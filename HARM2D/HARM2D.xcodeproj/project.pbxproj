@@ -55,7 +55,7 @@
 		0C677E8218F32F7100EE533A /* diag.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = diag.c; path = ../diag.c; sourceTree = "<group>"; };
 		0C677E8318F32F7100EE533A /* dump.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dump.c; path = ../dump.c; sourceTree = "<group>"; };
 		0C677E8418F32F7100EE533A /* fixup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fixup.c; path = ../fixup.c; sourceTree = "<group>"; };
-		0C677E8518F32F7100EE533A /* step_ch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = step_ch.c; path = ../step_ch.c; sourceTree = "<group>"; };
+		0C677E8518F32F7100EE533A /* step_ch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = step_ch.c; path = ../step_ch.c; sourceTree = "<group>"; tabWidth = 8; };
 		0C677E8618F32F7100EE533A /* bounds.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bounds.c; path = ../bounds.c; sourceTree = "<group>"; };
 		0C677E8718F32F7100EE533A /* init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = init.c; path = ../init.c; sourceTree = "<group>"; };
 		0C677E8818F32F7100EE533A /* decs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decs.h; path = ../decs.h; sourceTree = "<group>"; };
