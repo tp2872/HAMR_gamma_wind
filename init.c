@@ -689,7 +689,7 @@ void init_monopole(double Rout_val)
                 /* vertical field version */
                 coord(i,j,CORN,X) ;
                 bl_coord(X,&r,&th) ;
-                A[i][j] = 0.5*r*sin(th) ;
+                A[i][j] = 0.5*pow(r*sin(th),2);
 #elif(1)
                 /* radial (monopolar) field version */
                 coord(i,j,CORN,X) ;
