@@ -118,11 +118,11 @@ void init_torus()
         cour = 0.9 ;
         dt = 1.e-5 ;
 	R0 = 0.0 ;
-        Rin = 0.7*(1. + sqrt(1. - a*a)) ;
+        Rin = 0.9*(1. + sqrt(1. - a*a)) ;
         Rout = 40. ;
 
         t = 0. ;
-        hslope = 1.0 ;
+        hslope = 0.3 ;
 
 	if(N2!=1) {
 	  //2D problem, use full pi-wedge in theta
