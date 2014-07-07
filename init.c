@@ -119,7 +119,7 @@ void init_torus()
         dt = 1.e-5 ;
 	R0 = 0.0 ;
         Rin = 0.9*(1. + sqrt(1. - a*a)) ;
-        Rout = 50. ;
+        Rout = 40. ;
 
         t = 0. ;
         hslope = 0.3 ;
