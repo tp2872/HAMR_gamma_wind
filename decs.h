@@ -74,8 +74,8 @@
 #define N1       (128)      /* number of physical zones in X1-direction */
 #define N2       (128)        /* number of physical zones in X2-direction */
 #elif WHICHPROBLEM == TORUS_PROBLEM
-#define N1       (256)        /* number of physical zones in X1-direction */
-#define N2       (256)        /* number of physical zones in X2-direction */
+#define N1       (50)        /* number of physical zones in X1-direction */
+#define N2       (50)        /* number of physical zones in X2-direction */
 #elif WHICHPROBLEM == BONDI_PROBLEM_1D
 #define N1       (256)        /* number of physical zones in X1-direction */
 #define N2       (1)          /* number of physical zones in X2-direction */
