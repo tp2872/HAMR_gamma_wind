@@ -110,7 +110,7 @@ void init_torus()
         l = lfish_calc(rmax) ;
 
 	kappa = 1.e-3 ;
-	beta = 1.e2 ;
+	beta = 1.e20 ;
 
         /* some numerical parameters */
         lim = MC ;
