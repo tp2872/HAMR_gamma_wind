@@ -70,7 +70,8 @@ void fixup1zone( int i, int j, double pv[NPR] )
 
   rhoscal = pow(r,-POWRHO) ;
   //rhoscal = pow(r,-2) ;
-  uuscal = rhoscal/r ;
+  //uuscal = rhoscal/r ;
+  uuscal = pow(rhoscal,gam);
 
   rhoflr = RHOMIN*rhoscal;
   uuflr  = UUMIN*uuscal;
