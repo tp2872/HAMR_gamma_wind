@@ -122,7 +122,7 @@ void init_torus()
         Rout = 40. ;
 
         t = 0. ;
-        hslope = 0.3 ;
+        hslope = 1.0 ;
 
 	if(N2!=1) {
 	  //2D problem, use full pi-wedge in theta
