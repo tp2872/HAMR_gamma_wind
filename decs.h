@@ -59,7 +59,7 @@
 #define BONDI_PROBLEM_1D 5
 #define BONDI_PROBLEM_2D 6
 
-#define WHICHPROBLEM BZ_MONOPOLE_2D
+#define WHICHPROBLEM TORUS_PROBLEM
 
 
 /** here are the few things that we change frequently **/

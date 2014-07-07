@@ -75,6 +75,10 @@
 		0C677E5D18F32EA400EE533A = {
 			isa = PBXGroup;
 			children = (
+				0C677E8818F32F7100EE533A /* decs.h */,
+				0C677E8718F32F7100EE533A /* init.c */,
+				0C677E8618F32F7100EE533A /* bounds.c */,
+				0C677E8518F32F7100EE533A /* step_ch.c */,
 				0C677E7118F32F7100EE533A /* interp.c */,
 				0C677E7218F32F7100EE533A /* lu.c */,
 				0C677E7318F32F7100EE533A /* ranc.c */,
@@ -95,10 +99,6 @@
 				0C677E8218F32F7100EE533A /* diag.c */,
 				0C677E8318F32F7100EE533A /* dump.c */,
 				0C677E8418F32F7100EE533A /* fixup.c */,
-				0C677E8518F32F7100EE533A /* step_ch.c */,
-				0C677E8618F32F7100EE533A /* bounds.c */,
-				0C677E8718F32F7100EE533A /* init.c */,
-				0C677E8818F32F7100EE533A /* decs.h */,
 				0C677E6D18F32F4100EE533A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -348,6 +348,7 @@
 				0C677E6718F32EA400EE533A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		0C677E6E18F32F4200EE533A /* Build configuration list for PBXNativeTarget "Dummy" */ = {
 			isa = XCConfigurationList;
@@ -356,6 +357,7 @@
 				0C677E7018F32F4200EE533A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
