@@ -49,6 +49,10 @@
 
 #define SMALL 	1.e-14 ;
 
+#ifndef M_PI 
+#define M_PI 3.14159265358979323846264338327950288 
+#endif 
+
 int oN1,oN2,nN1,nN2 ;
 double dx1,dx2,rin,rout,dx,dy,hslope ;
 

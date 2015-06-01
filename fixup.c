@@ -48,29 +48,34 @@
 
 /* apply floors to density, internal energy */
 
-void fixup(double (* pv)[N2+4][NPR]) 
+void fixup(double((* pv)[NPR]))
 {
-  int i,j ;
+	int i, j, z;
 
-  ZLOOP {
-    fixup1zone( i, j, pv[i][j] );
-  }
+	// ZLOOP {
+	#pragma omp parallel shared(pv) private(i,j,z)
+	{
+		#pragma omp for schedule(static,1)
+		ZLOOP3D_MPI{
+			fixup1zone(i, j, z, pv[index(i, j, z)]);
+		}
+	}
 
 }
 
-void fixup1zone( int i, int j, double pv[NPR] ) 
+void fixup1zone( int i, int j, int z, double pv[NPR] ) 
 {
-  double r,th,X[NDIM],uuscal,rhoscal, rhoflr,uuflr ;
-  double f,gamma ;
-  double bsq;
+  double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr,uuflr;
+  double f,gamma, bsq;
+  double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
+  int k, flag, dofloor;
+  struct of_state q;
   struct of_geom geom ;
 
-  coord(i,j,CENT,X) ;
-  bl_coord(X,&r,&th) ;
+  coord(i,j, z, CENT,X) ;
+  bl_coord(X,&r,&th, &phi) ;
 
   rhoscal = pow(r,-POWRHO) ;
-  //rhoscal = pow(r,-2) ;
-  //uuscal = rhoscal/r ;
   uuscal = pow(rhoscal,gam);
 
   rhoflr = RHOMIN*rhoscal;
@@ -91,16 +96,70 @@ void fixup1zone( int i, int j, double pv[NPR] )
   if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
 
   /* floor on density and internal energy density (momentum *not* conserved) */
-  if(pv[RHO] < rhoflr )   pv[RHO] = rhoflr; 
-  if(pv[UU]  < uuflr  )   pv[UU]  = uuflr;
+#pragma simd 
+  PLOOP pv_prefloor[k] = pv[k];
+	if (pv[RHO] < rhoflr){
+		pv[RHO] = rhoflr;
+		dofloor = 1;
+	}
+	if (pv[UU] < uuflr){
+		pv[UU] = uuflr;
+		dofloor = 1;
+	}
 
+	#if( ZAMO_FLOOR )
+		if (dofloor && t > 0) {
+			//new way of floors according to Jon: add floors in the ZAMO frame
+			//instead of fluid frame to avoid run-away
+
+			//find the change in primitive quantities
+			#pragma simd  
+			for (k = 0; k < NPR; k++){
+				dpv[k] = pv[k] - pv_prefloor[k];
+			}
+
+			//compute the conserved quantity associated with floor addition
+			get_state(dpv, &geom, &q);
+			primtoU(dpv, &q, &geom, dU);
+
+			//compute the prefloor conserved quantity
+			get_state(pv_prefloor, &geom, &q);
+			primtoU(pv_prefloor, &q, &geom, U_prefloor);
+
+			//add U_added to the current conserved quantity
+			#pragma simd
+			PLOOP U[k] = U_prefloor[k] + dU[k];
+
+			//invert to obtain primitive quantity
+			flag = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pv);
+			if (flag){
+				failimage[index(i, j, z)][0]++;
+				U_ent = (geom.g *pv[0] * (gam - 1.)*pv[1] / pow(pv[0], gam)) * (q.ucon[0]);
+				pflag[index(i, j, z)] = flag;
+				#if( DO_FONT_FIX ) 
+				pflag[index(i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pv, U_ent);
+				if (pflag[index(i, j, z)]) {
+					failimage[index(i, j, z)][1]++;
+					//pflag[index(i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pv, U_ent);
+					if (pflag[index(i, j, z)]){
+						pflag[index(N1_MPI_offset - N1G, N2_MPI_offset - N2G, N3_MPI_offset - N3G)] = 100;
+						failimage[index(i, j, z)][2]++;
+					}
+				}
+				#else
+				pflag[index(N1_MPI_offset - N1G, N2_MPI_offset - N2G, N3_MPI_offset - N3G)] = 100;
+				#endif	
+			}
+		}
+	#endif
 
   /* limit gamma wrt normal observer */
 
   if( gamma_calc(pv,&geom,&gamma) ) { 
     /* Treat gamma failure here as "fixable" for fixup_utoprim() */
-    pflag[i][j] = -333;
-    failimage[3][i+j*N1]++ ;
+    pflag[index(i,j,z)] = -333;
+	pflag[index(N1_MPI_offset - N1G, N2_MPI_offset - N2G, N3_MPI_offset - N3G)] = 100;
+    failimage[index(i,j,z)][3]++ ;
   }
   else { 
     if(gamma > GAMMAMAX) {
@@ -129,26 +188,34 @@ void fixup1zone( int i, int j, double pv[NPR] )
 *******************************************************************************************/
 
 /* 12345678 */
-#define AVG8(pr,i,j,k)  \
-        (0.125*(pr[i-1][j+1][k]+pr[i][j+1][k]+pr[i+1][j+1][k]+pr[i+1][j][k]+pr[i+1][j-1][k]+pr[i][j-1][k]+pr[i-1][j-1][k]+pr[i-1][j][k])) 
+#define AVG8(pr,i,j,z,k)  \
+        (0.125*(pr[index(i-1,j+1,z)][k]+pr[index(i,j+1,z)][k]+pr[index(i+1,j+1,z)][k]+pr[index(i+1,j,z)][k]+pr[index(i+1,j-1,z)][k]+pr[index(i,j-1,z)][k]+pr[index(i-1,j-1,z)][k]+pr[index(i-1,j,z)][k])) 
 
 /* 2468  */
-#define AVG4_1(pr,i,j,k) (0.25*(pr[i][j+1][k]+pr[i][j-1][k]+pr[i-1][j][k]+pr[i+1][j][k]))
+#define AVG4_1(pr,i,j,z,k) (0.25*(pr[index(i,j+1,z)][k]+pr[index(i,j-1,z)][k]+pr[index(i-1,j,z)][k]+pr[index(i+1,j,z)][k]))
 
 /* 1357  */
-#define AVG4_2(pr,i,j,k) (0.25*(pr[i+1][j+1][k]+pr[i+1][j-1][k]+pr[i-1][j+1][k]+pr[i-1][j-1][k]))
+#define AVG4_2(pr,i,j,z, k) (0.25*(pr[index(i+1,j+1,z)][k]+pr[index(i+1,j-1,z)][k]+pr[index(i-1,j+1,z)][k]+pr[index(i-1,j-1,z)][k]))
+
+/* 2468+cells in 3rd dimension  */
+#define AVG6_1(pr,i,j,z,k) (1./6.*(pr[index(i,j+1,z)][k]+pr[index(i,j-1,z)][k]+pr[index(i-1,j,z)][k]+pr[index(i+1,j,z)][k] +pr[index(i,j,z+1)][k]+pr[index(i,j,z-1)][k]))
+
+/* 2468+cells in 3rd dimension  */
+#define AVG6_2(pr,i,j,z,k) (1./6.*(pr[index(i+1,j+1,z)][k]+pr[index(i+1,j-1,z)][k]+pr[index(i-1,j+1,z)][k]+pr[index(i-1,j-1,z)][k] +pr[index(i,j,z+1)][k]+pr[index(i,j,z-1)][k]))
 
 /* + shaped,  Linear interpolation in X1 or X2 directions using only neighbors in these direction */
 /* 48  */
-#define AVG2_X1(pr,i,j,k) (0.5*(pr[i-1][j  ][k]+pr[i+1][j  ][k]))
+#define AVG2_X1(pr,i,j,z,k) (0.5*(pr[index(i-1,j,z)][k]+pr[index(i+1,j,z)][k]))
 /* 26  */
-#define AVG2_X2(pr,i,j,k) (0.5*(pr[i  ][j-1][k]+pr[i  ][j+1][k]))
+#define AVG2_X2(pr,i,j,z,k) (0.5*(pr[index(i,j-1,z)][k]+pr[index(i,j+1,z)][k]))
+/*910*/
+#define AVG2_X3(pr,i,j,z,k) (0.5*(pr[index(i,j,z-1)][k]+pr[index(i,j,z+1)][k]))
 
 /* x shaped,  Linear interpolation diagonally along both X1 and X2 directions "corner" neighbors */
 /* 37  */
-#define AVG2_1_X1X2(pr,i,j,k) (0.5*(pr[i-1][j-1][k]+pr[i+1][j+1][k]))
+#define AVG2_1_X1X2(pr,i,j,z,k) (0.5*(pr[index(i-1,j-1,z)][k]+pr[index(i+1,j+1,z)][k]))
 /* 15  */
-#define AVG2_2_X1X2(pr,i,j,k) (0.5*(pr[i-1][j+1][k]+pr[i+1][j-1][k]))
+#define AVG2_2_X1X2(pr,i,j,z,k) (0.5*(pr[index(i-1,j+1,z)][k]+pr[index(i+1,j-1,z)][k]))
 
 /*******************************************************************************************
   fixup_utoprim(): 
@@ -163,54 +230,83 @@ void fixup1zone( int i, int j, double pv[NPR] )
 
  *******************************************************************************************/
 
-void fixup_utoprim( double (*pv)[N2 + 4][NPR] )  
+void fixup_utoprim( double ((*pv)[NPR]) )  
 {
-  int i, j, k;
-  static int pf[9];
+  int i, j, z, k;
+  static int pf[11];
 
-  /* Flip the logic of the pflag[] so that it now indicates which cells are good  */
-  ZSLOOP(-2,(N1+1),-2,(N2+1)) { pflag[i][j] = !pflag[i][j] ; } 
+  /* Fix the interior points first */ 
 
-  /* Fix the interior points first */
-  ZSLOOP(0,(N1-1),0,(N2-1)) { 
-    if( pflag[i][j] == 0 ) { 
-      pf[1] = pflag[i-1][j+1];   pf[2] = pflag[i][j+1];  pf[3] = pflag[i+1][j+1];
-      pf[8] = pflag[i-1][j  ];                           pf[4] = pflag[i+1][j  ];
-      pf[7] = pflag[i-1][j-1];   pf[6] = pflag[i][j-1];  pf[5] = pflag[i+1][j-1];
+#pragma omp parallel shared(pflag, pv) private(i,j,z,k, pf)
+  {
+	#pragma omp for schedule(static,1)
+	  ZSLOOP3D(N1_MPI_offset, N1_MPI_offset + N1_MPI - 1, N2_MPI_offset, N2_MPI_offset + N2_MPI - 1, N3_MPI_offset, N3_MPI_offset + N3_MPI - 1) 	{
+		  if (pflag[index(i,j,z)] != 0) {
+			  //printf("i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);
+			  pf[1] = !pflag[index(i - 1, j + 1, z)];   pf[2] = !pflag[index(i, j + 1, z)];  pf[3] = !pflag[index(i + 1, j + 1, z)];
+			  pf[8] = !pflag[index(i - 1, j, z)];                           pf[4] = !pflag[index(i + 1, j, z)];
+			  pf[7] = !pflag[index(i-1, j-1, z)];   pf[6] = !pflag[index(i, j - 1, z)];  pf[5] = !pflag[index(i + 1, j - 1, z)];
+			  #if(N3>1)
+			  pf[9] = !pflag[index(i, j, z + 1)]; pf[10] = !pflag[index(i, j, z - 1)];
+			  #else
+			  pf[9]=0;						      pf[10]=0;
+			  #endif
+			  /* Now the pf's  are true if they represent good points */
 
-      /* Now the pf's  are true if they represent good points */
+			  //      if(      pf[1]&&pf[2]&&pf[3]&&pf[4]&&pf[5]&&pf[6]&&pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = AVG8(            pv,i,j,k)                   ; }
+			  //      else if(        pf[2]&&       pf[4]&&       pf[6]&&       pf[8] ){ FLOOP pv[i][j][k] = AVG4_1(          pv,i,j,k)                   ; }
+			  //      else if( pf[1]&&       pf[3]&&       pf[5]&&       pf[7]        ){ FLOOP pv[i][j][k] = AVG4_2(          pv,i,j,k)                   ; }
+			  //      else if(               pf[3]&&pf[4]&&              pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = 0.5*(AVG2_1_X1X2(pv,i,j,k)+AVG2_X1(pv,i,j,k)); }
+			  //      else if(        pf[2]&&pf[3]&&              pf[6]&&pf[7]        ){ FLOOP pv[i][j][k] = 0.5*(AVG2_1_X1X2(pv,i,j,k)+AVG2_X2(pv,i,j,k)); }
+			  //      else if( pf[1]&&              pf[4]&&pf[5]&&              pf[8] ){ FLOOP pv[i][j][k] = 0.5*(AVG2_2_X1X2(pv,i,j,k)+AVG2_X1(pv,i,j,k)); }
+			  //      else if( pf[1]&&pf[2]&&              pf[5]&&pf[6]               ){ FLOOP pv[i][j][k] = 0.5*(AVG2_2_X1X2(pv,i,j,k)+AVG2_X2(pv,i,j,k)); }
+			  //      else if(               pf[3]&&                     pf[7]        ){ FLOOP pv[i][j][k] = AVG2_1_X1X2(     pv,i,j,k)                   ; }
+			  //      else if( pf[1]&&                     pf[5]                      ){ FLOOP pv[i][j][k] = AVG2_2_X1X2(     pv,i,j,k)                   ; }
+			  //      else if(        pf[2]&&                     pf[6]               ){ FLOOP pv[i][j][k] = AVG2_X2(         pv,i,j,k)                   ; }
+			  //      else if(                      pf[4]&&                     pf[8] ){ FLOOP pv[i][j][k] = AVG2_X1(         pv,i,j,k)                   ; }
 
-//      if(      pf[1]&&pf[2]&&pf[3]&&pf[4]&&pf[5]&&pf[6]&&pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = AVG8(            pv,i,j,k)                   ; }
-//      else if(        pf[2]&&       pf[4]&&       pf[6]&&       pf[8] ){ FLOOP pv[i][j][k] = AVG4_1(          pv,i,j,k)                   ; }
-//      else if( pf[1]&&       pf[3]&&       pf[5]&&       pf[7]        ){ FLOOP pv[i][j][k] = AVG4_2(          pv,i,j,k)                   ; }
-//      else if(               pf[3]&&pf[4]&&              pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = 0.5*(AVG2_1_X1X2(pv,i,j,k)+AVG2_X1(pv,i,j,k)); }
-//      else if(        pf[2]&&pf[3]&&              pf[6]&&pf[7]        ){ FLOOP pv[i][j][k] = 0.5*(AVG2_1_X1X2(pv,i,j,k)+AVG2_X2(pv,i,j,k)); }
-//      else if( pf[1]&&              pf[4]&&pf[5]&&              pf[8] ){ FLOOP pv[i][j][k] = 0.5*(AVG2_2_X1X2(pv,i,j,k)+AVG2_X1(pv,i,j,k)); }
-//      else if( pf[1]&&pf[2]&&              pf[5]&&pf[6]               ){ FLOOP pv[i][j][k] = 0.5*(AVG2_2_X1X2(pv,i,j,k)+AVG2_X2(pv,i,j,k)); }
-//      else if(               pf[3]&&                     pf[7]        ){ FLOOP pv[i][j][k] = AVG2_1_X1X2(     pv,i,j,k)                   ; }
-//      else if( pf[1]&&                     pf[5]                      ){ FLOOP pv[i][j][k] = AVG2_2_X1X2(     pv,i,j,k)                   ; }
-//      else if(        pf[2]&&                     pf[6]               ){ FLOOP pv[i][j][k] = AVG2_X2(         pv,i,j,k)                   ; }
-//      else if(                      pf[4]&&                     pf[8] ){ FLOOP pv[i][j][k] = AVG2_X1(         pv,i,j,k)                   ; }
-
-// Old way:
-      if(             pf[2]&&       pf[4]&&       pf[6]&&       pf[8] ){ FLOOP pv[i][j][k] = AVG4_1(          pv,i,j,k)                   ; }
-      else if( pf[1]&&       pf[3]&&       pf[5]&&       pf[7]        ){ FLOOP pv[i][j][k] = AVG4_2(          pv,i,j,k)                   ; }
-      else{ 
-//	fflush(stderr);
-//	fprintf(stderr,"fixup_utoprim()1: no good stencils1: i j pflag = %d %d : \n %4d %4d %4d \n %4d %4d %4d \n %4d %4d %4d \n\n", 
-//		i,j,pflag[i-1][j+1],pflag[i][j+1],pflag[i+1][j+1],pflag[i-1][j],pflag[i][j],pflag[i+1][j],
-//		pflag[i-1][j-1],pflag[i][j-1],pflag[i+1][j-1]);
-//	fflush(stderr);
-	failimage[4][i+j*N1]++ ;
-	/* if nothing better to do, then leave densities and B-field unchanged, set v^i = 0 */
-        for( k = RHO; k <= UU; k++ ) { pv[i][j][k] = 0.5*( AVG4_1(pv,i,j,k) + AVG4_2(pv,i,j,k) ); }  
-	pv[i][j][U1] = pv[i][j][U2] = pv[i][j][U3] = 0.;
-      }
-      pflag[i][j] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
-      fixup1zone( i, j, pv[i][j] ) ;  /* Floor and limit gamma the interpolated value */
-    }
+			  // Old way:
+			  if (pf[2] && pf[4] && pf[6] && pf[8] && pf[9] && pf[10]){
+					#pragma simd
+				  FLOOP pv[index(i,j,z)][k] = AVG6_1(pv, i, j, z, k);
+			  }
+			  else if (pf[1] && pf[3] && pf[5] && pf[7] && pf[9] && pf[10]){
+				#pragma simd
+				  FLOOP pv[index(i, j, z)][k] = AVG6_2(pv, i, j, z, k);
+			  }
+			  else if (pf[2] && pf[4] && pf[6] && pf[8]){
+				#pragma simd
+				  FLOOP pv[index(i,j,z)][k] = AVG4_1(pv, i, j, z, k);
+			  }
+			  else if (pf[1] && pf[3] && pf[5] && pf[7]){ 
+				#pragma simd
+					FLOOP pv[index(i,j,z)][k] = AVG4_2(pv, i, j,z, k); 
+			  }
+			  else if (pf[2] && pf[6]){
+				#pragma simd
+				  FLOOP pv[index(i, j, z)][k] = AVG2_X1(pv, i, j, z, k);
+			  }
+			  else if (pf[4] && pf[8]){
+				#pragma simd
+				  FLOOP pv[index(i, j, z)][k] = AVG2_X2(pv, i, j, z, k);
+			  }
+			  else if (pf[9] && pf[10]){
+				#pragma simd
+				  FLOOP pv[index(i, j, z)][k] = AVG2_X3(pv, i, j, z, k);
+			  }
+			  else{
+				  failimage[index(i,j,z)][4]++;
+				 
+				  /* if nothing better to do, then leave densities and B-field unchanged, set v^i = 0 */
+				#pragma simd
+				  for (k = RHO; k <= UU; k++) { pv[index(i,j,z)][k] = 0.5*(AVG4_1(pv, i, j,z, k) + AVG4_2(pv, i, j, z, k)); }
+				  pv[index(i,j,z)][U1] = pv[index(i,j,z)][U2] = pv[index(i,j,z)][U3] = 0.;
+			  }
+			  pflag[index(i,j,z)] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
+			  //fixup1zone(i, j,z, pv[index(i,j,z)]);  /* Floor and limit gamma the interpolated value */
+		  }
+	  }
   }
-
   return;
 }
 
@@ -238,23 +334,23 @@ void set_Katm( void )
 
   G_type = get_G_ATM( &G_tmp );
 
-  fflush(stdout);
-  fprintf(stdout,"G_tmp = %26.20e \n", G_tmp );
-  fflush(stdout);
+  if (rank == 0){
+	  fflush(stdout);
+	  fprintf(stdout, "G_tmp = %26.20e \n", G_tmp);
+	  fflush(stdout);
+  }
 
   j = 0;
-  for( i = 0 ; i < N1; i++ ) { 
-
+  for (i = N1_MPI_offset; i <N1_MPI_offset+ N1_MPI; i++) {
     PLOOP prim[k] = 0.;
     prim[RHO] = prim[UU] = -1.;
 
-    fixup1zone( i, j, prim );
+    fixup1zone( i, j, 0, prim );
     Katm[i] = (gam - 1.) * prim[UU] / pow( prim[RHO], G_tmp ) ;
     
-    fflush(stdout);
-    fprintf(stdout,"Katm[%d] = %26.20e \n", i, Katm[i] );
-    fflush(stdout);
-    
+    //fflush(stdout);
+    //fprintf(stdout,"Katm[%d] = %26.20e \n", i, Katm[i] );
+	//fflush(stdout); 
   }
 
   return;

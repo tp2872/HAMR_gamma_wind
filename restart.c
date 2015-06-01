@@ -47,8 +47,6 @@
 
 #include "decs.h"
 
-
-
 /***********************************************************************/
 /***********************************************************************
   restart_write():
@@ -61,63 +59,85 @@
 void restart_write()
 {
   FILE *fp ;
-  int idum,i,j,k ;
+  int idum,i,j,z, k, l ;
+  int int_size = sizeof(int);
+  int double_size = sizeof(double);
+  MPI_Barrier(MPI_COMM_WORLD);
+  for (l = 0; l < numtasks; l++){
+	  if (rank == l){
+		  if (rank == 0){
+			  if (rdump_cnt % 2 == 0) {
+				  fp = fopen("dumps/rdump0.bin", "wb");
+				  fprintf(stderr, "RESTART  file=dumps/rdump0\n");
+			  }
+			  else {
+				  fp = fopen("dumps/rdump1.bin", "wb");
+				  fprintf(stderr, "RESTART file=dumps/rdump1\n");
+			  }
+			  if (fp == NULL) {
+				  fprintf(stderr, "Cannot open restart file\n");
+				  exit(2);
+			  }
+		  }
+		  else{
+			  if (rdump_cnt % 2 == 0) {
+				  fp = fopen("dumps/rdump0.bin", "ab");
+			  }
+			  else {
+				  fp = fopen("dumps/rdump1.bin", "ab");
+			  }
+			  if (fp == NULL) {
+				  fprintf(stderr, "Cannot open restart file\n");
+				  exit(2);
+			  }
+		  }
+		  /*************************************************************
+		  Write the header of the restart file:
+		  *************************************************************/
+		  if (rank == 0){
+			  int N1_print = N1;
+			  int N2_print = N2;
+			  int N3_print = N3;
+			  fwrite(&N1_print, int_size, 1, fp);
+			  fwrite(&N2_print, int_size, 1, fp);
+			  fwrite(&N3_print, int_size, 1, fp);
+			  fwrite(&n_rows, int_size, 1, fp);
+			  fwrite(&n_columns, int_size, 1, fp);
+			  fwrite(&n_stacks, int_size, 1, fp);
+			  fwrite(&t, double_size, 1, fp);
+			  fwrite(&tf, double_size, 1, fp);
+			  fwrite(&fractheta, double_size, 1, fp);
+			  fwrite(&nstep, int_size, 1, fp);
+			  fwrite(&a, double_size, 1, fp);
+			  fwrite(&gam, double_size, 1, fp);
+			  fwrite(&cour, double_size, 1, fp);
+			  fwrite(&DTd, double_size, 1, fp);
+			  fwrite(&DTl, double_size, 1, fp);
+			  fwrite(&DTi, double_size, 1, fp);
+			  fwrite(&DTr, int_size, 1, fp);
+			  fwrite(&dump_cnt, int_size, 1, fp);
+			  fwrite(&image_cnt, int_size, 1, fp);
+			  fwrite(&rdump_cnt, int_size, 1, fp);
+			  fwrite(&dt, double_size, 1, fp);
+			  fwrite(&lim, int_size, 1, fp);
+			  fwrite(&failed, int_size, 1, fp);
+			  fwrite(&Rin, double_size, 1, fp);
+			  fwrite(&Rout, double_size, 1, fp);
+			  fwrite(&hslope, double_size, 1, fp);
+			  fwrite(&R0, double_size, 1, fp);
+		  }
 
-
-  if(rdump_cnt%2 == 0) {
-    fp = fopen("dumps/rdump0","wt") ;
-    fprintf(stderr,"RESTART  file=dumps/rdump0\n") ;
+		  /*************************************************************
+		  Write the body of the restart file:
+		  *************************************************************/
+		  ZSLOOP3D(-N1G + N1_MPI_offset, N1_MPI_offset + N1_MPI - 1+N1G, -N2G + N2_MPI_offset, N2_MPI_offset + N2_MPI - 1+N2G, -N3G + N3_MPI_offset, N3_MPI_offset + N3_MPI - 1+N3G) {
+			  PLOOP fwrite(&(p[index(i, j, z)][k]), double_size, 1, fp);
+		  }
+		  fclose(fp);
+		  rdump_cnt++;
+	  }
+	  MPI_Barrier(MPI_COMM_WORLD);
   }
-  else {
-    fp = fopen("dumps/rdump1","wt") ;
-    fprintf(stderr,"RESTART file=dumps/rdump1\n") ;
-  }
-
-  if(fp == NULL) {
-    fprintf(stderr,"Cannot open restart file\n") ;
-    exit(2) ;
-  }
-
-  /*************************************************************
-	  Write the header of the restart file: 
-  *************************************************************/
-  fprintf(fp, FMT_INT_OUT, N1       );
-  fprintf(fp, FMT_INT_OUT, N2       );
-  fprintf(fp, FMT_DBL_OUT, t        );
-  fprintf(fp, FMT_DBL_OUT, tf       );
-  fprintf(fp, FMT_INT_OUT, nstep    );
-  fprintf(fp, FMT_DBL_OUT, a        );
-  fprintf(fp, FMT_DBL_OUT, gam      );
-  fprintf(fp, FMT_DBL_OUT, cour     );
-  fprintf(fp, FMT_DBL_OUT, DTd      );
-  fprintf(fp, FMT_DBL_OUT, DTl      );
-  fprintf(fp, FMT_DBL_OUT, DTi      );
-  fprintf(fp, FMT_INT_OUT, DTr      );
-  fprintf(fp, FMT_INT_OUT, dump_cnt );
-  fprintf(fp, FMT_INT_OUT, image_cnt);
-  fprintf(fp, FMT_INT_OUT, rdump_cnt);
-  fprintf(fp, FMT_DBL_OUT, dt       );
-  fprintf(fp, FMT_INT_OUT, lim      );
-  fprintf(fp, FMT_INT_OUT, failed   );
-  fprintf(fp, FMT_DBL_OUT, Rin      );
-  fprintf(fp, FMT_DBL_OUT, Rout     );
-  fprintf(fp, FMT_DBL_OUT, hslope   );
-  fprintf(fp, FMT_DBL_OUT, R0       );
-
-  fprintf(fp,"\n");
-
-  /*************************************************************
-	  Write the body of the restart file: 
-  *************************************************************/
-  ZSLOOP(-2,N1+1,-2,N2+1) {
-    PLOOP fprintf(fp, FMT_DBL_OUT, p[i][j][k]); 
-    fprintf(fp, "\n"); 
-  }
-
-  fclose(fp) ;
-
-  rdump_cnt++ ;
-	
   return;
 }
 
@@ -134,83 +154,105 @@ int restart_init()
 {
   FILE *fp, *fp1, *fp0 ;
   char ans[100] ;
-  //int strncmp(char *s1, char *s2, int n) ;
-  int i,j,k ;
-
-  /* set up global arrays */
-  set_arrays() ;
-
+  int i,j,k, l, nofile=0;
+  double r, th, phi;
+  double trash;
 
   /********************************************************************
    Check to see which restart files exist. 
    Use the only one that exists, else prompt user to decide 
      which one to use if we have a choice : 
   ********************************************************************/
-  fp0 = fopen("dumps/rdump0","r") ;
-  fp1 = fopen("dumps/rdump1","r") ;
 
-  if( (fp0 == NULL) && (fp1 == NULL) ) {
-    fprintf(stderr,"No restart file\n") ;
-    return(0) ;
+    fp0 = fopen("dumps/rdump0.bin", "rb");
+	fp1 = fopen("dumps/rdump1.bin", "rb");
+	#if (RESTART==1)
+    fp0=NULL;
+	#elif (RESTART==0)
+    fp1 = NULL;
+    #endif
+
+  if ((fp0 == NULL) && (fp1 == NULL)) {
+	  if (rank == 0){
+		  fprintf(stderr, "No restart file\n");
+	  }
+	  nofile = 1;
   }
-  else { 
-    fprintf(stderr,"\nRestart file exists! \n") ;
-    if( fp0 == NULL ) { 
-      fprintf(stderr,"Using dumps/rdump1 ... \n");
-      fp = fp1;
-    }
-    else if( fp1 == NULL ) { 
-      fprintf(stderr,"Using dumps/rdump0 ... \n");
-      fp = fp0;
-    }
-    else { 
-      fprintf(stderr,"Use dumps/rdump0 (0) or dumps/rdump1 (1)?   [0|1]  \n");
-      fscanf(stdin,"%s",ans) ;
-      if(strncmp(ans,"0",1) == 0) { 
-	fp = fp0;
-      }
-      else{ 
-	fp = fp1;
-      }
-    }
+  for (l = 0; l < numtasks; l++){
+	  if (rank == l){
+		  if(nofile==0) {
+			  if (rank == 0){
+				  fprintf(stderr, "\nRestart file exists! \n");
+			  }
+			  if (fp0 == NULL) {
+				  if (rank == 0){
+					  fprintf(stderr, "Using dumps/rdump1 ... \n");
+				  }
+				  fp = fopen("dumps/rdump1.bin", "rb");
+			  }
+			  else if (fp1 == NULL) {
+				  if (rank == 0){
+					  fprintf(stderr, "Using dumps/rdump0 ... \n");
+				  }
+				  fp = fopen("dumps/rdump0.bin", "rb");;
+			  }
+			  else {
+				  if (rank == 0){
+					  fprintf(stderr, "Use dumps/rdump0 (0) or dumps/rdump1 (1)?   [0|1]  \n");
+				  }
+				  fscanf(stdin, "%s", ans);
+				  if (strncmp(ans, "0", 1) == 0) {
+					  fp = fopen("dumps/rdump0.bin", "rb");
+				  }
+				  else{
+					  fp = fopen("dumps/rdump1.bin", "rb");
+				  }
+			  }
+			 
+			  /********************************************************************
+			   Now that we know we are restarting from a checkpoint file, then
+			   we need to read in data, assign grid functions and define the grid:
+			   ********************************************************************/
+			  /* set up global arrays */
+			  set_arrays();
+			  
+			  /*Read in file*/
+			  restart_read(fp);
+			  fclose(fp);
+
+			  /* set metric functions */
+			  set_grid();
+			  
+			  #if( DO_FONT_FIX ) 
+			  set_Katm();
+			  #endif 
+	
+			  /***********************************************************************
+				Make any changes to parameters in restart file  here:
+				e.g., cour = 0.4 , change in limiter...
+				************************************************************************/
+			  //lim = MC ;
+			  //cour = 0.9 ;
+			  //lim = VANL ;
+			  //tf = 4000. ;
+
+			  if (rank == 0){
+				  fprintf(stderr, "done with restart init.\n");
+			  }
+		  }
+	  }
+	  MPI_Barrier(MPI_COMM_WORLD);
+	
+	  if (nofile == 1){
+		  return(0);
+	  }
   }
-
-  /********************************************************************
-   Now that we know we are restarting from a checkpoint file, then 
-   we need to read in data, assign grid functions and define the grid: 
-  ********************************************************************/
-  restart_read(fp) ;
-  fclose(fp) ;
-
-  /* set half-step primitives everywhere */
-  ZSLOOP(-2,N1+1,-2,N2+1) PLOOP ph[i][j][k] = p[i][j][k] ;
-
-  /* set metric functions */
-  set_grid() ;
 
   /* bound */
-  bound_prim(p) ;
-  bound_prim(ph) ;
+  bound_prim(p,1);
 
-
-#if( DO_FONT_FIX ) 
-  set_Katm();
-#endif 
-
-  /***********************************************************************
-    Make any changes to parameters in restart file  here: 
-      e.g., cour = 0.4 , change in limiter...
-  ************************************************************************/
-  //lim = MC ;
-  //cour = 0.9 ;
-  //lim = VANL ;
-  //tf = 4000. ;
-
-  fprintf(stderr,"done with restart init.\n") ;
-
-  /* done! */
+ /* done! */
   return(1) ;
-
 }
 
 /***********************************************************************/
@@ -221,48 +263,90 @@ int restart_init()
 ************************************************************************/
 void restart_read(FILE *fp)
 {
-  int idum,i,j,k ;
+  int idum,i,j,z,k,l,point;
+  int int_size = sizeof(int);
+  int double_size = sizeof(double);
+  double trash;
 
   /*************************************************************
 	  READ the header of the restart file: 
   *************************************************************/
-  fscanf(fp, "%d", &idum  );
-  if(idum != N1) {
-    fprintf(stderr,"error reading restart file; N1 differs\n") ;
+  fread(&idum, int_size, 1,fp );
+  if(idum != N1 && rank==0 ) {
+    fprintf(stderr,"Error reading restart file; N1 differs. Select N1=%d. \n", idum-ibound) ;
     exit(3) ;
   }
-  fscanf(fp, "%d", &idum  );
-  if(idum != N2) {
-    fprintf(stderr,"error reading restart file; N2 differs\n") ;
+  fread(&idum, int_size, 1, fp);
+  if(idum != N2 && rank==0) {
+	  fprintf(stderr, "Error reading restart file. N2 differs. Select N2=%d. \n", idum - jbound);
     exit(4) ;
   }
-
-  fscanf(fp, "%lf", &t        );
-  fscanf(fp, "%lf", &tf       );
-  fscanf(fp, "%d",  &nstep    );
-  fscanf(fp, "%lf", &a        );
-  fscanf(fp, "%lf", &gam      );
-  fscanf(fp, "%lf", &cour     );
-  fscanf(fp, "%lf", &DTd      );
-  fscanf(fp, "%lf", &DTl      );
-  fscanf(fp, "%lf", &DTi      );
-  fscanf(fp, "%d",  &DTr      );
-  fscanf(fp, "%d",  &dump_cnt );
-  fscanf(fp, "%d",  &image_cnt);
-  fscanf(fp, "%d",  &rdump_cnt);
-  fscanf(fp, "%lf", &dt       );
-  fscanf(fp, "%d",  &lim      );
-  fscanf(fp, "%d",  &failed   );
-  fscanf(fp, "%lf", &Rin      );
-  fscanf(fp, "%lf", &Rout     );
-  fscanf(fp, "%lf", &hslope   );
-  fscanf(fp, "%lf", &R0       );
+  fread(&idum, int_size, 1, fp);
+  if (idum != N3 && rank == 0) {
+	  fprintf(stderr, "Error reading restart file. N3 differs. Select N3=%d. \n", idum - zbound);
+	  exit(5);
+  }
+  fread(&idum, int_size, 1, fp);
+  if (idum != n_rows && rank==0){
+	  fprintf(stderr, "Error reading restart file, n_rows differs!\n");
+	  exit(6);
+  }
+  fread(&idum, int_size, 1, fp);
+  if (idum != n_columns && rank == 0){
+	  fprintf(stderr, "Error reading restart file, n_columns differs!\n");
+	  exit(7);
+  }
+  fread(&idum, int_size, 1, fp);
+  if (idum != n_stacks && rank == 0){
+	  fprintf(stderr, "Error reading restart file, n_stacks differs!\n");
+	  exit(8);
+  }
+  fread(&t, double_size,1,fp );
+  fread(&tf, double_size, 1, fp);
+  fread(&fractheta, double_size, 1, fp);
+  fread(&nstep, int_size, 1, fp);
+  fread(&a, double_size, 1, fp);
+  fread(&gam, double_size, 1, fp);
+  fread(&cour, double_size, 1, fp);
+  fread(&DTd, double_size, 1, fp);
+  fread(&DTl, double_size, 1, fp);
+  fread(&DTi, double_size, 1, fp);
+  fread(&DTr, int_size, 1, fp);
+  fread(&dump_cnt, int_size, 1, fp);
+  fread(&image_cnt, int_size, 1, fp);
+  fread(&rdump_cnt, int_size, 1, fp);
+  fread(&dt, double_size, 1, fp);
+  fread(&lim, int_size, 1, fp);
+  fread(&failed, int_size, 1, fp);
+  fread(&Rin, double_size, 1, fp);
+  fread(&Rout, double_size, 1, fp);
+  fread(&hslope, double_size, 1, fp);
+  fread(&R0, double_size, 1, fp);
 
   /*************************************************************
 	  READ the body of the restart file: 
-  *************************************************************/
-  ZSLOOP(-2,N1+1,-2,N2+1)  PLOOP fscanf(fp, "%lf", &(p[i][j][k])); 
-
+  *************************************************************/	
+  for (l = 0; l < numtasks; l++){
+	  if (rank == l){
+		  ZSLOOP3D(-N1G + N1_MPI_offset, N1_MPI_offset + N1_MPI - 1 + N1G, -N2G + N2_MPI_offset, N2_MPI_offset + N2_MPI - 1 + N2G,
+			  -N3G + N3_MPI_offset, N3_MPI_offset + N3_MPI - 1 + N3G){
+			  PLOOP fread(&(p[index(i, j, z)][k]), double_size, 1, fp);
+			  /*if (boundfreeze1 || boundfreeze2){
+				 for(point=0; point<N_POINTS; point++){
+					 if (i == ibound+point){
+						  PLOOP pbound[j][k][points] = p[ibound+point][j][k];
+					  }
+				  }
+			  }*/
+		  }
+	  }
+	  else{
+		  ZSLOOP3D(-N1G + aN1_MPI_offset[l], aN1_MPI_offset[l] + aN1_MPI[l] - 1 + N1G, -N2G + aN2_MPI_offset[l], aN2_MPI_offset[l] + aN2_MPI[l] - 1 + N2G,
+			  -N3G + aN3_MPI_offset[l], aN3_MPI_offset[l] + aN3_MPI[l] - 1 + N3G) {
+			  PLOOP fread(&trash, double_size, 1, fp);
+		  }
+	  }
+  }
   return ;
 }
 

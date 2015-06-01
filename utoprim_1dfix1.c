@@ -75,9 +75,9 @@ utoprim_1dfix1.c:
 
 /* these variables need to be shared between the functions
    Utoprim_1D, residual, and utsq */
-FTYPE Bsq,QdotBsq,Qtsq,Qdotn,D, K_atm ;
+FTYPE Bsq3,QdotBsq3,Qtsq3,Qdotn3,D3, K_atm3 ;
 FTYPE W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old;
-
+#pragma omp threadprivate(W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old,Bsq3,QdotBsq3,Qtsq3,Qdotn3,D3, K_atm3)
 
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
@@ -147,7 +147,7 @@ int Utoprim_1dfix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
     return(-100);
   }
 
-  K_atm = K ; 
+  K_atm3 = K ; 
 
   /* First update the primitive B-fields */
   for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
@@ -251,24 +251,24 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
   raise_g(Qcov,gcon,Qcon) ;
 
 
-  Bsq = 0. ;
-  for(i=1;i<4;i++) Bsq += Bcon[i]*Bcov[i] ;
+  Bsq3 = 0. ;
+  for(i=1;i<4;i++) Bsq3 += Bcon[i]*Bcov[i] ;
 
   QdotB = 0. ;
   for(i=0;i<4;i++) QdotB += Qcov[i]*Bcon[i] ;
-  QdotBsq = QdotB*QdotB ;
+  QdotBsq3 = QdotB*QdotB ;
   
   ncov_calc(gcon,ncov) ;
   raise_g(ncov,gcon,ncon);
 
-  Qdotn = Qcon[0]*ncov[0] ;
+  Qdotn3 = Qcon[0]*ncov[0] ;
 
   Qsq = 0. ;
   for(i=0;i<4;i++) Qsq += Qcov[i]*Qcon[i] ;
 
-  Qtsq = Qsq + Qdotn*Qdotn ;
+  Qtsq3 = Qsq + Qdotn3*Qdotn3 ;
 
-  D = U[RHO] ;
+  D3 = U[RHO] ;
 
   /* calculate W from last timestep and use for guess */
   utsq = 0. ;
@@ -289,7 +289,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	
   // Always calculate rho from D and gamma so that using D in EOS remains consistent
   //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D / gamma ;
+  rho0 = D3 / gamma ;
   p = pressure_of_rho( rho0 );
   u = u_of_p(p);
   w = rho0 + u + p ;
@@ -306,8 +306,8 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 
   // Make sure that W is large enough so that v^2 < 1 : 
   i_increase = 0;
-  while( (( W_last*W_last*W_last * ( W_last + 2.*Bsq ) 
-	    - QdotBsq*(2.*W_last + Bsq) ) <= W_last*W_last*(Qtsq-Bsq*Bsq))
+  while( (( W_last*W_last*W_last * ( W_last + 2.*Bsq3 ) 
+	    - QdotBsq3*(2.*W_last + Bsq3) ) <= W_last*W_last*(Qtsq3-Bsq3*Bsq3))
 	 && (i_increase < 10) ) {
     W_last *= 10.;
     i_increase++;
@@ -359,7 +359,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
   // Recover the primitive variables from the scalars and conserved variables:
   gtmp = sqrt(1. - vsq);
   gamma = 1./gtmp ;
-  rho0 = D * gtmp;
+  rho0 = D3 * gtmp;
 
   w = W * (1. - vsq) ;
 
@@ -380,8 +380,8 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
   prim[UU] = u ;
 
 
-  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
+  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn3;
+  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq3) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
 	
   /* set field components */
   for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
@@ -406,9 +406,9 @@ static FTYPE vsq_calc(FTYPE W)
 	FTYPE Wsq,Xsq;
 	
 	Wsq = W*W ;
-	Xsq = (Bsq + W) * (Bsq + W);
+	Xsq = (Bsq3 + W) * (Bsq3 + W);
 
-	return(  ( Wsq * Qtsq  + QdotBsq * (Bsq + 2.*W)) / (Wsq*Xsq) );
+	return(  ( Wsq * Qtsq3  + QdotBsq3 * (Bsq3 + 2.*W)) / (Wsq*Xsq) );
 }
 
 /**********************************************************************/
@@ -422,11 +422,11 @@ static FTYPE dvsq_dW(FTYPE W)
 {
 	FTYPE W3,X3,X;
 	
-	X = Bsq + W;
+	X = Bsq3 + W;
 	W3 = W*W*W ;
 	X3 = X*X*X;
 
-	return( -2.*( Qtsq/X3  +  QdotBsq * (3*W*X + Bsq*Bsq) / ( W3 * X3 )  )  );
+	return( -2.*( Qtsq3/X3  +  QdotBsq3 * (3*W*X + Bsq3*Bsq3) / ( W3 * X3 )  )  );
 }
 
 
@@ -490,8 +490,8 @@ static int general_newton_raphson( FTYPE x[], int n,
 
     //METHOD specific:
     i_increase = 0;
-    while( (( x[0]*x[0]*x[0] * ( x[0] + 2.*Bsq ) - 
-	      QdotBsq*(2.*x[0] + Bsq) ) <= x[0]*x[0]*(Qtsq-Bsq*Bsq))
+    while( (( x[0]*x[0]*x[0] * ( x[0] + 2.*Bsq3 ) - 
+	      QdotBsq3*(2.*x[0] + Bsq3) ) <= x[0]*x[0]*(Qtsq3-Bsq3*Bsq3))
 	   && (i_increase < 10) ) {
       x[0] -= (1.*i_increase) * dx[0] / 10. ;
       i_increase++;
@@ -534,7 +534,7 @@ static int general_newton_raphson( FTYPE x[], int n,
 
 
   /*  Check for bad untrapped divergences : */
-  if( (finite(f)==0) || (finite(df)==0) || (finite(x[0])==0)  ) {
+  if( (isfinite(f)==0) || (isfinite(df)==0) || (isfinite(x[0])==0)  ) {
 #if(LTRACE)
     fprintf(stderr,"\ngnr not finite, f,df,x_o,x,W_o,W,rho_o,rho = %26.20e %26.20e %26.20e %26.20e %26.20e %26.20e %26.20e %26.20e \n",
 	    f,df,x[0],x_old[0],W_for_gnr2_old,W_for_gnr2,rho_for_gnr2_old,rho_for_gnr2); fflush(stderr); 
@@ -641,7 +641,7 @@ static int gnr2( FTYPE x[], int n,
 
 
   /*  Check for bad untrapped divergences : */
-  if( (finite(f)==0) || (finite(df)==0) || (finite(x[0])==0)  ) {
+  if( (isfinite(f)==0) || (isfinite(df)==0) || (isfinite(x[0])==0)  ) {
 #if(LTRACE)
     fprintf(stderr,"\ngnr2 not finite, f,df,x_o,x,W_o,W,rho_o,rho = %26.20e %26.20e %26.20e %26.20e %26.20e %26.20e %26.20e %26.20e \n",
 	    f,df,x[0],x_old[0],W_for_gnr2_old,W_for_gnr2,rho_for_gnr2_old,rho_for_gnr2); fflush(stderr); 
@@ -724,30 +724,30 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[],
   rho_for_gnr2_old = rho_for_gnr2; 
   rho = rho_for_gnr2 = x_rho[0];
 
-  Dc = D;
+  Dc = D3;
   t1 = Dc*Dc;
-  t2 = QdotBsq*t1;
-  t3 = t2*Bsq;
-  t5 = Bsq*Bsq;
-  t8 = t1*Bsq;
+  t2 = QdotBsq3*t1;
+  t3 = t2*Bsq3;
+  t5 = Bsq3*Bsq3;
+  t8 = t1*Bsq3;
   t10 = t1*W;
   t21 = W*W;
   t23 = rho*rho;
   t26 = 1/t1;
-  resid[0] = (t3+(2.0*t2+((Qtsq-t5)*t1
-			  +(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq+W)*W)*t21*t23)*t26/t21;
+  resid[0] = (t3+(2.0*t2+((Qtsq3-t5)*t1
+			  +(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq3+W)*W)*t21*t23)*t26/t21;
   t29 = t1*t1;
-  t30 = QdotBsq*t29;
-  t32 = GAMMA*K_atm;
+  t30 = QdotBsq3*t29;
+  t32 = GAMMA*K_atm3;
   t33 = pow(rho,1.0*GAMMA);
   t34 = t32*t33;
   t38 = t23 * t33;
-  t51 = GAMMA*t1*K_atm*t33;
+  t51 = GAMMA*t1*K_atm3*t33;
   t67 = t21*W;
-  jac[0][0] = -2.0*(t30*Bsq*t34+(t30*t34
-			   +((-t38*Bsq*t32+Bsq*GAMMA*t1*K_atm*t33)*t1
-			     +(-t38*GAMMA*K_atm+t51)*t1*W)*t21)*W
-	      +((-t3+(-t2+(-t8-t10)*t21)*W)*W+(-t5-Bsq*W)*t67*t23)*t23)*t26/(t51-W*t23)/t67;
+  jac[0][0] = -2.0*(t30*Bsq3*t34+(t30*t34
+			   +((-t38*Bsq3*t32+Bsq3*GAMMA*t1*K_atm3*t33)*t1
+			     +(-t38*GAMMA*K_atm3+t51)*t1*W)*t21)*W
+	      +((-t3+(-t2+(-t8-t10)*t21)*W)*W+(-t5-Bsq3*W)*t67*t23)*t23)*t26/(t51-W*t23)/t67;
 
   dx[0] = -resid[0]/jac[0][0];
 
@@ -765,19 +765,19 @@ static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[],
   double Dc ,   t1 ,   t10,   t2 ,   t21,   t23,   t26,   t3 ,   t5 ,   t8, W, rho ;
 
   W  = x[0];
-  Dc = D;
+  Dc = D3;
   t1 = Dc*Dc;
-  t2 = QdotBsq*t1;
-  t3 = t2*Bsq;
-  t5 = Bsq*Bsq;
-  t8 = t1*Bsq;
+  t2 = QdotBsq3*t1;
+  t3 = t2*Bsq3;
+  t5 = Bsq3*Bsq3;
+  t8 = t1*Bsq3;
   t10 = t1*W;
   t21 = W*W;
-  rho = t1 * ( 1. + GAMMA*K_atm/(GAMMA-1.) ) / W;
+  rho = t1 * ( 1. + GAMMA*K_atm3/(GAMMA-1.) ) / W;
   t23 = rho*rho;
   t26 = 1/t1;
-  resid[0] = (t3+(2.0*t2+((Qtsq-t5)*t1+(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq+W)*W)*t21*t23)*t26/t21;
-  jac[0][0] = -2.0*(t3+(t2+(t8+t10)*t21)*W+(t5+Bsq*W)*t21*t23)*t26/t21/W;
+  resid[0] = (t3+(2.0*t2+((Qtsq3-t5)*t1+(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq3+W)*W)*t21*t23)*t26/t21;
+  jac[0][0] = -2.0*(t3+(t2+(t8+t10)*t21)*W+(t5+Bsq3*W)*t21*t23)*t26/t21/W;
 
   dx[0] = -resid[0]/jac[0][0];
 
@@ -813,8 +813,8 @@ static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
   FTYPE A, B, C, rho, W, B0;
   
-  A = D*D;
-  B0 = A * GAMMA * K_atm ;
+  A = D3*D3;
+  B0 = A * GAMMA * K_atm3 ;
   B  =  B0 / (GAMMA - 1.);
   rho = x[0];
   W = W_for_gnr2;
@@ -860,7 +860,7 @@ this is used by primtoU and Utoprim_1D
 static FTYPE pressure_of_rho(FTYPE rho0)
 {
 
-  return( K_atm * pow( rho0, G_ATM )  );
+  return( K_atm3 * pow( rho0, G_ATM )  );
 
 }
 

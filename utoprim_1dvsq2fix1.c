@@ -79,8 +79,8 @@ utoprim_1dvsq2fix1.c:
 
 /* these variables need to be shared between the functions
    Utoprim_1D, residual, and utsq */
-FTYPE Bsq,QdotBsq,Qtsq,Qdotn,D, K_atm ;
-
+FTYPE Bsq2,QdotBsq2,Qtsq2,Qdotn2,D2, K_atm2 ;
+#pragma omp threadprivate(Bsq2,QdotBsq2,Qtsq2,Qdotn2,D2, K_atm2)
 
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
@@ -148,7 +148,7 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][ND
     return(-100);
   }
 
-  K_atm = K ; 
+  K_atm2 = K ; 
 
   /* First update the primitive B-fields */
   for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
@@ -254,24 +254,24 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
   raise_g(Qcov,gcon,Qcon) ;
 
 
-  Bsq = 0. ;
-  for(i=1;i<4;i++) Bsq += Bcon[i]*Bcov[i] ;
+  Bsq2 = 0. ;
+  for(i=1;i<4;i++) Bsq2 += Bcon[i]*Bcov[i] ;
 
   QdotB = 0. ;
   for(i=0;i<4;i++) QdotB += Qcov[i]*Bcon[i] ;
-  QdotBsq = QdotB*QdotB ;
+  QdotBsq2 = QdotB*QdotB ;
 
   ncov_calc(gcon,ncov) ;
   raise_g(ncov,gcon,ncon);
 
-  Qdotn = Qcon[0]*ncov[0] ;
+  Qdotn2 = Qcon[0]*ncov[0] ;
 
   Qsq = 0. ;
   for(i=0;i<4;i++) Qsq += Qcov[i]*Qcon[i] ;
 
-  Qtsq = Qsq + Qdotn*Qdotn ;
+  Qtsq2 = Qsq + Qdotn2*Qdotn2 ;
 
-  D = U[RHO] ;
+  D2 = U[RHO] ;
 
   /* calculate W from last timestep and use  for guess */
   utsq = 0. ;
@@ -292,7 +292,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	
   // Always calculate rho from D and gamma so that using D in EOS remains consistent
   //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D / gamma ;
+  rho0 = D2 / gamma ;
   u = prim[UU] ;
   p = pressure_rho0_u(rho0,u) ;
   w = rho0 + u + p ;
@@ -342,8 +342,8 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
   prim[UU] = u ;
 
 
-  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
+  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn2;
+  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq2) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
 	
   /* set field components */
   for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
@@ -482,7 +482,7 @@ static int general_newton_raphson( FTYPE x[], int n,
 
 
   /*  Check for bad untrapped divergences : */
-  if( (finite(f)==0) || (finite(df)==0) ) {
+  if( (isfinite(f)==0) || (isfinite(df)==0) ) {
     return(2);
   }
 
@@ -543,10 +543,10 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
   dWdvsq = dWdvsq_calc(vsq, rho, p);
 
-  fact_tmp = (Bsq + W) ;
+  fact_tmp = (Bsq2 + W) ;
 
-  resid[0] = Qtsq  -  vsq * fact_tmp * fact_tmp  +  QdotBsq * ( Bsq + 2.*W ) / Wsq ; 
-  jac[0][0] =  -fact_tmp * ( fact_tmp +   2. * dWdvsq * ( vsq + QdotBsq/W3 ) ) ; 
+  resid[0] = Qtsq2  -  vsq * fact_tmp * fact_tmp  +  QdotBsq2 * ( Bsq2 + 2.*W ) / Wsq ; 
+  jac[0][0] =  -fact_tmp * ( fact_tmp +   2. * dWdvsq * ( vsq + QdotBsq2/W3 ) ) ; 
 
   dx[0] = -resid[0]/jac[0][0];
 
@@ -573,7 +573,7 @@ this is used by primtoU and Utoprim_1D
 static FTYPE pressure_of_rho(FTYPE rho0)
 {
 
-  return( K_atm * pow( rho0, G_ATM )  );
+  return( K_atm2 * pow( rho0, G_ATM )  );
 
 }
 
@@ -595,7 +595,7 @@ static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u)
   FTYPE gtmp;
 
   gtmp = (1. - vsq);
-  *rho = D * sqrt(gtmp);
+  *rho = D2 * sqrt(gtmp);
   *p = pressure_of_rho(*rho);
   *u = u_of_p(*p);
   

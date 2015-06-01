@@ -99,47 +99,47 @@ void image_ppm(double *f, char *fname);
 void image_all( int image_count ) 
 { 
 
-  int i,j,k, i_img;
+  int i,j,z,k, h, i_img;
   static int first_call = 1;
   static char ifnam[3*NIMG+1][100];
   double gamma;
   struct of_geom geom ;
   static const double fimage_logmin = 1.e-15;
 
+
+	if ((IGAM + 1) != NIMG) {
+		  fprintf(stderr, "image_all(): Index problem with fimage[] \n");
+		  fflush(stderr);
+		  exit(1);
+	  }
+
+	#if( MAKE_PPM_IMAGE ) 
+	  if (first_call) {
+		  get_color_map();
+		  first_call = 0;
+	  }
+	#endif
+
+	  /************************************************************************
+		Set the names of the image files to be generated now :
+		************************************************************************/
+	  i_img = 0;
+	  sprintf(ifnam[i_img++], "images/im_rho_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/im_u_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/im_bsq_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/im_gam_%04d.%s", image_count, IMGEXT);
+
+	  sprintf(ifnam[i_img++], "images/im_lrho_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/im_lu_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/im_lbsq_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/im_lgam_%04d.%s", image_count, IMGEXT);
+
+	  sprintf(ifnam[i_img++], "images/failu2p1_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/failu2p2_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/failu2p3_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/failgamc_%04d.%s", image_count, IMGEXT);
+	  sprintf(ifnam[i_img++], "images/failfint_%04d.%s", image_count, IMGEXT);
   
-  if( (IGAM+1) != NIMG ) {
-    fprintf(stderr, "image_all(): Index problem with fimage[] \n");
-    fflush(stderr);
-    exit(1);
-  }
-
-#if( MAKE_PPM_IMAGE ) 
-  if( first_call ) { 
-    get_color_map();
-    first_call = 0 ;
-  }
-#endif
-
-  /************************************************************************
-    Set the names of the image files to be generated now : 
-  ************************************************************************/
-  i_img = 0 ;
-  sprintf(ifnam[i_img++], "images/im_rho_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/im_u_%04d.%s"  ,image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/im_bsq_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/im_gam_%04d.%s",image_count, IMGEXT) ;
-
-  sprintf(ifnam[i_img++], "images/im_lrho_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/im_lu_%04d.%s"  ,image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/im_lbsq_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/im_lgam_%04d.%s",image_count, IMGEXT) ;
-
-  sprintf(ifnam[i_img++], "images/failu2p1_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/failu2p2_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/failu2p3_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/failgamc_%04d.%s",image_count, IMGEXT) ;
-  sprintf(ifnam[i_img++], "images/failfint_%04d.%s",image_count, IMGEXT) ;
-
 
   /************************************************************************
     Calculate the functions to be imaged : 
@@ -148,16 +148,15 @@ void image_all( int image_count )
   ************************************************************************/
   k = 0 ;
   IMAGELOOP { 
-    get_geometry(i,j,CENT,&geom) ;
-    if( gamma_calc(p[i][j],&geom,&gamma) ) { gamma = 1.; }
-    
-    fimage[IRHO][k] = p[i][j][RHO] ; 
-    fimage[IUU ][k] = p[i][j][UU ] ;
-    fimage[IBSQ][k] = bsq_calc( p[i][j], &geom ) ; 
+	get_geometry_direct(i, j, CENT, &geom);
+    if( gamma_calc(psave[index3(i,j)],&geom,&gamma) ) { gamma = 1.; }
+	fimage[IRHO][k] = psave[index3(i, j)][RHO];
+	fimage[IUU][k] = psave[index3(i, j)][UU];
+	fimage[IBSQ][k] = bsq_calc(psave[index3(i, j)], &geom);
     fimage[IGAM][k] = gamma ;
     k++;
   }
-
+  
 
   /************************************************************************
     Output non-log versions:
@@ -177,18 +176,22 @@ void image_all( int image_count )
   }
 
   /************************************************************************
-    Output log versions:
+    Output failure functions:
   ************************************************************************/
-  for( j = 0 ; j < 5; j++ ) { 
-    for( i = 0 ; i < N1*N2; i++ ) { 
-      fimage[0][i] = (double) failimage[j][i];
+  for( k = 0 ; k < NFAIL; k++ ) { 
+	  h = 0;
+	  IMAGELOOP{
+		  fimage[0][h] = fsave[index3(i, j)][k];
+		  h++;
     }
-    image( fimage[0], ifnam[j+2*NIMG] );
+    image( fimage[0], ifnam[k+2*NIMG] );
   }
-
+  
   /* Reset array after every image dump: */
-  for( i = 0 ; i < 5*N1*N2; i++ ) { 
-    failimage[0][i] = 0;
+ ZLOOP3D_MPI{
+	  for (k = 0; k < NFAIL; k++) {
+		  failimage[index(i, j, z)][k] = 0;
+	  }
   }
 
   return;

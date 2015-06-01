@@ -114,7 +114,7 @@ void primtoU_g(
 
   // Now set the conserved variables themselves, using HARM's definition:
   U[RHO] = ucon[0]*rho0 ;
-
+	#pragma simd
   for( i = 0; i < 4; i++) {
     U[QCOV0+i] = gamma*(w + bsq)*ucov[i] 
       - (p + bsq/2.)*ncov[i] 
@@ -127,7 +127,7 @@ void primtoU_g(
   U[BCON1] = prim[BCON1] ;
   U[BCON2] = prim[BCON2] ;
   U[BCON3] = prim[BCON3] ;
-
+	#pragma simd
   for(i = 0; i < NPR; i++ ) {
     U[i] *= gdet;
   }
@@ -177,7 +177,7 @@ void ucon_calc_g(FTYPE prim[NPR],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
   gamma = sqrt(1. + u_tilde_sq) ;
 
   lapse = sqrt(-1./gcon[0][0]) ;
-
+	#pragma simd
   for(i=0;i<NDIM;i++) ucon[i] = u_tilde_con[i] - lapse*gamma*gcon[0][i] ;
 
   return ;
@@ -195,7 +195,7 @@ void ucon_calc_g(FTYPE prim[NPR],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
 void raise_g(FTYPE vcov[NDIM], FTYPE gcon[NDIM][NDIM], FTYPE vcon[NDIM])
 {
   int i,j;
-
+	#pragma simd
   for(i=0;i<NDIM;i++) {
     vcon[i] = 0. ;
     for(j=0;j<NDIM;j++) 
@@ -217,7 +217,7 @@ void raise_g(FTYPE vcov[NDIM], FTYPE gcon[NDIM][NDIM], FTYPE vcon[NDIM])
 void lower_g(FTYPE vcon[NDIM], FTYPE gcov[NDIM][NDIM], FTYPE vcov[NDIM])
 {
   int i,j;
-
+	#pragma simd
   for(i=0;i<NDIM;i++) {
     vcov[i] = 0. ;
     for(j=0;j<NDIM;j++) 
@@ -246,6 +246,7 @@ void ncov_calc(FTYPE gcon[NDIM][NDIM],FTYPE ncov[NDIM])
   lapse = sqrt(-1./gcon[0][0]) ;
 
   ncov[0] = -lapse ;
+#pragma simd
   for( i = 1; i < NDIM; i++) { 
     ncov[i] = 0. ;
   }
@@ -280,12 +281,14 @@ void bcon_calc_g(FTYPE prim[NPR],FTYPE ucon[NDIM],FTYPE ucov[NDIM],
 
   // Bcon = \mathcal{B}^\mu  of the paper:
   Bcon[0] = 0. ;
+#pragma simd
   for(i=1;i<NDIM;i++) Bcon[i] = -ncov[0] * prim[BCON1+i-1] ;
 
   u_dot_B = 0. ;
   for(i=0;i<NDIM;i++) u_dot_B += ucov[i]*Bcon[i] ;
 
   gamma = -ucon[0]*ncov[0] ;
+#pragma simd
   for(i=0;i<NDIM;i++) bcon[i] = (Bcon[i] + ucon[i]*u_dot_B)/gamma ;
 }
 

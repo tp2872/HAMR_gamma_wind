@@ -1,3 +1,4 @@
+
 /***********************************************************************************
     Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
                    Gabor Toth, and Luca Del Zanna
@@ -59,23 +60,32 @@
            |CORN    FACE2        |
            ----------------------
 ***************************************************************************/
-void coord(int i, int j, int loc, double *X)
+void coord(int i, int j, int z, int loc, double *X)
 {
         if(loc == FACE1) {
-                X[1] = startx[1] + i*dx[1] ;
-                X[2] = startx[2] + (j + 0.5)*dx[2] ;
+            X[1] = startx[1] + i*dx[1] ;
+            X[2] = startx[2] + (j + 0.5)*dx[2] ;
+			X[3] = startx[3] + (z + 0.5)*dx[3];
         }
         else if(loc == FACE2) {
-                X[1] = startx[1] + (i + 0.5)*dx[1] ;
-                X[2] = startx[2] + j*dx[2] ;
+            X[1] = startx[1] + (i + 0.5)*dx[1] ;
+            X[2] = startx[2] + j*dx[2] ;
+			X[3] = startx[3] + (z + 0.5)*dx[3];
         }
+		else if (loc == FACE3) {
+			X[1] = startx[1] + (i + 0.5)*dx[1];
+			X[2] = startx[2] + (j + 0.5)*dx[2];
+			X[3] = startx[3] + z*dx[3];
+		}
         else if(loc == CENT) {
-                X[1] = startx[1] + (i + 0.5)*dx[1] ;
-                X[2] = startx[2] + (j + 0.5)*dx[2] ;
+            X[1] = startx[1] + (i + 0.5)*dx[1] ;
+            X[2] = startx[2] + (j + 0.5)*dx[2] ;
+			X[3] = startx[3] + (z + 0.5)*dx[3];
         }
         else {
-                X[1] = startx[1] + i*dx[1] ;
-                X[2] = startx[2] + j*dx[2] ;
+            X[1] = startx[1] + i*dx[1] ;
+            X[2] = startx[2] + j*dx[2] ;
+			X[3] = startx[3] + z*dx[3];
         }
 
         return ;
@@ -88,7 +98,6 @@ double gdet_func(double gcov[][NDIM])
   int permute[NDIM]; 
   double gcovtmp[NDIM][NDIM];
   double detg;
-
   for( i = 0 ; i < NDIM*NDIM ; i++ ) {  gcovtmp[0][i] = gcov[0][i]; }
   if( LU_decompose( gcovtmp,  permute ) != 0  ) { 
     fprintf(stderr, "gdet_func(): singular matrix encountered! \n");
@@ -118,7 +127,7 @@ void gcon_func(double gcov[][NDIM], double gcon[][NDIM])
 ***************************************************************************/
 
 /* Sets the spatial discretization in numerical derivatives : */
-#define DELTA 1.e-5
+#define EPS 1.e-5
 
 /* NOTE: parameter hides global variable */
 void conn_func(double *X, struct of_geom *geom, double conn[][NDIM][NDIM])
@@ -132,11 +141,10 @@ void conn_func(double *X, struct of_geom *geom, double conn[][NDIM][NDIM])
 	for(k=0;k<NDIM;k++) {
 		for(l=0;l<NDIM;l++) Xh[l] = X[l] ;
 		for(l=0;l<NDIM;l++) Xl[l] = X[l] ;
-		Xh[k] += DELTA ;
-		Xl[k] -= DELTA ;
+		Xh[k] += EPS ;
+		Xl[k] -= EPS ;
 		gcov_func(Xh,gh) ;
 		gcov_func(Xl,gl) ;
-
 		for(i=0;i<NDIM;i++)
 		for(j=0;j<NDIM;j++) 
 			conn[i][j][k] = (gh[i][j] - gl[i][j])/(Xh[k] - Xl[k]) ;
@@ -155,168 +163,151 @@ void conn_func(double *X, struct of_geom *geom, double conn[][NDIM][NDIM])
 		conn[i][j][k] = 0. ;
 		for(l=0;l<NDIM;l++) conn[i][j][k] += geom->gcon[i][l]*tmp[l][j][k] ;
 	}
-
 	/* done! */
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
 void lower(double *ucon, struct of_geom *geom, double *ucov)
 {
-
-	ucov[0] = geom->gcov[0][0]*ucon[0] 
-		+ geom->gcov[0][1]*ucon[1] 
-		+ geom->gcov[0][2]*ucon[2] 
-		+ geom->gcov[0][3]*ucon[3] ;
-	ucov[1] = geom->gcov[1][0]*ucon[0] 
-		+ geom->gcov[1][1]*ucon[1] 
-		+ geom->gcov[1][2]*ucon[2] 
-		+ geom->gcov[1][3]*ucon[3] ;
-	ucov[2] = geom->gcov[2][0]*ucon[0] 
-		+ geom->gcov[2][1]*ucon[1] 
-		+ geom->gcov[2][2]*ucon[2] 
-		+ geom->gcov[2][3]*ucon[3] ;
-	ucov[3] = geom->gcov[3][0]*ucon[0] 
-		+ geom->gcov[3][1]*ucon[1] 
-		+ geom->gcov[3][2]*ucon[2] 
-		+ geom->gcov[3][3]*ucon[3] ;
-
-        return ;
+	int i, j;
+	//#pragma omp simd
+	for (i = 0; i < NDIM; i++){
+		ucov[i] = 0.0;
+		for (j = 0; j < NDIM; j++){
+			ucov[i] += geom->gcov[i][j] * ucon[j];
+		}
+	}
+    return ;
 }
 
 /* Raises a covariant rank-1 tensor to a contravariant one */
 void raise(double *ucov, struct of_geom *geom, double *ucon)
 {
-
-	ucon[0] = geom->gcon[0][0]*ucov[0] 
-		+ geom->gcon[0][1]*ucov[1] 
-		+ geom->gcon[0][2]*ucov[2] 
-		+ geom->gcon[0][3]*ucov[3] ;
-	ucon[1] = geom->gcon[1][0]*ucov[0] 
-		+ geom->gcon[1][1]*ucov[1] 
-		+ geom->gcon[1][2]*ucov[2] 
-		+ geom->gcon[1][3]*ucov[3] ;
-	ucon[2] = geom->gcon[2][0]*ucov[0] 
-		+ geom->gcon[2][1]*ucov[1] 
-		+ geom->gcon[2][2]*ucov[2] 
-		+ geom->gcon[2][3]*ucov[3] ;
-	ucon[3] = geom->gcon[3][0]*ucov[0] 
-		+ geom->gcon[3][1]*ucov[1] 
-		+ geom->gcon[3][2]*ucov[2] 
-		+ geom->gcon[3][3]*ucov[3] ;
-
-        return ;
+	int i, j;
+	//#pragma omp simd
+	for (i = 0; i < NDIM; i++){
+		ucon[i] = 0.0;
+		for (j = 0; j < NDIM; j++){
+			ucon[i] += geom->gcon[i][j] * ucov[j];
+		}
+	}
+    return ;
 }
 
 /* load local geometry into structure geom */
-void get_geometry(int ii, int jj, int kk, struct of_geom *geom)
+void get_geometry(int ii, int jj, int ff, struct of_geom *geom)
 {
-	int j,k ;
-
-	//-new DLOOP geom->gcov[j][k] = gcov[ii][jj][kk][j][k] ;
-	//-new DLOOP geom->gcon[j][k] = gcon[ii][jj][kk][j][k] ;
-	for(j=0;j<=NDIM*NDIM-1;j++){
-	  geom->gcon[0][j] = gcon[ii][jj][kk][0][j];
-	  geom->gcov[0][j] = gcov[ii][jj][kk][0][j];
+	int i, j;
+	for (i = 0; i < NDIM; i++){
+		//#pragma omp simd
+		for (j = 0; j < NDIM; j++){
+			geom->gcon[i][j] = gcon[index2(ii, jj)][ff][i][j];
+			geom->gcov[i][j] = gcov[index2(ii, jj)][ff][i][j];
+		}
 	}
-	geom->g = gdet[ii][jj][kk] ;
-	icurr = ii ;
-	jcurr = jj ;
-	pcurr = kk ;
+	geom->g = gdet[index2(ii, jj)][ff];
 }
 
-#undef DELTA
-
-/* Minkowski metric; signature +2 */
-double mink(int i, int j)
+/*Load local geometry into structure geom for cases where the values are not stored in the memory 
+such as during image output for MPI on the host node*/
+void get_geometry_direct(int ii, int jj, int ff, struct of_geom *geom)
 {
-	if(i == j) {
-		if(i == 0) return(-1.) ;
-		else return(1.) ;
+	int j, k;
+	double X[NDIM];
+	double gcov_local[NDIM][NDIM], gcon_local[NDIM][NDIM], gdet_local;
+	coord(ii, jj,0, ff, X);
+	gcov_func(X, gcov_local);
+	gcon_func(gcov_local, gcon_local);
+	gdet_local = gdet_func(gcov_local);
+	for (j = 0; j <= NDIM*NDIM - 1; j++){
+		geom->gcon[0][j] = gcon_local[0][j];
+		geom->gcov[0][j] = gcov_local[0][j];
 	}
-	else return(0.) ;
+	geom->g = gdet_local;
 }
+
+#undef EPS
 
 /* Boyer-Lindquist ("bl") metric functions */
 void blgset(int i, int j, struct of_geom *geom)
 {
-	double r,th,X[NDIM] ;
+	double r, th,phi, X[NDIM];
 
-	coord(i,j,CENT,X) ;
-	bl_coord(X,&r,&th) ;
+	coord(i, j,0, CENT, X);
+	bl_coord(X, &r, &th, &phi);
 
-	if(th < 0) th *= -1. ;
-	if(th > M_PI) th = 2.*M_PI - th ;
+	if (th < 0) th *= -1.;
+	if (th > M_PI) th = 2.*M_PI - th;
 
-	geom->g = bl_gdet_func(r,th) ;
-	bl_gcov_func(r,th,geom->gcov) ;
-	bl_gcon_func(r,th,geom->gcon) ;
+	geom->g = bl_gdet_func(r, th);
+	bl_gcov_func(r, th, geom->gcov);
+	bl_gcon_func(r, th, geom->gcon);
 }
 
 double bl_gdet_func(double r, double th)
 {
-	double a2,r2 ;
+	double a2, r2;
 
-	a2 = a*a ;
-	r2 = r*r ;
-	return( 
-		r*r*fabs(sin(th))*(1. + 0.5*(a2/r2)*(1. + cos(2.*th)))
-	) ;
+	a2 = a*a;
+	r2 = r*r;
+	return(
+		r*r*fabs(sin(th))*(1. + 0.5*(a2 / r2)*(1. + cos(2.*th)))
+		);
 }
 
 void bl_gcov_func(double r, double th, double gcov[][NDIM])
 {
-	int j,k ;
-	double sth,cth,s2,a2,r2,DD,mu ;
+	int j, k;
+	double sth, cth, s2, a2, r2, DD, mu;
 
-	DLOOP gcov[j][k] = 0. ;
+	DLOOP gcov[j][k] = 0.;
 
-	sth = fabs(sin(th)) ;
-	s2 = sth*sth ;
-	cth = cos(th) ;
-	a2 = a*a ;
-	r2 = r*r ;
-	DD = 1. - 2./r + a2/r2 ;
-	mu = 1. + a2*cth*cth/r2 ;
-	
-	gcov[TT][TT] = -(1. - 2./(r*mu)) ;
-	gcov[TT][3] = -2.*a*s2/(r*mu) ;
-	gcov[3][TT] = gcov[TT][3] ;
-	gcov[1][1] = mu/DD ;
-	gcov[2][2] = r2*mu ;
-	gcov[3][3] = r2*sth*sth*(1. + a2/r2 + 2.*a2*s2/(r2*r*mu)) ;
+	sth = fabs(sin(th));
+	s2 = sth*sth;
+	cth = cos(th);
+	a2 = a*a;
+	r2 = r*r;
+	DD = 1. - 2. / r + a2 / r2;
+	mu = 1. + a2*cth*cth / r2;
+
+	gcov[TT][TT] = -(1. - 2. / (r*mu));
+	gcov[TT][3] = -2.*a*s2 / (r*mu);
+	gcov[3][TT] = gcov[TT][3];
+	gcov[1][1] = mu / DD;
+	gcov[2][2] = r2*mu;
+	gcov[3][3] = r2*sth*sth*(1. + a2 / r2 + 2.*a2*s2 / (r2*r*mu));
 
 }
 
 void bl_gcon_func(double r, double th, double gcon[][NDIM])
 {
-	int j,k ;
-	double sth,cth,a2,r2,r3,DD,mu ;
+	int j, k;
+	double sth, cth, a2, r2, r3, DD, mu;
 
-	DLOOP gcon[j][k] = 0. ;
+	DLOOP gcon[j][k] = 0.;
 
-	sth = sin(th) ;
-	cth = cos(th) ;
+	sth = sin(th);
+	cth = cos(th);
 
 #if(COORDSINGFIX)
 	if (fabs(sth) < SINGSMALL) {
-	  if(sth>=0) sth=SINGSMALL;
-	  if(sth<0) sth=-SINGSMALL;
+		if (sth >= 0) sth = SINGSMALL;
+		if (sth<0) sth = -SINGSMALL;
 	}
 #endif
 
-	a2 = a*a ;
-	r2 = r*r ;
-	r3 = r2*r ;
-	DD = 1. - 2./r + a2/r2 ;
-	mu = 1. + a2*cth*cth/r2 ;
+	a2 = a*a;
+	r2 = r*r;
+	r3 = r2*r;
+	DD = 1. - 2. / r + a2 / r2;
+	mu = 1. + a2*cth*cth / r2;
 
-	gcon[TT][TT] = -1. - 2.*(1. + a2/r2)/(r*DD*mu) ;
-	gcon[TT][3] = -2.*a/(r3*DD*mu) ;
-	gcon[3][TT] = gcon[TT][3] ;
-	gcon[1][1] = DD/mu ;
-	gcon[2][2] = 1./(r2*mu) ;
-	gcon[3][3] = (1. - 2./(r*mu))/(r2*sth*sth*DD) ;
+	gcon[TT][TT] = -1. - 2.*(1. + a2 / r2) / (r*DD*mu);
+	gcon[TT][3] = -2.*a / (r3*DD*mu);
+	gcon[3][TT] = gcon[TT][3];
+	gcon[1][1] = DD / mu;
+	gcon[2][2] = 1. / (r2*mu);
+	gcon[3][3] = (1. - 2. / (r*mu)) / (r2*sth*sth*DD);
 
 
 }
-

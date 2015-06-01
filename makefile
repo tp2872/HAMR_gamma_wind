@@ -53,50 +53,49 @@ CCFLAGS  = -O3 -axW -tpp7
 endif
 
 ifeq ($(USEICC),0)
-CC       = gcc
-CCFLAGS  = -g -O3
+CC       = mpicc
+CCFLAGS  = -I /opt/apps/cuda/6.5/include -lOpenCL -openmp -O2
 endif
 
 
-EXTRALIBS = -lm
+EXTRALIBS = -lm -L/opt/apps/cuda/6.5/lib64 -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
+CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
+
+
 
 .c.o:
 	$(CC_COMPILE) $*.c
-
+	
+.cu.o:
+	$(CUDA_COMPILE) $*.cu
+	
 EXE = harm
-all: $(EXE) image_interp
-
-
-SRCS = \
-bounds.c coord.c diag.c dump.c fixup.c \
-image.c init.c interp.c main.c metric.c lu.c \
-phys.c ranc.c restart.c step_ch.c \
-utoprim_1dfix1.c utoprim_1dvsq2fix1.c utoprim_2d.c u2p_util.c
+all: $(EXE)
 
 OBJS = \
 bounds.o coord.o diag.o dump.o fixup.o \
 image.o init.o interp.o main.o metric.o lu.o \
 phys.o ranc.o restart.o step_ch.o \
-utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o
+utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o \
+GPU_program.o
 
-INCS = decs.h  defs.h  u2p_defs.h  u2p_util.h
+INCS = decs.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h
 
 $(OBJS) : $(INCS) makefile
 
 $(EXE): $(OBJS) $(INCS) makefile
-	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE)
+	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE) 
 
 
-image_interp: image_interp.c
-	$(CC_LOAD) $(EXTRALIBS) image_interp.c -o image_interp
+#image_interp: image_interp.c
+#	$(CC_LOAD) $(EXTRALIBS) image_interp.c -o image_interp
 
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
-
 
 newrun:
 	/bin/rm -rf dumps images ener.out

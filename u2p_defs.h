@@ -70,7 +70,6 @@
 #define G_ATM G_ISOTHERMAL
 #endif
 
-
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */
 #define MIN_NEWT_TOL  1.0e-10    /* Max. of tolerance allowed for Newton-Raphson iterations */
@@ -87,7 +86,6 @@
 				  failures */
 
 #define FAIL_VAL  1.e30    /* Generic value to which we set variables when a problem arises */
-
 #define NUMEPSILON (2.2204460492503131e-16)
 
 
@@ -114,11 +112,8 @@
 #define QCOV2	3
 #define QCOV3	4
 
-
 #define MYMAX(a,b) ( ((a) > (b)) ? (a) : (b) )
-
 #define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3])
-
 #define delta(i,j) (((i) == (j)) ? 1. : 0.)
 
 extern double gam;
