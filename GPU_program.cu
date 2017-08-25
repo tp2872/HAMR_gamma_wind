@@ -6168,546 +6168,1063 @@ void set_arrays_GPU(int n){
 	commandQueueGPU[n] = commandQueue[0]; //clCreateCommandQueue(context[0], devices[0], 0, &status);
 
 	/*Allocate memory to buffers on GPU*/
-	BufferF1_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	BufferF2_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	BufferF3_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferdq_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	BufferE_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	cudaMalloc(BufferF1_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(BufferF2_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(BufferF3_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferdq_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(BufferE_1[n], NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
 	#if(LEER)
-	BufferV[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	cudaMalloc(BufferV[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
 	#endif
-	Bufferradius[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferstorage1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferstorage2[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferstorage3[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferstorage4[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	//Buffereta_avg[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferp_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferph_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	cudaMalloc(Bufferradius[n], (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2));
+	cudaMalloc(Bufferstorage1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferstorage2[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferstorage3[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferstorage4[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferp_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferph_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
 	#if(STAGGERED)
-	Bufferps_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferpsh_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	cudaMalloc(Bufferps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
+	cudaMalloc(Bufferpsh_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2));
 	#endif
-	Bufferpbound_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-	Bufferdtij[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) / LOCAL_WORK_SIZE*sizeof(FTYPE2), NULL, NULL);
-	Bufferpflag[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), NULL, NULL);
-	Bufferfailimage[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(cl_int), NULL, NULL);
-	Bufferdiagflux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY, 3 * MY_MAX((N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G))*sizeof(FTYPE2), NULL, NULL);
-	BufferKatm[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferdU[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))*sizeof(FTYPE2), NULL, NULL);
-	dtij_GPU[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferdtij[n], CL_FALSE, CL_MAP_READ, 0, nr_workgroups[n] * sizeof(FTYPE2), 0, NULL, NULL, &status);
-	Buffersend1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaMalloc(Bufferpbound_1[n], N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(FTYPE2);
+	cudaMalloc(Bufferdtij[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) / LOCAL_WORK_SIZE*sizeof(FTYPE2));
+	cudaMalloc(Bufferpflag[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int));
+	cudaMalloc(Bufferfailimage[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(cl_int));
+	cudaMalloc(Bufferdiagflux[n], 3 * MY_MAX((N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G))*sizeof(FTYPE2));
+	cudaMalloc(BufferKatm[n], (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2));
+	cudaMalloc(BufferdU[n], NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))*sizeof(FTYPE2));
+
+	cudaHostAlloc(&dtij_GPU[n], nr_workgroups[n] * sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostGetDevicePointer(&Bufferdtij[n], dtij_GPU[n], 0);
+
+	cudaHostAlloc(&send1[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Buffersend1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send1_3[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send1_4[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send1_7[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send1_8[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Buffersend2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send2[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Buffersend2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send2_1[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send2_2[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send2_3[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send2_4[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Buffersend3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send3[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Buffersend3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send3_1[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send3_2[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send3_5[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send3_6[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Buffersend4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send4[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Buffersend4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send4_5[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send4_6[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send4_7[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send4_8[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 
 	#if(N3G>0)
-	Buffersend5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send5[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Buffersend5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send5_1[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send5_3[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send5_5[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send5_7[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Buffersend6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send6[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Buffersend6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send6_2[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send6_4[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send6_6[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send6_8[n], NG * (NPR + 3)*(N1_GPU[n]/ (1+REF_1) + 2 * N1G)*(N2_GPU[n]/(1+REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
-	Bufferrec1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Bufferrec1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_3[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive2[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Bufferrec2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive2_1[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive3[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Bufferrec3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive3_1[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive4[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Bufferrec4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive4_5[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N3G>0)
-	Bufferrec5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Bufferrec5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_1[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive6[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	Bufferrec6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive6_2[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
-	tempBufferrec1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive1[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	tempBufferrec1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive1_3[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive1_4[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive1_7[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive1_8[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	tempBufferrec2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive2[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	tempBufferrec2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive2_1[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive2_2[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive2_3[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive2_4[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	tempBufferrec3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive3[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	tempBufferrec3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive3_1[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive3_2[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive3_5[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive3_6[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	tempBufferrec4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive4[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	tempBufferrec4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive4_5[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive4_6[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive4_7[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive4_8[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N3G>0)
-	tempBufferrec5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive5[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	tempBufferrec5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive5_1[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive5_3[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive5_5[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive5_7[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	tempBufferrec6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive6[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
-	tempBufferrec6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrec6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive6_2[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive6_4[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive6_6[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive6_8[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
-	Buffersend1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send1_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send2_flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send3_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send4_flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Buffersend5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send5_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send6_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	#endif
-	#if(N_LEVELS>1)
-	Bufferrec1_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	#if(N3G>0)
-	Bufferrec5_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	#endif
-	#endif
-	Bufferrec1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	#if(N3G>0)
-	Bufferrec5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N_LEVELS>1)
-	Bufferrec1_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_3flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	#endif
-	Bufferrec1_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	#if(N3G>0)
-	Bufferrec5_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_1flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
-	Buffersend1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_flux1[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_flux1[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Buffersend5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	#endif
-	Bufferrec1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	#if(N3G>0)
-	Bufferrec5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N_LEVELS>1)
-	Bufferrec1_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_3flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_1flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#endif
+	cudaHostAlloc(&receive1_3flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#if(N3G>0)
+	cudaHostAlloc(&receive5_1flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
-	Buffersend1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send2_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send4_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Buffersend5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Buffersend6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send5_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send6_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N_LEVELS>1)
-	Bufferrec1_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_3fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8fine[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_1fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
-	Bufferrec1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send1_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send2_E[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send3_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send4_E[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send5_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send6_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#endif
+	cudaHostAlloc(&receive1_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_E[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_E[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#if(N3G>0)
+	cudaHostAlloc(&receive5_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N_LEVELS>1)
-	Bufferrec1_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive1_3E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8E[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_1E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8E[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	Bufferrec1_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec1_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_2E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec2_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_2E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec3_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec4_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	#endif
+	cudaHostAlloc(&receive1_E1[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_E1[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_E1[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_E1[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	Bufferrec5_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec5_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_2E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	Bufferrec6_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive5_E1[n], 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_E1[n], 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&receive1_3E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8E1[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#if(N3G>0)
+	cudaHostAlloc(&receive5_1E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8E1[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#endif
+	cudaHostAlloc(&receive1_3E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_4E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_7E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive1_8E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_1E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_2E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_3E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive2_4E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_1E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_2E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_5E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive3_6E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_5E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_6E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_7E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive4_8E2[n], 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#if(N3G>0)
+	cudaHostAlloc(&receive5_1E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_3E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_5E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive5_7E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_2E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_4E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_6E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive6_8E2[n], 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#endif
 	#if(N3G>0)
-	BuffersendE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE1corn12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE2corn5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send_E1_corn9[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E1_corn10[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E1_corn11[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E1_corn12[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E2_corn5[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E2_corn6[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E2_corn7[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E2_corn8[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	BuffersendE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BuffersendE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&send_E3_corn1[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E3_corn2[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E3_corn3[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&send_E3_corn4[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	BufferrecE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive_E1_corn9[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn10[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn11[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn12[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn5[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn6[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn7[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn8[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	BufferrecE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive_E3_corn1[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn2[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn3[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn4[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	BufferrecE1corn9_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn9_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn10_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn10_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn11_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn11_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn12_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn12_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn5_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn5_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn6_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn6_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn7_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn7_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn8_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn8_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive_E1_corn9_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn9_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn10_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn10_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn11_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn11_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn12_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn12_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn5_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn5_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn6_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn6_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn7_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn7_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn8_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn8_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	BufferrecE3corn1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive_E3_corn1_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn1_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn2_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn2_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn3_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn3_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn4_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn4_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
 	#if(N3G>0)
-	tempBufferrecE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive_E1_corn9[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn10[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn11[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn12[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn5[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn6[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn7[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn8[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	tempBufferrecE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive_E3_corn1[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn2[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn3[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn4[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	tempBufferrecE1corn9_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn9_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn10_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn10_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn11_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn11_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn12_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE1corn12_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn5_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn5_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn6_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn6_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn7_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn7_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn8_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE2corn8_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive_E1_corn9_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn9_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn10_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn10_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn11_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn11_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn12_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E1_corn12_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn5_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn5_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn6_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn6_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn7_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn7_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn8_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E2_corn8_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	tempBufferrecE3corn1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	tempBufferrecE3corn4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&tempreceive_E3_corn1_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn1_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn2_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn2_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn3_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn3_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn4_1[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&tempreceive_E3_corn4_2[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#if(N3G>0)
-	BufferrecE1corn9_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn9_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn10_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn10_52[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn11_22[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn11_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn12_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE1corn12_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn5_22[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn5_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn6_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn6_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn7_52[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn7_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn8_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE2corn8_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive_E1_corn9_12[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn9_22[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn10_12[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn10_22[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn11_12[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn11_22[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn12_12[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E1_corn12_22[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn5_12[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn5_22[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn6_12[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn6_22[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn7_12[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn7_22[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn8_12[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E2_corn8_22[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), cudaHostAllocMapped);
 	#endif
-	BufferrecE3corn1_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn1_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn2_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn2_22[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn3_52[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn3_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn4_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-	BufferrecE3corn4_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	cudaHostAlloc(&receive_E3_corn1_12[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn1_22[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn2_12[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn2_22[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn3_12[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn3_22[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn4_12[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	cudaHostAlloc(&receive_E3_corn4_22[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), cudaHostAllocMapped);
+	#endif
+
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Buffersend1_3[n], send1_3[n], 0);
+	cudaHostGetDevicePointer(&Buffersend1_4[n], send1_4[n], 0);
+	cudaHostGetDevicePointer(&Buffersend1_7[n], send1_7[n], 0);
+	cudaHostGetDevicePointer(&Buffersend1_8[n], send1_8[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Buffersend2[n], send2[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Buffersend2_1[n], send2_1[n], 0);
+	cudaHostGetDevicePointer(&Buffersend2_2[n], send2_2[n], 0);
+	cudaHostGetDevicePointer(&Buffersend2_3[n], send2_3[n],0);
+	cudaHostGetDevicePointer(&Buffersend2_4[n], send2_4[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Buffersend3[n], send3[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Buffersend3_1[n], send3_1[n], 0);
+	cudaHostGetDevicePointer(&Buffersend3_2[n], send3_2[n], 0);
+	cudaHostGetDevicePointer(&Buffersend3_5[n], send3_5[n], 0);
+	cudaHostGetDevicePointer(&Buffersend3_6[n], send3_6[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Buffersend4[n], send4[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Buffersend4_5[n], send4_5[n], 0);
+	cudaHostGetDevicePointer(&Buffersend4_6[n], send4_6[n], 0);
+	cudaHostGetDevicePointer(&Buffersend4_7[n], send4_7[n], 0);
+	cudaHostGetDevicePointer(&Buffersend4_8[n], send4_8[n], 0);
+	#endif
+
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Buffersend5[n], send5[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Buffersend5_1[n], send5_1[n], 0);
+	cudaHostGetDevicePointer(&Buffersend5_3[n], send5_3[n], 0);
+	cudaHostGetDevicePointer(&Buffersend5_5[n], send5_5[n], 0);
+	cudaHostGetDevicePointer(&Buffersend5_7[n], send5_7[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Buffersend6[n], send6[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Buffersend6_2[n], send6_2[n], 0);
+	cudaHostGetDevicePointer(&Buffersend6_4[n], send6_4[n], 0);
+	cudaHostGetDevicePointer(&Buffersend6_6[n], send6_6[n], 0);
+	cudaHostGetDevicePointer(&Buffersend6_8[n], send6_8[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1[n], receive1[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec1_3[n], receive1_3[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4[n], receive1_4[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7[n], receive1_7[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8[n], receive1_8[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec2[n], receive2[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec2_1[n], receive2_1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2[n], receive2_2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3[n], receive2_3[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4[n], receive2_4[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec3[n], receive3[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec3_1[n], receive3_1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2[n], receive3_2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5[n], receive3_5[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6[n], receive3_6[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec4[n], receive4[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec4_5[n], receive4_5[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6[n], receive4_6[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7[n], receive4_7[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8[n], receive4_8[n], 0);
+	#endif
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5[n], receive5[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec5_1[n], receive5_1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3[n], receive5_3[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5[n], receive5_5[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7[n], receive5_7[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec6[n], receive6[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec6_2[n], receive6_2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4[n], receive6_4[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6[n], receive6_6[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8[n], receive6_8[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrec1[n], tempreceive1[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&tempBufferrec1_3[n], tempreceive1_3[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec1_4[n], tempreceive1_4[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec1_7[n], tempreceive1_7[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec1_8[n], tempreceive1_8[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrec2[n], tempreceive2[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&tempBufferrec2_1[n], tempreceive2_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec2_2[n], tempreceive2_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec2_3[n], tempreceive2_3[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec2_4[n], tempreceive2_4[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrec3[n], tempreceive3[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&tempBufferrec3_1[n], tempreceive3_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec3_2[n], tempreceive3_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec3_5[n], tempreceive3_5[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec3_6[n], tempreceive3_6[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrec4[n], tempreceive4[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&tempBufferrec4_5[n], tempreceive4_5[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec4_6[n], tempreceive4_6[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec4_7[n], tempreceive4_7[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec4_8[n], tempreceive4_8[n], 0);
+	#endif
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&tempBufferrec5[n], tempreceive5[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&tempBufferrec5_1[n], tempreceive5_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec5_3[n], tempreceive5_3[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec5_5[n], tempreceive5_5[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec5_7[n], tempreceive5_7[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrec6[n], tempreceive6[n], 0);
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&tempBufferrec6_2[n], tempreceive6_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec6_4[n], tempreceive6_4[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec6_6[n], tempreceive6_6[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrec6_8[n], tempreceive6_8[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&Buffersend1flux[n], send1_flux[n], 0);
+	cudaHostGetDevicePointer(&Buffersend2flux[n], send2_flux[n], 0);
+	cudaHostGetDevicePointer(&Buffersend3flux[n], send3_flux[n], 0);
+	cudaHostGetDevicePointer(&Buffersend4flux[n], send4_flux[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Buffersend5flux[n], send5_flux[n], 0);
+	cudaHostGetDevicePointer(&Buffersend6flux[n], send6_flux[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1flux[n], receive1_flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2flux[n], receive2_flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3flux[n], receive3_flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4flux[n], receive4_flux[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5flux[n], receive5_flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6flux[n], receive6_flux[n], 0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec1_3flux[n], receive1_3flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4flux[n], receive1_4flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7flux[n], receive1_7flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8flux[n], receive1_8flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1flux[n], receive2_1flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2flux[n], receive2_2flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3flux[n], receive2_3flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4flux[n], receive2_4flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1flux[n], receive3_1flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2flux[n], receive3_2flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5flux[n], receive3_5flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6flux[n], receive3_6flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5flux[n], receive4_5flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6flux[n], receive4_6flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7flux[n], receive4_7flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8flux[n], receive4_8flux[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1flux[n], receive5_1flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3flux[n], receive5_3flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5flux[n], receive5_5flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7flux[n], receive5_7flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2flux[n], receive6_2flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4flux[n], receive6_4flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6flux[n], receive6_6flux[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8flux[n], receive6_8flux[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1flux1[n], receive1_flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2flux1[n], receive2_flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3flux1[n], receive3_flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4flux1[n], receive4_flux1[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5flux1[n], receive5_flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6flux1[n], receive6_flux1[n], 0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec1_3flux1[n], receive1_3flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4flux1[n], receive1_4flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7flux1[n], receive1_7flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8flux1[n], receive1_8flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1flux1[n], receive2_1flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2flux1[n], receive2_2flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3flux1[n], receive2_3flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4flux1[n], receive2_4flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1flux1[n], receive3_1flux1[n],  0);
+	cudaHostGetDevicePointer(&Bufferrec3_2flux1[n], receive3_2flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5flux1[n], receive3_5flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6flux1[n], receive3_6flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5flux1[n], receive4_5flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6flux1[n], receive4_6flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7flux1[n], receive4_7flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8flux1[n], receive4_8flux1[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1flux1[n], receive5_1flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3flux1[n], receive5_3flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5flux1[n], receive5_5flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7flux1[n], receive5_7flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2flux1[n], receive6_2flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4flux1[n], receive6_4flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6flux1[n], receive6_6flux1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8flux1[n], receive6_8flux1[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1_3flux2[n], receive1_3flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4flux2[n], receive1_4flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7flux2[n], receive1_7flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8flux2[n], receive1_8flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1flux2[n], receive2_1flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2flux2[n], receive2_2flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3flux2[n], receive2_3flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4flux2[n], receive2_4flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1flux2[n], receive3_1flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2flux2[n], receive3_2flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5flux2[n], receive3_5flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6flux2[n], receive3_6flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5flux2[n], receive4_5flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6flux2[n], receive4_6flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7flux2[n], receive4_7flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8flux2[n], receive4_8flux2[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1flux2[n], receive5_1flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3flux2[n], receive5_3flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5flux2[n], receive5_5flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7flux2[n], receive5_7flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2flux2[n], receive6_2flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4flux2[n], receive6_4flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6flux2[n], receive6_6flux2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8flux2[n], receive6_8flux2[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&Buffersend1fine[n], send1_fine[n], 0);
+	cudaHostGetDevicePointer(&Buffersend2fine[n], send2_fine[n], 0);
+	cudaHostGetDevicePointer(&Buffersend3fine[n], send3_fine[n], 0);
+	cudaHostGetDevicePointer(&Buffersend4fine[n], send4_fine[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Buffersend5fine[n], send5_fine[n], 0);
+	cudaHostGetDevicePointer(&Buffersend6fine[n], send6_fine[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1fine[n], receive1_fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2fine[n], receive2_fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3fine[n], receive3_fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4fine[n], receive4_fine[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5fine[n], receive5_fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6fine[n], receive6_fine[n], 0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec1_3fine[n], receive1_3fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4fine[n], receive1_4fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7fine[n], receive1_7fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8fine[n], receive1_8fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1fine[n], receive2_1fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2fine[n], receive2_2fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3fine[n], receive2_3fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4fine[n], receive2_4fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1fine[n], receive3_1fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2fine[n], receive3_2fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5fine[n], receive3_5fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6fine[n], receive3_6fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5fine[n], receive4_5fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6fine[n], receive4_6fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7fine[n], receive4_7fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8fine[n], receive4_8fine[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1fine[n], receive5_1fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3fine[n], receive5_3fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5fine[n], receive5_5fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7fine[n], receive5_7fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2fine[n], receive6_2fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4fine[n], receive6_4fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6fine[n], receive6_6fine[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8fine[n], receive6_8fine[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&Buffersend1E[n], send1_E[n], 0);
+	cudaHostGetDevicePointer(&Buffersend2E[n], send2_E[n], 0);
+	cudaHostGetDevicePointer(&Buffersend3E[n], send3_E[n], 0);
+	cudaHostGetDevicePointer(&Buffersend4E[n], send4_E[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Buffersend5E[n], send5_E[n], 0);
+	cudaHostGetDevicePointer(&Buffersend6E[n], send6_E[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1E[n], receive1_E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2E[n], receive2_E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3E[n], receive3_E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4E[n], receive4_E[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5E[n], receive5_E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6E[n], receive6_E[n], 0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec1_3E[n], receive1_3E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4E[n], receive1_4E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7E[n], receive1_7E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8E[n], receive1_8E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1E[n], receive2_1E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2E[n], receive2_2E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3E[n], receive2_3E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4E[n], receive2_4E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1E[n], receive3_1E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2E[n], receive3_2E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5E[n], receive3_5E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6E[n], receive3_6E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5E[n], receive4_5E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6E[n], receive4_6E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7E[n], receive4_7E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8E[n], receive4_8E[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1E[n], receive5_1E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3E[n], receive5_3E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5E[n], receive5_5E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7E[n], receive5_7E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2E[n], receive6_2E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4E[n], receive6_4E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6E[n], receive6_6E[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8E[n], receive6_8E[n], 0);
+	#endif
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1E1[n], receive1_E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2E1[n], receive2_E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3E1[n], receive3_E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4E1[n], receive4_E1[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5E1[n], receive5_E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6E1[n], receive6_E1[n], 0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostGetDevicePointer(&Bufferrec1_3E1[n], receive1_3E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4E1[n], receive1_4E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7E1[n], receive1_7E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8E1[n], receive1_8E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1E1[n], receive2_1E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2E1[n], receive2_2E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3E1[n], receive2_3E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4E1[n], receive2_4E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1E1[n], receive3_1E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2E1[n], receive3_2E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5E1[n], receive3_5E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6E1[n], receive3_6E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5E1[n], receive4_5E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6E1[n], receive4_6E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7E1[n], receive4_7E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8E1[n], receive4_8E1[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1E1[n], receive5_1E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3E1[n], receive5_3E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5E1[n], receive5_5E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7E1[n], receive5_7E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2E1[n], receive6_2E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4E1[n], receive6_4E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6E1[n], receive6_6E1[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8E1[n], receive6_8E1[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&Bufferrec1_3E2[n], receive1_3E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_4E2[n], receive1_4E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_7E2[n], receive1_7E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec1_8E2[n], receive1_8E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_1E2[n], receive2_1E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_2E2[n], receive2_2E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_3E2[n], receive2_3E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec2_4E2[n], receive2_4E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_1E2[n], receive3_1E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_2E2[n], receive3_2E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_5E2[n], receive3_5E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec3_6E2[n], receive3_6E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_5E2[n], receive4_5E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_6E2[n], receive4_6E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_7E2[n], receive4_7E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec4_8E2[n], receive4_8E2[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&Bufferrec5_1E2[n], receive5_1E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_3E2[n], receive5_3E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_5E2[n], receive5_5E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec5_7E2[n], receive5_7E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_2E2[n], receive6_2E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_4E2[n], receive6_4E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_6E2[n], receive6_6E2[n], 0);
+	cudaHostGetDevicePointer(&Bufferrec6_8E2[n], receive6_8E2[n], 0);
+	#endif
+	#endif
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&BuffersendE1corn9[n], send_E1_corn9[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE1corn10[n], send_E1_corn10[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE1corn11[n], send_E1_corn11[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE1corn12[n], send_E1_corn12[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE2corn5[n], send_E2_corn5[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE2corn6[n], send_E2_corn6[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE2corn7[n], send_E2_corn7[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE2corn8[n], send_E2_corn8[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&BuffersendE3corn1[n], send_E3_corn1[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE3corn2[n], send_E3_corn2[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE3corn3[n], send_E3_corn3[n], 0);
+	cudaHostGetDevicePointer(&BuffersendE3corn4[n], send_E3_corn4[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&BufferrecE1corn9[n], receive_E1_corn9[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn10[n], receive_E1_corn10[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn11[n], receive_E1_corn11[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn12[n], receive_E1_corn12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn5[n], receive_E2_corn5[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn6[n], receive_E2_corn6[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn7[n], receive_E2_corn7[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn8[n], receive_E2_corn8[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&BufferrecE3corn1[n], receive_E3_corn1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn2[n], receive_E3_corn2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn3[n], receive_E3_corn3[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn4[n], receive_E3_corn4[n], 0);
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&BufferrecE1corn9_3[n], receive_E1_corn9_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn9_7[n], receive_E1_corn9_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn10_1[n], receive_E1_corn10_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn10_5[n], receive_E1_corn10_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn11_4[n], receive_E1_corn11_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn11_6[n], receive_E1_corn11_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn12_2[n], receive_E1_corn12_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn12_8[n], receive_E1_corn12_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn5_2[n], receive_E2_corn5_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn5_4[n], receive_E2_corn5_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn6_1[n], receive_E2_corn6_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn6_3[n], receive_E2_corn6_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn7_5[n], receive_E2_corn7_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn7_7[n], receive_E2_corn7_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn8_6[n], receive_E2_corn8_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn8_8[n], receive_E2_corn8_2[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&BufferrecE3corn1_3[n], receive_E3_corn1_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn1_4[n], receive_E3_corn1_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn2_1[n], receive_E3_corn2_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn2_2[n], receive_E3_corn2_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn3_5[n], receive_E3_corn3_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn3_6[n], receive_E3_corn3_2[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn4_7[n], receive_E3_corn4_1[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn4_8[n], receive_E3_corn4_2[n], 0);
+	#endif
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&tempBufferrecE1corn9[n], tempreceive_E1_corn9[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn10[n], tempreceive_E1_corn10[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn11[n], tempreceive_E1_corn11[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn12[n], tempreceive_E1_corn12[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn5[n], tempreceive_E2_corn5[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn6[n], tempreceive_E2_corn6[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn7[n], tempreceive_E2_corn7[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn8[n], tempreceive_E2_corn8[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrecE3corn1[n], tempreceive_E3_corn1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn2[n], tempreceive_E3_corn2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn3[n], tempreceive_E3_corn3[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn4[n], tempreceive_E3_corn4[n], 0);
+	#if(N_LEVELS>1)
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&tempBufferrecE1corn9_3[n], tempreceive_E1_corn9_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn9_7[n], tempreceive_E1_corn9_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn10_1[n], tempreceive_E1_corn10_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn10_5[n], tempreceive_E1_corn10_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn11_2[n], tempreceive_E1_corn11_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn11_6[n], tempreceive-E1_corn11_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn12_4[n], tempreceive_E1_corn12_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE1corn12_8[n], tempreceive_E1_corn12_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn5_2[n], tempreceive_E2_corn5_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn5_4[n], tempreceive_E2_corn5_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn6_1[n], tempreceive_E2_corn6_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn6_3[n], tempreceive_E2_corn6_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn7_5[n], tempreceive_E2_corn7_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn7_7[n], tempreceive_E2_corn7_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn8_6[n], tempreceive_E2_corn8_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE2corn8_8[n], tempreceive_E2_corn8_2[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&tempBufferrecE3corn1_3[n], tempreceive_E3_corn1_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn1_4[n], tempreceive_E3_corn1_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn2_1[n], tempreceive_E3_corn2_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn2_2[n], tempreceive_E3_corn2_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn3_5[n], tempreceive_E3_corn3_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn3_6[n], tempreceive_E3_corn3_2[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn4_7[n], tempreceive_E3_corn4_1[n], 0);
+	cudaHostGetDevicePointer(&tempBufferrecE3corn4_8[n], tempreceive_E3_corn4_2[n], 0);
+	#if(N3G>0)
+	cudaHostGetDevicePointer(&BufferrecE1corn9_32[n], receive_E1_corn9_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn9_72[n], receive_E1_corn9_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn10_12[n], receive_E1_corn10_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn10_52[n], receive_E1_corn10_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn11_22[n], receive_E1_corn11_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn11_62[n], receive_E1_corn11_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn12_42[n], receive_E1_corn12_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE1corn12_82[n], receive_E1_corn12_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn5_22[n], receive_E2_corn5_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn5_42[n], receive_E2_corn5_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn6_12[n], receive_E2_corn6_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn6_32[n], receive_E2_corn6_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn7_52[n], receive_E2_corn7_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn7_72[n], receive_E2_corn7_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn8_62[n], receive_E2_corn8_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE2corn8_82[n], receive_E2_corn8_22[n], 0);
+	#endif
+	cudaHostGetDevicePointer(&BufferrecE3corn1_32[n], receive_E3_corn1_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn1_42[n], receive_E3_corn1_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn2_12[n], receive_E3_corn2_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn2_22[n], receive_E3_corn2_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn3_52[n], receive_E3_corn3_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn3_62[n], receive_E3_corn3_22[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn4_72[n], receive_E3_corn4_12[n], 0);
+	cudaHostGetDevicePointer(&BufferrecE3corn4_82[n], receive_E3_corn4_22[n], 0);
+	#endif
+
 	#endif
 
 	/*Set arguments of kernel*/
@@ -6820,6 +7337,8 @@ void GPU_write(int n)
 			pflag_GPU[n][(i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
 		}
 	}
+
+	status = 0;
 	#if (ELLIPTICAL2)
 	for (i = N1_GPU_offset[n] - N1G; i<N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
 		for (j = N2_GPU_offset[n] - N2G; j<N2_GPU_offset[n] + N2_GPU[n] + N2G; j++){
@@ -6828,10 +7347,11 @@ void GPU_write(int n)
 			}
 		}
 	}
+	status = cudaMemcpy(BufferdU[n], dU_GPU[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
 	#endif
-	status = 0;
+	
 	/*Initialize memory items that have to be passed on to the GPU*/
-	status += cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status = cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
 	status += cudaMemcpy(Bufferph_1[n], ph_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
 	#if(STAGGERED)
 	status += cudaMemcpy(Bufferps_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
