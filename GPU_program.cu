@@ -5619,7 +5619,7 @@ __global__ void unpackreceiveB3(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 void GPU_step_ch()
 {
-#if (OpenCL_enable==1)
+#if (1)
 	double ndt, inmsg;
 	int i, j, z, k, n, uu;
 
@@ -5636,24 +5636,6 @@ void GPU_step_ch()
 			if (prestep_full[n_ord[n]] == 1)  GPU_fixup(1, n_ord[n]);
 			else if (prestep_half[n_ord[n]] == 1) GPU_fixup(0, n_ord[n]);
 		}
-
-		/*Use interpolation to fix remaining failure points*/
-		/*#pragma omp for schedule(static, 1)
-		for (n = 0; n < n_active; n++){
-		clEnqueueReadBuffer(commandQueueGPU[n_ord[n]], Bufferpflag[n_ord[n]], CL_TRUE, 0, sizeof(cl_int), pflag_GPU[n_ord[n]], 0, NULL, NULL);
-		if (fabs(pflag_GPU[n_ord[n]][0]) >1){
-		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		//z = (pflag_GPU[n_ord[n]][0] % ((N2_GPU[n_ord[n]])*(N3_GPU[n_ord[n]]))) % (N3_GPU[n_ord[n]]) + N3_GPU_offset[n_ord[n]];
-		//j = ((pflag_GPU[n_ord[n]][0] - z) % ((N2_GPU[n_ord[n]])*(N3_GPU[n_ord[n]]))) / (N3_GPU[n_ord[n]]) + N2_GPU_offset[n_ord[n]];
-		//i = (pflag_GPU[n_ord[n]][0] - (j*(N3_GPU[n_ord[n]]) + z)) / ((N2_GPU[n_ord[n]])*(N3_GPU[n_ord[n]])) + N1_GPU_offset[n_ord[n]];
-		//printf("Pflag errorh (n,i,j,z):(%d, %d, %d, %d)\n", n_ord[n], i, j, z);
-		//if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)GPU_fixuputoprim(1,n_ord[n]);
-		//else GPU_fixuputoprim(1, n_ord[n]);
-		clEnqueueWriteBuffer(commandQueueGPU[n_ord[n]], Bufferpflag[n_ord[n]], CL_TRUE, 0, sizeof(cl_int), pflag_GPU[n_ord[n]], 0, NULL, NULL);
-		}
-		}
-		}*/
-
 		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 
 		nstep++;
@@ -5732,7 +5714,7 @@ void set_prestep(void){
 		}
 	}
 
-#if(N_GPU>1)
+	#if(N_GPU>1)
 	for (gpu = 0; gpu < N_GPU; gpu++){
 		timelevel_min = AMR_MAXTIMELEVEL;
 		blocks_per_timestep = 0;
@@ -5760,7 +5742,7 @@ void set_prestep(void){
 			}
 		}
 	}
-#endif
+	#endif
 	//If at end of switchtimelevel do not pre-evolve
 	for (n = 0; n < n_active; n++){
 		if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){
@@ -5768,17 +5750,16 @@ void set_prestep(void){
 			block[n_ord[n]][AMR_NSTEP] = nstep;
 		}
 	}
-#else
+	#else
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
 		block[n_ord[n]][AMR_NSTEP] = nstep;
 	}
-#endif
+	#endif
 }
 
 double advance_GPU(void)
 {
-#if (OpenCL_enable==1)
 	int i, n;
 	gpu = 1;
 
@@ -5796,7 +5777,7 @@ double advance_GPU(void)
 			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
 	}
 
-#if(N1G>0)
+	#if(N1G>0)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
@@ -5816,10 +5797,10 @@ double advance_GPU(void)
 		}
 	}
 
-#else
+	#else
 	ndt1 = 1e9;
-#endif
-#if(N2G>0)
+	#endif
+	#if(N2G>0)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
@@ -5839,10 +5820,10 @@ double advance_GPU(void)
 		}
 	}
 
-#else
+	#else
 	ndt2 = 1e9;
-#endif
-#if(N3G>0)
+	#endif
+	#if(N3G>0)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
@@ -5861,71 +5842,71 @@ double advance_GPU(void)
 			}
 		}
 	}
-#else
+	#else
 	ndt3 = 1e9;
-#endif
+	#endif
 
 	gpu = 1;
 	rc = 0;
-#if(1)
+
 	//MPI communication
 	/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-	if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-	break;
-	}
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			break;
+		}
 	}*/
 
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
 		flux_send1(F1, BufferF1_1, n_ord[n]);
 		flux_send2(F2, BufferF2_1, n_ord[n]);
-#if(N3G>0)
+		#if(N3G>0)
 		flux_send3(F3, BufferF3_1, n_ord[n]);
-#endif
+		#endif
 	}
 
-#if(PRESTEP)
+	#if(PRESTEP)
 	//For last timestep synchronize electric fields immediately
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
 		flux_rec1(F1, BufferF1_1, n_ord[n], 5);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 5);
-#if(N3G>0)
+		#if(N3G>0)
 		flux_rec3(F3, BufferF3_1, n_ord[n], 5);
-#endif
+		#endif
 	}
 
 	//For first timestep do not synchronize electrice fields 
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
 		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
-#if(N3G>0)
+		#if(N3G>0)
 		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
-#endif
+		#endif
 	}
-#else
+	#else
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
-#if(N3G>0)
+		#if(N3G>0)
 		flux_rec3(F3, BufferF3_1, n_ord[n], 1);
-#endif
+		#endif
 	}
 
 	//For first timestep do not synchronize electrice fields
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
 		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
-#if(N3G>0)
+		#if(N3G>0)
 		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
-#endif
+		#endif
 	}
-#endif
+	#endif
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
-#endif
-#if(!TRANS_BOUND)
+
+	#if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1 || prestep_half[n_ord[n]] == 1) GPU_fix_flux(n_ord[n]);
-#endif
-#if(STAGGERED)
+	#endif
+	#if(STAGGERED)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport1(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -5934,22 +5915,22 @@ double advance_GPU(void)
 		if (prestep_full[n_ord[n]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
-#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+	#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
 	//MPI_Barrier(mpi_cartcomm);
 	rc = 0;
 	GPU_consttransport_bound();
 	//MPI communication
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
-#endif
+	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 
-#else
+	#else
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct1(n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);
-#endif
+	#endif
 	double timestep;
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
@@ -5981,13 +5962,11 @@ double advance_GPU(void)
 
 	//ndt = defcon * 1. / (1. / ndt1 + 1. / ndt2 + 1. / ndt3);
 	return defcon * ndt;
-#endif
 	return 0.;
 }
 
 /**/
 void read_time_GPU(void){
-#if (OpenCL_enable==1)
 	int n;
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1){
@@ -5995,12 +5974,10 @@ void read_time_GPU(void){
 			clFlush(commandQueueGPU[n_ord[n]]);
 		}
 	}
-#endif
 }
 
 double fluxcalc_GPU(int n)
 {
-#if (OpenCL_enable==1)
 	double ndt;
 	int y;
 	ndt = 1.e9;
@@ -6014,7 +5991,6 @@ double fluxcalc_GPU(int n)
 	}
 
 	return(ndt);
-#endif
 	return 0.;
 }
 
@@ -6126,7 +6102,7 @@ void GPU_init(void)
 }
 
 void set_arrays_GPU(int n){
-#if (OpenCL_enable==1)
+#if (1)
 	int i, j, z;
 	cl_int freeze_GPU;
 	cl_int N1_tot, N2_tot, N3_tot;
@@ -6153,26 +6129,26 @@ void set_arrays_GPU(int n){
 	/*Allocate memory to 1D arrays*/
 	p_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
 	dq_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2)); //array to store temporary data
-#if(STAGGERED)
+	#if(STAGGERED)
 	ps_1[n] = (FTYPE2(*))calloc(NDIM * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
 	psh_1[n] = (FTYPE2(*))calloc(NDIM * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
-#endif
+	#endif
 	//#if(GPU_DEBUG)
 	ph_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
 	//#endif
 	dU_GPU[n] = (FTYPE2(*))calloc(NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)), sizeof(FTYPE2));
 	pbound_1[n] = (FTYPE2(*))calloc(N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n]), sizeof(FTYPE2));
-#if(!NONSYMMETRIC)
+	#if(!NONSYMMETRIC)
 	gcov_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
 	gcon_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
 	conn_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NDIM*NDIM*NDIM, sizeof(FTYPE2));
 	gdet_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG, sizeof(FTYPE2));
-#else
+	#else
 	gcov_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
 	gcon_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
 	conn_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NDIM*NDIM*NDIM, sizeof(FTYPE2));
 	gdet_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG, sizeof(FTYPE2));
-#endif
+	#endif
 	pflag_GPU[n] = (cl_int(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(cl_int));
 	failimage_GPU[n] = (cl_int(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL, sizeof(cl_int));
 	Katm_GPU[n] = (FTYPE2(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(FTYPE2));
@@ -6197,9 +6173,9 @@ void set_arrays_GPU(int n){
 	BufferF3_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	Bufferdq_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	BufferE_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-#if(LEER)
+	#if(LEER)
 	BufferV[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferradius[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferstorage1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	Bufferstorage2[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
@@ -6208,10 +6184,10 @@ void set_arrays_GPU(int n){
 	//Buffereta_avg[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	Bufferp_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	Bufferph_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-#if(STAGGERED)
+	#if(STAGGERED)
 	Bufferps_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	Bufferpsh_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferpbound_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
 	Bufferdtij[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) / LOCAL_WORK_SIZE*sizeof(FTYPE2), NULL, NULL);
 	Bufferpflag[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), NULL, NULL);
@@ -6221,155 +6197,155 @@ void set_arrays_GPU(int n){
 	BufferdU[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))*sizeof(FTYPE2), NULL, NULL);
 	dtij_GPU[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferdtij[n], CL_FALSE, CL_MAP_READ, 0, nr_workgroups[n] * sizeof(FTYPE2), 0, NULL, NULL, &status);
 	Buffersend1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Buffersend1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Buffersend2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Buffersend2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Buffersend3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Buffersend3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Buffersend4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Buffersend4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 
-#if(N3G>0)
+	#if(N3G>0)
 	Buffersend5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Buffersend5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Buffersend6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Buffersend6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	Bufferrec1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Bufferrec1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Bufferrec2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Bufferrec3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Bufferrec4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N3G>0)
+	#endif
+	#if(N3G>0)
 	Bufferrec5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Bufferrec5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	Bufferrec6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	tempBufferrec1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	tempBufferrec1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	tempBufferrec2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	tempBufferrec2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	tempBufferrec3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	tempBufferrec3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	tempBufferrec4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	tempBufferrec4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N3G>0)
+	#endif
+	#if(N3G>0)
 	tempBufferrec5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	tempBufferrec5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	tempBufferrec6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
+	#if(N_LEVELS>1)
 	tempBufferrec6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrec6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	Buffersend1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Buffersend5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N_LEVELS>1)
+	#endif
+	#if(N_LEVELS>1)
 	Bufferrec1_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6386,7 +6362,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6395,17 +6371,17 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	Bufferrec1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N_LEVELS>1)
+	#endif
+	#if(N_LEVELS>1)
 	Bufferrec1_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6422,7 +6398,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6431,7 +6407,7 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec1_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6448,7 +6424,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6457,25 +6433,25 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	Buffersend1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Buffersend5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N_LEVELS>1)
+	#endif
+	#if(N_LEVELS>1)
 	Bufferrec1_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6492,7 +6468,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6501,25 +6477,25 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	Buffersend1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Buffersend5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Buffersend6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N_LEVELS>1)
+	#endif
+	#if(N_LEVELS>1)
 	Bufferrec1_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6536,7 +6512,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6545,17 +6521,17 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
+	#endif
+	#endif
 	Bufferrec1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N_LEVELS>1)
+	#endif
+	#if(N_LEVELS>1)
 	Bufferrec1_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6572,7 +6548,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6581,7 +6557,7 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	Bufferrec1_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec1_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6598,7 +6574,7 @@ void set_arrays_GPU(int n){
 	Bufferrec4_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec4_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	Bufferrec5_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec5_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
@@ -6607,9 +6583,9 @@ void set_arrays_GPU(int n){
 	Bufferrec6_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	Bufferrec6_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#endif
-#if(N3G>0)
+	#endif
+	#endif
+	#if(N3G>0)
 	BuffersendE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
@@ -6618,12 +6594,12 @@ void set_arrays_GPU(int n){
 	BuffersendE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	BuffersendE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BuffersendE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	BufferrecE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
@@ -6632,13 +6608,13 @@ void set_arrays_GPU(int n){
 	BufferrecE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	BufferrecE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
-#if(N3G>0)
+	#if(N_LEVELS>1)
+	#if(N3G>0)
 	BufferrecE1corn9_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE1corn9_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE1corn10_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
@@ -6655,7 +6631,7 @@ void set_arrays_GPU(int n){
 	BufferrecE2corn7_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE2corn8_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE2corn8_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	BufferrecE3corn1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6664,8 +6640,8 @@ void set_arrays_GPU(int n){
 	BufferrecE3corn3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
-#if(N3G>0)
+	#endif
+	#if(N3G>0)
 	tempBufferrecE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
@@ -6674,13 +6650,13 @@ void set_arrays_GPU(int n){
 	tempBufferrecE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	tempBufferrecE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N_LEVELS>1)
-#if(N3G>0)
+	#if(N_LEVELS>1)
+	#if(N3G>0)
 	tempBufferrecE1corn9_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE1corn9_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE1corn10_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
@@ -6697,7 +6673,7 @@ void set_arrays_GPU(int n){
 	tempBufferrecE2corn7_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE2corn8_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE2corn8_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	tempBufferrecE3corn1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6706,7 +6682,7 @@ void set_arrays_GPU(int n){
 	tempBufferrecE3corn3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	tempBufferrecE3corn4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#if(N3G>0)
+	#if(N3G>0)
 	BufferrecE1corn9_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE1corn9_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE1corn10_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
@@ -6723,7 +6699,7 @@ void set_arrays_GPU(int n){
 	BufferrecE2corn7_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE2corn8_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE2corn8_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 	BufferrecE3corn1_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn1_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn2_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
@@ -6732,905 +6708,32 @@ void set_arrays_GPU(int n){
 	BufferrecE3corn3_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn4_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
 	BufferrecE3corn4_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
-#endif
+	#endif
 
-#if PINNED
-	send1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	send1_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send1_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send1_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_7[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send1_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_8[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	send2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	send2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send2_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send2_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	send3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	send3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send3_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send3_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	send4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	send4_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send4_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send4_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_7[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send4_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_8[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif	
-#if(N3G>0)
-	send5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	send5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send5_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send5_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send5_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_7[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	send6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	send6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send6_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send6_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send6_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_8[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif	
-#endif
-	receive1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	receive1_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	receive2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	receive3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	receive4_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif	
-#if(N3G>0)
-	receive5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	receive5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	receive6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-	tempreceive1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	tempreceive1_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive1_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive1_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive1_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif	
-	tempreceive2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	tempreceive2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive2_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive2_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	tempreceive3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	tempreceive3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive3_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive3_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	tempreceive4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	tempreceive4_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive4_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive4_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive4_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif	
-#if(N3G>0)
-	tempreceive5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	tempreceive5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive5_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive5_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive5_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	tempreceive6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-	tempreceive6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive6_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive6_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive6_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-	send1_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send2_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send3_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send4_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	send5_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send6_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#if(N_LEVELS>1)
-	receive1_3flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-	receive1_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#if(N_LEVELS>1)
-	receive1_3flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_3flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-	send1_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send2_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send3_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send4_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	send5_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send6_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#if(N_LEVELS>1)
-	receive1_3fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-	send1_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send2_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send3_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send4_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	send5_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send6_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#if(N_LEVELS>1)
-	receive1_3E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_3E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive1_3E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_4E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_7E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive1_8E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_1E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_2E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_3E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive2_4E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_1E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_2E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_5E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive3_6E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_5E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_6E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_7E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive4_8E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive5_1E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_3E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_5E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive5_7E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_2E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_4E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_6E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive6_8E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-#if(N3G>0)
-	send_E1_corn9[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn9[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E1_corn10[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn10[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E1_corn11[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn11[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E1_corn12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn12[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E2_corn5[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn5[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E2_corn6[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn6[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E2_corn7[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn7[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E2_corn8[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn8[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	send_E3_corn1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn1[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E3_corn2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn2[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E3_corn3[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn3[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	send_E3_corn4[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn4[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive_E1_corn9[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn10[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn11[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn5[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn6[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn7[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn8[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive_E3_corn1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn3[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn4[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-#if(N3G>0)
-	receive_E1_corn9_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn9_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn10_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn10_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn11_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn11_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn12_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn12_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn5_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn6_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn7_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn7_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn8_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn8_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive_E3_corn1_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn1_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn4_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn4_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif	
-#if(N3G>0)
-	tempreceive_E1_corn9[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn9[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn10[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn10[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn11[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn11[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn12[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	tempreceive_E3_corn1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N_LEVELS>1)
-#if(N3G>0)
-	tempreceive_E1_corn9_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn9_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn9_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn9_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn10_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn10_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn10_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn10_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn11_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn11_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn11_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn11_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn12_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn12_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E1_corn12_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn12_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn5_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn5_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn5_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn6_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn6_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn6_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn7_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn7_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn7_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn7_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn8_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn8_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E2_corn8_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn8_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	tempreceive_E3_corn1_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn1_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn1_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn1_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn2_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn2_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn3_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn3_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn4_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn4_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	tempreceive_E3_corn4_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn4_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#if(N3G>0)
-	receive_E1_corn9_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_32[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn9_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_72[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn10_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn10_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_52[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn11_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_22[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn11_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_62[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn12_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_42[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E1_corn12_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_82[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn5_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_22[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn5_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_42[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn6_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn6_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_32[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn7_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_52[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn7_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_72[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn8_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_62[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E2_corn8_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_82[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-	receive_E3_corn1_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_32[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn1_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_42[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn2_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn2_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_22[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn3_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_52[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn3_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_62[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn4_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_72[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-	receive_E3_corn4_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_82[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
-#endif
-#endif
-
-	/*Build kernel*/
-#if H_CORRECTION
-	kernel_hcor1[n] = clCreateKernel(GPU_program[0], "hcor1", NULL);
-	kernel_hcor2[n] = clCreateKernel(GPU_program[0], "hcor2", NULL);
-	kernel_hcor3[n] = clCreateKernel(GPU_program[0], "hcor3", NULL);
-#endif
-	kernel_fluxcalcprep[n] = clCreateKernel(GPU_program[0], "fluxcalcprep", NULL);
-	kernel_fluxcalc2D1[n] = clCreateKernel(GPU_program[0], "fluxcalc2D1", NULL);
-	kernel_fluxcalc2D2[n] = clCreateKernel(GPU_program[0], "fluxcalc2D2", NULL);
-	kernel_flux_ct1[n] = clCreateKernel(GPU_program[0], "flux_ct1", NULL);
-	kernel_flux_ct2[n] = clCreateKernel(GPU_program[0], "flux_ct2", NULL);
-	kernel_consttransport1[n] = clCreateKernel(GPU_program[0], "consttransport1", NULL);
-	kernel_consttransport2[n] = clCreateKernel(GPU_program[0], "consttransport2", NULL);
-	kernel_consttransport3[n] = clCreateKernel(GPU_program[0], "consttransport3", NULL);
-	kernel_fix_flux[n] = clCreateKernel(GPU_program[0], "fix_flux", NULL);
-	kernel_Utoprim[n] = clCreateKernel(GPU_program[0], "Utoprim", NULL);
-	kernel_Utoprim2[n] = clCreateKernel(GPU_program[0], "Utoprim2", NULL);
-	kernel_Utoprim1[n] = clCreateKernel(GPU_program[0], "Utoprim1", NULL);
-	kernel_fixup[n] = clCreateKernel(GPU_program[0], "fixup", NULL);
-	kernel_fixuputoprim[n] = clCreateKernel(GPU_program[0], "fixuputoprim", NULL);
-	kernel_boundprim1[n] = clCreateKernel(GPU_program[0], "boundprim1", NULL);
-	kernel_boundprim2[n] = clCreateKernel(GPU_program[0], "boundprim2", NULL);
-	kernel_packsend1[n] = clCreateKernel(GPU_program[1], "packsend1", NULL);
-	kernel_packsend2[n] = clCreateKernel(GPU_program[1], "packsend2", NULL);
-	kernel_packsend3[n] = clCreateKernel(GPU_program[1], "packsend3", NULL);
-	kernel_packsend1flux[n] = clCreateKernel(GPU_program[1], "packsend1flux", NULL);
-	kernel_packsend2flux[n] = clCreateKernel(GPU_program[1], "packsend2flux", NULL);
-	kernel_packsend3flux[n] = clCreateKernel(GPU_program[1], "packsend3flux", NULL);
-	kernel_unpackreceive1[n] = clCreateKernel(GPU_program[1], "unpackreceive1", NULL);
-	kernel_unpackreceive2[n] = clCreateKernel(GPU_program[1], "unpackreceive2", NULL);
-	kernel_unpackreceive3[n] = clCreateKernel(GPU_program[1], "unpackreceive3", NULL);
-	kernel_unpackreceive1flux[n] = clCreateKernel(GPU_program[1], "unpackreceive1flux", NULL);
-	kernel_unpackreceive2flux[n] = clCreateKernel(GPU_program[1], "unpackreceive2flux", NULL);
-	kernel_unpackreceive3flux[n] = clCreateKernel(GPU_program[1], "unpackreceive3flux", NULL);
-	kernel_packsendaverage1[n] = clCreateKernel(GPU_program[1], "packsendaverage1", NULL);
-	kernel_packsendaverage2[n] = clCreateKernel(GPU_program[1], "packsendaverage2", NULL);
-	kernel_packsendaverage3[n] = clCreateKernel(GPU_program[1], "packsendaverage3", NULL);
-	kernel_unpackreceivecoarse1[n] = clCreateKernel(GPU_program[1], "unpackreceivecoarse1", NULL);
-	kernel_unpackreceivecoarse2[n] = clCreateKernel(GPU_program[1], "unpackreceivecoarse2", NULL);
-	kernel_unpackreceivecoarse3[n] = clCreateKernel(GPU_program[1], "unpackreceivecoarse3", NULL);
-	kernel_packsendfluxaverage1[n] = clCreateKernel(GPU_program[1], "packsendfluxaverage1", NULL);
-	kernel_packsendfluxaverage2[n] = clCreateKernel(GPU_program[1], "packsendfluxaverage2", NULL);
-	kernel_packsendfluxaverage3[n] = clCreateKernel(GPU_program[1], "packsendfluxaverage3", NULL);
-	kernel_unpackreceive1E[n] = clCreateKernel(GPU_program[1], "unpackreceive1E", NULL);
-	kernel_unpackreceive2E[n] = clCreateKernel(GPU_program[1], "unpackreceive2E", NULL);
-	kernel_unpackreceive3E[n] = clCreateKernel(GPU_program[1], "unpackreceive3E", NULL);
-	kernel_packsend1E[n] = clCreateKernel(GPU_program[1], "packsend1E", NULL);
-	kernel_packsend2E[n] = clCreateKernel(GPU_program[1], "packsend2E", NULL);
-	kernel_packsend3E[n] = clCreateKernel(GPU_program[1], "packsend3E", NULL);
-	kernel_packsendEaverage1[n] = clCreateKernel(GPU_program[1], "packsendEaverage1", NULL);
-	kernel_packsendEaverage2[n] = clCreateKernel(GPU_program[1], "packsendEaverage2", NULL);
-	kernel_packsendEaverage3[n] = clCreateKernel(GPU_program[1], "packsendEaverage3", NULL);
-	kernel_packsendE1corn[n] = clCreateKernel(GPU_program[1], "packsendE1corn", NULL);
-	kernel_packsendE2corn[n] = clCreateKernel(GPU_program[1], "packsendE2corn", NULL);
-	kernel_packsendE3corn[n] = clCreateKernel(GPU_program[1], "packsendE3corn", NULL);
-	kernel_packsendE1corncourse[n] = clCreateKernel(GPU_program[1], "packsendE1corncourse", NULL);
-	kernel_packsendE2corncourse[n] = clCreateKernel(GPU_program[1], "packsendE2corncourse", NULL);
-	kernel_packsendE3corncourse[n] = clCreateKernel(GPU_program[1], "packsendE3corncourse", NULL);
-	kernel_unpackreceiveE1corn[n] = clCreateKernel(GPU_program[1], "unpackreceiveE1corn", NULL);
-	kernel_unpackreceiveE2corn[n] = clCreateKernel(GPU_program[1], "unpackreceiveE2corn", NULL);
-	kernel_unpackreceiveE3corn[n] = clCreateKernel(GPU_program[1], "unpackreceiveE3corn", NULL);
-	kernel_packsendB1[n] = clCreateKernel(GPU_program[1], "packsendB1", NULL);
-	kernel_packsendB2[n] = clCreateKernel(GPU_program[1], "packsendB2", NULL);
-	kernel_packsendB3[n] = clCreateKernel(GPU_program[1], "packsendB3", NULL);
-	kernel_packsendBaverage1[n] = clCreateKernel(GPU_program[1], "packsendBaverage1", NULL);
-	kernel_packsendBaverage2[n] = clCreateKernel(GPU_program[1], "packsendBaverage2", NULL);
-	kernel_packsendBaverage3[n] = clCreateKernel(GPU_program[1], "packsendBaverage3", NULL);
-	kernel_unpackreceiveB1[n] = clCreateKernel(GPU_program[1], "unpackreceiveB1", NULL);
-	kernel_unpackreceiveB2[n] = clCreateKernel(GPU_program[1], "unpackreceiveB2", NULL);
-	kernel_unpackreceiveB3[n] = clCreateKernel(GPU_program[1], "unpackreceiveB3", NULL);
-
-	status = 0;
 	/*Set arguments of kernel*/
-
 	int POLE_1, POLE_2;
 	if (block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) POLE_1 = 1;
 	else POLE_1 = 0;
 	if (block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)) POLE_2 = 1;
 	else POLE_2 = 0;
-#if H_CORRECTION
-	status += clSetKernelArg(kernel_hcor1[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 4, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 5, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
 
-	status += clSetKernelArg(kernel_hcor2[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_hcor2[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_hcor2[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_hcor2[n], 3, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_hcor2[n], 4, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
-	status += clSetKernelArg(kernel_hcor2[n], 5, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
-
-	clSetKernelArg(kernel_hcor3[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 3, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 4, sizeof(cl_mem), (void *)&Buffereta_avg[n]);
-#endif
-
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 4, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 7, sizeof(cl_int), &lim);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 8, sizeof(FTYPE2), &hslope);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 9, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 10, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 11, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 12, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_fluxcalcprep[n], 14, sizeof(cl_mem), (void *)&BufferV[n]);
-
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 4, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 9, sizeof(cl_int), &lim);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 11, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 12, sizeof(FTYPE2), &hslope);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 13, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 14, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 15, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 16, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 17, sizeof(FTYPE2), &cour);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 18, sizeof(cl_mem), (void *)&Bufferdtij[n]);
-
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 19, sizeof(cl_int), &N1_tot);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 20, sizeof(cl_int), &N1_GPU_offset[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 21, sizeof(cl_int), &POLE_1);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 22, sizeof(cl_int), &POLE_2);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 23, sizeof(cl_int), &N3_tot);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 24, sizeof(cl_int), &N3_GPU_offset[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 25, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 26, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 27, sizeof(cl_mem), (void *)&Bufferstorage3[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 28, sizeof(cl_mem), (void *)&Bufferstorage4[n]);
-
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 4, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 9, sizeof(cl_int), &lim);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 11, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 12, sizeof(FTYPE2), &hslope);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 13, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 14, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 15, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 16, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 17, sizeof(FTYPE2), &cour);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 18, sizeof(cl_mem), (void *)&Bufferdtij[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 19, (LOCAL_WORK_SIZE)*sizeof(FTYPE2), NULL);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 20, sizeof(cl_int), &N1_tot);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 21, sizeof(cl_int), &N1_GPU_offset[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 22, sizeof(cl_int), &POLE_1);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 23, sizeof(cl_int), &POLE_2);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 24, sizeof(cl_int), &N3_tot);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 25, sizeof(cl_int), &N3_GPU_offset[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 26, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 27, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 28, sizeof(cl_mem), (void *)&Bufferstorage3[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 29, sizeof(cl_mem), (void *)&Bufferstorage4[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 30, sizeof(cl_double), &(dx[n][1]));
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 31, sizeof(cl_double), &(dx[n][2]));
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 32, sizeof(cl_double), &(dx[n][3]));
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 33, sizeof(cl_mem), (void *)&Buffereta_avg[n]);
-
-	status += clSetKernelArg(kernel_fix_flux[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_fix_flux[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_fix_flux[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_fix_flux[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_fix_flux[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_fix_flux[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_fix_flux[n], 6, sizeof(cl_int), &(block[n][AMR_NBR1]));
-	status += clSetKernelArg(kernel_fix_flux[n], 7, sizeof(cl_int), &(block[n][AMR_NBR2]));
-	status += clSetKernelArg(kernel_fix_flux[n], 8, sizeof(cl_int), &(block[n][AMR_NBR3]));
-	status += clSetKernelArg(kernel_fix_flux[n], 9, sizeof(cl_int), &(block[n][AMR_NBR4]));
-	/*
-	status += clSetKernelArg(kernel_diag_flux[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_diag_flux[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_diag_flux[n], 2, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_diag_flux[n], 3, sizeof(cl_mem), (void *)&Bufferdiagflux[n]);
-	status += clSetKernelArg(kernel_diag_flux[n], 4, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_diag_flux[n], 5, sizeof(cl_int), &N1_GPU[n][n]);
-	*/
-
-	status += clSetKernelArg(kernel_consttransport1[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport1[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport1[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport1[n], 4, sizeof(cl_mem), &(Bufferstorage1[n]));
-
-	status += clSetKernelArg(kernel_consttransport2[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport2[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport2[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport2[n], 3, sizeof(cl_mem), &(BufferE_1[n]));
-	status += clSetKernelArg(kernel_consttransport2[n], 4, sizeof(cl_mem), &(Bufferstorage1[n]));
-	status += clSetKernelArg(kernel_consttransport2[n], 5, sizeof(cl_mem), &(BufferF1_1[n]));
-	status += clSetKernelArg(kernel_consttransport2[n], 6, sizeof(cl_mem), &(BufferF2_1[n]));
-	status += clSetKernelArg(kernel_consttransport2[n], 7, sizeof(cl_mem), &(BufferF3_1[n]));
-
-	status += clSetKernelArg(kernel_consttransport2[n], 12, sizeof(cl_int), &POLE_1);
-	status += clSetKernelArg(kernel_consttransport2[n], 13, sizeof(cl_int), &POLE_2);
-
-	status += clSetKernelArg(kernel_consttransport3[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport3[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport3[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_consttransport3[n], 3, sizeof(cl_double), &(dx[n][1]));
-	status += clSetKernelArg(kernel_consttransport3[n], 4, sizeof(cl_double), &(dx[n][2]));
-	status += clSetKernelArg(kernel_consttransport3[n], 5, sizeof(cl_double), &(dx[n][3]));
-	status += clSetKernelArg(kernel_consttransport3[n], 9, sizeof(cl_mem), (void *)&BufferE_1[n]);
-	status += clSetKernelArg(kernel_consttransport3[n], 11, sizeof(cl_int), &POLE_1);
-	status += clSetKernelArg(kernel_consttransport3[n], 12, sizeof(cl_int), &POLE_2);
-
-	status += clSetKernelArg(kernel_flux_ct1[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_flux_ct1[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_flux_ct1[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_flux_ct1[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_flux_ct1[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_flux_ct1[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_flux_ct1[n], 6, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-
-	status += clSetKernelArg(kernel_flux_ct2[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_flux_ct2[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_flux_ct2[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_flux_ct2[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_flux_ct2[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_flux_ct2[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_flux_ct2[n], 6, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-
-	status += clSetKernelArg(kernel_Utoprim[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 6, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 13, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_Utoprim[n], 14, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_Utoprim[n], 15, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_Utoprim[n], 16, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_Utoprim[n], 17, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_Utoprim[n], 19, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 20, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 21, sizeof(cl_mem), (void *)&BufferKatm[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 22, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 23, sizeof(cl_int), &N1_tot);
-	status += clSetKernelArg(kernel_Utoprim[n], 24, sizeof(cl_int), &N2_tot);
-	status += clSetKernelArg(kernel_Utoprim[n], 25, sizeof(cl_int), &N3_tot);
-	status += clSetKernelArg(kernel_Utoprim[n], 26, sizeof(cl_double), &(dx[n][1]));
-	status += clSetKernelArg(kernel_Utoprim[n], 27, sizeof(cl_double), &(dx[n][2]));
-	status += clSetKernelArg(kernel_Utoprim[n], 28, sizeof(cl_double), &(dx[n][3]));
-
-	status += clSetKernelArg(kernel_Utoprim1[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 6, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 13, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_Utoprim1[n], 14, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_Utoprim1[n], 15, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_Utoprim1[n], 16, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_Utoprim1[n], 17, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_Utoprim1[n], 19, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 20, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 21, sizeof(cl_mem), (void *)&BufferKatm[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 22, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 23, sizeof(cl_int), &N1_tot);
-	status += clSetKernelArg(kernel_Utoprim1[n], 24, sizeof(cl_int), &N2_tot);
-	status += clSetKernelArg(kernel_Utoprim1[n], 25, sizeof(cl_int), &N3_tot);
-	status += clSetKernelArg(kernel_Utoprim1[n], 26, sizeof(cl_double), &(dx[n][1]));
-	status += clSetKernelArg(kernel_Utoprim1[n], 27, sizeof(cl_double), &(dx[n][2]));
-	status += clSetKernelArg(kernel_Utoprim1[n], 28, sizeof(cl_double), &(dx[n][3]));
-	status += clSetKernelArg(kernel_Utoprim1[n], 29, sizeof(cl_double), &a);
-	status += clSetKernelArg(kernel_Utoprim1[n], 30, sizeof(cl_mem), (void *)&Bufferradius[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 31, sizeof(cl_mem), (void *)&BufferdU[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 32, sizeof(cl_double), &sourceflag);
-	status += clSetKernelArg(kernel_Utoprim1[n], 33, sizeof(cl_int), &n3_MPI_GPU[n]);
-
-	status += clSetKernelArg(kernel_Utoprim2[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 6, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 13, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_Utoprim2[n], 14, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_Utoprim2[n], 15, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_Utoprim2[n], 16, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_Utoprim2[n], 17, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_Utoprim2[n], 19, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 20, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 21, sizeof(cl_mem), (void *)&BufferKatm[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 22, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 23, sizeof(cl_int), &N1_tot);
-	status += clSetKernelArg(kernel_Utoprim2[n], 24, sizeof(cl_int), &N2_tot);
-	status += clSetKernelArg(kernel_Utoprim2[n], 25, sizeof(cl_int), &N3_tot);
-	status += clSetKernelArg(kernel_Utoprim2[n], 26, sizeof(cl_double), &(dx[n][1]));
-	status += clSetKernelArg(kernel_Utoprim2[n], 27, sizeof(cl_double), &(dx[n][2]));
-	status += clSetKernelArg(kernel_Utoprim2[n], 28, sizeof(cl_double), &(dx[n][3]));
-	status += clSetKernelArg(kernel_Utoprim2[n], 30, sizeof(cl_int), &POLE_1);
-	status += clSetKernelArg(kernel_Utoprim2[n], 31, sizeof(cl_int), &POLE_2);
-
-	status += clSetKernelArg(kernel_fixup[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_fixup[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_fixup[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_fixup[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	status += clSetKernelArg(kernel_fixup[n], 7, sizeof(cl_mem), (void *)&BufferF1_1[n]);
-	status += clSetKernelArg(kernel_fixup[n], 8, sizeof(cl_mem), (void *)&BufferF2_1[n]);
-	status += clSetKernelArg(kernel_fixup[n], 9, sizeof(cl_mem), (void *)&BufferF3_1[n]);
-	status += clSetKernelArg(kernel_fixup[n], 10, sizeof(cl_mem), (void *)&Bufferradius[n]);
-	status += clSetKernelArg(kernel_fixup[n], 11, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_fixup[n], 12, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
-	status += clSetKernelArg(kernel_fixup[n], 17, sizeof(cl_mem), (void *)&BufferKatm[n]);
-	status += clSetKernelArg(kernel_fixup[n], 18, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_fixup[n], 19, sizeof(cl_double), &(dx[n][1]));
-	status += clSetKernelArg(kernel_fixup[n], 20, sizeof(cl_double), &(dx[n][2]));
-	status += clSetKernelArg(kernel_fixup[n], 21, sizeof(cl_double), &(dx[n][3]));
-	status += clSetKernelArg(kernel_fixup[n], 22, sizeof(cl_double), &(a));
-
-	status += clSetKernelArg(kernel_fixuputoprim[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 4, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 5, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 9, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 10, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 11, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 12, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 13, sizeof(FTYPE2), &hslope);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 14, sizeof(FTYPE2), &gam);
-
-	status += clSetKernelArg(kernel_boundprim1[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 4, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 5, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 9, sizeof(cl_mem), (void *)&Bufferpbound_1[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 10, sizeof(FTYPE2), &Rin);
-	status += clSetKernelArg(kernel_boundprim1[n], 11, sizeof(FTYPE2), &R0);
-	status += clSetKernelArg(kernel_boundprim1[n], 12, sizeof(FTYPE2), &Rout);
-	status += clSetKernelArg(kernel_boundprim1[n], 13, sizeof(FTYPE2), &fractheta);
-	status += clSetKernelArg(kernel_boundprim1[n], 14, sizeof(FTYPE2), &hslope);
-	status += clSetKernelArg(kernel_boundprim1[n], 15, sizeof(FTYPE2), &gam);
-	status += clSetKernelArg(kernel_boundprim1[n], 16, sizeof(cl_int), &freeze_GPU);
-	status += clSetKernelArg(kernel_boundprim1[n], 17, sizeof(cl_int), &(block[n][AMR_NBR2]));
-	status += clSetKernelArg(kernel_boundprim1[n], 18, sizeof(cl_int), &(block[n][AMR_NBR4]));
-
-	status += clSetKernelArg(kernel_boundprim2[n], 0, sizeof(cl_int), &N1_GPU[n]);
-	status += clSetKernelArg(kernel_boundprim2[n], 1, sizeof(cl_int), &N2_GPU[n]);
-	status += clSetKernelArg(kernel_boundprim2[n], 2, sizeof(cl_int), &N3_GPU[n]);
-	status += clSetKernelArg(kernel_boundprim2[n], 3, sizeof(cl_mem), (void *)&Bufferpflag[n]);
-	status += clSetKernelArg(kernel_boundprim2[n], 5, sizeof(cl_int), &(block[n][AMR_NBR1]));
-	status += clSetKernelArg(kernel_boundprim2[n], 6, sizeof(cl_int), &(block[n][AMR_NBR3]));
-	status += clSetKernelArg(kernel_boundprim2[n], 8, sizeof(cl_int), &(block[n][AMR_POLE]));
-	if (status != 0) printf("Error in setting kernel arguments 1: %d \n", status);
 	int pg, d1, d2, k;
-#pragma omp parallel private(i, j, z, k, pg, d1, d2)
+	#pragma omp parallel private(i, j, z, k, pg, d1, d2)
 	{
-#pragma omp for collapse(2) schedule(dynamic)
+		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
 			for (pg = 0; pg < NPG; pg++){
-#if(!NONSYMMETRIC)
-				gdet_GPU[n][pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gdet[n][index2(n, i, j, z)][pg];
-#else
-				gdet_GPU[n][pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) +
-					(j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = gdet[n][index2(n, i, j, z)][pg];
-
-#endif
+				#if(!NONSYMMETRIC)
+				gdet_GPU[n][pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gdet[n][index2(n, i, j, z)][pg];
+				#else
+				#endif
 				for (d1 = 0; d1 < NDIM; d1++){
 					for (d2 = 0; d2 < NDIM; d2++){
-#if(!NONSYMMETRIC)
-						gcov_GPU[n][d1*NDIM*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gcov[n][index2(n, i, j, z)][pg][d1][d2];
-						gcon_GPU[n][d1*NDIM*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gcon[n][index2(n, i, j, z)][pg][d1][d2];
-#else
-						gcov_GPU[n][d1*NDIM*NPG*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N3_GPU[n] + 2 * N3G)*
-							(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*
-							(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = gcov[n][index2(n, i, j, z)][pg][d1][d2];
-						gcon_GPU[n][d1*NDIM*NPG*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N3_GPU[n] + 2 * N3G)*
-							(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*
-							(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = gcon[n][index2(n, i, j, z)][pg][d1][d2];
-#endif
+						#if(!NONSYMMETRIC)
+						gcov_GPU[n][d1*NDIM*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + d2*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gcov[n][index2(n, i, j, z)][pg][d1][d2];
+						gcon_GPU[n][d1*NDIM*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + d2*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gcon[n][index2(n, i, j, z)][pg][d1][d2];
+						#else
+						#endif
 					}
 				}
 			}
@@ -7638,116 +6741,45 @@ void set_arrays_GPU(int n){
 			for (pg = 0; pg < NDIM; pg++){
 				for (d1 = 0; d1 < NDIM; d1++){
 					for (d2 = 0; d2 < NDIM; d2++){
-#if(!NONSYMMETRIC)
-						conn_GPU[n][d1*NDIM*NDIM*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NDIM*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))
-							+ pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G)
-							+ (j - N2_GPU_offset[n] + N2G)] = conn[n][index2(n, i, j, z)][pg][d1][d2];
-#else
-						conn_GPU[n][d1*NDIM*NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))
-							+ pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) +
-							(j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = conn[n][index2(n, i, j, z)][pg][d1][d2];
-#endif
+						#if(!NONSYMMETRIC)
+						conn_GPU[n][d1*NDIM*NDIM*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + d2*NDIM*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2) 
+							+ (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset + N2G)] = conn[n][index2(n, i, j, z)][pg][d1][d2];
+						#else
+						#endif
 					}
 				}
 			}
-#if(LEER)
+			#if(LEER)
 			for (k = 0; k < 6; k++){
 				dq_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = V[n][index(n, i, j, z)][k];
 			}
-#endif
+			#endif
 		}
 	}
-	cl_image_format format = { CL_RG, CL_SIGNED_INT32 };
-#if(LEER)
-	status = clEnqueueWriteBuffer(commandQueueGPU[n], BufferV[n], CL_FALSE, 0, 6 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), dq_1[n], 0, NULL, NULL);
-#endif
-	if (status != 0) printf("Error in writing data %d \n", status);
-#if(!NONSYMMETRIC)
-	cl_image_desc descriptor1 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NDIM*NDIM*NDIM, 0, 0, 0, 0, 0, NULL };
-	Imageconn[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor1, conn_GPU[n], &status);
-	cl_image_desc descriptor2 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, 0, 0, 0, NULL };
-	Imagegcov[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor2, gcov_GPU[n], &status);
-	cl_image_desc descriptor3 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, 0, 0, 0, NULL };
-	Imagegcon[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor3, gcon_GPU[n], &status);
-	cl_image_desc descriptor4 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG, 0, 0, 0, 0, 0, NULL };
-	Imagegdet[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor4, gdet_GPU[n], &status);
-	/*Imageconn[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NDIM*NDIM*NDIM, 0, 0, conn_GPU[n], &status);
-	if (status != 0) printf("Error in creating image %d \n", status);
-	Imagegcov[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, gcov_GPU[n], &status);
-	if (status != 0) printf("Error in creating image %d \n", status);
-	Imagegcon[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, gcon_GPU[n], &status);
-	if(status!=0) printf("Error in creating image %d \n", status);
-	Imagegdet[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG, 0, 0, gdet_GPU[n], &status);
-	if(status!=0) printf("Error in creating image %d \n", status);*/
-#else
-	Imageconn[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NDIM*NDIM*NDIM, 0, 0, conn_GPU[n], &status);
-	Imagegcov[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NPG*NDIM*NDIM, 0, 0, gcov_GPU[n], &status);
-	Imagegcon[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NPG*NDIM*NDIM, 0, 0, gcon_GPU[n], &status);
-	Imagegdet[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NPG, 0, 0, gdet_GPU[n], &status);
-#endif
-	status = 0;
-#if H_CORRECTION
-	status += clSetKernelArg(kernel_hcor1[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_hcor1[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 5, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 6, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_hcor3[n], 7, sizeof(cl_mem), (void *)&Imagegdet[n]);
-#endif
-	status += clSetKernelArg(kernel_fixup[n], 13, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_fixup[n], 14, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_fixup[n], 15, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_fixup[n], 16, sizeof(cl_mem), (void *)&Imageconn[n]);
-
-	status += clSetKernelArg(kernel_Utoprim[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_Utoprim[n], 18, sizeof(cl_mem), (void *)&Imageconn[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_Utoprim1[n], 18, sizeof(cl_mem), (void *)&Imageconn[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_Utoprim2[n], 18, sizeof(cl_mem), (void *)&Imageconn[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D1[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_fluxcalc2D2[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
-
-	status += clSetKernelArg(kernel_boundprim1[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_boundprim1[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_boundprim2[n], 7, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_fixuputoprim[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
-#if(STAGGERED)
-	status += clSetKernelArg(kernel_consttransport1[n], 5, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_consttransport1[n], 6, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_consttransport1[n], 7, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_consttransport2[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
-	status += clSetKernelArg(kernel_consttransport2[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
-	status += clSetKernelArg(kernel_consttransport2[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
-	status += clSetKernelArg(kernel_consttransport3[n], 6, sizeof(cl_mem), (void *)&Imagegdet[n]);
-#endif
-	status += clFinish(commandQueueGPU[n]);
+	
+	#if(LEER)
+	status =cudaMemcpy(BufferV[n], dq_1[n], 6 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);;
+	#endif
+		
+	#if(!NONSYMMETRIC)
+	status += cudaMemcpy(Buffergdet[n], gdet_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2)*NPG*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Buffergcov[n], gcov_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Buffergcon[n], gcov_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Bufferconn[n], conn_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2)*NDIM*NDIM*NDIM*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	#else
+	#endif
 
 	if (status != 0) printf("Error in setting kernel arguments 2: %d \n", status);
 	free(gcov_GPU[n]);
 	free(gcon_GPU[n]);
 	free(conn_GPU[n]);
 	free(gdet_GPU[n]);
-#endif
+	#endif
 }
 double check = 1.0;
 
 void GPU_write(int n)
 {
-#if (OpenCL_enable==1)
 	int i, j, z, k, l, pg, d1, d2;
 	double radius_GPU[(N1 + 2 * N1G)], r, th, phi, X[NDIM];
 	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
@@ -7757,38 +6789,38 @@ void GPU_write(int n)
 		Katm_GPU[n][i - N1_GPU_offset[n] + N1G] = Katm[n][i - N1_GPU_offset[n] + N1G];
 	}
 
-#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
+	#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
 	{
-#pragma omp for collapse(2) schedule(dynamic)
+		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
 			for (k = 0; k < NPR; k++){
 				p_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = p[n][index(n, i, j, z)][k];
 				ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ph[n][index(n, i, j, z)][k];
-#if(GPU_DEBUG)
+				#if(GPU_DEBUG)
 				ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ph[n][index(n, i, j, z)][k];
-#endif
-#if(ibound)
+				#endif
+				#if(ibound)
 				if (i == N1_GPU_offset[n]){
 					for (l = 0; l < N_POINTS; l++){
 						pbound_1[n][l*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n]) + k*((N2_GPU[n] + 2 * N2G) + fix_mem[n]) + (j - N2_GPU_offset[n] + N2G)] = pbound[j*(N3_GPU[n] + 2 * N3G) + z][k][l];
 					}
 				}
-#endif
+				#endif
 			}
-#if(STAGGERED)
+			#if(STAGGERED)
 			for (k = 1; k < NDIM; k++){
 				ps_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ps[n][index(n, i, j, z)][k];
 				psh_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = psh[n][index(n, i, j, z)][k];
 
 			}
-#endif
+			#endif
 			for (k = 0; k < NFAIL; k++){
 				failimage_GPU[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
 			}
 			pflag_GPU[n][(i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
 		}
 	}
-#if (ELLIPTICAL2)
+	#if (ELLIPTICAL2)
 	for (i = N1_GPU_offset[n] - N1G; i<N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
 		for (j = N2_GPU_offset[n] - N2G; j<N2_GPU_offset[n] + N2_GPU[n] + N2G; j++){
 			for (k = 0; k < NPR; k++){
@@ -7796,37 +6828,25 @@ void GPU_write(int n)
 			}
 		}
 	}
-#endif
+	#endif
 	status = 0;
 	/*Initialize memory items that have to be passed on to the GPU*/
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferp_1[n], CL_FALSE, 0, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), p_1[n], 0, NULL, NULL);
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, 0, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
-#if(STAGGERED)
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferps_1[n], CL_FALSE, 0, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), ps_1[n], 0, NULL, NULL);
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferpsh_1[n], CL_FALSE, 0, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), psh_1[n], 0, NULL, NULL);
-#endif
-#if (GPU_DEBUG)
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, 0, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
-#endif
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferpflag[n], CL_FALSE, 0, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), pflag_GPU[n], 0, NULL, NULL);
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferfailimage[n], CL_FALSE, 0, NFAIL*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), failimage_GPU[n], 0, NULL, NULL);
-#if(ibound)
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferpbound[n]_1, CL_FALSE, 0, N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(FTYPE2), pbound_1[n], 0, NULL, NULL);
-#endif
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], BufferKatm[n], CL_FALSE, 0, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), Katm_GPU[n], 0, NULL, NULL);
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferradius[n], CL_FALSE, 0, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), radius_GPU, 0, NULL, NULL);
-#if (ELLIPTICAL2)
-	status += clEnqueueWriteBuffer(commandQueueGPU[n], BufferdU[n], CL_FALSE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), dU_GPU[n], 0, NULL, NULL);
-#endif
+	status += cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Bufferph_1[n], ph_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	#if(STAGGERED)
+	status += cudaMemcpy(Bufferps_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Bufferpsh_1[n], psh_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	#endif
+	status += cudaMemcpy(Bufferpflag[n], pflag_GPU[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Bufferfailimage[n], failimage_GPU[n], NFAIL*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(BufferKatm[n], Katm_GPU[n], (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaMemcpyHostToDevice);
+	status += cudaMemcpy(Bufferradius[n], radius_GPU, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), cudaMemcpyHostToDevice);
 
-	//clEnqueueBarrier(commandQueueGPU[n]);
-	status += clFinish(commandQueueGPU[n]);
 	if (status != 0) printf("Error in GPU_write: %d \n", status);
-#endif
 }
 
 void GPU_hcor(int n){
-#if (OpenCL_enable==1)
+	#if (1)
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_hcor1[n], 1, global_work_offset[n], global_work_size[n], local_work_size, 0, NULL, NULL);
 	clFlush(commandQueueGPU[n]);
 
@@ -7835,13 +6855,13 @@ void GPU_hcor(int n){
 
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_hcor3[n], 1, global_work_offset[n], global_work_size2[n], local_work_size, 0, NULL, NULL);
 	clFlush(commandQueueGPU[n]);
-#endif
+	#endif
 }
 
 
 void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 {
-#if (OpenCL_enable==1)
+	#if (1)
 	/*Set arguments of kernel*/
 	if (dir == 1){
 		clSetKernelArg(kernel_fluxcalcprep[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
@@ -7869,13 +6889,13 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 		+ (N1_GPU[n] + 2 * D1 - (dir == 1)) * (N2_GPU[n] + 2 * D2 - (dir == 2)) * (N3_GPU[n] + 2 * D3 - (dir == 3)); //fluxcalc
 	nr_workgroups[n] = (int)ceil((double)global_work_size2[n][0] / (double)LOCAL_WORK_SIZE) - 1;
 	clFlush(commandQueueGPU[n]);
-#endif
+	#endif
 }
 
 
 void GPU_fluxcalc2D(int dir, int flag, int n)
 {
-#if (OpenCL_enable==1)
+	#if (1)
 	/*Calculate reconstructed left state*/
 	GPU_fluxcalcprep(dir, flag, 1, n);
 
@@ -7905,11 +6925,11 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	clFlush(commandQueueGPU[n]);
 
 	/*Calculate reconstructed right state*/
-#if(PPM || LEER)
+	#if(PPM || LEER)
 	global_work_size2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3)) % LOCAL_WORK_SIZE)
 		+ (N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3); //fluxcalc
 	GPU_fluxcalcprep(dir, flag, 2, n);
-#endif
+	#endif
 
 	/*Set arguments of kernel*/
 	if (dir == 1){
@@ -7937,77 +6957,75 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	clFlush(commandQueueGPU[n]);
 	global_work_size2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3)) % LOCAL_WORK_SIZE)
 		+ (N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3); //fluxcalc
-#endif
+	#endif
 }
 
 void GPU_fix_flux(int n)
 {
-#if (OpenCL_enable==1)
 	/*Run kernel*/
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fix_flux[n], 1, 0, global_work_size_special[n], local_work_size, 0, NULL, NULL);
 	if (status != 0)printf("Error fixflux %d \n", status);
 	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_consttransport_bound(void){
 	int n;
 
 	gpu = 1;
-#if(PRESTEP)
+		#if(PRESTEP)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
-#if(!TIMESTEP_JET)
+		#if(!TIMESTEP_JET)
 		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
-#endif
+		#endif
 		E_send1(E_corn, BufferE_1, n_ord[n]);
 		E_send2(E_corn, BufferE_1, n_ord[n]);
-#if(N3G>0)
-#if(!TIMESTEP_JET)
+		#if(N3G>0)
+		#if(!TIMESTEP_JET)
 		E_send3(E_corn, BufferE_1, n_ord[n]);
 		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
 		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
-#endif
-#endif
+		#endif
+		#endif
 	}
 
 	//For last timestep synchronize electric fields immediately
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-#if(!TIMESTEP_JET)
+		#if(!TIMESTEP_JET)
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
-#endif
+		#endif
 		E_rec1(E_corn, BufferE_1, n_ord[n], 5);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 5);
-#if(N3G>0)
-#if(!TIMESTEP_JET)
+		#if(N3G>0)
+		#if(!TIMESTEP_JET)
 		E_rec3(E_corn, BufferE_1, n_ord[n], 5);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
-#endif
-#endif
+		#endif
+		#endif
 	}
 
 	//For first timestep do not synchronize electrice fields 
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
-#if(!TIMESTEP_JET)
+		#if(!TIMESTEP_JET)
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
-#endif
+		#endif
 		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
-#if(N3G>0)
-#if(!TIMESTEP_JET)
+		#if(N3G>0)
+		#if(!TIMESTEP_JET)
 		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
-#endif
-#endif
+		#endif
+		#endif
 	}
-#else
-#if(!TIMESTEP_JET)
+	#else
+	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
-
-#endif
+	#endif
+	
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send1(E_corn, BufferE_1, n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, BufferE_1, n_ord[n], 2);
@@ -8016,8 +7034,8 @@ void GPU_consttransport_bound(void){
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, BufferE_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, BufferE_1, n_ord[n], 2);
 
-#if(N3G>0)
-#if(!TIMESTEP_JET)
+	#if(N3G>0)
+	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send3(E_corn, BufferE_1, n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, BufferE_1, n_ord[n], 2);
@@ -8029,17 +7047,15 @@ void GPU_consttransport_bound(void){
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_send_corn(E_corn, BufferE_1, n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
-
-#endif
-#endif
-#endif
-#if(TRANS_BOUND)
+	#endif
+	#endif
+	#endif
+	#if(TRANS_BOUND)
 	E_average();
-#endif
+	#endif
 }
 
 void GPU_consttransport1(int flag, double Dt, int n){
-#if (OpenCL_enable==1)
 	size_t global_work_size_local[1];
 
 	/*Run kernel*/
@@ -8053,11 +7069,9 @@ void GPU_consttransport1(int flag, double Dt, int n){
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_consttransport1[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
 	if (status != 0)printf("Error consttransport1 %d \n", status);
 	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_consttransport2(int flag, double Dt, int n){
-#if (OpenCL_enable==1)
 	size_t global_work_size_local[1];
 
 	/*Run kernel*/
@@ -8071,12 +7085,9 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_consttransport2[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
 	if (status != 0)printf("Error constransport2 %d \n", status);
 	clFlush(commandQueueGPU[n]);
-
-#endif
 }
 
 void GPU_consttransport3(int flag, double Dt, int n){
-#if (OpenCL_enable==1)
 	size_t global_work_size_local[1];
 
 	/*Run kernel*/
@@ -8093,72 +7104,32 @@ void GPU_consttransport3(int flag, double Dt, int n){
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_consttransport3[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
 	if (status != 0)printf("Error constransport3 %d \n", status);
 	clFlush(commandQueueGPU[n]);
-
-#endif
 }
 
 void GPU_flux_ct1(int n)
 {
-#if (OpenCL_enable==1)
 	/*Run kernel*/
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_flux_ct1[n], 1, global_work_offset[n], global_work_size3[n], local_work_size, 0, NULL, NULL);
 	if (status != 0) printf("Error fluxct1 %d\n", status);
 	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_flux_ct2(int n)
 {
-#if (OpenCL_enable==1)
 	/*Run kernel*/
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_flux_ct2[n], 1, global_work_offset[n], global_work_size3[n], local_work_size, 0, NULL, NULL);
 	if (status != 0) printf("Error fluxct2 %d\n", status);
 	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_Utoprim(int flag, int n)
 {
-#if (OpenCL_enable==1)
-	if (flag == 1){
-		//clSetKernelArg(kernel_Utoprim1[n], 7, sizeof(cl_mem), (void *)&Bufferph_1[n]);
-		//clSetKernelArg(kernel_Utoprim1[n], 8, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	}
-	else{
-		//clSetKernelArg(kernel_Utoprim1[n], 7, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-		//clSetKernelArg(kernel_Utoprim1[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
-	}
-	//status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_Utoprim1[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
-	if (status != 0) printf("Error Utoprim1 %d\n", status);
 
-	clFlush(commandQueueGPU[n]);
-
-	if (flag == 0){
-		//clSetKernelArg(kernel_Utoprim[n], 7, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-		//clSetKernelArg(kernel_Utoprim[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
-		//status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_Utoprim[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
-		if (status != 0) printf("Error Utoprim %d\n", status);
-		clFlush(commandQueueGPU[n]);
-	}
-
-	if (flag == 1){
-		//clSetKernelArg(kernel_Utoprim2[n], 7, sizeof(cl_mem), (void *)&Bufferph_1[n]);
-		//clSetKernelArg(kernel_Utoprim2[n], 8, sizeof(cl_mem), (void *)&Bufferp_1[n]);
-	}
-	else{
-		//clSetKernelArg(kernel_Utoprim2[n], 7, sizeof(cl_mem), (void *)&Bufferph_1[n]);
-		//clSetKernelArg(kernel_Utoprim2[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
-	}
-	//status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_Utoprim2[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
-	if (status != 0) printf("Error Utoprim2 %d\n", status);
-	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_fixuputoprim(int flag, int n)
 {
 	size_t global_work_size_local[1];
-#if (OpenCL_enable==1)
 	if (flag == 0){
 		clSetKernelArg(kernel_fixuputoprim[n], 3, sizeof(cl_mem), (void *)&Bufferph_1[n]);
 	}
@@ -8169,12 +7140,10 @@ void GPU_fixuputoprim(int flag, int n)
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fixuputoprim[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
 	if (status != 0) printf("Error fixuputoprim %d\n", status);
 	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_fixup(int flag, int n)
 {
-#if (OpenCL_enable==1)
 	if (flag == 0){
 		clSetKernelArg(kernel_fixup[n], 4, sizeof(cl_mem), (void *)&Bufferp_1[n]);
 		clSetKernelArg(kernel_fixup[n], 5, sizeof(cl_mem), (void *)&Bufferph_1[n]);
@@ -8189,12 +7158,10 @@ void GPU_fixup(int flag, int n)
 	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fixup[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
 	if (status != 0) printf("Error fixup %d\n", status);
 	clFlush(commandQueueGPU[n]);
-#endif
 }
 
 void GPU_boundprim(int bound_force)
 {
-#if (OpenCL_enable==1)
 	int i, n;
 	int temp = nstep;
 	gpu = 1;
@@ -8204,15 +7171,15 @@ void GPU_boundprim(int bound_force)
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
 	}
-#if(!TRANS_BOUND)
+	#if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim2(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(0, n_ord[n]);
 	}
-#endif
+	#endif
 
 	//For last timestep do not receive synchronized electrice fields 
-#if(PRESTEP)
+	#if(PRESTEP)
 	rc = 0;
 	//MPI communication
 	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
@@ -8231,20 +7198,20 @@ void GPU_boundprim(int bound_force)
 			flux_rec2(F2, BufferF2_1, n_ord[n], 3);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 3);
 
-#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
-#if(!TIMESTEP_JET)
+			#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+			#if(!TIMESTEP_JET)
 			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 3);
-#endif
+			#endif
 			E_rec1(E_corn, BufferE_1, n_ord[n], 3);
 			E_rec2(E_corn, BufferE_1, n_ord[n], 3);
-#if(N3G>0)
-#if(!TIMESTEP_JET)
+			#if(N3G>0)
+			#if(!TIMESTEP_JET)
 			E_rec3(E_corn, BufferE_1, n_ord[n], 3);
 			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 3);
 			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 3);
-#endif
-#endif
-#endif
+			#endif
+			#endif
+			#endif
 		}
 
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
@@ -8252,24 +7219,24 @@ void GPU_boundprim(int bound_force)
 			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
 
-#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
-#if(!TIMESTEP_JET)
+			#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+			#if(!TIMESTEP_JET)
 			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-#endif
+			#endif
 			E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 			E_rec2(E_corn, BufferE_1, n_ord[n], 1);
-#if(N3G>0)
-#if(!TIMESTEP_JET)
+			#if(N3G>0)
+			#if(!TIMESTEP_JET)
 			E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-#endif
-#endif
-#endif
+			#endif
+			#endif
+			#endif
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE/BoundcomF \n");
-#endif
+	#endif
 
 
 	rc = 0;
@@ -8322,7 +7289,7 @@ void GPU_boundprim(int bound_force)
 	}
 	receive_tag = 0;
 
-#if (STAGGERED && COPY_BFIELD)
+	#if (STAGGERED && COPY_BFIELD)
 	rc = 0;
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){ //watch out does this for both half and full timestep while only needed for full timestep
 		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1)B_send1(ps, Bufferps_1, n_ord[n]);
@@ -8337,14 +7304,13 @@ void GPU_boundprim(int bound_force)
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomB \n");
-#endif
+	#endif
 	nstep = temp;
-#endif
+	
 }
 
 void GPU_boundprim1(int flag, int n)
 {
-#if (OpenCL_enable==1)
 	if (block[n][AMR_NBR2] == -1 || block[n][AMR_NBR4] == -1){
 		if (flag == 0){
 			clSetKernelArg(kernel_boundprim1[n], 3, sizeof(cl_mem), (void *)&Bufferph_1[n]);
@@ -8358,12 +7324,10 @@ void GPU_boundprim1(int flag, int n)
 		if (status != 0) printf("Error boundprim1 %d\n", status);
 		clFlush(commandQueueGPU[n]);
 	}
-#endif
 }
 
 void GPU_boundprim2(int flag, int n)
 {
-#if (OpenCL_enable==1)
 	if (block[n][AMR_NBR1] == -1 || block[n][AMR_NBR3] == -1){
 		if (flag == 0){
 			clSetKernelArg(kernel_boundprim2[n], 4, sizeof(cl_mem), (void *)&Bufferph_1[n]);
@@ -8377,582 +7341,568 @@ void GPU_boundprim2(int flag, int n)
 		if (status != 0) printf("Error boundprim2 %d\n", status);
 		clFlush(commandQueueGPU[n]);
 	}
-#endif
 }
 
 void GPU_read(int n)
 {
-#if (OpenCL_enable==1)
 	int i, j, z, k, l, pg, d1, d2;
 	status = 0;
-	status += clFinish(commandQueueGPU[n]);
-	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferp_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), p_1[n], 0, NULL, NULL);
-	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
+	status += cudaMemcpy(p_1[n], Bufferp_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
+	status += cudaMemcpy(ph_1[n], Bufferph_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
+	#if(STAGGERED)
+	status += cudaMemcpy(ps_1[n], Bufferps_1[n], (int)(3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
+	status += cudaMemcpy(psh_1[n], Bufferpsh_1[n], (int)(3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
+	#endif
+	status += cudaMemcpy(failimage_GPU[n], Bufferfailimage[n], (int)((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(cl_int), cudaMemcpyDeviceToHost);
 
-#if(STAGGERED)
-	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferps_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), ps_1[n], 0, NULL, NULL);
-	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferpsh_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), psh_1[n], 0, NULL, NULL);
-#endif
-#if(GPU_DEBUG)
-	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
-#endif
-	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferfailimage[n], CL_FALSE, (int)0 * sizeof(cl_int), (int)((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(cl_int), failimage_GPU[n], 0, NULL, NULL);
-	status += clFinish(commandQueueGPU[n]);
-
-#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
+	#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
 	{
-#pragma omp for collapse(2) schedule(dynamic)
+		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
 			for (k = 0; k < NPR; k++){
 				p[n][index(n, i, j, z)][k] = p_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 				ph[n][index(n, i, j, z)][k] = ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 
-#if(GPU_DEBUG)
+				#if(GPU_DEBUG)
 				ph[n][index(n, i, j, z)][k] = ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
-#endif
+			#endif
 			}
 			for (k = 0; k < NFAIL; k++){
 				failimage[n][index(n, i, j, z)][k] = failimage_GPU[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 			}
-#if(STAGGERED)
+			#if(STAGGERED)
 			for (k = 1; k < NDIM; k++){
 				ps[n][index(n, i, j, z)][k] = ps_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 				psh[n][index(n, i, j, z)][k] = psh_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 			}
-#endif
+		#endif
 		}
 	}
 	if (status != 0)printf("Error in GPU_read: %d \n", status);
-#endif
 }
 
 
 void GPU_finish(int n)
 {
-#if (OpenCL_enable==1)
-	void unmap_buffers(int n);
-	clFinish(commandQueueGPU[n]);
-	unmap_buffers(n);
-	status = clEnqueueUnmapMemObject(commandQueueGPU[n], Bufferdtij[n], dtij_GPU[n], 0, NULL, NULL);
+	//Attention
+	//clFinish(commandQueueGPU[n]);
+
 	free(p_1[n]);
 	free(dq_1[n]);
-#if(STAGGERED)
+	#if(STAGGERED)
 	free(ps_1[n]);
 	free(psh_1[n]);
-#endif
+	#endif
 	free(ph_1[n]);
-	//#if(GPU_DEBUG)
 	free(dU_GPU[n]);
 	free(pbound_1[n]);
-	//#endif
-
-
 	free(pflag_GPU[n]);
 	free(failimage_GPU[n]);
 	free(Katm_GPU[n]);
-	status += clReleaseMemObject(Bufferdtij[n]);
-	//free(dtij_GPU[n]);
-	status += clReleaseMemObject(BufferF1_1[n]);
-	status += clReleaseMemObject(BufferF2_1[n]);
-	status += clReleaseMemObject(BufferF3_1[n]);
-	status += clReleaseMemObject(Bufferdq_1[n]);
-	status += clReleaseMemObject(BufferE_1[n]);
-#if(LEER)
-	status += clReleaseMemObject(BufferV[n]);
-#endif
-	status += clReleaseMemObject(Bufferradius[n]);
-	status += clReleaseMemObject(Bufferstorage1[n]);
-	status += clReleaseMemObject(Bufferstorage2[n]);
-	status += clReleaseMemObject(Bufferstorage3[n]);
-	status += clReleaseMemObject(Bufferstorage4[n]);
-	//status += clReleaseMemObject(Buffereta_avg[n]);
-	status += clReleaseMemObject(Bufferp_1[n]);
-	status += clReleaseMemObject(Bufferph_1[n]);
-#if(STAGGERED)
-	status += clReleaseMemObject(Bufferps_1[n]);
-	status += clReleaseMemObject(Bufferpsh_1[n]);
-#endif
-	status += clReleaseMemObject(Bufferpbound_1[n]);
-	status += clReleaseMemObject(Bufferpflag[n]);
-	status += clReleaseMemObject(Bufferfailimage[n]);
-	status += clReleaseMemObject(Bufferdiagflux[n]);
-	status += clReleaseMemObject(BufferKatm[n]);
-	status += clReleaseMemObject(BufferdU[n]);
-	status += clReleaseMemObject(Buffersend1[n]);
-	status += clReleaseMemObject(Buffersend1_3[n]);
-	status += clReleaseMemObject(Buffersend1_4[n]);
-	status += clReleaseMemObject(Buffersend1_7[n]);
-	status += clReleaseMemObject(Buffersend1_8[n]);
-	status += clReleaseMemObject(Buffersend2[n]);
-	status += clReleaseMemObject(Buffersend2_1[n]);
-	status += clReleaseMemObject(Buffersend2_2[n]);
-	status += clReleaseMemObject(Buffersend2_3[n]);
-	status += clReleaseMemObject(Buffersend2_4[n]);
-	status += clReleaseMemObject(Buffersend3[n]);
-	status += clReleaseMemObject(Buffersend3_1[n]);
-	status += clReleaseMemObject(Buffersend3_2[n]);
-	status += clReleaseMemObject(Buffersend3_5[n]);
-	status += clReleaseMemObject(Buffersend3_6[n]);
-	status += clReleaseMemObject(Buffersend4[n]);
-	status += clReleaseMemObject(Buffersend4_5[n]);
-	status += clReleaseMemObject(Buffersend4_6[n]);
-	status += clReleaseMemObject(Buffersend4_7[n]);
-	status += clReleaseMemObject(Buffersend4_8[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Buffersend5[n]);
-	status += clReleaseMemObject(Buffersend5_1[n]);
-	status += clReleaseMemObject(Buffersend5_3[n]);
-	status += clReleaseMemObject(Buffersend5_5[n]);
-	status += clReleaseMemObject(Buffersend5_7[n]);
-	status += clReleaseMemObject(Buffersend6[n]);
-	status += clReleaseMemObject(Buffersend6_2[n]);
-	status += clReleaseMemObject(Buffersend6_4[n]);
-	status += clReleaseMemObject(Buffersend6_6[n]);
-	status += clReleaseMemObject(Buffersend6_8[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1[n]);
-	status += clReleaseMemObject(Bufferrec1_3[n]);
-	status += clReleaseMemObject(Bufferrec1_4[n]);
-	status += clReleaseMemObject(Bufferrec1_7[n]);
-	status += clReleaseMemObject(Bufferrec1_8[n]);
-	status += clReleaseMemObject(Bufferrec2[n]);
-	status += clReleaseMemObject(Bufferrec2_1[n]);
-	status += clReleaseMemObject(Bufferrec2_2[n]);
-	status += clReleaseMemObject(Bufferrec2_3[n]);
-	status += clReleaseMemObject(Bufferrec2_4[n]);
-	status += clReleaseMemObject(Bufferrec3[n]);
-	status += clReleaseMemObject(Bufferrec3_1[n]);
-	status += clReleaseMemObject(Bufferrec3_2[n]);
-	status += clReleaseMemObject(Bufferrec3_5[n]);
-	status += clReleaseMemObject(Bufferrec3_6[n]);
-	status += clReleaseMemObject(Bufferrec4[n]);
-	status += clReleaseMemObject(Bufferrec4_5[n]);
-	status += clReleaseMemObject(Bufferrec4_6[n]);
-	status += clReleaseMemObject(Bufferrec4_7[n]);
-	status += clReleaseMemObject(Bufferrec4_8[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5[n]);
-	status += clReleaseMemObject(Bufferrec5_1[n]);
-	status += clReleaseMemObject(Bufferrec5_3[n]);
-	status += clReleaseMemObject(Bufferrec5_5[n]);
-	status += clReleaseMemObject(Bufferrec5_7[n]);
-	status += clReleaseMemObject(Bufferrec6[n]);
-	status += clReleaseMemObject(Bufferrec6_2[n]);
-	status += clReleaseMemObject(Bufferrec6_4[n]);
-	status += clReleaseMemObject(Bufferrec6_6[n]);
-	status += clReleaseMemObject(Bufferrec6_8[n]);
-#endif
-	status += clReleaseMemObject(tempBufferrec1[n]);
-	status += clReleaseMemObject(tempBufferrec1_3[n]);
-	status += clReleaseMemObject(tempBufferrec1_4[n]);
-	status += clReleaseMemObject(tempBufferrec1_7[n]);
-	status += clReleaseMemObject(tempBufferrec1_8[n]);
-	status += clReleaseMemObject(tempBufferrec2[n]);
-	status += clReleaseMemObject(tempBufferrec2_1[n]);
-	status += clReleaseMemObject(tempBufferrec2_2[n]);
-	status += clReleaseMemObject(tempBufferrec2_3[n]);
-	status += clReleaseMemObject(tempBufferrec2_4[n]);
-	status += clReleaseMemObject(tempBufferrec3[n]);
-	status += clReleaseMemObject(tempBufferrec3_1[n]);
-	status += clReleaseMemObject(tempBufferrec3_2[n]);
-	status += clReleaseMemObject(tempBufferrec3_5[n]);
-	status += clReleaseMemObject(tempBufferrec3_6[n]);
-	status += clReleaseMemObject(tempBufferrec4[n]);
-	status += clReleaseMemObject(tempBufferrec4_5[n]);
-	status += clReleaseMemObject(tempBufferrec4_6[n]);
-	status += clReleaseMemObject(tempBufferrec4_7[n]);
-	status += clReleaseMemObject(tempBufferrec4_8[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(tempBufferrec5[n]);
-	status += clReleaseMemObject(tempBufferrec5_1[n]);
-	status += clReleaseMemObject(tempBufferrec5_3[n]);
-	status += clReleaseMemObject(tempBufferrec5_5[n]);
-	status += clReleaseMemObject(tempBufferrec5_7[n]);
-	status += clReleaseMemObject(tempBufferrec6[n]);
-	status += clReleaseMemObject(tempBufferrec6_2[n]);
-	status += clReleaseMemObject(tempBufferrec6_4[n]);
-	status += clReleaseMemObject(tempBufferrec6_6[n]);
-	status += clReleaseMemObject(tempBufferrec6_8[n]);
-#endif
-	status += clReleaseMemObject(Buffersend1flux[n]);
-	status += clReleaseMemObject(Buffersend2flux[n]);
-	status += clReleaseMemObject(Buffersend3flux[n]);
-	status += clReleaseMemObject(Buffersend4flux[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Buffersend5flux[n]);
-	status += clReleaseMemObject(Buffersend6flux[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1flux[n]);
-	status += clReleaseMemObject(Bufferrec2flux[n]);
-	status += clReleaseMemObject(Bufferrec3flux[n]);
-	status += clReleaseMemObject(Bufferrec4flux[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5flux[n]);
-	status += clReleaseMemObject(Bufferrec6flux[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3flux[n]);
-	status += clReleaseMemObject(Bufferrec1_4flux[n]);
-	status += clReleaseMemObject(Bufferrec1_7flux[n]);
-	status += clReleaseMemObject(Bufferrec1_8flux[n]);
-	status += clReleaseMemObject(Bufferrec2_1flux[n]);
-	status += clReleaseMemObject(Bufferrec2_2flux[n]);
-	status += clReleaseMemObject(Bufferrec2_3flux[n]);
-	status += clReleaseMemObject(Bufferrec2_4flux[n]);
-	status += clReleaseMemObject(Bufferrec3_1flux[n]);
-	status += clReleaseMemObject(Bufferrec3_2flux[n]);
-	status += clReleaseMemObject(Bufferrec3_5flux[n]);
-	status += clReleaseMemObject(Bufferrec3_6flux[n]);
-	status += clReleaseMemObject(Bufferrec4_5flux[n]);
-	status += clReleaseMemObject(Bufferrec4_6flux[n]);
-	status += clReleaseMemObject(Bufferrec4_7flux[n]);
-	status += clReleaseMemObject(Bufferrec4_8flux[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1flux[n]);
-	status += clReleaseMemObject(Bufferrec5_3flux[n]);
-	status += clReleaseMemObject(Bufferrec5_5flux[n]);
-	status += clReleaseMemObject(Bufferrec5_7flux[n]);
-	status += clReleaseMemObject(Bufferrec6_2flux[n]);
-	status += clReleaseMemObject(Bufferrec6_4flux[n]);
-	status += clReleaseMemObject(Bufferrec6_6flux[n]);
-	status += clReleaseMemObject(Bufferrec6_8flux[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1flux1[n]);
-	status += clReleaseMemObject(Bufferrec2flux1[n]);
-	status += clReleaseMemObject(Bufferrec3flux1[n]);
-	status += clReleaseMemObject(Bufferrec4flux1[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5flux1[n]);
-	status += clReleaseMemObject(Bufferrec6flux1[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3flux1[n]);
-	status += clReleaseMemObject(Bufferrec1_4flux1[n]);
-	status += clReleaseMemObject(Bufferrec1_7flux1[n]);
-	status += clReleaseMemObject(Bufferrec1_8flux1[n]);
-	status += clReleaseMemObject(Bufferrec2_1flux1[n]);
-	status += clReleaseMemObject(Bufferrec2_2flux1[n]);
-	status += clReleaseMemObject(Bufferrec2_3flux1[n]);
-	status += clReleaseMemObject(Bufferrec2_4flux1[n]);
-	status += clReleaseMemObject(Bufferrec3_1flux1[n]);
-	status += clReleaseMemObject(Bufferrec3_2flux1[n]);
-	status += clReleaseMemObject(Bufferrec3_5flux1[n]);
-	status += clReleaseMemObject(Bufferrec3_6flux1[n]);
-	status += clReleaseMemObject(Bufferrec4_5flux1[n]);
-	status += clReleaseMemObject(Bufferrec4_6flux1[n]);
-	status += clReleaseMemObject(Bufferrec4_7flux1[n]);
-	status += clReleaseMemObject(Bufferrec4_8flux1[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1flux1[n]);
-	status += clReleaseMemObject(Bufferrec5_3flux1[n]);
-	status += clReleaseMemObject(Bufferrec5_5flux1[n]);
-	status += clReleaseMemObject(Bufferrec5_7flux1[n]);
-	status += clReleaseMemObject(Bufferrec6_2flux1[n]);
-	status += clReleaseMemObject(Bufferrec6_4flux1[n]);
-	status += clReleaseMemObject(Bufferrec6_6flux1[n]);
-	status += clReleaseMemObject(Bufferrec6_8flux1[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3flux2[n]);
-	status += clReleaseMemObject(Bufferrec1_4flux2[n]);
-	status += clReleaseMemObject(Bufferrec1_7flux2[n]);
-	status += clReleaseMemObject(Bufferrec1_8flux2[n]);
-	status += clReleaseMemObject(Bufferrec2_1flux2[n]);
-	status += clReleaseMemObject(Bufferrec2_2flux2[n]);
-	status += clReleaseMemObject(Bufferrec2_3flux2[n]);
-	status += clReleaseMemObject(Bufferrec2_4flux2[n]);
-	status += clReleaseMemObject(Bufferrec3_1flux2[n]);
-	status += clReleaseMemObject(Bufferrec3_2flux2[n]);
-	status += clReleaseMemObject(Bufferrec3_5flux2[n]);
-	status += clReleaseMemObject(Bufferrec3_6flux2[n]);
-	status += clReleaseMemObject(Bufferrec4_5flux2[n]);
-	status += clReleaseMemObject(Bufferrec4_6flux2[n]);
-	status += clReleaseMemObject(Bufferrec4_7flux2[n]);
-	status += clReleaseMemObject(Bufferrec4_8flux2[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1flux2[n]);
-	status += clReleaseMemObject(Bufferrec5_3flux2[n]);
-	status += clReleaseMemObject(Bufferrec5_5flux2[n]);
-	status += clReleaseMemObject(Bufferrec5_7flux2[n]);
-	status += clReleaseMemObject(Bufferrec6_2flux2[n]);
-	status += clReleaseMemObject(Bufferrec6_4flux2[n]);
-	status += clReleaseMemObject(Bufferrec6_6flux2[n]);
-	status += clReleaseMemObject(Bufferrec6_8flux2[n]);
-#endif
-	status += clReleaseMemObject(Buffersend1fine[n]);
-	status += clReleaseMemObject(Buffersend2fine[n]);
-	status += clReleaseMemObject(Buffersend3fine[n]);
-	status += clReleaseMemObject(Buffersend4fine[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Buffersend5fine[n]);
-	status += clReleaseMemObject(Buffersend6fine[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1fine[n]);
-	status += clReleaseMemObject(Bufferrec2fine[n]);
-	status += clReleaseMemObject(Bufferrec3fine[n]);
-	status += clReleaseMemObject(Bufferrec4fine[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5fine[n]);
-	status += clReleaseMemObject(Bufferrec6fine[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3fine[n]);
-	status += clReleaseMemObject(Bufferrec1_4fine[n]);
-	status += clReleaseMemObject(Bufferrec1_7fine[n]);
-	status += clReleaseMemObject(Bufferrec1_8fine[n]);
-	status += clReleaseMemObject(Bufferrec2_1fine[n]);
-	status += clReleaseMemObject(Bufferrec2_2fine[n]);
-	status += clReleaseMemObject(Bufferrec2_3fine[n]);
-	status += clReleaseMemObject(Bufferrec2_4fine[n]);
-	status += clReleaseMemObject(Bufferrec3_1fine[n]);
-	status += clReleaseMemObject(Bufferrec3_2fine[n]);
-	status += clReleaseMemObject(Bufferrec3_5fine[n]);
-	status += clReleaseMemObject(Bufferrec3_6fine[n]);
-	status += clReleaseMemObject(Bufferrec4_5fine[n]);
-	status += clReleaseMemObject(Bufferrec4_6fine[n]);
-	status += clReleaseMemObject(Bufferrec4_7fine[n]);
-	status += clReleaseMemObject(Bufferrec4_8fine[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1fine[n]);
-	status += clReleaseMemObject(Bufferrec5_3fine[n]);
-	status += clReleaseMemObject(Bufferrec5_5fine[n]);
-	status += clReleaseMemObject(Bufferrec5_7fine[n]);
-	status += clReleaseMemObject(Bufferrec6_2fine[n]);
-	status += clReleaseMemObject(Bufferrec6_4fine[n]);
-	status += clReleaseMemObject(Bufferrec6_6fine[n]);
-	status += clReleaseMemObject(Bufferrec6_8fine[n]);
-#endif
-	status += clReleaseMemObject(Buffersend1E[n]);
-	status += clReleaseMemObject(Buffersend2E[n]);
-	status += clReleaseMemObject(Buffersend3E[n]);
-	status += clReleaseMemObject(Buffersend4E[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Buffersend5E[n]);
-	status += clReleaseMemObject(Buffersend6E[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1E[n]);
-	status += clReleaseMemObject(Bufferrec2E[n]);
-	status += clReleaseMemObject(Bufferrec3E[n]);
-	status += clReleaseMemObject(Bufferrec4E[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5E[n]);
-	status += clReleaseMemObject(Bufferrec6E[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3E[n]);
-	status += clReleaseMemObject(Bufferrec1_4E[n]);
-	status += clReleaseMemObject(Bufferrec1_7E[n]);
-	status += clReleaseMemObject(Bufferrec1_8E[n]);
-	status += clReleaseMemObject(Bufferrec2_1E[n]);
-	status += clReleaseMemObject(Bufferrec2_2E[n]);
-	status += clReleaseMemObject(Bufferrec2_3E[n]);
-	status += clReleaseMemObject(Bufferrec2_4E[n]);
-	status += clReleaseMemObject(Bufferrec3_1E[n]);
-	status += clReleaseMemObject(Bufferrec3_2E[n]);
-	status += clReleaseMemObject(Bufferrec3_5E[n]);
-	status += clReleaseMemObject(Bufferrec3_6E[n]);
-	status += clReleaseMemObject(Bufferrec4_5E[n]);
-	status += clReleaseMemObject(Bufferrec4_6E[n]);
-	status += clReleaseMemObject(Bufferrec4_7E[n]);
-	status += clReleaseMemObject(Bufferrec4_8E[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1E[n]);
-	status += clReleaseMemObject(Bufferrec5_3E[n]);
-	status += clReleaseMemObject(Bufferrec5_5E[n]);
-	status += clReleaseMemObject(Bufferrec5_7E[n]);
-	status += clReleaseMemObject(Bufferrec6_2E[n]);
-	status += clReleaseMemObject(Bufferrec6_4E[n]);
-	status += clReleaseMemObject(Bufferrec6_6E[n]);
-	status += clReleaseMemObject(Bufferrec6_8E[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1E1[n]);
-	status += clReleaseMemObject(Bufferrec2E1[n]);
-	status += clReleaseMemObject(Bufferrec3E1[n]);
-	status += clReleaseMemObject(Bufferrec4E1[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5E1[n]);
-	status += clReleaseMemObject(Bufferrec6E1[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3E1[n]);
-	status += clReleaseMemObject(Bufferrec1_4E1[n]);
-	status += clReleaseMemObject(Bufferrec1_7E1[n]);
-	status += clReleaseMemObject(Bufferrec1_8E1[n]);
-	status += clReleaseMemObject(Bufferrec2_1E1[n]);
-	status += clReleaseMemObject(Bufferrec2_2E1[n]);
-	status += clReleaseMemObject(Bufferrec2_3E1[n]);
-	status += clReleaseMemObject(Bufferrec2_4E1[n]);
-	status += clReleaseMemObject(Bufferrec3_1E1[n]);
-	status += clReleaseMemObject(Bufferrec3_2E1[n]);
-	status += clReleaseMemObject(Bufferrec3_5E1[n]);
-	status += clReleaseMemObject(Bufferrec3_6E1[n]);
-	status += clReleaseMemObject(Bufferrec4_5E1[n]);
-	status += clReleaseMemObject(Bufferrec4_6E1[n]);
-	status += clReleaseMemObject(Bufferrec4_7E1[n]);
-	status += clReleaseMemObject(Bufferrec4_8E1[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1E1[n]);
-	status += clReleaseMemObject(Bufferrec5_3E1[n]);
-	status += clReleaseMemObject(Bufferrec5_5E1[n]);
-	status += clReleaseMemObject(Bufferrec5_7E1[n]);
-	status += clReleaseMemObject(Bufferrec6_2E1[n]);
-	status += clReleaseMemObject(Bufferrec6_4E1[n]);
-	status += clReleaseMemObject(Bufferrec6_6E1[n]);
-	status += clReleaseMemObject(Bufferrec6_8E1[n]);
-#endif
-	status += clReleaseMemObject(Bufferrec1_3E2[n]);
-	status += clReleaseMemObject(Bufferrec1_4E2[n]);
-	status += clReleaseMemObject(Bufferrec1_7E2[n]);
-	status += clReleaseMemObject(Bufferrec1_8E2[n]);
-	status += clReleaseMemObject(Bufferrec2_1E2[n]);
-	status += clReleaseMemObject(Bufferrec2_2E2[n]);
-	status += clReleaseMemObject(Bufferrec2_3E2[n]);
-	status += clReleaseMemObject(Bufferrec2_4E2[n]);
-	status += clReleaseMemObject(Bufferrec3_1E2[n]);
-	status += clReleaseMemObject(Bufferrec3_2E2[n]);
-	status += clReleaseMemObject(Bufferrec3_5E2[n]);
-	status += clReleaseMemObject(Bufferrec3_6E2[n]);
-	status += clReleaseMemObject(Bufferrec4_5E2[n]);
-	status += clReleaseMemObject(Bufferrec4_6E2[n]);
-	status += clReleaseMemObject(Bufferrec4_7E2[n]);
-	status += clReleaseMemObject(Bufferrec4_8E2[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(Bufferrec5_1E2[n]);
-	status += clReleaseMemObject(Bufferrec5_3E2[n]);
-	status += clReleaseMemObject(Bufferrec5_5E2[n]);
-	status += clReleaseMemObject(Bufferrec5_7E2[n]);
-	status += clReleaseMemObject(Bufferrec6_2E2[n]);
-	status += clReleaseMemObject(Bufferrec6_4E2[n]);
-	status += clReleaseMemObject(Bufferrec6_6E2[n]);
-	status += clReleaseMemObject(Bufferrec6_8E2[n]);
-#endif
-#if(N3G>0)
-	status += clReleaseMemObject(BuffersendE1corn9[n]);
-	status += clReleaseMemObject(BuffersendE1corn10[n]);
-	status += clReleaseMemObject(BuffersendE1corn11[n]);
-	status += clReleaseMemObject(BuffersendE1corn12[n]);
-	status += clReleaseMemObject(BuffersendE2corn5[n]);
-	status += clReleaseMemObject(BuffersendE2corn6[n]);
-	status += clReleaseMemObject(BuffersendE2corn7[n]);
-	status += clReleaseMemObject(BuffersendE2corn8[n]);
-#endif
-	status += clReleaseMemObject(BuffersendE3corn1[n]);
-	status += clReleaseMemObject(BuffersendE3corn2[n]);
-	status += clReleaseMemObject(BuffersendE3corn3[n]);
-	status += clReleaseMemObject(BuffersendE3corn4[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(BufferrecE1corn9[n]);
-	status += clReleaseMemObject(BufferrecE1corn10[n]);
-	status += clReleaseMemObject(BufferrecE1corn11[n]);
-	status += clReleaseMemObject(BufferrecE1corn12[n]);
-	status += clReleaseMemObject(BufferrecE2corn5[n]);
-	status += clReleaseMemObject(BufferrecE2corn6[n]);
-	status += clReleaseMemObject(BufferrecE2corn7[n]);
-	status += clReleaseMemObject(BufferrecE2corn8[n]);
-#endif
-	status += clReleaseMemObject(BufferrecE3corn1[n]);
-	status += clReleaseMemObject(BufferrecE3corn2[n]);
-	status += clReleaseMemObject(BufferrecE3corn3[n]);
-	status += clReleaseMemObject(BufferrecE3corn4[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(BufferrecE1corn9_3[n]);
-	status += clReleaseMemObject(BufferrecE1corn9_7[n]);
-	status += clReleaseMemObject(BufferrecE1corn10_1[n]);
-	status += clReleaseMemObject(BufferrecE1corn10_5[n]);
-	status += clReleaseMemObject(BufferrecE1corn11_2[n]);
-	status += clReleaseMemObject(BufferrecE1corn11_6[n]);
-	status += clReleaseMemObject(BufferrecE1corn12_4[n]);
-	status += clReleaseMemObject(BufferrecE1corn12_8[n]);
-	status += clReleaseMemObject(BufferrecE2corn5_2[n]);
-	status += clReleaseMemObject(BufferrecE2corn5_4[n]);
-	status += clReleaseMemObject(BufferrecE2corn6_1[n]);
-	status += clReleaseMemObject(BufferrecE2corn6_3[n]);
-	status += clReleaseMemObject(BufferrecE2corn7_5[n]);
-	status += clReleaseMemObject(BufferrecE2corn7_7[n]);
-	status += clReleaseMemObject(BufferrecE2corn8_6[n]);
-	status += clReleaseMemObject(BufferrecE2corn8_8[n]);
-#endif
-	status += clReleaseMemObject(BufferrecE3corn1_3[n]);
-	status += clReleaseMemObject(BufferrecE3corn1_4[n]);
-	status += clReleaseMemObject(BufferrecE3corn2_1[n]);
-	status += clReleaseMemObject(BufferrecE3corn2_2[n]);
-	status += clReleaseMemObject(BufferrecE3corn3_5[n]);
-	status += clReleaseMemObject(BufferrecE3corn3_6[n]);
-	status += clReleaseMemObject(BufferrecE3corn4_7[n]);
-	status += clReleaseMemObject(BufferrecE3corn4_8[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(tempBufferrecE1corn9[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn10[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn11[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn12[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn5[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn6[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn7[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn8[n]);
-#endif
-	status += clReleaseMemObject(tempBufferrecE3corn1[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn2[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn3[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn4[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(tempBufferrecE1corn9_3[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn9_7[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn10_1[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn10_5[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn11_2[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn11_6[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn12_4[n]);
-	status += clReleaseMemObject(tempBufferrecE1corn12_8[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn5_2[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn5_4[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn6_1[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn6_3[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn7_5[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn7_7[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn8_6[n]);
-	status += clReleaseMemObject(tempBufferrecE2corn8_8[n]);
-#endif
-	status += clReleaseMemObject(tempBufferrecE3corn1_3[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn1_4[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn2_1[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn2_2[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn3_5[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn3_6[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn4_7[n]);
-	status += clReleaseMemObject(tempBufferrecE3corn4_8[n]);
-#if(N3G>0)
-	status += clReleaseMemObject(BufferrecE1corn9_32[n]);
-	status += clReleaseMemObject(BufferrecE1corn9_72[n]);
-	status += clReleaseMemObject(BufferrecE1corn10_12[n]);
-	status += clReleaseMemObject(BufferrecE1corn10_52[n]);
-	status += clReleaseMemObject(BufferrecE1corn11_22[n]);
-	status += clReleaseMemObject(BufferrecE1corn11_62[n]);
-	status += clReleaseMemObject(BufferrecE1corn12_42[n]);
-	status += clReleaseMemObject(BufferrecE1corn12_82[n]);
-	status += clReleaseMemObject(BufferrecE2corn5_22[n]);
-	status += clReleaseMemObject(BufferrecE2corn5_42[n]);
-	status += clReleaseMemObject(BufferrecE2corn6_12[n]);
-	status += clReleaseMemObject(BufferrecE2corn6_32[n]);
-	status += clReleaseMemObject(BufferrecE2corn7_52[n]);
-	status += clReleaseMemObject(BufferrecE2corn7_72[n]);
-	status += clReleaseMemObject(BufferrecE2corn8_62[n]);
-	status += clReleaseMemObject(BufferrecE2corn8_82[n]);
-#endif
-	status += clReleaseMemObject(BufferrecE3corn1_32[n]);
-	status += clReleaseMemObject(BufferrecE3corn1_42[n]);
-	status += clReleaseMemObject(BufferrecE3corn2_12[n]);
-	status += clReleaseMemObject(BufferrecE3corn2_22[n]);
-	status += clReleaseMemObject(BufferrecE3corn3_52[n]);
-	status += clReleaseMemObject(BufferrecE3corn3_62[n]);
-	status += clReleaseMemObject(BufferrecE3corn4_72[n]);
-	status += clReleaseMemObject(BufferrecE3corn4_82[n]);
+	
+	status += cudaFree(Bufferdtij[n]);
+	status += cudaFree(BufferF1_1[n]);
+	status += cudaFree(BufferF2_1[n]);
+	status += cudaFree(BufferF3_1[n]);
+	status += cudaFree(Bufferdq_1[n]);
+	status += cudaFree(BufferE_1[n]);
+	#if(LEER)
+	status += cudaFree(BufferV[n]);
+	#endif
+	status += cudaFree(Bufferradius[n]);
+	status += cudaFree(Bufferstorage1[n]);
+	status += cudaFree(Bufferstorage2[n]);
+	status += cudaFree(Bufferstorage3[n]);
+	status += cudaFree(Bufferstorage4[n]);
+	//status += cudaFree(Buffereta_avg[n]);
+	status += cudaFree(Bufferp_1[n]);
+	status += cudaFree(Bufferph_1[n]);
+	#if(STAGGERED)
+	status += cudaFree(Bufferps_1[n]);
+	status += cudaFree(Bufferpsh_1[n]);
+	#endif
+	status += cudaFree(Bufferpbound_1[n]);
+	status += cudaFree(Bufferpflag[n]);
+	status += cudaFree(Bufferfailimage[n]);
+	status += cudaFree(Bufferdiagflux[n]);
+	status += cudaFree(BufferKatm[n]);
+	status += cudaFree(BufferdU[n]);
+	status += cudaFree(Buffersend1[n]);
+	status += cudaFree(Buffersend1_3[n]);
+	status += cudaFree(Buffersend1_4[n]);
+	status += cudaFree(Buffersend1_7[n]);
+	status += cudaFree(Buffersend1_8[n]);
+	status += cudaFree(Buffersend2[n]);
+	status += cudaFree(Buffersend2_1[n]);
+	status += cudaFree(Buffersend2_2[n]);
+	status += cudaFree(Buffersend2_3[n]);
+	status += cudaFree(Buffersend2_4[n]);
+	status += cudaFree(Buffersend3[n]);
+	status += cudaFree(Buffersend3_1[n]);
+	status += cudaFree(Buffersend3_2[n]);
+	status += cudaFree(Buffersend3_5[n]);
+	status += cudaFree(Buffersend3_6[n]);
+	status += cudaFree(Buffersend4[n]);
+	status += cudaFree(Buffersend4_5[n]);
+	status += cudaFree(Buffersend4_6[n]);
+	status += cudaFree(Buffersend4_7[n]);
+	status += cudaFree(Buffersend4_8[n]);
+	#if(N3G>0)
+	status += cudaFree(Buffersend5[n]);
+	status += cudaFree(Buffersend5_1[n]);
+	status += cudaFree(Buffersend5_3[n]);
+	status += cudaFree(Buffersend5_5[n]);
+	status += cudaFree(Buffersend5_7[n]);
+	status += cudaFree(Buffersend6[n]);
+	status += cudaFree(Buffersend6_2[n]);
+	status += cudaFree(Buffersend6_4[n]);
+	status += cudaFree(Buffersend6_6[n]);
+	status += cudaFree(Buffersend6_8[n]);
+	#endif
+	status += cudaFree(Bufferrec1[n]);
+	status += cudaFree(Bufferrec1_3[n]);
+	status += cudaFree(Bufferrec1_4[n]);
+	status += cudaFree(Bufferrec1_7[n]);
+	status += cudaFree(Bufferrec1_8[n]);
+	status += cudaFree(Bufferrec2[n]);
+	status += cudaFree(Bufferrec2_1[n]);
+	status += cudaFree(Bufferrec2_2[n]);
+	status += cudaFree(Bufferrec2_3[n]);
+	status += cudaFree(Bufferrec2_4[n]);
+	status += cudaFree(Bufferrec3[n]);
+	status += cudaFree(Bufferrec3_1[n]);
+	status += cudaFree(Bufferrec3_2[n]);
+	status += cudaFree(Bufferrec3_5[n]);
+	status += cudaFree(Bufferrec3_6[n]);
+	status += cudaFree(Bufferrec4[n]);
+	status += cudaFree(Bufferrec4_5[n]);
+	status += cudaFree(Bufferrec4_6[n]);
+	status += cudaFree(Bufferrec4_7[n]);
+	status += cudaFree(Bufferrec4_8[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5[n]);
+	status += cudaFree(Bufferrec5_1[n]);
+	status += cudaFree(Bufferrec5_3[n]);
+	status += cudaFree(Bufferrec5_5[n]);
+	status += cudaFree(Bufferrec5_7[n]);
+	status += cudaFree(Bufferrec6[n]);
+	status += cudaFree(Bufferrec6_2[n]);
+	status += cudaFree(Bufferrec6_4[n]);
+	status += cudaFree(Bufferrec6_6[n]);
+	status += cudaFree(Bufferrec6_8[n]);
+	#endif
+	status += cudaFree(tempBufferrec1[n]);
+	status += cudaFree(tempBufferrec1_3[n]);
+	status += cudaFree(tempBufferrec1_4[n]);
+	status += cudaFree(tempBufferrec1_7[n]);
+	status += cudaFree(tempBufferrec1_8[n]);
+	status += cudaFree(tempBufferrec2[n]);
+	status += cudaFree(tempBufferrec2_1[n]);
+	status += cudaFree(tempBufferrec2_2[n]);
+	status += cudaFree(tempBufferrec2_3[n]);
+	status += cudaFree(tempBufferrec2_4[n]);
+	status += cudaFree(tempBufferrec3[n]);
+	status += cudaFree(tempBufferrec3_1[n]);
+	status += cudaFree(tempBufferrec3_2[n]);
+	status += cudaFree(tempBufferrec3_5[n]);
+	status += cudaFree(tempBufferrec3_6[n]);
+	status += cudaFree(tempBufferrec4[n]);
+	status += cudaFree(tempBufferrec4_5[n]);
+	status += cudaFree(tempBufferrec4_6[n]);
+	status += cudaFree(tempBufferrec4_7[n]);
+	status += cudaFree(tempBufferrec4_8[n]);
+	#if(N3G>0)
+	status += cudaFree(tempBufferrec5[n]);
+	status += cudaFree(tempBufferrec5_1[n]);
+	status += cudaFree(tempBufferrec5_3[n]);
+	status += cudaFree(tempBufferrec5_5[n]);
+	status += cudaFree(tempBufferrec5_7[n]);
+	status += cudaFree(tempBufferrec6[n]);
+	status += cudaFree(tempBufferrec6_2[n]);
+	status += cudaFree(tempBufferrec6_4[n]);
+	status += cudaFree(tempBufferrec6_6[n]);
+	status += cudaFree(tempBufferrec6_8[n]);
+	#endif
+	status += cudaFree(Buffersend1flux[n]);
+	status += cudaFree(Buffersend2flux[n]);
+	status += cudaFree(Buffersend3flux[n]);
+	status += cudaFree(Buffersend4flux[n]);
+	#if(N3G>0)
+	status += cudaFree(Buffersend5flux[n]);
+	status += cudaFree(Buffersend6flux[n]);
+	#endif
+	status += cudaFree(Bufferrec1flux[n]);
+	status += cudaFree(Bufferrec2flux[n]);
+	status += cudaFree(Bufferrec3flux[n]);
+	status += cudaFree(Bufferrec4flux[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5flux[n]);
+	status += cudaFree(Bufferrec6flux[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3flux[n]);
+	status += cudaFree(Bufferrec1_4flux[n]);
+	status += cudaFree(Bufferrec1_7flux[n]);
+	status += cudaFree(Bufferrec1_8flux[n]);
+	status += cudaFree(Bufferrec2_1flux[n]);
+	status += cudaFree(Bufferrec2_2flux[n]);
+	status += cudaFree(Bufferrec2_3flux[n]);
+	status += cudaFree(Bufferrec2_4flux[n]);
+	status += cudaFree(Bufferrec3_1flux[n]);
+	status += cudaFree(Bufferrec3_2flux[n]);
+	status += cudaFree(Bufferrec3_5flux[n]);
+	status += cudaFree(Bufferrec3_6flux[n]);
+	status += cudaFree(Bufferrec4_5flux[n]);
+	status += cudaFree(Bufferrec4_6flux[n]);
+	status += cudaFree(Bufferrec4_7flux[n]);
+	status += cudaFree(Bufferrec4_8flux[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1flux[n]);
+	status += cudaFree(Bufferrec5_3flux[n]);
+	status += cudaFree(Bufferrec5_5flux[n]);
+	status += cudaFree(Bufferrec5_7flux[n]);
+	status += cudaFree(Bufferrec6_2flux[n]);
+	status += cudaFree(Bufferrec6_4flux[n]);
+	status += cudaFree(Bufferrec6_6flux[n]);
+	status += cudaFree(Bufferrec6_8flux[n]);
+	#endif
+	status += cudaFree(Bufferrec1flux1[n]);
+	status += cudaFree(Bufferrec2flux1[n]);
+	status += cudaFree(Bufferrec3flux1[n]);
+	status += cudaFree(Bufferrec4flux1[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5flux1[n]);
+	status += cudaFree(Bufferrec6flux1[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3flux1[n]);
+	status += cudaFree(Bufferrec1_4flux1[n]);
+	status += cudaFree(Bufferrec1_7flux1[n]);
+	status += cudaFree(Bufferrec1_8flux1[n]);
+	status += cudaFree(Bufferrec2_1flux1[n]);
+	status += cudaFree(Bufferrec2_2flux1[n]);
+	status += cudaFree(Bufferrec2_3flux1[n]);
+	status += cudaFree(Bufferrec2_4flux1[n]);
+	status += cudaFree(Bufferrec3_1flux1[n]);
+	status += cudaFree(Bufferrec3_2flux1[n]);
+	status += cudaFree(Bufferrec3_5flux1[n]);
+	status += cudaFree(Bufferrec3_6flux1[n]);
+	status += cudaFree(Bufferrec4_5flux1[n]);
+	status += cudaFree(Bufferrec4_6flux1[n]);
+	status += cudaFree(Bufferrec4_7flux1[n]);
+	status += cudaFree(Bufferrec4_8flux1[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1flux1[n]);
+	status += cudaFree(Bufferrec5_3flux1[n]);
+	status += cudaFree(Bufferrec5_5flux1[n]);
+	status += cudaFree(Bufferrec5_7flux1[n]);
+	status += cudaFree(Bufferrec6_2flux1[n]);
+	status += cudaFree(Bufferrec6_4flux1[n]);
+	status += cudaFree(Bufferrec6_6flux1[n]);
+	status += cudaFree(Bufferrec6_8flux1[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3flux2[n]);
+	status += cudaFree(Bufferrec1_4flux2[n]);
+	status += cudaFree(Bufferrec1_7flux2[n]);
+	status += cudaFree(Bufferrec1_8flux2[n]);
+	status += cudaFree(Bufferrec2_1flux2[n]);
+	status += cudaFree(Bufferrec2_2flux2[n]);
+	status += cudaFree(Bufferrec2_3flux2[n]);
+	status += cudaFree(Bufferrec2_4flux2[n]);
+	status += cudaFree(Bufferrec3_1flux2[n]);
+	status += cudaFree(Bufferrec3_2flux2[n]);
+	status += cudaFree(Bufferrec3_5flux2[n]);
+	status += cudaFree(Bufferrec3_6flux2[n]);
+	status += cudaFree(Bufferrec4_5flux2[n]);
+	status += cudaFree(Bufferrec4_6flux2[n]);
+	status += cudaFree(Bufferrec4_7flux2[n]);
+	status += cudaFree(Bufferrec4_8flux2[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1flux2[n]);
+	status += cudaFree(Bufferrec5_3flux2[n]);
+	status += cudaFree(Bufferrec5_5flux2[n]);
+	status += cudaFree(Bufferrec5_7flux2[n]);
+	status += cudaFree(Bufferrec6_2flux2[n]);
+	status += cudaFree(Bufferrec6_4flux2[n]);
+	status += cudaFree(Bufferrec6_6flux2[n]);
+	status += cudaFree(Bufferrec6_8flux2[n]);
+	#endif
+	status += cudaFree(Buffersend1fine[n]);
+	status += cudaFree(Buffersend2fine[n]);
+	status += cudaFree(Buffersend3fine[n]);
+	status += cudaFree(Buffersend4fine[n]);
+	#if(N3G>0)
+	status += cudaFree(Buffersend5fine[n]);
+	status += cudaFree(Buffersend6fine[n]);
+	#endif
+	status += cudaFree(Bufferrec1fine[n]);
+	status += cudaFree(Bufferrec2fine[n]);
+	status += cudaFree(Bufferrec3fine[n]);
+	status += cudaFree(Bufferrec4fine[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5fine[n]);
+	status += cudaFree(Bufferrec6fine[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3fine[n]);
+	status += cudaFree(Bufferrec1_4fine[n]);
+	status += cudaFree(Bufferrec1_7fine[n]);
+	status += cudaFree(Bufferrec1_8fine[n]);
+	status += cudaFree(Bufferrec2_1fine[n]);
+	status += cudaFree(Bufferrec2_2fine[n]);
+	status += cudaFree(Bufferrec2_3fine[n]);
+	status += cudaFree(Bufferrec2_4fine[n]);
+	status += cudaFree(Bufferrec3_1fine[n]);
+	status += cudaFree(Bufferrec3_2fine[n]);
+	status += cudaFree(Bufferrec3_5fine[n]);
+	status += cudaFree(Bufferrec3_6fine[n]);
+	status += cudaFree(Bufferrec4_5fine[n]);
+	status += cudaFree(Bufferrec4_6fine[n]);
+	status += cudaFree(Bufferrec4_7fine[n]);
+	status += cudaFree(Bufferrec4_8fine[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1fine[n]);
+	status += cudaFree(Bufferrec5_3fine[n]);
+	status += cudaFree(Bufferrec5_5fine[n]);
+	status += cudaFree(Bufferrec5_7fine[n]);
+	status += cudaFree(Bufferrec6_2fine[n]);
+	status += cudaFree(Bufferrec6_4fine[n]);
+	status += cudaFree(Bufferrec6_6fine[n]);
+	status += cudaFree(Bufferrec6_8fine[n]);
+	#endif
+	status += cudaFree(Buffersend1E[n]);
+	status += cudaFree(Buffersend2E[n]);
+	status += cudaFree(Buffersend3E[n]);
+	status += cudaFree(Buffersend4E[n]);
+	#if(N3G>0)
+	status += cudaFree(Buffersend5E[n]);
+	status += cudaFree(Buffersend6E[n]);
+	#endif
+	status += cudaFree(Bufferrec1E[n]);
+	status += cudaFree(Bufferrec2E[n]);
+	status += cudaFree(Bufferrec3E[n]);
+	status += cudaFree(Bufferrec4E[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5E[n]);
+	status += cudaFree(Bufferrec6E[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3E[n]);
+	status += cudaFree(Bufferrec1_4E[n]);
+	status += cudaFree(Bufferrec1_7E[n]);
+	status += cudaFree(Bufferrec1_8E[n]);
+	status += cudaFree(Bufferrec2_1E[n]);
+	status += cudaFree(Bufferrec2_2E[n]);
+	status += cudaFree(Bufferrec2_3E[n]);
+	status += cudaFree(Bufferrec2_4E[n]);
+	status += cudaFree(Bufferrec3_1E[n]);
+	status += cudaFree(Bufferrec3_2E[n]);
+	status += cudaFree(Bufferrec3_5E[n]);
+	status += cudaFree(Bufferrec3_6E[n]);
+	status += cudaFree(Bufferrec4_5E[n]);
+	status += cudaFree(Bufferrec4_6E[n]);
+	status += cudaFree(Bufferrec4_7E[n]);
+	status += cudaFree(Bufferrec4_8E[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1E[n]);
+	status += cudaFree(Bufferrec5_3E[n]);
+	status += cudaFree(Bufferrec5_5E[n]);
+	status += cudaFree(Bufferrec5_7E[n]);
+	status += cudaFree(Bufferrec6_2E[n]);
+	status += cudaFree(Bufferrec6_4E[n]);
+	status += cudaFree(Bufferrec6_6E[n]);
+	status += cudaFree(Bufferrec6_8E[n]);
+	#endif
+	status += cudaFree(Bufferrec1E1[n]);
+	status += cudaFree(Bufferrec2E1[n]);
+	status += cudaFree(Bufferrec3E1[n]);
+	status += cudaFree(Bufferrec4E1[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5E1[n]);
+	status += cudaFree(Bufferrec6E1[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3E1[n]);
+	status += cudaFree(Bufferrec1_4E1[n]);
+	status += cudaFree(Bufferrec1_7E1[n]);
+	status += cudaFree(Bufferrec1_8E1[n]);
+	status += cudaFree(Bufferrec2_1E1[n]);
+	status += cudaFree(Bufferrec2_2E1[n]);
+	status += cudaFree(Bufferrec2_3E1[n]);
+	status += cudaFree(Bufferrec2_4E1[n]);
+	status += cudaFree(Bufferrec3_1E1[n]);
+	status += cudaFree(Bufferrec3_2E1[n]);
+	status += cudaFree(Bufferrec3_5E1[n]);
+	status += cudaFree(Bufferrec3_6E1[n]);
+	status += cudaFree(Bufferrec4_5E1[n]);
+	status += cudaFree(Bufferrec4_6E1[n]);
+	status += cudaFree(Bufferrec4_7E1[n]);
+	status += cudaFree(Bufferrec4_8E1[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1E1[n]);
+	status += cudaFree(Bufferrec5_3E1[n]);
+	status += cudaFree(Bufferrec5_5E1[n]);
+	status += cudaFree(Bufferrec5_7E1[n]);
+	status += cudaFree(Bufferrec6_2E1[n]);
+	status += cudaFree(Bufferrec6_4E1[n]);
+	status += cudaFree(Bufferrec6_6E1[n]);
+	status += cudaFree(Bufferrec6_8E1[n]);
+	#endif
+	status += cudaFree(Bufferrec1_3E2[n]);
+	status += cudaFree(Bufferrec1_4E2[n]);
+	status += cudaFree(Bufferrec1_7E2[n]);
+	status += cudaFree(Bufferrec1_8E2[n]);
+	status += cudaFree(Bufferrec2_1E2[n]);
+	status += cudaFree(Bufferrec2_2E2[n]);
+	status += cudaFree(Bufferrec2_3E2[n]);
+	status += cudaFree(Bufferrec2_4E2[n]);
+	status += cudaFree(Bufferrec3_1E2[n]);
+	status += cudaFree(Bufferrec3_2E2[n]);
+	status += cudaFree(Bufferrec3_5E2[n]);
+	status += cudaFree(Bufferrec3_6E2[n]);
+	status += cudaFree(Bufferrec4_5E2[n]);
+	status += cudaFree(Bufferrec4_6E2[n]);
+	status += cudaFree(Bufferrec4_7E2[n]);
+	status += cudaFree(Bufferrec4_8E2[n]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1E2[n]);
+	status += cudaFree(Bufferrec5_3E2[n]);
+	status += cudaFree(Bufferrec5_5E2[n]);
+	status += cudaFree(Bufferrec5_7E2[n]);
+	status += cudaFree(Bufferrec6_2E2[n]);
+	status += cudaFree(Bufferrec6_4E2[n]);
+	status += cudaFree(Bufferrec6_6E2[n]);
+	status += cudaFree(Bufferrec6_8E2[n]);
+	#endif
+	#if(N3G>0)
+	status += cudaFree(BuffersendE1corn9[n]);
+	status += cudaFree(BuffersendE1corn10[n]);
+	status += cudaFree(BuffersendE1corn11[n]);
+	status += cudaFree(BuffersendE1corn12[n]);
+	status += cudaFree(BuffersendE2corn5[n]);
+	status += cudaFree(BuffersendE2corn6[n]);
+	status += cudaFree(BuffersendE2corn7[n]);
+	status += cudaFree(BuffersendE2corn8[n]);
+	#endif
+	status += cudaFree(BuffersendE3corn1[n]);
+	status += cudaFree(BuffersendE3corn2[n]);
+	status += cudaFree(BuffersendE3corn3[n]);
+	status += cudaFree(BuffersendE3corn4[n]);
+	#if(N3G>0)
+	status += cudaFree(BufferrecE1corn9[n]);
+	status += cudaFree(BufferrecE1corn10[n]);
+	status += cudaFree(BufferrecE1corn11[n]);
+	status += cudaFree(BufferrecE1corn12[n]);
+	status += cudaFree(BufferrecE2corn5[n]);
+	status += cudaFree(BufferrecE2corn6[n]);
+	status += cudaFree(BufferrecE2corn7[n]);
+	status += cudaFree(BufferrecE2corn8[n]);
+	#endif
+	status += cudaFree(BufferrecE3corn1[n]);
+	status += cudaFree(BufferrecE3corn2[n]);
+	status += cudaFree(BufferrecE3corn3[n]);
+	status += cudaFree(BufferrecE3corn4[n]);
+	#if(N3G>0)
+	status += cudaFree(BufferrecE1corn9_3[n]);
+	status += cudaFree(BufferrecE1corn9_7[n]);
+	status += cudaFree(BufferrecE1corn10_1[n]);
+	status += cudaFree(BufferrecE1corn10_5[n]);
+	status += cudaFree(BufferrecE1corn11_2[n]);
+	status += cudaFree(BufferrecE1corn11_6[n]);
+	status += cudaFree(BufferrecE1corn12_4[n]);
+	status += cudaFree(BufferrecE1corn12_8[n]);
+	status += cudaFree(BufferrecE2corn5_2[n]);
+	status += cudaFree(BufferrecE2corn5_4[n]);
+	status += cudaFree(BufferrecE2corn6_1[n]);
+	status += cudaFree(BufferrecE2corn6_3[n]);
+	status += cudaFree(BufferrecE2corn7_5[n]);
+	status += cudaFree(BufferrecE2corn7_7[n]);
+	status += cudaFree(BufferrecE2corn8_6[n]);
+	status += cudaFree(BufferrecE2corn8_8[n]);
+	#endif
+	status += cudaFree(BufferrecE3corn1_3[n]);
+	status += cudaFree(BufferrecE3corn1_4[n]);
+	status += cudaFree(BufferrecE3corn2_1[n]);
+	status += cudaFree(BufferrecE3corn2_2[n]);
+	status += cudaFree(BufferrecE3corn3_5[n]);
+	status += cudaFree(BufferrecE3corn3_6[n]);
+	status += cudaFree(BufferrecE3corn4_7[n]);
+	status += cudaFree(BufferrecE3corn4_8[n]);
+	#if(N3G>0)
+	status += cudaFree(tempBufferrecE1corn9[n]);
+	status += cudaFree(tempBufferrecE1corn10[n]);
+	status += cudaFree(tempBufferrecE1corn11[n]);
+	status += cudaFree(tempBufferrecE1corn12[n]);
+	status += cudaFree(tempBufferrecE2corn5[n]);
+	status += cudaFree(tempBufferrecE2corn6[n]);
+	status += cudaFree(tempBufferrecE2corn7[n]);
+	status += cudaFree(tempBufferrecE2corn8[n]);
+	#endif
+	status += cudaFree(tempBufferrecE3corn1[n]);
+	status += cudaFree(tempBufferrecE3corn2[n]);
+	status += cudaFree(tempBufferrecE3corn3[n]);
+	status += cudaFree(tempBufferrecE3corn4[n]);
+	#if(N3G>0)
+	status += cudaFree(tempBufferrecE1corn9_3[n]);
+	status += cudaFree(tempBufferrecE1corn9_7[n]);
+	status += cudaFree(tempBufferrecE1corn10_1[n]);
+	status += cudaFree(tempBufferrecE1corn10_5[n]);
+	status += cudaFree(tempBufferrecE1corn11_2[n]);
+	status += cudaFree(tempBufferrecE1corn11_6[n]);
+	status += cudaFree(tempBufferrecE1corn12_4[n]);
+	status += cudaFree(tempBufferrecE1corn12_8[n]);
+	status += cudaFree(tempBufferrecE2corn5_2[n]);
+	status += cudaFree(tempBufferrecE2corn5_4[n]);
+	status += cudaFree(tempBufferrecE2corn6_1[n]);
+	status += cudaFree(tempBufferrecE2corn6_3[n]);
+	status += cudaFree(tempBufferrecE2corn7_5[n]);
+	status += cudaFree(tempBufferrecE2corn7_7[n]);
+	status += cudaFree(tempBufferrecE2corn8_6[n]);
+	status += cudaFree(tempBufferrecE2corn8_8[n]);
+	#endif
+	status += cudaFree(tempBufferrecE3corn1_3[n]);
+	status += cudaFree(tempBufferrecE3corn1_4[n]);
+	status += cudaFree(tempBufferrecE3corn2_1[n]);
+	status += cudaFree(tempBufferrecE3corn2_2[n]);
+	status += cudaFree(tempBufferrecE3corn3_5[n]);
+	status += cudaFree(tempBufferrecE3corn3_6[n]);
+	status += cudaFree(tempBufferrecE3corn4_7[n]);
+	status += cudaFree(tempBufferrecE3corn4_8[n]);
+	#if(N3G>0)
+	status += cudaFree(BufferrecE1corn9_32[n]);
+	status += cudaFree(BufferrecE1corn9_72[n]);
+	status += cudaFree(BufferrecE1corn10_12[n]);
+	status += cudaFree(BufferrecE1corn10_52[n]);
+	status += cudaFree(BufferrecE1corn11_22[n]);
+	status += cudaFree(BufferrecE1corn11_62[n]);
+	status += cudaFree(BufferrecE1corn12_42[n]);
+	status += cudaFree(BufferrecE1corn12_82[n]);
+	status += cudaFree(BufferrecE2corn5_22[n]);
+	status += cudaFree(BufferrecE2corn5_42[n]);
+	status += cudaFree(BufferrecE2corn6_12[n]);
+	status += cudaFree(BufferrecE2corn6_32[n]);
+	status += cudaFree(BufferrecE2corn7_52[n]);
+	status += cudaFree(BufferrecE2corn7_72[n]);
+	status += cudaFree(BufferrecE2corn8_62[n]);
+	status += cudaFree(BufferrecE2corn8_82[n]);
+	#endif
+	status += cudaFree(BufferrecE3corn1_32[n]);
+	status += cudaFree(BufferrecE3corn1_42[n]);
+	status += cudaFree(BufferrecE3corn2_12[n]);
+	status += cudaFree(BufferrecE3corn2_22[n]);
+	status += cudaFree(BufferrecE3corn3_52[n]);
+	status += cudaFree(BufferrecE3corn3_62[n]);
+	status += cudaFree(BufferrecE3corn4_72[n]);
+	status += cudaFree(BufferrecE3corn4_82[n]);
 
-	status += clReleaseMemObject(Imagegcov[n]);
-	status += clReleaseMemObject(Imagegcon[n]);
-	status += clReleaseMemObject(Imageconn[n]);
-	status += clReleaseMemObject(Imagegdet[n]);
-
-#if H_CORRECTION
+	status += cudaFree(Imagegcov[n]);
+	status += cudaFree(Imagegcon[n]);
+	status += cudaFree(Imageconn[n]);
+	status += cudaFree(Imagegdet[n]);
+	
+	//attention
+	/*
+	#if H_CORRECTION
 	status += clReleaseKernel(kernel_hcor1[n]);
 	status += clReleaseKernel(kernel_hcor2[n]);
 	status += clReleaseKernel(kernel_hcor3[n]);
-#endif
+	#endif
 	status += clReleaseKernel(kernel_fluxcalcprep[n]);
-
 	status += clReleaseKernel(kernel_fluxcalc2D1[n]);
 	status += clReleaseKernel(kernel_fluxcalc2D2[n]);
 	status += clReleaseKernel(kernel_flux_ct1[n]);
@@ -8961,7 +7911,6 @@ void GPU_finish(int n)
 	status += clReleaseKernel(kernel_consttransport2[n]);
 	status += clReleaseKernel(kernel_consttransport3[n]);
 	status += clReleaseKernel(kernel_fix_flux[n]);
-
 	status += clReleaseKernel(kernel_Utoprim[n]);
 	status += clReleaseKernel(kernel_Utoprim2[n]);
 	status += clReleaseKernel(kernel_Utoprim1[n]);
@@ -8969,7 +7918,6 @@ void GPU_finish(int n)
 	status += clReleaseKernel(kernel_fixuputoprim[n]);
 	status += clReleaseKernel(kernel_boundprim1[n]);
 	status += clReleaseKernel(kernel_boundprim2[n]);
-
 	status += clReleaseKernel(kernel_packsend1[n]);
 	status += clReleaseKernel(kernel_packsend2[n]);
 	status += clReleaseKernel(kernel_packsend3[n]);
@@ -9019,10 +7967,6 @@ void GPU_finish(int n)
 	status += clReleaseKernel(kernel_unpackreceiveB1[n]);
 	status += clReleaseKernel(kernel_unpackreceiveB2[n]);
 	status += clReleaseKernel(kernel_unpackreceiveB3[n]);
-
+	*/
 	if (status != 0) printf("Error in GPU_finish_1: %d \n", status);
-	//status += clReleaseCommandQueue(commandQueueGPU[n]);
-	if (status != 0) printf("Error in GPU_finish_2: %d \n", status);
-
-#endif
 }
