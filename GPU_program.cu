@@ -1483,26 +1483,26 @@ struct of_state {
 };
 
 /*Declare other functions*/
-__device__ get_state(FTYPE2 * restrict pr, struct of_geom * restrict geom, struct of_state * restrict q);
-__device__ ucon_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict ucon);
-__device__ bcon_calc(FTYPE2 * restrict pr, FTYPE2 * restrict ucon, FTYPE2 * restrict ucov, FTYPE2 * restrict bcon);
-__device__ int gamma_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict gamma);
-__device__ get_geometry(int N1, int N2, int ii, int jj, int zz, int kk, struct of_geom * restrict geom, __read_only image3d_t gcov_GPU, __read_only image3d_t gcon_GPU, __read_only image3d_t gdet_GPU);
+__device__ get_state(FTYPE2 *  pr, struct of_geom *  geom, struct of_state *  q);
+__device__ ucon_calc(FTYPE2 *  pr, struct of_geom *  geom, FTYPE2 *  ucon);
+__device__ bcon_calc(FTYPE2 *  pr, FTYPE2 *  ucon, FTYPE2 *  ucov, FTYPE2 *  bcon);
+__device__ int gamma_calc(FTYPE2 *  pr, struct of_geom *  geom, FTYPE2 *  gamma);
+__device__ get_geometry(int N1, int N2, int ii, int jj, int zz, int kk, struct of_geom *  geom, const  FTYPE2* __restrict__ gcov_GPU, const  FTYPE2* __restrict__ gcon_GPU, const  FTYPE2* __restrict__ gdet_GPU);
 FTYPE2 slope_lim(FTYPE2 y1, FTYPE2 y2, FTYPE2 y3, int lim);
-__device__ raise(FTYPE2 * restrict ucov, struct of_geom * restrict geom, FTYPE2 * restrict ucon);
-__device__ lower(FTYPE2 * restrict ucon, struct of_geom * restrict geom, FTYPE2 * restrict ucov);
-__device__ primtoflux(FTYPE2 * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, FTYPE2 * restrict flux, FTYPE2 gam);
-__device__ primtoU(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, FTYPE2 *U, FTYPE2 gam);
-__device__ vchar(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js, FTYPE2 * restrict vmax, FTYPE2 * restrict vmin, FTYPE2 gam);
-__device__ mhd_calc(FTYPE2 * restrict pr, int dir, struct of_state * restrict q, FTYPE2 * restrict mhd, FTYPE2 gam);
-__device__ source(int N1, int N2, FTYPE2 * restrict ph, struct of_geom * restrict geom, int icurr, int jcurr, int zcurr, FTYPE2 *dU, FTYPE2 Dt, FTYPE2 gam, __read_only image3d_t Imageconn,
-struct of_state * restrict q, double a, double r);
-__device__ misc_source(FTYPE2 * restrict ph, int icurr, int jcurr, struct of_geom * restrict geom, struct of_state * restrict q, FTYPE2 * restrict dU,
+__device__ raise(FTYPE2 *  ucov, struct of_geom *  geom, FTYPE2 *  ucon);
+__device__ lower(FTYPE2 *  ucon, struct of_geom *  geom, FTYPE2 *  ucov);
+__device__ primtoflux(FTYPE2 *  pr, struct of_state *  q, int dir, struct of_geom *  geom, FTYPE2 *  flux, FTYPE2 gam);
+__device__ primtoU(FTYPE2 *  pr, struct of_state *  q, struct of_geom *  geom, FTYPE2 *U, FTYPE2 gam);
+__device__ vchar(FTYPE2 *  pr, struct of_state *  q, struct of_geom *  geom, int js, FTYPE2 *  vmax, FTYPE2 *  vmin, FTYPE2 gam);
+__device__ mhd_calc(FTYPE2 *  pr, int dir, struct of_state *  q, FTYPE2 *  mhd, FTYPE2 gam);
+__device__ source(int N1, int N2, FTYPE2 *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, FTYPE2 *dU, FTYPE2 Dt, FTYPE2 gam, const  FTYPE2* __restrict__ Imageconn,
+struct of_state *  q, double a, double r);
+__device__ misc_source(FTYPE2 *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, FTYPE2 *  dU,
 	double a, double gam, double r, double Dt);
-__device__ inflow_check(int N1, int N2, FTYPE2 * restrict prim, int ii, int jj, int zz, int type, __read_only image3d_t gcov1, __read_only image3d_t gcon2, __read_only image3d_t gdet3);
-__device__ FTYPE2 bsq_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom);
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq);
-__device__ double Drel(int dir, double v, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq);
+__device__ inflow_check(int N1, int N2, FTYPE2 *  prim, int ii, int jj, int zz, int type, const  FTYPE2* __restrict__ gcov1, const  FTYPE2* __restrict__ gcon2, const  FTYPE2* __restrict__ gdet3);
+__device__ FTYPE2 bsq_calc(FTYPE2 *  pr, struct of_geom *  geom);
+__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
+__device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
 __device__ double readImageDouble(int4 a);
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
@@ -1551,18 +1551,19 @@ __device__ ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 	*ut = sqrt(DD);
 
 }
+
 __device__ primtoU(FTYPE2 *pr, struct of_state *q, struct of_geom *geom, FTYPE2 *U, FTYPE2 gam)
 {
 	primtoflux(pr, q, 0, geom, U, gam);
 	return;
 }
 
-
 /* add in source terms to equations of motion */
-__device__ source(int N1, int N2, FTYPE2 * restrict ph, struct of_geom * restrict geom, int icurr, int jcurr, int zcurr, FTYPE2 * restrict dU, FTYPE2 Dt, FTYPE2 gam,
-	__read_only image3d_t Imageconn, struct of_state * restrict q, double a, double r)
+__device__ source(int N1, int N2, FTYPE2 *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, FTYPE2 *  dU, FTYPE2 Dt, FTYPE2 gam,
+	const  FTYPE2* __restrict__ Imageconn, struct of_state *  q, double a, double r)
 {
 	FTYPE2 mhd[NDIM][NDIM];
+	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int k;
 	//struct of_state q ;
 	double conn;
@@ -1578,54 +1579,29 @@ __device__ source(int N1, int N2, FTYPE2 * restrict ph, struct of_geom * restric
 	
 	#pragma unroll NDIM	
 	for (k = 0; k<NDIM; k++){
-		#if(NONSYMMETRIC)
-		dU[UU] += mhd[0][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 0 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[U1] += mhd[1][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 1 * NDIM*NDIM*(BS_1 + 2 * N1G) + 1 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[U2] += mhd[2][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 2 * NDIM*NDIM*(BS_1 + 2 * N1G) + 2 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[U3] += mhd[3][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 3 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 1 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[UU] += mhd[1][k] * conn;
-		dU[U1] += mhd[0][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 2 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[UU] += mhd[2][k] * conn;
-		dU[U2] += mhd[0][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[UU] += mhd[3][k] * conn;
-		dU[U3] += mhd[0][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 1 * NDIM*NDIM*(BS_1 + 2 * N1G) + 2 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[U1] += mhd[2][k] * conn;
-		dU[U2] += mhd[1][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 1 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[U1] += mhd[3][k] * conn;
-		dU[U3] += mhd[1][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 2 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
-		dU[U2] += mhd[3][k] * conn;
-		dU[U3] += mhd[2][k] * conn;
-		#else
-		dU[UU] += mhd[0][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 0 * NDIM + k, 0)));
-		dU[U1] += mhd[1][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 1 * NDIM*NDIM + 1 * NDIM + k, 0)));
-		dU[U2] += mhd[2][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 2 * NDIM*NDIM + 2 * NDIM + k, 0)));
-		dU[U3] += mhd[3][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 3 * NDIM*NDIM + 3 * NDIM + k, 0)));
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 1 * NDIM + k, 0)));
-		dU[UU] += mhd[1][k] * conn;
-		dU[U1] += mhd[0][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 2 * NDIM + k, 0)));
-		dU[UU] += mhd[2][k] * conn;
-		dU[U2] += mhd[0][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 3 * NDIM + k, 0)));
-		dU[UU] += mhd[3][k] * conn;
-		dU[U3] += mhd[0][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 1 * NDIM*NDIM + 2 * NDIM + k, 0)));
-		dU[U1] += mhd[2][k] * conn;
-		dU[U2] += mhd[1][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 1 * NDIM*NDIM + 3 * NDIM + k, 0)));
-		dU[U1] += mhd[3][k] * conn;
-		dU[U3] += mhd[1][k] * conn;
-		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 2 * NDIM*NDIM + 3 * NDIM + k, 0)));
-		dU[U2] += mhd[3][k] * conn;
-		dU[U3] += mhd[2][k] * conn;
-		#endif
-	}
+		dU[UU] += mhd[0][k]*conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 0*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[U1] += mhd[1][k]*conn_GPU[1*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 1*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[U2] += mhd[2][k]*conn_GPU[2*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[U3] += mhd[3][k]*conn_GPU[3*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		conn=conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 1*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id];
+		dU[UU] += mhd[1][k]*conn;
+		dU[U1] += mhd[0][k]*conn;
+		conn=conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[UU] += mhd[2][k]*conn;
+		dU[U2] += mhd[0][k]*conn;
+		conn=conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[UU] += mhd[3][k]*conn;
+		dU[U3] += mhd[0][k]*conn;
+		conn=conn_GPU[1*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[U1] += mhd[2][k]*conn;
+		dU[U2] += mhd[1][k]*conn;
+		conn=conn_GPU[1*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[U1] += mhd[3][k]*conn;
+		dU[U3] += mhd[1][k]*conn ;
+		conn=conn_GPU[2*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
+		dU[U2] += mhd[3][k]*conn;
+		dU[U3] += mhd[2][k]*conn;
+	}	
 
 	//Add cooling term if needed
 	#if (COOL_DISK)
@@ -1639,7 +1615,7 @@ __device__ source(int N1, int N2, FTYPE2 * restrict ph, struct of_geom * restric
 	/* done! */
 }
 
-__device__ misc_source(FTYPE2 * restrict ph, int icurr, int jcurr, struct of_geom * restrict geom, struct of_state * restrict q, FTYPE2 * restrict dU,
+__device__ misc_source(FTYPE2 *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, FTYPE2 *  dU,
 	double a, double gam, double r, double Dt){
 	double epsilon = ph[UU] / ph[RHO];
 	double om_kepler = 1. / (pow(r, 3. / 2.) + a);
@@ -1665,7 +1641,7 @@ __device__ misc_source(FTYPE2 * restrict ph, int icurr, int jcurr, struct of_geo
 	}
 }
 
-__device__ primtoflux(FTYPE2 * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, FTYPE2 * restrict flux, FTYPE2 gam)
+__device__ primtoflux(FTYPE2 *  pr, struct of_state *  q, int dir, struct of_geom *  geom, FTYPE2 *  flux, FTYPE2 gam)
 {
 	int k;
 	FTYPE2 mhd[NDIM];
@@ -1701,7 +1677,7 @@ __device__ primtoflux(FTYPE2 * restrict pr, struct of_state * restrict q, int di
 	PLOOP flux[k] *= geom->g;
 }
 
-__device__ vchar(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js, FTYPE2 * restrict vmax, FTYPE2 * restrict vmin, FTYPE2 gam)
+__device__ vchar(FTYPE2 *  pr, struct of_state *  q, struct of_geom *  geom, int js, FTYPE2 *  vmax, FTYPE2 *  vmin, FTYPE2 gam)
 {
 	FTYPE2 discr, vp, vm, bsq, EE, EF, va2, cs2, cms2, rho, u;
 	FTYPE2 Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
@@ -1811,7 +1787,7 @@ __device__ vchar(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_g
 	return;
 }
 
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq)
+__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq)
 {
 	size_t count = 0;
 	double dx = start / 100.0;
@@ -1829,7 +1805,7 @@ __device__ double NewtonRaphson(double start, size_t max_count, int dir, double 
 	return x;
 }
 
-__device__ double Drel(int dir, double v, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq){
+__device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq){
 	double kcov[NDIM], kcon[NDIM], Kcov[NDIM], Kcon[NDIM];
 	double om, omsq, ksq, kvasq, cfsq, result;
 	int i;
@@ -1886,7 +1862,7 @@ __device__ mhd_calc(FTYPE2 *pr, int dir, struct of_state *q, FTYPE2 *mhd, FTYPE2
 	#endif
 }
 
-__device__ get_state(FTYPE2 * restrict pr, struct of_geom * restrict geom, struct of_state * restrict q)
+__device__ get_state(FTYPE2 *  pr, struct of_geom *  geom, struct of_state *  q)
 {
 	/* get ucon */
 	ucon_calc(pr, geom, q->ucon);
@@ -1898,7 +1874,7 @@ __device__ get_state(FTYPE2 * restrict pr, struct of_geom * restrict geom, struc
 }
 
 /* Raises a covariant rank-1 tensor to a contravariant one */
-__device__ raise(FTYPE2 * restrict ucov, struct of_geom * restrict geom, FTYPE2 * restrict ucon)
+__device__ raise(FTYPE2 *  ucov, struct of_geom *  geom, FTYPE2 *  ucon)
 {
 	#if AMD
 	ucon[0] = fma(geom->gcon[0][0], ucov[0], fma(
@@ -1939,7 +1915,7 @@ __device__ raise(FTYPE2 * restrict ucov, struct of_geom * restrict geom, FTYPE2 
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
-__device__ lower(FTYPE2 * restrict ucon, struct of_geom * restrict geom, FTYPE2 * restrict ucov)
+__device__ lower(FTYPE2 *  ucon, struct of_geom *  geom, FTYPE2 *  ucov)
 {
 	#if AMD
 	ucov[0] = fma(geom->gcov[0][0], ucon[0], fma(
@@ -1980,7 +1956,7 @@ __device__ lower(FTYPE2 * restrict ucon, struct of_geom * restrict geom, FTYPE2 
 }
 
 /* find contravariant four-velocity */
-__device__ ucon_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict ucon)
+__device__ ucon_calc(FTYPE2 *  pr, struct of_geom *  geom, FTYPE2 *  ucon)
 {
 	FTYPE2 alpha, gamma;
 	FTYPE2 beta[NDIM];
@@ -2009,7 +1985,7 @@ __device__ ucon_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE
 	return;
 }
 
-__device__ bcon_calc(FTYPE2 * restrict pr, FTYPE2 * restrict ucon, FTYPE2 * restrict ucov, FTYPE2 * restrict bcon)
+__device__ bcon_calc(FTYPE2 *  pr, FTYPE2 *  ucon, FTYPE2 *  ucov, FTYPE2 *  bcon)
 {
 	int j;
 
@@ -2027,7 +2003,7 @@ __device__ bcon_calc(FTYPE2 * restrict pr, FTYPE2 * restrict ucon, FTYPE2 * rest
 	return;
 }
 
-__device__ int gamma_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict gamma)
+__device__ int gamma_calc(FTYPE2 *  pr, struct of_geom *  geom, FTYPE2 *  gamma)
 {
 	FTYPE2 qsq;
 	#if AMD
@@ -2062,81 +2038,45 @@ __device__ int gamma_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, 
 }
 
 /* load local geometry into structure geom */
-__device__ get_geometry(int N1, int N2, int ii, int jj, int zz, int kk, struct of_geom * restrict geom, __read_only image3d_t gcov_GPU, __read_only image3d_t gcon_GPU, __read_only image3d_t gdet_GPU)
+__device__ get_geometry(int N1, int N2, int ii, int jj, int zz, int kk, struct of_geom *  geom, const  FTYPE2* __restrict__ gcov_GPU, const  FTYPE2* __restrict__ gcon_GPU, const  FTYPE2* __restrict__ gdet_GPU)
 {
-	#if(NONSYMMETRIC)
-	geom->gcon[0][0] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[0][0] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcon[0][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[0][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcon[0][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[0][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcon[0][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[0][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	geom->gcon[0][0] = gcon_GPU[kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[0][0] = gcov_GPU[kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcon[0][1] = gcon_GPU[1 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[0][1] = gcov_GPU[1 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcon[0][2] = gcon_GPU[2 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[0][2] = gcov_GPU[2 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcon[0][3] = gcon_GPU[3 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[0][3] = gcov_GPU[3 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
 	geom->gcon[1][0] = geom->gcon[0][1];
 	geom->gcov[1][0] = geom->gcov[0][1];
-	geom->gcon[1][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[1][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcon[1][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[1][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcon[1][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[1][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[1][1] = gcon_GPU[1 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 1 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[1][1] = gcov_GPU[1 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 1 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcon[1][2] = gcon_GPU[1 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 2 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[1][2] = gcov_GPU[1 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 2 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcon[1][3] = gcon_GPU[1 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 3 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[1][3] = gcov_GPU[1 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 3 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
 	geom->gcon[2][0] = geom->gcon[0][2];
 	geom->gcov[2][0] = geom->gcov[0][2];
 	geom->gcon[2][1] = geom->gcon[1][2];
 	geom->gcov[2][1] = geom->gcov[1][2];
-	geom->gcon[2][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[2][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcon[2][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[2][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[2][2] = gcon_GPU[2 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 2 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[2][2] = gcov_GPU[2 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 2 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcon[2][3] = gcon_GPU[2 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 3 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
+	geom->gcov[2][3] = gcov_GPU[2 * NDIM*NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + 3 * NPG*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + kk*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];
 	geom->gcon[3][0] = geom->gcon[0][3];
 	geom->gcov[3][0] = geom->gcov[0][3];
 	geom->gcon[3][1] = geom->gcon[1][3];
 	geom->gcov[3][1] = geom->gcov[1][3];
 	geom->gcon[3][2] = geom->gcon[2][3];
-	geom->gcov[3][2] = geom->gcov[2][3];
-	geom->gcon[3][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 3 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->gcov[3][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 3 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
-	geom->g = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(zz, jj, kk*(BS_1 + 2 * N1G) + ii, 0)));
-	#else
-	geom->gcon[0][0] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, kk, 0)));;
-	geom->gcov[0][0] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, kk, 0)));
-	geom->gcon[0][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NPG + kk, 0)));
-	geom->gcov[0][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NPG + kk, 0)));
-	geom->gcon[0][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 2 * NPG + kk, 0)));
-	geom->gcov[0][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 2 * NPG + kk, 0)));
-	geom->gcon[0][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 3 * NPG + kk, 0)));
-	geom->gcov[0][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 3 * NPG + kk, 0)));
-	geom->gcon[1][0] = geom->gcon[0][1];
-	geom->gcov[1][0] = geom->gcov[0][1];
-	geom->gcon[1][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 1 * NPG + kk, 0)));
-	geom->gcov[1][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 1 * NPG + kk, 0)));
-	geom->gcon[1][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 2 * NPG + kk, 0)));
-	geom->gcov[1][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 2 * NPG + kk, 0)));
-	geom->gcon[1][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 3 * NPG + kk, 0)));
-	geom->gcov[1][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 3 * NPG + kk, 0)));
-	geom->gcon[2][0] = geom->gcon[0][2];
-	geom->gcov[2][0] = geom->gcov[0][2];
-	geom->gcon[2][1] = geom->gcon[1][2];
-	geom->gcov[2][1] = geom->gcov[1][2];
-	geom->gcon[2][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 2 * NPG + kk, 0)));
-	geom->gcov[2][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 2 * NPG + kk, 0)));
-	geom->gcon[2][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 3 * NPG + kk, 0)));
-	geom->gcov[2][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 3 * NPG + kk, 0)));
-	geom->gcon[3][0] = geom->gcon[0][3];
-	geom->gcov[3][0] = geom->gcov[0][3];
-	geom->gcon[3][1] = geom->gcon[1][3];
-	geom->gcov[3][1] = geom->gcov[1][3];
-	geom->gcon[3][2] = geom->gcon[2][3];
-	geom->gcov[3][2] = geom->gcov[2][3];
-	geom->gcon[3][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 3 * NDIM*NPG + 3 * NPG + kk, 0)));
-	geom->gcov[3][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 3 * NDIM*NPG + 3 * NPG + kk, 0)));
-	geom->g = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jj, ii, kk, 0)));
-	#endif
-
+	geom->gcov[3][2] = geom->gcov[2][3];	 
+	geom->gcon[3][3] = gcon_GPU[3*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
+	geom->gcov[3][3] = gcov_GPU[3*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
+	geom->g = gdet_GPU[kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj] ;
 }
 
-__device__ inflow_check(int N1, int N2, FTYPE2 * restrict pr, int ii, int jj, int zz, int type, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet)
+__device__ inflow_check(int N1, int N2, FTYPE2 *  pr, int ii, int jj, int zz, int type, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet)
 {
 	struct of_geom geom;
 	FTYPE2 ucon[NDIM];
@@ -2252,7 +2192,7 @@ __device__ para(double x1, double x2, double x3, double x4, double x5, double *l
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
-__device__ FTYPE2 bsq_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom)
+__device__ FTYPE2 bsq_calc(FTYPE2 *  pr, struct of_geom *  geom)
 {
 	struct of_state q;
 	get_state(pr, geom, &q);
@@ -2260,7 +2200,7 @@ __device__ FTYPE2 bsq_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom)
 }
 
 
-__global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 * restrict  F, __global FTYPE2 * restrict dq, __global FTYPE2 * restrict p, int dir, int lim, FTYPE2 hslope, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, int number, __global FTYPE2 * restrict V)
+__global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 *   F, __global FTYPE2 *  dq, __global FTYPE2 *  p, int dir, int lim, FTYPE2 hslope, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, int number, __global FTYPE2 *  V)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + 2 * D3)*(N2 + 2 * D2);
@@ -2359,9 +2299,9 @@ __global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 * restrict 
 }
 
 
-__global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 * restrict F, __global FTYPE2 * restrict dq, __global FTYPE2 * restrict pv, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet, int lim, int dir,
+__global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 *  F, __global FTYPE2 *  dq, __global FTYPE2 *  pv, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int lim, int dir,
 	FTYPE2 gam, FTYPE2 hslope, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 cour, __global FTYPE2*  dtij, __local FTYPE2* local_dtij, int N1_MPI, int N1_MPI_offset, int POLE_1, int POLE_2,
-	int N3_MPI, int N3_MPI_offset, __global FTYPE2* storage1, __global FTYPE2* storage2, __global FTYPE2* storage3, __global FTYPE2* storage4, double dx_1, double dx_2, double dx_3, __global FTYPE2 * restrict eta_avg, __global FTYPE2 * restrict ps)
+	int N3_MPI, int N3_MPI_offset, __global FTYPE2* storage1, __global FTYPE2* storage2, __global FTYPE2* storage3, __global FTYPE2* storage4, double dx_1, double dx_2, double dx_3, __global FTYPE2 *  eta_avg, __global FTYPE2 *  ps)
 {
 	int global_id = get_global_id(0);
 	int local_id = get_local_id(0);
@@ -2494,7 +2434,7 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 * restrict F
 	}
 }
 
-__global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
+__global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
@@ -2554,7 +2494,7 @@ __global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 * restrict F1, 
 	#endif
 }
 
-__global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 * restrict pb_i, __global FTYPE2 * restrict E_cent, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet)
+__global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 *  pb_i, __global FTYPE2 *  E_cent, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + N3G)*(N2 + N2G);
@@ -2588,8 +2528,8 @@ __global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 * restri
 	}
 }
 
-__global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 * restrict emf, __global FTYPE2 * restrict E_cent, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3,
-	__global FTYPE2 * restrict pb_i, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet, int POLE_1, int POLE_2)
+__global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 *  emf, __global FTYPE2 *  E_cent, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3,
+	__global FTYPE2 *  pb_i, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int POLE_1, int POLE_2)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2660,8 +2600,8 @@ __global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 * restri
 	}
 }
 
-__global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2, double dx_3, __read_only image3d_t gdet_GPU, __global FTYPE2 * restrict psi, __global FTYPE2 * restrict psf,
-	__global FTYPE2 * restrict E_corn, double Dt, int POLE_1, int POLE_2)
+__global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2, double dx_3, const  FTYPE2* __restrict__ gdet_GPU, __global FTYPE2 *  psi, __global FTYPE2 *  psf,
+	__global FTYPE2 *  E_corn, double Dt, int POLE_1, int POLE_2)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2674,29 +2614,30 @@ __global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2
 	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
 	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
 
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G + D1 && jcurr<N2 + N2G  && zcurr<N3 + N3G){
-		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3 * ksize + global_id + (N3 + 2 * N3G)] - E_corn[3 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3 * ksize + global_id + (N3 + 2 * N3G)] - E_corn[3 * ksize + global_id]) / gdet_GPU[FACE1*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];;
 		#if(N3G>0)
-		psf[global_id] += Dt / dx_3*(E_corn[2 * ksize + global_id + D3] - E_corn[2 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+		psf[global_id] += Dt / dx_3*(E_corn[2 * ksize + global_id + D3] - E_corn[2 * ksize + global_id]) / gdet_GPU[FACE1*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];;
 		#endif
 	}
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G + D2  && zcurr<N3 + N3G){
-		psf[1 * ksize + global_id] = psi[1 * ksize + global_id] + Dt / dx_1*(E_corn[3 * ksize + global_id + isize] - E_corn[3 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		psf[1 * ksize + global_id] = psi[1 * ksize + global_id] + Dt / dx_1*(E_corn[3 * ksize + global_id + isize] - E_corn[3 * ksize + global_id]) / gdet_GPU[FACE2*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];;
 		#if(N3G>0)
-		psf[1 * ksize + global_id] += -Dt / dx_3*(E_corn[1 * ksize + global_id + D3] - E_corn[1 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		psf[1 * ksize + global_id] += -Dt / dx_3*(E_corn[1 * ksize + global_id + D3] - E_corn[1 * ksize + global_id]) / gdet_GPU[FACE2*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];;
 		#endif
 	}
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G && zcurr<N3 + N3G + D3){
 		#if(N3G>0)
-		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize] - E_corn[2 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
-		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (N3 + 2 * N3G)] - E_corn[1 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize] - E_corn[2 * ksize + global_id]) / gdet_GPU[FACE3*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj];;
+		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (N3 + 2 * N3G)] - E_corn[1 * ksize + global_id]) / gdet_GPU[FACE3*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + ii*(N2 + 2 * N2G) + jj]; 
 		#endif
 	}
 }
 
-__global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, __global FTYPE2 * restrict emf)
+__global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2 *  emf)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2728,7 +2669,7 @@ __global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 * restrict F1, 
 	}
 }
 
-__global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, __global FTYPE2 * restrict emf)
+__global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2 *  emf)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2782,9 +2723,9 @@ __global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 * restrict F1, 
 
 
 
-__global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FTYPE2* pb_i, __global FTYPE2* pf_i, __global FTYPE2 * restrict psf,
-	__global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, __global FTYPE2* radius, __global int* pflag, __global int* failimage,
-	__read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet, __read_only image3d_t conn, __global FTYPE2* Katm, FTYPE2 gam, FTYPE2 dx_1, FTYPE2 dx_2, FTYPE2 dx_3, FTYPE2 a, FTYPE2 Dt,
+__global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FTYPE2* pb_i, __global FTYPE2* pf_i, __global FTYPE2 *  psf,
+	__global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2* radius, __global int* pflag, __global int* failimage,
+	const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, const  FTYPE2* __restrict__ conn, __global FTYPE2* Katm, FTYPE2 gam, FTYPE2 dx_1, FTYPE2 dx_2, FTYPE2 dx_3, FTYPE2 a, FTYPE2 Dt,
 	int full_step)
 {
 	int global_id = get_global_id(0);
@@ -2800,6 +2741,7 @@ __global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FT
 	if (global_id<N1*N2*N3) k = 1;
 	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
 
 	struct of_geom geom;
@@ -2859,10 +2801,10 @@ __global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FT
 		}
 
 		#if(STAGGERED)
-		U[B1] = (psf[0 * ksize + global_id] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE1, 0))) + psf[0 * ksize + global_id + isize] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr + D1, FACE1, 0)))) / 2.0;
-		U[B2] = (psf[1 * ksize + global_id] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE2, 0))) + psf[1 * ksize + global_id + (N3 + 2 * N3G)] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr + D2, icurr, FACE2, 0)))) / 2.0;
+		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + icurr*(N2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize] * gdet_GPU[FACE1*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + (icurr+D1)*(N2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + icurr*(N2 + 2 * N2G) + jcurr] + psf[1 * ksize + global_id + (N3 + 2 * N3G)] * gdet_GPU[FACE2*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + icurr*(N2 + 2 * N2G) + (jcurr+D2)]) / 2.0;
 		#if(N3G>0)
-		U[B3] = (psf[2 * ksize + global_id] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE3, 0))) + psf[2 * ksize + global_id + D3] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE3, 0)))) / 2.0;
+		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + icurr*(N2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id + D3] * gdet_GPU[FACE3*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + icurr*(N2 + 2 * N2G) + jcurr]) / 2.0;
 		#endif
 		#endif
 
@@ -3082,8 +3024,8 @@ __global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FT
 /* 1357910  */
 #define AVG6_2(pr,icurr,jcurr,zcurr, N1, N2, N3, k) (1.0/6.0*(pr[k*(ksize)+(icurr+1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr-1)+ zcurr]*(N3+2*N3G)+pr[k*(ksize)+(icurr-1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr-1)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr+1)]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr-1)]))
 
-__global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 * restrict pv, __global int * restrict pflag, __global int * restrict failimage, __read_only image3d_t gcov,
-	__read_only image3d_t gcon, __read_only image3d_t gdet, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta, FTYPE2 hslope, FTYPE2 gam)
+__global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 *  pv, __global int *  pflag, __global int *  failimage, const  FTYPE2* __restrict__ gcov,
+	const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta, FTYPE2 hslope, FTYPE2 gam)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
@@ -3116,9 +3058,9 @@ __global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 * restrict 
 	}
 }
 
-__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 * restrict  pv, __global int * restrict pflag, __global int * restrict failimage, __read_only image3d_t gcov,
-	__read_only image3d_t gcon, __read_only image3d_t gdet, __global FTYPE2* pbound, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta,
-	FTYPE2 hslope, FTYPE2 gam, int freeze, int NBR_2, int NBR_4, __global FTYPE2 * restrict ps)
+__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 *   pv, __global int *  pflag, __global int *  failimage, const  FTYPE2* __restrict__ gcov,
+	const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, __global FTYPE2* pbound, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta,
+	FTYPE2 hslope, FTYPE2 gam, int freeze, int NBR_2, int NBR_4, __global FTYPE2 *  ps)
 {
 	int global_id = get_global_id(0);
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
@@ -3243,7 +3185,7 @@ __global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 * restrict  p
 	}
 }
 
-__global__ void boundprim2(int N1, int N2, int N3, __global int * restrict pflag, __global FTYPE2 * restrict pv, int NBR_1, int NBR_3, __read_only image3d_t gdet, int AMR_POLE, __global FTYPE2 * restrict ps)
+__global__ void boundprim2(int N1, int N2, int N3, __global int *  pflag, __global FTYPE2 *  pv, int NBR_1, int NBR_3, const  FTYPE2* __restrict__ gdet, int AMR_POLE, __global FTYPE2 *  ps)
 {
 	int j, jref, k;
 	int global_id = get_global_id(0);
@@ -3362,7 +3304,7 @@ __global__ void boundprim2(int N1, int N2, int N3, __global int * restrict pflag
 #define AMR_SWITCHTIMELEVEL 32
 #define NT 0
 
-__global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -3387,7 +3329,7 @@ __global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int js
 	#endif
 }
 
-__global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -3412,7 +3354,7 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	#endif
 }
 
-__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -3437,7 +3379,7 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	#endif
 }
 
-__global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -3445,6 +3387,8 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
 	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	for (k = 0; k < NPR; k++){
@@ -3459,27 +3403,27 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 	#if(STAGGERED)
 	for (i = i1; i <i2; i += 1 + REF_1){
 		send[(NPR + 0)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
-			0.25*(ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
-			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
-			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
-			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))));
+			0.25*(ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + REF_1))*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
+		ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + REF_1))*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
+		ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + REF_1))*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
+		ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + REF_1))*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))));
 
 		send[(NPR + 1)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
-			0.25*(ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) +
-			ps[1 * (ksize)+(i + N1G)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) +
-			ps[1 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE2, 0))) +
-			ps[1 * (ksize)+(i + N1G + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE2, 0))));
+			0.25*(ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) +
+		ps[1 * (ksize)+(i + N1G)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) +
+		ps[1 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE2, 0))) +
+		ps[1 * (ksize)+(i + N1G + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE2, 0))));
 
 		send[(NPR + 2)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
-			0.25*(ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0))) +
-			ps[2 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE3, 0))) +
-			ps[2 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE3, 0))) +
-			ps[2 * (ksize)+(i + N1G + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + REF_1, FACE3, 0))));
+			0.25*(ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0))) +
+		ps[2 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE3, 0))) +
+		ps[2 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE3, 0))) +
+		ps[2 * (ksize)+(i + N1G + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + REF_1)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + REF_1, FACE3, 0))));
 	}
 	#endif
 }
 
-__global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -3487,6 +3431,7 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
 	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	for (k = 0; k < NPR; k++){
@@ -3501,27 +3446,27 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 	#if(STAGGERED)
 	for (j = j1; j <j2; j += 1 + REF_2){
 		send[(NPR + 0)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
-			0.25*(ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
-			ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
-			ps[0 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE1, 0))) +
-			ps[0 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE1, 0))));
+			0.25*(ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j+N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
+		ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
+		ps[0 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + REF_2)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE1, 0))) +
+		ps[0 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + REF_2)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE1, 0))));
 
 		send[(NPR + 1)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
-			0.25*(ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr, FACE2, 0))) +
-			ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr, FACE2, 0))) +
-			ps[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr + REF_1, FACE2, 0))) +
-			ps[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr + REF_1, FACE2, 0))));
+			0.25*(ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + (j1>N2G)*(1 + REF_2))];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr, FACE2, 0))) +
+		ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + (j1>N2G)*(1 + REF_2))];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr, FACE2, 0))) +
+		ps[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + (j1>N2G)*(1 + REF_2))];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr + REF_1, FACE2, 0))) +
+		ps[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + (j1>N2G)*(1 + REF_2))];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr + REF_1, FACE2, 0))));
 
 		send[(NPR + 2)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
-			0.25*(ps[2 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0))) +
-			ps[2 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE3, 0))) +
-			ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE3, 0))) +
-			ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr + REF_1, FACE3, 0))));
+			0.25*(ps[2 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0))) +
+		ps[2 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE3, 0))) +
+		ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE3, 0))) +
+		ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (j + N2G +REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr + REF_1, FACE3, 0))));
 	}
 	#endif
 }
 
-__global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -3529,6 +3474,7 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
 	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	for (k = 0; k < NPR; k++){
@@ -3543,28 +3489,28 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 	#if(STAGGERED)
 	for (z = z1; z <z2; z += 1 + REF_3){
 		send[(NPR + 0)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
-			0.25*(ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
-			ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
-			ps[0 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE1, 0))) +
-			ps[0 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE1, 0))));
+			0.25*(ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
+		ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
+		ps[0 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr + REF_2)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE1, 0))) +
+		ps[0 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr + REF_2)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE1, 0))));
 
 		send[(NPR + 1)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
-			0.25*(ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) +
-			ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) +
-			ps[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE2, 0))) +
-			ps[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE2, 0))));
+			0.25*(ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) +
+		ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) +
+		ps[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE2, 0))) +
+		ps[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE2, 0))));
 
 		send[(NPR + 2)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
-			0.25*(ps[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) +
-			ps[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE3, 0))) +
-			ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
-			ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
+			0.25*(ps[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) +
+		ps[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE3, 0))) +
+		ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+REF_1)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
+		ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+REF_1)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
 	}
 	#endif
 }
 
-__global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int jsize2, int zsize2, __global FTYPE2 * restrict p, __global FTYPE2 * restrict ph,
-	__global FTYPE2 * restrict ps, __global FTYPE2 * restrict psh, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict tempreceive, int update_staggered, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+__global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int jsize2, int zsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
+	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -3572,6 +3518,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	//When at timestep where n_rec does not evolve
@@ -3623,13 +3570,16 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		for (i = i1; i <i2; i++){
 			tempreceive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
 				= (receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0))) - ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1<0))*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0))) 
+				- ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
 			tempreceive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
 				= (receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) - ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)))
+				- ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
 			tempreceive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
 				= (receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0))) - ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)))
+				- ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
 		}
 	}
 
@@ -3656,28 +3606,28 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		for (i = i1; i <i2; i++){
 			if ((jcurr<N2G || jcurr >= BS_2 + N2G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
 				ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0)));
+					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1<0))*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0)));
 				psh[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0)));
+					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1<0))*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0)));
 			}
 			else psh[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0)));
 			ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 			ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+				gdet_GPU[FACE3((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 
 			psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 			psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 		}
 		#endif
 	}
 }
 
-__global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int zsize2, __global FTYPE2 * restrict p, __global FTYPE2 * restrict ph,
-	__global FTYPE2 * restrict ps, __global FTYPE2 * restrict psh, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict tempreceive, int reverse, int update_staggered, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+__global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int zsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
+	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int reverse, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -3685,6 +3635,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor = 1.;
 	if (reverse == 0){
@@ -3737,13 +3688,16 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			for (j = j1; j <j2; j++){
 				tempreceive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
 					= (receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) - ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) 
+					- ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
 				tempreceive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
 					= (receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0))) - ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G +(j1<0))]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0))) 
+					- ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
 				tempreceive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
 					= (receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0))) - ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0))) 
+					- ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
 			}
 		}
 
@@ -3769,22 +3723,22 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			#if(STAGGERED)
 			for (j = j1; j <j2; j++){
 				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 				if ((icurr<N1G || icurr >= BS_1 + N1G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
 					ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-						readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0)));
+						gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + (j1<0))]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0)));
 					psh[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-						readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0)));
+						gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G + (j1<0))]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0)));
 				}
 				else psh[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
+					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
 				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 
 				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 			}
 			#endif
 		}
@@ -3802,7 +3756,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 		#if(STAGGERED)
 		for (j = j1; j <j2; j++){
 			ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 			if (update_staggered == 1){
 				//ps[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = -receive[(1+NPR)*isize2*zsize2*(j2-j1) + (j2-j-1)*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))]/
 				//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j+N2G,icurr,FACE2,0)));
@@ -3812,18 +3766,18 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			//else psh[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = -receive[(1+NPR)*isize2*zsize2*(j2-j1) + (j2-j-1)*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))]/
 			//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j+N2G,icurr,FACE2,0)));
 			ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 			psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 			psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 		}
 		#endif
 	}
 }
 
-__global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int jsize2, __global FTYPE2 * restrict p, __global FTYPE2 * restrict ph,
-	__global FTYPE2 * restrict ps, __global FTYPE2 * restrict psh, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict tempreceive, int update_staggered, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+__global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int jsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
+	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -3831,6 +3785,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 	int jcurr = global_id % (j2 - j1) + j1 + N2G;
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	//When at timestep where n_rec does not evolve
@@ -3882,13 +3837,16 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		for (z = z1; z <z2; z++){
 			tempreceive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
 				= (receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) - ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) 
+				- ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
 			tempreceive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
 				= (receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) - ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) 
+				- ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
 			tempreceive[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
 				= (receive[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) - ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))]) / (0.5*dt*timelevel_rec);
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) 
+				- ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))]) / (0.5*dt*timelevel_rec);
 		}
 	}
 
@@ -3914,27 +3872,27 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		#if(STAGGERED)
 		for (z = z1; z <z2; z++){
 			ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 			ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 			if ((icurr<N1G || icurr >= BS_1 + N1G || jcurr<N2G || jcurr >= BS_2 + N2G) && update_staggered == 1){
 				ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
 				psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
 			}
 			else psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
 			psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 			psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 		}
 		#endif
 	}
 }
 __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
-	__global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1receive, __global FTYPE2 * restrict temp2receive, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
 {
 	int i, ii, ij, iz, is, js, zs, k;
 	int global_id = get_global_id(0);
@@ -3942,6 +3900,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg, dq1, dq2, dq3;
 
@@ -3991,27 +3950,27 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 		#if(STAGGERED)
 		if (js == 1){
 			ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij + REF_2)*zsize2 + iz]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i+N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 			psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij + REF_2)*zsize2 + iz]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 		}
 		else{
 			ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 			psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 		}
 		if (zs == 1){
 			ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + (iz + REF_3)]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 			psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + (iz + REF_3)]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 		}
 		else{
 			ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 			psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 		}
 
 
@@ -4026,7 +3985,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 }
 
 __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
-	__global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1receive, __global FTYPE2 * restrict temp2receive, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
 {
 	int j, ii, ij, iz, is, js, zs, k;
 	int global_id = get_global_id(0);
@@ -4034,6 +3993,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg, dq1, dq2, dq3;
 
@@ -4088,27 +4048,27 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 		#if(STAGGERED)
 		if (is == 1){
 			ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii + REF_1)*zsize2 + iz]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 			psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii + REF_1)*zsize2 + iz]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 		}
 		else{
 			ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 			psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 		}
 		if (zs == 1){
 			ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + (iz + REF_3)]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 			psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + (iz + REF_3)]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 		}
 		else{
 			ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 			psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 		}
 
 		//ps[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+0)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
@@ -4122,7 +4082,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 }
 
 __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
-	__global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1receive, __global FTYPE2 * restrict temp2receive, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
 {
 	int z, ii, ij, iz, is, js, zs, k;
 	int global_id = get_global_id(0);
@@ -4130,6 +4090,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	int jcurr = global_id % (j2 - j1) + j1 + N2G;
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg, dq1, dq2, dq3;
 
@@ -4179,27 +4140,27 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 		#if(STAGGERED)
 		if (is == 1){
 			ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii + REF_1)*jsize2 + ij]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 			psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii + REF_1)*jsize2 + ij]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 		}
 		else{
 			ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 			psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+				gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 		}
 		if (js == 1){
 			ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + (ij + REF_2)]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 			psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + (ij + REF_2)]) /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+				gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 		}
 		else{
 			ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 			psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
-				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+				gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 		}
 		//ps[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+0)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
 		//psh[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+0)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
@@ -4211,7 +4172,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -4239,7 +4200,7 @@ __global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	}
 }
 
-__global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -4267,7 +4228,7 @@ __global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	}
 }
 
-__global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -4295,8 +4256,8 @@ __global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	}
 }
 
-__global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive,
-	__global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
+__global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
+	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -4391,8 +4352,8 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 	}
 }
 
-__global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive,
-	__global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
+__global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
+	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -4487,8 +4448,8 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 	}
 }
 
-__global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive,
-	__global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
+__global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
+	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -4583,7 +4544,7 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 	}
 }
 
-__global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -4615,7 +4576,7 @@ __global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -4647,7 +4608,7 @@ __global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -4679,7 +4640,7 @@ __global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -4711,7 +4672,7 @@ __global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int j
 	}
 }
 
-__global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -4743,7 +4704,7 @@ __global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int i
 	}
 }
 
-__global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+__global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -4775,7 +4736,7 @@ __global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int i
 	}
 }
 
-__global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep, int mode)
+__global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int mode)
 {
 	int i, k;
 	int global_id = get_global_id(0);
@@ -4842,7 +4803,7 @@ __global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2
 	}
 }
 
-__global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep, int mode)
+__global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int mode)
 {
 	int j, k;
 	int global_id = get_global_id(0);
@@ -4909,7 +4870,7 @@ __global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2
 	}
 }
 
-__global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep, int mode)
+__global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int mode)
 {
 	int z, k;
 	int global_id = get_global_id(0);
@@ -4976,7 +4937,7 @@ __global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2
 	}
 }
 
-__global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+__global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2)
 {
 	int i, k;
@@ -5075,7 +5036,7 @@ __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, 
 }
 
 
-__global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+__global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2)
 {
 	int j, k;
@@ -5179,7 +5140,7 @@ __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, 
 	}
 }
 
-__global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+__global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2)
 {
 	int z, k;
@@ -5277,7 +5238,7 @@ __global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, 
 	}
 }
 
-__global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+__global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep){
 	int global_id = get_global_id(0);
 	int icurr = global_id + i1 + N1G;
 	int jcurr = j + N2G;
@@ -5289,7 +5250,7 @@ __global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 * r
 	else send[global_id] += factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
 }
 
-__global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+__global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep){
 	int global_id = get_global_id(0);
 	int icurr = i + N1G;
 	int jcurr = global_id + j1 + N2G;
@@ -5301,7 +5262,7 @@ __global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 * r
 	else send[global_id] += factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
 }
 
-__global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+__global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep){
 	int global_id = get_global_id(0);
 	int icurr = i + N1G;
 	int jcurr = j + N2G;
@@ -5313,7 +5274,7 @@ __global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 * r
 	else send[global_id] += factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
 }
 
-__global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+__global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep){
 	int global_id = get_global_id(0);
 	int icurr = global_id*(1 + REF_1) + i1 + N1G;
 	int jcurr = j + N2G;
@@ -5328,7 +5289,7 @@ __global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYP
 	//pv[1*(ksize)+(icurr+REF_1)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
 }
 
-__global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+__global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep){
 	int global_id = get_global_id(0);
 	int icurr = i + N1G;
 	int jcurr = global_id*(1 + REF_2) + j1 + N2G;
@@ -5343,7 +5304,7 @@ __global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYP
 	//pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]=avg;
 }
 
-__global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+__global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep){
 	int global_id = get_global_id(0);
 	int icurr = i + N1G;
 	int jcurr = j + N2G;
@@ -5358,7 +5319,7 @@ __global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYP
 	//pv[3*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
 }
 
-__global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+__global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor){
 	int global_id = get_global_id(0);
 	int icurr = global_id + i1 + N1G;
@@ -5404,7 +5365,7 @@ __global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE
 	}
 }
 
-__global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+__global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor){
 	int global_id = get_global_id(0);
 	int icurr = i + N1G;
@@ -5450,7 +5411,7 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE
 	}
 }
 
-__global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+__global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor){
 	int global_id = get_global_id(0);
 	int icurr = i + N1G;
@@ -5496,7 +5457,7 @@ __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, __global FTYPE
 	}
 }
 
-__global__ void packsendB1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send)
+__global__ void packsendB1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send)
 {
 	int i;
 	int global_id = get_global_id(0);
@@ -5511,7 +5472,7 @@ __global__ void packsendB1(int i1, int i2, int j1, int j2, int z1, int z2, int j
 	}
 }
 
-__global__ void packsendB2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send)
+__global__ void packsendB2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send)
 {
 	int j;
 	int global_id = get_global_id(0);
@@ -5526,7 +5487,7 @@ __global__ void packsendB2(int i1, int i2, int j1, int j2, int z1, int z2, int i
 	}
 }
 
-__global__ void packsendB3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send)
+__global__ void packsendB3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send)
 {
 	int z;
 	int global_id = get_global_id(0);
@@ -5541,7 +5502,7 @@ __global__ void packsendB3(int i1, int i2, int j1, int j2, int z1, int z2, int i
 	}
 }
 
-__global__ void packsendBaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsendBaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int i;
 	int global_id = get_global_id(0);
@@ -5549,18 +5510,19 @@ __global__ void packsendBaverage1(int i1, int i2, int j1, int j2, int z1, int z2
 	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
 	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	for (i = i1; i <i2; i++){
 		send[(i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*(
-			pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0))) +
-			pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0))) +
-			pv[0 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE1, 0))) +
-			pv[0 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE1, 0))));
+			pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0))) +
+		pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0))) +
+		pv[0 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE1, 0))) +
+		pv[0 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE1, 0))));
 	}
 }
 
-__global__ void packsendBaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsendBaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int j;
 	int global_id = get_global_id(0);
@@ -5568,18 +5530,19 @@ __global__ void packsendBaverage2(int i1, int i2, int j1, int j2, int z1, int z2
 	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
 	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	for (j = j1; j <j2; j++){
 		send[(j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*(
-			pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0))) +
-			pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0))) +
-			pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE2, 0))) +
-			pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE2, 0))));
+			pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (j+N2G)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0))) +
+		pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (j + N2G)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0))) +
+		pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+REF_1)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE2, 0))) +
+		pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+REF_1)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE2, 0))));
 	}
 }
 
-__global__ void packsendBaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+__global__ void packsendBaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int z;
 	int global_id = get_global_id(0);
@@ -5587,18 +5550,19 @@ __global__ void packsendBaverage3(int i1, int i2, int j1, int j2, int z1, int z2
 	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
 	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	for (z = z1; z <z2; z++){
 		send[(z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.25*(
-			pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) +
-			pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE3, 0))) +
-			pv[2 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
-			pv[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
+			pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) +
+		pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE3, 0))) +
+		pv[2 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+REF_1)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
+		pv[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+REF_1)*(BS_2 + 2 * N2G) + (jcurr+REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
 	}
 }
 
-__global__ void unpackreceiveB1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, int div, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive, __read_only image3d_t gdet_GPU)
+__global__ void unpackreceiveB1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, int div, __global FTYPE2 *  pv, __global FTYPE2 *  receive, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int i;
 	int global_id = get_global_id(0);
@@ -5606,15 +5570,16 @@ __global__ void unpackreceiveB1(int i1, int i2, int j1, int j2, int z1, int z2, 
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor = 1.;
 	for (i = i1; i <i2; i++){
-		if (div == 1) factor = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0)));
+		if (div == 1) factor = gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i+N1G)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0)));
 		pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 	}
 }
 
-__global__ void unpackreceiveB2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, int div, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive, __read_only image3d_t gdet_GPU, int neg)
+__global__ void unpackreceiveB2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, int div, __global FTYPE2 *  pv, __global FTYPE2 *  receive, const  FTYPE2* __restrict__ gdet_GPU, int neg)
 {
 	int j;
 	int global_id = get_global_id(0);
@@ -5622,18 +5587,19 @@ __global__ void unpackreceiveB2(int i1, int i2, int j1, int j2, int z1, int z2, 
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor = 1.;
 
 	for (j = j1; j <j2; j++){
-		if (div == 1) factor = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
+		if (div == 1) factor = gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j+N2G)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
 		if (neg == 1) factor = -1.;
 		if (div == 1 && neg == 1) factor = -readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
 		pv[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 	}
 }
 
-__global__ void unpackreceiveB3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, int div, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive, __read_only image3d_t gdet_GPU)
+__global__ void unpackreceiveB3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, int div, __global FTYPE2 *  pv, __global FTYPE2 *  receive, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int z;
 	int global_id = get_global_id(0);
@@ -5641,11 +5607,12 @@ __global__ void unpackreceiveB3(int i1, int i2, int j1, int j2, int z1, int z2, 
 	int jcurr = global_id % (j2 - j1) + j1 + N2G;
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor = 1.;
 
 	for (z = z1; z <z2; z++){
-		if (div == 1) factor = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+		if (div == 1) factor = gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
 		pv[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
 	}
 }
@@ -5690,12 +5657,12 @@ void GPU_step_ch()
 		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 
 		nstep++;
-#if(PRESTEP)
+		#if(PRESTEP)
 		for (n = 0; n < n_active; n++){
 			if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && (block[n_ord[n]][AMR_PRESTEP] != 0))block[n_ord[n]][AMR_PRESTEP] = 0;
 			else if (block[n_ord[n]][AMR_PRESTEP] == 1)block[n_ord[n]][AMR_PRESTEP] = 2;
 		}
-#endif
+		#endif
 	}
 
 	/* Repeat and rinse for the full time (aka corrector) step:  */
@@ -5718,18 +5685,18 @@ void GPU_step_ch()
 
 	/*Calculate smallest timestep for all MPI threads*/
 
-#if (MPI_enable)
+		#if (MPI_enable)
 	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-#endif
+		#endif
 
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
 
-#if(TIMESTEP_JET)
+	#if(TIMESTEP_JET)
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
-#endif
+	#endif
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
-#endif
+	#endif
 }
 
 void set_prestep(void){
