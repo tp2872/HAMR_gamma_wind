@@ -5,14 +5,31 @@ extern "C" {
 /*Whether or not to use the 3D version of the code*/
 #define ThreeD (1)
 
+/*Wheter to cool the disk to predifined thickness H_OVER_R*/
+#define COOL_DISK (0)
+#define H_OVER_R (0.03)
+
 /*Wheter to set floors in lab frame*/
 #define ZAMO_FLOOR (1)
 
 /*Set the pixel value of the frozen boundary*/
 #define ibound 0
 
+/*Whether or not to fix the Carbuncle problem*/
+#define H_CORRECTION 0
+
 /*Whether or not to allow inflow for fluxes (see fix_flux())*/
 #define INFLOW 0
+
+/*Set block size in each dimension*/
+#define BS_1 40
+#define BS_2 50
+#define BS_3 12
+
+#define STAGGERED (1)
+
+/*Wheter or not to use a non symmetric metric for tilted disk*/
+#define NONSYMMETRIC (0)
 
 /*Wheter or not to use the full dispersion relation*/
 #define FULL_DISP (0)
@@ -20,11 +37,15 @@ extern "C" {
 /* whether or not to use Font's  adiabatic/isothermal prim. var. inversion method: */
 #define DO_FONT_FIX (1)
 
-/*Set grid parameters*/
-#define BRAVO (1.0)
-#define QUEBEC (2.0)
-#define CHARLIE (0.55)
-#define DELTA (3.0)
+/*Whether or not to use the PPM slope limiter*/
+#define PPM (0)
+
+/*Whether or not to use the general relativistic van Leer slope limiter*/
+#define LEER (0)
+
+/*Enable fma operations for improved performance on AMD GPUs*/
+//#define OPENCLBUILDOPTIONS "-cl-mad-enable"
+#define AMD 0
 
 /*Set workgroup size*/
 #define LOCAL_WORK_SIZE 64
@@ -42,42 +63,44 @@ extern "C" {
 #define D3 ((ThreeD>0)?(1):(0))
 
 /*Set the number of pixels for the polefix*/
-#define POLEFIX 1*(1-D3)
+#define POLEFIX 2
 
 /* your choice of floating-point data type */
 #define FTYPE double
 #define FTYPE2 double
 
+#define DOKTOT 1
+#define KTOT 8
+
 /*Define variable quantities*/
 #define NPG 5
-#define NPR 8
+#define NPR 9
 #define NDIM 4
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(0.5*1.e-4)
-#define UUMIN	(0.5*1.e-6)
+#define RHOMIN	(1.0*1.e-6)
+#define UUMIN	(1.0*1.e-7)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
-#define POWRHO (2.50)
+#define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (9.*FLOORFACTOR)
-#define BSQOUMAX (250.*FLOORFACTOR)
-#define UORHOMAX (50.*FLOORFACTOR)
+#define BSQORHOMAX (50.*FLOORFACTOR)
+#define BSQOUMAX (750.*FLOORFACTOR)
+#define UORHOMAX (150.*FLOORFACTOR)
 
 /* Max. value of gamma, the lorentz factor */
-#define GAMMAMAX (50.)
-
-#define AMD 0
+#define GAMMAMAX (80.)
 
 /*Define misc. MACROs*/
 #if AMD
-#define dot(a,b) (mad(a[0],b[0],mad( a[1],b[1],mad( a[2],b[2] , a[3]*b[3]))))
+#define dot(a,b) (fma(a[0],b[0],fma( a[1],b[1],fma( a[2],b[2] , a[3]*b[3]))))
 #else
 #define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3])
 #endif
 #define delta(i,j) (((i) == (j)) ? 1. : 0.)
 #define MY_MIN(fval1,fval2) ( ((fval1) < (fval2)) ? (fval1) : (fval2))
 #define MY_MAX(fval1,fval2) ( ((fval1) > (fval2)) ? (fval1) : (fval2))
+#define MY_SIGN(fval) ( ((fval) <0.) ? -1. : 1. )
 
 /* mnemonics for primitive vars; conserved vars */
 #define RHO	(0)	
@@ -98,8 +121,8 @@ extern "C" {
 #define SMALL	(1.e-20)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (1.0)
-#define LAXF  (0.0)
+#define HLLF  (1.00)
+#define LAXF  (0.00)
 
 /* loop over all Space dimensions; first rank loop */
 #define SLOOPA for(j=1;j<NDIM;j++)
@@ -174,468 +197,880 @@ __device__ void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM], FTYPE *f,
 __device__ FTYPE x1_of_x0(FTYPE x0, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq);
 __device__ FTYPE W_of_vsq2(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u, FTYPE D, FTYPE K_atm);
 __device__ FTYPE u_of_p2(FTYPE p);
-__device__ FTYPE pressure_of_rho2(FTYPE rho0,  FTYPE K_atm);
-__device__ FTYPE dWdvsq_calc2(FTYPE vsq, FTYPE rho, FTYPE p );
-__device__ int Utoprim_new_body2(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[],FTYPE K_atm);
+__device__ FTYPE pressure_of_rho2(FTYPE rho0, FTYPE K_atm);
+__device__ FTYPE dWdvsq_calc2(FTYPE vsq, FTYPE rho, FTYPE p);
+__device__ int Utoprim_new_body2(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[], FTYPE K_atm);
 __device__ void func_1d_gnr2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm);
-__device__ void validate_x2(FTYPE x[1], FTYPE x0[1] ) ;
-__device__ int general_newton_raphson2( FTYPE x[], int n,  FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm );
-__device__ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYPE gdet, FTYPE prim[NPR], FTYPE K );
+__device__ void validate_x2(FTYPE x[1], FTYPE x0[1]);
+__device__ int general_newton_raphson2(FTYPE x[], int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm);
+__device__ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K);
 __device__ void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2);
-__device__ void raise_g(FTYPE vcov[], FTYPE gcon[][NDIM], FTYPE vcon[]);
-__device__ void lower_g(FTYPE vcon[], FTYPE gcov[][NDIM], FTYPE vcov[]);
-__device__ void ncov_calc(FTYPE gcon[][NDIM],FTYPE ncov[]) ;
-__device__ void bcon_calc_g(FTYPE prim[],FTYPE ucon[],FTYPE ucov[],FTYPE ncov[],FTYPE bcon[]); 
-__device__ FTYPE pressure_rho0_u(FTYPE rho0, FTYPE u);
-__device__ FTYPE pressure_rho0_w(FTYPE rho0, FTYPE w);
+__device__ raise_g(FTYPE vcov[], FTYPE gcon[][NDIM], FTYPE ucon[]);
+__device__ lower_g(FTYPE vcon[], FTYPE gcov[][NDIM], FTYPE ucov[]);
+__device__ ncov_calc(FTYPE gcon[][NDIM], FTYPE ncov[]);
+__device__ bcon_calc_g(FTYPE prim[], FTYPE ucon[], FTYPE ucov[], FTYPE ncov[], FTYPE bcon[]);
+FTYPE pressure_rho0_u(FTYPE rho0, FTYPE u);
+FTYPE pressure_rho0_w(FTYPE rho0, FTYPE w);
+__device__ int Utoprim_1dfix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K);
+__device__ int Utoprim_new_body3(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K_atm);
+__device__ FTYPE pressure_of_rho3(FTYPE rho0, FTYPE K_atm);
+__device__ FTYPE vsq_calc3(FTYPE W, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm);
+__device__ int general_newton_raphson3(FTYPE x[], int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2, FTYPE rho_for_gnr2, FTYPE W_for_gnr2_old, FTYPE rho_for_gnr2_old);
+__device__ void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[],
+	FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2, FTYPE rho_for_gnr2, FTYPE W_for_gnr2_old, FTYPE rho_for_gnr2_old);
+__device__ int gnr2(FTYPE x[], int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2);
 
-__device__ void raise_g(FTYPE vcov[NDIM], FTYPE gcon[NDIM][NDIM], FTYPE vcon[NDIM])
+__device__ int Utoprim_1dfix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K)
 {
-  int i,j;
-  #pragma unroll 8	
-  for(i=0;i<NDIM;i++) {
-    vcon[i] = 0. ;
-	#pragma unroll 8	
-    for(j=0;j<NDIM;j++) 
-      vcon[i] += gcon[i][j]*vcov[j] ;
-  }
-  return ;
+	FTYPE U_tmp[NPR], prim_tmp[NPR];
+	int i, j, ret;
+	FTYPE alpha, K_atm;
+
+	if (U[0] <= 0.) {
+		return(-100);
+	}
+	K_atm = K;
+
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
+
+	alpha = 1.0 / sqrt(-gcon[0][0]);
+
+	U_tmp[RHO] = alpha * U[RHO] / gdet;
+	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
+	for (i = UTCON1; i <= UTCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+	for (i = BCON1; i <= BCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+
+	for (i = 0; i < BCON1; i++) {
+		prim_tmp[i] = prim[i];
+	}
+	for (i = BCON1; i <= BCON3; i++) {
+		prim_tmp[i] = alpha*prim[i];
+	}
+
+	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
+	if (ret == 0) {
+		for (i = 0; i < BCON1; i++) {
+			prim[i] = prim_tmp[i];
+		}
+	}
+	return(ret);
 }
 
-__device__ void lower_g(FTYPE vcon[NDIM], FTYPE gcov[NDIM][NDIM], FTYPE vcov[NDIM])
+
+__device__ int Utoprim_new_body3(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
+	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K_atm)
 {
-  int i,j;
-  #pragma unroll 8	
-  for(i=0;i<NDIM;i++) {
-    vcov[i] = 0. ;
-	#pragma unroll 8	
-    for(j=0;j<NDIM;j++) 
-      vcov[i] += gcov[i][j]*vcon[j] ;
-  }
-  return ;
+
+	FTYPE x_1d[1];
+	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+	FTYPE rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
+	int i, j, retval, i_increase;
+	FTYPE W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old;
+	FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
+	retval = 0;
+
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	Bcon[0] = 0.;
+	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
+
+	lower_g(Bcon, gcov, Bcov);
+
+	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
+	raise_g(Qcov, gcon, Qcon);
+
+
+	Bsq = 0.;
+	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
+
+	QdotB = 0.;
+	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
+	QdotBsq = QdotB*QdotB;
+
+	ncov_calc(gcon, ncov);
+	raise_g(ncov, gcon, ncon);
+
+	Qdotn = Qcon[0] * ncov[0];
+
+	Qsq = 0.;
+	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
+
+	Qtsq = Qsq + Qdotn*Qdotn;
+
+	D = U[RHO];
+
+	utsq = 0.;
+	for (i = 1; i<4; i++)
+		for (j = 1; j<4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+
+
+	if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) {
+		utsq = fabs(utsq);
+	}
+	if (utsq < 0. || utsq > UTSQ_TOO_BIG) {
+		retval = 2;
+		return(retval);
+	}
+
+	gammasq = 1. + utsq;
+	gamma = sqrt(gammasq);
+
+	rho0 = D / gamma;
+	p = pressure_of_rho3(rho0, K_atm);
+	u = u_of_p2(p);
+	w = rho0 + u + p;
+
+	W_last = w*gammasq;
+
+	i_increase = 0;
+	while (((W_last*W_last*W_last * (W_last + 2.*Bsq)
+		- QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq))
+		&& (i_increase < 10)) {
+		W_last *= 10.;
+		i_increase++;
+	}
+
+	W_for_gnr2 = W_for_gnr2_old = W_last;
+	rho_for_gnr2 = rho_for_gnr2_old = rho0;
+
+	x_1d[0] = W_last;
+	retval = general_newton_raphson3(x_1d, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);
+
+	W = x_1d[0];
+
+	if ((retval != 0) || (W == FAIL_VAL)) {
+		retval = retval * 100 + 1;
+
+		return(retval);
+	}
+	else{
+		if (W <= 0. || W > W_TOO_BIG) {
+			retval = 3;
+			return(retval);
+		}
+	}
+
+	vsq = vsq_calc3(W, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);
+	if (vsq >= 1.) {
+		retval = 4;
+		return(retval);
+	}
+
+	gtmp = sqrt(1. - vsq);
+	gamma = 1. / gtmp;
+	rho0 = D * gtmp;
+
+	w = W * (1. - vsq);
+
+	p = pressure_of_rho3(rho0, K_atm);
+	u = u_of_p2(p);
+
+	if ((rho0 <= 0.) || (u <= 0.)) {
+		retval = 5;
+		return(retval);
+	}
+
+	prim[RHO] = rho0;
+	prim[UU] = u;
+
+
+	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+	return(retval);
 }
 
-__device__ void ncov_calc(FTYPE gcon[NDIM][NDIM],FTYPE ncov[NDIM]) 
+__device__ FTYPE pressure_of_rho3(FTYPE rho0, FTYPE K_atm)
 {
-  FTYPE lapse ;
-  int i;
-
-  lapse = sqrt(-1./gcon[0][0]) ;
-  ncov[0] = -lapse ;
-  #pragma unroll 8	
-  for( i = 1; i < NDIM; i++) { 
-    ncov[i] = 0. ;
-  }
-  return ;
+	return(K_atm * pow(rho0, G_ATM));
 }
 
-__device__ void bcon_calc_g(FTYPE prim[NPR],FTYPE ucon[NDIM],FTYPE ucov[NDIM],FTYPE ncov[NDIM],FTYPE bcon[NDIM]) 
+__device__ FTYPE vsq_calc3(FTYPE W, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm)
 {
-  FTYPE Bcon[NDIM] ;
-  FTYPE u_dot_B ;
-  FTYPE gamma ;
-  int i ;
+	FTYPE Wsq, Xsq;
+	Wsq = W*W;
+	Xsq = (Bsq + W) * (Bsq + W);
+	return((Wsq * Qtsq + QdotBsq * (Bsq + 2.*W)) / (Wsq*Xsq));
+}
 
-  // Bcon = \mathcal{B}^\mu  of the paper:
-  Bcon[0] = 0. ;
-  #pragma unroll 8	
-  for(i=1;i<NDIM;i++) Bcon[i] = -ncov[0] * prim[BCON1+i-1] ;
+__device__ int general_newton_raphson3(FTYPE x[], int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2, FTYPE rho_for_gnr2, FTYPE W_for_gnr2_old, FTYPE rho_for_gnr2_old)
+{
+	FTYPE f, df, dx[NEWT_DIM2], x_old[NEWT_DIM2], resid[NEWT_DIM2],
+		jac[NEWT_DIM2][NEWT_DIM2];
+	FTYPE errx, x_orig[NEWT_DIM2];
+	int    n_iter, id, jd, i_extra, doing_extra;
+	FTYPE dW, dvsq, vsq_old, vsq, W, W_old;
+	int   keep_iterating, i_increase;
 
-  u_dot_B = 0. ;
-  #pragma unroll 8	
-  for(i=0;i<NDIM;i++) u_dot_B += ucov[i]*Bcon[i] ;
+	errx = 1.;
+	df = f = 1.;
+	i_extra = doing_extra = 0;
+	for (id = 0; id < n; id++)  x_old[id] = x_orig[id] = x[id];
 
-  gamma = -ucon[0]*ncov[0] ;
-  #pragma unroll 8	
-  for(i=0;i<NDIM;i++) bcon[i] = (Bcon[i] + ucon[i]*u_dot_B)/gamma ;
+	vsq_old = vsq = W = W_old = 0.;
+
+	n_iter = 0;
+
+	keep_iterating = 1;
+	while (keep_iterating) {
+		#if( USE_ISENTROPIC )   
+		func_1d_orig1(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);  /* returns with new dx, f, df */
+		#endif
+
+		errx = 0.;
+		for (id = 0; id < n; id++) {
+			x_old[id] = x[id];
+		}
+
+		for (id = 0; id < n; id++) {
+			x[id] += dx[id];
+		}
+
+		i_increase = 0;
+		while (((x[0] * x[0] * x[0] * (x[0] + 2.*Bsq) -
+			QdotBsq*(2.*x[0] + Bsq)) <= x[0] * x[0] * (Qtsq - Bsq*Bsq))
+			&& (i_increase < 10)) {
+			x[0] -= (1.*i_increase) * dx[0] / 10.;
+			i_increase++;
+		}
+		errx = (x[0] == 0.) ? fabs(dx[0]) : fabs(dx[0] / x[0]);
+		x[0] = fabs(x[0]);
+
+		if ((fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
+			doing_extra = 1;
+		}
+
+		if (doing_extra == 1) i_extra++;
+
+		if (((fabs(errx) <= NEWT_TOL) && (doing_extra == 0)) ||
+			(i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+			keep_iterating = 0;
+		}
+		n_iter++;
+	}
+
+	if ((isfinite(f) == 0) || (isfinite(df) == 0) || (isfinite(x[0]) == 0)) {
+		return(2);
+	}
+
+
+	if (fabs(errx) > MIN_NEWT_TOL){
+		return(1);
+	}
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
+		return(0);
+	}
+	if (fabs(errx) <= NEWT_TOL){
+		return(0);
+	}
+	return(0);
+}
+
+__device__ int gnr2(FTYPE x[], int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2)
+{
+	FTYPE f, df, dx[NEWT_DIM2], x_old[NEWT_DIM2], resid[NEWT_DIM2],
+		jac[NEWT_DIM2][NEWT_DIM2];
+	FTYPE errx, x_orig[NEWT_DIM2];
+	int    n_iter, id, jd, i_extra, doing_extra;
+	FTYPE dW, dvsq, vsq_old, vsq, W, W_old;
+	int   keep_iterating;
+
+	errx = 1.;
+	df = f = 1.;
+	i_extra = doing_extra = 0;
+	for (id = 0; id < n; id++)  x_old[id] = x_orig[id] = x[id];
+	n_iter = 0;
+
+	keep_iterating = 1;
+	while (keep_iterating) {
+		func_gnr2_rho(x, dx, resid, jac, &f, &df, n, D, K_atm, W_for_gnr2);  /* returns with new dx, f, df */
+
+		errx = 0.;
+		for (id = 0; id < n; id++) {
+			x_old[id] = x[id];
+		}
+
+		/* Make the newton step: */
+		for (id = 0; id < n; id++) {
+			x[id] += dx[id];
+		}
+
+		/* Calculate the convergence criterion */
+		for (id = 0; id < n; id++) {
+			errx += (x[id] == 0.) ? fabs(dx[id]) : fabs(dx[id] / x[id]);
+		}
+		errx /= 1.*n;
+
+		x[0] = fabs(x[0]);
+
+		if ((fabs(errx) <= NEWT_TOL2) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
+			doing_extra = 0;
+		}
+
+		if (doing_extra == 1) i_extra++;
+
+		if (((fabs(errx) <= NEWT_TOL2) && (doing_extra == 0)) ||
+			(i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+			keep_iterating = 0;
+		}
+
+		n_iter++;
+
+	}
+
+	if ((isfinite(f) == 0) || (isfinite(df) == 0) || (isfinite(x[0]) == 0)) {
+		return(2);
+	}
+
+	if (fabs(errx) > MIN_NEWT_TOL){
+		return(1);
+	}
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
+		return(0);
+	}
+	if (fabs(errx) <= NEWT_TOL){
+		return(0);
+	}
+	return(0);
+}
+
+//isentropic version:   eq.  (27)
+__device__ void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[],
+	FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2, FTYPE rho_for_gnr2, FTYPE W_for_gnr2_old, FTYPE rho_for_gnr2_old)
+{
+	int retval, ntries;
+	FTYPE  Dc, t1, t10, t2, t21, t23, t26, t29, t3, t30;
+	FTYPE  t32, t33, t34, t38, t5, t51, t67, t8, W, x_rho[1], rho, rho_g;
+
+	W = x[0];
+	W_for_gnr2_old = W_for_gnr2;
+	W_for_gnr2 = W;
+
+	// get rho from NR:
+	rho_g = x_rho[0] = rho_for_gnr2;
+
+	ntries = 0;
+	while ((retval = gnr2(x_rho, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2)) && (ntries++ < 10)) {
+		rho_g *= 10.;
+		x_rho[0] = rho_g;
+	}
+
+	rho_for_gnr2_old = rho_for_gnr2;
+	rho = rho_for_gnr2 = x_rho[0];
+
+	Dc = D;
+	t1 = Dc*Dc;
+	t2 = QdotBsq*t1;
+	t3 = t2*Bsq;
+	t5 = Bsq*Bsq;
+	t8 = t1*Bsq;
+	t10 = t1*W;
+	t21 = W*W;
+	t23 = rho*rho;
+	t26 = 1 / t1;
+	resid[0] = (t3 + (2.0*t2 + ((Qtsq - t5)*t1
+		+ (-2.0*t8 - t10)*W)*W)*W + (t5 + (2.0*Bsq + W)*W)*t21*t23)*t26 / t21;
+	t29 = t1*t1;
+	t30 = QdotBsq*t29;
+	t32 = GAMMA*K_atm;
+	t33 = pow(rho, 1.0*GAMMA);
+	t34 = t32*t33;
+	t38 = t23 * t33;
+	t51 = GAMMA*t1*K_atm*t33;
+	t67 = t21*W;
+	jac[0][0] = -2.0*(t30*Bsq*t34 + (t30*t34
+		+ ((-t38*Bsq*t32 + Bsq*GAMMA*t1*K_atm*t33)*t1
+		+ (-t38*GAMMA*K_atm + t51)*t1*W)*t21)*W
+		+ ((-t3 + (-t2 + (-t8 - t10)*t21)*W)*W + (-t5 - Bsq*W)*t67*t23)*t23)*t26 / (t51 - W*t23) / t67;
+
+	dx[0] = -resid[0] / jac[0][0];
+
+	*f = 0.5*resid[0] * resid[0];
+	*df = -2. * (*f);
+
+	return;
+}
+
+
+__device__ raise_g(FTYPE ucov[NDIM], FTYPE gcon[NDIM][NDIM], FTYPE ucon[NDIM])
+{
+	#if AMD
+	ucon[0] = fma(gcon[0][0], ucov[0], fma(
+		gcon[0][1], ucov[1], fma(
+		gcon[0][2], ucov[2]
+		, gcon[0][3] * ucov[3])));
+	ucon[1] = fma(gcon[1][0], ucov[0], fma(
+		gcon[1][1], ucov[1], fma(
+		gcon[1][2], ucov[2]
+		, gcon[1][3] * ucov[3])));
+	ucon[2] = fma(gcon[2][0], ucov[0], fma(
+		gcon[2][1], ucov[1], fma(
+		gcon[2][2], ucov[2]
+		, gcon[2][3] * ucov[3])));
+	ucon[3] = fma(gcon[3][0], ucov[0], fma(
+		gcon[3][1], ucov[1], fma(
+		gcon[3][2], ucov[2]
+		, gcon[3][3] * ucov[3])));
+	#else
+	ucon[0] = gcon[0][0] * ucov[0]
+		+ gcon[0][1] * ucov[1]
+		+ gcon[0][2] * ucov[2]
+		+ gcon[0][3] * ucov[3];
+	ucon[1] = gcon[1][0] * ucov[0]
+		+ gcon[1][1] * ucov[1]
+		+ gcon[1][2] * ucov[2]
+		+ gcon[1][3] * ucov[3];
+	ucon[2] = gcon[2][0] * ucov[0]
+		+ gcon[2][1] * ucov[1]
+		+ gcon[2][2] * ucov[2]
+		+ gcon[2][3] * ucov[3];
+	ucon[3] = gcon[3][0] * ucov[0]
+		+ gcon[3][1] * ucov[1]
+		+ gcon[3][2] * ucov[2]
+		+ gcon[3][3] * ucov[3];
+#endif
+	return;
+}
+
+__device__ lower_g(FTYPE ucon[NDIM], FTYPE gcov[NDIM][NDIM], FTYPE ucov[NDIM])
+{
+	#if AMD
+	ucov[0] = fma(gcov[0][0], ucon[0], fma(
+		gcov[0][1], ucon[1], fma(
+		gcov[0][2], ucon[2],
+		gcov[0][3] * ucon[3])));
+	ucov[1] = fma(gcov[1][0], ucon[0], fma(
+		gcov[1][1], ucon[1], fma(
+		gcov[1][2], ucon[2],
+		gcov[1][3] * ucon[3])));
+	ucov[2] = fma(gcov[2][0], ucon[0], fma(
+		gcov[2][1], ucon[1], fma(
+		gcov[2][2], ucon[2],
+		gcov[2][3] * ucon[3])));
+	ucov[3] = fma(gcov[3][0], ucon[0], fma(
+		gcov[3][1], ucon[1], fma(
+		gcov[3][2], ucon[2],
+		gcov[3][3] * ucon[3])));
+	return;
+	#else
+	ucov[0] = gcov[0][0] * ucon[0]
+		+ gcov[0][1] * ucon[1]
+		+ gcov[0][2] * ucon[2]
+		+ gcov[0][3] * ucon[3];
+	ucov[1] = gcov[1][0] * ucon[0]
+		+ gcov[1][1] * ucon[1]
+		+ gcov[1][2] * ucon[2]
+		+ gcov[1][3] * ucon[3];
+	ucov[2] = gcov[2][0] * ucon[0]
+		+ gcov[2][1] * ucon[1]
+		+ gcov[2][2] * ucon[2]
+		+ gcov[2][3] * ucon[3];
+	ucov[3] = gcov[3][0] * ucon[0]
+		+ gcov[3][1] * ucon[1]
+		+ gcov[3][2] * ucon[2]
+		+ gcov[3][3] * ucon[3];
+	#endif
+	return;
+}
+
+__device__ ncov_calc(FTYPE gcon[NDIM][NDIM], FTYPE ncov[NDIM])
+{
+	FTYPE lapse;
+	int i;
+
+	lapse = sqrt(-1. / gcon[0][0]);
+	ncov[0] = -lapse;
+#pragma unroll NPR	
+	for (i = 1; i < NDIM; i++) {
+		ncov[i] = 0.;
+	}
+	return;
+}
+
+__device__ bcon_calc_g(FTYPE prim[NPR], FTYPE ucon[NDIM], FTYPE ucov[NDIM], FTYPE ncov[NDIM], FTYPE bcon[NDIM])
+{
+	FTYPE Bcon[NDIM];
+	FTYPE u_dot_B;
+	FTYPE gamma;
+	int i;
+
+	// Bcon = \mathcal{B}^\mu  of the paper:
+	Bcon[0] = 0.;
+	#pragma unroll NPR	
+	for (i = 1; i<NDIM; i++) Bcon[i] = -ncov[0] * prim[BCON1 + i - 1];
+
+	u_dot_B = 0.;
+	#pragma unroll NPR	
+	for (i = 0; i<NDIM; i++) u_dot_B += ucov[i] * Bcon[i];
+
+	gamma = -ucon[0] * ncov[0];
+	#pragma unroll NPR	
+	for (i = 0; i<NDIM; i++) bcon[i] = (Bcon[i] + ucon[i] * u_dot_B) / gamma;
 }
 
 __device__ int gamma_calc_g(FTYPE *pr, FTYPE gcov[NDIM][NDIM], FTYPE *gamma)
 {
-  FTYPE utsq ;
+	FTYPE utsq;
 
-  utsq =    gcov[1][1]*pr[UTCON1]*pr[UTCON1]
-    + gcov[2][2]*pr[UTCON2]*pr[UTCON2]
-    + gcov[3][3]*pr[UTCON3]*pr[UTCON3]
-    + 2.*(  gcov[1][2]*pr[UTCON1]*pr[UTCON2]
-	    + gcov[1][3]*pr[UTCON1]*pr[UTCON3]
-	    + gcov[2][3]*pr[UTCON2]*pr[UTCON3]) ;
+	utsq = gcov[1][1] * pr[UTCON1] * pr[UTCON1]
+		+ gcov[2][2] * pr[UTCON2] * pr[UTCON2]
+		+ gcov[3][3] * pr[UTCON3] * pr[UTCON3]
+		+ 2.*(gcov[1][2] * pr[UTCON1] * pr[UTCON2]
+		+ gcov[1][3] * pr[UTCON1] * pr[UTCON3]
+		+ gcov[2][3] * pr[UTCON2] * pr[UTCON3]);
 
-  if(utsq<0.0){
-    if(fabs(utsq)>1.E-10){ // then assume not just machine precision
-      return (1);
-    }
-    else utsq=fabs(utsq); // set floor
-  }
+	if (utsq<0.0){
+		if (fabs(utsq)>1.E-10){ // then assume not just machine precision
+			return (1);
+		}
+		else utsq = fabs(utsq); // set floor
+	}
 
-  *gamma = sqrt(1. + utsq) ;
-  return(0) ;
+	*gamma = sqrt(1. + utsq);
+	return(0);
 }
 
 
 __device__ FTYPE pressure_rho0_u(FTYPE rho0, FTYPE u)
 {
-  return((GAMMA - 1.)*u) ;
+	return((GAMMA - 1.)*u);
 }
 
 __device__ FTYPE pressure_rho0_w(FTYPE rho0, FTYPE w)
 {
-  return((GAMMA-1.)*(w - rho0)/GAMMA) ;
+	return((GAMMA - 1.)*(w - rho0) / GAMMA);
 }
 
 // for the isentropic version:   eq.  (27)
-__device__ void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			 FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2)
+__device__ void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[],
+	FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE D, FTYPE K_atm, FTYPE W_for_gnr2)
 {
-  FTYPE A, B, C, rho, W, B0;
-  
-  A = D*D;
-  B0 = A * GAMMA * K_atm ;
-  B  =  B0 / (GAMMA - 1.);
-  rho = x[0];
-  W = W_for_gnr2;
-  C = pow( rho, GAMMA - 1. );
-  resid[0] = rho*W - A - B*C ;	
-  jac[0][0] = W  -  B0 * C / rho;
-  dx[0] = -resid[0]/jac[0][0];
-  *f = 0.5*resid[0]*resid[0];
-  *df = -2. * (*f);
-  return;
+	FTYPE A, B, C, rho, W, B0;
+
+	A = D*D;
+	B0 = A * GAMMA * K_atm;
+	B = B0 / (GAMMA - 1.);
+	rho = x[0];
+	W = W_for_gnr2;
+	C = pow(rho, GAMMA - 1.);
+	resid[0] = rho*W - A - B*C;
+	jac[0][0] = W - B0 * C / rho;
+	dx[0] = -resid[0] / jac[0][0];
+	*f = 0.5*resid[0] * resid[0];
+	*df = -2. * (*f);
+	return;
 }
 
-__device__ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K )
+__device__ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K)
 {
-  FTYPE U_tmp[NPR], prim_tmp[NPR];
-  int i, ret; 
-  FTYPE alpha;
+	FTYPE U_tmp[NPR], prim_tmp[NPR];
+	int i, ret;
+	FTYPE alpha;
 
-  if( U[0] <= 0. ) { 
-    return(-100);
-  }
+	if (U[0] <= 0.) {
+		return(-100);
+	}
 
-  /* First update the primitive B-fields */
-  #pragma unroll //3
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
+	/* First update the primitive B-fields */
+	#pragma unroll 3
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
-  /* Set the geometry variables: */
-  alpha = 1.0/sqrt(-gcon[0][0]);
-  
-  /* Transform the CONSERVED variables into the new system */
-  U_tmp[RHO] = alpha * U[RHO] / gdet;
-  U_tmp[UU]  = alpha * (U[UU] - U[RHO])  / gdet ;
-  #pragma unroll //3
-  for( i = UTCON1; i <= UTCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
-  }
-  #pragma unroll //3
-  for( i = BCON1; i <= BCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
-  }
+	/* Set the geometry variables: */
+	alpha = 1.0 / sqrt(-gcon[0][0]);
 
-  /* Transform the PRIMITIVE variables into the new system */
-  #pragma unroll //BCON1
-  for( i = 0; i < BCON1; i++ ) {
-    prim_tmp[i] = prim[i];
-  }
-  #pragma unroll //3
-  for( i = BCON1; i <= BCON3; i++ ) {
-    prim_tmp[i] = alpha*prim[i];
-  }
+	/* Transform the CONSERVED variables into the new system */
+	U_tmp[RHO] = alpha * U[RHO] / gdet;
+	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
+	#pragma unroll 3
+	for (i = UTCON1; i <= UTCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+	#pragma unroll 3
+	for (i = BCON1; i <= BCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
 
-  ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K);
+	/* Transform the PRIMITIVE variables into the new system */
+	#pragma unroll BCON1
+	for (i = 0; i < BCON1; i++) {
+		prim_tmp[i] = prim[i];
+	}
+	#pragma unroll 3
+	for (i = BCON1; i <= BCON3; i++) {
+		prim_tmp[i] = alpha*prim[i];
+	}
 
-  /* Transform new primitive variables back if there was no problem : */ 
-  if( ret == 0 ) {
-	 #pragma unroll //BCON1
-    for( i = 0; i < BCON1; i++ ) {
-      prim[i] = prim_tmp[i];
-    }
-  }
-  return( ret ) ;
+	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K);
+
+	/* Transform new primitive variables back if there was no problem : */
+	if (ret == 0) {
+	#pragma unroll BCON1
+		for (i = 0; i < BCON1; i++) {
+			prim[i] = prim_tmp[i];
+		}
+	}
+	return(ret);
 }
 
-__device__ int Utoprim_new_body2(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], 
-			    FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR], FTYPE K_atm)
+__device__ int Utoprim_new_body2(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
+	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR], FTYPE K_atm)
 {
-  FTYPE x_1d[1];
-  FTYPE QdotB,Bcon[NDIM],Bcov[NDIM],Qcov[NDIM],Qcon[NDIM],ncov[NDIM],ncon[NDIM],Qsq,Qtcon[NDIM];
-  FTYPE rho0,u,p,gammasq,gamma,gtmp, W,utsq,vsq;
-  int    i,j, retval;
-  FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
+	FTYPE x_1d[1];
+	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+	FTYPE rho0, u, p, gammasq, gamma, gtmp, W, utsq, vsq;
+	int    i, j, retval;
+	FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
 
-  // Assume ok initially:
-  retval = 0 ;
-  #pragma unroll //3
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
+	// Assume ok initially:
+	retval = 0;
+	#pragma unroll 3
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
-  // Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
-  Bcon[0] = 0. ;
-  #pragma unroll //3
-  for(i=1;i<4;i++) Bcon[i] = U[BCON1+i-1] ;
+	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
+	Bcon[0] = 0.;
+	#pragma unroll 3
+	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
 
-  lower_g(Bcon,gcov,Bcov) ;
-  #pragma unroll //4
-  for(i=0;i<4;i++) Qcov[i] = U[QCOV0+i] ;
-  raise_g(Qcov,gcon,Qcon) ;
+	lower_g(Bcon, gcov, Bcov);
+	#pragma unroll 4
+	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
+	raise_g(Qcov, gcon, Qcon);
 
-  Bsq = 0. ;
-  #pragma unroll //3
-  for(i=1;i<4;i++) Bsq += Bcon[i]*Bcov[i] ;
+	Bsq = 0.;
+	#pragma unroll 3
+	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
 
-  QdotB = 0. ;
-  #pragma unroll //4
-  for(i=0;i<4;i++) QdotB += Qcov[i]*Bcon[i] ;
-  QdotBsq = QdotB*QdotB ;
+	QdotB = 0.;
+	#pragma unroll 4
+	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
+	QdotBsq = QdotB*QdotB;
 
-  ncov_calc(gcon,ncov) ;
-  raise_g(ncov,gcon,ncon);
+	ncov_calc(gcon, ncov);
+	raise_g(ncov, gcon, ncon);
 
-  Qdotn = Qcon[0]*ncov[0] ;
+	Qdotn = Qcon[0] * ncov[0];
 
-  Qsq = 0. ;
-  #pragma unroll //4
-  for(i=0;i<4;i++) Qsq += Qcov[i]*Qcon[i] ;
+	Qsq = 0.;
+	#pragma unroll 4
+	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
 
-  Qtsq = Qsq + Qdotn*Qdotn ;
+	Qtsq = Qsq + Qdotn*Qdotn;
 
-  D = U[RHO] ;
+	D = U[RHO];
 
-  /* calculate W from last timestep and use  for guess */
-  utsq = 0. ;
-  #pragma unroll //3
-  for(i=1;i<4;i++)
-	#pragma unroll //3
-    for(j=1;j<4;j++) utsq += gcov[i][j]*prim[UTCON1+i-1]*prim[UTCON1+j-1] ;
+	/* calculate W from last timestep and use  for guess */
+	utsq = 0.;
+	#pragma unroll 3
+	for (i = 1; i<4; i++)
+	#pragma unroll 3
+		for (j = 1; j<4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
 
-  if( (utsq < 0.) && (fabs(utsq) < 1.0e-13) ) { 
-    utsq = fabs(utsq);
-  }
-  if(utsq < 0. || utsq > UTSQ_TOO_BIG) {
-    retval = 2;
-    return(retval) ;
-  }
+	if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) {
+		utsq = fabs(utsq);
+	}
+	if (utsq < 0. || utsq > UTSQ_TOO_BIG) {
+		retval = 2;
+		return(retval);
+	}
 
-  gammasq = 1. + utsq ;
-  gamma  = sqrt(gammasq);
-	
-  // Always calculate rho from D and gamma so that using D in EOS remains consistent
-  //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D / gamma ;
-  u = prim[UU] ;
-  p = pressure_rho0_u(rho0,u) ;
+	gammasq = 1. + utsq;
+	gamma = sqrt(gammasq);
 
-  // Initialize independent variables for Newton-Raphson:
-  x_1d[0] = 1. - 1. / gammasq ; 
+	// Always calculate rho from D and gamma so that using D in EOS remains consistent
+	//   i.e. you don't get positive values for dP/d(vsq) . 
+	rho0 = D / gamma;
+	u = prim[UU];
+	p = pressure_rho0_u(rho0, u);
 
-  // Find vsq via Newton-Raphson:
-  retval = general_newton_raphson2( x_1d, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm) ; 
+	// Initialize independent variables for Newton-Raphson:
+	x_1d[0] = 1. - 1. / gammasq;
 
-  /* Problem with solver, so return denoting error before doing anything further */
-  if( retval != 0 ) { 
-    retval = retval*100+1;
-    return(retval);
-  }
+	// Find vsq via Newton-Raphson:
+	retval = general_newton_raphson2(x_1d, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);
 
-  // Calculate v^2 :
-  vsq = x_1d[0];
-  if( (vsq >= 1.) || (vsq < 0.) ) {
-    retval = 4;
-    return(retval) ;
-  }
+	/* Problem with solver, so return denoting error before doing anything further */
+	if (retval != 0) {
+		retval = retval * 100 + 1;
+		return(retval);
+	}
 
-  // Find W from this vsq:
-  W = W_of_vsq2(vsq, &p, &rho0, &u, D, K_atm);
+	// Calculate v^2 :
+	vsq = x_1d[0];
+	if ((vsq >= 1.) || (vsq < 0.)) {
+		retval = 4;
+		return(retval);
+	}
 
-  // Recover the primitive variables from the scalars and conserved variables:
-  gtmp = sqrt(1. - vsq);
-  gamma = 1./gtmp ;
+	// Find W from this vsq:
+	W = W_of_vsq2(vsq, &p, &rho0, &u, D, K_atm);
 
-  // User may want to handle this case differently, e.g. do NOT return upon 
-  // a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-  if( (rho0 <= 0.) || (u <= 0.) ) { 
-    retval = 5;
-    return(retval) ;
-  }
+	// Recover the primitive variables from the scalars and conserved variables:
+	gtmp = sqrt(1. - vsq);
+	gamma = 1. / gtmp;
 
-  prim[RHO] = rho0 ;
-  prim[UU] = u ;
+	// User may want to handle this case differently, e.g. do NOT return upon 
+	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
+	if ((rho0 <= 0.) || (u <= 0.)) {
+		retval = 5;
+		return(retval);
+	}
 
-  #pragma unroll //3
-  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-  #pragma unroll //3
-  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
-	
-  /* set field components */
-  #pragma unroll //3
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
+	prim[RHO] = rho0;
+	prim[UU] = u;
 
-  /* done! */
-  return(retval) ;
+	#pragma unroll 3
+	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+	#pragma unroll 3
+	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
+
+	/* set field components */
+	#pragma unroll 3
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	/* done! */
+	return(retval);
 }
 
-
-__device__ int general_newton_raphson2( FTYPE x[], int n, 
-				   FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm )
+__device__ int general_newton_raphson2(FTYPE x[], int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm)
 {
-  FTYPE f, df, dx[NEWT_DIM2], x_old[NEWT_DIM2], resid[NEWT_DIM2], 
-    jac[NEWT_DIM2][NEWT_DIM2];
-  FTYPE errx;
-  int    n_iter, id, i_extra, doing_extra;
-  FTYPE W,W_old, rho,p,u;
+	FTYPE f, df, dx[NEWT_DIM2], x_old[NEWT_DIM2], resid[NEWT_DIM2],
+		jac[NEWT_DIM2][NEWT_DIM2];
+	FTYPE errx;
+	int    n_iter, id, i_extra, doing_extra;
+	FTYPE W, W_old, rho, p, u;
 
-  int   keep_iterating;
+	int   keep_iterating;
 
-  // Initialize various parameters and variables:
-  errx = 1. ; 
-  df =  f = 1.;
-  i_extra = doing_extra = 0;
+	// Initialize various parameters and variables:
+	errx = 1.;
+	df = f = 1.;
+	i_extra = doing_extra = 0;
 
-  for( id = 0; id < n ; id++)  x_old[id] =  x[id] ;
+	for (id = 0; id < n; id++)  x_old[id] = x[id];
 
-  W = W_old = 0.;
+	W = W_old = 0.;
 
-  n_iter = 0;
+	n_iter = 0;
 
-  /* Start the Newton-Raphson iterations : */
-  keep_iterating = 1;
-  while( keep_iterating ) { 
+	/* Start the Newton-Raphson iterations : */
+	keep_iterating = 1;
+	while (keep_iterating) {
 
-	func_1d_gnr2(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);/* returns with new dx, f, df */
-	//func_vsq(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D);
-    /* Save old values before calculating the new: */
-    errx = 0.;
-    for( id = 0; id < n ; id++) {
-      x_old[id] = x[id] ;
-    }
+		func_1d_gnr2(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);/* returns with new dx, f, df */
 
-    for( id = 0; id < n ; id++) {
-      x[id] += dx[id]  ;
-    }
+		errx = 0.;
+		for (id = 0; id < n; id++) {
+			x_old[id] = x[id];
+		}
 
-    /****************************************/
-    /* Make sure that the new x[] is physical : */
-    /****************************************/
-    // METHOD specific
-    validate_x2( x, x_old );
+		for (id = 0; id < n; id++) {
+			x[id] += dx[id];
+		}
 
-    /****************************************/
-    /* Calculate the convergence criterion */
-    /****************************************/
+		validate_x2(x, x_old);
 
-    /* For the new criterion, always look at error in "W" : */
-    // METHOD specific
-    W_old = W;
-    W = W_of_vsq2( x[0], &p, &rho, &u, D, K_atm);
-    errx  = (W==0.) ?  fabs(W-W_old) : fabs((W-W_old)/W);
-    errx += (x[0]==0.) ?  fabs(x[0]-x_old[0]) : fabs((x[0]-x_old[0])/x[0]);
-    
-    if( (fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) {
-      doing_extra = 1;
-    }
+		W_old = W;
+		W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm);
+		errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
+		errx += (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
-    if( doing_extra == 1 ) i_extra++ ;
+		if ((fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
+			doing_extra = 1;
+		}
 
-    // See if we've done the extra iterations, or have done too many iterations:
-    if( ((fabs(errx) <= NEWT_TOL)&&(doing_extra == 0)) 
-	|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER-1)) ) {
-      keep_iterating = 0;
-    }
+		if (doing_extra == 1) i_extra++;
 
-    n_iter++;
-  }   // END of while(keep_iterating)
+		// See if we've done the extra iterations, or have done too many iterations:
+		if (((fabs(errx) <= NEWT_TOL) && (doing_extra == 0))
+			|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+			keep_iterating = 0;
+		}
 
-  /*  Check for bad untrapped divergences : */
-  if( (isfinite(f)==0) || (isfinite(df)==0) ) {
-    return(2);
-  }
+		n_iter++;
+	}   // END of while(keep_iterating)
 
-  // Return in different ways depending on whether a solution was found:
-  if( fabs(errx) > MIN_NEWT_TOL){
+	/*  Check for bad untrapped divergences : */
+	if ((isfinite(f) == 0) || (isfinite(df) == 0)) {
+		return(2);
+	}
 
-    return(1);
-  }
-  if( (fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL) ){
-    //fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
-    return(0);
-  }
-  if( fabs(errx) <= NEWT_TOL ){
-    //fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
-    return(0);
-  }
-  return(0);
+	// Return in different ways depending on whether a solution was found:
+	if (fabs(errx) > MIN_NEWT_TOL){
+
+		return(1);
+	}
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
+		//fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
+		return(0);
+	}
+	if (fabs(errx) <= NEWT_TOL){
+		//fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
+		return(0);
+	}
+	return(0);
 }
 
-__device__ void validate_x2(FTYPE x[1], FTYPE x0[1] ) 
+__device__ void validate_x2(FTYPE x[1], FTYPE x0[1])
 {
-  FTYPE small = 1.e-10;
-  x[0] = (x[0] >= 1.0)    ?  ( 0.5*(x0[0] + 1.) )    : x[0];
-  x[0] = (x[0] <  -small) ?  ( 0.5*x0[0] )           : x[0];
-  x[0] = fabs(x[0]);
-  return;
+	FTYPE small = 1.e-10;
+	x[0] = (x[0] >= 1.0) ? (0.5*(x0[0] + 1.)) : x[0];
+	x[0] = (x[0] <  -small) ? (0.5*x0[0]) : x[0];
+	x[0] = fabs(x[0]);
+	return;
 }
 
-__device__ void func_1d_gnr2(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n,FTYPE Bsq,FTYPE Qtsq, FTYPE QdotBsq,FTYPE Qdotn,FTYPE D, FTYPE K_atm)
+__device__ void func_1d_gnr2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM2], FTYPE *f, FTYPE *df, int n, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D, FTYPE K_atm)
 {
-  FTYPE vsq,W,Wsq,W3,dWdvsq , fact_tmp, rho, p, u  ;
-  vsq = x[0];
+	FTYPE vsq, W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
+	vsq = x[0];
 
-  // Calculate best value for W given current guess for vsq: 
-  W = W_of_vsq2(vsq, &p, &rho, &u ,D, K_atm);
-  Wsq = W*W;
-  W3 = W*Wsq;
+	// Calculate best value for W given current guess for vsq: 
+	W = W_of_vsq2(vsq, &p, &rho, &u, D, K_atm);
+	Wsq = W*W;
+	W3 = W*Wsq;
 
-  // Doing this assuming  P = (G-1) u :
+	// Doing this assuming  P = (G-1) u :
 
-  dWdvsq = dWdvsq_calc2(vsq, rho, p);
+	dWdvsq = dWdvsq_calc2(vsq, rho, p);
 
-  fact_tmp = (Bsq + W) ;
+	fact_tmp = (Bsq + W);
 
-  resid[0] = Qtsq  -  vsq * fact_tmp * fact_tmp  +  QdotBsq * ( Bsq + 2.*W ) / Wsq ; 
-  jac[0][0] =  -fact_tmp * ( fact_tmp +   2. * dWdvsq * ( vsq + QdotBsq/W3 ) ) ; 
+	resid[0] = Qtsq - vsq * fact_tmp * fact_tmp + QdotBsq * (Bsq + 2.*W) / Wsq;
+	jac[0][0] = -fact_tmp * (fact_tmp + 2. * dWdvsq * (vsq + QdotBsq / W3));
 
-  dx[0] = -resid[0]/jac[0][0];
+	dx[0] = -resid[0] / jac[0][0];
 
-  *f = 0.5*resid[0]*resid[0];
-  *df = -2. * (*f);
+	*f = 0.5*resid[0] * resid[0];
+	*df = -2. * (*f);
 }
 
-/* 
-pressure as a function of rho0 and w = rho0 + u + p 
-this is used by primtoU and Utoprim_1D
-*/
-__device__ FTYPE pressure_of_rho2(FTYPE rho0,  FTYPE K_atm)
-{ 
-  return( K_atm * pow( rho0, G_ATM )  );
+__device__ FTYPE pressure_of_rho2(FTYPE rho0, FTYPE K_atm)
+{
+	return(K_atm * pow(rho0, G_ATM));
 }
 
-/* 
-internal energy density as a function of the pressure
-*/
 __device__ FTYPE u_of_p2(FTYPE p)
 {
-  return( p / (GAMMA - 1.) ) ;
+	return(p / (GAMMA - 1.));
 }
 
-/* 
-W as a function of v^2
-*/
 __device__ FTYPE W_of_vsq2(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u, FTYPE D, FTYPE K_atm)
 {
-  FTYPE gtmp;
-  gtmp = (1. - vsq);
-  *rho = D * sqrt(gtmp);
-  *p = pressure_of_rho2(*rho, K_atm);
-  *u = u_of_p2(*p);
-  return( (*rho + *u + *p ) / gtmp  );
+	FTYPE gtmp;
+	gtmp = (1. - vsq);
+	*rho = D * sqrt(gtmp);
+	*p = pressure_of_rho2(*rho, K_atm);
+	*u = u_of_p2(*p);
+	return((*rho + *u + *p) / gtmp);
 }
 
-/* 
-dW/dvsq as a function of v^2, rho, p
-*/
 __device__ FTYPE dWdvsq_calc2(FTYPE vsq, FTYPE rho, FTYPE p)
 {
-  return(  ( GAMMA*(2.-G_ATM)*p   + (GAMMA-1.)*rho ) / ( 2.*(GAMMA-1.)*(1.-vsq)*(1.-vsq) )   ) ;
+	return((GAMMA*(2. - G_ATM)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
 }
 
 
@@ -651,7 +1086,7 @@ __device__ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM]
 	}
 
 	/* First update the primitive B-fields */
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
 	/* Set the geometry variables: */
@@ -660,21 +1095,21 @@ __device__ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM]
 	/* Transform the CONSERVED variables into the new system */
 	U_tmp[RHO] = alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = UTCON1; i <= UTCON3; i++) {
 		U_tmp[i] = alpha * U[i] / gdet;
 	}
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) {
 		U_tmp[i] = alpha * U[i] / gdet;
 	}
 
 	/* Transform the PRIMITIVE variables into the new system */
-	#pragma unroll //BCON1
+	#pragma unroll BCON1
 	for (i = 0; i < BCON1; i++) {
 		prim_tmp[i] = prim[i];
 	}
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) {
 		prim_tmp[i] = alpha*prim[i];
 	}
@@ -683,16 +1118,20 @@ __device__ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM]
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
-		#pragma unroll //BCON1
+	#pragma unroll BCON1
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
 	}
+
+	#if(DOKTOT )
+	prim[KTOT] = U[KTOT] / U[RHO];
+	#endif
+
 	return(ret);
 }
 
-__device__ int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
-	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+__device__ int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
 {
 	FTYPE x_2d[NEWT_DIM];
 	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
@@ -704,25 +1143,25 @@ __device__ int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 
 	// Assume ok initially:
 	retval = 0;
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
 
 	lower_g(Bcon, gcov, Bcov);
-	#pragma unroll //4
+	#pragma unroll 4
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
 	raise_g(Qcov, gcon, Qcon);
 
 	Bsq = 0.;
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
 
 	QdotB = 0.;
-	#pragma unroll //4
+	#pragma unroll 4
 	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
 	QdotBsq = QdotB*QdotB;
 
@@ -735,7 +1174,7 @@ __device__ int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
 
 	#if AMD
-	Qtsq =  mad(Qdotn,Qdotn,Qsq);
+	Qtsq = fma(Qdotn, Qdotn, Qsq);
 	#else
 	Qtsq = Qsq + Qdotn*Qdotn;
 	#endif
@@ -743,11 +1182,11 @@ __device__ int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 
 	/* calculate W from last timestep and use for guess */
 	utsq = 0.;
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = 1; i<4; i++)
-		#pragma unroll //4
+	#pragma unroll 4
 		for (j = 1; j<4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
-		utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+	utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
 
 	if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) {
 		utsq = fabs(utsq);
@@ -824,18 +1263,18 @@ __device__ int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	prim[UU] = u;
 
 	#if AMD
-	#pragma unroll //4
-	for (i = 1; i<4; i++)  Qtcon[i] =  mad(ncon[i] , Qdotn,Qcon[i]);
-	#pragma unroll //4
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (mad(QdotB,Bcon[i] / W,Qtcon[i]));
+	#pragma unroll 4
+	for (i = 1; i<4; i++)  Qtcon[i] = fma(ncon[i], Qdotn, Qcon[i]);
+	#pragma unroll 4
+	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (fma(QdotB, Bcon[i] / W, Qtcon[i]));
 	#else
-	#pragma unroll //4
+	#pragma unroll 4
 	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-	#pragma unroll //4
+	#pragma unroll 4
 	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
 	#endif
 	/* set field components */
-	#pragma unroll //3
+	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	/* done! */
@@ -848,7 +1287,7 @@ __device__ FTYPE vsq_calc(FTYPE W, FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq)
 	Wsq = W*W;
 	Xsq = (Bsq + W) * (Bsq + W);
 	#if AMD
-	return((mad(Wsq , Qtsq , QdotBsq * (Bsq + 2.*W))) / (Wsq*Xsq));
+	return((fma(Wsq, Qtsq, QdotBsq * (Bsq + 2.*W))) / (Wsq*Xsq));
 	#else
 	return((Wsq * Qtsq + QdotBsq * (Bsq + 2.*W)) / (Wsq*Xsq));
 	#endif
@@ -876,7 +1315,7 @@ __device__ void validate_x(FTYPE x[2], FTYPE x0[2])
 }
 
 __device__ int general_newton_raphson(FTYPE x[], int n,
-	 FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D)
+	FTYPE Bsq, FTYPE Qtsq, FTYPE QdotBsq, FTYPE Qdotn, FTYPE D)
 {
 	FTYPE f, df, dx[NEWT_DIM], x_old[NEWT_DIM];
 	FTYPE resid[NEWT_DIM], jac[NEWT_DIM][NEWT_DIM];
@@ -968,46 +1407,41 @@ __device__ void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
 	Wsq = W*W;
 	gtmp = 1. - vsq;
-	
-	#if AMD
-	p_tmp = (GAMMA - 1.) * (mad(W , gtmp, - D * sqrt(gtmp))) / GAMMA;
+
+	p_tmp = (GAMMA - 1.) * (fma(W, gtmp, -D * sqrt(gtmp))) / GAMMA;
 	dPdW = (GAMMA - 1.) * (1. - vsq) / GAMMA;
-	dPdvsq = (GAMMA - 1.) * (mad(0.5 , D / sqrt(1. - vsq), - W)) / GAMMA;
-	#else
-	p_tmp = (GAMMA - 1.) * (W * gtmp - D * sqrt(gtmp)) / GAMMA;
-	dPdW = (GAMMA - 1.) * (1. - vsq) / GAMMA;
-	dPdvsq = (GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA;
-	#endif
-	// These expressions were calculated using Mathematica, but made into efficient 
+	dPdvsq = (GAMMA - 1.) * (fma(0.5, D / sqrt(1. - vsq), -W)) / GAMMA;
+
+	// These expressions were calculated using Mathematica, but fmae into efficient 
 	// code using Maple.  Since we know the analytic form of the equations, we can 
 	// explicitly calculate the Newton-Raphson step: 
 
 	#if AMD
-	t2 = mad(-0.5,Bsq , dPdvsq);
+	t2 = fma(-0.5, Bsq, dPdvsq);
 	t3 = Bsq + W;
 	t4 = t3*t3;
 	t9 = 1 / Wsq;
-	t11 =  mad(QdotBsq,(Bsq + 2.0*W)*t9,mad(- vsq,t4,Qtsq)) ;
+	t11 = fma(QdotBsq, (Bsq + 2.0*W)*t9, fma(-vsq, t4, Qtsq));
 	t16 = QdotBsq*t9;
-	t18 = -mad(0.5,Bsq*(1.0 + vsq),Qdotn) + mad(0.5,t16, - W + p_tmp);
+	t18 = -fma(0.5, Bsq*(1.0 + vsq), Qdotn) + fma(0.5, t16, -W + p_tmp);
 	t21 = 1 / t3;
 	t23 = 1 / W;
 	t24 = t16*t23;
 	t25 = -1.0 + dPdW - t24;
-	t35 = mad(t25,t3 , (mad(- 2.0,dPdvsq,Bsq))*(mad(vsq,Wsq*W,QdotBsq))*t9*t23);
+	t35 = fma(t25, t3, (fma(-2.0, dPdvsq, Bsq))*(fma(vsq, Wsq*W, QdotBsq))*t9*t23);
 	t36 = 1 / t35;
-	dx[0] = -(mad(t2,t11 , t4*t18))*t21*t36;
+	dx[0] = -(fma(t2, t11, t4*t18))*t21*t36;
 	t40 = (vsq + t24)*t3;
-	dx[1] = -(-mad(t25,t11,  2.0*t40*t18))*t21*t36;
+	dx[1] = -(-fma(t25, t11, 2.0*t40*t18))*t21*t36;
 	jac[0][0] = -2.0*t40;
 	jac[0][1] = -t4;
 	jac[1][0] = t25;
 	jac[1][1] = t2;
 	resid[0] = t11;
 	resid[1] = t18;
-	*df = mad(-resid[0] , resid[0], - resid[1] * resid[1]);
+	*df = fma(-resid[0], resid[0], -resid[1] * resid[1]);
 	#else
-		t2 = -0.5*Bsq + dPdvsq;
+	t2 = -0.5*Bsq + dPdvsq;
 	t3 = Bsq + W;
 	t4 = t3*t3;
 	t9 = 1 / Wsq;
@@ -1036,350 +1470,358 @@ __device__ void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
 /*Declare structs for 'other functions'*/
 struct of_geom {
-	FTYPE2 gcon[NDIM][NDIM] ;
-	FTYPE2 gcov[NDIM][NDIM] ;
-	FTYPE2 g ;
-} ;
+	FTYPE2 gcon[NDIM][NDIM];
+	FTYPE2 gcov[NDIM][NDIM];
+	FTYPE2 g;
+};
 
 struct of_state {
-	FTYPE2 ucon[NDIM] ;
-	FTYPE2 ucov[NDIM] ;
-	FTYPE2 bcon[NDIM] ;
-	FTYPE2 bcov[NDIM] ;
-} ;
+	FTYPE2 ucon[NDIM];
+	FTYPE2 ucov[NDIM];
+	FTYPE2 bcon[NDIM];
+	FTYPE2 bcov[NDIM];
+};
 
 /*Declare other functions*/
-__device__ void get_state(FTYPE2 *pr, struct of_geom *geom, struct of_state *q);
-__device__ void ucon_calc(FTYPE2 *pr, struct of_geom *geom, FTYPE2 *ucon);
-__device__ void bcon_calc(FTYPE2 *pr, FTYPE2 *ucon, FTYPE2 *ucov, FTYPE2 *bcon) ;
-__device__ int gamma_calc(FTYPE2 *pr, struct of_geom *geom, FTYPE2 *gamma);
-__device__ void get_geometry(int N1, int N2, int ii, int jj, int kk, struct of_geom *geom, const  FTYPE2* __restrict__  gcov_GPU, const  FTYPE2* __restrict__  gcon_GPU, const  FTYPE2* __restrict__  gdet_GPU);
-__device__ FTYPE2 slope_lim(FTYPE2 y1,FTYPE2 y2,FTYPE2 y3, int lim) ;
-__device__ void raise(FTYPE2 *ucov, struct of_geom *geom, FTYPE2 *ucon);
-__device__ void lower(FTYPE2 *ucon, struct of_geom *geom, FTYPE2 *ucov);
-__device__ void primtoflux(FTYPE2 *pr, struct of_state *q, int dir, struct of_geom *geom, FTYPE2 *flux, FTYPE2 gam); 
-__device__ void primtoU(FTYPE2 *pr, struct of_state *q, struct of_geom *geom, FTYPE2 *U, FTYPE2 gam);
-__device__ void vchar(FTYPE2 *pr, struct of_state *q, struct of_geom *geom, int js, FTYPE2 *vmax, FTYPE2 *vmin, FTYPE2 gam);
-__device__ void mhd_calc(FTYPE2 *pr, int dir, struct of_state *q, FTYPE2 *mhd, FTYPE2 gam); 
-__device__ void bl_coord(FTYPE2 *X, FTYPE2 *r, FTYPE2 *th, FTYPE2 hslope, FTYPE2 R0);
-__device__ void coord(int i, int j, int z, int loc, FTYPE2 *X, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, int N1_MPI, int N2_MPI, int N3_MPI);
-__device__ void source(int N1, int N2, FTYPE2 *ph, struct of_geom *geom, int icurr, int jcurr, FTYPE2 *dU, FTYPE2 Dt, FTYPE2 gam, const  FTYPE2* __restrict__  conn);
-__device__ void inflow_check(int N1,  int N2, FTYPE2* prim ,int ii, int jj, int type, const  FTYPE2* __restrict__  gcov1, const  FTYPE2* __restrict__  gcon2, const  FTYPE2* __restrict__  gdet3) ;
-__device__ FTYPE2 bsq_calc(FTYPE2 *pr, struct of_geom *geom);
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq);
-__device__ double Drel(int dir, double v, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq);
+__device__ get_state(FTYPE2 * restrict pr, struct of_geom * restrict geom, struct of_state * restrict q);
+__device__ ucon_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict ucon);
+__device__ bcon_calc(FTYPE2 * restrict pr, FTYPE2 * restrict ucon, FTYPE2 * restrict ucov, FTYPE2 * restrict bcon);
+__device__ int gamma_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict gamma);
+__device__ get_geometry(int N1, int N2, int ii, int jj, int zz, int kk, struct of_geom * restrict geom, __read_only image3d_t gcov_GPU, __read_only image3d_t gcon_GPU, __read_only image3d_t gdet_GPU);
+FTYPE2 slope_lim(FTYPE2 y1, FTYPE2 y2, FTYPE2 y3, int lim);
+__device__ raise(FTYPE2 * restrict ucov, struct of_geom * restrict geom, FTYPE2 * restrict ucon);
+__device__ lower(FTYPE2 * restrict ucon, struct of_geom * restrict geom, FTYPE2 * restrict ucov);
+__device__ primtoflux(FTYPE2 * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, FTYPE2 * restrict flux, FTYPE2 gam);
+__device__ primtoU(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, FTYPE2 *U, FTYPE2 gam);
+__device__ vchar(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js, FTYPE2 * restrict vmax, FTYPE2 * restrict vmin, FTYPE2 gam);
+__device__ mhd_calc(FTYPE2 * restrict pr, int dir, struct of_state * restrict q, FTYPE2 * restrict mhd, FTYPE2 gam);
+__device__ source(int N1, int N2, FTYPE2 * restrict ph, struct of_geom * restrict geom, int icurr, int jcurr, int zcurr, FTYPE2 *dU, FTYPE2 Dt, FTYPE2 gam, __read_only image3d_t Imageconn,
+struct of_state * restrict q, double a, double r);
+__device__ misc_source(FTYPE2 * restrict ph, int icurr, int jcurr, struct of_geom * restrict geom, struct of_state * restrict q, FTYPE2 * restrict dU,
+	double a, double gam, double r, double Dt);
+__device__ inflow_check(int N1, int N2, FTYPE2 * restrict prim, int ii, int jj, int zz, int type, __read_only image3d_t gcov1, __read_only image3d_t gcon2, __read_only image3d_t gdet3);
+__device__ FTYPE2 bsq_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom);
+__device__ double NewtonRaphson(double start, size_t max_count, int dir, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq);
+__device__ double Drel(int dir, double v, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq);
+__device__ double readImageDouble(int4 a);
+__device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
+__device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
+__device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
 
-__device__ void primtoU(FTYPE2 *pr, struct of_state *q, struct of_geom *geom, FTYPE2 *U, FTYPE2 gam)
+/* find relative 4-velocity from 4-velocity (both in code coords) */
+__device__ ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 {
-	primtoflux(pr,q,0,geom, U ,gam) ;
-	return ;
+	double alpha, beta[NDIM], gamma;
+	int j;
+
+	/* now solve for v-- we can use the same u^t because
+	* it didn't change under KS -> KS' */
+	alpha = 1. / sqrt(-geom->gcon[TT][TT]);
+	SLOOPA beta[j] = geom->gcon[TT][j] * alpha*alpha;
+	gamma = alpha*ucon[TT];
+
+
+	utcon[0] = 0;
+	SLOOPA utcon[j] = ucon[j] + gamma*beta[j] / alpha;
 }
 
-/* add in source terms to equations of motion */
-__device__ void source(int N1, int N2, FTYPE2 *ph, struct of_geom *geom, int icurr, int jcurr, FTYPE2 *dU, FTYPE2 Dt, FTYPE2 gam, const  FTYPE2* __restrict__  conn_GPU)
+__device__ ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 {
-	FTYPE2 mhd[NDIM][NDIM] ;
+	double AA, BB, CC, DD, one_over_alpha_sq;
+	//compute the Lorentz factor based on contravariant 3-velocity
+	AA = geom->gcov[TT][TT];
+	BB = 2.*(geom->gcov[TT][1] * vcon[1] +
+		geom->gcov[TT][2] * vcon[2] +
+		geom->gcov[TT][3] * vcon[3]);
+	CC = geom->gcov[1][1] * vcon[1] * vcon[1] +
+		geom->gcov[2][2] * vcon[2] * vcon[2] +
+		geom->gcov[3][3] * vcon[3] * vcon[3] +
+		2.*(geom->gcov[1][2] * vcon[1] * vcon[2] +
+		geom->gcov[1][3] * vcon[1] * vcon[3] +
+		geom->gcov[2][3] * vcon[2] * vcon[3]);
+
+	DD = -1. / (AA + BB + CC);
+
+	one_over_alpha_sq = -geom->gcon[TT][TT];
+
+	if (DD<one_over_alpha_sq) {
+		DD = one_over_alpha_sq;
+	}
+
+	*ut = sqrt(DD);
+
+}
+__device__ primtoU(FTYPE2 *pr, struct of_state *q, struct of_geom *geom, FTYPE2 *U, FTYPE2 gam)
+{
+	primtoflux(pr, q, 0, geom, U, gam);
+	return;
+}
+
+
+/* add in source terms to equations of motion */
+__device__ source(int N1, int N2, FTYPE2 * restrict ph, struct of_geom * restrict geom, int icurr, int jcurr, int zcurr, FTYPE2 * restrict dU, FTYPE2 Dt, FTYPE2 gam,
+	__read_only image3d_t Imageconn, struct of_state * restrict q, double a, double r)
+{
+	FTYPE2 mhd[NDIM][NDIM];
 	int k;
-	struct of_state q ;
+	//struct of_state q ;
 	double conn;
-	int global_id=icurr*(N2+2*N2G)+jcurr;
-	int fix_mem2=LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	get_state(ph, geom, &q) ;
-	mhd_calc(ph, 0, &q, mhd[0], gam) ;
-	mhd_calc(ph, 1, &q, mhd[1], gam) ;
-	mhd_calc(ph, 2, &q, mhd[2], gam) ;
-	mhd_calc(ph, 3, &q, mhd[3], gam) ;
+	//get_state(ph, geom, &q) ;
+	mhd_calc(ph, 0, q, mhd[0], gam);
+	mhd_calc(ph, 1, q, mhd[1], gam);
+	mhd_calc(ph, 2, q, mhd[2], gam);
+	mhd_calc(ph, 3, q, mhd[3], gam);
 
 	/* contract mhd stress tensor with connection */
-	#pragma unroll 8	
-	PLOOP dU[k] = 0. ;
-	#pragma unroll //NDIM	
-	for(k=0; k<NDIM; k++){
-		dU[UU] += mhd[0][k]*conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 0*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U1] += mhd[1][k]*conn_GPU[1*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 1*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U2] += mhd[2][k]*conn_GPU[2*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U3] += mhd[3][k]*conn_GPU[3*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		conn=conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 1*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id];
-		dU[UU] += mhd[1][k]*conn;
-		dU[U1] += mhd[0][k]*conn;
-		conn=conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[UU] += mhd[2][k]*conn;
-		dU[U2] += mhd[0][k]*conn;
-		conn=conn_GPU[0*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[UU] += mhd[3][k]*conn;
-		dU[U3] += mhd[0][k]*conn;
-		conn=conn_GPU[1*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U1] += mhd[2][k]*conn;
-		dU[U2] += mhd[1][k]*conn;
-		conn=conn_GPU[1*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U1] += mhd[3][k]*conn;
-		dU[U3] += mhd[1][k]*conn ;
-		conn=conn_GPU[2*NDIM*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 3*NDIM*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + k*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U2] += mhd[3][k]*conn;
-		dU[U3] += mhd[2][k]*conn;
-	}	
+	#pragma unroll NPR	
+	PLOOP dU[k] = 0.;
+	
+	#pragma unroll NDIM	
+	for (k = 0; k<NDIM; k++){
+		#if(NONSYMMETRIC)
+		dU[UU] += mhd[0][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 0 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[U1] += mhd[1][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 1 * NDIM*NDIM*(BS_1 + 2 * N1G) + 1 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[U2] += mhd[2][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 2 * NDIM*NDIM*(BS_1 + 2 * N1G) + 2 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[U3] += mhd[3][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 3 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 1 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[UU] += mhd[1][k] * conn;
+		dU[U1] += mhd[0][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 2 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[UU] += mhd[2][k] * conn;
+		dU[U2] += mhd[0][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 0 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[UU] += mhd[3][k] * conn;
+		dU[U3] += mhd[0][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 1 * NDIM*NDIM*(BS_1 + 2 * N1G) + 2 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[U1] += mhd[2][k] * conn;
+		dU[U2] += mhd[1][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 1 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[U1] += mhd[3][k] * conn;
+		dU[U3] += mhd[1][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(zcurr, jcurr, 2 * NDIM*NDIM*(BS_1 + 2 * N1G) + 3 * NDIM*(BS_1 + 2 * N1G) + k*(BS_1 + 2 * N1G) + icurr, 0)));
+		dU[U2] += mhd[3][k] * conn;
+		dU[U3] += mhd[2][k] * conn;
+		#else
+		dU[UU] += mhd[0][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 0 * NDIM + k, 0)));
+		dU[U1] += mhd[1][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 1 * NDIM*NDIM + 1 * NDIM + k, 0)));
+		dU[U2] += mhd[2][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 2 * NDIM*NDIM + 2 * NDIM + k, 0)));
+		dU[U3] += mhd[3][k] * readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 3 * NDIM*NDIM + 3 * NDIM + k, 0)));
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 1 * NDIM + k, 0)));
+		dU[UU] += mhd[1][k] * conn;
+		dU[U1] += mhd[0][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 2 * NDIM + k, 0)));
+		dU[UU] += mhd[2][k] * conn;
+		dU[U2] += mhd[0][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 0 * NDIM*NDIM + 3 * NDIM + k, 0)));
+		dU[UU] += mhd[3][k] * conn;
+		dU[U3] += mhd[0][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 1 * NDIM*NDIM + 2 * NDIM + k, 0)));
+		dU[U1] += mhd[2][k] * conn;
+		dU[U2] += mhd[1][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 1 * NDIM*NDIM + 3 * NDIM + k, 0)));
+		dU[U1] += mhd[3][k] * conn;
+		dU[U3] += mhd[1][k] * conn;
+		conn = readImageDouble(read_imagei(Imageconn, sample, (int4)(jcurr, icurr, 2 * NDIM*NDIM + 3 * NDIM + k, 0)));
+		dU[U2] += mhd[3][k] * conn;
+		dU[U3] += mhd[2][k] * conn;
+		#endif
+	}
 
-	//misc_source(ph, ii, jj, geom, &q, dU, Dt) ;
-	#pragma unroll 8	
-	PLOOP dU[k] *= geom->g ;
+	//Add cooling term if needed
+	#if (COOL_DISK)
+	misc_source(ph, icurr, jcurr, geom, q, dU, a, gam, r, Dt);
+	#endif
+
+	dU[UU] *= geom->g;
+	dU[U1] *= geom->g;
+	dU[U2] *= geom->g;
+	dU[U3] *= geom->g;
 	/* done! */
 }
 
-__device__ void coord(int i, int j, int z, int loc, FTYPE2 *X, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, int N1_MPI, int N2_MPI, int N3_MPI)
-{
-        FTYPE2 startx[4], dx[4];
-	    startx[1] = log(Rin - R0) ;
-        startx[2] = 0.5*(1.-fractheta) ;
-		startx[3] = 0.;
-        dx[1] = log((Rout - R0)/(Rin - R0))/N1_MPI ;
-        dx[2] = fractheta/N2_MPI ;
-		dx[3] = 2.0*M_PI/N3_MPI ;
-	    #if AMD
-		if(loc == FACE1) {
-            X[1] = mad(i,dx[1],startx[1])  ;
-            X[2] = mad(j+0.5,dx[2],startx[2]) ;
-			X[3] = mad(z+0.5,dx[3],startx[3]);
-        }
-        else if(loc == FACE2) {
-            X[1] = mad(i+0.5,dx[1],startx[1])  ;
-            X[2] = mad(j,dx[2],startx[2]) ;
-			X[3] = mad(z+0.5,dx[3],startx[3]);
-        }
-		else if (loc == FACE3) {
-            X[1] = mad(i+0.5,dx[1],startx[1])  ;
-            X[2] = mad(j+0.5,dx[2],startx[2]) ;
-			X[3] = mad(z,dx[3],startx[3]);
+__device__ misc_source(FTYPE2 * restrict ph, int icurr, int jcurr, struct of_geom * restrict geom, struct of_state * restrict q, FTYPE2 * restrict dU,
+	double a, double gam, double r, double Dt){
+	double epsilon = ph[UU] / ph[RHO];
+	double om_kepler = 1. / (pow(r, 3. / 2.) + a);
+	double T_target = M_PI / 2.*pow(H_OVER_R*r*om_kepler, 2.);
+	double Y = (gam - 1.)*epsilon / T_target;
+	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
+	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
+	double bsq = bsq_calc(ph, geom);
+	if (bsq / ph[RHO]<1. || r<10.){
+		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
+			dU[UU] += -q->ucov[0] * lambda;
+			dU[U1] += -q->ucov[1] * lambda;
+			dU[U2] += -q->ucov[2] * lambda;
+			dU[U3] += -q->ucov[3] * lambda;
 		}
-        else if(loc == CENT) {
-            X[1] = mad(i+0.5,dx[1],startx[1])  ;
-            X[2] = mad(j+0.5,dx[2],startx[2]) ;
-			X[3] = mad(z+0.5,dx[3],startx[3]);
-        }
-        else {
-            X[1] = mad(i,dx[1],startx[1])  ;
-            X[2] = mad(j,dx[2],startx[2]) ;
-			X[3] = mad(z,dx[3],startx[3]);
-        }
-		#else
-			    if(loc == FACE1) {
-            X[1] = startx[1] + i*dx[1] ;
-            X[2] = startx[2] + (j + 0.5)*dx[2] ;
-			X[3] = startx[3] + (z + 0.5)*dx[3];
-        }
-        else if(loc == FACE2) {
-            X[1] = startx[1] + (i + 0.5)*dx[1] ;
-            X[2] = startx[2] + j*dx[2] ;
-			X[3] = startx[3] + (z + 0.5)*dx[3];
-        }
-		else if (loc == FACE3) {
-			X[1] = startx[1] + (i + 0.5)*dx[1];
-			X[2] = startx[2] + (j + 0.5)*dx[2];
-			X[3] = startx[3] + z*dx[3];
+		else{
+			lambda *= (0.1*fabs(int_energy)) / (fabs(q->ucov[0] * lambda)*Dt);
+			dU[UU] += -q->ucov[0] * lambda;
+			dU[U1] += -q->ucov[1] * lambda;
+			dU[U2] += -q->ucov[2] * lambda;
+			dU[U3] += -q->ucov[3] * lambda;
 		}
-        else if(loc == CENT) {
-            X[1] = startx[1] + (i + 0.5)*dx[1] ;
-            X[2] = startx[2] + (j + 0.5)*dx[2] ;
-			X[3] = startx[3] + (z + 0.5)*dx[3];
-        }
-        else {
-            X[1] = startx[1] + i*dx[1] ;
-            X[2] = startx[2] + j*dx[2] ;
-			X[3] = startx[3] + z*dx[3];
-        }
-		#endif
-        return ;
+	}
 }
 
-__device__ void bl_coord(FTYPE2 *X, FTYPE2 *r, FTYPE2 *th, FTYPE2 hslope, FTYPE2 R0)
+__device__ primtoflux(FTYPE2 * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, FTYPE2 * restrict flux, FTYPE2 gam)
 {
-	*r = exp(X[1]) + R0 ;
-	
-	double A1 = 1. / (1. + pow(CHARLIE*log(*r) / log(10.), DELTA));
-	double A2 = (0.5 - BRAVO*0.5) / pow(0.5, QUEBEC);
-	double Xc = sqrt(pow(X[2], 2.));
-	double sign=1.;
-	
-	//*th = M_PI*X[2] + 0.5*sin(M_PI + 2.*M_PI*X[2]) *(1.-1./ (1. + pow(CHARLIE*log(*r) / log(10.), DELTA)));
-	if (X[2] < 0.0){
-		sign = -1.;
-	}
-	if (X[2] > 1.0){
-		sign = -1.;
-		Xc = 2. - Xc;
-	}
-	if (X[2] < 0.5){
-		*th =sign*(A1* M_PI*Xc + M_PI*(BRAVO*Xc + A2*pow(Xc, QUEBEC))*(1. - A1) + 0.50*(1. - A1)*sin(M_PI + 2.*M_PI*(BRAVO*Xc + A2*pow(Xc, QUEBEC))));
-	}
-	else{
-		*th = M_PI - sign*(A1* M_PI*(1.-Xc) + M_PI*(BRAVO*(1.-Xc) + A2*pow(1.-Xc, QUEBEC))*(1. - A1) + 0.50*(1. - A1)*sin(M_PI + 2.*M_PI*(BRAVO*(1.-Xc) + A2*pow(1.-Xc, QUEBEC))));
-	}
-
-	// avoid singularity at polar axis
-	#if(COORDSINGFIX)
-	if(fabs(*th)<SINGSMALL){
-	  if((*th)>=0) *th =  SINGSMALL;
-	  if((*th)<0)  *th = -SINGSMALL;
-	}
-	if(fabs(M_PI - (*th)) < SINGSMALL){
-	  if((*th)>=M_PI) *th = M_PI+SINGSMALL;
-	  if((*th)<M_PI)  *th = M_PI-SINGSMALL;
-	}
-	#endif
-	
-	return ;
-}
-
-__device__ void primtoflux(FTYPE2 *pr, struct of_state *q, int dir, struct of_geom *geom, FTYPE2 *flux, FTYPE2 gam) 
-{
-	int k ;
-	FTYPE2 mhd[NDIM] ;
+	int k;
+	FTYPE2 mhd[NDIM];
 
 	/* particle number flux */
-	flux[RHO] = pr[RHO]*q->ucon[dir] ;
+	flux[RHO] = pr[RHO] * q->ucon[dir];
 
-	mhd_calc(pr, dir, q, mhd, gam) ;
+	mhd_calc(pr, dir, q, mhd, gam);
 
-	/* MHD stress-energy tensor w/ first index up, 
-	 * second index down. */
-	flux[UU] = mhd[0] + flux[RHO] ;
-	flux[U1] = mhd[1] ;
-	flux[U2] = mhd[2] ;
-	flux[U3] = mhd[3] ;
+	/* MHD stress-energy tensor w/ first index up,
+	* second index down. */
+	flux[UU] = mhd[0] + flux[RHO];
+	flux[U1] = mhd[1];
+	flux[U2] = mhd[2];
+	flux[U3] = mhd[3];
 
 	/* dual of Maxwell tensor */
 	#if AMD
-	flux[B1]  = mad(q->bcon[1],q->ucon[dir], - q->bcon[dir]*q->ucon[1]) ;
-	flux[B2]  = mad(q->bcon[2],q->ucon[dir], - q->bcon[dir]*q->ucon[2]) ;
-	flux[B3]  = mad(q->bcon[3],q->ucon[dir], - q->bcon[dir]*q->ucon[3]);
+	flux[B1] = fma(q->bcon[1], q->ucon[dir], -q->bcon[dir] * q->ucon[1]);
+	flux[B2] = fma(q->bcon[2], q->ucon[dir], -q->bcon[dir] * q->ucon[2]);
+	flux[B3] = fma(q->bcon[3], q->ucon[dir], -q->bcon[dir] * q->ucon[3]);
 	#else
-	flux[B1]  = q->bcon[1]*q->ucon[dir] - q->bcon[dir]*q->ucon[1] ;
-	flux[B2]  = q->bcon[2]*q->ucon[dir] - q->bcon[dir]*q->ucon[2] ;
-	flux[B3]  = q->bcon[3]*q->ucon[dir] - q->bcon[dir]*q->ucon[3] ;
+	flux[B1] = q->bcon[1] * q->ucon[dir] - q->bcon[dir] * q->ucon[1];
+	flux[B2] = q->bcon[2] * q->ucon[dir] - q->bcon[dir] * q->ucon[2];
+	flux[B3] = q->bcon[3] * q->ucon[dir] - q->bcon[dir] * q->ucon[3];
 	#endif
-	#pragma unroll 8
-	PLOOP flux[k] *= geom->g ;
+
+	#if(DOKTOT )
+	flux[KTOT] = flux[RHO] * pr[KTOT];
+	#endif
+
+	#pragma unroll NPR
+	PLOOP flux[k] *= geom->g;
 }
 
-__device__ void vchar(FTYPE2 *pr, struct of_state *q, struct of_geom *geom, int js, FTYPE2 *vmax, FTYPE2 *vmin, FTYPE2 gam)
+__device__ vchar(FTYPE2 * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js, FTYPE2 * restrict vmax, FTYPE2 * restrict vmin, FTYPE2 gam)
 {
-	FTYPE2 discr,vp,vm,bsq,EE,EF,va2,cs2,cms2,rho,u ;
-	FTYPE2 Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
-	FTYPE2 Asq,Bsq,Au,Bu,AB,Au2,Bu2,AuBu,A,B,C ;
-	int j ;
+	FTYPE2 discr, vp, vm, bsq, EE, EF, va2, cs2, cms2, rho, u;
+	FTYPE2 Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
+	FTYPE2 Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
+	int j;
 
-	#pragma unroll //NDIM
-	DLOOPA Acov[j] = 0. ;
-	Acov[js] = 1. ;
-	raise(Acov,geom,Acon) ;
-	
-	#pragma unroll //NDIM
-	DLOOPA Bcov[j] = 0. ;
-	Bcov[TT] = 1. ;
-	raise(Bcov,geom,Bcon) ;
+	#pragma unroll NDIM
+	DLOOPA Acov[j] = 0.;
+	Acov[js] = 1.;
+	raise(Acov, geom, Acon);
+
+	#pragma unroll NDIM
+	DLOOPA Bcov[j] = 0.;
+	Bcov[TT] = 1.;
+	raise(Bcov, geom, Bcon);
 
 	/* find fast magnetosonic speed */
-	bsq = dot(q->bcon,q->bcov) ;
-	rho = pr[RHO] ;
-	u = pr[UU] ;
+	bsq = dot(q->bcon, q->bcov);
+	rho = pr[RHO];
+	u = pr[UU];
 	#if AMD
-	EF = mad(gam,u,rho);
+	EF = fma(gam, u, rho);
 	#else
-	EF = rho + gam*u ;
+	EF = rho + gam*u;
 	#endif
-	EE = bsq + EF ;
-	va2 = bsq/EE ;
-	cs2 = gam*(gam - 1.)*u/EF ;
+	EE = bsq + EF;
+	cs2 = gam*(gam - 1.)*u / EF;
+	va2 = bsq / EE;
 
-//	if(cs2 < 0.) cs2 = SMALL ;
-//	if(cs2 > 1.) cs2 = 1. ;
-//	if(va2 < 0.) va2 = SMALL ;
-//	if(va2 > 1.) va2 = 1. ;
 
-	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */
+	//	if(cs2 < 0.) cs2 = SMALL ;
+	//	if(cs2 > 1.) cs2 = 1. ;
+	//	if(va2 < 0.) va2 = SMALL ;
+	//	if(va2 > 1.) va2 = 1. ;
+
+	cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
 
 	//cms2 *= 1.1 ;
 
 	/* check on it! */
-	if(cms2 < 0.) {
+	if (cms2 < 0.) {
 		//fail(FAIL_COEFF_NEG) ;
-		cms2 = SMALL ;
+		cms2 = SMALL;
 	}
-	if(cms2 > 1.) {
+	if (cms2 > 1.) {
 		//fail(FAIL_COEFF_SUP) ;
-		cms2 = 1. ;
+		cms2 = 1.;
 	}
 
-	/* now require that speed of wave measured by observer 
-	   q->ucon is cms2 */
-	Asq = dot(Acon,Acov) ;
-	Bsq = dot(Bcon,Bcov) ;
-	Au =  dot(Acov,q->ucon) ;
-	Bu =  dot(Bcov,q->ucon) ;
-	AB =  dot(Acon,Bcov) ;
-	Au2 = Au*Au ;
-	Bu2 = Bu*Bu ;
-	AuBu = Au*Bu ;
+	/* now require that speed of wave measured by observer
+	q->ucon is cms2 */
+	Asq = dot(Acon, Acov);
+	Bsq = dot(Bcon, Bcov);
+	Au = q->ucon[js];
+	Bu = q->ucon[TT];
+	AB = dot(Acon, Bcov);
+	Au2 = Au*Au;
+	Bu2 = Bu*Bu;
+	AuBu = Au*Bu;
 	#if AMD
-	A =     mad(-(Bsq + Bu2),cms2, Bu2)  ;
-	B = 2.* mad(- (AB + AuBu),cms2,AuBu)   ;
-	C =      mad(- (Asq + Au2),cms2,Au2)   ;
-	discr = mad(B,B, - 4.*A*C) ;
+	A = fma(-(Bsq + Bu2), cms2, Bu2);
+	B = 2.* fma(-(AB + AuBu), cms2, AuBu);
+	C = fma(-(Asq + Au2), cms2, Au2);
+	discr = fma(B, B, -4.*A*C);
 	#else
-	A =      Bu2  - (Bsq + Bu2)*cms2 ;
-	B = 2.*( AuBu - (AB + AuBu)*cms2 ) ;
-	C =      Au2  - (Asq + Au2)*cms2 ;
-	discr = B*B - 4.*A*C ;
+	A = Bu2 - (Bsq + Bu2)*cms2;
+	B = 2.*(AuBu - (AB + AuBu)*cms2);
+	C = Au2 - (Asq + Au2)*cms2;
+	discr = B*B - 4.*A*C;
 	#endif
-	if((discr<0.0)&&(discr>-1.e-10)) discr=0.0;
-	else if(discr < -1.e-10) {
+	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
+	else if (discr < -1.e-10) {
 		/*fprintf(stderr,"\n\t %g %g %g %g %g\n",A,B,C,discr,cms2) ;
 		fprintf(stderr,"\n\t q->ucon: %g %g %g %g\n",q->ucon[0],q->ucon[1],
-				q->ucon[2],q->ucon[3]) ;
+		q->ucon[2],q->ucon[3]) ;
 		fprintf(stderr,"\n\t q->bcon: %g %g %g %g\n",q->bcon[0],q->bcon[1],
-				q->bcon[2],q->bcon[3]) ;
+		q->bcon[2],q->bcon[3]) ;
 		fprintf(stderr,"\n\t Acon: %g %g %g %g\n",Acon[0],Acon[1],
-				Acon[2],Acon[3]) ;
+		Acon[2],Acon[3]) ;
 		fprintf(stderr,"\n\t Bcon: %g %g %g %g\n",Bcon[0],Bcon[1],
-				Bcon[2],Bcon[3]) ;
+		Bcon[2],Bcon[3]) ;
 		fail(FAIL_VCHAR_DISCR) ;*/
-		discr = 0. ;
+		discr = 0.;
 	}
 
-	discr = sqrt(discr) ;
+	discr = sqrt(discr);
 	vp = -(-B + discr) / (2.*A);
 	vm = -(-B - discr) / (2.*A);
-	
+
 	#if( FULL_DISP ) 
 	double vp2, vm2;
-	vp2 = NewtonRaphson(vp , 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vp= vp2;
+	vp2 = NewtonRaphson(vp, 1, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+	vm2 = NewtonRaphson(vm, 1, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+	vp = vp2;
 	vm = vm2;
 	#endif
 
-	if(vp > vm) {
-		*vmax = vp ;
-		*vmin = vm ;
+	if (vp > vm) {
+		*vmax = vp;
+		*vmin = vm;
 	}
 	else {
-		*vmax = vm ;
-		*vmin = vp ;
+		*vmax = vm;
+		*vmin = vp;
 	}
 
-	return ;
+	return;
 }
 
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq)
+__device__ double NewtonRaphson(double start, size_t max_count, int dir, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq)
 {
 	size_t count = 0;
-	double dx = start/1000000.0;
+	double dx = start / 100.0;
 	double x = start;
 	double diff, derivative;
 	do{
 		diff = Drel(dir, x, ucon, ucov, bcon, geom, E, vasq, csq);
-		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / dx;
+		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / (dx + SMALL);
 		count++;
-		x = x - diff / (derivative);
+		x = x - diff / (derivative + SMALL);
 	} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
 	if (count >= max_count){
 		x = start;
@@ -1387,7 +1829,7 @@ __device__ double NewtonRaphson(double start, size_t max_count, int dir, double 
 	return x;
 }
 
-__device__ double Drel(int dir, double v, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq){
+__device__ double Drel(int dir, double v, double * restrict ucon, double * restrict ucov, double * restrict bcon, struct of_geom * restrict geom, double E, double vasq, double csq){
 	double kcov[NDIM], kcon[NDIM], Kcov[NDIM], Kcon[NDIM];
 	double om, omsq, ksq, kvasq, cfsq, result;
 	int i;
@@ -1398,562 +1840,713 @@ __device__ double Drel(int dir, double v, double *ucon, double *ucov, double *bc
 	else if (dir == 2){
 		kcov[2] = 1.0;
 	}
+	else if (dir == 3){
+		kcov[3] = 1.0;
+	}
 	raise(kcov, geom, kcon);
 	om = dot(ucon, kcov);
 	omsq = pow(om, 2.0);
-	#pragma unroll //NDIM
+	#pragma unroll NDIM
 	for (i = 0; i < NDIM; i++){
 		Kcov[i] = kcov[i] + ucov[i] * om;
 		Kcon[i] = kcon[i] + ucon[i] * om;
 	}
 	ksq = dot(Kcov, Kcon);
-	kvasq = pow(dot(kcov, bcon), 2.0) / E;
+	kvasq = pow(dot(kcov, bcon), 2.0) / (E + SMALL);
 	cfsq = vasq + csq*(1.0 - vasq);
 	result = 0.5*(cfsq*ksq + csq*kvasq + sqrt(pow(cfsq*ksq + csq*kvasq, 2.0) - 4.0*ksq*csq*kvasq)) - omsq;
 	return result;
 }
 
 /* MHD stress tensor, with first index up, second index down */
-__device__ void mhd_calc(FTYPE2 *pr, int dir, struct of_state *q, FTYPE2 *mhd, FTYPE2 gam) 
+__device__ mhd_calc(FTYPE2 *pr, int dir, struct of_state *q, FTYPE2 *mhd, FTYPE2 gam)
 {
-	int j ;
-	FTYPE2 r,u,P,w,bsq,eta,ptot ;
+	int j;
+	FTYPE2 r, u, P, w, bsq, eta, ptot;
 
-        r = pr[RHO] ;
-        u = pr[UU] ;
-        P = (gam - 1.)*u ;
-        w = P + r + u ;
-	bsq = dot(q->bcon,q->bcov) ;
-	eta = w + bsq ;
+	r = pr[RHO];
+	u = pr[UU];
+	P = (gam - 1.)*u;
+	w = P + r + u;
+	bsq = dot(q->bcon, q->bcov);
+	eta = w + bsq;
 	#if AMD
-	ptot = mad(0.5, bsq,P);
+	ptot = fma(0.5, bsq, P);
 	#else
 	ptot = P + 0.5*bsq;
 	#endif
 
-	/* single row of mhd stress tensor, 
-	 * first index up, second index down */
+	/* single row of mhd stress tensor,
+	* first index up, second index down */
 	#if AMD
-	#pragma unroll //NDIM
-	DLOOPA mhd[j] = mad(eta,q->ucon[dir]*q->ucov[j],mad(ptot,delta(dir,j),- q->bcon[dir]*q->bcov[j])) ;
+	#pragma unroll NDIM
+	DLOOPA mhd[j] = fma(eta, q->ucon[dir] * q->ucov[j], fma(ptot, delta(dir, j), -q->bcon[dir] * q->bcov[j]));
 	#else
-	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j]+ ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
+	DLOOPA mhd[j] = eta*q->ucon[dir] * q->ucov[j] + ptot*delta(dir, j) - q->bcon[dir] * q->bcov[j];
 	#endif
 }
 
-__device__ void get_state(FTYPE2 *pr, struct of_geom *geom, struct of_state *q)
+__device__ get_state(FTYPE2 * restrict pr, struct of_geom * restrict geom, struct of_state * restrict q)
 {
 	/* get ucon */
-	ucon_calc(pr, geom, q->ucon) ;
-	lower(q->ucon, geom, q->ucov) ;
-	bcon_calc(pr, q->ucon, q->ucov, q->bcon) ;
-	lower(q->bcon, geom, q->bcov) ;
+	ucon_calc(pr, geom, q->ucon);
+	lower(q->ucon, geom, q->ucov);
+	bcon_calc(pr, q->ucon, q->ucov, q->bcon);
+	lower(q->bcon, geom, q->bcov);
 
-	return ;
+	return;
 }
 
 /* Raises a covariant rank-1 tensor to a contravariant one */
-__device__ void raise(FTYPE2 *ucov, struct of_geom *geom, FTYPE2 *ucon)
+__device__ raise(FTYPE2 * restrict ucov, struct of_geom * restrict geom, FTYPE2 * restrict ucon)
 {
 	#if AMD
-	ucon[0] = mad(geom->gcon[0][0],ucov[0], mad(
-		 geom->gcon[0][1],ucov[1],mad( 
-		 geom->gcon[0][2],ucov[2] 
-		, geom->gcon[0][3]*ucov[3]))) ;
-	ucon[1] = mad(geom->gcon[1][0],ucov[0], mad(
-		 geom->gcon[1][1],ucov[1],mad( 
-		 geom->gcon[1][2],ucov[2] 
-		, geom->gcon[1][3]*ucov[3])));
-	ucon[2] = mad(geom->gcon[2][0],ucov[0], mad(
-		 geom->gcon[2][1],ucov[1],mad( 
-		 geom->gcon[2][2],ucov[2] 
-		, geom->gcon[2][3]*ucov[3]))) ;
-	ucon[3] = mad(geom->gcon[3][0],ucov[0], mad(
-		 geom->gcon[3][1],ucov[1],mad( 
-		 geom->gcon[3][2],ucov[2] 
-		, geom->gcon[3][3]*ucov[3]))) ;
+	ucon[0] = fma(geom->gcon[0][0], ucov[0], fma(
+		geom->gcon[0][1], ucov[1], fma(
+		geom->gcon[0][2], ucov[2]
+		, geom->gcon[0][3] * ucov[3])));
+	ucon[1] = fma(geom->gcon[1][0], ucov[0], fma(
+		geom->gcon[1][1], ucov[1], fma(
+		geom->gcon[1][2], ucov[2]
+		, geom->gcon[1][3] * ucov[3])));
+	ucon[2] = fma(geom->gcon[2][0], ucov[0], fma(
+		geom->gcon[2][1], ucov[1], fma(
+		geom->gcon[2][2], ucov[2]
+		, geom->gcon[2][3] * ucov[3])));
+	ucon[3] = fma(geom->gcon[3][0], ucov[0], fma(
+		geom->gcon[3][1], ucov[1], fma(
+		geom->gcon[3][2], ucov[2]
+		, geom->gcon[3][3] * ucov[3])));
 	#else
-		ucon[0] = geom->gcon[0][0]*ucov[0] 
-		+ geom->gcon[0][1]*ucov[1] 
-		+ geom->gcon[0][2]*ucov[2] 
-		+ geom->gcon[0][3]*ucov[3] ;
-	ucon[1] = geom->gcon[1][0]*ucov[0] 
-		+ geom->gcon[1][1]*ucov[1] 
-		+ geom->gcon[1][2]*ucov[2] 
-		+ geom->gcon[1][3]*ucov[3] ;
-	ucon[2] = geom->gcon[2][0]*ucov[0] 
-		+ geom->gcon[2][1]*ucov[1] 
-		+ geom->gcon[2][2]*ucov[2] 
-		+ geom->gcon[2][3]*ucov[3] ;
-	ucon[3] = geom->gcon[3][0]*ucov[0] 
-		+ geom->gcon[3][1]*ucov[1] 
-		+ geom->gcon[3][2]*ucov[2] 
-		+ geom->gcon[3][3]*ucov[3] ;
+	ucon[0] = geom->gcon[0][0] * ucov[0]
+		+ geom->gcon[0][1] * ucov[1]
+		+ geom->gcon[0][2] * ucov[2]
+		+ geom->gcon[0][3] * ucov[3];
+	ucon[1] = geom->gcon[1][0] * ucov[0]
+		+ geom->gcon[1][1] * ucov[1]
+		+ geom->gcon[1][2] * ucov[2]
+		+ geom->gcon[1][3] * ucov[3];
+	ucon[2] = geom->gcon[2][0] * ucov[0]
+		+ geom->gcon[2][1] * ucov[1]
+		+ geom->gcon[2][2] * ucov[2]
+		+ geom->gcon[2][3] * ucov[3];
+	ucon[3] = geom->gcon[3][0] * ucov[0]
+		+ geom->gcon[3][1] * ucov[1]
+		+ geom->gcon[3][2] * ucov[2]
+		+ geom->gcon[3][3] * ucov[3];
 	#endif
-        return ;
+	return;
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
-__device__ void lower(FTYPE2 *ucon, struct of_geom *geom, FTYPE2 *ucov)
+__device__ lower(FTYPE2 * restrict ucon, struct of_geom * restrict geom, FTYPE2 * restrict ucov)
 {
 	#if AMD
-	ucov[0] = mad(geom->gcov[0][0],ucon[0],mad( 
-		 geom->gcov[0][1],ucon[1],mad( 
-		 geom->gcov[0][2],ucon[2], 
-		 geom->gcov[0][3]*ucon[3]))) ;
-	ucov[1] = mad(geom->gcov[1][0],ucon[0],mad( 
-		 geom->gcov[1][1],ucon[1],mad( 
-		 geom->gcov[1][2],ucon[2], 
-		 geom->gcov[1][3]*ucon[3]))) ;
-	ucov[2] = mad(geom->gcov[2][0],ucon[0],mad( 
-		 geom->gcov[2][1],ucon[1],mad( 
-		 geom->gcov[2][2],ucon[2], 
-		 geom->gcov[2][3]*ucon[3]))) ;
-	ucov[3] = mad(geom->gcov[3][0],ucon[0],mad( 
-		 geom->gcov[3][1],ucon[1],mad( 
-		 geom->gcov[3][2],ucon[2], 
-		 geom->gcov[3][3]*ucon[3]))) ;
-        return ;
+	ucov[0] = fma(geom->gcov[0][0], ucon[0], fma(
+		geom->gcov[0][1], ucon[1], fma(
+		geom->gcov[0][2], ucon[2],
+		geom->gcov[0][3] * ucon[3])));
+	ucov[1] = fma(geom->gcov[1][0], ucon[0], fma(
+		geom->gcov[1][1], ucon[1], fma(
+		geom->gcov[1][2], ucon[2],
+		geom->gcov[1][3] * ucon[3])));
+	ucov[2] = fma(geom->gcov[2][0], ucon[0], fma(
+		geom->gcov[2][1], ucon[1], fma(
+		geom->gcov[2][2], ucon[2],
+		geom->gcov[2][3] * ucon[3])));
+	ucov[3] = fma(geom->gcov[3][0], ucon[0], fma(
+		geom->gcov[3][1], ucon[1], fma(
+		geom->gcov[3][2], ucon[2],
+		geom->gcov[3][3] * ucon[3])));
+	return;
 	#else
-		ucov[0] = geom->gcov[0][0]*ucon[0] 
-		+ geom->gcov[0][1]*ucon[1] 
-		+ geom->gcov[0][2]*ucon[2] 
-		+ geom->gcov[0][3]*ucon[3] ;
-	ucov[1] = geom->gcov[1][0]*ucon[0] 
-		+ geom->gcov[1][1]*ucon[1] 
-		+ geom->gcov[1][2]*ucon[2] 
-		+ geom->gcov[1][3]*ucon[3] ;
-	ucov[2] = geom->gcov[2][0]*ucon[0] 
-		+ geom->gcov[2][1]*ucon[1] 
-		+ geom->gcov[2][2]*ucon[2] 
-		+ geom->gcov[2][3]*ucon[3] ;
-	ucov[3] = geom->gcov[3][0]*ucon[0] 
-		+ geom->gcov[3][1]*ucon[1] 
-		+ geom->gcov[3][2]*ucon[2] 
-		+ geom->gcov[3][3]*ucon[3] ;
+	ucov[0] = geom->gcov[0][0] * ucon[0]
+		+ geom->gcov[0][1] * ucon[1]
+		+ geom->gcov[0][2] * ucon[2]
+		+ geom->gcov[0][3] * ucon[3];
+	ucov[1] = geom->gcov[1][0] * ucon[0]
+		+ geom->gcov[1][1] * ucon[1]
+		+ geom->gcov[1][2] * ucon[2]
+		+ geom->gcov[1][3] * ucon[3];
+	ucov[2] = geom->gcov[2][0] * ucon[0]
+		+ geom->gcov[2][1] * ucon[1]
+		+ geom->gcov[2][2] * ucon[2]
+		+ geom->gcov[2][3] * ucon[3];
+	ucov[3] = geom->gcov[3][0] * ucon[0]
+		+ geom->gcov[3][1] * ucon[1]
+		+ geom->gcov[3][2] * ucon[2]
+		+ geom->gcov[3][3] * ucon[3];
 	#endif
 }
 
 /* find contravariant four-velocity */
-__device__ void ucon_calc(FTYPE2 *pr, struct of_geom *geom, FTYPE2 *ucon)
+__device__ ucon_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict ucon)
 {
-	FTYPE2 alpha,gamma ;
-	FTYPE2 beta[NDIM] ;
-	int j ;
+	FTYPE2 alpha, gamma;
+	FTYPE2 beta[NDIM];
+	int j;
 
-	alpha = 1./sqrt(-geom->gcon[TT][TT]) ;
-	#pragma unroll //4
-	SLOOPA beta[j] = geom->gcon[TT][j]*alpha*alpha ;
+	alpha = 1. / sqrt(-geom->gcon[TT][TT]);
+	#pragma unroll 4
+	SLOOPA beta[j] = geom->gcon[TT][j] * alpha*alpha;
 
-	if( gamma_calc(pr,geom,&gamma) ) { 
-	 // fflush(stderr);
-	  //fprintf(stderr,"\nucon_calc(): gamma failure \n");
-	 // fflush(stderr);
-	 // fail(FAIL_GAMMA);
+	if (gamma_calc(pr, geom, &gamma)) {
+		// fflush(stderr);
+		//fprintf(stderr,"\nucon_calc(): gamma failure \n");
+		// fflush(stderr);
+		// fail(FAIL_GAMMA);
 	}
 
-	ucon[TT] = gamma/alpha ;
+	ucon[TT] = gamma / alpha;
 	#if AMD
-	#pragma unroll //4
-	SLOOPA ucon[j] = mad(- gamma,beta[j]/alpha,pr[U1+j-1])  ;
+	#pragma unroll 4
+	SLOOPA ucon[j] = fma(-gamma, beta[j] / alpha, pr[U1 + j - 1]);
 	#else
-	#pragma unroll //4
-	SLOOPA ucon[j] = pr[U1+j-1] - gamma*beta[j]/alpha ;
+	#pragma unroll 4
+	SLOOPA ucon[j] = pr[U1 + j - 1] - gamma*beta[j] / alpha;
 	#endif
 
-	return ;
+	return;
 }
 
-__device__ void bcon_calc(FTYPE2 *pr, FTYPE2 *ucon, FTYPE2 *ucov, FTYPE2 *bcon) 
+__device__ bcon_calc(FTYPE2 * restrict pr, FTYPE2 * restrict ucon, FTYPE2 * restrict ucov, FTYPE2 * restrict bcon)
 {
-	int j ;
+	int j;
 
 	#if AMD
-	bcon[TT] = mad(pr[B1],ucov[1],mad(pr[B2],ucov[2], pr[B3]*ucov[3])) ;
-	#pragma unroll //3
-	for(j=1;j<4;j++)
-		bcon[j] = ( mad(bcon[TT],ucon[j],pr[B1-1+j]))/ucon[TT] ;
+	bcon[TT] = fma(pr[B1], ucov[1], fma(pr[B2], ucov[2], pr[B3] * ucov[3]));
+	#pragma unroll 3
+	for (j = 1; j<4; j++)
+		bcon[j] = (fma(bcon[TT], ucon[j], pr[B1 - 1 + j])) / ucon[TT];
 	#else
-		bcon[TT] = pr[B1]*ucov[1] + pr[B2]*ucov[2] + pr[B3]*ucov[3] ;
-	#pragma unroll //3
-	for(j=1;j<4;j++)
-		bcon[j] = (pr[B1-1+j] + bcon[TT]*ucon[j])/ucon[TT] ;
+	bcon[TT] = pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3];
+	#pragma unroll 3
+	for (j = 1; j<4; j++)
+		bcon[j] = (pr[B1 - 1 + j] + bcon[TT] * ucon[j]) / ucon[TT];
 	#endif
-	return ;
+	return;
 }
 
-__device__ int gamma_calc(FTYPE2 *pr, struct of_geom *geom, FTYPE2 *gamma)
+__device__ int gamma_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom, FTYPE2 * restrict gamma)
 {
-        FTYPE2 qsq ;
-		#if AMD
-        qsq =     mad(geom->gcov[1][1],pr[U1]*pr[U1],mad(
-                  geom->gcov[2][2],pr[U2]*pr[U2],
-                  geom->gcov[3][3]*pr[U3]*pr[U3]))
-            + 2.*mad(geom->gcov[1][2],pr[U1]*pr[U2],mad(
-                 geom->gcov[1][3],pr[U1]*pr[U3],
-                 geom->gcov[2][3]*pr[U2]*pr[U3])) ;
-		#else
-		      qsq =     geom->gcov[1][1]*pr[U1]*pr[U1]
-                + geom->gcov[2][2]*pr[U2]*pr[U2]
-                + geom->gcov[3][3]*pr[U3]*pr[U3]
-            + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]
-                + geom->gcov[1][3]*pr[U1]*pr[U3]
-                + geom->gcov[2][3]*pr[U2]*pr[U3]) ;
-		#endif
+	FTYPE2 qsq;
+	#if AMD
+	qsq = fma(geom->gcov[1][1], pr[U1] * pr[U1], fma(
+		geom->gcov[2][2], pr[U2] * pr[U2],
+		geom->gcov[3][3] * pr[U3] * pr[U3]))
+		+ 2.*fma(geom->gcov[1][2], pr[U1] * pr[U2], fma(
+		geom->gcov[1][3], pr[U1] * pr[U3],
+		geom->gcov[2][3] * pr[U2] * pr[U3]));
+	#else
+	qsq = geom->gcov[1][1] * pr[U1] * pr[U1]
+		+ geom->gcov[2][2] * pr[U2] * pr[U2]
+		+ geom->gcov[3][3] * pr[U3] * pr[U3]
+		+ 2.*(geom->gcov[1][2] * pr[U1] * pr[U2]
+		+ geom->gcov[1][3] * pr[U1] * pr[U3]
+		+ geom->gcov[2][3] * pr[U2] * pr[U3]);
+	#endif
 
-        if( qsq < 0. ){
-          if( fabs(qsq) > 1.E-10 ){ // then assume not just machine precision
-            //fprintf(stderr,"gamma_calc():  failed: i,j,qsq = %d %d %28.18e \n", icurr,jcurr,qsq);
-           // fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
-	    *gamma = 1.;
-	    return (1);
-	  }
-          else qsq=1.E-10; // set floor
-        }
+	if (qsq < 0.){
+		if (fabs(qsq) > 1.E-10){ // then assume not just machine precision
+			//fprintf(stderr,"gamma_calc():  failed: i,j,qsq = %d %d %28.18e \n", icurr,jcurr,qsq);
+			// fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
+			*gamma = 1.;
+			return (1);
+		}
+		else qsq = 1.E-10; // set floor
+	}
 
-        *gamma = sqrt(1. + qsq) ;
+	*gamma = sqrt(1. + qsq);
 
-        return(0) ;
+	return(0);
 }
 
 /* load local geometry into structure geom */
-__device__ void get_geometry(int N1, int N2, int ii, int jj, int kk, struct of_geom *geom, const  FTYPE2* __restrict__  gcov_GPU, const  FTYPE2* __restrict__  gcon_GPU,  const  FTYPE2* __restrict__  gdet_GPU)
+__device__ get_geometry(int N1, int N2, int ii, int jj, int zz, int kk, struct of_geom * restrict geom, __read_only image3d_t gcov_GPU, __read_only image3d_t gcon_GPU, __read_only image3d_t gdet_GPU)
 {
-	int fix_mem2=LOCAL_WORK_SIZE-((N2+2*N2G)*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	geom->gcon[0][0] = gcon_GPU[kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[0][0] = gcov_GPU[kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcon[0][1] = gcon_GPU[1*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[0][1] = gcov_GPU[1*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcon[0][2] = gcon_GPU[2*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[0][2] = 0.0;
-	geom->gcon[0][3] = 0.0;
-	geom->gcov[0][3] = gcov_GPU[3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
+	#if(NONSYMMETRIC)
+	geom->gcon[0][0] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[0][0] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[0][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[0][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[0][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[0][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[0][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[0][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
 	geom->gcon[1][0] = geom->gcon[0][1];
 	geom->gcov[1][0] = geom->gcov[0][1];
-	geom->gcon[1][1] = gcon_GPU[1*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+1*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[1][1] = gcov_GPU[1*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+1*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcon[1][2] = gcon_GPU[1*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+2*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[1][2] = gcov_GPU[1*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+2*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcon[1][3] = gcon_GPU[1*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[1][3] = gcov_GPU[1*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
+	geom->gcon[1][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[1][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 1 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[1][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[1][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[1][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[1][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 1 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
 	geom->gcon[2][0] = geom->gcon[0][2];
 	geom->gcov[2][0] = geom->gcov[0][2];
-	geom->gcon[2][1] = geom->gcon[1][2]; 
+	geom->gcon[2][1] = geom->gcon[1][2];
 	geom->gcov[2][1] = geom->gcov[1][2];
-	geom->gcon[2][2] = gcon_GPU[2*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+2*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[2][2] = gcov_GPU[2*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+2*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcon[2][3] = gcon_GPU[2*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[2][3] = 0.0;
+	geom->gcon[2][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[2][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 2 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcon[2][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[2][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 2 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
 	geom->gcon[3][0] = geom->gcon[0][3];
 	geom->gcov[3][0] = geom->gcov[0][3];
 	geom->gcon[3][1] = geom->gcon[1][3];
 	geom->gcov[3][1] = geom->gcov[1][3];
 	geom->gcon[3][2] = geom->gcon[2][3];
-	geom->gcov[3][2] = geom->gcov[2][3];	 
-	geom->gcon[3][3] = gcon_GPU[3*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->gcov[3][3] = gcov_GPU[3*NDIM*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2)+3*NPG*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj];
-	geom->g = gdet_GPU[kk*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + ii*(N2+2*N2G) + jj] ;
+	geom->gcov[3][2] = geom->gcov[2][3];
+	geom->gcon[3][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(zz, jj, 3 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->gcov[3][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(zz, jj, 3 * NDIM*NPG*(BS_1 + 2 * N1G) + 3 * NPG*(BS_1 + 2 * N1G) + kk*(BS_1 + 2 * N1G) + ii, 0)));
+	geom->g = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(zz, jj, kk*(BS_1 + 2 * N1G) + ii, 0)));
+	#else
+	geom->gcon[0][0] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, kk, 0)));;
+	geom->gcov[0][0] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, kk, 0)));
+	geom->gcon[0][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NPG + kk, 0)));
+	geom->gcov[0][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NPG + kk, 0)));
+	geom->gcon[0][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 2 * NPG + kk, 0)));
+	geom->gcov[0][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 2 * NPG + kk, 0)));
+	geom->gcon[0][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 3 * NPG + kk, 0)));
+	geom->gcov[0][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 3 * NPG + kk, 0)));
+	geom->gcon[1][0] = geom->gcon[0][1];
+	geom->gcov[1][0] = geom->gcov[0][1];
+	geom->gcon[1][1] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 1 * NPG + kk, 0)));
+	geom->gcov[1][1] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 1 * NPG + kk, 0)));
+	geom->gcon[1][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 2 * NPG + kk, 0)));
+	geom->gcov[1][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 2 * NPG + kk, 0)));
+	geom->gcon[1][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 3 * NPG + kk, 0)));
+	geom->gcov[1][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 1 * NDIM*NPG + 3 * NPG + kk, 0)));
+	geom->gcon[2][0] = geom->gcon[0][2];
+	geom->gcov[2][0] = geom->gcov[0][2];
+	geom->gcon[2][1] = geom->gcon[1][2];
+	geom->gcov[2][1] = geom->gcov[1][2];
+	geom->gcon[2][2] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 2 * NPG + kk, 0)));
+	geom->gcov[2][2] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 2 * NPG + kk, 0)));
+	geom->gcon[2][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 3 * NPG + kk, 0)));
+	geom->gcov[2][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 2 * NDIM*NPG + 3 * NPG + kk, 0)));
+	geom->gcon[3][0] = geom->gcon[0][3];
+	geom->gcov[3][0] = geom->gcov[0][3];
+	geom->gcon[3][1] = geom->gcon[1][3];
+	geom->gcov[3][1] = geom->gcov[1][3];
+	geom->gcon[3][2] = geom->gcon[2][3];
+	geom->gcov[3][2] = geom->gcov[2][3];
+	geom->gcon[3][3] = readImageDouble(read_imagei(gcon_GPU, sample, (int4)(jj, ii, 3 * NDIM*NPG + 3 * NPG + kk, 0)));
+	geom->gcov[3][3] = readImageDouble(read_imagei(gcov_GPU, sample, (int4)(jj, ii, 3 * NDIM*NPG + 3 * NPG + kk, 0)));
+	geom->g = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jj, ii, kk, 0)));
+	#endif
+
 }
 
-__device__ void inflow_check(int N1, int N2, FTYPE2 *pr, int ii, int jj, int type, const  FTYPE2* __restrict__  gcov, const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet)
+__device__ inflow_check(int N1, int N2, FTYPE2 * restrict pr, int ii, int jj, int zz, int type, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet)
 {
-    struct of_geom geom ;
-    FTYPE2 ucon[NDIM] ;
-    int j,k ;
-    FTYPE2 alpha,beta1,gamma,vsq ;
-    get_geometry(N1, N2, ii,jj,CENT,&geom, gcov, gcon, gdet) ;
-    ucon_calc(pr, &geom, ucon) ;
+	struct of_geom geom;
+	FTYPE2 ucon[NDIM];
+	int j, k;
+	FTYPE2 alpha, beta1, gamma, vsq;
+	get_geometry(N1, N2, ii, jj, zz, CENT, &geom, gcov, gcon, gdet);
+	ucon_calc(pr, &geom, ucon);
 
-    if( ((ucon[1] > 0.) && (type==0)) || ((ucon[1] < 0.) && (type==1)) ) { 
-            // find gamma and remove it from primitives 
-	if( gamma_calc(pr,&geom,&gamma) ) { 
-		// fflush(stderr);
-		// fprintf(stderr,"\ninflow_check(): gamma failure \n");
-		// fflush(stderr);
-		// fail(FAIL_GAMMA);
-	}
-	pr[U1] /= gamma ;
-	pr[U2] /= gamma ;
-	pr[U3] /= gamma ;
-	alpha = 1./sqrt(-geom.gcon[0][0]) ;
-	beta1 = geom.gcon[0][1]*alpha*alpha ;
-
-	// reset radial velocity so radial 4-velocity is zero 
-	pr[U1] = beta1/alpha ;
-
-	// now find new gamma and put it back in 
-	vsq = 0. ;
-	#pragma unroll //NDIM
-	SLOOP vsq += geom.gcov[j][k]*pr[U1+j-1]*pr[U1+k-1] ;
-	if( fabs(vsq) < 1.e-13 )  vsq = 1.e-13;
-	if( vsq >= 1. ) { 
-	    vsq = 1. - 1./(GAMMAMAX*GAMMAMAX) ;
-	}
-	gamma = 1./sqrt(1. - vsq) ;
-	pr[U1] *= gamma ;
-	pr[U2] *= gamma ;
-	pr[U3] *= gamma ;
-	}
-}
-
-__device__ FTYPE2 slope_lim(FTYPE2 y1,FTYPE2 y2,FTYPE2 y3, int lim) 
-{
- FTYPE2 Dqm,Dqp,Dqc,s ;
-/* woodward, or monotonized central, slope limiter */
-	if(lim == 0) {
-		Dqm = 2.*(y2 - y1) ;
-		Dqp = 2.*(y3 - y2) ;
-		Dqc = 0.5*(y3 - y1) ;
-		s = Dqm*Dqp ;
-		if(s<= 0.) return 0. ;
-		else {
-			if(fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
-				return(Dqm) ;
-			else if(fabs(Dqp) < fabs(Dqc))
-				return(Dqp) ;
-			else
-				return(Dqc) ;
+	if (((ucon[1] > 0.) && (type == 0)) || ((ucon[1] < 0.) && (type == 1))) {
+		// find gamma and remove it from primitives 
+		if (gamma_calc(pr, &geom, &gamma)) {
+			// fflush(stderr);
+			// fprintf(stderr,"\ninflow_check(): gamma failure \n");
+			// fflush(stderr);
+			// fail(FAIL_GAMMA);
 		}
+		pr[U1] /= gamma;
+		pr[U2] /= gamma;
+		pr[U3] /= gamma;
+		alpha = 1. / sqrt(-geom.gcon[0][0]);
+		beta1 = geom.gcon[0][1] * alpha*alpha;
+
+		// reset radial velocity so radial 4-velocity is zero 
+		pr[U1] = beta1 / alpha;
+
+		// now find new gamma and put it back in 
+		vsq = 0.;
+		
+		#pragma unroll NDIM
+		SLOOP vsq += geom.gcov[j][k] * pr[U1 + j - 1] * pr[U1 + k - 1];
+		
+		if (fabs(vsq) < 1.e-13)  vsq = 1.e-13;
+		if (vsq >= 1.) {
+			vsq = 1. - 1. / (GAMMAMAX*GAMMAMAX);
+		}
+		gamma = 1. / sqrt(1. - vsq);
+		pr[U1] *= gamma;
+		pr[U2] *= gamma;
+		pr[U3] *= gamma;
 	}
-	/* van leer slope limiter */
-	else if(lim == 1) {
-		Dqm = (y2 - y1) ;
-		Dqp = (y3 - y2) ;
-		s = Dqm*Dqp ;
-		if(s <= 0.) return 0. ;
+}
+
+__device__ FTYPE2 slope_lim(FTYPE2 y1, FTYPE2 y2, FTYPE2 y3, int dir)
+{
+	FTYPE2 Dqm, Dqp, Dqc, s;
+	/* woodward, or monotonized central, slope limiter */
+	Dqm = (1.5)*(y2 - y1);
+	Dqp = (1.5)*(y3 - y2);
+	Dqc = 0.5*(y3 - y1);
+	s = Dqm*Dqp;
+	if (s <= 0.) return 0.;
+	else {
+		if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
+			return(Dqm);
+		else if (fabs(Dqp) < fabs(Dqc))
+			return(Dqp);
 		else
-			return(2.*s/(Dqm+Dqp)) ;
+			return(Dqc);
+	}
+}
+
+__device__ para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout)
+{
+	int i;
+	double y[5], dq[5];
+	double Dqm, Dqc, Dqp, aDqm, aDqp, aDqc, s, l, r, qa, qd, qe;
+
+	y[0] = x1;
+	y[1] = x2;
+	y[2] = x3;
+	y[3] = x4;
+	y[4] = x5;
+
+	/*CW1.7 */
+	for (i = 1; i<4; i++) {
+		Dqm = 2. *(y[i] - y[i - 1]);
+		Dqp = 2. *(y[i + 1] - y[i]);
+		Dqc = 0.5 *(y[i + 1] - y[i - 1]);
+		aDqm = fabs(Dqm);
+		aDqp = fabs(Dqp);
+		aDqc = fabs(Dqc);
+		s = Dqm*Dqp;
+		Dqm = MY_MIN(aDqm, aDqp);
+		if (aDqc< Dqm){
+			if (Dqc>0.) dq[i] = (aDqc)*(double)(s>0.);
+			else dq[i] = (-aDqc)*(double)(s>0.);
+		}
+		else{
+			if (Dqc>0.) dq[i] = (Dqm)*(double)(s>0.);
+			else dq[i] = (-Dqm)*(double)(s>0.);
+		}
+
 	}
 
-	/* minmod slope limiter (crude but robust) */
-	else if(lim == 2) {
-		Dqm = (y2 - y1) ;
-		Dqp = (y3 - y2) ;
-		s = Dqm*Dqp ;
-		if(s <= 0.) return 0. ;
-		else if(fabs(Dqm) < fabs(Dqp)) return Dqm ;
-		else return Dqp ;
+	// CW1.6
+	l = 0.5*(y[2] + y[1]) - (dq[2] - dq[1]) / 6.0;
+	r = 0.5*(y[3] + y[2]) - (dq[3] - dq[2]) / 6.0;
+
+	qa = (r - y[2])*(y[2] - l);
+	qd = (r - l);
+	qe = 6.0*(y[2] - 0.5*(l + r));
+
+	if (qa <= 0.) {
+		l = y[2];
+		r = y[2];
 	}
-		return(0.) ;
+
+	if (qd*(qd - qe)<0.0) l = 3.0*y[2] - 2.0*r;
+	else if (qd*(qd + qe)<0.0) r = 3.0*y[2] - 2.0*l;
+
+	lout[0] = l;   //a_L,j
+	rout[0] = r;
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
-__device__ FTYPE2 bsq_calc(FTYPE2 *pr, struct of_geom *geom)
+__device__ FTYPE2 bsq_calc(FTYPE2 * restrict pr, struct of_geom * restrict geom)
 {
-	struct of_state q ;
-	get_state(pr,geom,&q) ;
-	return( dot(q.bcon,q.bcov) ) ;
+	struct of_state q;
+	get_state(pr, geom, &q);
+	return(dot(q.bcon, q.bcov));
 }
 
-__global__ void fluxcalcprep(int N1, int N2, int N3,  FTYPE2* F,  FTYPE2* dq, const FTYPE2* __restrict__ p, int dir, int lim)
- {
- 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int idel, jdel, zdel;
-	int k;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	FTYPE2 temp1[NPR], temp2[NPR], temp3[NPR];
-	
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;}
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0;}
-	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1;}
-	if(icurr>=N1G-D1 && jcurr>=N2G-D2 && zcurr>=N3G-D3 && icurr<N1+N1G+D1 && jcurr<N2+N2G+D2 && zcurr<N3+N3G+D3){
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
-			temp1[k]=p[k*(ksize)+global_id-idel*isize -jdel*(N3+2*N3G)-zdel];
-			temp2[k]=p[k*(ksize)+global_id];
-			temp3[k]=p[k*(ksize)+global_id+idel*isize +jdel*(N3+2*N3G)+zdel];
-			dq[k*(ksize)+global_id]=slope_lim(temp1[k],temp2[k], temp3[k], lim);
-		}
-	}
- }
 
-  __global__ void fluxcalc2D1(int N1, int N2, int N3,  FTYPE2* F, const FTYPE2* __restrict__ dq, const FTYPE2* __restrict__ p,
-  const  FTYPE2* __restrict__  gcov, const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, FTYPE2* storage1, 
-  FTYPE2* storage2, FTYPE2* storage3, FTYPE2* storage4, int dir)
- {
- 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int idel, jdel, zdel, k;
+__global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 * restrict  F, __global FTYPE2 * restrict dq, __global FTYPE2 * restrict p, int dir, int lim, FTYPE2 hslope, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, int number, __global FTYPE2 * restrict V)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + 2 * D3)*(N2 + 2 * D2);
+	int zcurr = (global_id % (isize)) % (N3 + 2 * D3);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + 2 * D3);
+	int icurr = (global_id - (jcurr*(N3 + 2 * D3) + zcurr)) / (isize);
+	zcurr += (N3G - 1)*D3;
+	jcurr += N2G - 1;
+	icurr += N1G - 1;
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	int jsize = N3 + 2 * N3G;
+	int k = 0;
+	if (global_id<(N1 + 2 * D1) * (N2 + 2 * D2) * (N3 + 2 * D3)) k = 1;
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int idel, jdel, zdel;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	FTYPE2 x1, x2, x3, x4, x5, temp[1], result[1];
+
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
+	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
+	if (k == 1){
+		#if(PPM)
+		if (number == 1){
+			#pragma unroll NPR	
+			for (k = 0; k<NPR; k++){
+				x1 = p[k*(ksize)+global_id - 3 * zdel - 3 * (N3 + 2 * N3G)*jdel - 3 * isize*idel];
+				x2 = p[k*(ksize)+global_id - 2 * zdel - 2 * (N3 + 2 * N3G)*jdel - 2 * isize*idel];
+				x3 = p[k*(ksize)+global_id - 1 * zdel - 1 * (N3 + 2 * N3G)*jdel - 1 * isize*idel];
+				x4 = p[k*(ksize)+global_id];
+				x5 = p[k*(ksize)+global_id + 1 * zdel + 1 * (N3 + 2 * N3G)*jdel + 1 * isize*idel];
+				para(x1, x2, x3, x4, x5, temp, result);
+				dq[k*(ksize)+global_id] = result[0];
+			}
+		}
+		else{
+			#pragma unroll NPR	
+			for (k = 0; k<NPR; k++){
+				x1 = p[k*(ksize)+global_id - 2 * zdel - 2 * (N3 + 2 * N3G)*jdel - 2 * isize*idel];
+				x2 = p[k*(ksize)+global_id - 1 * zdel - 1 * (N3 + 2 * N3G)*jdel - 1 * isize*idel];
+				x3 = p[k*(ksize)+global_id];
+				x4 = p[k*(ksize)+global_id + 1 * zdel + 1 * (N3 + 2 * N3G)*jdel + 1 * isize*idel];
+				x5 = p[k*(ksize)+global_id + 2 * zdel + 2 * (N3 + 2 * N3G)*jdel + 2 * isize*idel];
+				para(x1, x2, x3, x4, x5, result, temp);
+				dq[k*(ksize)+global_id] = result[0];
+			}
+		}
+		#elif(LEER)
+		if (number == 1){
+			double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
+			double CFL = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XL);
+			double CBL = (V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
+				(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(dir - 1)*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
+			for (k = 0; k<NPR; k++){
+				double d_C = (p[k*ksize + global_id] - p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
+				double d_L = (p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - p[k*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
+					(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]);
+				if (d_L*d_C <= 0.){
+					dq[k*(ksize)+global_id] = p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
+				}
+				else{
+					dq[k*(ksize)+global_id] = p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] + (d_XL*d_L*d_C*(CFL*d_L + CBL*d_C)) / (d_L*d_L + (CFL + CBL - 2.)*d_C*d_L + d_C*d_C);
+				}
+			}
+		}
+		else{
+			double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
+			double d_XR = V[(3 + (dir - 1))*ksize + global_id] - V[(dir - 1)*ksize + global_id];
+			double CFL = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XL);
+			double CBL = (V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
+				(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(dir - 1)*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
+			double CFR = (V[(3 + (dir - 1))*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id])
+				/ (V[(dir - 1)*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id]);
+			double CBR = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XR);
+			for (k = 0; k<NPR; k++){
+				double d_C = (p[k*ksize + global_id] - p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
+				double d_R = (p[k*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - p[k*ksize + global_id]) / (V[(3 + (dir - 1))*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id]);
+				if (d_R*d_C <= 0.){
+					dq[k*(ksize)+global_id] = p[k*ksize + global_id];
+				}
+				else{
+					dq[k*(ksize)+global_id] = p[k*ksize + global_id] - (d_XR*d_R*d_C*(CFL*d_R + CBL*d_C)) / (d_R*d_R + (CFL + CBL - 2.)*d_C*d_R + d_C*d_C);
+				}
+			}
+
+		}
+		//if(p[0*(ksize)+global_id]/dq[0*(ksize)+global_id]>10.) printf("test %d %d %d %d: %f %f %f \n ",number ,icurr, jcurr, zcurr, log(p[0*(ksize)+global_id]),log(p[0*(ksize)+global_id-(dir==1)*isize-(dir==2)*jsize-(dir==3)]),log(dq[0*(ksize)+global_id]));
+		#else
+		#pragma unroll NPR	
+		for (k = 0; k<NPR; k++){
+			dq[k*(ksize)+global_id] = slope_lim(p[k*(ksize)+global_id - idel*isize - jdel*(N3 + 2 * N3G) - zdel], p[k*(ksize)+global_id], p[k*(ksize)+global_id + idel*isize + jdel*(N3 + 2 * N3G) + zdel], 0);
+		}
+		#endif
+	}
+}
+
+
+__global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 * restrict F, __global FTYPE2 * restrict dq, __global FTYPE2 * restrict pv, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet, int lim, int dir,
+	FTYPE2 gam, FTYPE2 hslope, FTYPE2 fractheta, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 cour, __global FTYPE2*  dtij, __local FTYPE2* local_dtij, int N1_MPI, int N1_MPI_offset, int POLE_1, int POLE_2,
+	int N3_MPI, int N3_MPI_offset, __global FTYPE2* storage1, __global FTYPE2* storage2, __global FTYPE2* storage3, __global FTYPE2* storage4, double dx_1, double dx_2, double dx_3, __global FTYPE2 * restrict eta_avg, __global FTYPE2 * restrict ps)
+{
+	int global_id = get_global_id(0);
+	int local_id = get_local_id(0);
+	int group_id = get_group_id(0);
+	int isize = (N3 + 2 * D3 - (dir == 3))*(N2 + 2 * D2 - (dir == 2));
+	int zcurr = (global_id % (isize)) % (N3 + 2 * D3 - (dir == 3));
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + 2 * D3 - (dir == 3));
+	int icurr = (global_id - (jcurr*(N3 + 2 * D3 - (dir == 3)) + zcurr)) / (isize);
+	zcurr += (N3G - 1)*D3 + (dir == 3);
+	jcurr += (N2G - 1) + (dir == 2);
+	icurr += (N1G - 1) + (dir == 1);
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	int k = 0;
+	if (global_id<(N1 + 2 * D1 - (dir == 1)) * (N2 + 2 * D2 - (dir == 2)) * (N3 + 2 * D3 - (dir == 3))) k = 1;
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int idel, jdel, zdel, i;
 	int face;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	FTYPE2 cmax_l,cmin_l;
-	FTYPE2 p_l[NPR];
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	double factor;
+	FTYPE2 cmax_r, cmin_r, cmax, cmin;
+	FTYPE2 ctop;
+	FTYPE2 temp3[NPR], temp4[NPR];
+	FTYPE2 cmax_l, cmin_l;
+	FTYPE2 p[NPR];
 	FTYPE2 temp1[NPR], temp2[NPR];
 	struct of_geom geom;
-	struct of_state state_l ;
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; }
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; }
-	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; }
+	struct of_state state;
+	local_dtij[local_id] = 1.e9;
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
+	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3; }
 
-	/*Watch out that the 'temp' variables in the loop above are properly initialized!*/
-	if(icurr>=(2-jdel-zdel)*D1 && jcurr>=(2-idel-zdel)*D2 && zcurr>=(2-idel-jdel)*D3 && icurr<N1+N1G+D1 && jcurr<N2+N2G+D2 && zcurr<N3+N3G+D3){
-		get_geometry(N1, N2, icurr, jcurr, face, &geom, gcov, gcon, gdet) ;
-						//if(icurr==52 && jcurr==52){
-			//printf("testGPU: %f %d \n",gcov[face*((N2+2*N2G)*(N1+2*N1G)+LOCAL_WORK_SIZE-((N2+2*N2G)*(N1+2*N1G))%LOCAL_WORK_SIZE) + global_id], face);
-		//}
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
+	if (k == 1){
+		get_geometry(N1, N2, icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
+
+		#if(PPM || LEER)
+		#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
+			p[k] = dq[k*(ksize)+global_id];
+		}
+		#else
+		#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
 			#if AMD
-			p_l[k] = mad(0.5,dq[k*(ksize)+global_id-idel*isize -jdel*(N3+2*N3G)-zdel],p[k*(ksize)+global_id-idel*isize -jdel*(N3+2*N3G)-zdel]) ;
+			p[k] = fma(0.5, dq[k*(ksize)+global_id - idel*isize - jdel*(N3 + 2 * N3G) - zdel], pv[k*(ksize)+global_id - idel*isize - jdel*(N3 + 2 * N3G) - zdel]);
 			#else
-			p_l[k] = p[k*(ksize)+global_id-idel*isize -jdel*(N3+2*N3G)-zdel] + 0.5*dq[k*(ksize)+global_id-idel*isize -jdel*(N3+2*N3G)-zdel];
+			p[k] = pv[k*(ksize)+global_id - idel*isize - jdel*(N3 + 2 * N3G) - zdel] + 0.5*dq[k*(ksize)+global_id - idel*isize - jdel*(N3 + 2 * N3G) - zdel];
 			#endif
 		}
-		get_state(p_l,&geom,&state_l) ;
-		primtoflux(p_l,&state_l,dir,&geom,temp1, GAMMA) ;
-		primtoflux(p_l,&state_l,TT, &geom,temp2, GAMMA) ;
-		vchar(p_l,&state_l,&geom,dir,&cmax_l,&cmin_l, GAMMA) ;
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
-			storage1[k*(ksize)+global_id]=temp1[k];
-			storage2[k*(ksize)+global_id]=temp2[k];
-		}
-		storage3[global_id]=cmin_l;
-		storage4[global_id]=cmax_l;
-	}
- }
-
-  __global__ void fluxcalc2D2(int N1, int N2, int N3,  FTYPE2* F,  const FTYPE2* __restrict__ dq, const FTYPE2* __restrict__ p, FTYPE2* dtij,
-  const  FTYPE2* __restrict__  gcov, const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, const FTYPE2* __restrict__ storage1, const FTYPE2* __restrict__ storage2,
-   const FTYPE2* __restrict__ storage3, const FTYPE2* __restrict__ storage4,FTYPE2 cour, FTYPE2 Rout, FTYPE2 Rin, FTYPE2 R0, FTYPE2 fractheta, int dir, int N1_MPI, int N2_MPI, int N3_MPI)
- {
- 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int local_id=threadIdx.x;
-	int group_id=blockIdx.x;
-	int local_size=blockDim.x;
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int idel, jdel, zdel,i, k;
-	int face;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	double factor;
-	FTYPE2 cmax_r,cmin_r,cmax,cmin;
-	FTYPE2 ctop ;
-	FTYPE2 p_r[NPR];
-	FTYPE2 temp3[NPR], temp4[NPR];
-	__shared__ FTYPE2 local_dtij[LOCAL_WORK_SIZE];
-	struct of_geom geom;
-	struct of_state state_r ;
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor=cour*(log((Rout - R0)/(Rin - R0))/(double)N1_MPI);}
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2;factor=cour*(fractheta/(double)N2_MPI); }
-	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor=cour*(2.0*M_PI/(double)N3_MPI);}
-	
-	local_dtij[local_id]=1.e9;
-
-	/*Watch out that the 'temp' variables in the loop above are properly initialized!*/
-	if(icurr>=(2-jdel-zdel)*D1 && jcurr>=(2-idel-zdel)*D2 && zcurr>=(2-idel-jdel)*D3 && icurr<N1+N1G+D1 && jcurr<N2+N2G+D2 && zcurr<N3+N3G+D3){
-       	get_geometry(N1, N2, icurr, jcurr, face, &geom, gcov, gcon, gdet) ;
-
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
-		#if AMD
-			p_r[k] =  mad(- 0.5,dq[k*(ksize)+global_id],p[k*(ksize)+global_id]);
-		#else
-			p_r[k] = p[k*(ksize)+global_id] - 0.5*dq[k*(ksize)+global_id];
 		#endif
+		#if(STAGGERED)
+		for (k = 0; k< NPR; k++){
+			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
+				p[k] = ps[(k - B1)*(ksize)+global_id];
+			}
+
+			if (dir == 2 && k == B1 && ((jcurr == N2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
+				#if AMD
+				p[k] = 0.;
+				#else
+				p[k] = 0.;
+				#endif
+			}
+		}
+		#endif
+
+		get_state(p, &geom, &state);
+		primtoflux(p, &state, dir, &geom, temp1, gam);
+		primtoflux(p, &state, TT, &geom, temp2, gam);
+		vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
+
+			#if(PPM || LEER)
+			#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
+			p[k] = dq[k*(ksize)+global_id];
+		}
+		#else
+		#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
+			#if AMD
+			p[k] = fma(-0.5, dq[k*(ksize)+global_id], pv[k*(ksize)+global_id]);
+			#else
+			p[k] = pv[k*(ksize)+global_id] - 0.5*dq[k*(ksize)+global_id];
+			#endif
+		}
+		#endif
+		#if(STAGGERED)
+		for (k = 0; k< NPR; k++){
+			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
+				p[k] = ps[(k - B1)*(ksize)+global_id];
+			}
+			if (dir == 2 && k == B1 && ((jcurr == N2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
+				#if AMD
+				p[k] = 0.;
+				#else
+				p[k] = 0.;
+				#endif
+			}
+		}
+		#endif
+		get_state(p, &geom, &state);
+		primtoflux(p, &state, dir, &geom, temp3, gam);
+		primtoflux(p, &state, TT, &geom, temp4, gam);
+		vchar(p, &state, &geom, dir, &cmax_r, &cmin_r, gam);
+
+		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
+		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
+		ctop = MY_MAX(cmax, cmin);
+		#pragma unroll NPR	
+		for (k = 0; k<NPR; k++){
+			F[k*(ksize)+global_id] = HLLF*((cmax*temp1[k] +
+				cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL))
+				+ LAXF*(0.5*(temp1[k]
+				+ temp3[k] - ctop*(temp4[k] - temp2[k])));
 		}
 
-		get_state(p_r,&geom,&state_r) ;
-		primtoflux(p_r,&state_r,dir,&geom,temp3, GAMMA) ;
-		primtoflux(p_r,&state_r,TT, &geom,temp4, GAMMA) ;
-		vchar(p_r,&state_r,&geom,dir,&cmax_r,&cmin_r, GAMMA) ;
-
-		cmax = fabs(MY_MAX(MY_MAX(0., storage4[global_id]),  cmax_r)) ;
-		cmin = fabs(MY_MAX(MY_MAX(0.,-storage3[global_id]), -cmin_r)) ;
-		ctop = MY_MAX(cmax,cmin) ;
-		
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
-			F[k*(ksize)+global_id]=HLLF*((cmax*storage1[k*(ksize)+global_id] + 
-			cmin*temp3[k] - cmax*cmin*(temp4[k] - storage2[k*(ksize)+global_id]))/(cmax + cmin + SMALL)) 
-			+LAXF*(0.5*(storage1[k*(ksize)+global_id] 
-			+ temp3[k] - ctop*(temp4[k] - storage2[k*(ksize)+global_id])));
+		cmax = MY_MAX(cmax, cmin);
+		local_dtij[local_id] = factor / cmax;
+	}
+	barrier(CLK_LOCAL_MEM_FENCE);
+	for (i = get_local_size(0) / 2; i>1; i = i / 2){
+		if (local_id<i){
+			local_dtij[local_id] = MY_MIN(local_dtij[local_id], local_dtij[local_id + i]);
 		}
-
-        //evaluate restriction on timestep
-        cmax = MY_MAX(cmax,cmin) ;
-		local_dtij[local_id] = factor/cmax ;
+		barrier(CLK_LOCAL_MEM_FENCE);
 	}
-
-	__syncthreads();
-	for(i=local_size/2; i>1; i=i/2){
-		if(local_id<i){
-			local_dtij[local_id]=MY_MIN(local_dtij[local_id], local_dtij[local_id+i]);
-		}
-		__syncthreads();
+	if (local_id == 0){
+		dtij[group_id] = MY_MIN(local_dtij[0], local_dtij[1]);
 	}
-	if(local_id==0){
-		dtij[group_id]=MY_MIN(local_dtij[0], local_dtij[1]);
-	}
-	
- }
+}
 
- __global__ void fix_flux(int N1, int N2,int N3, int N1_MPI, int N1_MPI_offset, int N2_MPI, int N2_MPI_offset,  FTYPE2* F1,  FTYPE2* F2,  FTYPE2* F3)
- {
-	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
+__global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
 	int icurr, jcurr, zcurr;
 	int k;
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	if(global_id<(N1+2*N1G)*(N3+2*N3G)){
-		zcurr=global_id%(N3+2*N3G);
-		icurr=(global_id-zcurr)/(N3+2*N3G);
-		if(icurr>=N1G-D1 && zcurr>=N3G-D3 && icurr<N1+N1G+D1 && zcurr<N3+N3G+D3) {
-			if(N2_MPI_offset == 0){
-				F1[B2*(ksize)+icurr*isize + 1*(N3+2*N3G) + zcurr] = -F1[B2*(ksize)+icurr*isize +2*(N3+2*N3G) + zcurr];
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	if (global_id<(N1 + 2 * N1G)*(N3 + 2 * N3G)){
+		zcurr = global_id % (N3 + 2 * N3G);
+		icurr = (global_id - zcurr) / (N3 + 2 * N3G);
+		if (icurr >= N1G - D1 && zcurr >= N3G - D3 && icurr<N1 + N1G + D1 && zcurr<N3 + N3G + D3) {
+			if (NBR_1 < 0){
+				F1[B2*(ksize)+icurr*isize + (N2G - 1)*(N3 + 2 * N3G) + zcurr] = -F1[B2*(ksize)+icurr*isize + N2G*(N3 + 2 * N3G) + zcurr];
 				#if(N3G>0)
-				F3[B2*(ksize)+icurr*isize + 1*(N3+2*N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize +2*(N3+2*N3G) + zcurr];
+				F3[B2*(ksize)+icurr*isize + (N2G - 1)*(N3 + 2 * N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize + N2G*(N3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
-				#pragma unroll 8	
-				PLOOP F2[k*(ksize)+icurr*isize+ 2*(N3+2*N3G) + zcurr] = 0.;
+				#pragma unroll NPR	
+				PLOOP F2[k*(ksize)+icurr*isize + N2G*(N3 + 2 * N3G) + zcurr] = 0.;
 				#endif	
-				#pragma unroll 8	
-				for(k=0; k<NPR; k++){
-					F2[k*(ksize)+icurr*isize + N2G*(N3+2*N3G) + zcurr] = 0.0;
+				#pragma unroll NPR	
+				for (k = 0; k<NPR; k++){
+					F2[k*(ksize)+icurr*isize + N2G*(N3 + 2 * N3G) + zcurr] = 0.0;
 				}
 			}
-			if(N2_MPI_offset+N2 == N2_MPI){
-				F1[B2*(ksize)+icurr*isize + (N2+2)*(N3+2*N3G) + zcurr] = -F1[B2*(ksize)+icurr*isize +(N2+1)*(N3+2*N3G) + zcurr];
+			if (NBR_3 < 0){
+				F1[B2*(ksize)+icurr*isize + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = -F1[B2*(ksize)+icurr*isize + (N2 + N2G - 1)*(N3 + 2 * N3G) + zcurr];
 				#if(N3G>0)
-				F3[B2*(ksize)+icurr*isize + (N2+2)*(N3+2*N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize +(N2+1)*(N3+2*N3G) + zcurr];
+				F3[B2*(ksize)+icurr*isize + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize + (N2 + N2G - 1)*(N3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
-				#pragma unroll 8	
-				PLOOP F2[k*(ksize)+icurr*isize +(N2+2)*(N3+2*N3G) + zcurr] = 0.;
+				#pragma unroll NPR	
+				PLOOP F2[k*(ksize)+icurr*isize + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = 0.;
 				#endif	
-				#pragma unroll 8	
-				for(k=0; k<NPR; k++){
-					F2[k*(ksize)+icurr*isize + (N2+N2G)*(N3+2*N3G) + zcurr] = 0.0;
+				#pragma unroll NPR	
+				for (k = 0; k<NPR; k++){
+					F2[k*(ksize)+icurr*isize + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = 0.0;
 				}
 			}
-			
 		}
 	}
 	#if INFLOW==0
 	else{
-		global_id=global_id-(N1+2*N1G)*(N3+2*N3G);
-		zcurr=global_id%(N3+2*N3G);
-		jcurr=(global_id-zcurr)/(N3+2*N3G);
-		if(jcurr>=N2G-D2 && zcurr>=N3G-D3 && jcurr<N2+N2G+D2 && zcurr<N3+N3G+D3) {
-			if(N1_MPI_offset == 0){
-				if (F1[RHO*(ksize)+2*isize + jcurr*(N3+2*N3G) + zcurr] > 0.) F1[RHO*(ksize)+2*isize + jcurr*(N3+2*N3G) + zcurr] = 0.;
+		global_id = global_id - (N1 + 2 * N1G)*(N3 + 2 * N3G);
+		zcurr = global_id % (N3 + 2 * N3G);
+		jcurr = (global_id - zcurr) / (N3 + 2 * N3G);
+		if (jcurr >= N2G - D2 && zcurr >= N3G - D3 && jcurr<N2 + N2G + D2 && zcurr<N3 + N3G + D3) {
+			if (NBR_4<0){
+				if (F1[RHO*(ksize)+N1G*isize + jcurr*(N3 + 2 * N3G) + zcurr] > 0.) F1[RHO*(ksize)+N1G*isize + jcurr*(N3 + 2 * N3G) + zcurr] = 0.;
 			}
-			if(N1_MPI_offset+N1 == N1_MPI){
-				if (F1[RHO*(ksize)+(N1+2)*isize + jcurr*(N3+2*N3G) + zcurr] < 0.) F1[RHO*(ksize)+(N1+2)*isize + jcurr*(N3+2*N3G) + zcurr] = 0.;
+			if (NBR_2<0){
+				if (F1[RHO*(ksize)+(N1 + N1G)*isize + jcurr*(N3 + 2 * N3G) + zcurr] < 0.) F1[RHO*(ksize)+(N1 + N1G)*isize + jcurr*(N3 + 2 * N3G) + zcurr] = 0.;
 			}
 		}
 
@@ -1961,953 +2554,6508 @@ __global__ void fluxcalcprep(int N1, int N2, int N3,  FTYPE2* F,  FTYPE2* dq, co
 	#endif
 }
 
-__global__ void flux_ct1(int N1, int N2,int N3, const FTYPE2* __restrict__ F1, const FTYPE2* __restrict__ F2, const FTYPE2* __restrict__ F3,  FTYPE2* emf) 
- {
-	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	if(icurr>=N1G && jcurr>=N2G && zcurr>=N3G && icurr<N1+N1G+D1 && jcurr<N2+N2G+D2  && zcurr<N3+N3G+D3){
-		#if (N2G>0 && N3G>0)
-		emf[1*(ksize)+global_id] = 0.25*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id-1] - 
-		F3[B2*(ksize)+global_id] - F3[B2*(ksize)+global_id- (N3+2*N3G)]);
+__global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 * restrict pb_i, __global FTYPE2 * restrict E_cent, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + N3G)*(N2 + N2G);
+	int zcurr = (global_id % (isize)) % (N3 + N3G);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + N3G);
+	int icurr = (global_id - (jcurr*(N3 + N3G) + zcurr)) / (isize);
+	zcurr += (N3G - D3);
+	jcurr += (N2G - D2);
+	icurr += (N1G - D1);
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	int jsize = N3 + 2 * N3G;
+	double pb[NPR];
+	struct of_geom geom;
+	struct of_state q;
+	int k;
+
+	if (icurr >= D1 && jcurr >= D2  && zcurr >= D3  && icurr<N1 + N1G + D1 && jcurr<N2 + N2G + D2  && zcurr<N3 + N3G + D3){
+		for (k = 0; k<NPR; k++){
+			pb[k] = pb_i[k*(ksize)+global_id];
+		}
+		get_geometry(N1, N2, icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_state(pb, &geom, &q);
+		#if(N3G>0)
+		E_cent[1 * ksize + global_id] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
+		E_cent[2 * ksize + global_id] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
 		#endif
-		#if (N1G>0 && N3G>0)
-		emf[2*(ksize)+global_id] = 0.25*(F3[B1*(ksize)+global_id] + F3[B1*(ksize)+global_id-isize] - 
-		F1[B3*(ksize)+global_id] - F1[B3*(ksize)+global_id-1]);
+		E_cent[3 * ksize + global_id] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
+	}
+}
+
+__global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 * restrict emf, __global FTYPE2 * restrict E_cent, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3,
+	__global FTYPE2 * restrict pb_i, __read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet, int POLE_1, int POLE_2)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + D3)*(N2 + D2);
+	int zcurr = (global_id % (isize)) % (N3 + D3);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + D3);
+	int icurr = (global_id - (jcurr*(N3 + D3) + zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	int jsize = N3 + 2 * N3G;
+	double v[NDIM], pb[NPR];
+	int k;
+	struct of_geom geom;
+
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G + D1 && jcurr<N2 + N2G + D2  && zcurr<N3 + N3G + D3){
+		for (k = 0; k<NPR; k++){
+			pb[k] = pb_i[k*(ksize)+global_id];
+		}
+		get_geometry(N1, N2, icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		ucon_calc(pb, &geom, v);
+
+		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2*(ksize)+global_id];
+		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize*D2] - F3[B2*(ksize)+global_id - jsize*D2];
+		double dE_RIGHT_13_1 = F3[B2*(ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
+		double dE_RIGHT_13_2 = F3[B2*(ksize)+global_id + D3 - jsize*D2 - D3] - E_cent[1 * (ksize)+global_id - jsize*D2 - D3];
+		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3*(ksize)+global_id];
+		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + F2[B3*(ksize)+global_id - D3];
+		double dE_RIGHT_12_1 = -F2[B3*(ksize)+global_id + D2*jsize - D2*jsize] - E_cent[1 * (ksize)+global_id - D2*jsize];
+		double dE_RIGHT_12_2 = -F2[B3*(ksize)+global_id + D2*jsize - D2*jsize - D3] - E_cent[1 * (ksize)+global_id - D2*jsize - D3];
+		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3*(ksize)+global_id];
+		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3*(ksize)+global_id - D3];
+		double dE_RIGHT_21_1 = F1[B3*(ksize)+global_id + D1*isize - D1*isize] - E_cent[2 * (ksize)+global_id - D1*isize];
+		double dE_RIGHT_21_2 = F1[B3*(ksize)+global_id + D1*isize - D1*isize - D3] - E_cent[2 * (ksize)+global_id - D1*isize - D3];
+		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1*(ksize)+global_id];
+		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1*isize] + F3[B1*(ksize)+global_id - D1*isize];
+		double dE_RIGHT_23_1 = -F3[B1*(ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
+		double dE_RIGHT_23_2 = -F3[B1*(ksize)+global_id + D3 - isize*D1 - D3] - E_cent[2 * (ksize)+global_id - isize*D1 - D3];
+		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2*(ksize)+global_id];
+		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2*jsize] + F1[B2*(ksize)+global_id - D2*jsize];
+		double dE_RIGHT_31_1 = -F1[B2*(ksize)+global_id + D1*isize - D1*isize] - E_cent[3 * (ksize)+global_id - D1*isize];
+		double dE_RIGHT_31_2 = -F1[B2*(ksize)+global_id + D1*isize - D1*isize - D2*jsize] - E_cent[3 * (ksize)+global_id - D1*isize - D2*jsize];
+		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1*(ksize)+global_id];
+		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1*isize] - F2[B1*(ksize)+global_id - D1*isize];
+		double dE_RIGHT_32_1 = F2[B1*(ksize)+global_id + D2*jsize - D2*jsize] - E_cent[3 * (ksize)+global_id - D2*jsize];
+		double dE_RIGHT_32_2 = F2[B1*(ksize)+global_id + D2*jsize - D1*isize - D2*jsize] - E_cent[3 * (ksize)+global_id - D1*isize - D2*jsize];
+
+		emf[1 * (ksize)+global_id] = 0.25*((-F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(v[2] <= 0.0) + dE_LEFT_13_2* (double)(v[2]>0.0)))
+			+ (-F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(v[2] <= 0.0) + dE_RIGHT_13_2* (double)(v[2]>0.0))) +
+			+(F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(v[3] <= 0.0) + dE_LEFT_12_2* (double)(v[3]>0.0)))
+			+ (F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(v[3] <= 0.0) + dE_RIGHT_12_2* (double)(v[3]>0.0))));
+		emf[2 * (ksize)+global_id] = 0.25*((-F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(v[3] <= 0.0) + dE_LEFT_21_2* (double)(v[3]>0.0)))
+			+ (-F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(v[3] <= 0.0) + dE_RIGHT_21_2* (double)(v[3]>0.0)))
+			+ (F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(v[1] <= 0.0) + dE_LEFT_23_2* (double)(v[1]>0.0)))
+			+ (F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(v[1] <= 0.0) + dE_RIGHT_23_2* (double)(v[1]>0.0))));
+		emf[3 * (ksize)+global_id] = 0.25*((F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(v[2] <= 0.0) + dE_LEFT_31_2* (double)(v[2]>0.0)))
+			+ (F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(v[2] <= 0.0) + dE_RIGHT_31_2* (double)(v[2]>0.0)))
+			+ (-F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(v[1] <= 0.0) + dE_LEFT_32_2* (double)(v[1]>0.0)))
+			+ (-F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(v[1] <= 0.0) + dE_RIGHT_32_2* (double)(v[1]>0.0))));
+
+		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == N2 + N2G)){
+			emf[3 * (ksize)+global_id] = 0.5*(F2[B1*(ksize)+global_id] + F2[B1*(ksize)+global_id - isize]);
+			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
+		}
+	}
+}
+
+__global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2, double dx_3, __read_only image3d_t gdet_GPU, __global FTYPE2 * restrict psi, __global FTYPE2 * restrict psf,
+	__global FTYPE2 * restrict E_corn, double Dt, int POLE_1, int POLE_2)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + D3)*(N2 + D2);
+	int zcurr = (global_id % (isize)) % (N3 + D3);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + D3);
+	int icurr = (global_id - (jcurr*(N3 + D3) + zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G + D1 && jcurr<N2 + N2G  && zcurr<N3 + N3G){
+		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3 * ksize + global_id + (N3 + 2 * N3G)] - E_corn[3 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+		#if(N3G>0)
+		psf[global_id] += Dt / dx_3*(E_corn[2 * ksize + global_id + D3] - E_corn[2 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 		#endif
-		#if (N1G>0 && N2G>0)
-		emf[3*(ksize)+global_id] = 0.25*(F1[B2*(ksize)+global_id] + F1[B2*(ksize)+global_id-(N3+2*N3G)] - 
-		F2[B1*(ksize)+global_id] - F2[B1*(ksize)+global_id-isize]);
-		#else
-		emf[3*(ksize)+global_id] =0.25*(F1[B2*(ksize)+global_id] + F1[B2*(ksize)+global_id-(N3+2*N3G)]);
+	}
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G + D2  && zcurr<N3 + N3G){
+		psf[1 * ksize + global_id] = psi[1 * ksize + global_id] + Dt / dx_1*(E_corn[3 * ksize + global_id + isize] - E_corn[3 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		#if(N3G>0)
+		psf[1 * ksize + global_id] += -Dt / dx_3*(E_corn[1 * ksize + global_id + D3] - E_corn[1 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		#endif
+	}
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G && zcurr<N3 + N3G + D3){
+		#if(N3G>0)
+		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize] - E_corn[2 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (N3 + 2 * N3G)] - E_corn[1 * ksize + global_id]) / readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
 		#endif
 	}
 }
 
-__global__ void flux_ct2(int N1, int N2, int N3,  FTYPE2* F1,  FTYPE2* F2, FTYPE2* F3,  const FTYPE2* __restrict__ emf) 
- {
-	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	double emf1=emf[1*(ksize)+global_id];
-	double emf2=emf[2*(ksize)+global_id];
-	double emf3=emf[3*(ksize)+global_id];
-	if(icurr>=N1G && jcurr>=N2G && zcurr>=N3G && icurr<N1+N1G+D1 && jcurr<N2+N2G && zcurr<N3+N3G){
-		#if (N1G>0)
-		F1[B1*(ksize)+global_id]=0.0;
+__global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, __global FTYPE2 * restrict emf)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + D3)*(N2 + D2);
+	int zcurr = (global_id % (isize)) % (N3 + D3);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + D3);
+	int icurr = (global_id - (jcurr*(N3 + D3) + zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G + D1 && jcurr<N2 + N2G + D2  && zcurr<N3 + N3G + D3){
+		#if (N2G>0 && N3G>0)
+		emf[1 * (ksize)+global_id] = -0.25*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - 1] -
+			F3[B2*(ksize)+global_id] - F3[B2*(ksize)+global_id - (N3 + 2 * N3G)]);
+		#endif
+		#if (N1G>0 && N3G>0)
+		emf[2 * (ksize)+global_id] = -0.25*(F3[B1*(ksize)+global_id] + F3[B1*(ksize)+global_id - isize] -
+			F1[B3*(ksize)+global_id] - F1[B3*(ksize)+global_id - 1]);
 		#endif
 		#if (N1G>0 && N2G>0)
-		F1[B2*(ksize)+global_id]=0.5*(emf3+emf[3*(ksize)+global_id+(N3+2*N3G)]);
-		#endif
-		#if (N1G>0 && N3G>0)
-		F1[B3*(ksize)+global_id]=-0.5*(emf2 + emf[2*(ksize)+global_id+1]);
+		emf[3 * (ksize)+global_id] = -0.25*(F1[B2*(ksize)+global_id] + F1[B2*(ksize)+global_id - (N3 + 2 * N3G)] -
+			F2[B1*(ksize)+global_id] - F2[B1*(ksize)+global_id - isize]);
+		#else
+		emf[3 * (ksize)+global_id] = -0.25*(F1[B2*(ksize)+global_id] + F1[B2*(ksize)+global_id - (N3 + 2 * N3G)]);
 		#endif
 	}
-	if(icurr>=N1G && jcurr>=N2G && zcurr>=N3G && icurr<N1+N1G && jcurr<N2+N2G+D2 && zcurr<N3+N3G){
+}
+
+__global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, __global FTYPE2 * restrict emf)
+{
+	int global_id = get_global_id(0);
+	int isize = (N3 + D3)*(N2 + D2);
+	int zcurr = (global_id % (isize)) % (N3 + D3);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + D3);
+	int icurr = (global_id - (jcurr*(N3 + D3) + zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	double emf1 = -emf[1 * (ksize)+global_id];
+	double emf2 = -emf[2 * (ksize)+global_id];
+	double emf3 = -emf[3 * (ksize)+global_id];
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G + D1 && jcurr<N2 + N2G && zcurr<N3 + N3G){
+		#if (N1G>0)
+		F1[B1*(ksize)+global_id] = 0.0;
+		#endif
+		#if (N1G>0 && N2G>0)
+		F1[B2*(ksize)+global_id] = 0.5*(emf3 - emf[3 * (ksize)+global_id + (N3 + 2 * N3G)]);
+		#endif
+		#if (N1G>0 && N3G>0)
+		F1[B3*(ksize)+global_id] = -0.5*(emf2 - emf[2 * (ksize)+global_id + 1]);
+		#endif
+	}
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G + D2 && zcurr<N3 + N3G){
 		#if (N1G>0 && N2G>0)		
-		F2[B1*(ksize)+global_id] = -0.5*(emf3 + emf[3*(ksize)+global_id + isize]);
+		F2[B1*(ksize)+global_id] = -0.5*(emf3 - emf[3 * (ksize)+global_id + isize]);
 		#endif
 		#if (N2G>0 && N3G>0)
-		F2[B3*(ksize)+global_id] = 0.5*(emf1 + emf[1*(ksize)+global_id+1]);
+		F2[B3*(ksize)+global_id] = 0.5*(emf1 - emf[1 * (ksize)+global_id + 1]);
 		#endif
-		#if(N2G!=1)
-		F2[B2*(ksize)+global_id]=0.0;
+		#if(N2G>0)
+		F2[B2*(ksize)+global_id] = 0.0;
 		#endif
 	}
-	if(icurr>=N1G && jcurr>=N2G && zcurr>=N3G && icurr<N1+N1G && jcurr<N2+N2G && zcurr<N3+N3G+D3){
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G && zcurr<N3 + N3G + D3){
 		#if (N1G>0 && N3G>0)
-		F3[B1*(ksize)+global_id] = 0.5*(emf2 + emf[2*(ksize)+global_id + isize]);
+		F3[B1*(ksize)+global_id] = 0.5*(emf2 - emf[2 * (ksize)+global_id + isize]);
 		#endif
 		#if (N2G>0 && N3G>0)
-		F3[B2*(ksize)+global_id] = -0.5*(emf1 + emf[1*(ksize)+global_id +(N3+2*N3G)]);
+		F3[B2*(ksize)+global_id] = -0.5*(emf1 - emf[1 * (ksize)+global_id + (N3 + 2 * N3G)]);
 		#endif
 		#if(N3G>0)
 		F3[B3*(ksize)+global_id] = 0.;
 		#endif
 	}
- } 
- 
-__global__ void diag_flux(int N1, int N2,  FTYPE2* F1,  FTYPE2* diagflux, FTYPE2 fractheta, int n1_MPI)
- {
+}
 
- }
 
-  __global__ void Utoprim(int N1, int N2, int N3,  FTYPE2* F1,  FTYPE2* F2, FTYPE2* F3, const FTYPE2* __restrict__ pi_i,  FTYPE2* pb_i,  FTYPE2* pf_i, const  FTYPE2* __restrict__  gcov, 
- const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet,const  FTYPE2* __restrict__  conn, FTYPE2 Dt, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta, FTYPE2 gam, FTYPE2* U_i, int N1_MPI,
- int N2_MPI, int N3_MPI)
- {
- 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int k;
+
+__global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FTYPE2* pb_i, __global FTYPE2* pf_i, __global FTYPE2 * restrict psf,
+	__global FTYPE2 * restrict F1, __global FTYPE2 * restrict F2, __global FTYPE2 * restrict F3, __global FTYPE2* radius, __global int* pflag, __global int* failimage,
+	__read_only image3d_t gcov, __read_only image3d_t gcon, __read_only image3d_t gdet, __read_only image3d_t conn, __global FTYPE2* Katm, FTYPE2 gam, FTYPE2 dx_1, FTYPE2 dx_2, FTYPE2 dx_3, FTYPE2 a, FTYPE2 Dt,
+	int full_step)
+{
+	int global_id = get_global_id(0);
+	int isize = N3*N2;
+	int zcurr = (global_id % (isize)) % N3;
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3);
+	int icurr = (global_id - (jcurr*N3 + zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	int k = 0;
+	if (global_id<N1*N2*N3) k = 1;
+	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+
 	struct of_geom geom;
-	struct of_state q ;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	FTYPE2 U[NPR], pi[NPR];
-	FTYPE2 dx[4];
-	dx[1] = log((Rout - R0)/(Rin - R0))/(double)N1_MPI ;
-    dx[2] = fractheta/(double)N2_MPI ;
-	dx[3]=2.0*M_PI/(double)N3_MPI;
-	if(icurr>=N1G && icurr<N1+N1G && jcurr>=N2G && jcurr<N2+N2G && zcurr>=N3G && zcurr<N3+N3G){
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
-			pi[k]=pi_i[k*(ksize)+global_id];
+	struct of_state q;
+	int flag = 0, dofloor = 0, m;
+	FTYPE2 r, X, uuscal, rhoscal, rhoflr, uuflr;
+	FTYPE2 f, gamma, bsq;
+	FTYPE2 pf[NPR], pf_prefloor[NPR], U_ent, dpf[NPR], U_prefloor[NPR], dU[NPR], U[NPR];
+	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM], Xtrans;
+
+	if (k == 1){
+		get_geometry(N1, N2, icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		if (full_step == 0){
+			for (k = 0; k<NPR; k++){
+				pf[k] = pi_i[k*(ksize)+global_id];
+			}
+			get_state(pf, &geom, &q);
+			primtoU(pf, &q, &geom, U, gam);
+			#pragma unroll NPR	
+			for (k = 0; k<NPR; k++){
+				pi_i[k*(ksize)+global_id] = U[k];
+			}
 		}
-		get_geometry(N1, N2, icurr, jcurr, CENT, &geom, gcov, gcon, gdet) ;
-		get_state(pi,&geom,&q) ;
-		primtoU(pi,&q,&geom,U, gam) ;
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
+		else{
+			#pragma unroll NPR	
+			for (k = 0; k<NPR; k++){
+				U[k] = pi_i[k*(ksize)+global_id];
+			}
+			#pragma unroll NPR	
+			for (k = 0; k<NPR; k++){
+				pf[k] = pb_i[k*(ksize)+global_id];
+			}
+			if (full_step == 1){
+				get_state(pf, &geom, &q);
+			}
+		}
+
+		#pragma unroll NPR	
+		for (k = 0; k<NPR; k++){
 			#if( N1G > 0 )
-			U[k] -= Dt*(F1[k*(ksize)+global_id+isize]- F1[k*(ksize)+global_id])/dx[1];
+			U[k] -= Dt*(F1[k*(ksize)+global_id + isize] - F1[k*(ksize)+global_id]) / dx_1;
 			#endif
 			#if( N2G > 0 )
-			U[k] -=Dt* (F2[k*(ksize)+global_id+(N3+2*N3G)] - F2[k*(ksize)+global_id])/dx[2];
+			U[k] -= Dt*(F2[k*(ksize)+global_id + (N3 + 2 * N3G)] - F2[k*(ksize)+global_id]) / dx_2;
 			#endif
 			#if( N3G > 0 )
-			U[k] -= Dt*(F3[k*(ksize)+global_id+1] - F3[k*(ksize)+global_id]) / (dx[3]);
+			U[k] -= Dt*(F3[k*(ksize)+global_id + 1] - F3[k*(ksize)+global_id]) / dx_3;
 			#endif
 		}
-		
-		#pragma unroll 8	
-		for(k=0; k< NPR; k++){
-			U_i[k*(ksize)+global_id]=U[k];
-		}
-	} 
- }
-__global__ void Utoprim1(int N1, int N2, int N3,  FTYPE2* F1,  FTYPE2* F2, FTYPE2* F3,  FTYPE2* pi_i, const FTYPE2* __restrict__ pb_i,  FTYPE2* pf_i, const  FTYPE2* __restrict__  gcov,  const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, 
-const  FTYPE2* __restrict__  conn, FTYPE2 Dt, FTYPE2* U_i)
- {
- 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int k;
-	struct of_geom geom;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	FTYPE2 dU[NPR], pb[NPR];
-	if(icurr>=N1G && icurr<N1+N1G && jcurr>=N2G && jcurr<N2+N2G && zcurr>=N3G && zcurr<N3+N3G){
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
-			pb[k]=pb_i[k*(ksize)+global_id];
-		}
-		get_geometry(N1, N2, icurr, jcurr, CENT, &geom, gcov, gcon, gdet) ;
-		source(N1, N2, pb,&geom,icurr, jcurr,dU,Dt, GAMMA, conn) ;
-		
-		#pragma unroll 8	
-		for(k=0; k< NPR; k++){
-			U_i[k*(ksize)+global_id]+=Dt*dU[k];
-		}
-	} 
- }
 
-__global__ void Utoprim2(int N1, int N2, int N3,  FTYPE2* F1,  FTYPE2* F2, FTYPE2* F3, const FTYPE2* __restrict__ pi_i,  FTYPE2* pb_i,  FTYPE2* pf_i, const  FTYPE2* __restrict__  gcov,  const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, 
-const  FTYPE2* __restrict__  conn, FTYPE2 Dt, FTYPE2* U_i,  int *pflag,  int *failimage)
- {
- 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int k, flag;
-	struct of_geom geom;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	FTYPE2 U[NPR], pi[NPR];
+		source(N1, N2, pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
 
-	if(icurr>=N1G && icurr<N1+N1G && jcurr>=N2G && jcurr<N2+N2G && zcurr>=N3G && zcurr<N3+N3G){
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
-			pi[k]=pi_i[k*(ksize)+global_id];
-			U[k]=U_i[k*(ksize)+global_id];
+		#pragma unroll NPR	
+		for (k = 0; k< NPR; k++){
+			U[k] += Dt*(dU[k]);
 		}
 
-		get_geometry(N1, N2, icurr, jcurr, CENT, &geom, gcov, gcon, gdet) ;	
-		flag=Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pi);
-		pflag[global_id]=flag;
-		if (flag){
+		#if(STAGGERED)
+		U[B1] = (psf[0 * ksize + global_id] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE1, 0))) + psf[0 * ksize + global_id + isize] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr + D1, FACE1, 0)))) / 2.0;
+		U[B2] = (psf[1 * ksize + global_id] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE2, 0))) + psf[1 * ksize + global_id + (N3 + 2 * N3G)] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr + D2, icurr, FACE2, 0)))) / 2.0;
+		#if(N3G>0)
+		U[B3] = (psf[2 * ksize + global_id] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE3, 0))) + psf[2 * ksize + global_id + D3] * readImageDouble(read_imagei(gdet, sample, (int4)(jcurr, icurr, FACE3, 0)))) / 2.0;
+		#endif
+		#endif
+
+		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		if (pflag[global_id]){
 			failimage[global_id]++;
-			#if(!DO_FONT_FIX )
-			pflag[0]=100;
-			#endif
 		}
-		
-		#pragma unroll 8	
-		for(k=0; k<NPR; k++){
-			pf_i[k*(ksize)+global_id]=pi[k];
-		}
-	} 
- }
 
-__global__ void fixup(int N1, int N2, int N3,  FTYPE2* pv_i,  int* pflag,  int* failimage,
- const  FTYPE2* __restrict__  gcov, const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta, FTYPE2 hslope, FTYPE2 gam,  FTYPE2* U_i
- ,int N1_MPI, int N1_MPI_offset, int N2_MPI, int N2_MPI_offset, int N3_MPI, int N3_MPI_offset)
-{
-  	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=(global_id%(isize))%(N3+2*N3G);
-	int jcurr=((global_id-zcurr)%(isize))/(N3+2*N3G);
-	int icurr=(global_id - (jcurr*(N3+2*N3G)+zcurr)) / (isize);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int k, flag, dofloor=0;
-	FTYPE2 r,th,X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
-	FTYPE2 f,gamma,bsq ;
-	FTYPE2 pv[NPR], pv_prefloor[NPR],U_ent, dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR];
-	struct of_geom geom ;
-	struct of_state q;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-
-	if(icurr>=N1G && jcurr>=N2G && zcurr>=N3G && icurr<N1+N1G && jcurr<N2+N2G && zcurr<N3+N3G){
-		#pragma unroll 8
-		for(k=0; k<NPR; k++){
-			pv[k]=pv_i[k*(ksize)+global_id]; 
-		}
-		
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
-		get_geometry(N1, N2, icurr, jcurr, CENT, &geom, gcov, gcon, gdet) ;
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
-			#pragma unroll 8
-			for(k=0; k< NPR; k++){
-				U[k]=U_i[k*(ksize)+global_id];
-			}
-			get_state(pv, &geom, &q);
-			U_ent = (geom.g*pv[0] * (gam - 1.)*pv[1] / pow(pv[0], gam)) * (q.ucon[0]);
-			pflag[global_id]=Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pv,  U_ent);
+			#if DOKTOT
+			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+			#endif
 			if (pflag[global_id]) {
-				failimage[1*(ksize) + global_id]++ ;
-				//pflag[global_id]=Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pv, Katm[icurr]);
+				failimage[1 * (ksize)+global_id]++;
+				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 				if (pflag[global_id]){
-					pflag[0]=100;
-					failimage[2*(ksize) + global_id]++ ;
+					pflag[0] = global_id;
+					failimage[2 * (ksize)+global_id]++;
 				}
 			}
 		}
 		#endif
 
-		coord(icurr+N1_MPI_offset-2, jcurr+N2_MPI_offset-2,0.0, CENT, X, fractheta, Rin, R0, Rout, N1_MPI,N2_MPI, N3_MPI);
-		bl_coord(X, &r, &th, hslope, R0);
-
-		rhoscal = pow(r,-POWRHO) ;
-		uuscal = pow(rhoscal,gam);
+		r = radius[icurr];
+		rhoscal = pow(r, -POWRHO);
+		uuscal = pow(rhoscal, gam);
 
 		rhoflr = RHOMIN*rhoscal;
-		uuflr  = UUMIN*uuscal;
-	
-		bsq = bsq_calc(pv,&geom) ;
+		uuflr = UUMIN*uuscal;
+
+		ucon_calc(pf, &geom, q.ucon);
+		lower(q.ucon, &geom, q.ucov);
+		bcon_calc(pf, q.ucon, q.ucov, q.bcon);
+		lower(q.bcon, &geom, q.bcov);
+		bsq = dot(q.bcon, q.bcov);
 
 		//tie floors to the local values of magnetic field and internal energy density
-		if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / (BSQORHOMAX);
-		if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / (BSQOUMAX);
-		if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / (UORHOMAX);
+		if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+		if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+		if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
 
-		if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
-		if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
-		
+		if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+		if (uuflr  < UUMINLIMIT) uuflr = UUMINLIMIT;
+
 		//floor on density and internal energy density (momentum *not* conserved) 
-		#pragma unroll 8
-		PLOOP pv_prefloor[k] = pv[k];
-		if (pv[RHO] < rhoflr ){
-			pv[RHO] = rhoflr;
+		#pragma unroll NPR
+		PLOOP pf_prefloor[k] = pf[k];
+		if (pf[RHO] <rhoflr){
+			pf[RHO] = rhoflr;
 			dofloor = 1;
 		}
-		if (pv[UU] < uuflr){
-			pv[UU] = uuflr;
+		if (pf[UU] < uuflr){
+			pf[UU] = uuflr;
 			dofloor = 1;
 		}
 
 		#if( ZAMO_FLOOR )
-		if (dofloor==1) {
-			#pragma unroll 8
-			PLOOP dpv[k] = pv[k] - pv_prefloor[k];
+		if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
+			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
+			//lower(q.ucon, &geom, q.ucov) ;
+			if (trans > 1.) {
+				trans = 1.;
+			}
+
+			betapar = -q.bcon[0] / ((bsq + SMALL)*q.ucon[0]);
+			betasq = betapar*betapar*bsq;
+			betasqmax = 1. - 1. / (GAMMAMAX*GAMMAMAX);
+			if (betasq > betasqmax) {
+				betasq = betasqmax;
+			}
+			gamma = 1. / sqrt(1 - betasq);
+			#pragma unroll NDIM
+			for (m = 0; m < NDIM; m++) {
+				ucondr[m] = gamma*(q.ucon[m] + betapar*q.bcon[m]);
+			}
+
+			Bcon[0] = 0.;
+
+			#pragma unroll 3
+			for (m = 1; m < NDIM; m++) {
+				Bcon[m] = pf[B1 - 1 + m];
+			}
+
+			lower(Bcon, &geom, Bcov);
+			udotB = dot(q.ucon, Bcov);
+			Bsq = dot(Bcon, Bcov);
+			B = sqrt(Bsq);
+
+			//enthalpy before the floors
+			wold = pf_prefloor[RHO] + pf_prefloor[UU] * gam;
+
+			//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
+			QdotB = udotB*wold*q.ucon[0];
+
+			//enthalpy after the floors
+			wnew = pf[RHO] + pf[UU] * gam;
+			//wnew = wold;
+
+			x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
+
+			//new parallel velocity
+			vpar = x / (ucondr[0] * (1. + sqrt(1. + x*x)));
+
+			one_over_ucondr_t = 1. / ucondr[0];
+
+			//new contravariant 3-velocity, v^i
+			vcon[0] = 1.;
+
+			#pragma unroll 3
+			for (m = 1; m < NDIM; m++) {
+				//parallel (to B) plus perpendicular (to B) velocities
+				vcon[m] = vpar*Bcon[m] / (B + SMALL) + ucondr[m] * one_over_ucondr_t;
+			}
+
+			//compute u^t corresponding to the new v^i
+			ut_calc_3vel(vcon, &geom, &ut);
+
+			#pragma unroll NDIM
+			for (m = 0; m < NDIM; m++) {
+				ucon[m] = ut*vcon[m];
+			}
+			ucon_to_utcon(ucon, &geom, utcon);
+
+			//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
+			//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
+			#pragma unroll 3
+			for (m = 1; m < NDIM; m++) {
+				pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
+			}
+		}
+		#else
+		if (dofloor == 1) {
+			#pragma unroll NPR
+			PLOOP dpf[k] = pf[k] - pf_prefloor[k];
 
 			//compute the conserved quantity associated with floor addition
-			get_state(dpv, &geom, &q);
-			primtoU(dpv, &q, &geom, dU, gam);
+			get_state(dpf, &geom, &q);
+			primtoU(dpf, &q, &geom, dU, gam);
 
 			//compute the prefloor conserved quantity
-			get_state(pv_prefloor, &geom, &q);
-			primtoU(pv_prefloor, &q, &geom, U_prefloor, gam);
+			get_state(pf_prefloor, &geom, &q);
+			primtoU(pf_prefloor, &q, &geom, U_prefloor, gam);
 
 			//add U_added to the current conserved quantity
-			#pragma unroll 8
-			PLOOP U[k] = U_prefloor[k]+ dU[k];
+			#pragma unroll NPR
+			PLOOP U[k] = U_prefloor[k] + dU[k];
 
-			flag = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pv);
-			if (flag){
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[global_id]){
 				failimage[global_id]++;
-				pflag[global_id]=flag;
 				#if( DO_FONT_FIX ) 
-				U_ent = (geom.g*pv[0] * (gam - 1.)*pv[1] / pow(pv[0], gam)) * (q.ucon[0]);
-				pflag[global_id]=Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pv, U_ent);
+				U_ent = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 				if (pflag[global_id]) {
-					failimage[1*(ksize) + global_id]++ ;
-					//pflag[global_id]=Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pv, Katm[icurr]);
-					//pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pv, U_ent);
+					failimage[1 * (ksize)+global_id]++;
+					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[icurr]);
 					if (pflag[global_id]){
-						pflag[0]=100;
-						failimage[2*(ksize) + global_id]++ ;
+						pflag[0] = 100;
+						failimage[2 * (ksize)+global_id]++;
 					}
 				}
 				#else
-				pflag[0]=100;
+				pflag[0] = 100;
 				#endif	
 			}
 		}
 		#endif
 
 		// limit gamma wrt normal observer 
-		if( gamma_calc(pv,&geom,&gamma) ) { 
+		if (gamma_calc(pf, &geom, &gamma)) {
 			// Treat gamma failure here as "fixable" for fixup_utoprim() 
 			pflag[global_id] = -333;
-			pflag[0]=100;
-			failimage[3*(ksize) + global_id]++ ;
+			pflag[0] = global_id;;
+			failimage[3 * (ksize)+global_id]++;
 		}
-		else { 
-			if(gamma > GAMMAMAX) {
-			f = sqrt(
-				(GAMMAMAX*GAMMAMAX - 1.)/
-				(gamma*gamma - 1.)
-				) ;
-			pv[U1] *= f ;	
-			pv[U2] *= f ;	
-			pv[U3] *= f ;	
+		else {
+			if (gamma > GAMMAMAX) {
+				f = sqrt(
+					(GAMMAMAX*GAMMAMAX - 1.) /
+					(gamma*gamma - 1.)
+					);
+				pf[U1] *= f;
+				pf[U2] *= f;
+				pf[U3] *= f;
 			}
 		}
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
-			pv_i[k*(ksize)+global_id]=pv[k];
+		#if DOKTOT
+		pf_i[KTOT*(ksize)+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
+		#endif
+		#pragma unroll NPR	
+		for (k = 0; k< NPR - DOKTOT; k++){
+			pf_i[k*(ksize)+global_id] = pf[k];
 		}
 	}
 }
 
+/* 26 */
+#define AVG2_1(pr,icurr,jcurr,zcurr, N1, N2, N3,k) (0.5*(pr[k*(ksize)+(icurr)*isize+(jcurr+1)*(N3+2*N3G) + zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]))
 
-__global__ void fixuputoprim(int N1, int N2, int N3,  FTYPE2* pv,  int* pflag,  int* failimage, const  FTYPE2* __restrict__  gcov,
-const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta, FTYPE2 hslope, FTYPE2 gam)
+/* 48 */
+#define AVG2_2(pr,icurr,jcurr,zcurr, N1, N2, N3,k) (0.5*(pr[k*(ksize)+(icurr-1)*isize+(jcurr)*(N3+2*N3G) + zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr)*(N3+2*N3G)+ zcurr]))
+
+/* 910 */
+#define AVG2_3(pr,icurr,jcurr,zcurr, N1, N2, N3,k) (0.5*(pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr-1)]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G)+ (zcurr+1)]))
+
+/* 2468  */
+#define AVG4_1(pr,icurr,jcurr,zcurr, N1, N2, N3,k) (0.25*(pr[k*(ksize)+(icurr)*isize+(jcurr+1)*(N3+2*N3G) + zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr-1)*isize+(jcurr)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr)*(N3+2*N3G)+ zcurr]))
+
+/* 1357  */
+#define AVG4_2(pr,icurr,jcurr,zcurr, N1, N2, N3, k) (0.25*(pr[k*(ksize)+(icurr+1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr-1)+ zcurr]*(N3+2*N3G)+pr[k*(ksize)+(icurr-1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr-1)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]))
+
+/* 2468910  */
+#define AVG6_1(pr,icurr,jcurr,zcurr, N1, N2, N3,k) (1.0/6.0*(pr[k*(ksize)+(icurr)*isize+(jcurr+1)*(N3+2*N3G) + zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr-1)*isize+(jcurr)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr+1)]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr-1)]))
+
+/* 1357910  */
+#define AVG6_2(pr,icurr,jcurr,zcurr, N1, N2, N3, k) (1.0/6.0*(pr[k*(ksize)+(icurr+1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr-1)+ zcurr]*(N3+2*N3G)+pr[k*(ksize)+(icurr-1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr-1)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr+1)]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr-1)]))
+
+__global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 * restrict pv, __global int * restrict pflag, __global int * restrict failimage, __read_only image3d_t gcov,
+	__read_only image3d_t gcon, __read_only image3d_t gdet, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta, FTYPE2 hslope, FTYPE2 gam)
 {
-
+	int global_id = get_global_id(0);
+	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	int zcurr = (global_id % (isize)) % (N3 + 2 * N3G);
+	int jcurr = ((global_id - zcurr) % (isize)) / (N3 + 2 * N3G);
+	int icurr = (global_id - (jcurr*(N3 + 2 * N3G) + zcurr)) / (isize);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int k;
+	int pf[11];
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	/* Fix the interior points first */
+	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<N1 + N1G && jcurr<N2 + N2G && zcurr<N3 + N3G) {
+		if (pflag[global_id] != 0) {
+			pf[1] = !pflag[(icurr - 1)*isize + (jcurr + 1)*(N3 + 2 * N3G) + zcurr];   pf[2] = !pflag[(icurr)*isize + (jcurr + 1)*(N3 + 2 * N3G) + zcurr];  pf[3] = !pflag[(icurr + 1)*isize + (jcurr + 1)*(N3 + 2 * N3G) + zcurr];
+			pf[8] = !pflag[(icurr - 1)*isize + (jcurr)*(N3 + 2 * N3G) + zcurr];                           pf[4] = !pflag[(icurr + 1)*isize + (jcurr)*(N3 + 2 * N3G) + zcurr];
+			pf[7] = !pflag[(icurr - 1)*isize + (jcurr - 1)*(N3 + 2 * N3G) + zcurr];   pf[6] = !pflag[(icurr)*isize + (jcurr - 1)*(N3 + 2 * N3G) + zcurr];  pf[5] = !pflag[(icurr + 1)*isize + (jcurr - 1)*(N3 + 2 * N3G) + zcurr];
+			#if(N3G>0)
+			pf[9] = !pflag[(icurr)*isize + (jcurr)*(N3 + 2 * N3G) + (zcurr + 1)];	pf[10] = !pflag[(icurr)*isize + (jcurr)*(N3 + 2 * N3G) + (zcurr - 1)];
+			#else	
+			pf[9] = 0;	pf[10] = 0;
+			#endif																 
+			/* Now the pf's  are true if they represent good points */
+			failimage[4 * (ksize)+global_id]++;
+			/* if nothing better to do, then leave densities and B-field unchanged, set v^i = 0 */
+			pv[0 * (ksize)+global_id] = 0.5*(AVG4_1(pv, icurr, jcurr, zcurr, N1, N2, N3, 0) + AVG4_2(pv, icurr, jcurr, zcurr, N1, N2, N3, 0));
+			pv[1 * (ksize)+global_id] = 0.5*(AVG4_1(pv, icurr, jcurr, zcurr, N1, N2, N3, 1) + AVG4_2(pv, icurr, jcurr, zcurr, N1, N2, N3, 1));
+			pv[2 * (ksize)+global_id] = pv[3 * (ksize)+global_id] = pv[4 * (ksize)+global_id] = 0.;
+			pflag[global_id] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
+		}
+	}
 }
 
-__global__ void boundprim1(int N1, int N2, int N3,  FTYPE2* pv,  int* pflag, const  FTYPE2* __restrict__  gcov, 
-const  FTYPE2* __restrict__  gcon, const  FTYPE2* __restrict__  gdet, int N1_MPI, int N1_MPI_offset, int N2_MPI, int N2_MPI_offset, int N3_MPI, int N3_MPI_offset)
+__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 * restrict  pv, __global int * restrict pflag, __global int * restrict failimage, __read_only image3d_t gcov,
+	__read_only image3d_t gcon, __read_only image3d_t gdet, __global FTYPE2* pbound, FTYPE2 Rin, FTYPE2 R0, FTYPE2 Rout, FTYPE2 fractheta,
+	FTYPE2 hslope, FTYPE2 gam, int freeze, int NBR_2, int NBR_4, __global FTYPE2 * restrict ps)
 {
-  	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
+	int global_id = get_global_id(0);
+	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
 	int k;
-	int zcurr=global_id%(N3+2*N3G);
-	int jcurr=(global_id-zcurr)/(N3+2*N3G);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	FTYPE2 prim1[NPR], prim2[NPR],prim3[NPR], prim4[NPR],prim5[NPR], prim6[NPR]; 
+	int zcurr = global_id % (N3 + 2 * N3G);
+	int jcurr = (global_id - zcurr) / (N3 + 2 * N3G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	FTYPE2 prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 	int prim7, prim8;
-	int fix_mem2=LOCAL_WORK_SIZE-((N2+2*N2G)*(N1+2*N1G))%LOCAL_WORK_SIZE;
 
 	// inner r boundary condition: u, gdet extrapolation 
-	if(jcurr>=N2G && jcurr<N2+N2G && zcurr>=0 && zcurr<N3+2*N3G && N1_MPI_offset == 0){
-		/*if(freeze!=0){
-			#pragma unroll 8
-			for(k=0; k< NPR; k++){
-				pv[k*(ksize)+(ibound)*isize+global_id]=pbound[k*(isize+fix_mem1)+global_id];
-				pv[k*(ksize)+(ibound+1)*isize+global_id]=pbound[NPR*(isize+fix_mem1)+k*((N3+2*N3G)*(N2+2*N2G)+fix_mem1)+global_id];
-			}
-			pflag[(ibound)*isize+global_id]=0;
-			pflag[(ibound+1)*isize+global_id]=0;
-		}*/
-		
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
-			prim5[k]=pv[k*(ksize)+2*isize+global_id];
+	if (jcurr >= 0 && jcurr<N2 + 2 * N2G && zcurr >= 0 && zcurr<N3 + 2 * N3G && NBR_4 == -1){
+		#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
+			prim5[k] = pv[k*(ksize)+N1G*isize + global_id];
 		}
-		prim7=pflag[0*isize+global_id] ;
-		
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
-			prim1[k] = prim5[k] ;
-			prim2[k] = prim5[k] ;
+		prim7 = pflag[0 * isize + global_id];
+
+		#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
+			prim1[k] = prim5[k];
+			prim2[k] = prim5[k];
+			#if(N1G==3)
+			prim3[k] = prim5[k];
+			#endif
 		}
-		pflag[1*isize+global_id] = prim7  ;
-		//pflag[0*isize+global_id] = prim7  ;
-			
+
 		/*Make sure there is no inflow at inner boundary*/
-		inflow_check(N1, N2, prim1,0,jcurr,0, gcov, gcon, gdet) ;
-		inflow_check(N1, N2, prim2,0,jcurr,0, gcov, gcon, gdet) ;
-		inflow_check(N1, N2, prim1,1,jcurr,0, gcov, gcon, gdet) ;
-		inflow_check(N1, N2, prim2,1,jcurr,0, gcov, gcon, gdet) ;
-
+		inflow_check(N1, N2, prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(N1, N2, prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		#if(N1G==3)
+		inflow_check(N1, N2, prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		#endif
+		inflow_check(N1, N2, prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(N1, N2, prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		#if(N1G==3)
+		inflow_check(N1, N2, prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		#endif
 		/*Write primitives back to global memory*/
-		#pragma unroll 8
-		for(k=0; k<NPR; k++){
-			pv[k*(ksize)+1*isize+global_id]=prim1[k]*gdet[3*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*(N2+2*N2G)+ jcurr]/gdet[3*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 1*(N2+2*N2G) + jcurr];
-			pv[k*(ksize)+global_id]                        =prim2[k]*gdet[3*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + 2*(N2+2*N2G)+ jcurr]/gdet[3*((N2+2*N2G)*(N1+2*N1G)+fix_mem2) + jcurr];
+		#pragma unroll NPR
+		for (k = 0; k<NPR; k++){
+			pv[k*(ksize)+global_id] = prim2[k];
+			pv[k*(ksize)+1 * isize + global_id] = prim1[k];
+			#if(N1G==3)
+			pv[k*(ksize)+2 * isize + global_id] = prim3[k];
+			#endif
 		}
-		global_id=-10;
-		jcurr=-10;
-		zcurr=-10;
+
+		#if(STAGGERED)
+		ps[1 * (ksize)+0 * isize + global_id] = ps[1 * (ksize)+N1G*isize + global_id];
+		ps[1 * (ksize)+1 * isize + global_id] = ps[1 * (ksize)+N1G*isize + global_id];
+		ps[2 * (ksize)+0 * isize + global_id] = ps[2 * (ksize)+N1G*isize + global_id];
+		ps[2 * (ksize)+1 * isize + global_id] = ps[2 * (ksize)+N1G*isize + global_id];
+		#if(N1G==3)
+		ps[1 * (ksize)+2 * isize + global_id] = ps[1 * (ksize)+N1G*isize + global_id];
+		ps[2 * (ksize)+2 * isize + global_id] = ps[2 * (ksize)+N1G*isize + global_id];
+		#endif
+		#endif
+
+		global_id = -10;
+		jcurr = -10;
+		zcurr = -10;
 	}
 
-	if(global_id>=isize){
-		global_id=global_id-isize;
-		zcurr=global_id%(N3+2*N3G);
-		jcurr=(global_id-zcurr)/(N3+2*N3G);
+	if (global_id<isize){
+		global_id = -10;
+		jcurr = -10;
+		zcurr = -10;
 	}
+	else if (global_id >= isize){
+		global_id = global_id - isize;
+		zcurr = global_id % (N3 + 2 * N3G);
+		jcurr = (global_id - zcurr) / (N3 + 2 * N3G);
+	}
+
 	// outer r BC: outflow 
-	if(jcurr>=N2G && jcurr<N2+N2G && zcurr>=0 && zcurr<N3+2*N3G && N1_MPI_offset + N1 == N1_MPI){
-		#pragma unroll 8
-		for(k=0; k< NPR; k++){
-			prim6[k]=pv[k*(ksize)+(N1+1)*isize+global_id];
+	if (jcurr >= 0 && jcurr<N2 + 2 * N2G && zcurr >= 0 && zcurr<N3 + 2 * N3G && NBR_2 == -1){
+		#pragma unroll NPR
+		for (k = 0; k< NPR; k++){
+			prim6[k] = pv[k*(ksize)+(N1 + N1G - 1)*isize + global_id];
 		}
-		
-		#pragma unroll 8
-		for(k=0; k<NPR; k++){
-			prim3[k] = prim6[k] ;
-			prim4[k] = prim6[k] ;
+
+		#pragma unroll NPR
+		for (k = 0; k<NPR; k++){
+			prim3[k] = prim6[k];
+			prim4[k] = prim6[k];
+			prim5[k] = prim6[k];
 		}
-		prim8=pflag[(N1+1)*isize+global_id] ;
-		pflag[(N1+2)*isize+global_id] = prim8 ;
-		//pflag[(N1+3)*isize+global_id] = prim8 ;
-	
+		prim8 = pflag[(N1 + N1G - 1)*isize + global_id];
+
 		/*Make sure there is no inflow at outer boundary*/
-		inflow_check(N1, N2, prim3,N1+2,jcurr,1, gcov, gcon, gdet) ;
-		inflow_check(N1, N2, prim4,N1+2,jcurr,1, gcov, gcon, gdet) ;
-		inflow_check(N1, N2, prim3,N1+3,jcurr,1, gcov, gcon, gdet) ;
-		inflow_check(N1, N2, prim4,N1+3,jcurr,1, gcov, gcon, gdet) ;
-		#pragma unroll 8
-		for(k=0; k<NPR; k++){
-			pv[k*(ksize)+(N1+2)*isize+global_id]=prim3[k];
-			pv[k*(ksize)+(N1+3)*isize+global_id]=prim4[k];
+		inflow_check(N1, N2, prim3, N1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(N1, N2, prim4, N1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		#if(N1G==3)
+		inflow_check(N1, N2, prim5, N1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		#endif
+		inflow_check(N1, N2, prim3, N1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(N1, N2, prim4, N1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		#if(N1G==3)
+		inflow_check(N1, N2, prim5, N1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		#endif
+
+		#pragma unroll NPR
+		for (k = 0; k<NPR; k++){
+			pv[k*(ksize)+(N1 + N1G)*isize + global_id] = prim3[k];
+			pv[k*(ksize)+(N1 + N1G + 1)*isize + global_id] = prim4[k];
+		#if(N1G==3)
+			pv[k*(ksize)+(N1 + N1G + 2)*isize + global_id] = prim5[k];
+		#endif
 		}
+		#if(STAGGERED)
+		ps[1 * (ksize)+(N1 + N1G)*isize + global_id] = ps[1 * (ksize)+(N1 + N1G - 1)*isize + global_id];
+		ps[1 * (ksize)+(N1 + N1G + 1)*isize + global_id] = ps[1 * (ksize)+(N1 + N1G - 1)*isize + global_id];
+		ps[2 * (ksize)+(N1 + N1G)*isize + global_id] = ps[2 * (ksize)+(N1 + N1G - 1)*isize + global_id];
+		ps[2 * (ksize)+(N1 + N1G + 1)*isize + global_id] = ps[2 * (ksize)+(N1 + N1G - 1)*isize + global_id];
+		#if(N1G==3)
+		ps[1 * (ksize)+(N1 + N1G + 2)*isize + global_id] = ps[1 * (ksize)+(N1 + N1G - 1)*isize + global_id];
+		ps[2 * (ksize)+(N1 + N1G + 2)*isize + global_id] = ps[2 * (ksize)+(N1 + N1G - 1)*isize + global_id];
+		#endif
+		#endif
 	}
 }
 
-__global__ void boundprim2(int N1, int N2, int N3, FTYPE2* pv, int* pflag, int N1_MPI, int N1_MPI_offset, int N2_MPI, 
-int N2_MPI_offset, int N3_MPI, int N3_MPI_offset)
+__global__ void boundprim2(int N1, int N2, int N3, __global int * restrict pflag, __global FTYPE2 * restrict pv, int NBR_1, int NBR_3, __read_only image3d_t gdet, int AMR_POLE, __global FTYPE2 * restrict ps)
 {
 	int j, jref, k;
-	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int zcurr=global_id%(N3+2*N3G);
-	int icurr=(global_id-zcurr)/(N3+2*N3G);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	jref=POLEFIX;
+	int global_id = get_global_id(0);
+	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
+	int zcurr = global_id % (N3 + 2 * N3G);
+	int icurr = (global_id - zcurr) / (N3 + 2 * N3G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
+	jref = POLEFIX;
+
 	// polar BCs
-	if(icurr>=0 && icurr<N1+2*N1G && zcurr>=0 && zcurr<N3+2*N3G && N2_MPI_offset == 0) { 
-		for(j=0; j<jref; j++){
+	if (icurr >= 0 && icurr<N1 + 2 * N1G && zcurr >= 0 && zcurr<N3 + 2 * N3G && NBR_1 == -1) {
+		for (j = 0; j<jref; j++){
 			//linear interpolation of transverse velocity (both poles)
-			pv[3*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = (j+0.5)/(jref+0.5) * pv[3*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
+			pv[3 * (ksize)+isize*icurr + (j + N2G)*(N3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[3 * (ksize)+isize*icurr + (jref + N2G)*(N3 + 2 * N3G) + zcurr];
 
 			//everything else copy (both poles)
-			pv[0*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[0*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
-			pv[1*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[1*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
-			pv[2*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[2*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
-			pv[4*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[4*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
-			#if (N3G>0)
-			pv[5*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[5*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
-			pv[6*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[6*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
+			pv[0 * (ksize)+isize*icurr + (j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[0 * (ksize)+isize*icurr + (jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[1 * (ksize)+isize*icurr + (j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[1 * (ksize)+isize*icurr + (jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[2 * (ksize)+isize*icurr + (j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[2 * (ksize)+isize*icurr + (jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[4 * (ksize)+isize*icurr + (j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[4 * (ksize)+isize*icurr + (jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			#if (N2G==0)
+			//pv[7*(ksize)+isize*icurr+(j+N2G)*(N3+2*N3G)+zcurr] = pv[7*(ksize)+isize*icurr+(jref+N2G)*(N3+2*N3G)+zcurr];
 			#endif
-			pv[7*(ksize)+isize*icurr+(j+2)*(N3+2*N3G)+zcurr] = pv[7*(ksize)+isize*icurr+(jref+2)*(N3+2*N3G)+zcurr];
-		}
-		#pragma unroll 8
-		for(k=0; k<NPR; k++){
-			pv[k*(ksize)+isize*icurr+1*(N3+2*N3G)+zcurr] = pv[k*(ksize)+isize*icurr+2*(N3+2*N3G)+zcurr] ;
-			pv[k*(ksize)+isize*icurr+zcurr] = pv[k*(ksize)+isize*icurr+3*(N3+2*N3G)+zcurr] ;
-		}
-		pflag[isize*icurr+1*(N3+2*N3G)+zcurr] = pflag[isize*icurr+2*(N3+2*N3G)+zcurr] ;
-		//pflag[isize*icurr+zcurr] = pflag[isize*icurr+3*(N3+2*N3G)+zcurr] ;
-		
-		// make sure b and u are antisymmetric at the poles 
-		for(j=0;j<2;j++) {
-			pv[3*(ksize)+isize*icurr+j*(N3+2*N3G)+zcurr] *= -1. ;
-			pv[6*(ksize)+isize*icurr+j*(N3+2*N3G)+zcurr] *= -1. ;
-		}
-		global_id=-10;
-		icurr=-10;
-		zcurr=-10;
-	}
-
-	if(global_id>=(N1+2*N1G)*(N3+2*N3G)){
-		global_id=global_id-(N1+2*N1G)*(N3+2*N3G);
-		zcurr=global_id%(N3+2*N3G);
-		icurr=(global_id-zcurr)/(N3+2*N3G);
-	}
-
-	if(icurr>=0 && icurr<N1+2*N1G && zcurr>=0 && zcurr<N3+2*N3G && N2_MPI_offset + N2 == N2_MPI) {
-		for(j=0; j<jref; j++){
-			//linear interpolation of transverse velocity (both poles)
-			pv[3*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = (j+0.5)/(jref+0.5) * pv[3*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
-
-			//everything else copy (both poles)
-			pv[0*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[0*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
-			pv[1*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[1*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
-			pv[2*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[2*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
-			pv[4*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[4*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
-			#if (N3G>0)
-			pv[5*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[5*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
-			pv[6*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[6*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];
+			#if DOKTOT
+			pv[KTOT*(ksize)+isize*icurr + (j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (jref + N2G)*(N3 + 2 * N3G) + zcurr];
 			#endif
-			pv[7*(ksize)+isize*icurr+(N2-1-j+2)*(N3+2*N3G)+zcurr] = pv[7*(ksize)+isize*icurr+(N2-1-jref+2)*(N3+2*N3G)+zcurr];		
 		}
-		#pragma unroll 8
-		for(k=0; k<NPR; k++){
-			pv[k*(ksize)+isize*icurr+(N2+2)*(N3+2*N3G)+zcurr] = pv[k*(ksize)+isize*icurr+(N2+1)*(N3+2*N3G)+zcurr] ;
-			pv[k*(ksize)+isize*icurr+(N2+3)*(N3+2*N3G)+zcurr] = pv[k*(ksize)+isize*icurr+(N2)*(N3+2*N3G)+zcurr] ;
+		#pragma unroll NPR
+		for (k = 0; k<NPR; k++){
+			pv[k*(ksize)+isize*icurr + (N2G - 1)*(N3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[k*(ksize)+isize*icurr + (N2G - 2)*(N3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2G + 1)*(N3 + 2 * N3G) + zcurr];
+			#if(N2G==3)
+			pv[k*(ksize)+isize*icurr + (N2G - 3)*(N3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2G + 2)*(N3 + 2 * N3G) + zcurr];
+			#endif
 		}
-		pflag[isize*icurr+(N3+2*N3G)*(N2+2)+zcurr] = pflag[isize*icurr+(N2+1)*(N3+2*N3G)+zcurr] ;
-		//pflag[isize*icurr+(N3+2*N3G)*(N2+3)+zcurr] = pflag[isize*icurr+(N2)*(N3+2*N3G)+zcurr] ;
 
 		// make sure b and u are antisymmetric at the poles 
-		for(j=N2+N2G;j<N2+2*N2G;j++) {
-			pv[3*(ksize)+isize*icurr+j*(N3+2*N3G)+zcurr] *= -1. ;
-			pv[6*(ksize)+isize*icurr+j*(N3+2*N3G)+zcurr] *= -1. ;
+		for (j = 0; j<N2G; j++) {
+			pv[3 * (ksize)+isize*icurr + j*(N3 + 2 * N3G) + zcurr] *= -1.;
+			pv[6 * (ksize)+isize*icurr + j*(N3 + 2 * N3G) + zcurr] *= -1.;
 		}
-	}
-}
 
-__global__ void boundprim3(int N1, int N2, int N3, FTYPE2* pv, int* pflag, int N1_MPI, int N1_MPI_offset, int N2_MPI, 
-int N2_MPI_offset, int N3_MPI, int N3_MPI_offset)
-{
-	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize=(N3+2*N3G)*(N2+2*N2G);
-	int jcurr=global_id%(N2+2*N2G);
-	int icurr=(global_id-jcurr)/(N2+2*N2G);
-	int fix_mem1=LOCAL_WORK_SIZE-(isize*(N1+2*N1G))%LOCAL_WORK_SIZE;
-	int k, z;
-	int ksize=isize*(N1+2*N1G)+fix_mem1;
-	//Inner phi-boundary
-	if (icurr>=0 && jcurr>=0 && icurr<N1+2*N1G && jcurr<N2+2*N2G && N3_MPI_offset == 0){
-		for (z = 0; z < N3G; z++){
-			#pragma unroll 8
-			for(k=0; k<NPR; k++){
-				pv[k*(ksize)+icurr*isize+jcurr*(N3+2*N3G)+z] = pv[k*(ksize)+icurr*isize+jcurr*(N3+2*N3G)+(N3+z)];
-			}
-		}
-		pflag[icurr*isize+jcurr*(N3+2*N3G)+D3] = pflag[icurr*isize+jcurr*(N3+2*N3G)+(N3+D3)];
-		global_id=-10;
-		jcurr=-10;
-		icurr=-10;
-	}
-
-	if(global_id>=(N1+2*N1G)*(N2+2*N2G)){
-		global_id=global_id-(N1+2*N1G)*(N2+2*N2G);
-		jcurr=global_id%(N2+2*N2G);
-		icurr=(global_id-jcurr)/(N2+2*N2G);
-	}
-
-	//Outer phi-boundary
-	if (icurr>=0 && jcurr>=0 && icurr<N1+2*N1G && jcurr<N2+2*N2G && N3_MPI_offset + N3 == N3_MPI){
-		for (z = N3G; z < 2*N3G; z++){
-			#pragma unroll 8
-			for(k=0; k<NPR; k++){
-				pv[k*(ksize)+icurr*isize+jcurr*(N3+2*N3G)+(N3+z)] = pv[k*(ksize)+icurr*isize+jcurr*(N3+2*N3G)+z];
-			}
-		}
-		pflag[icurr*isize+jcurr*(N3+2*N3G)+(N3+N3G)] = pflag[icurr*isize+jcurr*(N3+2*N3G)+N3G];
-	}
-}
-extern "C" {
-
-
-	void GPU_init(void)
-	{
-		
-		/*N1 and N2 values to be exported to GPU memory*/
-		N1_tot = N1_MPI;
-		N2_tot = N2_MPI;
-		N3_tot = N3_MPI;
-		int freeze_GPU;
-	
-		/*Set the global work size and make sure that it is a multiple of the group size. The Nvidia OpenCL framework crashes otherwise!*/
-		fix_mem = LOCAL_WORK_SIZE - ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G)) % LOCAL_WORK_SIZE;
-		fix_mem2 = LOCAL_WORK_SIZE - ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G)) % LOCAL_WORK_SIZE;
-		global_work_offset[0] = ibound*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G); //alert
-		global_work_size[0] = (LOCAL_WORK_SIZE - ((N1_MPI + 2 * N1G)*(N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G) - global_work_offset[0]) % LOCAL_WORK_SIZE) + ((N1_MPI + 2 * N1G)*(N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G) - global_work_offset[0]);
-		global_work_size_bound[0] = (LOCAL_WORK_SIZE - (2 * (N2_tot + 4) + 2 * (N1_tot + 4)) % LOCAL_WORK_SIZE) + 2 * (N2_tot + 4) + 2 * (N1_tot + 4);
-		global_work_size_special[0] = (LOCAL_WORK_SIZE - ((N1_MPI + 2 * N1G)*(N3_MPI + 2 * N3G) + (N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G)) % LOCAL_WORK_SIZE) + (N1_MPI + 2 * N1G)*(N3_MPI + 2 * N3G) + (N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G);
-		global_work_size_special1[0] = (LOCAL_WORK_SIZE - ((N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G) * 2) % LOCAL_WORK_SIZE) + (N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G) * 2;
-		global_work_size_special2[0] = (LOCAL_WORK_SIZE - ((N1_MPI + 2 * N1G)*(N3_MPI + 2 * N3G) * 2 ) % LOCAL_WORK_SIZE) + ((N1_MPI + 2 * N1G)*(N3_MPI + 2 * N3G) * 2);
-		global_work_size_special3[0] = (LOCAL_WORK_SIZE - ((N1_MPI + 2 * N1G)*(N2_MPI + 2 * N2G) * 2) % LOCAL_WORK_SIZE) + ((N1_MPI + 2 * N1G)*(N2_MPI + 2 * N2G) * 2);
-		local_work_size[0] = LOCAL_WORK_SIZE;
-		nr_workgroups = (int)ceil((double)global_work_size[0] / (double)LOCAL_WORK_SIZE);
-
-		/*Allocate memory to 1D arrays*/
-		p_1 = (FTYPE2(*))malloc(NPR*((N3_MPI + 2*N3G)*(N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem)*sizeof(FTYPE2));
-		#if(GPU_DEBUG)
-		ph_1 = (FTYPE2(*))malloc(NPR*((N3_MPI + 2*N3G)*(N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem)*sizeof(FTYPE2));
+		#if(STAGGERED)
+		ps[0 * (ksize)+isize*icurr + (N2G - 1)*(N3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (N2G)*(N3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+isize*icurr + (N2G - 2)*(N3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (N2G + 1)*(N3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+isize*icurr + (N2G - 1)*(N3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+isize*icurr + (N2G)*(N3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+isize*icurr + (N2G - 2)*(N3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+isize*icurr + (N2G + 1)*(N3 + 2 * N3G) + zcurr];
+		#if(N2G==3)
+		ps[0 * (ksize)+isize*icurr + (N2G - 3)*(N3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (N2G + 2)*(N3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+isize*icurr + (N2G - 3)*(N3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+isize*icurr + (N2G + 2)*(N3 + 2 * N3G) + zcurr];
 		#endif
-		pbound_1 = (FTYPE2(*))malloc(N_POINTS*NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + fix_mem)*sizeof(FTYPE2));
-		gcov_GPU = (FTYPE2(*))malloc(((N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2));
-		gcon_GPU = (FTYPE2(*))malloc(((N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2));
-		conn_GPU = (FTYPE2(*))malloc(((N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem2)*NDIM*NDIM*NDIM*sizeof(FTYPE2));
-		gdet_GPU = (FTYPE2(*))malloc(((N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem2)*NPG*sizeof(FTYPE2));
-		pflag_GPU = (int(*))malloc(((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(int));
-		failimage_GPU = (int(*))malloc(((N3_MPI + 2*N3G)*(N2_MPI + 2*N2G)*(N1_MPI + 2*N1G) + fix_mem) * NFAIL * sizeof(int));
-		Katm_GPU = (FTYPE2(*))malloc((N1_MPI + 2*N1G)*sizeof(FTYPE2));
-		dtij_GPU = (FTYPE2(*))malloc(nr_workgroups*sizeof(FTYPE2));
+		#endif
+		global_id = -10;
+		icurr = -10;
+		zcurr = -10;
+	}
 
-		if (boundfreeze1 == 1 || boundfreeze2==1){
-			freeze_GPU = N_POINTS;
+	if (global_id<(N1 + 2 * N1G)*(N3 + 2 * N3G)){
+		global_id = -10;
+		icurr = -10;
+		zcurr = -10;
+	}
+	else if (global_id >= (N1 + 2 * N1G)*(N3 + 2 * N3G)){
+		global_id = global_id - (N1 + 2 * N1G)*(N3 + 2 * N3G);
+		zcurr = global_id % (N3 + 2 * N3G);
+		icurr = (global_id - zcurr) / (N3 + 2 * N3G);
+	}
+
+	if (icurr >= 0 && icurr<N1 + 2 * N1G && zcurr >= 0 && zcurr<N3 + 2 * N3G && NBR_3 == -1) {
+		for (j = 0; j<jref; j++){
+			//linear interpolation of transverse velocity (both poles)
+			pv[3 * (ksize)+isize*icurr + (N2 - 1 - j + N2G)*(N3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[3 * (ksize)+isize*icurr + (N2 - 1 - jref + N2G)*(N3 + 2 * N3G) + zcurr];
+
+			//everything else copy (both poles)
+			pv[0 * (ksize)+isize*icurr + (N2 - 1 - j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[0 * (ksize)+isize*icurr + (N2 - 1 - jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[1 * (ksize)+isize*icurr + (N2 - 1 - j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[1 * (ksize)+isize*icurr + (N2 - 1 - jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[2 * (ksize)+isize*icurr + (N2 - 1 - j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[2 * (ksize)+isize*icurr + (N2 - 1 - jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			pv[4 * (ksize)+isize*icurr + (N2 - 1 - j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[4 * (ksize)+isize*icurr + (N2 - 1 - jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			#if (N2G==0)
+			//pv[7*(ksize)+isize*icurr+(N2-1-j+N2G)*(N3+2*N3G)+zcurr] = pv[7*(ksize)+isize*icurr+(N2-1-jref+N2G)*(N3+2*N3G)+zcurr];		
+			#endif
+			#if DOKTOT
+			pv[KTOT*(ksize)+isize*icurr + (N2 - 1 - j + N2G)*(N3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (N2 - 1 - jref + N2G)*(N3 + 2 * N3G) + zcurr];
+			#endif
+		}
+		#pragma unroll NPR
+		for (k = 0; k<NPR; k++){
+			pv[k*(ksize)+isize*icurr + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2 + N2G - 1)*(N3 + 2 * N3G) + zcurr];
+			pv[k*(ksize)+isize*icurr + (N2 + N2G + 1)*(N3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2 + N2G - 2)*(N3 + 2 * N3G) + zcurr];
+			#if(N2G==3)
+			pv[k*(ksize)+isize*icurr + (N2 + N2G + 2)*(N3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (N2 + N2G - 3)*(N3 + 2 * N3G) + zcurr];
+			#endif
+		}
+
+		// make sure b and u are antisymmetric at the poles 
+		for (j = N2 + N2G; j<N2 + 2 * N2G; j++) {
+			pv[3 * (ksize)+isize*icurr + j*(N3 + 2 * N3G) + zcurr] *= -1.;
+			pv[6 * (ksize)+isize*icurr + j*(N3 + 2 * N3G) + zcurr] *= -1.;
+		}
+
+		#if(STAGGERED)
+		ps[0 * (ksize)+isize*icurr + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (N2 + N2G - 1)*(N3 + 2 * N3G) + zcurr];
+		ps[0 * (ksize)+isize*icurr + (N2 + N2G + 1)*(N3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (N2 + N2G - 2)*(N3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+isize*icurr + (N2 + N2G)*(N3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+isize*icurr + (N2 + N2G - 1)*(N3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+isize*icurr + (N2 + N2G + 1)*(N3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+isize*icurr + (N2 + N2G - 2)*(N3 + 2 * N3G) + zcurr];
+		#if(N2G==3)
+		ps[0 * (ksize)+isize*icurr + (N2 + N2G + 2)*(N3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (N2 + N2G - 3)*(N3 + 2 * N3G) + zcurr];
+		ps[2 * (ksize)+isize*icurr + (N2 + N2G + 2)*(N3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+isize*icurr + (N2 + N2G - 3)*(N3 + 2 * N3G) + zcurr];
+		#endif
+		#endif
+	}
+}
+
+/*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
+#define AMR_SWITCHTIMELEVEL 32
+#define NT 0
+
+__global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (k = 0; k < NPR; k++){
+		#pragma unroll NG
+		for (i = i1; i <i2; i++){
+			send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+	}
+	#if(STAGGERED)
+	for (i = i1; i <i2; i++){
+		send[(NPR + 0)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+(i + N1G + (i1>N1G))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G), FACE1, 0)));
+		send[(NPR + 1)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+		send[(NPR + 2)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+	}
+	#endif
+}
+
+__global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (k = 0; k < NPR; k++){
+		#pragma unroll NG
+		for (j = j1; j <j2; j++){
+			send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+		}
+	}
+	#if(STAGGERED)
+	for (j = j1; j <j2; j++){
+		send[(NPR + 0)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+		send[(NPR + 1)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+icurr*isize + (j + N2G + (j1>N2G))*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G), icurr, FACE2, 0)));
+		send[(NPR + 2)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+	}
+	#endif
+}
+
+__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (k = 0; k < NPR; k++){
+		#pragma unroll NG
+		for (z = z1; z <z2; z++){
+			send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+		}
+	}
+	#if(STAGGERED)
+	for (z = z1; z <z2; z++){
+		send[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+		send[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		send[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+	}
+	#endif
+}
+
+__global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (k = 0; k < NPR; k++){
+		#pragma unroll NG
+		for (i = i1; i <i2; i += 1 + REF_1){
+			send[k*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.125*(
+				pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
+				pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + REF_1 + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + REF_1 + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] +
+				pv[k*(ksize)+(i + REF_1 + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + REF_1 + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+		}
+	}
+	#if(STAGGERED)
+	for (i = i1; i <i2; i += 1 + REF_1){
+		send[(NPR + 0)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
+			0.25*(ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
+			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
+			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
+			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))));
+
+		send[(NPR + 1)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
+			0.25*(ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) +
+			ps[1 * (ksize)+(i + N1G)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) +
+			ps[1 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE2, 0))) +
+			ps[1 * (ksize)+(i + N1G + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE2, 0))));
+
+		send[(NPR + 2)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
+			0.25*(ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0))) +
+			ps[2 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE3, 0))) +
+			ps[2 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE3, 0))) +
+			ps[2 * (ksize)+(i + N1G + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + REF_1, FACE3, 0))));
+	}
+	#endif
+}
+
+__global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (k = 0; k < NPR; k++){
+		#pragma unroll NG
+		for (j = j1; j <j2; j += 1 + REF_2){
+			send[k*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.125*(
+				pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
+				pv[k*(ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] +
+				pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+		}
+	}
+	#if(STAGGERED)
+	for (j = j1; j <j2; j += 1 + REF_2){
+		send[(NPR + 0)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
+			0.25*(ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
+			ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
+			ps[0 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE1, 0))) +
+			ps[0 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE1, 0))));
+
+		send[(NPR + 1)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
+			0.25*(ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr, FACE2, 0))) +
+			ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr, FACE2, 0))) +
+			ps[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr + REF_1, FACE2, 0))) +
+			ps[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G + (j1>N2G)*(1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G)*(1 + REF_2), icurr + REF_1, FACE2, 0))));
+
+		send[(NPR + 2)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
+			0.25*(ps[2 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0))) +
+			ps[2 * (ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr, FACE3, 0))) +
+			ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE3, 0))) +
+			ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr + REF_1, FACE3, 0))));
+	}
+	#endif
+}
+
+__global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict ps, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
+	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (k = 0; k < NPR; k++){
+		#pragma unroll NG
+		for (z = z1; z <z2; z += 1 + REF_3){
+			send[k*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.125*(
+				pv[k*(ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G + REF_3] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] +
+				pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G + REF_3] + pv[k*(ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G + REF_3] +
+				pv[k*(ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G + REF_3]);
+		}
+	}
+	#if(STAGGERED)
+	for (z = z1; z <z2; z += 1 + REF_3){
+		send[(NPR + 0)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
+			0.25*(ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
+			ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
+			ps[0 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE1, 0))) +
+			ps[0 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE1, 0))));
+
+		send[(NPR + 1)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
+			0.25*(ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) +
+			ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) +
+			ps[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE2, 0))) +
+			ps[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + REF_3)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE2, 0))));
+
+		send[(NPR + 2)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
+			0.25*(ps[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) +
+			ps[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE3, 0))) +
+			ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
+			ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
+	}
+	#endif
+}
+
+__global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int jsize2, int zsize2, __global FTYPE2 * restrict p, __global FTYPE2 * restrict ph,
+	__global FTYPE2 * restrict ps, __global FTYPE2 * restrict psh, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict tempreceive, int update_staggered, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	//When at timestep where n_rec does not evolve
+	if (nstep != -1 && timelevel_rec>timelevel){
+		for (k = 0; k < NPR; k++){
+			for (i = i1; i <i2; i++){
+				p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += 0.5*dt*(double)timelevel*tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += 0.5*dt*(double)timelevel*tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+			}
+		}
+		for (i = i1; i <i2; i++){
+			/*ps[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(1+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			psh[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(1+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			ps[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(2+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			psh[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(2+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			if((jcurr<N2G || jcurr>=BS_2+N2G || zcurr<N3G || zcurr>=BS_3+N3G)&& update_staggered==1){
+			ps[0*(ksize)+(i+N1G+(i1<0))*isize+jcurr*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(0+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			psh[0*(ksize)+(i+N1G+(i1<0))*isize+jcurr*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(0+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			}
+			else psh[0*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(0+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			*/
+		}
+	}
+
+	//When at same timestep where n_rec evolves
+	if (nstep%timelevel_rec == timelevel_rec - 1 && timelevel_rec>timelevel){
+		for (k = 0; k < NPR; k++){
+			for (i = i1; i <i2; i++){
+				p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+			}
+			for (i = i1; i <i2; i++){
+				tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+					= (receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] - p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+			}
+		}
+		for (i = i1; i <i2; i++){
+			/*ps[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(1+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			psh[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(1+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			ps[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			psh[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			if((jcurr<N2G || jcurr>=BS_2+N2G || zcurr<N3G || zcurr>=BS_3+N3G)&& update_staggered==1){
+			ps[0*(ksize)+(i+N1G+(i1<0))*isize+jcurr*(BS_3+2*N3G)+zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[(0+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			psh[0*(ksize)+(i+N1G+(i1<0))*isize+jcurr*(BS_3+2*N3G)+zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[(0+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			}
+			else psh[0*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[(0+NPR)*jsize2*zsize2*(i2-i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+			*/
+		}
+		for (i = i1; i <i2; i++){
+			tempreceive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+				= (receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0))) - ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+			tempreceive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+				= (receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0))) - ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+			tempreceive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+				= (receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0))) - ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+		}
+	}
+
+	//Reset gradient to 0 at eg refinement steps
+	if (nstep == -1){
+		for (k = 0; k < NPR + 3; k++){
+			#pragma unroll NG
+			for (i = i1; i <i2; i++){
+				tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] = 0.0;
+			}
+		}
+	}
+
+	//Reset primitve variables
+	if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (i = i1; i <i2; i++){
+				p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+			}
+		}
+		#if(STAGGERED)
+		for (i = i1; i <i2; i++){
+			if ((jcurr<N2G || jcurr >= BS_2 + N2G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
+				ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0)));
+				psh[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1<0), FACE1, 0)));
+			}
+			else psh[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0)));
+			ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+			ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+
+			psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+			psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+		}
+		#endif
+	}
+}
+
+__global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int zsize2, __global FTYPE2 * restrict p, __global FTYPE2 * restrict ph,
+	__global FTYPE2 * restrict ps, __global FTYPE2 * restrict psh, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict tempreceive, int reverse, int update_staggered, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double factor = 1.;
+	if (reverse == 0){
+		//When at timestep where n_rec does not evolve
+		if (nstep != -1 && timelevel_rec>timelevel){
+			for (k = 0; k < NPR; k++){
+				for (j = j1; j <j2; j++){
+					p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += 0.5*dt*(double)timelevel*tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+					ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += 0.5*dt*(double)timelevel*tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				}
+			}
+			for (j = j1; j <j2; j++){
+				/*ps[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(0+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				psh[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(0+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				ps[2*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(2+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				psh[2*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+=0.5*dt*(double)timelevel*tempreceive[(2+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				if((icurr<N1G || icurr>=BS_1+N1G || zcurr<N3G || zcurr>=BS_3+N3G) && update_staggered==1 ){
+				ps[1*(ksize)+icurr*isize+(j+N2G+(j1<0))*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(1+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				psh[1*(ksize)+icurr*isize+(j+N2G+(j1<0))*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(1+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				}
+				else psh[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(1+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				*/
+			}
+		}
+
+		//When at same timestep where n_rec evolves
+		if (nstep%timelevel_rec == timelevel_rec - 1 && timelevel_rec>timelevel){
+			for (k = 0; k < NPR; k++){
+				for (j = j1; j <j2; j++){
+					p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+					ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				}
+				for (j = j1; j <j2; j++){
+					tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+						= (receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] - p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+				}
+			}
+			for (j = j1; j <j2; j++){
+				/*ps[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(0+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				psh[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(0+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				if((icurr<N1G || icurr>=BS_1+N1G || zcurr<N3G || zcurr>=BS_3+N3G) && update_staggered==1 ){
+				ps[1*(ksize)+icurr*isize+(j+N2G+(j1<0))*(BS_3+2*N3G)+zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[(1+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				psh[1*(ksize)+icurr*isize+(j+N2G+(j1<0))*(BS_3+2*N3G)+zcurr] -= 0.5*dt*(double)timelevel_rec*tempreceive[(1+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				}
+				else psh[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] += 0.5*dt*(double)timelevel*tempreceive[(1+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				ps[2*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				psh[2*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]-=0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*isize2*zsize2*(j2-j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))];
+				*/
+			}
+			for (j = j1; j <j2; j++){
+				tempreceive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+					= (receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) - ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+				tempreceive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+					= (receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0))) - ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+				tempreceive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
+					= (receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0))) - ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]) / (0.5*dt*timelevel_rec);
+			}
+		}
+
+		//Reset gradient to 0 at eg refinement steps
+		if (nstep == -1){
+			for (k = 0; k < NPR + 3; k++){
+				#pragma unroll NG
+				for (j = j1; j <j2; j++){
+					tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] = 0.0;
+				}
+			}
+		}
+
+		//Reset primitve variables
+		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+			for (k = 0; k < NPR; k++){
+				#pragma unroll NG
+				for (j = j1; j <j2; j++){
+					p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+					ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				}
+			}
+			#if(STAGGERED)
+			for (j = j1; j <j2; j++){
+				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+				if ((icurr<N1G || icurr >= BS_1 + N1G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
+					ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+						readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0)));
+					psh[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+						readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1<0), icurr, FACE2, 0)));
+				}
+				else psh[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
+				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+
+				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+			}
+			#endif
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (j = j1; j <j2; j++){
+				if (k == 3 || k == 4 || k == 6 || k == 7) factor = -1.;
+				else factor = 1.;
+				p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = factor*receive[k*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+				ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = factor*receive[k*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
+			}
+		}
+		#if(STAGGERED)
+		for (j = j1; j <j2; j++){
+			ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+			if (update_staggered == 1){
+				//ps[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = -receive[(1+NPR)*isize2*zsize2*(j2-j1) + (j2-j-1)*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))]/
+				//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j+N2G,icurr,FACE2,0)));
+				//psh[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = -receive[(1+NPR)*isize2*zsize2*(j2-j1) + (j2-j-1)*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))]/
+				//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j+N2G,icurr,FACE2,0)));
+			}
+			//else psh[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = -receive[(1+NPR)*isize2*zsize2*(j2-j1) + (j2-j-1)*isize2*zsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*zsize2+(zcurr-z1-N3G + z_offset * N3G / (1 + REF_3))]/
+			//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j+N2G,icurr,FACE2,0)));
+			ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+			psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+			psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+		}
+		#endif
+	}
+}
+
+__global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int jsize2, __global FTYPE2 * restrict p, __global FTYPE2 * restrict ph,
+	__global FTYPE2 * restrict ps, __global FTYPE2 * restrict psh, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict tempreceive, int update_staggered, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	//When at timestep where n_rec does not evolve
+	if (nstep != -1 && timelevel_rec>timelevel){
+		for (k = 0; k < NPR; k++){
+			for (z = z1; z <z2; z++){
+				p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += 0.5*dt*(double)timelevel*tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
+				ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += 0.5*dt*(double)timelevel*tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
+			}
+		}
+		for (z = z1; z <z2; z++){
+			/*ps[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]+=0.5*dt*(double)timelevel*tempreceive[(NPR+0)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			psh[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]+=0.5*dt*(double)timelevel*tempreceive[(NPR+0)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			ps[1*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]+=0.5*dt*(double)timelevel*tempreceive[(NPR+1)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			psh[1*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]+=0.5*dt*(double)timelevel*tempreceive[(NPR+1)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			if((icurr<N1G || icurr>=BS_1+N1G || jcurr<N2G || jcurr>=BS_2+N2G) && update_staggered==1 ){
+			ps[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G+(z1<0))] += 0.5*dt*(double)timelevel*tempreceive[(2+NPR)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			psh[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G+(z1<0))] += 0.5*dt*(double)timelevel*tempreceive[(2+NPR)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			}
+			else psh[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] += 0.5*dt*(double)timelevel*tempreceive[(2+NPR)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			*/
+		}
+	}
+
+	//When at same timestep where n_rec evolves
+	if (nstep%timelevel_rec == timelevel_rec - 1 && timelevel_rec>timelevel){
+		for (k = 0; k < NPR; k++){
+			for (z = z1; z <z2; z++){
+				p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= 0.5*dt*(double)timelevel_rec*tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
+				ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= 0.5*dt*(double)timelevel_rec*tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
+			}
+			for (z = z1; z <z2; z++){
+				tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
+					= (receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] - p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
+			}
+		}
+		for (z = z1; z <z2; z++){
+			/*ps[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]-=0.5*dt*(double)timelevel_rec*tempreceive[(NPR+0)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			psh[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]-=0.5*dt*(double)timelevel_rec*tempreceive[(NPR+0)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			ps[1*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]-=0.5*dt*(double)timelevel_rec*tempreceive[(NPR+1)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			psh[1*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)]-=0.5*dt*(double)timelevel_rec*tempreceive[(NPR+1)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			if((icurr<N1G || icurr>=BS_1+N1G || jcurr<N2G || jcurr>=BS_2+N2G) && update_staggered==1 ){
+			ps[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G+(z1<0))] -= 0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			psh[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G+(z1<0))] -= 0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			}
+			else psh[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] -= 0.5*dt*(double)timelevel_rec*tempreceive[(2+NPR)*isize2*jsize2*(z2-z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr-i1-N1G + i_offset * N1G / (1 + REF_1))*jsize2+(jcurr-j1-N2G + j_offset * N2G / (1 + REF_2))];
+			*/
+		}
+		for (z = z1; z <z2; z++){
+			tempreceive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
+				= (receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) - ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
+			tempreceive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
+				= (receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0))) - ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]) / (0.5*dt*timelevel_rec);
+			tempreceive[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
+				= (receive[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) - ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))]) / (0.5*dt*timelevel_rec);
+		}
+	}
+
+	//Reset gradient to 0 at eg refinement steps
+	if (nstep == -1){
+		for (k = 0; k < NPR + 3; k++){
+			#pragma unroll NG
+			for (z = z1; z <z2; z++){
+				tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] = 0.0;
+			}
+		}
+	}
+
+	//Reset primitve variables
+	if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (z = z1; z <z2; z++){
+				p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
+				ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
+			}
+		}
+		#if(STAGGERED)
+		for (z = z1; z <z2; z++){
+			ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+			ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+			if ((icurr<N1G || icurr >= BS_1 + N1G || jcurr<N2G || jcurr >= BS_2 + N2G) && update_staggered == 1){
+				ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+				psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+					readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+			}
+			else psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+			psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+			psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		}
+		#endif
+	}
+}
+__global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
+	__global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1receive, __global FTYPE2 * restrict temp2receive, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+{
+	int i, ii, ij, iz, is, js, zs, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double avg, dq1, dq2, dq3;
+
+	#pragma unroll NG
+	for (i = i1; i <i2; i++){
+		if (i1 < 0 && REF_1 == 1) ii = REF_1;
+		else if (REF_1 == 1) ii = 0;
+		else ii = i - i1;
+		ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + REF_2;
+		iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + REF_3;
+
+		is = ((i == i1) ? (-1) : (1));
+		js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
+		zs = (((zcurr - z1 - N3G) % (1 + REF_3) == 0) ? (-1) : (1));
+		for (k = 0; k < NPR; k++){
+			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+				temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] = temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz];
+				temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz];
+			}
+
+			if (nstep == -1 && timelevel_rec>timelevel)temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] = temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz];
+
+			if (nstep != -1 && timelevel_rec>timelevel){
+				receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] = temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] +
+					(double)((nstep + 1) % timelevel_rec) / ((double)timelevel_rec)*(temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] - temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz]);
+			}
+		}
+		for (k = 0; k < NPR; k++){
+			avg = 0.5*(prim[k*(ksize)+(N1G + (1 - ii)*(BS_1 - 1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + prim[k*(ksize)+(ii + N1G + (1 - ii)*(BS_1 - 2))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+			if (ii == 0){
+				dq1 = slope_lim(avg, receive[k*jsize2*zsize2*(i2 - i1) + 0 * jsize2*zsize2 + ij*zsize2 + iz], receive[k*jsize2*zsize2*(i2 - i1) + REF_1*jsize2*zsize2 + ij*zsize2 + iz]);
+			}
+			else{
+				dq1 = slope_lim(receive[k*jsize2*zsize2*(i2 - i1) + 0 * jsize2*zsize2 + ij*zsize2 + iz], receive[k*jsize2*zsize2*(i2 - i1) + REF_1*jsize2*zsize2 + ij*zsize2 + iz], avg);
+			}
+			//if(jcurr-N2G-j1<(j2-j1)/2)dq2=receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + (ij+REF_2)*zsize2+iz]-receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+			//else dq2=receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + (ij)*zsize2+iz]-receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + (ij-REF_2)*zsize2+iz];
+			//if(zcurr-N3G-z1<(z2-z1)/2)dq3=receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + (ij)*zsize2+iz+REF_3]-receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+			//else dq3=receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + (ij)*zsize2+iz]-receive[k*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + (ij)*zsize2+iz-REF_3];
+			dq2 = slope_lim(receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij - REF_2)*zsize2 + iz], receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij)*zsize2 + iz], receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij + REF_2)*zsize2 + iz]);
+			dq3 = slope_lim(receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij)*zsize2 + (iz - REF_3)], receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij)*zsize2 + iz], receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij)*zsize2 + (iz + REF_3)]);
+			//dq2=dq3=0.;
+			p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
+			ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
+		}
+
+		#if(STAGGERED)
+		if (js == 1){
+			ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij + REF_2)*zsize2 + iz]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+			psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij + REF_2)*zsize2 + iz]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 		}
 		else{
-			freeze_GPU = 0; //alert
+			ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+			psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
+		}
+		if (zs == 1){
+			ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + (iz + REF_3)]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+			psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + (iz + REF_3)]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+		}
+		else{
+			ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+			psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 		}
 
-		/*Set cache config*/
-		cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
-		cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
-		/*Allocate memory to buffers on GPU*/
-		cudaMalloc(&BufferF1_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&BufferF2_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&BufferF3_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferdq_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferstorage1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferstorage2, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferstorage3, ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferstorage4, ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferp_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferph_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2));
-		//cudaMalloc(&Bufferpbound_1, N_POINTS*NPR*((N2_MPI + 2 * N2G) + fix_mem)*sizeof(FTYPE2));
-		cudaMalloc(&Buffergcov, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2));
-		cudaMalloc(&Buffergcon, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2));
-		cudaMalloc(&Bufferconn, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NDIM*NDIM*NDIM*sizeof(FTYPE2));
-		cudaMalloc(&Buffergdet, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NPG*sizeof(FTYPE2));
-		cudaMalloc(&Bufferdtij, ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) / LOCAL_WORK_SIZE*sizeof(FTYPE2));
-		cudaMalloc(&Bufferpflag, ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(int));
-		cudaMalloc(&Bufferfailimage, ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) * NFAIL * sizeof(int));
-		cudaMalloc(&Bufferdiagflux, 3 * MY_MAX((N1_MPI + 2 * N1G)*(N3_MPI + 2 * N3G), (N2_MPI + 2 * N2G)*(N3_MPI + 2 * N3G))*sizeof(FTYPE2));
-		cudaMalloc(&BufferKatm, (N1_MPI + 2 * N1G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundrec1_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N1_MPI + 2 * N1G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundrec2_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundrec3_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N1_MPI + 2 * N1G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundrec4_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundsend1_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N1_MPI + 2 * N1G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundsend2_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundsend3_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N1_MPI + 2 * N1G)*sizeof(FTYPE2));
-		cudaMalloc(&Bufferboundsend4_MPI, 2 * NPR*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornrec1_MPI, 4 * (N3_MPI + 2 * N3G)*NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornrec2_MPI, 4 * (N3_MPI + 2 * N3G)* NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornrec3_MPI, 4 * (N3_MPI + 2 * N3G)*NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornrec4_MPI, 4 * (N3_MPI + 2 * N3G)* NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornsend1_MPI, 4 * (N3_MPI + 2 * N3G)*NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornsend2_MPI, 4 * (N3_MPI + 2 * N3G)* NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornsend3_MPI, 4 * (N3_MPI + 2 * N3G)* NPR*sizeof(FTYPE2));
-		cudaMalloc(&Buffercornsend4_MPI, 4 * (N3_MPI + 2 * N3G)*NPR*sizeof(FTYPE2));
-	
-
+		//ps[0*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+0)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+		//ps[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+1)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+		//ps[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+2)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+		//psh[0*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+0)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+		//psh[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+1)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+		//psh[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+2)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
+	#endif
 	}
-	double check = 1.0;
-	void GPU_write(void)
+}
+
+__global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
+	__global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1receive, __global FTYPE2 * restrict temp2receive, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+{
+	int j, ii, ij, iz, is, js, zs, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double avg, dq1, dq2, dq3;
+
+	#pragma unroll NG
+	for (j = j1; j <j2; j++){
+		if (j1 < 0 && REF_2 == 1) ij = REF_2;
+		else if (REF_2 == 1) ij = 0;
+		else ij = j - j1;
+
+		ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + REF_1)) / (1 + REF_1) + REF_1;
+		iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + REF_3;
+
+		is = (((icurr - i1 - N1G) % (1 + REF_1) == 0) ? (-1) : (1));
+		js = ((j == j1) ? (-1) : (1));
+		zs = (((zcurr - z1 - N3G) % (1 + REF_3) == 0) ? (-1) : (1));
+
+		for (k = 0; k < NPR; k++){
+			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+				temp2receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] = temp1receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz];
+				temp1receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] = receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz];
+			}
+
+			if (nstep == -1 && timelevel_rec>timelevel)temp2receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] = temp1receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz];
+
+			if (nstep != -1 && timelevel_rec>timelevel){
+				receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] = temp1receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] +
+					(double)((nstep + 1) % timelevel_rec) / ((double)timelevel_rec)*(temp1receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] - temp2receive[(k)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz]);
+			}
+		}
+		for (k = 0; k < NPR; k++){
+			avg = 0.5*(prim[k*(ksize)+icurr*isize + (N2G + (1 - ij)*(BS_2 - 1))*(BS_3 + 2 * N3G) + zcurr] + prim[k*(ksize)+icurr*isize + (ij + N2G + (1 - ij)*(BS_2 - 2))*(BS_3 + 2 * N3G) + zcurr]);
+			if (ij == 0){
+				dq2 = slope_lim(avg, receive[k*isize2*zsize2*(j2 - j1) + 0 * isize2*zsize2 + ii*zsize2 + iz], receive[k*isize2*zsize2*(j2 - j1) + REF_2*isize2*zsize2 + ii*zsize2 + iz]);
+			}
+			else{
+				dq2 = slope_lim(receive[k*isize2*zsize2*(j2 - j1) + 0 * isize2*zsize2 + ii*zsize2 + iz], receive[k*isize2*zsize2*(j2 - j1) + REF_2*isize2*zsize2 + ii*zsize2 + iz], avg);
+			}
+			//if(icurr-N1G-i1<(i2-i1)/2)dq1=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + (ii+REF_1)*zsize2+iz]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+			//else dq1=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + (ii-REF_1)*zsize2+iz];
+			//if(zcurr-N3G-z1<(z2-z1)/2)dq3=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+(iz+REF_3)]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+			//else dq3=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+(iz-REF_3)];
+			//if(icurr-N1G-i1<(i2-i1)/2)dq1=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + (ii+REF_1)*zsize2+iz]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+			//else dq1=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + (ii-REF_1)*zsize2+iz];
+			//dq3=receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+(iz+REF_3)]-receive[k*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+			dq1 = slope_lim(receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii - REF_1)*zsize2 + iz], receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii)*zsize2 + iz], receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii + REF_1)*zsize2 + iz]);
+			dq3 = slope_lim(receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii)*zsize2 + (iz - REF_3)], receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii)*zsize2 + iz], receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii)*zsize2 + (iz + REF_3)]);
+			//dq1=dq3=0.;
+			p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
+			ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
+		}
+
+		#if(STAGGERED)
+		if (is == 1){
+			ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii + REF_1)*zsize2 + iz]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+			psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + (ii + REF_1)*zsize2 + iz]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+		}
+		else{
+			ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+			psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 0)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
+		}
+		if (zs == 1){
+			ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + (iz + REF_3)]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+			psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] + receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + (iz + REF_3)]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+		}
+		else{
+			ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+			psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(NPR + 2)*isize2*zsize2*(j2 - j1) + ij*isize2*zsize2 + ii*zsize2 + iz] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
+		}
+
+		//ps[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+0)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+		//ps[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+1)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+		//ps[2*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+2)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+		//psh[0*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+0)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+		//psh[1*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+1)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+		//psh[2*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] = receive[(NPR+2)*isize2*zsize2*(j2-j1) + ij*isize2*zsize2 + ii*zsize2+iz];
+	#endif
+	}
+}
+
+__global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
+	__global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1receive, __global FTYPE2 * restrict temp2receive, __read_only image3d_t gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec)
+{
+	int z, ii, ij, iz, is, js, zs, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double avg, dq1, dq2, dq3;
+
+	#pragma unroll NG
+	for (z = z1; z <z2; z++){
+		if (z1 < 0 && REF_3 == 1) iz = REF_3;
+		else if (REF_3 == 1) iz = 0;
+		else iz = z - z1;
+		ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + REF_1)) / (1 + REF_1) + REF_1;
+		ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + REF_2;
+		is = (((icurr - i1 - N1G) % (1 + REF_1) == 0) ? (-1) : (1));
+		js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
+		zs = ((z == z1) ? (-1) : (1));
+
+		for (k = 0; k < NPR; k++){
+			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+				temp2receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] = temp1receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij];
+				temp1receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] = receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij];
+			}
+
+			if (nstep == -1 && timelevel_rec>timelevel)temp2receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] = temp1receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij];
+
+			if (nstep != -1 && timelevel_rec>timelevel){
+				receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] = temp1receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] +
+					(double)((nstep + 1) % timelevel_rec) / ((double)timelevel_rec)*(temp1receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] - temp2receive[(k)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij]);
+			}
+		}
+		for (k = 0; k < NPR; k++){
+			avg = 0.5*(prim[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (N3G + (1 - iz)*(BS_3 - 1))] + prim[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (iz + N3G + (1 - iz)*(BS_3 - 1))]);
+			if (iz == 0){
+				dq3 = slope_lim(avg, receive[k*isize2*jsize2*(z2 - z1) + 0 * isize2*jsize2 + ii*jsize2 + ij], receive[k*isize2*jsize2*(z2 - z1) + REF_3*isize2*jsize2 + ii*jsize2 + ij]);
+			}
+			else{
+				dq3 = slope_lim(receive[k*isize2*jsize2*(z2 - z1) + 0 * isize2*jsize2 + ii*jsize2 + ij], receive[k*isize2*jsize2*(z2 - z1) + REF_3*isize2*jsize2 + ii*jsize2 + ij], avg);
+			}
+			//if(icurr-N1G-i1<(i2-i1)/2)dq1=receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + (ii+REF_1)*jsize2+ij]-receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+			//else dq1=receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij]-receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + (ii-REF_1)*jsize2+ij];
+			//if(jcurr-N2G-j1<(j2-j1)/2)dq2=receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+(ij+REF_2)]-receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+			//else dq2=receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij]-receive[k*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+(ij-REF_2)];
+			dq1 = slope_lim(receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii + REF_1)*jsize2 + ij], receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij], receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii - REF_1)*jsize2 + ij]);
+			dq2 = slope_lim(receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii)*jsize2 + (ij + REF_2)], receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij], receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii)*jsize2 + (ij - REF_2)]);
+			//dq1=dq2=0.;
+			p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
+			ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
+		}
+
+		#if(STAGGERED)
+		if (is == 1){
+			ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii + REF_1)*jsize2 + ij]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+			psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + (ii + REF_1)*jsize2 + ij]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+		}
+		else{
+			ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+			psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 0)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
+		}
+		if (js == 1){
+			ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + (ij + REF_2)]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+			psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] + receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + (ij + REF_2)]) /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		}
+		else{
+			ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+			psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(NPR + 1)*isize2*jsize2*(z2 - z1) + iz*isize2*jsize2 + ii*jsize2 + ij] /
+				readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
+		}
+		//ps[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+0)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+		//psh[0*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+0)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+		//ps[1*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+1)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+		//psh[1*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+1)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+		//ps[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+2)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+		//psh[2*(ksize)+icurr*isize+jcurr*(BS_3+2*N3G)+(z+N3G)] = receive[(NPR+2)*isize2*jsize2*(z2-z1) + iz*isize2*jsize2 + ii*jsize2+ij];
+#endif
+	}
+}
+
+__global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (i = i1; i <i2; i++){
+				send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (i = i1; i <i2; i++){
+				send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+	}
+}
+
+__global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (j = j1; j <j2; j++){
+				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (j = j1; j <j2; j++){
+				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+	}
+}
+
+__global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (z = z1; z <z2; z++){
+				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = factor*pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			}
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (z = z1; z <z2; z++){
+				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += factor*pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			}
+		}
+	}
+}
+
+__global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive,
+	__global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i <i2; i++){
+					temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
+						= receive[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+				}
+			}
+		}
+		if (calc_corr == 2){
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i <i2; i++){
+					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+			}
+		}
+		if (calc_corr == 3){
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i <i2; i++){
+					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+			}
+		}
+		if (calc_corr == 5){
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i <i2; i++){
+					temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
+						+= receive[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+				}
+			}
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i < i2; i++){
+					temp2[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
+						= factor*pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+				}
+			}
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i < i2; i++){
+					temp2[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
+						+= factor*pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+				}
+			}
+		}
+
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i < i2; i++){
+					temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
+						= (receive[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
+				}
+			}
+		}
+		else if (calc_corr == 2 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i < i2; i++){
+					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]
+						+= temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor; //times dt_old/dt_new to add in future code
+				}
+			}
+		}
+		else if (calc_corr == 3 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i < i2; i++){
+					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]
+						-= temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor; //times dt_old/dt_new to add in future code
+				}
+			}
+		}
+		else if (calc_corr == 5 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (k = 0; k<NPR; k++){
+				for (i = i1; i < i2; i++){
+					temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
+						+= (receive[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
+				}
+			}
+		}
+	}
+}
+
+__global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive,
+	__global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
+						= receive[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
+				}
+			}
+		}
+		if (calc_corr == 2){
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+			}
+		}
+		if (calc_corr == 3){
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+			}
+		}
+		if (calc_corr == 5){
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
+						+= receive[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
+				}
+			}
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					temp2[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
+						= factor*pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+				}
+			}
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					temp2[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
+						+= factor*pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+				}
+			}
+		}
+
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
+						= (receive[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
+				}
+			}
+		}
+		else if (calc_corr == 2 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
+						+= temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor; //times dt_old/dt_new to add in future code
+				}
+			}
+		}
+		else if (calc_corr == 3 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
+						-= temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor; //times dt_old/dt_new to add in future code
+				}
+			}
+		}
+		if (calc_corr == 5 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (k = 0; k<NPR; k++){
+				for (j = j1; j <j2; j++){
+					temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
+						+= (receive[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
+				}
+			}
+		}
+	}
+}
+
+__global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive,
+	__global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
+						= receive[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
+				}
+			}
+		}
+		if (calc_corr == 2){
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+				}
+			}
+		}
+		if (calc_corr == 3){
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+				}
+			}
+		}
+		if (calc_corr == 5){
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
+						+= receive[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
+				}
+			}
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					temp2[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
+						= factor*pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+				}
+			}
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					temp2[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
+						+= factor*pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+				}
+			}
+		}
+
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
+						= (receive[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
+				}
+			}
+		}
+		else if (calc_corr == 2 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]
+						+= temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor; //times dt_old/dt_new to add in future code
+				}
+			}
+		}
+		else if (calc_corr == 3 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]
+						-= temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor; //times dt_old/dt_new to add in future code
+				}
+			}
+		}
+		else if (calc_corr == 5 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (k = 0; k<NPR; k++){
+				for (z = z1; z <z2; z++){
+					temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
+						+= (receive[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
+				}
+			}
+		}
+	}
+}
+
+__global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (i = i1; i <i2; i++){
+				send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*factor*(
+					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
+					pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+			}
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (i = i1; i <i2; i++){
+				send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += 0.25*factor*(
+					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
+					pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+			}
+		}
+	}
+}
+
+__global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (j = j1; j <j2; j++){
+				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*factor*(
+					pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
+					+ pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+			}
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (j = j1; j <j2; j++){
+				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += 0.25*factor*(
+					pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
+					+ pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+			}
+		}
+	}
+}
+
+__global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
+	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (z = z1; z <z2; z++){
+				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.25*factor*(
+					pv[k*(ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
+					+ pv[k*(ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G]);
+			}
+		}
+	}
+	else{
+		for (k = 0; k < NPR; k++){
+			#pragma unroll NG
+			for (z = z1; z <z2; z++){
+				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] += 0.25*factor*(
+					pv[k*(ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
+					+ pv[k*(ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G]);
+			}
+		}
+	}
+}
+
+__global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1)) + z1 + N3G;
+	int jcurr = (global_id - global_id % ((z2 - z1))) / ((z2 - z1)) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		//k=2
+		for (i = i1; i <i2; i++){
+			send[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		//k=3
+		for (i = i1; i <i2; i++){
+			send[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+	}
+	else{
+		//k=2
+		for (i = i1; i <i2; i++){
+			send[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		//k=3
+		for (i = i1; i <i2; i++){
+			send[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+	}
+}
+
+__global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1)) + z1 + N3G;
+	int icurr = (global_id - global_id % ((z2 - z1))) / ((z2 - z1)) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		//k=1;
+		for (j = j1; j <j2; j++){
+			send[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+		}
+		//k=3;
+		for (j = j1; j <j2; j++){
+			send[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+		}
+	}
+	else{
+		//k=1;
+		for (j = j1; j <j2; j++){
+			send[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+		}
+		//k=3;
+		for (j = j1; j <j2; j++){
+			send[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+		}
+	}
+}
+
+__global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % ((j2 - j1)) + j1 + N2G;
+	int icurr = (global_id - global_id % ((j2 - j1))) / ((j2 - j1)) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (first_timestep == 1){
+		//k=1;
+		for (z = z1; z <z2; z++){
+			send[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = factor*pv[1 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G];
+		}
+		//k=2;
+		for (z = z1; z <z2; z++){
+			send[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = factor*pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G];
+		}
+	}
+	else{
+		//k=1;
+		for (z = z1; z <z2; z++){
+			send[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += factor*pv[1 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G];
+		}
+		//k=2;
+		for (z = z1; z <z2; z++){
+			send[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += factor*pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G];
+		}
+	}
+}
+
+__global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep, int mode)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double avg;
+
+	if (mode == 0){
+		if (first_timestep == 1){
+			//k=2
+			for (i = i1; i <i2; i++){
+				send[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = factor*0.5*(
+					pv[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr]);
+				//pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+				//pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]+pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+			}
+			//k=3
+			for (i = i1; i <i2; i++){
+				send[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = factor*0.5*(
+					pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+				//pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]=0.5*(pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(i+N1G)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+zcurr]);
+				//pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]+pv[3*(ksize)+(i+N1G)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+			}
+		}
+		else{
+			//k=2
+			for (i = i1; i <i2; i++){
+				send[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += factor*0.5*(
+					pv[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr]);
+				//pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+				//pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]+pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+			}
+			//k=3
+			for (i = i1; i <i2; i++){
+				send[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += factor*0.5*(
+					pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+				//pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]=0.5*(pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(i+N1G)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+zcurr]);
+				//pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]+pv[3*(ksize)+(i+N1G)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+			}
+		}
+	}
+	else{
+		/*//k=2
+		for (i = i1; i <i2; i++){
+		avg=0.5*(pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]);
+		pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
+		pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]=avg;
+		avg=0.5*(pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]+pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+		pv[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		pv[2*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		}
+		//k=3
+		for (i = i1; i <i2; i++){
+		avg=0.5*(pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]);
+		pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
+		pv[3*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		avg=0.5*(pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+		pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]=avg;
+		pv[3*(ksize)+(i+N1G)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		}*/
+	}
+}
+
+__global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep, int mode)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double avg;
+
+	if (mode == 0){
+		if (first_timestep == 1){
+			//k=1;
+			for (j = j1; j <j2; j++){
+				send[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = factor*0.5*(
+					pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]);
+				//pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+				//pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+			}
+			//k=3;
+			for (j = j1; j <j2; j++){
+				send[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = factor*0.5*(
+					pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+				//pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]=0.5*(pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(icurr+2*REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]);
+				//pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]+pv[3*(ksize)+(icurr+2*REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+			}
+		}
+		else{
+			//k=1;
+			for (j = j1; j <j2; j++){
+				send[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += factor*0.5*(
+					pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]);
+				//pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+				//pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+2*REF_3)]);
+			}
+			//k=3;
+			for (j = j1; j <j2; j++){
+				send[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += factor*0.5*(
+					pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
+				//pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]=0.5*(pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(icurr+2*REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]);
+				//pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=0.5*(pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(icurr+2*REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+			}
+		}
+	}
+	else{
+		//k=1;
+		/*for (j = j1; j <j2; j++){
+		avg=0.5*(pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]);
+		pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]=avg;
+		pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]=avg;
+		avg=0.5*(pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]+pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+		pv[1*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		pv[1*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		}
+		//k=3;
+		for (j = j1; j <j2; j++){
+		avg=0.5*(pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+		pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]=avg;
+		pv[3*(ksize)+(icurr)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		avg=0.5*(pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+		pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+zcurr]=avg;
+		pv[3*(ksize)+(icurr+REF_1)*isize+(j+N2G)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+		}*/
+	}
+}
+
+__global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep, int mode)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
+	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double avg;
+
+	if (mode == 0){
+		if (first_timestep == 1){
+			//k=1;
+			for (z = z1; z <z2; z++){
+				send[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = factor*0.5*(
+					pv[1 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G]);
+				//pv[1*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[1*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[1*(ksize)+(icurr)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+z+N3G]);
+				//pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+z+N3G]);
+			}
+			//k=2;
+			for (z = z1; z <z2; z++){
+				send[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = factor*0.5*(
+					pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G]);
+				//pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[2*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[2*(ksize)+(icurr+2*REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]);
+				//pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]+pv[2*(ksize)+(icurr+2*REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]);
+			}
+		}
+		else{
+			//k=1;
+			for (z = z1; z <z2; z++){
+				send[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] += factor*0.5*(
+					pv[1 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[1 * (ksize)+(icurr + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G]);
+				//pv[1*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[1*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[1*(ksize)+(icurr)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+z+N3G]);
+				//pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr+2*REF_2)*(BS_3+2*N3G)+z+N3G]);
+			}
+			//k=2;
+			for (z = z1; z <z2; z++){
+				send[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] += factor*0.5*(
+					pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G]);
+				//pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[2*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[2*(ksize)+(icurr+2*REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]);
+				//pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=0.5*(pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]+pv[2*(ksize)+(icurr+2*REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]);
+			}
+		}
+	}
+	else{
+		//k=1
+		/*for (z = z1; z <z2; z++){
+		avg=0.5*(pv[1*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]);
+		pv[1*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]=avg;
+		pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]=avg;
+		avg=0.5*(pv[1*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]+pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]);
+		pv[1*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=avg;
+		pv[1*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=avg;
+		}
+		//k=2
+		for (z = z1; z <z2; z++){
+		avg=0.5*(pv[2*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]);
+		pv[2*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]=avg;
+		pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=avg;
+		avg=0.5*(pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]+pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]);
+		pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr)*(BS_3+2*N3G)+z+N3G]=avg;
+		pv[2*(ksize)+(icurr+REF_1)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+z+N3G]=avg;
+		}*/
+	}
+}
+
+__global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2)
+{
+	int i, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int z22 = z2 + D3;
+	int zcurr = global_id % (z22 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z22 - z1)) / (z22 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = receive[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+		}
+		else if (calc_corr == 2){
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G)prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+		}
+		else if (calc_corr == 3){
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G)prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= (temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]) / factor;
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= (temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]) / factor;
+			}
+		}
+		else if (calc_corr == 5){
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += receive[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp2[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = factor*prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) temp2[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = factor*prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp2[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += factor*prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) temp2[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += factor*prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = (receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = (receive[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+		}
+		else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+		}
+		else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+		}
+		else if (calc_corr == 5 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (i = i1; i < i2; i++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += (receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+			for (i = i1; i < i2; i++){
+				if (jcurr >= j1 + N2G + d1*D2 && jcurr<j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr<z2 + N3G) temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += (receive[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+		}
+	}
+}
+
+
+__global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2)
+{
+	int j, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int z22 = z2 + D3;
+	int zcurr = global_id % (z22 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z22 - z1)) / (z22 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = receive[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+		}
+		else if (calc_corr == 2){
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+		}
+		else if (calc_corr == 3){
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= (temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]) / factor;
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G) prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= (temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]) / factor;
+			}
+		}
+		else if (calc_corr == 4){
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G && zcurr<z2 + N3G && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				if (zcurr >= z1 + N3G && zcurr<z2 + N3G && icurr >= i1 + N1G && icurr<i2 + N1G) prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.;//0.5*(prim[3*(ksize)+icurr*isize+(j+N2G)*(BS_3+2*N3G)+zcurr] - receive[1*isize2*zsize2*(j2-j1) + (j - j1)*isize2*zsize2 + (icurr-i1-N1G)*zsize2+(zcurr-z1-N3G)] / factor);
+			}
+		}
+		else if (calc_corr == 5){
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += receive[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
+			}
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) temp2[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = factor*prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  temp2[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = factor*prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) temp2[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += factor*prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  temp2[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += factor*prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			}
+		}
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = (receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = (receive[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+		}
+		else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+		}
+		else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+			}
+		}
+		else if (calc_corr == 5 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (j = j1; j <j2; j++){
+				if (zcurr >= z1 + N3G + e1*D3 && zcurr<z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += (receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+			for (j = j1; j <j2; j++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr<z2 + N3G)  temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += (receive[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
+			}
+		}
+	}
+}
+
+__global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2)
+{
+	int z, k;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int j22 = j2 + 1;
+	int jcurr = global_id % (j22 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j22 - j1)) / (j22 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = receive[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
+			}
+		}
+		else if (calc_corr == 2){
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+			}
+		}
+		else if (calc_corr == 3){
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= (temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]) / factor;
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= (temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]) / factor;
+			}
+		}
+		else if (calc_corr == 5){
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += receive[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
+			}
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) temp2[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = factor*prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp2[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = factor*prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			}
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) temp2[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += factor*prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp2[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += factor*prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			}
+		}
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = (receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = (receive[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
+			}
+		}
+		else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+			}
+		}
+		else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+			}
+		}
+		else if (calc_corr == 5 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //add correction to fluxes before applying fluxes to conserved quantities
+			for (z = z1; z <z2; z++){
+				if (jcurr >= j1 + N2G + e1*D2 && jcurr<j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr<i2 + N1G) temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += (receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
+			}
+			for (z = z1; z <z2; z++){
+				if (icurr >= i1 + N1G + d1*D1 && icurr<i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr<j2 + N2G) temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += (receive[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
+			}
+		}
+	}
+}
+
+__global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+	int global_id = get_global_id(0);
+	int icurr = global_id + i1 + N1G;
+	int jcurr = j + N2G;
+	int zcurr = z + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	if (first_timestep == 1) send[global_id] = factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+	else send[global_id] += factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+}
+
+__global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+	int global_id = get_global_id(0);
+	int icurr = i + N1G;
+	int jcurr = global_id + j1 + N2G;
+	int zcurr = z + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	if (first_timestep == 1) send[global_id] = factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+	else send[global_id] += factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+}
+
+__global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+	int global_id = get_global_id(0);
+	int icurr = i + N1G;
+	int jcurr = j + N2G;
+	int zcurr = global_id + z1 + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	if (first_timestep == 1) send[global_id] = factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+	else send[global_id] += factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+}
+
+__global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+	int global_id = get_global_id(0);
+	int icurr = global_id*(1 + REF_1) + i1 + N1G;
+	int jcurr = j + N2G;
+	int zcurr = z + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	if (first_timestep == 1) send[global_id] = 0.5*factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+	else send[global_id] += 0.5*factor*(pv[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[1 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+	//double avg=0.5*(pv[1*(ksize)+(icurr)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[1*(ksize)+(icurr+REF_1)*isize+jcurr*(BS_3+2*N3G)+zcurr]);
+	//pv[1*(ksize)+(icurr)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
+	//pv[1*(ksize)+(icurr+REF_1)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
+}
+
+__global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+	int global_id = get_global_id(0);
+	int icurr = i + N1G;
+	int jcurr = global_id*(1 + REF_2) + j1 + N2G;
+	int zcurr = z + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	if (first_timestep == 1) send[global_id] = 0.5*factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr]);
+	else send[global_id] += 0.5*factor*(pv[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr]);
+	//double avg=0.5*(pv[2*(ksize)+(icurr)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]);
+	//pv[2*(ksize)+(icurr)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
+	//pv[2*(ksize)+(icurr)*isize+(jcurr+REF_2)*(BS_3+2*N3G)+zcurr]=avg;
+}
+
+__global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, double factor, int first_timestep){
+	int global_id = get_global_id(0);
+	int icurr = i + N1G;
+	int jcurr = j + N2G;
+	int zcurr = global_id*(1 + REF_3) + z1 + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	if (first_timestep == 1) send[global_id] = 0.5*factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)]);
+	else send[global_id] += 0.5*factor*(pv[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[3 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + REF_3)]);
+	//double avg=0.5*(pv[3*(ksize)+(icurr)*isize+jcurr*(BS_3+2*N3G)+zcurr]+pv[3*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+(zcurr+REF_3)]);
+	//pv[3*(ksize)+(icurr)*isize+jcurr*(BS_3+2*N3G)+zcurr]=avg;
+	//pv[3*(ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G)+(zcurr+REF_3)]=avg;
+}
+
+__global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor){
+	int global_id = get_global_id(0);
+	int icurr = global_id + i1 + N1G;
+	int jcurr = j + N2G;
+	int zcurr = z + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			temp1[global_id] = receive[global_id] - prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+		}
+		else if (calc_corr == 2){
+			prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor;
+		}
+		else if (calc_corr == 3){
+			prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= (temp1[global_id]) / factor;
+		}
+		else if (calc_corr == 5){
+			temp1[global_id] += receive[global_id] - prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			temp2[global_id] = factor*prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			temp2[global_id] += factor*prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			temp1[global_id] = (receive[global_id] - temp2[global_id]);
+		}
+		else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor; //times dt_old/dt_new to add in future code
+		}
+		else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[global_id] / factor; //times dt_old/dt_new to add in future code
+		}
+		else if (calc_corr == 5 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //add correction to fluxes before applying fluxes to conserved quantities
+			temp1[global_id] += (receive[global_id] - temp2[global_id]);
+		}
+	}
+}
+
+__global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor){
+	int global_id = get_global_id(0);
+	int icurr = i + N1G;
+	int jcurr = global_id + j1 + N2G;
+	int zcurr = z + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			temp1[global_id] = receive[global_id] - prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+		}
+		else if (calc_corr == 2){
+			prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor;
+		}
+		else if (calc_corr == 3){
+			prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= (temp1[global_id]) / factor;
+		}
+		else if (calc_corr == 5){
+			temp1[global_id] += receive[global_id] - prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			temp2[global_id] = factor*prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			temp2[global_id] += factor*prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			temp1[global_id] = (receive[global_id] - temp2[global_id]);
+		}
+		else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor; //times dt_old/dt_new to add in future code
+		}
+		else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[global_id] / factor; //times dt_old/dt_new to add in future code
+		}
+		else if (calc_corr == 5 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //add correction to fluxes before applying fluxes to conserved quantities
+			temp1[global_id] += (receive[global_id] - temp2[global_id]);
+		}
+	}
+}
+
+__global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, __global FTYPE2 * restrict prim, __global FTYPE2 * restrict receive, __global FTYPE2 * restrict temp1, __global FTYPE2 * restrict temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor){
+	int global_id = get_global_id(0);
+	int icurr = i + N1G;
+	int jcurr = j + N2G;
+	int zcurr = global_id + z1 + N3G;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	if (timelevel_rec <= timelevel){
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			temp1[global_id] = receive[global_id] - prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+		}
+		else if (calc_corr == 2){
+			prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor;
+		}
+		else if (calc_corr == 3){
+			prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= (temp1[global_id]) / factor;
+		}
+		else if (calc_corr == 5){
+			temp1[global_id] += receive[global_id] - prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
+		}
+	}
+	else{
+		if ((calc_corr == 1 || calc_corr == 5) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel - 1){ //store used flux in present timestep to calculate later correction
+			temp2[global_id] = factor*prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		else if ((calc_corr == 1 || calc_corr == 5)){
+			temp2[global_id] += factor*prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+		}
+		if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
+			temp1[global_id] = (receive[global_id] - temp2[global_id]);
+		}
+		else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor; //times dt_old/dt_new to add in future code
+		}
+		else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * NT * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[global_id] / factor; //times dt_old/dt_new to add in future code
+		}
+		else if (calc_corr == 5 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //add correction to fluxes before applying fluxes to conserved quantities
+			temp1[global_id] += (receive[global_id] - temp2[global_id]);
+		}
+	}
+}
+
+__global__ void packsendB1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send)
+{
+	int i;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (i = i1; i <i2; i++){
+		send[(i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+	}
+}
+
+__global__ void packsendB2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send)
+{
+	int j;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (j = j1; j <j2; j++){
+		send[(j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = pv[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+	}
+}
+
+__global__ void packsendB3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send)
+{
+	int z;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (z = z1; z <z2; z++){
+		send[(z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+	}
+}
+
+__global__ void packsendBaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int i;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (i = i1; i <i2; i++){
+		send[(i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*(
+			pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0))) +
+			pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0))) +
+			pv[0 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE1, 0))) +
+			pv[0 * (ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G, FACE1, 0))));
+	}
+}
+
+__global__ void packsendBaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int j;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
+	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (j = j1; j <j2; j++){
+		send[(j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*(
+			pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0))) +
+			pv[1 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0))) +
+			pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE2, 0))) +
+			pv[1 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE2, 0))));
+	}
+}
+
+__global__ void packsendBaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict send, __read_only image3d_t gdet_GPU)
+{
+	int z;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
+	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	for (z = z1; z <z2; z++){
+		send[(z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.25*(
+			pv[2 * (ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0))) +
+			pv[2 * (ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr, FACE3, 0))) +
+			pv[2 * (ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
+			pv[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
+	}
+}
+
+__global__ void unpackreceiveB1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, int div, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive, __read_only image3d_t gdet_GPU)
+{
+	int i;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double factor = 1.;
+	for (i = i1; i <i2; i++){
+		if (div == 1) factor = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE1, 0)));
+		pv[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+	}
+}
+
+__global__ void unpackreceiveB2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, int div, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive, __read_only image3d_t gdet_GPU, int neg)
+{
+	int j;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (z2 - z1) + z1 + N3G;
+	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double factor = 1.;
+
+	for (j = j1; j <j2; j++){
+		if (div == 1) factor = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
+		if (neg == 1) factor = -1.;
+		if (div == 1 && neg == 1) factor = -readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE2, 0)));
+		pv[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+	}
+}
+
+__global__ void unpackreceiveB3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, int div, __global FTYPE2 * restrict pv, __global FTYPE2 * restrict receive, __read_only image3d_t gdet_GPU)
+{
+	int z;
+	int global_id = get_global_id(0);
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int jcurr = global_id % (j2 - j1) + j1 + N2G;
+	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	double factor = 1.;
+
+	for (z = z1; z <z2; z++){
+		if (div == 1) factor = readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
+		pv[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+	}
+}
+
+void GPU_step_ch()
+{
+#if (OpenCL_enable==1)
+	double ndt, inmsg;
+	int i, j, z, k, n, uu;
+
+	if (rank == 0){
+		//fprintf(stderr, "h");
+	}
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_PRESTEP] = 0;
+	}
+	for (uu = 0; uu < 2 * AMR_MAXTIMELEVEL; uu++){
+		set_prestep();
+		ndt = advance_GPU();   /* time step primitive variables to the half step */
+		for (n = 0; n < n_active; n++){
+			if (prestep_full[n_ord[n]] == 1)  GPU_fixup(1, n_ord[n]);
+			else if (prestep_half[n_ord[n]] == 1) GPU_fixup(0, n_ord[n]);
+		}
+
+		/*Use interpolation to fix remaining failure points*/
+		/*#pragma omp for schedule(static, 1)
+		for (n = 0; n < n_active; n++){
+		clEnqueueReadBuffer(commandQueueGPU[n_ord[n]], Bufferpflag[n_ord[n]], CL_TRUE, 0, sizeof(cl_int), pflag_GPU[n_ord[n]], 0, NULL, NULL);
+		if (fabs(pflag_GPU[n_ord[n]][0]) >1){
+		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		//z = (pflag_GPU[n_ord[n]][0] % ((N2_GPU[n_ord[n]])*(N3_GPU[n_ord[n]]))) % (N3_GPU[n_ord[n]]) + N3_GPU_offset[n_ord[n]];
+		//j = ((pflag_GPU[n_ord[n]][0] - z) % ((N2_GPU[n_ord[n]])*(N3_GPU[n_ord[n]]))) / (N3_GPU[n_ord[n]]) + N2_GPU_offset[n_ord[n]];
+		//i = (pflag_GPU[n_ord[n]][0] - (j*(N3_GPU[n_ord[n]]) + z)) / ((N2_GPU[n_ord[n]])*(N3_GPU[n_ord[n]])) + N1_GPU_offset[n_ord[n]];
+		//printf("Pflag errorh (n,i,j,z):(%d, %d, %d, %d)\n", n_ord[n], i, j, z);
+		//if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)GPU_fixuputoprim(1,n_ord[n]);
+		//else GPU_fixuputoprim(1, n_ord[n]);
+		clEnqueueWriteBuffer(commandQueueGPU[n_ord[n]], Bufferpflag[n_ord[n]], CL_TRUE, 0, sizeof(cl_int), pflag_GPU[n_ord[n]], 0, NULL, NULL);
+		}
+		}
+		}*/
+
+		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+
+		nstep++;
+#if(PRESTEP)
+		for (n = 0; n < n_active; n++){
+			if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && (block[n_ord[n]][AMR_PRESTEP] != 0))block[n_ord[n]][AMR_PRESTEP] = 0;
+			else if (block[n_ord[n]][AMR_PRESTEP] == 1)block[n_ord[n]][AMR_PRESTEP] = 2;
+		}
+#endif
+	}
+
+	/* Repeat and rinse for the full time (aka corrector) step:  */
+	if (rank == 0){
+		//fprintf(stderr, "f");
+	}
+
+	/* Determine next time increment based on current characteristic speeds: */
+	if (dt < 1.e-9) {
+		fprintf(stderr, "timestep too small\n");
+		exit(11);
+	}
+
+	/* increment time */
+	t += (double)(AMR_MAXTIMELEVEL)*dt;
+
+	/* set next timestep */
+	if (ndt > SAFE*dt) ndt = SAFE*dt;
+	dt = ndt;
+
+	/*Calculate smallest timestep for all MPI threads*/
+
+#if (MPI_enable)
+	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+#endif
+
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+
+#if(TIMESTEP_JET)
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
+#endif
+
+	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
+#endif
+}
+
+void set_prestep(void){
+	int n;
+
+#if(PRESTEP)
+	int timelevel_min = AMR_MAXTIMELEVEL;
+	int blocks_per_timestep = 0;
+	int blocks_this_timestep = 0;
+
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_NSTEP] = nstep;
+	}
+	//Find the minimum timelevel on this node
+	for (n = 0; n < n_active; n++){
+		if (block[n_ord[n]][AMR_TIMELEVEL] < timelevel_min) timelevel_min = block[n_ord[n]][AMR_TIMELEVEL];
+	}
+
+	//Calculate the number of blocks you want to evolve simultaneously
+	blocks_per_timestep = (count_node[0] - count_node[0] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
+	for (n = 0; n < n_active; n++){
+		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
+	}
+
+	//If you don't have sufficient blocks this timestep preevolve some blocks if available
+	if ((nstep % timelevel_min) == timelevel_min - 1){
+		for (n = 0; n < n_active; n++){
+			if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
+				block[n_ord[n]][AMR_PRESTEP] = 1;
+				block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
+				blocks_this_timestep++;
+			}
+		}
+	}
+
+#if(N_GPU>1)
+	for (gpu = 0; gpu < N_GPU; gpu++){
+		timelevel_min = AMR_MAXTIMELEVEL;
+		blocks_per_timestep = 0;
+		blocks_this_timestep = 0;
+		//Find the minimum timelevel on this gpu
+		for (n = 0; n < n_active_gpu[gpu]; n++){
+			if (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] < timelevel_min) timelevel_min = block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL];
+		}
+
+		//Calculate the number of blocks you want to evolve simultaneously
+		blocks_per_timestep = (count_gpu[gpu] - count_gpu[gpu] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
+		for (n = 0; n < n_active_gpu[gpu]; n++){
+			if (nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) == block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1 || block[n_ord[n]][AMR_PRESTEP] == 1 || block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
+		}
+
+		//If you don't have sufficient blocks this timestep preevolve some blocks if available
+		if ((nstep % timelevel_min) == timelevel_min - 1){
+			for (n = 0; n < n_active_gpu[gpu]; n++){
+				if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) != block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1
+					&& (block[n_ord_gpu[gpu][n]][AMR_PRESTEP] == 0) && (block[n_ord_gpu[gpu][n]][AMR_POLE] == 0)){
+					block[n_ord_gpu[gpu][n]][AMR_PRESTEP] = 1;
+					block[n_ord_gpu[gpu][n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) - (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1));
+					blocks_this_timestep++;
+				}
+			}
+		}
+	}
+#endif
+	//If at end of switchtimelevel do not pre-evolve
+	for (n = 0; n < n_active; n++){
+		if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){
+			block[n_ord[n]][AMR_PRESTEP] = 0;
+			block[n_ord[n]][AMR_NSTEP] = nstep;
+		}
+	}
+#else
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_PRESTEP] = 0;
+		block[n_ord[n]][AMR_NSTEP] = nstep;
+	}
+#endif
+}
+
+double advance_GPU(void)
+{
+#if (OpenCL_enable==1)
+	int i, n;
+	gpu = 1;
+
+
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 0){
+		ndt1 = ndt2 = ndt3 = 1e9;
+		for (n = 0; n < n_active; n++){
+			bdt[n_ord[n]][0] = bdt[n_ord[n]][1] = bdt[n_ord[n]][2] = bdt[n_ord[n]][3] = 1e9;
+		}
+	}
+	for (n = 0; n < n_active; n++){
+		prestep_half[n_ord[n]] = (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
+			|| (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) < block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
+		prestep_full[n_ord[n]] = (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
+			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
+	}
+
+#if(N1G>0)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
+	}
+
+	read_time_GPU();
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][1] = fluxcalc_GPU(n_ord[n]);
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt1 = 1e9;
+		for (n = 0; n < n_active; n++){
+			if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+			}
+			else{
+				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+
+#else
+	ndt1 = 1e9;
+#endif
+#if(N2G>0)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
+	}
+
+	read_time_GPU();
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][2] = fluxcalc_GPU(n_ord[n]);
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt2 = 1e9;
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+			}
+			else{
+				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+
+#else
+	ndt2 = 1e9;
+#endif
+#if(N3G>0)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
+	}
+
+	read_time_GPU();
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][3] = fluxcalc_GPU(n_ord[n]);
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt3 = 1e9;
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+			}
+			else{
+				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+#else
+	ndt3 = 1e9;
+#endif
+
+	gpu = 1;
+	rc = 0;
+#if(1)
+	//MPI communication
+	/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+	if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+	break;
+	}
+	}*/
+
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
+		flux_send1(F1, BufferF1_1, n_ord[n]);
+		flux_send2(F2, BufferF2_1, n_ord[n]);
+#if(N3G>0)
+		flux_send3(F3, BufferF3_1, n_ord[n]);
+#endif
+	}
+
+#if(PRESTEP)
+	//For last timestep synchronize electric fields immediately
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		flux_rec1(F1, BufferF1_1, n_ord[n], 5);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 5);
+#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 5);
+#endif
+	}
+
+	//For first timestep do not synchronize electrice fields 
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
+		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
+#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
+#endif
+	}
+#else
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+#endif
+	}
+
+	//For first timestep do not synchronize electrice fields
+	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
+		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
+#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
+#endif
+	}
+#endif
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
+#endif
+#if(!TRANS_BOUND)
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1 || prestep_half[n_ord[n]] == 1) GPU_fix_flux(n_ord[n]);
+#endif
+#if(STAGGERED)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport1(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+	//MPI_Barrier(mpi_cartcomm);
+	rc = 0;
+	GPU_consttransport_bound();
+	//MPI communication
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
+#endif
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+
+#else
+	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct1(n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);
+#endif
+	double timestep;
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
+		else if (prestep_half[n_ord[n]] == 1)timestep = 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
+
+		clSetKernelArg(kernel_fixup[n_ord[n]], 23, sizeof(FTYPE2), &timestep);
+
+		if (prestep_full[n_ord[n]] == 1)clSetKernelArg(kernel_fixup[n_ord[n]], 6, sizeof(cl_mem), (void *)&Bufferps_1[n_ord[n]]);
+		else if (prestep_half[n_ord[n]] == 1) clSetKernelArg(kernel_fixup[n_ord[n]], 6, sizeof(cl_mem), (void *)&Bufferpsh_1[n_ord[n]]);
+	}
+
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_Utoprim(1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_Utoprim(0, n_ord[n]);
+	}
+
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt = 1e9;
+		for (n = 0; n < n_active; n++){
+			bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+			}
+			else{
+				ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+
+	//ndt = defcon * 1. / (1. / ndt1 + 1. / ndt2 + 1. / ndt3);
+	return defcon * ndt;
+#endif
+	return 0.;
+}
+
+/**/
+void read_time_GPU(void){
+#if (OpenCL_enable==1)
+	int n;
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1){
+			clEnqueueReadBuffer(commandQueueGPU[n_ord[n]], Bufferdtij[n_ord[n]], CL_FALSE, (int)0 * sizeof(FTYPE2), nr_workgroups[n_ord[n]] * sizeof(FTYPE2), dtij_GPU[n_ord[n]], 0, NULL, NULL);
+			clFlush(commandQueueGPU[n_ord[n]]);
+		}
+	}
+#endif
+}
+
+double fluxcalc_GPU(int n)
+{
+#if (OpenCL_enable==1)
+	double ndt;
+	int y;
+	ndt = 1.e9;
+	//status=clEnqueueReadBuffer(commandQueueGPU[n], Bufferdtij[n], CL_TRUE, (int)0 * sizeof(FTYPE2), nr_workgroups[n] * sizeof(FTYPE2), dtij_GPU[n], 0, NULL, NULL);
+	clFinish(commandQueueGPU[n]);
+
+	for (y = 0; y < nr_workgroups[n]; y++){
+		if (dtij_GPU[n][y] < ndt && dtij_GPU[n][y] < 1.e9){
+			ndt = dtij_GPU[n][y];
+		}
+	}
+
+	return(ndt);
+#endif
+	return 0.;
+}
+
+void GPU_init(void)
+{
+	int c;
+
+	/*Getting platforms and choose an available one*/
+	platform = NULL;	//the chosen platform
+	cl_platform_id* platforms;
+
+	status = clGetPlatformIDs(0, NULL, &numPlatforms);
+	if (status != CL_SUCCESS){
+		fprintf(stderr, "\nError: Getting platforms! \n");
+	}
+
+	if (rank == 0) printf("numplatforms : %d \n", numPlatforms);
+
+	/*For clarity, choose the first available platform. We use the AMD OpenCL SDK*/
+	if (numPlatforms > 0){
+		platforms = (cl_platform_id*)malloc(numPlatforms* sizeof(cl_platform_id));
+		clGetPlatformIDs(numPlatforms, platforms, &status);
+		platform = platforms[0];
+	}
+
+	/*Query the platform and choose the first GPU device if has one. Otherwise use the CPU as device*/
+	numDevices = 0;
+#if(!Intel_CL)
+	for (c = 0; c < numPlatforms; c++){
+		status = clGetDeviceIDs(platforms[c], CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
+		if (numDevices >= 1) break;
+	}
+#else
+	for (c = 0; c < numPlatforms; c++){
+		status = clGetDeviceIDs(&(platforms[c]), CL_DEVICE_TYPE_CPU, 0, NULL, &numDevices);
+		if (numDevices >= 1) break;
+	}
+#endif
+
+	if (numDevices == 0){ //no GPU available.
+		fprintf(stderr, "No GPU device available.");
+		fprintf(stderr, "Choosing CPU as default device.\n");
+		clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 0, NULL, &numDevices);
+		devices = (cl_device_id*)malloc(numDevices * sizeof(cl_device_id));
+		clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, numDevices, devices, NULL);
+	}
+	else{
+		status = clGetDeviceIDs(platforms[c], CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
+		devices = (cl_device_id*)malloc(numDevices * sizeof(cl_device_id));
+		status = clGetDeviceIDs(platforms[c], CL_DEVICE_TYPE_GPU, numDevices, devices, NULL);
+	}
+
+	/*Check that number of devices per node is put in correctly*/
+	if (numDevices != N_GPU && rank == 0){
+		printf("Number of devices per node incorrect! %d %d \n", numDevices, status);
+	}
+
+	/*Create context*/
+	context[0] = clCreateContext(NULL, numDevices, &devices[0], NULL, NULL, &status);
+	if (status != 0) printf("Error context: %d \n", status);
+
+	/*Get size of kernel source*/
+	programHandle = fopen("GPU_program1.cl", "r");
+	fseek(programHandle, 0, SEEK_END);
+	programSize = ftell(programHandle);
+	rewind(programHandle);
+
+	/*Read kernel source into buffer*/
+	programBuffer = (char*)malloc(programSize + 1);
+	programBuffer[programSize] = '\0';
+	fread(programBuffer, sizeof(char), programSize, programHandle);
+	fclose(programHandle);
+	while (programBuffer[programSize - 1] != '}'){
+		programSize--;
+	}
+
+	GPU_program[0] = clCreateProgramWithSource(context[0], 1, (const char**)&programBuffer, &programSize, NULL);
+	//free(programBuffer);
+
+	/*Get size of kernel source*/
+	programHandle = fopen("GPU_program2.cl", "r");
+	fseek(programHandle, 0, SEEK_END);
+	programSize = ftell(programHandle);
+	rewind(programHandle);
+
+	/*Read kernel source into buffer*/
+	programBuffer = (char*)malloc(programSize + 1);
+	programBuffer[programSize] = '\0';
+	fread(programBuffer, sizeof(char), programSize, programHandle);
+	fclose(programHandle);
+	while (programBuffer[programSize - 1] != '}'){
+		programSize--;
+	}
+	GPU_program[1] = clCreateProgramWithSource(context[0], 1, (const char**)&programBuffer, &programSize, NULL);
+	//free(programBuffer);
+
+	/*Build program*/
+	status = clBuildProgram(GPU_program[0], numDevices, &devices[0], NULL, NULL, NULL);
+	if (status != 0) printf("Error program 1: %d \n", status);
+
+	status = clBuildProgram(GPU_program[1], numDevices, &devices[0], NULL, NULL, NULL);
+	if (status != 0) printf("Error program 2: %d \n", status);
+	int i, j;
+	for (i = 0; i < numDevices; i++){
+		for (j = 0; j < NQ; j++){
+			commandQueue[i*NQ + j] = clCreateCommandQueue(context[0], devices[i], 0, &status);
+		}
+	}
+}
+
+void set_arrays_GPU(int n){
+#if (OpenCL_enable==1)
+	int i, j, z;
+	cl_int freeze_GPU;
+	cl_int N1_tot, N2_tot, N3_tot;
+
+	/*N1 and N2 values to be exported to GPU memory*/
+	int offset = 0;
+
+	/*Set the global work size and make sure that it is a multiple of the group size. The Nvidia OpenCL framework crashes otherwise!*/
+	fix_mem[n] = LOCAL_WORK_SIZE - ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) % LOCAL_WORK_SIZE;
+	fix_mem2[n] = LOCAL_WORK_SIZE - ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) % LOCAL_WORK_SIZE;
+	global_work_offset[n][0] = ibound*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G); //alert
+	global_work_size_special[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) + (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) +
+		(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G);
+	global_work_size_special1[n][0] = (LOCAL_WORK_SIZE - ((N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * NG) % LOCAL_WORK_SIZE) + (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * NG;
+	global_work_size_special2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * NG) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * NG;
+	global_work_size_special3[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G) * NG) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G) * NG;
+
+	local_work_size[0] = LOCAL_WORK_SIZE;
+	global_work_size1[n][0] = (LOCAL_WORK_SIZE - (N1_GPU[n] * N2_GPU[n] * N3_GPU[n]) % LOCAL_WORK_SIZE) + (N1_GPU[n] * N2_GPU[n] * N3_GPU[n]); //utoprim
+	global_work_size2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3); //fluxcalc
+	global_work_size3[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3); //flux_ct
+	nr_workgroups[n] = (int)ceil((double)global_work_size2[n][0] / (double)LOCAL_WORK_SIZE) + 1;
+
+	/*Allocate memory to 1D arrays*/
+	p_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
+	dq_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2)); //array to store temporary data
+#if(STAGGERED)
+	ps_1[n] = (FTYPE2(*))calloc(NDIM * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
+	psh_1[n] = (FTYPE2(*))calloc(NDIM * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
+#endif
+	//#if(GPU_DEBUG)
+	ph_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
+	//#endif
+	dU_GPU[n] = (FTYPE2(*))calloc(NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)), sizeof(FTYPE2));
+	pbound_1[n] = (FTYPE2(*))calloc(N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n]), sizeof(FTYPE2));
+#if(!NONSYMMETRIC)
+	gcov_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
+	gcon_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
+	conn_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NDIM*NDIM*NDIM, sizeof(FTYPE2));
+	gdet_GPU[n] = (FTYPE2(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG, sizeof(FTYPE2));
+#else
+	gcov_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
+	gcon_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG*NDIM*NDIM, sizeof(FTYPE2));
+	conn_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NDIM*NDIM*NDIM, sizeof(FTYPE2));
+	gdet_GPU[n] = (FTYPE2(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG, sizeof(FTYPE2));
+#endif
+	pflag_GPU[n] = (cl_int(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(cl_int));
+	failimage_GPU[n] = (cl_int(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL, sizeof(cl_int));
+	Katm_GPU[n] = (FTYPE2(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(FTYPE2));
+
+	N1_tot = N1;
+	N2_tot = N2;
+	N3_tot = N3;
+
+	if (boundfreeze1 == 1 || boundfreeze2 == 1){
+		freeze_GPU = N_POINTS;
+	}
+	else{
+		freeze_GPU = 0; //alert
+	}
+
+	/*Creating command queue associate with the context*/
+	commandQueueGPU[n] = commandQueue[0]; //clCreateCommandQueue(context[0], devices[0], 0, &status);
+
+	/*Allocate memory to buffers on GPU*/
+	BufferF1_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	BufferF2_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	BufferF3_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferdq_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	BufferE_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+#if(LEER)
+	BufferV[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferradius[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferstorage1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferstorage2[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferstorage3[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferstorage4[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	//Buffereta_avg[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferp_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferph_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+#if(STAGGERED)
+	Bufferps_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferpsh_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferpbound_1[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(FTYPE2), NULL, NULL);
+	Bufferdtij[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) / LOCAL_WORK_SIZE*sizeof(FTYPE2), NULL, NULL);
+	Bufferpflag[n] = clCreateBuffer(context[0], CL_MEM_READ_WRITE, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), NULL, NULL);
+	Bufferfailimage[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(cl_int), NULL, NULL);
+	Bufferdiagflux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY, 3 * MY_MAX((N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G))*sizeof(FTYPE2), NULL, NULL);
+	BufferKatm[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferdU[n] = clCreateBuffer(context[0], CL_MEM_READ_ONLY, NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))*sizeof(FTYPE2), NULL, NULL);
+	dtij_GPU[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferdtij[n], CL_FALSE, CL_MAP_READ, 0, nr_workgroups[n] * sizeof(FTYPE2), 0, NULL, NULL, &status);
+	Buffersend1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Buffersend1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Buffersend2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Buffersend2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Buffersend3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Buffersend3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Buffersend4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Buffersend4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+
+#if(N3G>0)
+	Buffersend5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Buffersend5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Buffersend6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Buffersend6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	Bufferrec1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Bufferrec1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Bufferrec2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Bufferrec3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Bufferrec4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N3G>0)
+	Bufferrec5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Bufferrec5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	Bufferrec6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	tempBufferrec1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	tempBufferrec1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec1_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec1_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	tempBufferrec2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	tempBufferrec2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec2_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec2_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	tempBufferrec3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	tempBufferrec3_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec3_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	tempBufferrec4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	tempBufferrec4_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec4_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N3G>0)
+	tempBufferrec5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	tempBufferrec5_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec5_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec5_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec5_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	tempBufferrec6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+	tempBufferrec6_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec6_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec6_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrec6_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	Buffersend1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Buffersend5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	Bufferrec1_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8flux[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	Bufferrec1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	Bufferrec1_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8flux1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec1_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8flux2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	Buffersend1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Buffersend5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	Bufferrec1_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8fine[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	Buffersend1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Buffersend5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Buffersend6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	Bufferrec1_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8E[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+	Bufferrec1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	Bufferrec1_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8E1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	Bufferrec1_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec1_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_2E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec2_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_2E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec3_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec4_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	Bufferrec5_1E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_3E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_5E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec5_7E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_2E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_4E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_6E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	Bufferrec6_8E2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#endif
+#if(N3G>0)
+	BuffersendE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE1corn12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE2corn5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	BuffersendE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BuffersendE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	BufferrecE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	BufferrecE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+#if(N3G>0)
+	BufferrecE1corn9_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn9_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn10_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn10_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn11_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn11_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn12_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn12_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn5_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn5_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn6_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn6_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn7_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn7_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn8_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn8_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	BufferrecE3corn1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+#if(N3G>0)
+	tempBufferrecE1corn9[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn10[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn11[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	tempBufferrecE3corn1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N_LEVELS>1)
+#if(N3G>0)
+	tempBufferrecE1corn9_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn9_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn10_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn10_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn11_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn11_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn12_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE1corn12_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn5_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn5_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn6_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn6_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn7_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn7_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn8_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE2corn8_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	tempBufferrecE3corn1_3[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn1_4[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn2_1[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn2_2[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn3_5[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn3_6[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn4_7[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	tempBufferrecE3corn4_8[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#if(N3G>0)
+	BufferrecE1corn9_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn9_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn10_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn10_52[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn11_22[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn11_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn12_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE1corn12_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn5_22[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn5_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn6_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn6_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn7_52[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn7_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn8_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE2corn8_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+	BufferrecE3corn1_32[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn1_42[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn2_12[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn2_22[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn3_52[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn3_62[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn4_72[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+	BufferrecE3corn4_82[n] = clCreateBuffer(context[0], CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), NULL, NULL);
+#endif
+
+#if PINNED
+	send1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	send1_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send1_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send1_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_7[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send1_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1_8[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	send2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	send2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send2_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send2_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2_4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	send3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	send3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send3_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send3_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3_6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	send4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	send4_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send4_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send4_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_7[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send4_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4_8[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif	
+#if(N3G>0)
+	send5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	send5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_1[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send5_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_3[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send5_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_5[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send5_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5_7[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	send6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	send6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_2[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send6_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_4[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send6_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_6[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send6_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6_8[n], CL_FALSE, CL_MAP_READ, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif	
+#endif
+	receive1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	receive1_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	receive2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	receive3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	receive4_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif	
+#if(N3G>0)
+	receive5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	receive5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	receive6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+	tempreceive1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	tempreceive1_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive1_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive1_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive1_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec1_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif	
+	tempreceive2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	tempreceive2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive2_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive2_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec2_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	tempreceive3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	tempreceive3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive3_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive3_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec3_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	tempreceive4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	tempreceive4_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive4_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive4_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive4_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec4_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif	
+#if(N3G>0)
+	tempreceive5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	tempreceive5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_1[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive5_3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_3[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive5_5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_5[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive5_7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec5_7[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	tempreceive6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+	tempreceive6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_2[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive6_4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_4[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive6_6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_6[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive6_8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrec6_8[n], CL_FALSE, CL_MAP_WRITE, 0, NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+	send1_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send2_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send3_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send4_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	send5_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send6_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6flux[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	receive1_3flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8flux[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+	receive1_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6flux[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	receive1_3flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8flux1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8flux1[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_3flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8flux2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8flux2[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+	send1_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send2_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send3_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send4_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	send5_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send6_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6fine[n], CL_FALSE, CL_MAP_READ, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	receive1_3fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8fine[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8fine[n], CL_FALSE, CL_MAP_WRITE, 0, NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+	send1_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend1E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send2_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend2E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send3_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend3E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send4_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend4E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	send5_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend5E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send6_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Buffersend6E[n], CL_FALSE, CL_MAP_READ, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#if(N_LEVELS>1)
+	receive1_3E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8E[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8E[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_3E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8E1[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8E1[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive1_3E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_3E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_4E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_4E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_7E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_7E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive1_8E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec1_8E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_1E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_1E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_2E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_2E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_3E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_3E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive2_4E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec2_4E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_1E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_1E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_2E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_2E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_5E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_5E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive3_6E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec3_6E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_5E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_5E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_6E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_6E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_7E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_7E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive4_8E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec4_8E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive5_1E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_1E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_3E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_3E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_5E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_5E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive5_7E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec5_7E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_2E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_2E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_4E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_4E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_6E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_6E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive6_8E2[n] = clEnqueueMapBuffer(commandQueueGPU[n], Bufferrec6_8E2[n], CL_FALSE, CL_MAP_WRITE, 0, 2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+#if(N3G>0)
+	send_E1_corn9[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn9[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E1_corn10[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn10[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E1_corn11[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn11[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E1_corn12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE1corn12[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E2_corn5[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn5[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E2_corn6[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn6[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E2_corn7[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn7[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E2_corn8[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE2corn8[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	send_E3_corn1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn1[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E3_corn2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn2[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E3_corn3[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn3[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	send_E3_corn4[n] = clEnqueueMapBuffer(commandQueueGPU[n], BuffersendE3corn4[n], CL_FALSE, CL_MAP_READ, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive_E1_corn9[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn10[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn11[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn5[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn6[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn7[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn8[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive_E3_corn1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn3[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn4[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+#if(N3G>0)
+	receive_E1_corn9_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn9_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn10_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn10_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn11_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn11_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn12_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn12_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn5_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn6_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn7_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn7_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn8_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn8_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive_E3_corn1_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn1_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn4_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn4_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif	
+#if(N3G>0)
+	tempreceive_E1_corn9[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn9[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn10[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn10[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn11[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn11[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn12[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn5[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn6[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn7[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn8[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	tempreceive_E3_corn1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn3[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn4[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N_LEVELS>1)
+#if(N3G>0)
+	tempreceive_E1_corn9_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn9_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn9_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn9_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn10_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn10_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn10_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn10_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn11_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn11_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn11_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn11_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn12_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn12_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E1_corn12_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE1corn12_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn5_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn5_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn5_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn5_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn6_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn6_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn6_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn6_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn7_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn7_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn7_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn7_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn8_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn8_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E2_corn8_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE2corn8_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	tempreceive_E3_corn1_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn1_3[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn1_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn1_4[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn2_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn2_1[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn2_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn2_2[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn3_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn3_5[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn3_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn3_6[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn4_1[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn4_7[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	tempreceive_E3_corn4_2[n] = clEnqueueMapBuffer(commandQueueGPU[n], tempBufferrecE3corn4_8[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#if(N3G>0)
+	receive_E1_corn9_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_32[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn9_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn9_72[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn10_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn10_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn10_52[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn11_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_22[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn11_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn11_62[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn12_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_42[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E1_corn12_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE1corn12_82[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn5_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_22[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn5_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn5_42[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn6_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn6_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn6_32[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn7_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_52[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn7_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn7_72[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn8_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_62[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E2_corn8_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE2corn8_82[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+	receive_E3_corn1_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_32[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn1_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn1_42[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn2_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_12[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn2_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn2_22[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn3_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_52[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn3_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn3_62[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn4_12[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_72[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+	receive_E3_corn4_22[n] = clEnqueueMapBuffer(commandQueueGPU[n], BufferrecE3corn4_82[n], CL_FALSE, CL_MAP_WRITE, 0, 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2), 0, NULL, NULL, NULL);
+#endif
+#endif
+
+	/*Build kernel*/
+#if H_CORRECTION
+	kernel_hcor1[n] = clCreateKernel(GPU_program[0], "hcor1", NULL);
+	kernel_hcor2[n] = clCreateKernel(GPU_program[0], "hcor2", NULL);
+	kernel_hcor3[n] = clCreateKernel(GPU_program[0], "hcor3", NULL);
+#endif
+	kernel_fluxcalcprep[n] = clCreateKernel(GPU_program[0], "fluxcalcprep", NULL);
+	kernel_fluxcalc2D1[n] = clCreateKernel(GPU_program[0], "fluxcalc2D1", NULL);
+	kernel_fluxcalc2D2[n] = clCreateKernel(GPU_program[0], "fluxcalc2D2", NULL);
+	kernel_flux_ct1[n] = clCreateKernel(GPU_program[0], "flux_ct1", NULL);
+	kernel_flux_ct2[n] = clCreateKernel(GPU_program[0], "flux_ct2", NULL);
+	kernel_consttransport1[n] = clCreateKernel(GPU_program[0], "consttransport1", NULL);
+	kernel_consttransport2[n] = clCreateKernel(GPU_program[0], "consttransport2", NULL);
+	kernel_consttransport3[n] = clCreateKernel(GPU_program[0], "consttransport3", NULL);
+	kernel_fix_flux[n] = clCreateKernel(GPU_program[0], "fix_flux", NULL);
+	kernel_Utoprim[n] = clCreateKernel(GPU_program[0], "Utoprim", NULL);
+	kernel_Utoprim2[n] = clCreateKernel(GPU_program[0], "Utoprim2", NULL);
+	kernel_Utoprim1[n] = clCreateKernel(GPU_program[0], "Utoprim1", NULL);
+	kernel_fixup[n] = clCreateKernel(GPU_program[0], "fixup", NULL);
+	kernel_fixuputoprim[n] = clCreateKernel(GPU_program[0], "fixuputoprim", NULL);
+	kernel_boundprim1[n] = clCreateKernel(GPU_program[0], "boundprim1", NULL);
+	kernel_boundprim2[n] = clCreateKernel(GPU_program[0], "boundprim2", NULL);
+	kernel_packsend1[n] = clCreateKernel(GPU_program[1], "packsend1", NULL);
+	kernel_packsend2[n] = clCreateKernel(GPU_program[1], "packsend2", NULL);
+	kernel_packsend3[n] = clCreateKernel(GPU_program[1], "packsend3", NULL);
+	kernel_packsend1flux[n] = clCreateKernel(GPU_program[1], "packsend1flux", NULL);
+	kernel_packsend2flux[n] = clCreateKernel(GPU_program[1], "packsend2flux", NULL);
+	kernel_packsend3flux[n] = clCreateKernel(GPU_program[1], "packsend3flux", NULL);
+	kernel_unpackreceive1[n] = clCreateKernel(GPU_program[1], "unpackreceive1", NULL);
+	kernel_unpackreceive2[n] = clCreateKernel(GPU_program[1], "unpackreceive2", NULL);
+	kernel_unpackreceive3[n] = clCreateKernel(GPU_program[1], "unpackreceive3", NULL);
+	kernel_unpackreceive1flux[n] = clCreateKernel(GPU_program[1], "unpackreceive1flux", NULL);
+	kernel_unpackreceive2flux[n] = clCreateKernel(GPU_program[1], "unpackreceive2flux", NULL);
+	kernel_unpackreceive3flux[n] = clCreateKernel(GPU_program[1], "unpackreceive3flux", NULL);
+	kernel_packsendaverage1[n] = clCreateKernel(GPU_program[1], "packsendaverage1", NULL);
+	kernel_packsendaverage2[n] = clCreateKernel(GPU_program[1], "packsendaverage2", NULL);
+	kernel_packsendaverage3[n] = clCreateKernel(GPU_program[1], "packsendaverage3", NULL);
+	kernel_unpackreceivecoarse1[n] = clCreateKernel(GPU_program[1], "unpackreceivecoarse1", NULL);
+	kernel_unpackreceivecoarse2[n] = clCreateKernel(GPU_program[1], "unpackreceivecoarse2", NULL);
+	kernel_unpackreceivecoarse3[n] = clCreateKernel(GPU_program[1], "unpackreceivecoarse3", NULL);
+	kernel_packsendfluxaverage1[n] = clCreateKernel(GPU_program[1], "packsendfluxaverage1", NULL);
+	kernel_packsendfluxaverage2[n] = clCreateKernel(GPU_program[1], "packsendfluxaverage2", NULL);
+	kernel_packsendfluxaverage3[n] = clCreateKernel(GPU_program[1], "packsendfluxaverage3", NULL);
+	kernel_unpackreceive1E[n] = clCreateKernel(GPU_program[1], "unpackreceive1E", NULL);
+	kernel_unpackreceive2E[n] = clCreateKernel(GPU_program[1], "unpackreceive2E", NULL);
+	kernel_unpackreceive3E[n] = clCreateKernel(GPU_program[1], "unpackreceive3E", NULL);
+	kernel_packsend1E[n] = clCreateKernel(GPU_program[1], "packsend1E", NULL);
+	kernel_packsend2E[n] = clCreateKernel(GPU_program[1], "packsend2E", NULL);
+	kernel_packsend3E[n] = clCreateKernel(GPU_program[1], "packsend3E", NULL);
+	kernel_packsendEaverage1[n] = clCreateKernel(GPU_program[1], "packsendEaverage1", NULL);
+	kernel_packsendEaverage2[n] = clCreateKernel(GPU_program[1], "packsendEaverage2", NULL);
+	kernel_packsendEaverage3[n] = clCreateKernel(GPU_program[1], "packsendEaverage3", NULL);
+	kernel_packsendE1corn[n] = clCreateKernel(GPU_program[1], "packsendE1corn", NULL);
+	kernel_packsendE2corn[n] = clCreateKernel(GPU_program[1], "packsendE2corn", NULL);
+	kernel_packsendE3corn[n] = clCreateKernel(GPU_program[1], "packsendE3corn", NULL);
+	kernel_packsendE1corncourse[n] = clCreateKernel(GPU_program[1], "packsendE1corncourse", NULL);
+	kernel_packsendE2corncourse[n] = clCreateKernel(GPU_program[1], "packsendE2corncourse", NULL);
+	kernel_packsendE3corncourse[n] = clCreateKernel(GPU_program[1], "packsendE3corncourse", NULL);
+	kernel_unpackreceiveE1corn[n] = clCreateKernel(GPU_program[1], "unpackreceiveE1corn", NULL);
+	kernel_unpackreceiveE2corn[n] = clCreateKernel(GPU_program[1], "unpackreceiveE2corn", NULL);
+	kernel_unpackreceiveE3corn[n] = clCreateKernel(GPU_program[1], "unpackreceiveE3corn", NULL);
+	kernel_packsendB1[n] = clCreateKernel(GPU_program[1], "packsendB1", NULL);
+	kernel_packsendB2[n] = clCreateKernel(GPU_program[1], "packsendB2", NULL);
+	kernel_packsendB3[n] = clCreateKernel(GPU_program[1], "packsendB3", NULL);
+	kernel_packsendBaverage1[n] = clCreateKernel(GPU_program[1], "packsendBaverage1", NULL);
+	kernel_packsendBaverage2[n] = clCreateKernel(GPU_program[1], "packsendBaverage2", NULL);
+	kernel_packsendBaverage3[n] = clCreateKernel(GPU_program[1], "packsendBaverage3", NULL);
+	kernel_unpackreceiveB1[n] = clCreateKernel(GPU_program[1], "unpackreceiveB1", NULL);
+	kernel_unpackreceiveB2[n] = clCreateKernel(GPU_program[1], "unpackreceiveB2", NULL);
+	kernel_unpackreceiveB3[n] = clCreateKernel(GPU_program[1], "unpackreceiveB3", NULL);
+
+	status = 0;
+	/*Set arguments of kernel*/
+
+	int POLE_1, POLE_2;
+	if (block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) POLE_1 = 1;
+	else POLE_1 = 0;
+	if (block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)) POLE_2 = 1;
+	else POLE_2 = 0;
+#if H_CORRECTION
+	status += clSetKernelArg(kernel_hcor1[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 4, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 5, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
+
+	status += clSetKernelArg(kernel_hcor2[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_hcor2[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_hcor2[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_hcor2[n], 3, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_hcor2[n], 4, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
+	status += clSetKernelArg(kernel_hcor2[n], 5, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
+
+	clSetKernelArg(kernel_hcor3[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 3, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 4, sizeof(cl_mem), (void *)&Buffereta_avg[n]);
+#endif
+
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 4, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 7, sizeof(cl_int), &lim);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 8, sizeof(FTYPE2), &hslope);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 9, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 10, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 11, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 12, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_fluxcalcprep[n], 14, sizeof(cl_mem), (void *)&BufferV[n]);
+
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 4, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 9, sizeof(cl_int), &lim);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 11, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 12, sizeof(FTYPE2), &hslope);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 13, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 14, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 15, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 16, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 17, sizeof(FTYPE2), &cour);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 18, sizeof(cl_mem), (void *)&Bufferdtij[n]);
+
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 19, sizeof(cl_int), &N1_tot);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 20, sizeof(cl_int), &N1_GPU_offset[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 21, sizeof(cl_int), &POLE_1);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 22, sizeof(cl_int), &POLE_2);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 23, sizeof(cl_int), &N3_tot);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 24, sizeof(cl_int), &N3_GPU_offset[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 25, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 26, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 27, sizeof(cl_mem), (void *)&Bufferstorage3[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 28, sizeof(cl_mem), (void *)&Bufferstorage4[n]);
+
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 4, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 9, sizeof(cl_int), &lim);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 11, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 12, sizeof(FTYPE2), &hslope);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 13, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 14, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 15, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 16, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 17, sizeof(FTYPE2), &cour);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 18, sizeof(cl_mem), (void *)&Bufferdtij[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 19, (LOCAL_WORK_SIZE)*sizeof(FTYPE2), NULL);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 20, sizeof(cl_int), &N1_tot);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 21, sizeof(cl_int), &N1_GPU_offset[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 22, sizeof(cl_int), &POLE_1);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 23, sizeof(cl_int), &POLE_2);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 24, sizeof(cl_int), &N3_tot);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 25, sizeof(cl_int), &N3_GPU_offset[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 26, sizeof(cl_mem), (void *)&Bufferstorage1[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 27, sizeof(cl_mem), (void *)&Bufferstorage2[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 28, sizeof(cl_mem), (void *)&Bufferstorage3[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 29, sizeof(cl_mem), (void *)&Bufferstorage4[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 30, sizeof(cl_double), &(dx[n][1]));
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 31, sizeof(cl_double), &(dx[n][2]));
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 32, sizeof(cl_double), &(dx[n][3]));
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 33, sizeof(cl_mem), (void *)&Buffereta_avg[n]);
+
+	status += clSetKernelArg(kernel_fix_flux[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_fix_flux[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_fix_flux[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_fix_flux[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_fix_flux[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_fix_flux[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_fix_flux[n], 6, sizeof(cl_int), &(block[n][AMR_NBR1]));
+	status += clSetKernelArg(kernel_fix_flux[n], 7, sizeof(cl_int), &(block[n][AMR_NBR2]));
+	status += clSetKernelArg(kernel_fix_flux[n], 8, sizeof(cl_int), &(block[n][AMR_NBR3]));
+	status += clSetKernelArg(kernel_fix_flux[n], 9, sizeof(cl_int), &(block[n][AMR_NBR4]));
+	/*
+	status += clSetKernelArg(kernel_diag_flux[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_diag_flux[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_diag_flux[n], 2, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_diag_flux[n], 3, sizeof(cl_mem), (void *)&Bufferdiagflux[n]);
+	status += clSetKernelArg(kernel_diag_flux[n], 4, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_diag_flux[n], 5, sizeof(cl_int), &N1_GPU[n][n]);
+	*/
+
+	status += clSetKernelArg(kernel_consttransport1[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport1[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport1[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport1[n], 4, sizeof(cl_mem), &(Bufferstorage1[n]));
+
+	status += clSetKernelArg(kernel_consttransport2[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport2[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport2[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport2[n], 3, sizeof(cl_mem), &(BufferE_1[n]));
+	status += clSetKernelArg(kernel_consttransport2[n], 4, sizeof(cl_mem), &(Bufferstorage1[n]));
+	status += clSetKernelArg(kernel_consttransport2[n], 5, sizeof(cl_mem), &(BufferF1_1[n]));
+	status += clSetKernelArg(kernel_consttransport2[n], 6, sizeof(cl_mem), &(BufferF2_1[n]));
+	status += clSetKernelArg(kernel_consttransport2[n], 7, sizeof(cl_mem), &(BufferF3_1[n]));
+
+	status += clSetKernelArg(kernel_consttransport2[n], 12, sizeof(cl_int), &POLE_1);
+	status += clSetKernelArg(kernel_consttransport2[n], 13, sizeof(cl_int), &POLE_2);
+
+	status += clSetKernelArg(kernel_consttransport3[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport3[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport3[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_consttransport3[n], 3, sizeof(cl_double), &(dx[n][1]));
+	status += clSetKernelArg(kernel_consttransport3[n], 4, sizeof(cl_double), &(dx[n][2]));
+	status += clSetKernelArg(kernel_consttransport3[n], 5, sizeof(cl_double), &(dx[n][3]));
+	status += clSetKernelArg(kernel_consttransport3[n], 9, sizeof(cl_mem), (void *)&BufferE_1[n]);
+	status += clSetKernelArg(kernel_consttransport3[n], 11, sizeof(cl_int), &POLE_1);
+	status += clSetKernelArg(kernel_consttransport3[n], 12, sizeof(cl_int), &POLE_2);
+
+	status += clSetKernelArg(kernel_flux_ct1[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_flux_ct1[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_flux_ct1[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_flux_ct1[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_flux_ct1[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_flux_ct1[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_flux_ct1[n], 6, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+
+	status += clSetKernelArg(kernel_flux_ct2[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_flux_ct2[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_flux_ct2[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_flux_ct2[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_flux_ct2[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_flux_ct2[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_flux_ct2[n], 6, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+
+	status += clSetKernelArg(kernel_Utoprim[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 6, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 13, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_Utoprim[n], 14, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_Utoprim[n], 15, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_Utoprim[n], 16, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_Utoprim[n], 17, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_Utoprim[n], 19, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 20, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 21, sizeof(cl_mem), (void *)&BufferKatm[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 22, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 23, sizeof(cl_int), &N1_tot);
+	status += clSetKernelArg(kernel_Utoprim[n], 24, sizeof(cl_int), &N2_tot);
+	status += clSetKernelArg(kernel_Utoprim[n], 25, sizeof(cl_int), &N3_tot);
+	status += clSetKernelArg(kernel_Utoprim[n], 26, sizeof(cl_double), &(dx[n][1]));
+	status += clSetKernelArg(kernel_Utoprim[n], 27, sizeof(cl_double), &(dx[n][2]));
+	status += clSetKernelArg(kernel_Utoprim[n], 28, sizeof(cl_double), &(dx[n][3]));
+
+	status += clSetKernelArg(kernel_Utoprim1[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 6, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 13, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_Utoprim1[n], 14, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_Utoprim1[n], 15, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_Utoprim1[n], 16, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_Utoprim1[n], 17, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_Utoprim1[n], 19, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 20, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 21, sizeof(cl_mem), (void *)&BufferKatm[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 22, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 23, sizeof(cl_int), &N1_tot);
+	status += clSetKernelArg(kernel_Utoprim1[n], 24, sizeof(cl_int), &N2_tot);
+	status += clSetKernelArg(kernel_Utoprim1[n], 25, sizeof(cl_int), &N3_tot);
+	status += clSetKernelArg(kernel_Utoprim1[n], 26, sizeof(cl_double), &(dx[n][1]));
+	status += clSetKernelArg(kernel_Utoprim1[n], 27, sizeof(cl_double), &(dx[n][2]));
+	status += clSetKernelArg(kernel_Utoprim1[n], 28, sizeof(cl_double), &(dx[n][3]));
+	status += clSetKernelArg(kernel_Utoprim1[n], 29, sizeof(cl_double), &a);
+	status += clSetKernelArg(kernel_Utoprim1[n], 30, sizeof(cl_mem), (void *)&Bufferradius[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 31, sizeof(cl_mem), (void *)&BufferdU[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 32, sizeof(cl_double), &sourceflag);
+	status += clSetKernelArg(kernel_Utoprim1[n], 33, sizeof(cl_int), &n3_MPI_GPU[n]);
+
+	status += clSetKernelArg(kernel_Utoprim2[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 4, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 5, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 6, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 13, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_Utoprim2[n], 14, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_Utoprim2[n], 15, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_Utoprim2[n], 16, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_Utoprim2[n], 17, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_Utoprim2[n], 19, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 20, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 21, sizeof(cl_mem), (void *)&BufferKatm[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 22, sizeof(cl_mem), (void *)&Bufferdq_1[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 23, sizeof(cl_int), &N1_tot);
+	status += clSetKernelArg(kernel_Utoprim2[n], 24, sizeof(cl_int), &N2_tot);
+	status += clSetKernelArg(kernel_Utoprim2[n], 25, sizeof(cl_int), &N3_tot);
+	status += clSetKernelArg(kernel_Utoprim2[n], 26, sizeof(cl_double), &(dx[n][1]));
+	status += clSetKernelArg(kernel_Utoprim2[n], 27, sizeof(cl_double), &(dx[n][2]));
+	status += clSetKernelArg(kernel_Utoprim2[n], 28, sizeof(cl_double), &(dx[n][3]));
+	status += clSetKernelArg(kernel_Utoprim2[n], 30, sizeof(cl_int), &POLE_1);
+	status += clSetKernelArg(kernel_Utoprim2[n], 31, sizeof(cl_int), &POLE_2);
+
+	status += clSetKernelArg(kernel_fixup[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_fixup[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_fixup[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_fixup[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	status += clSetKernelArg(kernel_fixup[n], 7, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	status += clSetKernelArg(kernel_fixup[n], 8, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	status += clSetKernelArg(kernel_fixup[n], 9, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	status += clSetKernelArg(kernel_fixup[n], 10, sizeof(cl_mem), (void *)&Bufferradius[n]);
+	status += clSetKernelArg(kernel_fixup[n], 11, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_fixup[n], 12, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
+	status += clSetKernelArg(kernel_fixup[n], 17, sizeof(cl_mem), (void *)&BufferKatm[n]);
+	status += clSetKernelArg(kernel_fixup[n], 18, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_fixup[n], 19, sizeof(cl_double), &(dx[n][1]));
+	status += clSetKernelArg(kernel_fixup[n], 20, sizeof(cl_double), &(dx[n][2]));
+	status += clSetKernelArg(kernel_fixup[n], 21, sizeof(cl_double), &(dx[n][3]));
+	status += clSetKernelArg(kernel_fixup[n], 22, sizeof(cl_double), &(a));
+
+	status += clSetKernelArg(kernel_fixuputoprim[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 4, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 5, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 9, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 10, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 11, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 12, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 13, sizeof(FTYPE2), &hslope);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 14, sizeof(FTYPE2), &gam);
+
+	status += clSetKernelArg(kernel_boundprim1[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 4, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 5, sizeof(cl_mem), (void *)&Bufferfailimage[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 9, sizeof(cl_mem), (void *)&Bufferpbound_1[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 10, sizeof(FTYPE2), &Rin);
+	status += clSetKernelArg(kernel_boundprim1[n], 11, sizeof(FTYPE2), &R0);
+	status += clSetKernelArg(kernel_boundprim1[n], 12, sizeof(FTYPE2), &Rout);
+	status += clSetKernelArg(kernel_boundprim1[n], 13, sizeof(FTYPE2), &fractheta);
+	status += clSetKernelArg(kernel_boundprim1[n], 14, sizeof(FTYPE2), &hslope);
+	status += clSetKernelArg(kernel_boundprim1[n], 15, sizeof(FTYPE2), &gam);
+	status += clSetKernelArg(kernel_boundprim1[n], 16, sizeof(cl_int), &freeze_GPU);
+	status += clSetKernelArg(kernel_boundprim1[n], 17, sizeof(cl_int), &(block[n][AMR_NBR2]));
+	status += clSetKernelArg(kernel_boundprim1[n], 18, sizeof(cl_int), &(block[n][AMR_NBR4]));
+
+	status += clSetKernelArg(kernel_boundprim2[n], 0, sizeof(cl_int), &N1_GPU[n]);
+	status += clSetKernelArg(kernel_boundprim2[n], 1, sizeof(cl_int), &N2_GPU[n]);
+	status += clSetKernelArg(kernel_boundprim2[n], 2, sizeof(cl_int), &N3_GPU[n]);
+	status += clSetKernelArg(kernel_boundprim2[n], 3, sizeof(cl_mem), (void *)&Bufferpflag[n]);
+	status += clSetKernelArg(kernel_boundprim2[n], 5, sizeof(cl_int), &(block[n][AMR_NBR1]));
+	status += clSetKernelArg(kernel_boundprim2[n], 6, sizeof(cl_int), &(block[n][AMR_NBR3]));
+	status += clSetKernelArg(kernel_boundprim2[n], 8, sizeof(cl_int), &(block[n][AMR_POLE]));
+	if (status != 0) printf("Error in setting kernel arguments 1: %d \n", status);
+	int pg, d1, d2, k;
+#pragma omp parallel private(i, j, z, k, pg, d1, d2)
 	{
-		int i, j, z, k,l, pg ,d1, d2;
-		
-	ZSLOOP(N1_MPI_offset-N1G, N1_MPI_offset + N1_MPI - 1 + N1G, N2_MPI_offset - N2G, N2_MPI_offset + N2_MPI - 1 + N2G){
-		for (pg = 0; pg < NPG; pg++){
-			gdet_GPU[pg*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + (i - N1_MPI_offset + N1G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)] = gdet[index2(i, j)][pg];
-			for (d1 = 0; d1 < NDIM; d1++){
-				for (d2 = 0; d2 < NDIM; d2++){
-					gcov_GPU[d1*NDIM*NPG*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + d2*NPG*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + pg*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + (i - N1_MPI_offset + N1G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)] = gcov[index2(i, j)][pg][d1][d2];
-					gcon_GPU[d1*NDIM*NPG*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + d2*NPG*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + pg*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + (i - N1_MPI_offset + N1G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)] = gcon[index2(i, j)][pg][d1][d2];
+#pragma omp for collapse(2) schedule(dynamic)
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
+			for (pg = 0; pg < NPG; pg++){
+#if(!NONSYMMETRIC)
+				gdet_GPU[n][pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gdet[n][index2(n, i, j, z)][pg];
+#else
+				gdet_GPU[n][pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) +
+					(j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = gdet[n][index2(n, i, j, z)][pg];
+
+#endif
+				for (d1 = 0; d1 < NDIM; d1++){
+					for (d2 = 0; d2 < NDIM; d2++){
+#if(!NONSYMMETRIC)
+						gcov_GPU[n][d1*NDIM*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gcov[n][index2(n, i, j, z)][pg][d1][d2];
+						gcon_GPU[n][d1*NDIM*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gcon[n][index2(n, i, j, z)][pg][d1][d2];
+#else
+						gcov_GPU[n][d1*NDIM*NPG*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N3_GPU[n] + 2 * N3G)*
+							(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*
+							(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = gcov[n][index2(n, i, j, z)][pg][d1][d2];
+						gcon_GPU[n][d1*NDIM*NPG*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NPG*((N3_GPU[n] + 2 * N3G)*
+							(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*
+							(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = gcon[n][index2(n, i, j, z)][pg][d1][d2];
+#endif
+					}
 				}
 			}
-		}
-		for (pg = 0; pg < NDIM; pg++){
-			for (d1 = 0; d1 < NDIM; d1++){
-				for (d2 = 0; d2 < NDIM; d2++){
-					conn_GPU[d1*NDIM*NDIM*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + d2*NDIM*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + pg*((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2) + (i - N1_MPI_offset + N1G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)] = conn[index2(i, j)][pg][d1][d2];
+
+			for (pg = 0; pg < NDIM; pg++){
+				for (d1 = 0; d1 < NDIM; d1++){
+					for (d2 = 0; d2 < NDIM; d2++){
+#if(!NONSYMMETRIC)
+						conn_GPU[n][d1*NDIM*NDIM*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NDIM*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))
+							+ pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G)
+							+ (j - N2_GPU_offset[n] + N2G)] = conn[n][index2(n, i, j, z)][pg][d1][d2];
+#else
+						conn_GPU[n][d1*NDIM*NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + d2*NDIM*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))
+							+ pg*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) +
+							(j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = conn[n][index2(n, i, j, z)][pg][d1][d2];
+#endif
+					}
 				}
+			}
+#if(LEER)
+			for (k = 0; k < 6; k++){
+				dq_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = V[n][index(n, i, j, z)][k];
+			}
+#endif
+		}
+	}
+	cl_image_format format = { CL_RG, CL_SIGNED_INT32 };
+#if(LEER)
+	status = clEnqueueWriteBuffer(commandQueueGPU[n], BufferV[n], CL_FALSE, 0, 6 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), dq_1[n], 0, NULL, NULL);
+#endif
+	if (status != 0) printf("Error in writing data %d \n", status);
+#if(!NONSYMMETRIC)
+	cl_image_desc descriptor1 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NDIM*NDIM*NDIM, 0, 0, 0, 0, 0, NULL };
+	Imageconn[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor1, conn_GPU[n], &status);
+	cl_image_desc descriptor2 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, 0, 0, 0, NULL };
+	Imagegcov[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor2, gcov_GPU[n], &status);
+	cl_image_desc descriptor3 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, 0, 0, 0, NULL };
+	Imagegcon[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor3, gcon_GPU[n], &status);
+	cl_image_desc descriptor4 = { CL_MEM_OBJECT_IMAGE3D, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG, 0, 0, 0, 0, 0, NULL };
+	Imagegdet[n] = clCreateImage(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, &descriptor4, gdet_GPU[n], &status);
+	/*Imageconn[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NDIM*NDIM*NDIM, 0, 0, conn_GPU[n], &status);
+	if (status != 0) printf("Error in creating image %d \n", status);
+	Imagegcov[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, gcov_GPU[n], &status);
+	if (status != 0) printf("Error in creating image %d \n", status);
+	Imagegcon[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG*NDIM*NDIM, 0, 0, gcon_GPU[n], &status);
+	if(status!=0) printf("Error in creating image %d \n", status);
+	Imagegdet[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N2_GPU[n] + 2 * N2G, N1_GPU[n] + 2 * N1G, NPG, 0, 0, gdet_GPU[n], &status);
+	if(status!=0) printf("Error in creating image %d \n", status);*/
+#else
+	Imageconn[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NDIM*NDIM*NDIM, 0, 0, conn_GPU[n], &status);
+	Imagegcov[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NPG*NDIM*NDIM, 0, 0, gcov_GPU[n], &status);
+	Imagegcon[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NPG*NDIM*NDIM, 0, 0, gcon_GPU[n], &status);
+	Imagegdet[n] = clCreateImage3D(context[0], CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, &format, N3_GPU[n] + 2 * N3G, N2_GPU[n] + 2 * N2G, (N1_GPU[n] + 2 * N1G)*NPG, 0, 0, gdet_GPU[n], &status);
+#endif
+	status = 0;
+#if H_CORRECTION
+	status += clSetKernelArg(kernel_hcor1[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_hcor1[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 5, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 6, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_hcor3[n], 7, sizeof(cl_mem), (void *)&Imagegdet[n]);
+#endif
+	status += clSetKernelArg(kernel_fixup[n], 13, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_fixup[n], 14, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_fixup[n], 15, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_fixup[n], 16, sizeof(cl_mem), (void *)&Imageconn[n]);
+
+	status += clSetKernelArg(kernel_Utoprim[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_Utoprim[n], 18, sizeof(cl_mem), (void *)&Imageconn[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_Utoprim1[n], 18, sizeof(cl_mem), (void *)&Imageconn[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_Utoprim2[n], 18, sizeof(cl_mem), (void *)&Imageconn[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D1[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_fluxcalc2D2[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
+
+	status += clSetKernelArg(kernel_boundprim1[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_boundprim1[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_boundprim2[n], 7, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 6, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 7, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_fixuputoprim[n], 8, sizeof(cl_mem), (void *)&Imagegdet[n]);
+#if(STAGGERED)
+	status += clSetKernelArg(kernel_consttransport1[n], 5, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_consttransport1[n], 6, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_consttransport1[n], 7, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_consttransport2[n], 9, sizeof(cl_mem), (void *)&Imagegcov[n]);
+	status += clSetKernelArg(kernel_consttransport2[n], 10, sizeof(cl_mem), (void *)&Imagegcon[n]);
+	status += clSetKernelArg(kernel_consttransport2[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
+	status += clSetKernelArg(kernel_consttransport3[n], 6, sizeof(cl_mem), (void *)&Imagegdet[n]);
+#endif
+	status += clFinish(commandQueueGPU[n]);
+
+	if (status != 0) printf("Error in setting kernel arguments 2: %d \n", status);
+	free(gcov_GPU[n]);
+	free(gcon_GPU[n]);
+	free(conn_GPU[n]);
+	free(gdet_GPU[n]);
+#endif
+}
+double check = 1.0;
+
+void GPU_write(int n)
+{
+#if (OpenCL_enable==1)
+	int i, j, z, k, l, pg, d1, d2;
+	double radius_GPU[(N1 + 2 * N1G)], r, th, phi, X[NDIM];
+	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
+		coord(n, i, 0, 0, CENT, X);
+		bl_coord(X, &r, &th, &phi);
+		radius_GPU[(i - N1_GPU_offset[n] + N1G)] = r;
+		Katm_GPU[n][i - N1_GPU_offset[n] + N1G] = Katm[n][i - N1_GPU_offset[n] + N1G];
+	}
+
+#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
+	{
+#pragma omp for collapse(2) schedule(dynamic)
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
+			for (k = 0; k < NPR; k++){
+				p_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = p[n][index(n, i, j, z)][k];
+				ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ph[n][index(n, i, j, z)][k];
+#if(GPU_DEBUG)
+				ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ph[n][index(n, i, j, z)][k];
+#endif
+#if(ibound)
+				if (i == N1_GPU_offset[n]){
+					for (l = 0; l < N_POINTS; l++){
+						pbound_1[n][l*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n]) + k*((N2_GPU[n] + 2 * N2G) + fix_mem[n]) + (j - N2_GPU_offset[n] + N2G)] = pbound[j*(N3_GPU[n] + 2 * N3G) + z][k][l];
+					}
+				}
+#endif
+			}
+#if(STAGGERED)
+			for (k = 1; k < NDIM; k++){
+				ps_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ps[n][index(n, i, j, z)][k];
+				psh_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = psh[n][index(n, i, j, z)][k];
+
+			}
+#endif
+			for (k = 0; k < NFAIL; k++){
+				failimage_GPU[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
+			}
+			pflag_GPU[n][(i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = 0;
+		}
+	}
+#if (ELLIPTICAL2)
+	for (i = N1_GPU_offset[n] - N1G; i<N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
+		for (j = N2_GPU_offset[n] - N2G; j<N2_GPU_offset[n] + N2_GPU[n] + N2G; j++){
+			for (k = 0; k < NPR; k++){
+				dU_GPU[n][k*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = dU_s[n][index2(n, i, j, 0)][k];
 			}
 		}
 	}
-		
-		for (i = N1_MPI_offset; i < N1_MPI_offset+N1_MPI; i++){
-			//Katm_GPU[i - N1_MPI_offset + N1G] = Katm[i];
+#endif
+	status = 0;
+	/*Initialize memory items that have to be passed on to the GPU*/
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferp_1[n], CL_FALSE, 0, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), p_1[n], 0, NULL, NULL);
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, 0, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
+#if(STAGGERED)
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferps_1[n], CL_FALSE, 0, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), ps_1[n], 0, NULL, NULL);
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferpsh_1[n], CL_FALSE, 0, 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), psh_1[n], 0, NULL, NULL);
+#endif
+#if (GPU_DEBUG)
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, 0, NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
+#endif
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferpflag[n], CL_FALSE, 0, ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), pflag_GPU[n], 0, NULL, NULL);
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferfailimage[n], CL_FALSE, 0, NFAIL*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(cl_int), failimage_GPU[n], 0, NULL, NULL);
+#if(ibound)
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferpbound[n]_1, CL_FALSE, 0, N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(FTYPE2), pbound_1[n], 0, NULL, NULL);
+#endif
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], BufferKatm[n], CL_FALSE, 0, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), Katm_GPU[n], 0, NULL, NULL);
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], Bufferradius[n], CL_FALSE, 0, (N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), radius_GPU, 0, NULL, NULL);
+#if (ELLIPTICAL2)
+	status += clEnqueueWriteBuffer(commandQueueGPU[n], BufferdU[n], CL_FALSE, 0, NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)*sizeof(FTYPE2), dU_GPU[n], 0, NULL, NULL);
+#endif
+
+	//clEnqueueBarrier(commandQueueGPU[n]);
+	status += clFinish(commandQueueGPU[n]);
+	if (status != 0) printf("Error in GPU_write: %d \n", status);
+#endif
+}
+
+void GPU_hcor(int n){
+#if (OpenCL_enable==1)
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_hcor1[n], 1, global_work_offset[n], global_work_size[n], local_work_size, 0, NULL, NULL);
+	clFlush(commandQueueGPU[n]);
+
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_hcor2[n], 1, global_work_offset[n], global_work_size2[n], local_work_size, 0, NULL, NULL);
+	clFlush(commandQueueGPU[n]);
+
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_hcor3[n], 1, global_work_offset[n], global_work_size2[n], local_work_size, 0, NULL, NULL);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+
+void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
+{
+#if (OpenCL_enable==1)
+	/*Set arguments of kernel*/
+	if (dir == 1){
+		clSetKernelArg(kernel_fluxcalcprep[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	}
+	else if (dir == 2){
+		clSetKernelArg(kernel_fluxcalcprep[n], 3, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fluxcalcprep[n], 3, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	}
+	if (flag == 1){
+		clSetKernelArg(kernel_fluxcalcprep[n], 5, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fluxcalcprep[n], 5, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	}
+	clSetKernelArg(kernel_fluxcalcprep[n], 6, sizeof(cl_int), &dir);
+	clSetKernelArg(kernel_fluxcalcprep[n], 13, sizeof(cl_int), &ppm_solver);
+
+	/*Run kernel*/
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fluxcalcprep[n], 1, global_work_offset[n], global_work_size2[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error Fluxcalcprep %d\n", status);
+
+	global_work_size2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * D1 - (dir == 1)) * (N2_GPU[n] + 2 * D2 - (dir == 2)) * (N3_GPU[n] + 2 * D3 - (dir == 3))) % LOCAL_WORK_SIZE)
+		+ (N1_GPU[n] + 2 * D1 - (dir == 1)) * (N2_GPU[n] + 2 * D2 - (dir == 2)) * (N3_GPU[n] + 2 * D3 - (dir == 3)); //fluxcalc
+	nr_workgroups[n] = (int)ceil((double)global_work_size2[n][0] / (double)LOCAL_WORK_SIZE) - 1;
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+
+void GPU_fluxcalc2D(int dir, int flag, int n)
+{
+#if (OpenCL_enable==1)
+	/*Calculate reconstructed left state*/
+	GPU_fluxcalcprep(dir, flag, 1, n);
+
+	/*Set arguments of kernel*/
+	if (dir == 1){
+		clSetKernelArg(kernel_fluxcalc2D1[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	}
+	else if (dir == 2){
+		clSetKernelArg(kernel_fluxcalc2D1[n], 3, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fluxcalc2D1[n], 3, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	}
+	if (flag == 1){
+		clSetKernelArg(kernel_fluxcalc2D1[n], 5, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		clSetKernelArg(kernel_fluxcalc2D1[n], 29, sizeof(cl_mem), (void *)&Bufferpsh_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fluxcalc2D1[n], 5, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+		clSetKernelArg(kernel_fluxcalc2D1[n], 29, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+	}
+	clSetKernelArg(kernel_fluxcalc2D1[n], 10, sizeof(cl_int), &dir);
+
+	/*Run kernel*/
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fluxcalc2D1[n], 1, global_work_offset[n], global_work_size2[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error Fluxcalc2D1 %d\n", status);
+	clFlush(commandQueueGPU[n]);
+
+	/*Calculate reconstructed right state*/
+#if(PPM || LEER)
+	global_work_size2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3)) % LOCAL_WORK_SIZE)
+		+ (N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3); //fluxcalc
+	GPU_fluxcalcprep(dir, flag, 2, n);
+#endif
+
+	/*Set arguments of kernel*/
+	if (dir == 1){
+		clSetKernelArg(kernel_fluxcalc2D2[n], 3, sizeof(cl_mem), (void *)&BufferF1_1[n]);
+	}
+	else if (dir == 2){
+		clSetKernelArg(kernel_fluxcalc2D2[n], 3, sizeof(cl_mem), (void *)&BufferF2_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fluxcalc2D2[n], 3, sizeof(cl_mem), (void *)&BufferF3_1[n]);
+	}
+	if (flag == 1){
+		clSetKernelArg(kernel_fluxcalc2D2[n], 5, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		clSetKernelArg(kernel_fluxcalc2D2[n], 34, sizeof(cl_mem), (void *)&Bufferpsh_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fluxcalc2D2[n], 5, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+		clSetKernelArg(kernel_fluxcalc2D2[n], 34, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+	}
+	clSetKernelArg(kernel_fluxcalc2D2[n], 10, sizeof(cl_int), &dir);
+
+	/*Run kernel*/
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fluxcalc2D2[n], 1, global_work_offset[n], global_work_size2[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error Fluxcalc2D2 %d\n", status);
+	clFlush(commandQueueGPU[n]);
+	global_work_size2[n][0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3)) % LOCAL_WORK_SIZE)
+		+ (N1_GPU[n] + 2 * D1) * (N2_GPU[n] + 2 * D2) * (N3_GPU[n] + 2 * D3); //fluxcalc
+#endif
+}
+
+void GPU_fix_flux(int n)
+{
+#if (OpenCL_enable==1)
+	/*Run kernel*/
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fix_flux[n], 1, 0, global_work_size_special[n], local_work_size, 0, NULL, NULL);
+	if (status != 0)printf("Error fixflux %d \n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_consttransport_bound(void){
+	int n;
+
+	gpu = 1;
+#if(PRESTEP)
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
+#if(!TIMESTEP_JET)
+		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
+#endif
+		E_send1(E_corn, BufferE_1, n_ord[n]);
+		E_send2(E_corn, BufferE_1, n_ord[n]);
+#if(N3G>0)
+#if(!TIMESTEP_JET)
+		E_send3(E_corn, BufferE_1, n_ord[n]);
+		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+#endif
+#endif
+	}
+
+	//For last timestep synchronize electric fields immediately
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+#if(!TIMESTEP_JET)
+		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
+#endif
+		E_rec1(E_corn, BufferE_1, n_ord[n], 5);
+		E_rec2(E_corn, BufferE_1, n_ord[n], 5);
+#if(N3G>0)
+#if(!TIMESTEP_JET)
+		E_rec3(E_corn, BufferE_1, n_ord[n], 5);
+		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
+		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
+#endif
+#endif
+	}
+
+	//For first timestep do not synchronize electrice fields 
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
+#if(!TIMESTEP_JET)
+		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+#endif
+		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
+		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
+#if(N3G>0)
+#if(!TIMESTEP_JET)
+		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
+		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+#endif
+#endif
+	}
+#else
+#if(!TIMESTEP_JET)
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_send_corn(E_corn, BufferE_1, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+
+#endif
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send1(E_corn, BufferE_1, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, BufferE_1, n_ord[n], 1);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, BufferE_1, n_ord[n], 2);
+
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send2(E_corn, BufferE_1, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, BufferE_1, n_ord[n], 1);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, BufferE_1, n_ord[n], 2);
+
+#if(N3G>0)
+#if(!TIMESTEP_JET)
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send3(E_corn, BufferE_1, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, BufferE_1, n_ord[n], 1);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, BufferE_1, n_ord[n], 2);
+
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+
+#endif
+#endif
+#endif
+#if(TRANS_BOUND)
+	E_average();
+#endif
+}
+
+void GPU_consttransport1(int flag, double Dt, int n){
+#if (OpenCL_enable==1)
+	size_t global_work_size_local[1];
+
+	/*Run kernel*/
+	if (flag == 1){
+		clSetKernelArg(kernel_consttransport1[n], 3, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_consttransport1[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	}
+	global_work_size_local[0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + N1G) * (N2_GPU[n] + N2G) * (N3_GPU[n] + N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + N1G) * (N2_GPU[n] + N2G) * (N3_GPU[n] + N3G);
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_consttransport1[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
+	if (status != 0)printf("Error consttransport1 %d \n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_consttransport2(int flag, double Dt, int n){
+#if (OpenCL_enable==1)
+	size_t global_work_size_local[1];
+
+	/*Run kernel*/
+	if (flag == 1){
+		clSetKernelArg(kernel_consttransport2[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_consttransport2[n], 8, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	}
+	global_work_size_local[0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3);
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_consttransport2[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
+	if (status != 0)printf("Error constransport2 %d \n", status);
+	clFlush(commandQueueGPU[n]);
+
+#endif
+}
+
+void GPU_consttransport3(int flag, double Dt, int n){
+#if (OpenCL_enable==1)
+	size_t global_work_size_local[1];
+
+	/*Run kernel*/
+	clSetKernelArg(kernel_consttransport3[n], 10, sizeof(FTYPE2), &Dt);
+	if (flag == 1){
+		clSetKernelArg(kernel_consttransport3[n], 7, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+		clSetKernelArg(kernel_consttransport3[n], 8, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_consttransport3[n], 7, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+		clSetKernelArg(kernel_consttransport3[n], 8, sizeof(cl_mem), (void *)&Bufferpsh_1[n]);
+	}
+	global_work_size_local[0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3);
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_consttransport3[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
+	if (status != 0)printf("Error constransport3 %d \n", status);
+	clFlush(commandQueueGPU[n]);
+
+#endif
+}
+
+void GPU_flux_ct1(int n)
+{
+#if (OpenCL_enable==1)
+	/*Run kernel*/
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_flux_ct1[n], 1, global_work_offset[n], global_work_size3[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error fluxct1 %d\n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_flux_ct2(int n)
+{
+#if (OpenCL_enable==1)
+	/*Run kernel*/
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_flux_ct2[n], 1, global_work_offset[n], global_work_size3[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error fluxct2 %d\n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_Utoprim(int flag, int n)
+{
+#if (OpenCL_enable==1)
+	if (flag == 1){
+		//clSetKernelArg(kernel_Utoprim1[n], 7, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		//clSetKernelArg(kernel_Utoprim1[n], 8, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	}
+	else{
+		//clSetKernelArg(kernel_Utoprim1[n], 7, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+		//clSetKernelArg(kernel_Utoprim1[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+	}
+	//status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_Utoprim1[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error Utoprim1 %d\n", status);
+
+	clFlush(commandQueueGPU[n]);
+
+	if (flag == 0){
+		//clSetKernelArg(kernel_Utoprim[n], 7, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+		//clSetKernelArg(kernel_Utoprim[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		//status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_Utoprim[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
+		if (status != 0) printf("Error Utoprim %d\n", status);
+		clFlush(commandQueueGPU[n]);
+	}
+
+	if (flag == 1){
+		//clSetKernelArg(kernel_Utoprim2[n], 7, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		//clSetKernelArg(kernel_Utoprim2[n], 8, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	}
+	else{
+		//clSetKernelArg(kernel_Utoprim2[n], 7, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		//clSetKernelArg(kernel_Utoprim2[n], 8, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+	}
+	//status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_Utoprim2[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error Utoprim2 %d\n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_fixuputoprim(int flag, int n)
+{
+	size_t global_work_size_local[1];
+#if (OpenCL_enable==1)
+	if (flag == 0){
+		clSetKernelArg(kernel_fixuputoprim[n], 3, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+	}
+	else{
+		clSetKernelArg(kernel_fixuputoprim[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+	}
+	global_work_size_local[0] = (LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * N1G) * (N2_GPU[n] + 2 * N2G) * (N3_GPU[n] + 2 * N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * N1G) * (N2_GPU[n] + 2 * N2G) * (N3_GPU[n] + 2 * N3G);
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fixuputoprim[n], 1, global_work_offset[n], global_work_size_local, local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error fixuputoprim %d\n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_fixup(int flag, int n)
+{
+#if (OpenCL_enable==1)
+	if (flag == 0){
+		clSetKernelArg(kernel_fixup[n], 4, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+		clSetKernelArg(kernel_fixup[n], 5, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		clSetKernelArg(kernel_fixup[n], 24, sizeof(cl_int), &flag);
+
+	}
+	else{
+		clSetKernelArg(kernel_fixup[n], 4, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+		clSetKernelArg(kernel_fixup[n], 5, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+		clSetKernelArg(kernel_fixup[n], 24, sizeof(cl_int), &flag);
+	}
+	status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_fixup[n], 1, global_work_offset[n], global_work_size1[n], local_work_size, 0, NULL, NULL);
+	if (status != 0) printf("Error fixup %d\n", status);
+	clFlush(commandQueueGPU[n]);
+#endif
+}
+
+void GPU_boundprim(int bound_force)
+{
+#if (OpenCL_enable==1)
+	int i, n;
+	int temp = nstep;
+	gpu = 1;
+
+	if (bound_force == 1) nstep = -1;
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
+	}
+#if(!TRANS_BOUND)
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim2(1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(0, n_ord[n]);
+	}
+#endif
+
+	//For last timestep do not receive synchronized electrice fields 
+#if(PRESTEP)
+	rc = 0;
+	//MPI communication
+	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			break;
 		}
-		ZSLOOP3D(N1_MPI_offset - N1G, N1_MPI_offset + N1_MPI - 1 + N1G, N2_MPI_offset - N2G, N2_MPI_offset + N2_MPI - 1 + N2G, N3_MPI_offset - N3G, N3_MPI_offset + N3_MPI - 1 + N3G){
+	}
+
+	if (rank == 0){
+		begin2 = clock();
+	}
+	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			flux_rec1(F1, BufferF1_1, n_ord[n], 3);
+			flux_rec2(F2, BufferF2_1, n_ord[n], 3);
+			flux_rec3(F3, BufferF3_1, n_ord[n], 3);
+
+#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+#if(!TIMESTEP_JET)
+			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 3);
+#endif
+			E_rec1(E_corn, BufferE_1, n_ord[n], 3);
+			E_rec2(E_corn, BufferE_1, n_ord[n], 3);
+#if(N3G>0)
+#if(!TIMESTEP_JET)
+			E_rec3(E_corn, BufferE_1, n_ord[n], 3);
+			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 3);
+			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 3);
+#endif
+#endif
+#endif
+		}
+
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+
+#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+#if(!TIMESTEP_JET)
+			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+#endif
+			E_rec1(E_corn, BufferE_1, n_ord[n], 1);
+			E_rec2(E_corn, BufferE_1, n_ord[n], 1);
+#if(N3G>0)
+#if(!TIMESTEP_JET)
+			E_rec3(E_corn, BufferE_1, n_ord[n], 1);
+			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+#endif
+#endif
+#endif
+		}
+	}
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE/BoundcomF \n");
+#endif
+
+
+	rc = 0;
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
+	}
+
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, Bufferp_1, 0, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, 0, n_ord[n]);
+	}
+
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
+	}
+
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, Bufferp_1, 0, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, Bufferph_1, 0, n_ord[n]);
+	}
+
+	if (N3 > 1){
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
+		}
+
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, Bufferp_1, 0, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, Bufferph_1, 0, n_ord[n]);
+		}
+	}
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
+	//MPI communication
+	for (n = 0; n < n_active; n++){
+		//clFinish(commandQueueGPU[n_ord[n]]);
+	}
+	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			break;
+		}
+	}
+
+	if (rank == 0){
+		end2 = clock();
+		time_spent3 += (double)(end2 - begin2) / CLOCKS_PER_SEC;
+	}
+	receive_tag = 0;
+
+#if (STAGGERED && COPY_BFIELD)
+	rc = 0;
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){ //watch out does this for both half and full timestep while only needed for full timestep
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1)B_send1(ps, Bufferps_1, n_ord[n]);
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1)B_send2(ps, Bufferps_1, n_ord[n]);
+		if (N3 > 1){
+			for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1)B_send3(ps, Bufferps_1, n_ord[n]);
+		}
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1)B_rec1(ps, Bufferps_1, n_ord[n]);
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1)B_rec2(ps, Bufferps_1, n_ord[n]);
+		if (N3 > 1){
+			for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) B_rec3(ps, Bufferps_1, n_ord[n]);
+		}
+	}
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomB \n");
+#endif
+	nstep = temp;
+#endif
+}
+
+void GPU_boundprim1(int flag, int n)
+{
+#if (OpenCL_enable==1)
+	if (block[n][AMR_NBR2] == -1 || block[n][AMR_NBR4] == -1){
+		if (flag == 0){
+			clSetKernelArg(kernel_boundprim1[n], 3, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+			clSetKernelArg(kernel_boundprim1[n], 19, sizeof(cl_mem), (void *)&Bufferpsh_1[n]);
+		}
+		else{
+			clSetKernelArg(kernel_boundprim1[n], 3, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+			clSetKernelArg(kernel_boundprim1[n], 19, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+		}
+		status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_boundprim1[n], 1, 0, global_work_size_special1[n], local_work_size, 0, NULL, NULL);
+		if (status != 0) printf("Error boundprim1 %d\n", status);
+		clFlush(commandQueueGPU[n]);
+	}
+#endif
+}
+
+void GPU_boundprim2(int flag, int n)
+{
+#if (OpenCL_enable==1)
+	if (block[n][AMR_NBR1] == -1 || block[n][AMR_NBR3] == -1){
+		if (flag == 0){
+			clSetKernelArg(kernel_boundprim2[n], 4, sizeof(cl_mem), (void *)&Bufferph_1[n]);
+			clSetKernelArg(kernel_boundprim2[n], 9, sizeof(cl_mem), (void *)&Bufferpsh_1[n]);
+		}
+		else{
+			clSetKernelArg(kernel_boundprim2[n], 4, sizeof(cl_mem), (void *)&Bufferp_1[n]);
+			clSetKernelArg(kernel_boundprim2[n], 9, sizeof(cl_mem), (void *)&Bufferps_1[n]);
+		}
+		status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_boundprim2[n], 1, 0, global_work_size_special2[n], local_work_size, 0, NULL, NULL);
+		if (status != 0) printf("Error boundprim2 %d\n", status);
+		clFlush(commandQueueGPU[n]);
+	}
+#endif
+}
+
+void GPU_read(int n)
+{
+#if (OpenCL_enable==1)
+	int i, j, z, k, l, pg, d1, d2;
+	status = 0;
+	status += clFinish(commandQueueGPU[n]);
+	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferp_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), p_1[n], 0, NULL, NULL);
+	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
+
+#if(STAGGERED)
+	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferps_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), ps_1[n], 0, NULL, NULL);
+	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferpsh_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), psh_1[n], 0, NULL, NULL);
+#endif
+#if(GPU_DEBUG)
+	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferph_1[n], CL_FALSE, (int)0 * sizeof(FTYPE2), (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(FTYPE2), ph_1[n], 0, NULL, NULL);
+#endif
+	status += clEnqueueReadBuffer(commandQueueGPU[n], Bufferfailimage[n], CL_FALSE, (int)0 * sizeof(cl_int), (int)((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(cl_int), failimage_GPU[n], 0, NULL, NULL);
+	status += clFinish(commandQueueGPU[n]);
+
+#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
+	{
+#pragma omp for collapse(2) schedule(dynamic)
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
 			for (k = 0; k < NPR; k++){
-				p_1[k*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) + (i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)] = p[index(i, j, z)][k];
-				#if(GPU_DEBUG)
-				ph_1[k*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) + (i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)] = ph[index(i, j, z)][k];
-				#endif
-				#if(ibound)
-				if (i == N1_MPI_offset){
-					for (l = 0; l < N_POINTS; l++){
-						pbound_1[l*NPR*((N3_MPI + 2*N3G)*(N2_MPI + 2*N2G) + fix_mem) + k*((N2_MPI + 2*N2G) + fix_mem) + (j - N2_MPI_offset + N2G)] = pbound[j*(N3_MPI+2*N3G)+z][k][l];
-					}	
-				}
-				#endif
+				p[n][index(n, i, j, z)][k] = p_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+				ph[n][index(n, i, j, z)][k] = ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+
+#if(GPU_DEBUG)
+				ph[n][index(n, i, j, z)][k] = ph_1[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+#endif
 			}
 			for (k = 0; k < NFAIL; k++){
-				failimage_GPU[k*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) + (i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)] = failimage[index(i, j, z)][k];
+				failimage[n][index(n, i, j, z)][k] = failimage_GPU[n][k*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 			}
-			pflag_GPU[(i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)] = 1;
-		}
-		/*Initialize memory items that have to be passed on to the GPU*/
-		cudaMemcpy(Bufferp_1, p_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-	#if (GPU_DEBUG)
-		cudaMemcpy(Bufferph_1, ph_1, NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-	#endif
-		cudaMemcpy(Bufferpflag, pflag_GPU, ((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem)*sizeof(int), cudaMemcpyHostToDevice);
-		cudaMemcpy(Bufferpbound_1, pbound_1, N_POINTS*NPR*((N2_MPI + 2 * N2G) + fix_mem)*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-		cudaMemcpy(Buffergcov, gcov_GPU, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-		cudaMemcpy(Buffergcon, gcon_GPU, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NPG*NDIM*NDIM*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-		cudaMemcpy(Bufferconn, conn_GPU, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NDIM*NDIM*NDIM*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-		cudaMemcpy(Buffergdet, gdet_GPU, ((N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem2)*NPG*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-		cudaMemcpy(BufferKatm, Katm_GPU, (N1_MPI + 2 * N1G)*sizeof(FTYPE2), cudaMemcpyHostToDevice);
-		
-		free(pflag_GPU);
-		pflag_GPU = (int(*))malloc(1*sizeof(int));
-	}
-
-	double fluxcalc_GPU(int dir, int flag)
-	{
-		double ndt;
-		int y;
-		ndt = 1.e9;
-		GPU_fluxcalcprep(dir, flag);
-		GPU_fluxcalc2D(dir, flag);
-		cudaMemcpy(dtij_GPU, Bufferdtij, (int)nr_workgroups*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
-				
-		//printf("dq: %f \n", dtij_GPU[10]);
-		for (y = 0; y <nr_workgroups-1; y++){
-			if (dtij_GPU[y] < ndt && dtij_GPU[y] <1.e9){
-				ndt = dtij_GPU[y];
+#if(STAGGERED)
+			for (k = 1; k < NDIM; k++){
+				ps[n][index(n, i, j, z)][k] = ps_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+				psh[n][index(n, i, j, z)][k] = psh_1[n][(k - 1) * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) + (i - N1_GPU_offset[n] + N1G)*(N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(N3_GPU[n] + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
 			}
-		}
-		//printf("ndt: %f \n", ndt);
-		return(ndt) ;
-	}
-
-	void GPU_fluxcalcprep(int dir, int flag)
-	{	
-		/*Set arguments of kernel*/
-		if (dir == 1){
-			if (flag == 1){
-				fluxcalcprep <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, Bufferdq_1, Bufferph_1, dir, lim);
-			}
-			else{
-				fluxcalcprep <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, Bufferdq_1, Bufferp_1, dir, lim);
-			}
-		}
-		else if (dir == 2){
-			if (flag == 1){
-				fluxcalcprep <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF2_1, Bufferdq_1, Bufferph_1, dir, lim);
-			}
-			else{
-				fluxcalcprep <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF2_1, Bufferdq_1, Bufferp_1, dir, lim);
-			}
-		}
-		else{
-			if (flag == 1){
-				fluxcalcprep <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF3_1, Bufferdq_1, Bufferph_1, dir, lim);
-			}
-			else{
-				fluxcalcprep <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF3_1, Bufferdq_1, Bufferp_1, dir, lim);
-			}
-		}
-
-
-	}
-
-	void GPU_fluxcalc2D(int dir, int flag)
-	{  
-		/*Set arguments of kernel*/
-		if (dir == 1){
-			if (flag == 1){
-				fluxcalc2D1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, Bufferdq_1, Bufferph_1, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4, dir);
-				fluxcalc2D2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, Bufferdq_1, Bufferph_1,Bufferdtij, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4,cour, Rout,Rin, R0,fractheta, dir, N1_tot, N2_tot, N3_tot);
-			}
-			else{
-				fluxcalc2D1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, Bufferdq_1, Bufferp_1, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4, dir);
-				fluxcalc2D2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, Bufferdq_1, Bufferp_1,Bufferdtij, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4,cour, Rout,Rin, R0,fractheta, dir, N1_tot, N2_tot, N3_tot);
-			}
-		}
-		else if (dir == 2){
-			if (flag == 1){
-				fluxcalc2D1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF2_1, Bufferdq_1, Bufferph_1, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4, dir);
-				fluxcalc2D2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF2_1, Bufferdq_1, Bufferph_1,Bufferdtij, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4,cour, Rout,Rin, R0,fractheta, dir, N1_tot, N2_tot, N3_tot);
-			}
-			else{
-				fluxcalc2D1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF2_1, Bufferdq_1, Bufferp_1, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4, dir);
-				fluxcalc2D2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF2_1, Bufferdq_1, Bufferp_1,Bufferdtij, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4,cour, Rout,Rin, R0, fractheta,dir, N1_tot, N2_tot, N3_tot);
-			}
-		}
-		else{
-			if (flag == 1){
-				fluxcalc2D1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF3_1, Bufferdq_1, Bufferph_1, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4, dir);
-				fluxcalc2D2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF3_1, Bufferdq_1, Bufferph_1,Bufferdtij, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4,cour, Rout,Rin, R0,fractheta, dir, N1_tot, N2_tot, N3_tot);
-			}
-			else{
-				fluxcalc2D1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF3_1, Bufferdq_1, Bufferp_1, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4, dir);
-				fluxcalc2D2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF3_1, Bufferdq_1, Bufferp_1,Bufferdtij, Buffergcov, Buffergcon, Buffergdet, Bufferstorage1,
-					Bufferstorage2, Bufferstorage3, Bufferstorage4,cour, Rout,Rin, R0, fractheta, dir, N1_tot, N2_tot, N3_tot);
-			}
+#endif
 		}
 	}
+	if (status != 0)printf("Error in GPU_read: %d \n", status);
+#endif
+}
 
-	void GPU_fix_flux(void)
-	{
-		fix_flux <<< global_work_size_special[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI,N1_tot,N1_MPI_offset,
-			N2_tot, N2_MPI_offset, BufferF1_1, BufferF2_1, BufferF3_1);
-	}
 
-	void GPU_flux_ct1(void)
-	{
-		flux_ct1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferdq_1);
-	}
+void GPU_finish(int n)
+{
+#if (OpenCL_enable==1)
+	void unmap_buffers(int n);
+	clFinish(commandQueueGPU[n]);
+	unmap_buffers(n);
+	status = clEnqueueUnmapMemObject(commandQueueGPU[n], Bufferdtij[n], dtij_GPU[n], 0, NULL, NULL);
+	free(p_1[n]);
+	free(dq_1[n]);
+#if(STAGGERED)
+	free(ps_1[n]);
+	free(psh_1[n]);
+#endif
+	free(ph_1[n]);
+	//#if(GPU_DEBUG)
+	free(dU_GPU[n]);
+	free(pbound_1[n]);
+	//#endif
 
-	void GPU_flux_ct2(void)
-	{
-		flux_ct2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferdq_1);
-	}
 
-	void GPU_diag_flux(void)
-	{
+	free(pflag_GPU[n]);
+	free(failimage_GPU[n]);
+	free(Katm_GPU[n]);
+	status += clReleaseMemObject(Bufferdtij[n]);
+	//free(dtij_GPU[n]);
+	status += clReleaseMemObject(BufferF1_1[n]);
+	status += clReleaseMemObject(BufferF2_1[n]);
+	status += clReleaseMemObject(BufferF3_1[n]);
+	status += clReleaseMemObject(Bufferdq_1[n]);
+	status += clReleaseMemObject(BufferE_1[n]);
+#if(LEER)
+	status += clReleaseMemObject(BufferV[n]);
+#endif
+	status += clReleaseMemObject(Bufferradius[n]);
+	status += clReleaseMemObject(Bufferstorage1[n]);
+	status += clReleaseMemObject(Bufferstorage2[n]);
+	status += clReleaseMemObject(Bufferstorage3[n]);
+	status += clReleaseMemObject(Bufferstorage4[n]);
+	//status += clReleaseMemObject(Buffereta_avg[n]);
+	status += clReleaseMemObject(Bufferp_1[n]);
+	status += clReleaseMemObject(Bufferph_1[n]);
+#if(STAGGERED)
+	status += clReleaseMemObject(Bufferps_1[n]);
+	status += clReleaseMemObject(Bufferpsh_1[n]);
+#endif
+	status += clReleaseMemObject(Bufferpbound_1[n]);
+	status += clReleaseMemObject(Bufferpflag[n]);
+	status += clReleaseMemObject(Bufferfailimage[n]);
+	status += clReleaseMemObject(Bufferdiagflux[n]);
+	status += clReleaseMemObject(BufferKatm[n]);
+	status += clReleaseMemObject(BufferdU[n]);
+	status += clReleaseMemObject(Buffersend1[n]);
+	status += clReleaseMemObject(Buffersend1_3[n]);
+	status += clReleaseMemObject(Buffersend1_4[n]);
+	status += clReleaseMemObject(Buffersend1_7[n]);
+	status += clReleaseMemObject(Buffersend1_8[n]);
+	status += clReleaseMemObject(Buffersend2[n]);
+	status += clReleaseMemObject(Buffersend2_1[n]);
+	status += clReleaseMemObject(Buffersend2_2[n]);
+	status += clReleaseMemObject(Buffersend2_3[n]);
+	status += clReleaseMemObject(Buffersend2_4[n]);
+	status += clReleaseMemObject(Buffersend3[n]);
+	status += clReleaseMemObject(Buffersend3_1[n]);
+	status += clReleaseMemObject(Buffersend3_2[n]);
+	status += clReleaseMemObject(Buffersend3_5[n]);
+	status += clReleaseMemObject(Buffersend3_6[n]);
+	status += clReleaseMemObject(Buffersend4[n]);
+	status += clReleaseMemObject(Buffersend4_5[n]);
+	status += clReleaseMemObject(Buffersend4_6[n]);
+	status += clReleaseMemObject(Buffersend4_7[n]);
+	status += clReleaseMemObject(Buffersend4_8[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Buffersend5[n]);
+	status += clReleaseMemObject(Buffersend5_1[n]);
+	status += clReleaseMemObject(Buffersend5_3[n]);
+	status += clReleaseMemObject(Buffersend5_5[n]);
+	status += clReleaseMemObject(Buffersend5_7[n]);
+	status += clReleaseMemObject(Buffersend6[n]);
+	status += clReleaseMemObject(Buffersend6_2[n]);
+	status += clReleaseMemObject(Buffersend6_4[n]);
+	status += clReleaseMemObject(Buffersend6_6[n]);
+	status += clReleaseMemObject(Buffersend6_8[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1[n]);
+	status += clReleaseMemObject(Bufferrec1_3[n]);
+	status += clReleaseMemObject(Bufferrec1_4[n]);
+	status += clReleaseMemObject(Bufferrec1_7[n]);
+	status += clReleaseMemObject(Bufferrec1_8[n]);
+	status += clReleaseMemObject(Bufferrec2[n]);
+	status += clReleaseMemObject(Bufferrec2_1[n]);
+	status += clReleaseMemObject(Bufferrec2_2[n]);
+	status += clReleaseMemObject(Bufferrec2_3[n]);
+	status += clReleaseMemObject(Bufferrec2_4[n]);
+	status += clReleaseMemObject(Bufferrec3[n]);
+	status += clReleaseMemObject(Bufferrec3_1[n]);
+	status += clReleaseMemObject(Bufferrec3_2[n]);
+	status += clReleaseMemObject(Bufferrec3_5[n]);
+	status += clReleaseMemObject(Bufferrec3_6[n]);
+	status += clReleaseMemObject(Bufferrec4[n]);
+	status += clReleaseMemObject(Bufferrec4_5[n]);
+	status += clReleaseMemObject(Bufferrec4_6[n]);
+	status += clReleaseMemObject(Bufferrec4_7[n]);
+	status += clReleaseMemObject(Bufferrec4_8[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5[n]);
+	status += clReleaseMemObject(Bufferrec5_1[n]);
+	status += clReleaseMemObject(Bufferrec5_3[n]);
+	status += clReleaseMemObject(Bufferrec5_5[n]);
+	status += clReleaseMemObject(Bufferrec5_7[n]);
+	status += clReleaseMemObject(Bufferrec6[n]);
+	status += clReleaseMemObject(Bufferrec6_2[n]);
+	status += clReleaseMemObject(Bufferrec6_4[n]);
+	status += clReleaseMemObject(Bufferrec6_6[n]);
+	status += clReleaseMemObject(Bufferrec6_8[n]);
+#endif
+	status += clReleaseMemObject(tempBufferrec1[n]);
+	status += clReleaseMemObject(tempBufferrec1_3[n]);
+	status += clReleaseMemObject(tempBufferrec1_4[n]);
+	status += clReleaseMemObject(tempBufferrec1_7[n]);
+	status += clReleaseMemObject(tempBufferrec1_8[n]);
+	status += clReleaseMemObject(tempBufferrec2[n]);
+	status += clReleaseMemObject(tempBufferrec2_1[n]);
+	status += clReleaseMemObject(tempBufferrec2_2[n]);
+	status += clReleaseMemObject(tempBufferrec2_3[n]);
+	status += clReleaseMemObject(tempBufferrec2_4[n]);
+	status += clReleaseMemObject(tempBufferrec3[n]);
+	status += clReleaseMemObject(tempBufferrec3_1[n]);
+	status += clReleaseMemObject(tempBufferrec3_2[n]);
+	status += clReleaseMemObject(tempBufferrec3_5[n]);
+	status += clReleaseMemObject(tempBufferrec3_6[n]);
+	status += clReleaseMemObject(tempBufferrec4[n]);
+	status += clReleaseMemObject(tempBufferrec4_5[n]);
+	status += clReleaseMemObject(tempBufferrec4_6[n]);
+	status += clReleaseMemObject(tempBufferrec4_7[n]);
+	status += clReleaseMemObject(tempBufferrec4_8[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(tempBufferrec5[n]);
+	status += clReleaseMemObject(tempBufferrec5_1[n]);
+	status += clReleaseMemObject(tempBufferrec5_3[n]);
+	status += clReleaseMemObject(tempBufferrec5_5[n]);
+	status += clReleaseMemObject(tempBufferrec5_7[n]);
+	status += clReleaseMemObject(tempBufferrec6[n]);
+	status += clReleaseMemObject(tempBufferrec6_2[n]);
+	status += clReleaseMemObject(tempBufferrec6_4[n]);
+	status += clReleaseMemObject(tempBufferrec6_6[n]);
+	status += clReleaseMemObject(tempBufferrec6_8[n]);
+#endif
+	status += clReleaseMemObject(Buffersend1flux[n]);
+	status += clReleaseMemObject(Buffersend2flux[n]);
+	status += clReleaseMemObject(Buffersend3flux[n]);
+	status += clReleaseMemObject(Buffersend4flux[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Buffersend5flux[n]);
+	status += clReleaseMemObject(Buffersend6flux[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1flux[n]);
+	status += clReleaseMemObject(Bufferrec2flux[n]);
+	status += clReleaseMemObject(Bufferrec3flux[n]);
+	status += clReleaseMemObject(Bufferrec4flux[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5flux[n]);
+	status += clReleaseMemObject(Bufferrec6flux[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3flux[n]);
+	status += clReleaseMemObject(Bufferrec1_4flux[n]);
+	status += clReleaseMemObject(Bufferrec1_7flux[n]);
+	status += clReleaseMemObject(Bufferrec1_8flux[n]);
+	status += clReleaseMemObject(Bufferrec2_1flux[n]);
+	status += clReleaseMemObject(Bufferrec2_2flux[n]);
+	status += clReleaseMemObject(Bufferrec2_3flux[n]);
+	status += clReleaseMemObject(Bufferrec2_4flux[n]);
+	status += clReleaseMemObject(Bufferrec3_1flux[n]);
+	status += clReleaseMemObject(Bufferrec3_2flux[n]);
+	status += clReleaseMemObject(Bufferrec3_5flux[n]);
+	status += clReleaseMemObject(Bufferrec3_6flux[n]);
+	status += clReleaseMemObject(Bufferrec4_5flux[n]);
+	status += clReleaseMemObject(Bufferrec4_6flux[n]);
+	status += clReleaseMemObject(Bufferrec4_7flux[n]);
+	status += clReleaseMemObject(Bufferrec4_8flux[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1flux[n]);
+	status += clReleaseMemObject(Bufferrec5_3flux[n]);
+	status += clReleaseMemObject(Bufferrec5_5flux[n]);
+	status += clReleaseMemObject(Bufferrec5_7flux[n]);
+	status += clReleaseMemObject(Bufferrec6_2flux[n]);
+	status += clReleaseMemObject(Bufferrec6_4flux[n]);
+	status += clReleaseMemObject(Bufferrec6_6flux[n]);
+	status += clReleaseMemObject(Bufferrec6_8flux[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1flux1[n]);
+	status += clReleaseMemObject(Bufferrec2flux1[n]);
+	status += clReleaseMemObject(Bufferrec3flux1[n]);
+	status += clReleaseMemObject(Bufferrec4flux1[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5flux1[n]);
+	status += clReleaseMemObject(Bufferrec6flux1[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3flux1[n]);
+	status += clReleaseMemObject(Bufferrec1_4flux1[n]);
+	status += clReleaseMemObject(Bufferrec1_7flux1[n]);
+	status += clReleaseMemObject(Bufferrec1_8flux1[n]);
+	status += clReleaseMemObject(Bufferrec2_1flux1[n]);
+	status += clReleaseMemObject(Bufferrec2_2flux1[n]);
+	status += clReleaseMemObject(Bufferrec2_3flux1[n]);
+	status += clReleaseMemObject(Bufferrec2_4flux1[n]);
+	status += clReleaseMemObject(Bufferrec3_1flux1[n]);
+	status += clReleaseMemObject(Bufferrec3_2flux1[n]);
+	status += clReleaseMemObject(Bufferrec3_5flux1[n]);
+	status += clReleaseMemObject(Bufferrec3_6flux1[n]);
+	status += clReleaseMemObject(Bufferrec4_5flux1[n]);
+	status += clReleaseMemObject(Bufferrec4_6flux1[n]);
+	status += clReleaseMemObject(Bufferrec4_7flux1[n]);
+	status += clReleaseMemObject(Bufferrec4_8flux1[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1flux1[n]);
+	status += clReleaseMemObject(Bufferrec5_3flux1[n]);
+	status += clReleaseMemObject(Bufferrec5_5flux1[n]);
+	status += clReleaseMemObject(Bufferrec5_7flux1[n]);
+	status += clReleaseMemObject(Bufferrec6_2flux1[n]);
+	status += clReleaseMemObject(Bufferrec6_4flux1[n]);
+	status += clReleaseMemObject(Bufferrec6_6flux1[n]);
+	status += clReleaseMemObject(Bufferrec6_8flux1[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3flux2[n]);
+	status += clReleaseMemObject(Bufferrec1_4flux2[n]);
+	status += clReleaseMemObject(Bufferrec1_7flux2[n]);
+	status += clReleaseMemObject(Bufferrec1_8flux2[n]);
+	status += clReleaseMemObject(Bufferrec2_1flux2[n]);
+	status += clReleaseMemObject(Bufferrec2_2flux2[n]);
+	status += clReleaseMemObject(Bufferrec2_3flux2[n]);
+	status += clReleaseMemObject(Bufferrec2_4flux2[n]);
+	status += clReleaseMemObject(Bufferrec3_1flux2[n]);
+	status += clReleaseMemObject(Bufferrec3_2flux2[n]);
+	status += clReleaseMemObject(Bufferrec3_5flux2[n]);
+	status += clReleaseMemObject(Bufferrec3_6flux2[n]);
+	status += clReleaseMemObject(Bufferrec4_5flux2[n]);
+	status += clReleaseMemObject(Bufferrec4_6flux2[n]);
+	status += clReleaseMemObject(Bufferrec4_7flux2[n]);
+	status += clReleaseMemObject(Bufferrec4_8flux2[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1flux2[n]);
+	status += clReleaseMemObject(Bufferrec5_3flux2[n]);
+	status += clReleaseMemObject(Bufferrec5_5flux2[n]);
+	status += clReleaseMemObject(Bufferrec5_7flux2[n]);
+	status += clReleaseMemObject(Bufferrec6_2flux2[n]);
+	status += clReleaseMemObject(Bufferrec6_4flux2[n]);
+	status += clReleaseMemObject(Bufferrec6_6flux2[n]);
+	status += clReleaseMemObject(Bufferrec6_8flux2[n]);
+#endif
+	status += clReleaseMemObject(Buffersend1fine[n]);
+	status += clReleaseMemObject(Buffersend2fine[n]);
+	status += clReleaseMemObject(Buffersend3fine[n]);
+	status += clReleaseMemObject(Buffersend4fine[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Buffersend5fine[n]);
+	status += clReleaseMemObject(Buffersend6fine[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1fine[n]);
+	status += clReleaseMemObject(Bufferrec2fine[n]);
+	status += clReleaseMemObject(Bufferrec3fine[n]);
+	status += clReleaseMemObject(Bufferrec4fine[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5fine[n]);
+	status += clReleaseMemObject(Bufferrec6fine[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3fine[n]);
+	status += clReleaseMemObject(Bufferrec1_4fine[n]);
+	status += clReleaseMemObject(Bufferrec1_7fine[n]);
+	status += clReleaseMemObject(Bufferrec1_8fine[n]);
+	status += clReleaseMemObject(Bufferrec2_1fine[n]);
+	status += clReleaseMemObject(Bufferrec2_2fine[n]);
+	status += clReleaseMemObject(Bufferrec2_3fine[n]);
+	status += clReleaseMemObject(Bufferrec2_4fine[n]);
+	status += clReleaseMemObject(Bufferrec3_1fine[n]);
+	status += clReleaseMemObject(Bufferrec3_2fine[n]);
+	status += clReleaseMemObject(Bufferrec3_5fine[n]);
+	status += clReleaseMemObject(Bufferrec3_6fine[n]);
+	status += clReleaseMemObject(Bufferrec4_5fine[n]);
+	status += clReleaseMemObject(Bufferrec4_6fine[n]);
+	status += clReleaseMemObject(Bufferrec4_7fine[n]);
+	status += clReleaseMemObject(Bufferrec4_8fine[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1fine[n]);
+	status += clReleaseMemObject(Bufferrec5_3fine[n]);
+	status += clReleaseMemObject(Bufferrec5_5fine[n]);
+	status += clReleaseMemObject(Bufferrec5_7fine[n]);
+	status += clReleaseMemObject(Bufferrec6_2fine[n]);
+	status += clReleaseMemObject(Bufferrec6_4fine[n]);
+	status += clReleaseMemObject(Bufferrec6_6fine[n]);
+	status += clReleaseMemObject(Bufferrec6_8fine[n]);
+#endif
+	status += clReleaseMemObject(Buffersend1E[n]);
+	status += clReleaseMemObject(Buffersend2E[n]);
+	status += clReleaseMemObject(Buffersend3E[n]);
+	status += clReleaseMemObject(Buffersend4E[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Buffersend5E[n]);
+	status += clReleaseMemObject(Buffersend6E[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1E[n]);
+	status += clReleaseMemObject(Bufferrec2E[n]);
+	status += clReleaseMemObject(Bufferrec3E[n]);
+	status += clReleaseMemObject(Bufferrec4E[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5E[n]);
+	status += clReleaseMemObject(Bufferrec6E[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3E[n]);
+	status += clReleaseMemObject(Bufferrec1_4E[n]);
+	status += clReleaseMemObject(Bufferrec1_7E[n]);
+	status += clReleaseMemObject(Bufferrec1_8E[n]);
+	status += clReleaseMemObject(Bufferrec2_1E[n]);
+	status += clReleaseMemObject(Bufferrec2_2E[n]);
+	status += clReleaseMemObject(Bufferrec2_3E[n]);
+	status += clReleaseMemObject(Bufferrec2_4E[n]);
+	status += clReleaseMemObject(Bufferrec3_1E[n]);
+	status += clReleaseMemObject(Bufferrec3_2E[n]);
+	status += clReleaseMemObject(Bufferrec3_5E[n]);
+	status += clReleaseMemObject(Bufferrec3_6E[n]);
+	status += clReleaseMemObject(Bufferrec4_5E[n]);
+	status += clReleaseMemObject(Bufferrec4_6E[n]);
+	status += clReleaseMemObject(Bufferrec4_7E[n]);
+	status += clReleaseMemObject(Bufferrec4_8E[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1E[n]);
+	status += clReleaseMemObject(Bufferrec5_3E[n]);
+	status += clReleaseMemObject(Bufferrec5_5E[n]);
+	status += clReleaseMemObject(Bufferrec5_7E[n]);
+	status += clReleaseMemObject(Bufferrec6_2E[n]);
+	status += clReleaseMemObject(Bufferrec6_4E[n]);
+	status += clReleaseMemObject(Bufferrec6_6E[n]);
+	status += clReleaseMemObject(Bufferrec6_8E[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1E1[n]);
+	status += clReleaseMemObject(Bufferrec2E1[n]);
+	status += clReleaseMemObject(Bufferrec3E1[n]);
+	status += clReleaseMemObject(Bufferrec4E1[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5E1[n]);
+	status += clReleaseMemObject(Bufferrec6E1[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3E1[n]);
+	status += clReleaseMemObject(Bufferrec1_4E1[n]);
+	status += clReleaseMemObject(Bufferrec1_7E1[n]);
+	status += clReleaseMemObject(Bufferrec1_8E1[n]);
+	status += clReleaseMemObject(Bufferrec2_1E1[n]);
+	status += clReleaseMemObject(Bufferrec2_2E1[n]);
+	status += clReleaseMemObject(Bufferrec2_3E1[n]);
+	status += clReleaseMemObject(Bufferrec2_4E1[n]);
+	status += clReleaseMemObject(Bufferrec3_1E1[n]);
+	status += clReleaseMemObject(Bufferrec3_2E1[n]);
+	status += clReleaseMemObject(Bufferrec3_5E1[n]);
+	status += clReleaseMemObject(Bufferrec3_6E1[n]);
+	status += clReleaseMemObject(Bufferrec4_5E1[n]);
+	status += clReleaseMemObject(Bufferrec4_6E1[n]);
+	status += clReleaseMemObject(Bufferrec4_7E1[n]);
+	status += clReleaseMemObject(Bufferrec4_8E1[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1E1[n]);
+	status += clReleaseMemObject(Bufferrec5_3E1[n]);
+	status += clReleaseMemObject(Bufferrec5_5E1[n]);
+	status += clReleaseMemObject(Bufferrec5_7E1[n]);
+	status += clReleaseMemObject(Bufferrec6_2E1[n]);
+	status += clReleaseMemObject(Bufferrec6_4E1[n]);
+	status += clReleaseMemObject(Bufferrec6_6E1[n]);
+	status += clReleaseMemObject(Bufferrec6_8E1[n]);
+#endif
+	status += clReleaseMemObject(Bufferrec1_3E2[n]);
+	status += clReleaseMemObject(Bufferrec1_4E2[n]);
+	status += clReleaseMemObject(Bufferrec1_7E2[n]);
+	status += clReleaseMemObject(Bufferrec1_8E2[n]);
+	status += clReleaseMemObject(Bufferrec2_1E2[n]);
+	status += clReleaseMemObject(Bufferrec2_2E2[n]);
+	status += clReleaseMemObject(Bufferrec2_3E2[n]);
+	status += clReleaseMemObject(Bufferrec2_4E2[n]);
+	status += clReleaseMemObject(Bufferrec3_1E2[n]);
+	status += clReleaseMemObject(Bufferrec3_2E2[n]);
+	status += clReleaseMemObject(Bufferrec3_5E2[n]);
+	status += clReleaseMemObject(Bufferrec3_6E2[n]);
+	status += clReleaseMemObject(Bufferrec4_5E2[n]);
+	status += clReleaseMemObject(Bufferrec4_6E2[n]);
+	status += clReleaseMemObject(Bufferrec4_7E2[n]);
+	status += clReleaseMemObject(Bufferrec4_8E2[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(Bufferrec5_1E2[n]);
+	status += clReleaseMemObject(Bufferrec5_3E2[n]);
+	status += clReleaseMemObject(Bufferrec5_5E2[n]);
+	status += clReleaseMemObject(Bufferrec5_7E2[n]);
+	status += clReleaseMemObject(Bufferrec6_2E2[n]);
+	status += clReleaseMemObject(Bufferrec6_4E2[n]);
+	status += clReleaseMemObject(Bufferrec6_6E2[n]);
+	status += clReleaseMemObject(Bufferrec6_8E2[n]);
+#endif
+#if(N3G>0)
+	status += clReleaseMemObject(BuffersendE1corn9[n]);
+	status += clReleaseMemObject(BuffersendE1corn10[n]);
+	status += clReleaseMemObject(BuffersendE1corn11[n]);
+	status += clReleaseMemObject(BuffersendE1corn12[n]);
+	status += clReleaseMemObject(BuffersendE2corn5[n]);
+	status += clReleaseMemObject(BuffersendE2corn6[n]);
+	status += clReleaseMemObject(BuffersendE2corn7[n]);
+	status += clReleaseMemObject(BuffersendE2corn8[n]);
+#endif
+	status += clReleaseMemObject(BuffersendE3corn1[n]);
+	status += clReleaseMemObject(BuffersendE3corn2[n]);
+	status += clReleaseMemObject(BuffersendE3corn3[n]);
+	status += clReleaseMemObject(BuffersendE3corn4[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(BufferrecE1corn9[n]);
+	status += clReleaseMemObject(BufferrecE1corn10[n]);
+	status += clReleaseMemObject(BufferrecE1corn11[n]);
+	status += clReleaseMemObject(BufferrecE1corn12[n]);
+	status += clReleaseMemObject(BufferrecE2corn5[n]);
+	status += clReleaseMemObject(BufferrecE2corn6[n]);
+	status += clReleaseMemObject(BufferrecE2corn7[n]);
+	status += clReleaseMemObject(BufferrecE2corn8[n]);
+#endif
+	status += clReleaseMemObject(BufferrecE3corn1[n]);
+	status += clReleaseMemObject(BufferrecE3corn2[n]);
+	status += clReleaseMemObject(BufferrecE3corn3[n]);
+	status += clReleaseMemObject(BufferrecE3corn4[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(BufferrecE1corn9_3[n]);
+	status += clReleaseMemObject(BufferrecE1corn9_7[n]);
+	status += clReleaseMemObject(BufferrecE1corn10_1[n]);
+	status += clReleaseMemObject(BufferrecE1corn10_5[n]);
+	status += clReleaseMemObject(BufferrecE1corn11_2[n]);
+	status += clReleaseMemObject(BufferrecE1corn11_6[n]);
+	status += clReleaseMemObject(BufferrecE1corn12_4[n]);
+	status += clReleaseMemObject(BufferrecE1corn12_8[n]);
+	status += clReleaseMemObject(BufferrecE2corn5_2[n]);
+	status += clReleaseMemObject(BufferrecE2corn5_4[n]);
+	status += clReleaseMemObject(BufferrecE2corn6_1[n]);
+	status += clReleaseMemObject(BufferrecE2corn6_3[n]);
+	status += clReleaseMemObject(BufferrecE2corn7_5[n]);
+	status += clReleaseMemObject(BufferrecE2corn7_7[n]);
+	status += clReleaseMemObject(BufferrecE2corn8_6[n]);
+	status += clReleaseMemObject(BufferrecE2corn8_8[n]);
+#endif
+	status += clReleaseMemObject(BufferrecE3corn1_3[n]);
+	status += clReleaseMemObject(BufferrecE3corn1_4[n]);
+	status += clReleaseMemObject(BufferrecE3corn2_1[n]);
+	status += clReleaseMemObject(BufferrecE3corn2_2[n]);
+	status += clReleaseMemObject(BufferrecE3corn3_5[n]);
+	status += clReleaseMemObject(BufferrecE3corn3_6[n]);
+	status += clReleaseMemObject(BufferrecE3corn4_7[n]);
+	status += clReleaseMemObject(BufferrecE3corn4_8[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(tempBufferrecE1corn9[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn10[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn11[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn12[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn5[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn6[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn7[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn8[n]);
+#endif
+	status += clReleaseMemObject(tempBufferrecE3corn1[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn2[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn3[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn4[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(tempBufferrecE1corn9_3[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn9_7[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn10_1[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn10_5[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn11_2[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn11_6[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn12_4[n]);
+	status += clReleaseMemObject(tempBufferrecE1corn12_8[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn5_2[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn5_4[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn6_1[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn6_3[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn7_5[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn7_7[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn8_6[n]);
+	status += clReleaseMemObject(tempBufferrecE2corn8_8[n]);
+#endif
+	status += clReleaseMemObject(tempBufferrecE3corn1_3[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn1_4[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn2_1[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn2_2[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn3_5[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn3_6[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn4_7[n]);
+	status += clReleaseMemObject(tempBufferrecE3corn4_8[n]);
+#if(N3G>0)
+	status += clReleaseMemObject(BufferrecE1corn9_32[n]);
+	status += clReleaseMemObject(BufferrecE1corn9_72[n]);
+	status += clReleaseMemObject(BufferrecE1corn10_12[n]);
+	status += clReleaseMemObject(BufferrecE1corn10_52[n]);
+	status += clReleaseMemObject(BufferrecE1corn11_22[n]);
+	status += clReleaseMemObject(BufferrecE1corn11_62[n]);
+	status += clReleaseMemObject(BufferrecE1corn12_42[n]);
+	status += clReleaseMemObject(BufferrecE1corn12_82[n]);
+	status += clReleaseMemObject(BufferrecE2corn5_22[n]);
+	status += clReleaseMemObject(BufferrecE2corn5_42[n]);
+	status += clReleaseMemObject(BufferrecE2corn6_12[n]);
+	status += clReleaseMemObject(BufferrecE2corn6_32[n]);
+	status += clReleaseMemObject(BufferrecE2corn7_52[n]);
+	status += clReleaseMemObject(BufferrecE2corn7_72[n]);
+	status += clReleaseMemObject(BufferrecE2corn8_62[n]);
+	status += clReleaseMemObject(BufferrecE2corn8_82[n]);
+#endif
+	status += clReleaseMemObject(BufferrecE3corn1_32[n]);
+	status += clReleaseMemObject(BufferrecE3corn1_42[n]);
+	status += clReleaseMemObject(BufferrecE3corn2_12[n]);
+	status += clReleaseMemObject(BufferrecE3corn2_22[n]);
+	status += clReleaseMemObject(BufferrecE3corn3_52[n]);
+	status += clReleaseMemObject(BufferrecE3corn3_62[n]);
+	status += clReleaseMemObject(BufferrecE3corn4_72[n]);
+	status += clReleaseMemObject(BufferrecE3corn4_82[n]);
 
-	}
+	status += clReleaseMemObject(Imagegcov[n]);
+	status += clReleaseMemObject(Imagegcon[n]);
+	status += clReleaseMemObject(Imageconn[n]);
+	status += clReleaseMemObject(Imagegdet[n]);
 
-	void GPU_Utoprim(int flag, double Dt)
-	{
+#if H_CORRECTION
+	status += clReleaseKernel(kernel_hcor1[n]);
+	status += clReleaseKernel(kernel_hcor2[n]);
+	status += clReleaseKernel(kernel_hcor3[n]);
+#endif
+	status += clReleaseKernel(kernel_fluxcalcprep[n]);
 
-		if (flag == 1){
-			Utoprim <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferp_1,
-				Bufferph_1, Bufferp_1,Buffergcov,Buffergcon,Buffergdet,Bufferconn,Dt,Rin,R0,Rout,fractheta,gam,Bufferdq_1, N1_tot, N2_tot, N3_tot);
-			Utoprim1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferp_1,
-				Bufferph_1, Bufferp_1, Buffergcov, Buffergcon, Buffergdet, Bufferconn, Dt, Bufferdq_1);
-			Utoprim2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferp_1,
-				Bufferph_1, Bufferp_1, Buffergcov, Buffergcon, Buffergdet, Bufferconn, Dt, Bufferdq_1, Bufferpflag, Bufferfailimage);
-		}
-		else{
-			Utoprim <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferp_1,
-				Bufferp_1, Bufferph_1, Buffergcov, Buffergcon, Buffergdet, Bufferconn, Dt, Rin, R0, Rout, fractheta, gam, Bufferdq_1,N1_tot, N2_tot, N3_tot);
-			Utoprim1 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferp_1,
-				Bufferp_1, Bufferph_1, Buffergcov, Buffergcon, Buffergdet, Bufferconn, Dt, Bufferdq_1);
-			Utoprim2 <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, BufferF1_1, BufferF2_1, BufferF3_1, Bufferp_1,
-				Bufferp_1, Bufferph_1, Buffergcov, Buffergcon, Buffergdet, Bufferconn, Dt,  Bufferdq_1, Bufferpflag, Bufferfailimage);
-		}
-	}
+	status += clReleaseKernel(kernel_fluxcalc2D1[n]);
+	status += clReleaseKernel(kernel_fluxcalc2D2[n]);
+	status += clReleaseKernel(kernel_flux_ct1[n]);
+	status += clReleaseKernel(kernel_flux_ct2[n]);
+	status += clReleaseKernel(kernel_consttransport1[n]);
+	status += clReleaseKernel(kernel_consttransport2[n]);
+	status += clReleaseKernel(kernel_consttransport3[n]);
+	status += clReleaseKernel(kernel_fix_flux[n]);
 
-	void GPU_fixuputoprim(int flag)
-	{
+	status += clReleaseKernel(kernel_Utoprim[n]);
+	status += clReleaseKernel(kernel_Utoprim2[n]);
+	status += clReleaseKernel(kernel_Utoprim1[n]);
+	status += clReleaseKernel(kernel_fixup[n]);
+	status += clReleaseKernel(kernel_fixuputoprim[n]);
+	status += clReleaseKernel(kernel_boundprim1[n]);
+	status += clReleaseKernel(kernel_boundprim2[n]);
 
-	}
+	status += clReleaseKernel(kernel_packsend1[n]);
+	status += clReleaseKernel(kernel_packsend2[n]);
+	status += clReleaseKernel(kernel_packsend3[n]);
+	status += clReleaseKernel(kernel_packsend1flux[n]);
+	status += clReleaseKernel(kernel_packsend2flux[n]);
+	status += clReleaseKernel(kernel_packsend3flux[n]);
+	status += clReleaseKernel(kernel_unpackreceive1[n]);
+	status += clReleaseKernel(kernel_unpackreceive2[n]);
+	status += clReleaseKernel(kernel_unpackreceive3[n]);
+	status += clReleaseKernel(kernel_unpackreceive1flux[n]);
+	status += clReleaseKernel(kernel_unpackreceive2flux[n]);
+	status += clReleaseKernel(kernel_unpackreceive3flux[n]);
+	status += clReleaseKernel(kernel_packsendaverage1[n]);
+	status += clReleaseKernel(kernel_packsendaverage2[n]);
+	status += clReleaseKernel(kernel_packsendaverage3[n]);
+	status += clReleaseKernel(kernel_unpackreceivecoarse1[n]);
+	status += clReleaseKernel(kernel_unpackreceivecoarse2[n]);
+	status += clReleaseKernel(kernel_unpackreceivecoarse3[n]);
+	status += clReleaseKernel(kernel_packsendfluxaverage1[n]);
+	status += clReleaseKernel(kernel_packsendfluxaverage2[n]);
+	status += clReleaseKernel(kernel_packsendfluxaverage3[n]);
+	status += clReleaseKernel(kernel_packsend1E[n]);
+	status += clReleaseKernel(kernel_packsend2E[n]);
+	status += clReleaseKernel(kernel_packsend3E[n]);
+	status += clReleaseKernel(kernel_unpackreceive1E[n]);
+	status += clReleaseKernel(kernel_unpackreceive2E[n]);
+	status += clReleaseKernel(kernel_unpackreceive3E[n]);
+	status += clReleaseKernel(kernel_packsendEaverage1[n]);
+	status += clReleaseKernel(kernel_packsendEaverage2[n]);
+	status += clReleaseKernel(kernel_packsendEaverage3[n]);
+	status += clReleaseKernel(kernel_packsendE1corn[n]);
+	status += clReleaseKernel(kernel_packsendE2corn[n]);
+	status += clReleaseKernel(kernel_packsendE3corn[n]);
+	status += clReleaseKernel(kernel_packsendE1corncourse[n]);
+	status += clReleaseKernel(kernel_packsendE2corncourse[n]);
+	status += clReleaseKernel(kernel_packsendE3corncourse[n]);
+	status += clReleaseKernel(kernel_unpackreceiveE1corn[n]);
+	status += clReleaseKernel(kernel_unpackreceiveE2corn[n]);
+	status += clReleaseKernel(kernel_unpackreceiveE3corn[n]);
 
-	void GPU_fixup(int flag)
-	{
-		if (flag == 0){
-			fixup <<< nr_workgroups, local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferph_1, Bufferpflag, Bufferfailimage,
-				Buffergcov, Buffergcon, Buffergdet,  Rin, R0, Rout, fractheta, hslope, gam, Bufferdq_1, N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-		else{
-			fixup << < nr_workgroups, local_work_size[0] >> > (N1_MPI, N2_MPI, N3_MPI, Bufferp_1, Bufferpflag, Bufferfailimage,
-				Buffergcov, Buffergcon, Buffergdet, Rin, R0, Rout, fractheta, hslope, gam, Bufferdq_1, N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-	}
+	status += clReleaseKernel(kernel_packsendB1[n]);
+	status += clReleaseKernel(kernel_packsendB2[n]);
+	status += clReleaseKernel(kernel_packsendB3[n]);
+	status += clReleaseKernel(kernel_packsendBaverage1[n]);
+	status += clReleaseKernel(kernel_packsendBaverage2[n]);
+	status += clReleaseKernel(kernel_packsendBaverage3[n]);
+	status += clReleaseKernel(kernel_unpackreceiveB1[n]);
+	status += clReleaseKernel(kernel_unpackreceiveB2[n]);
+	status += clReleaseKernel(kernel_unpackreceiveB3[n]);
 
-	void GPU_boundprim(int flag, int MPI)
-	{
-	#if(N1G>0)
-		if (n1_MPI == n_columns - 1 || n1_MPI == 0) GPU_boundprim1(flag);
-	#endif
-	#if(N2G>0)
-		if (n2_MPI == n_rows - 1 || n2_MPI == 0)GPU_boundprim2(flag);
-	#endif
-	#if(N3G>0)
-		if (n3_MPI == n_stacks - 1 || n3_MPI == 0)GPU_boundprim3(flag);
-	#endif
-		if ((n_rows > 1 || n_columns > 1) && (MPI == 1)){
-			GPU_boundsend(flag);
-			GPU_boundrec(flag);
-		}
-	}
+	if (status != 0) printf("Error in GPU_finish_1: %d \n", status);
+	//status += clReleaseCommandQueue(commandQueueGPU[n]);
+	if (status != 0) printf("Error in GPU_finish_2: %d \n", status);
 
-	void GPU_boundprim1(int flag)
-	{
-		if (flag == 0){
-			boundprim1 <<< global_work_size_special1[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferph_1, Bufferpflag,
-				Buffergcov,Buffergcon,Buffergdet, N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-		else{
-			boundprim1 <<< global_work_size_special1[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferp_1, Bufferpflag,
-				Buffergcov, Buffergcon, Buffergdet, N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-	}
-
-	void GPU_boundprim2(int flag)
-	{
-		if (flag == 0){
-			boundprim2 <<< global_work_size_special2[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferph_1, Bufferpflag,
-				 N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-		else{
-			boundprim2 <<< global_work_size_special2[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferp_1, Bufferpflag,
-				N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-	}
-
-	void GPU_boundprim3(int flag)
-	{
-		if (flag == 0){
-			boundprim3 <<< global_work_size_special3[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferph_1, Bufferpflag,
-				N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-		else{
-			boundprim3 <<< global_work_size_special3[0] / local_work_size[0], local_work_size[0] >>> (N1_MPI, N2_MPI, N3_MPI, Bufferp_1, Bufferpflag,
-				N1_tot, N1_MPI_offset, N2_tot, N2_MPI_offset, N3_tot, N3_MPI_offset);
-		}
-	}
-
-	void GPU_boundsend(int flag){
-
-	}
-
-	void GPU_boundrec(int flag){
-
-	}
-
-	void GPU_read(void)
-	{
-		int i, j, z, k;
-
-		cudaMemcpy(p_1, Bufferp_1, (int)(NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem))*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
-		#if(GPU_DEBUG)
-		cudaMemcpy(ph_1, Bufferph_1, (int)(NPR*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem))*sizeof(FTYPE2), cudaMemcpyDeviceToHost);
-		#endif
-		cudaMemcpy(failimage_GPU, Bufferfailimage, (int)((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost);
-	
-		ZSLOOP3D(N1_MPI_offset - N1G, N1_MPI_offset + N1_MPI - 1 + N1G, N2_MPI_offset - N2G, N2_MPI_offset + N2_MPI - 1 + N2G, N3_MPI_offset - N3G, N3_MPI_offset + N3_MPI - 1 + N3G){
-			for (k = 0; k < NPR; k++){
-				p[index(i, j, z)][k] = p_1[k*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) + (i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)];
-				#if(GPU_DEBUG)
-				ph[index(i, j, z)][k] = ph_1[k*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) + (i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)];
-				#endif
-			}
-			for (k = 0; k<NFAIL; k++){
-				failimage[index(i, j, z)][k] = failimage_GPU[k*((N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G)*(N1_MPI + 2 * N1G) + fix_mem) + (i - N1_MPI_offset + N1G)*(N3_MPI + 2 * N3G)*(N2_MPI + 2 * N2G) + (j - N2_MPI_offset + N2G)*(N3_MPI + 2 * N3G) + (z - N3_MPI_offset + N3G)];
-			}
-		}
-	}
+#endif
 }

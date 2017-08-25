@@ -109,10 +109,10 @@ int invert_matrix( double Am[][NDIM], double Aminv[][NDIM] )
 
 int LU_decompose( double A[][NDIM], int permute[] )
 {
+  double row_norm[NDIM];
 
-  const  double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+  double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
 
-  static double row_norm[NDIM];
   double  absmax, maxtemp, mintemp;
 
   int i, j, k, max_row;

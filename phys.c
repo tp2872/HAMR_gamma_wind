@@ -43,8 +43,7 @@
 ***********************************************************************************/
 
 #include "decs.h"
-double Drel(int dir, double v, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq);
-double NewtonRaphson(double start, size_t max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq);
+
 /***********************************************************************************************/
 /***********************************************************************************************
   primtoflux():
@@ -53,38 +52,39 @@ double NewtonRaphson(double start, size_t max_count, int dir, double *ucon, doub
         
 ***********************************************************************************************/
 
-void primtoflux(double *pr, struct of_state *q, int dir, 
-		struct of_geom *geom, double *flux) 
+void primtoflux(double * restrict pr, struct of_state * restrict q, int dir,
+struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
-	double mhd[NDIM] ;
+	double mhd[NDIM];
 
 	/* particle number flux */
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
-
 	mhd_calc(pr, dir, q, mhd) ;
 
 	/* MHD stress-energy tensor w/ first index up, 
 	 * second index down. */
-	//#pragma omp simd
+	#pragma ivdep
 	for (k = 0; k < 4; k++){
 		flux[k+1] = mhd[k] ;
 	}
 	flux[UU] += flux[RHO];
 
 	/* dual of Maxwell tensor */
-	//#pragma omp simd
+	#pragma ivdep
 	for (k = B1; k <= B3; k++){
 		flux[k] = q->bcon[k-4] * q->ucon[dir] - q->bcon[dir] * q->ucon[k-4];
 	}
-	
-	//#pragma omp simd
+	#if(DOKTOT )
+	flux[KTOT] = flux[RHO] * pr[KTOT];
+	#endif
+	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }
 
 /* calculate "conserved" quantities; provided strictly for
  * historical reasons */
-void primtoU(double *pr, struct of_state *q, struct of_geom *geom, double *U)
+void primtoU(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U)
 {
 
 	primtoflux(pr,q,0,geom, U) ;
@@ -92,12 +92,12 @@ void primtoU(double *pr, struct of_state *q, struct of_geom *geom, double *U)
 }
 
 /* calculate magnetic field four-vector */
-void bcon_calc(double *pr, double *ucon, double *ucov, double *bcon) 
+void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict ucov, double * restrict bcon)
 {
 	int j ;
 
 	bcon[TT] = pr[B1]*ucov[1] + pr[B2]*ucov[2] + pr[B3]*ucov[3] ;
-	//#pragma omp simd
+	/*#pragma ivdep*/
 	for(j=1;j<4;j++)
 		bcon[j] = (pr[B1-1+j] + bcon[TT]*ucon[j])/ucon[TT] ;
 
@@ -105,7 +105,7 @@ void bcon_calc(double *pr, double *ucon, double *ucov, double *bcon)
 }
 
 /* MHD stress tensor, with first index up, second index down */
-void mhd_calc(double *pr, int dir, struct of_state *q, double *mhd) 
+void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd)
 {
 	int j ;
 	double r,u,P,w,bsq,eta,ptot ;
@@ -120,14 +120,14 @@ void mhd_calc(double *pr, int dir, struct of_state *q, double *mhd)
 
 	/* single row of mhd stress tensor, 
 	 * first index up, second index down */
-	//#pragma omp simd
+	#pragma ivdep
 	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j]
 		+ ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
 
 }
 
 /* add in source terms to equations of motion */
-void source(double *ph, struct of_geom *geom, int ii, int jj, double *dU,
+void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU,
 		double Dt)
 {
 	double mhd[NDIM][NDIM] ;
@@ -141,25 +141,26 @@ void source(double *ph, struct of_geom *geom, int ii, int jj, double *dU,
 	mhd_calc(ph, 3, &q, mhd[3]) ;
 
 	/* contract mhd stress tensor with connection */
-	//#pragma omp simd
+	 #pragma ivdep
 	PLOOP dU[k] = 0. ;
 
 	DLOOP {
-		dU[UU] += mhd[j][k]*conn[index2(ii,jj)][k][0][j] ;
-		dU[U1] += mhd[j][k] * conn[index2(ii, jj)][k][1][j];
-		dU[U2] += mhd[j][k] * conn[index2(ii, jj)][k][2][j];
-		dU[U3] += mhd[j][k] * conn[index2(ii, jj)][k][3][j];
+		dU[UU] += mhd[j][k] * conn[n][index2(n,ii,jj,zz)][k][0][j] ;
+		dU[U1] += mhd[j][k] * conn[n][index2(n, ii, jj, zz)][k][1][j];
+		dU[U2] += mhd[j][k] * conn[n][index2(n, ii, jj, zz)][k][2][j];
+		dU[U3] += mhd[j][k] * conn[n][index2(n, ii, jj, zz)][k][3][j];
+		//printf("(%d,%d,%f):%f\n", j, k, gcon[index2(ii, jj)][0][k][j] / gcon[index2(ii, jj)][0][j][k], log(fabs(gcon[index2(ii, jj)][0][k][j])));
 	}
 
 	//misc_source(ph, ii, jj, geom, &q, dU, Dt) ;
-	//#pragma omp simd
+	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
 
 	/* done! */
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
-double bsq_calc(double *pr, struct of_geom *geom)
+double bsq_calc(double * restrict pr, struct of_geom * restrict geom)
 {
 	struct of_state q ;
 
@@ -168,7 +169,7 @@ double bsq_calc(double *pr, struct of_geom *geom)
 }
 
 /* find ucon, ucov, bcon, bcov from primitive variables */
-void get_state(double *pr, struct of_geom *geom, struct of_state *q)
+void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_state * restrict q)
 {
 
 	/* get ucon */
@@ -181,14 +182,14 @@ void get_state(double *pr, struct of_geom *geom, struct of_state *q)
 }
 
 /* find contravariant four-velocity */
-void ucon_calc(double *pr, struct of_geom *geom, double *ucon)
+void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
 {
 	double alpha,gamma ;
 	double beta[NDIM] ;
 	int j ;
 
 	alpha = 1./sqrt(-geom->gcon[TT][TT]) ;
-	//#pragma omp simd
+	 #pragma ivdep
 	SLOOPA beta[j] = geom->gcon[TT][j]*alpha*alpha ;
 
 	if( gamma_calc(pr,geom,&gamma) ) { 
@@ -199,14 +200,14 @@ void ucon_calc(double *pr, struct of_geom *geom, double *ucon)
 	}
 
 	ucon[TT] = gamma/alpha ;
-	//#pragma omp simd
+	 #pragma ivdep
 	SLOOPA ucon[j] = pr[U1+j-1] - gamma*beta[j]/alpha ;
 
 	return ;
 }
 
 /* find gamma-factor wrt normal observer */
-int gamma_calc(double *pr, struct of_geom *geom, double *gamma)
+int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {
         double qsq ;
         qsq =     geom->gcov[1][1]*pr[U1]*pr[U1]
@@ -241,20 +242,20 @@ int gamma_calc(double *pr, struct of_geom *geom, double *gamma)
  * 
  */
 
-void vchar(double *pr, struct of_state *q, struct of_geom *geom, int js, 
-		double *vmax, double *vmin)
+void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,
+	double * restrict vmax, double * restrict vmin, int a, int b, int c)
 {
 	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2,rho,u ;
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
 	double Asq,Bsq,Au,Bu,AB,Au2,Bu2,AuBu,A,B,C ;
 	int j ;
 
-	//#pragma omp simd
+	 #pragma ivdep
 	DLOOPA Acov[j] = 0. ;
 	Acov[js] = 1. ;
 	raise(Acov,geom,Acon) ;
 	
-	//#pragma omp simd
+	 #pragma ivdep
 	DLOOPA Bcov[j] = 0. ;
 	Bcov[TT] = 1. ;
 	raise(Bcov,geom,Bcon) ;
@@ -323,11 +324,11 @@ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int js,
 	vm = -(-B - discr) / (2.*A);
 	
 	#if( FULL_DISP ) 
-	double vp2, vm2;
-	vp2 = NewtonRaphson(vp , 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vp= vp2;
-	vm = vm2;
+		double vp2, vm2;
+		vp2 = NewtonRaphson(vp, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+		vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+		vp = vp2;
+		vm = vm2;
 	#endif
 
 	if(vp > vm) {
@@ -363,15 +364,15 @@ double NewtonRaphson(double start, size_t max_count, int dir, double *ucon, doub
 	double dx = start/1000000.0;
 	double x = start;
 	double diff, derivative;
-	do{
+	//do{
 		diff = Drel(dir, x, ucon, ucov, bcon, geom, E, vasq, csq);
 		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / dx;
 		count++;
 		x = x - diff / (derivative);
-	} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
-	if (count >= 3){
-		x = start;
-	}
+	//} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
+	//if (count >= 3){
+	//	x = start;
+	//}
 	return x;
 }
 
@@ -387,10 +388,13 @@ double Drel(int dir, double v, double *ucon, double *ucov, double *bcon, struct 
 	if (dir == 2){
 		kcov[2] = 1.0;
 	}
+	if (dir == 3){
+		kcov[3] = 1.0;
+	}
 	raise(kcov, geom, kcon);
 	om = dot(ucon, kcov);
 	omsq = pow(om, 2.0);
-	//#pragma omp simd
+	#pragma ivdep
 	for (i = 0; i < NDIM; i++){
 		Kcov[i] = kcov[i] + ucov[i] * om;
 		Kcon[i] = kcon[i] + ucon[i] * om;

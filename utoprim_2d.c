@@ -62,8 +62,8 @@ change this aspect of the code please comment out the "return(retval)"
 statement after "retval = 5;" statement in Utoprim_new_body();
 
 ******************************************************************************/
-
 #include "u2p_util.h"
+#include "decs.h"
 #define NEWT_DIM 2
 
 /* these variables need to be shared between the functions
@@ -126,10 +126,11 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 
 	if (U[0] <= 0.) {
 		return(-100);
+		//U[0] = 0.01;
 	}
 
 	/* First update the primitive B-fields */
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
 	/* Set the geometry variables: */
@@ -138,21 +139,21 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 	/* Transform the CONSERVED variables into the new system */
 	U_tmp[RHO] = alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = UTCON1; i <= UTCON3; i++) {
 		U_tmp[i] = alpha * U[i] / gdet;
 	}
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) {
 		U_tmp[i] = alpha * U[i] / gdet;
 	}
 
 	/* Transform the PRIMITIVE variables into the new system */
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 0; i < BCON1; i++) {
 		prim_tmp[i] = prim[i];
 	}
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) {
 		prim_tmp[i] = alpha*prim[i];
 	}
@@ -161,11 +162,15 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
-		//#pragma omp simd
+		 #pragma ivdep
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
 	}
+
+	#if(DOKTOT)
+	prim[KTOT] = U[KTOT] / U[RHO];
+	#endif
 
 	return(ret);
 
@@ -225,26 +230,26 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	// Assume ok initially:
 	retval = 0;
 	
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
 
 	lower_g(Bcon, gcov, Bcov);
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
 	raise_g(Qcov, gcon, Qcon);
 
 
 	Bsq = 0.;
-	////#pragma omp simd reduction(+:Bsq)
+	/*#pragma ivdepreduction(+:Bsq)*/
 	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
 
 	QdotB = 0.;
-	//#pragma omp simd reduction(+:QdotB)
+	//#pragma ivdepreduction(+:QdotB)
 	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
 	QdotBsq = QdotB*QdotB;
 
@@ -254,7 +259,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	Qdotn = Qcon[0] * ncov[0];
 
 	Qsq = 0.;
-	//#pragma omp simd reduction(+:Qsq)
+	//#pragma ivdepreduction(+:Qsq)
 	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
 
 	Qtsq = Qsq + Qdotn*Qdotn;
@@ -264,7 +269,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	/* calculate W from last timestep and use for guess */
 	utsq = 0.;
 	for (i = 1; i<4; i++)
-		//#pragma omp simd reduction(+:utsq)
+		//#pragma ivdepreduction(+:utsq)
 		for (j = 1; j<4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
 
 
@@ -343,13 +348,13 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	prim[RHO] = rho0;
 	prim[UU] = u;
 
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
 
 	/* set field components */
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 
@@ -454,7 +459,7 @@ static int general_newton_raphson(FTYPE x[], int n,
 	errx = 1.;
 	df = f = 1.;
 	i_extra = doing_extra = 0;
-	//#pragma omp simd
+	 #pragma ivdep
 	for (id = 0; id < n; id++)  x_old[id] = x_orig[id] = x[id];
 
 	vsq_old = vsq = W = W_old = 0.;
@@ -469,13 +474,13 @@ static int general_newton_raphson(FTYPE x[], int n,
 
 		/* Save old values before calculating the new: */
 		errx = 0.;
-		//#pragma omp simd
+		 #pragma ivdep
 		for (id = 0; id < n; id++) {
 			x_old[id] = x[id];
 		}
 
 		/* Make the newton step: */
-		//#pragma omp simd
+		 #pragma ivdep
 		for (id = 0; id < n; id++) {
 			x[id] += dx[id];
 		}

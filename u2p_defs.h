@@ -53,8 +53,13 @@
  /* your choice of floating-point data type */
 #define FTYPE double    
 
+#ifndef NPR
 #define NPR 8
+#endif
+
+#ifndef NDIM
 #define NDIM 4
+#endif
 
 /* Adiabatic index used for the state equation */
 #define GAMMA	(gam)  

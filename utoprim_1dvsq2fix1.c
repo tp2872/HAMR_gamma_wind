@@ -146,6 +146,7 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][ND
 
   if( U[0] <= 0. ) { 
     return(-100);
+	  //U[0] = prim[RHO] * gdet;
   }
 
   K_atm2 = K ; 

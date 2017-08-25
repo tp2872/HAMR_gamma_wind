@@ -99,13 +99,12 @@ void image_ppm(double *f, char *fname);
 void image_all( int image_count ) 
 { 
 
-  int i,j,z,k, h, i_img;
+  int i,j,z,k, h, i_img, n;
   static int first_call = 1;
   static char ifnam[3*NIMG+1][100];
   double gamma;
   struct of_geom geom ;
   static const double fimage_logmin = 1.e-15;
-
 
 	if ((IGAM + 1) != NIMG) {
 		  fprintf(stderr, "image_all(): Index problem with fimage[] \n");
@@ -148,31 +147,30 @@ void image_all( int image_count )
   ************************************************************************/
   k = 0 ;
   IMAGELOOP { 
-	get_geometry_direct(i, j, CENT, &geom);
+	/*get_geometry_direct(i, j,0, CENT, &geom);
     if( gamma_calc(psave[index3(i,j)],&geom,&gamma) ) { gamma = 1.; }
 	fimage[IRHO][k] = psave[index3(i, j)][RHO];
 	fimage[IUU][k] = psave[index3(i, j)][UU];
 	fimage[IBSQ][k] = bsq_calc(psave[index3(i, j)], &geom);
-    fimage[IGAM][k] = gamma ;
+    fimage[IGAM][k] = gamma ;*/
     k++;
   }
-  
 
   /************************************************************************
     Output non-log versions:
   ************************************************************************/
   for( i_img = 0 ; i_img < NIMG; i_img++ ) {  
-    image( fimage[i_img], ifnam[i_img] );  
+   image( fimage[i_img], ifnam[i_img] );  
   }
 
   /************************************************************************
     Make log version of the image functions 
   ************************************************************************/
   for( i = 0 ; i < NIMG*N1*N2; i++ ) { 
-    fimage[0][i] = log( fabs(fimage[0][i]) + fimage_logmin );
+   // fimage[0][i] = log( fabs(fimage[0][i]) + fimage_logmin );
   }
   for( i_img = 0 ; i_img < NIMG; i_img++ ) { 
-    image( fimage[i_img], ifnam[i_img+NIMG] );
+   // image( fimage[i_img], ifnam[i_img+NIMG] );
   }
 
   /************************************************************************
@@ -181,16 +179,18 @@ void image_all( int image_count )
   for( k = 0 ; k < NFAIL; k++ ) { 
 	  h = 0;
 	  IMAGELOOP{
-		  fimage[0][h] = fsave[index3(i, j)][k];
+		  //fimage[0][h] = fsave[index3(i, j)][k];
 		  h++;
     }
     image( fimage[0], ifnam[k+2*NIMG] );
   }
-  
+
   /* Reset array after every image dump: */
- ZLOOP3D_MPI{
-	  for (k = 0; k < NFAIL; k++) {
-		  failimage[index(i, j, z)][k] = 0;
+  for (n = 0; n < n_active; n++){
+	  ZLOOP3D_MPI{
+		  for (k = 0; k < NFAIL; k++) {
+			  failimage[n_ord[n]][index(n_ord[n], i, j, z)][k] = 0;
+		  }
 	  }
   }
 

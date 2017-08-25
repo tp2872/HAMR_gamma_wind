@@ -51,177 +51,450 @@
  * conditions 
  *
  **/
+double costh(double th, double ph, double tilt);
+double sinth(double th, double ph, double tilt);
+double cosph(double th, double ph, double tilt);
+double sinph(double th, double ph, double tilt);
 
 /* should return boyer-lindquist coordinte of point */
-void bl_coord(double *X, double *r, double *th, double *phi)
+void bl_coord(double * restrict X, double * restrict r, double * restrict th, double * restrict phi)
 {
-	*r = exp(X[1]) + R0 ;
+	double V[4];
 
-	double A1 = 1. / (1. + pow(CHARLIE*log(*r) / log(10.), DELTA));
-	double A2 = (0.5 - BRAVO*0.5) / pow(0.5, QUEBEC);
-	double Xc = sqrt(pow(X[2], 2.));
-	double sign=1.;
-	
-	if (X[2] < 0.0){
-		sign = -1.;
-	}
-	if (X[2] > 1.0){
-		sign = -1.;
-		Xc = 2. - Xc;
-	}
-	if (X[2] < 0.5){
-		*th = sign*(A1* M_PI*Xc + M_PI*(BRAVO*Xc + A2*pow(Xc, QUEBEC))*(1. - A1) + 0.50*(1. - A1)*sin(M_PI + 2.*M_PI*(BRAVO*Xc + A2*pow(Xc, QUEBEC))));
-	}
-	else{
-		*th = M_PI - sign*(A1* M_PI*(1. - Xc) + M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))*(1. - A1) + 0.50*(1. - A1)*sin(M_PI + 2.*M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))));
-	}
-
-	*phi = X[3];
+	#if(!DOCYLINDRIFYCOORDS)
+	vofx_matthewcoords(X,V);
+	#else
+	vofx_cylindrified(X, vofx_matthewcoords, V);
+	#endif
 
 	// avoid singularity at polar axis
 	#if(COORDSINGFIX)
-	if(fabs(*th)<SINGSMALL){
-	  if((*th)>=0) *th =  SINGSMALL;
-	  if((*th)<0)  *th = -SINGSMALL;
+	if (fabs(V[2])<SINGSMALL){
+		if (V[2] >= 0.0) V[2] = SINGSMALL;
+		if (V[2]<0.0)  V[2] = -SINGSMALL;
 	}
-	if(fabs(M_PI - (*th)) < SINGSMALL){
-	  if((*th)>=M_PI) *th = M_PI+SINGSMALL;
-	  if((*th)<M_PI)  *th = M_PI-SINGSMALL;
+	if (fabs(M_PI - V[2]) <SINGSMALL){
+		if (V[2] >= M_PI) V[2] = M_PI + SINGSMALL;
+		if (V[2]<M_PI)  V[2] = M_PI -  SINGSMALL;
 	}
 	#endif
-	
+
+	*r = V[1];
+	*th = V[2];
+	*phi = V[3];
 	return ;
 }
 
-/* insert metric here */
-void gcov_func(double *X, double gcov[][NDIM])
-{
-	int j,k ;
-	double sth,cth,s2,rho2 ;
-	double r,th, phi ;
-	double tfac,rfac,hfac1, hfac2 ,pfac, A1, A2, A3, Xc, sign ;
+void vofx_matthewcoords(double *X, double *V){
+	V[0] = X[0];
+	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
+	if (X[1] < Xtrans){
+		V[1] = exp(pow(X[1], RADEXP)) + RB;
+	}
+	else if (X[1] >= Xtrans && X[1]<1.01*Xtrans){
+		V[1] = 10.*(X[1] / Xtrans - 1.)*((X[1] - Xtrans)*RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP) + RTRANS) +
+			(1. - 10.*(X[1] / Xtrans - 1.))*(exp(pow(X[1], RADEXP)) + RB);
+	}
+	else{
+		V[1] = (X[1] - Xtrans)*RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP) + RTRANS;
+	}
+	double A1 = 1. / (1. + pow(CHARLIE*(log(V[1]) / log(10.) - R1), DELTA));
+	double A2 = BRAVO*(log(V[1]) / log(10.) - R1) + TANGO;
+	double A3 = pow(0.5, 1. - A2);
+	double sign = 1.;
+	double X_2 =(X[2]+1.0)/2.0;
+	double Xc = sqrt(pow(X_2, 2.));
 
-	DLOOP gcov[j][k] = 0. ;
-
-	bl_coord(X,&r,&th, &phi) ;
-
-	cth = cos(th) ;
-	sth = sin(th) ;
-	s2 = sth*sth ;
-	rho2 = r*r + a*a*cth*cth ;
-	tfac = 1. ;
-	rfac = r - R0 ;
-	A1 = CHARLIE*DELTA*pow(log(10.), -DELTA)*pow(CHARLIE*log(r), -1. + DELTA)/pow(1. + pow(log(10.), -DELTA)*pow(CHARLIE*log(r), DELTA), 2.);
-	A2 = (0.5 - BRAVO*0.5) / pow(0.5, QUEBEC);
-	A3 = 1. / (1. + pow(log(10.), -DELTA)*pow(CHARLIE*log(r), DELTA));
-	Xc = sqrt(pow(X[2], 2.));
-	sign = 1.;
-	if (X[2] < 0.0){
+	if (X_2 < 0.0){
 		sign = -1.;
 	}
-	if (X[2] > 1.0){
+	if (X_2 > 1.0){
 		sign = -1.;
 		Xc = 2. - Xc;
 	}
-	if (X[2] < 0.5){
-		hfac1 = sign*(-M_PI*A1*Xc + M_PI*A1*(BRAVO*Xc + A2*pow(Xc, QUEBEC)) + 0.5*A1*sin(2.*M_PI*(BRAVO*Xc + A2*pow(Xc, QUEBEC))));
-		hfac2 = M_PI * A3 + M_PI*(BRAVO + A2*QUEBEC*pow(Xc, -1. + QUEBEC))*(1. - A3) *(1. - cos(2.*M_PI*(BRAVO*Xc + A2*pow(Xc, QUEBEC))));
+	if (X_2 >= 0.5){
+		Xc = 1. - Xc;
+		//if (log(V[1]) / log(10.)>R1){
+			V[2] = M_PI - sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
+		//}
+		//else{
+		//	V[2] = M_PI - sign*(M_PI*Xc + omega*(1. - 1. / (1. - pow(log(V[1]) / log(10.) - R1, 3.)))*atan(zeta*pow(Xc, iota)) * (0.5 - Xc));
+		//}
+		//*th = M_PI - sign*(A1* M_PI*(1. - Xc) + M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))*(1. - A1) + 0.50*(1. - A1)*sin(M_PI + 2.*M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))));
 	}
 	else{
-		hfac1 = sign*(-M_PI*A1*(1. - Xc) + M_PI*A1*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC)) + 0.5*A1*sin(2.*M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))));
-		hfac2 = M_PI * A3 + M_PI*(BRAVO + A2*QUEBEC*pow(1. - Xc, -1. + QUEBEC))*(1. - A3) *(1. - cos(2.*M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))));
+		//if (log(V[1]) / log(10.)>R1){
+			V[2] = sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
+	//	}
+	//	else{
+	//		V[2] = sign*(M_PI*Xc + omega*(1. - 1. / (1. - pow(log(V[1]) / log(10.) - R1, 3.)))*atan(zeta*pow(Xc, iota)) * (0.5 - Xc));
+	//	}
 	}
-
-	pfac = 1. ;
-
-	gcov[TT][TT] = (-1. + 2.*r/rho2)      * tfac*tfac ;
-	gcov[TT][1] = (2.*r/rho2)             * tfac*rfac ;
-	gcov[TT][3] = (-2.*a*r*s2/rho2)       * tfac*pfac ;
-
-	gcov[1][TT] = gcov[TT][1] ;
-	gcov[1][1] = (1. + 2.*r/rho2)         * rfac*rfac + rho2*hfac1*hfac1;
-	gcov[1][2] = rho2					  * hfac1*hfac2;
-	gcov[1][3] = (-a*s2*(1. + 2.*r/rho2)) * rfac*pfac ;
-
-	gcov[2][1] = gcov[1][2];
-	gcov[2][2] = rho2                     * hfac2*hfac2 ;
-
-	gcov[3][TT] = gcov[TT][3] ;
-	gcov[3][1]  = gcov[1][3] ;
-	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r/rho2)) * pfac*pfac ;
+	V[3] = X[3];
 }
 
-/* some grid location, dxs */
-void set_points()
+/* insert metric here */
+void gcov_func(double *X, double gcovp[][NDIM])
 {
-        startx[1] = log(Rin - R0) ;
-        startx[2] = 0.+0.5*(1.-fractheta) ;
-		startx[3] = 0.;
-        dx[1] = log((Rout - R0)/(Rin - R0))/N1 ;
-        dx[2] = fractheta/(N2) ;
-		dx[3] = 2.*M_PI / (N3);
-}
+	int i, j, k, l;
+	double sth, cth, s2, rho2, sph, cph;
+	double r, th, phi;
+	double tfac, rfac, hfac, pfac;
+	double gcov[NDIM][NDIM];
+	double dxdxp[NDIM][NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxt[NDIM][NDIM], dxtdx[NDIM][NDIM];
+	double V[NDIM], Vp[NDIM];
+	double T1, T2, P1, P2, A;
+	double offset = 0.000000001;
+	double tilt = TILT_ANGLE / 180.*M_PI;
+	DLOOP gcov[j][k] = 0.;
+	#if(NONSYMMETRIC)
+	bl_coord(X, &r, &th, &phi);
 
-void fix_flux(double(*F1)[NPR], double(*F2)[NPR], double(*F3)[NPR])
-{
-	int i,j,z,k ;
-	double test;
-	if (N2_MPI_offset == 0){
-		#pragma omp parallel shared(F1, F2, F3) private(i,z,k)
-		{
-			#pragma omp for schedule(static,1)
-			for (i = N1_MPI_offset - D1; i < N1_MPI_offset + N1_MPI+D1; i++){
-				//#pragma omp simd
-				for (z = N3_MPI_offset - D3; z < N3_MPI_offset + N3_MPI + D3; z++){
-					test = F1[index(i, -1, z)][B2];
-					F1[index(i, -1, z)][B2] = -F1[index(i, 0, z)][B2];
-					F3[index(i, -1, z)][B2] = -F3[index(i, 0, z)][B2];
-				//	if ((F1[index(i, -1, z)][B2]/test>1.00001 ||F1[index(i, -1, z)][B2]/test<0.99999)) printf("F1: %f\n", F1[index(i, -1, z)][B2]/test);
-					#if INFLOW==0
-					PLOOP F2[index(i, 0, z)][k] = 0.;
-					#endif	
-				}	
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(th)*cos(phi);
+	dxdr[1][2] = r*cos(th)*cos(phi);
+	dxdr[1][3] = -r*sin(th)*sin(phi);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(th)*sin(phi);
+	dxdr[2][2] = r*cos(th)*sin(phi);
+	dxdr[2][3] = r*sin(th)*cos(phi);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(th);
+	dxdr[3][2] = -r*sin(th);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
+
+	//compute Jacobian nt->t (dt/dnt)
+	dxdxt[0][0] = 1.;
+	dxdxt[0][1] = 0.;
+	dxdxt[0][2] = 0.;
+	dxdxt[0][3] = 0.;
+	dxdxt[1][0] = 0.;
+	dxdxt[1][1] = cos(tilt);
+	dxdxt[1][2] = 0.;
+	dxdxt[1][3] = -sin(tilt);
+	dxdxt[2][0] = 0.;
+	dxdxt[2][1] = 0.;
+	dxdxt[2][2] = 1.;
+	dxdxt[2][3] = 0.;
+	dxdxt[3][0] = 0.;
+	dxdxt[3][1] = sin(tilt);
+	dxdxt[3][2] = 0.0;
+	dxdxt[3][3] = cos(tilt);
+	invert_matrix(dxdxt, dxtdx);
+
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	dxdxp_func(X, dxdxp);
+
+	
+	Vp[1] = r*sin(th)*cos(phi);
+	Vp[2] = r*sin(th)*sin(phi);
+	Vp[3] = r*cos(th);
+
+	V[1] = Vp[1] * cos(-tilt) - Vp[3] * sin(-tilt);
+	V[2] = Vp[2];
+	V[3] = sin(-tilt)*Vp[1] + cos(-tilt)*Vp[3];
+	Vp[1] = sqrt(V[1] * V[1] + V[2] * V[2] + V[3] * V[3]);
+	Vp[2] = acos(V[3]/Vp[1]);
+	Vp[3] = atan2(V[2],V[1]);
+	if (Vp[2] < 0.0) Vp[2] *= -1;
+	if (Vp[2] > M_PI) Vp[2] = M_PI - (Vp[2] - M_PI);
+
+	#if(COORDSINGFIX)
+	if (fabs(Vp[2])<SINGSMALL){
+		if (Vp[2] >= 0.0) Vp[2] = SINGSMALL;
+		if (Vp[2]<0.0)  Vp[2] = -SINGSMALL;
+	}
+	if (fabs(M_PI - Vp[2]) <SINGSMALL){
+		if (Vp[2] >= M_PI) Vp[2] = M_PI + SINGSMALL;
+		if (Vp[2]<M_PI)  Vp[2] = M_PI - SINGSMALL;
+	}
+	#endif
+	//printf("r: %f %f, th: %f %f, phi: %f %f \n", r,Vp[1], th,Vp[2], phi,Vp[3]);
+	r = Vp[1];
+	th = Vp[2];
+	phi = Vp[3];
+
+	cth = cos(th);
+	sth = sin(th);
+
+	s2 = sth*sth;
+	rho2 = r*r + a*a*cth*cth;
+
+	gcov[TT][TT] = (-1. + 2.*r / rho2);
+	gcov[TT][1] = (2.*r / rho2);
+	gcov[TT][3] = (-2.*a*r*s2 / rho2);
+
+	gcov[1][TT] = gcov[TT][1];
+	gcov[1][1] = (1. + 2.*r / rho2);
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
+
+	gcov[2][2] = rho2;
+
+	gcov[3][TT] = gcov[TT][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
+	#else
+	bl_coord(X, &r, &th, &phi);
+
+	cth = cos(th);
+	sth = sin(th);
+
+	s2 = sth*sth;
+	rho2 = r*r + a*a*cth*cth;
+
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	dxdxp_func(X, dxdxp);
+
+	gcov[TT][TT] = (-1. + 2.*r / rho2);
+	gcov[TT][1] = (2.*r / rho2);
+	gcov[TT][3] = (-2.*a*r*s2 / rho2);
+
+	gcov[1][TT] = gcov[TT][1];
+	gcov[1][1] = (1. + 2.*r / rho2);
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
+
+	gcov[2][2] = rho2;
+
+	gcov[3][TT] = gcov[TT][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
+	#endif
+
+	#if(NONSYMMETRIC)
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(Vp[2])*cos(Vp[3]);
+	dxdr[1][2] = r*cos(Vp[2])*cos(Vp[3]);
+	dxdr[1][3] = -r*sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][2] = r*cos(Vp[2])*sin(Vp[3]);
+	dxdr[2][3] = r*sin(Vp[2])*cos(Vp[3]);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(Vp[2]);
+	dxdr[3][2] = -r*sin(Vp[2]);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
+
+	//convert from kerr schild to cartesian coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcovp[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * drdx[k][i] * drdx[l][j];
+				}
+			}
+		}
+	}
+	//convert from cartesian to tilted cartesian coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcov[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcov[i][j] += gcovp[k][l] * dxtdx[k][i] * dxtdx[l][j];
+				}
 			}
 		}
 	}
 
-	if (N2_MPI_offset + N2_MPI==N2){
-		#pragma omp parallel shared(F1, F2, F3) private(i,z,k)
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	bl_coord(X, &r, &th, &phi);
+
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(th)*cos(phi);
+	dxdr[1][2] = r*cos(th)*cos(phi);
+	dxdr[1][3] = -r*sin(th)*sin(phi);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(th)*sin(phi);
+	dxdr[2][2] = r*cos(th)*sin(phi);
+	dxdr[2][3] = r*sin(th)*cos(phi);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(th);
+	dxdr[3][2] = -r*sin(th);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
+
+	//convert back to tilted kerr-schild coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcovp[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * dxdr[k][i] * dxdr[l][j];
+				}
+			}
+		}
+	}
+	for (i = 0; i < NDIM; i++){
+		for (j = 0; j < NDIM; j++){
+			gcov[i][j] = gcovp[i][j];
+		}
+	}
+	#endif
+	//convert to code coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcovp[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * dxdxp[k][i] * dxdxp[l][j];
+				}
+			}
+		}
+	}
+}
+
+double costh(double th, double ph, double tilt){
+	return (-sin(th)*cos(ph)*sin(tilt) + cos(th)*cos(tilt));
+}
+
+double sinth(double th, double ph, double tilt){
+	return sqrt(1. - pow(costh(th, ph, tilt),2.));
+}
+
+double cosph(double th, double ph, double tilt){
+	return sqrt(1. - pow(sinph(th, ph, tilt), 2.0));
+}
+double sinph(double th, double ph, double tilt){
+	return sin(th)*sin(ph) / (fabs(sinth(th, ph, tilt))+0.0001);
+}
+
+/* NOTE: parameter hides global variable */
+void dxdxp_func(double *X, double dxdxp[][NDIM])
+{
+	int i, j, k, l;
+	double Xh[NDIM], Xl[NDIM];
+	double Vh[NDIM], Vl[NDIM];
+
+	for (k = 0; k<NDIM; k++) {
+		for (l = 0; l<NDIM; l++) Xh[l] = X[l];
+		for (l = 0; l<NDIM; l++) Xl[l] = X[l];
+		Xh[k] += 0.00001;
+		Xl[k] -= 0.00001;
+		Vh[0] = Xh[0];
+		Vl[0] = Xl[0];
+		bl_coord(Xh, &Vh[1], &Vh[2], &Vh[3]);
+		bl_coord(Xl, &Vl[1], &Vl[2], &Vl[3]);
+		for (j = 0; j<NDIM; j++)
+			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
+	}
+}
+
+/* some grid location, dxs */
+void set_points(int n)
+{
+	/* Grid parameters*/
+	a = 0.9375;
+	Rin = 0.85*(1. + sqrt(1. - a*a));
+	Rout = 150.;
+	lim = MC;
+	failed = 0;	/* start slow */
+	cour = 0.9;
+	if (dt>1e-5) dt = dt;
+	else dt = 1.e-5;
+	R0 = 0.0;
+	//t = 0.;
+	hslope = 0.6;
+	gam = 5. / 3.;
+
+	if (N2 != 1) {
+		//2D problem, use full pi-wedge in theta
+		fractheta = 1.0 - 2.0 / ((double)N2)*(TRANS_BOUND==1);
+	}
+	else{
+		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
+		fractheta = 1.e-2;
+	}
+
+	double Xtrans = pow(log(RTRANS-RB), 1. / RADEXP);
+	startx[1] = pow(log(Rin-RB), 1. / RADEXP);
+	startx[2] = -1.+1.*(1.-fractheta) ;
+	startx[3] = 0.;
+	if(Rout<=RTRANS){
+		dx[n][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+	}
+	else{
+		dx[n][1] = ((Rout - RTRANS + Xtrans *RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP)) / (RADEXP*exp(pow(Xtrans, RADEXP))*
+			pow(Xtrans, -1. + RADEXP)) - pow(log(Rin), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+	}
+	dx[n][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
+	dx[n][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
+}
+
+void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n)
+{
+	int i,j,z,k;
+	double test;
+	if (block[n][AMR_NBR1] == -1){
+		#pragma omp parallel shared(block, n,n_ord,F1, F2, F3) private(i,z,k)
 		{
 			#pragma omp for schedule(static,1)
-			for (i = N1_MPI_offset - D1; i < N1_MPI_offset + N1_MPI+D1; i++){
-				//#pragma omp simd
-				for (z = N3_MPI_offset - D3; z < N3_MPI_offset + N3_MPI + D3; z++){
-					F1[index(i, N2, z)][B2] = -F1[index(i, N2-1, z)][B2];
-					F3[index(i, N2, z)][B2] = -F3[index(i, N2-1, z)][B2];
+			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
+				#pragma ivdep
+				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+					F1[n][index(n,i, -1, z)][B2] = -F1[n][index(n,i, 0, z)][B2];
+					F3[n][index(n,i, -1, z)][B2] = -F3[n][index(n,i, 0, z)][B2];
+					#if INFLOW==0
+					PLOOP F2[n][index(n,i, 0, z)][k] = 0.;
+					#endif	
+				}
+			}
+		}
+	}
+
+	if (block[n][AMR_NBR3] == -1){
+		#pragma omp parallel shared(block,n,n_ord,F1, F2, F3) private(i,z,k)
+		{
+			#pragma omp for schedule(static,1)
+			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
+				#pragma ivdep
+				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+					F1[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+					F3[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
 				}
 				#if INFLOW==0
-				PLOOP F2[index(i, N2, z)][k] = 0.;
+				PLOOP F2[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = 0.;
 				#endif	
 			}
 		}
 	}
 	if (INFLOW == 0){
-		if (N1_MPI_offset == 0){
-			#pragma omp parallel shared(F1) private(j,z)
+		if (block[n][AMR_NBR4] == -1){
+			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
 			{
 				#pragma omp for schedule(static,1)
-				for (j = N2_MPI_offset - D2; j < N2_MPI_offset + N2_MPI + D2; j++){
-					//#pragma omp simd
-					for (z = N3_MPI_offset - D3; z < N3_MPI_offset + N3_MPI + D3; z++){
-						if (F1[index(0, j, z)][RHO] > 0.) F1[index(0, j, z)][RHO] = 0.;
+				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
+					#pragma ivdep
+					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+						if (F1[n][index(n,0, j, z)][RHO] > 0.) F1[n][index(n,0, j, z)][RHO] = 0.;
 					}
 				}
 			}
 		}
-		if (N1_MPI_offset + N1_MPI == N1){
-			#pragma omp parallel shared(F1) private(j,z)
+		if (block[n][AMR_NBR2] == -1){
+			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
 			{
 				#pragma omp for schedule(static,1)
-				for (j = N2_MPI_offset - D2; j < N2_MPI_offset + N2_MPI + D2; j++){
-					//#pragma omp simd
-					for (z = N3_MPI_offset - D3; z < N3_MPI_offset + N3_MPI + D3; z++){
-						if (F1[index(N1, j, z)][RHO] < 0.) F1[index(N1, j, z)][RHO] = 0.;
+				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
+				#pragma ivdep
+					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+						if (F1[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
 					}
 				}
 			}
@@ -230,12 +503,12 @@ void fix_flux(double(*F1)[NPR], double(*F2)[NPR], double(*F3)[NPR])
 	return;
 }
 
-void rescale(double *pr, int which, int dir, int ii, int jj, int zz, int face, struct of_geom *geom)
+void rescale(double *pr, int which, int dir, int n, int ii, int jj, int zz, int face, struct of_geom *geom)
 {
 	double scale[NPR], r, th, phi, X[NDIM];
 	int k;
 
-	coord(ii, jj, zz, face, X);
+	coord(n, ii, jj, zz, face, X);
 	bl_coord(X, &r, &th, &phi);
 
 	if (dir == 1) {
@@ -280,4 +553,336 @@ void rescale(double *pr, int which, int dir, int ii, int jj, int zz, int face, s
 		}
 		exit(100) ;
 	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+//  CYLINDRIFICATION
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//smooth step function:
+// Ftr = 0 if x < 0, Ftr = 1 if x > 1 and smoothly interps. in btw.
+double Ftr(double x)
+{
+	double res;
+
+	if (x <= 0.) {
+		res = 0.;
+	}
+	else if (x >= 1) {
+		res = 1.;
+	}
+	else {
+		res = (64. + cos(5. * M_PI*x) + 70. * sin((M_PI*(-1. + 2. * x)) / 2.) + 5. * sin((3. * M_PI*(-1. + 2. * x)) / 2.)) / 128.;
+	}
+
+	return(res);
+}
+
+double Ftrgenlin(double x, double xa, double xb, double ya, double yb)
+{
+	double Ftr(double x);
+	double res;
+
+	res = (x*ya) / xa + (-((x*ya) / xa) + ((x - xb)*(1. - yb)) / (1. - xb) + yb)*Ftr((x - xa) / (-xa + xb));
+
+	return(res);
+}
+
+//goes from ya to yb as x goes from xa to xb
+double Ftrgen(double x, double xa, double xb, double ya, double yb)
+{
+	double Ftr(double x);
+	double res;
+
+	res = ya + (yb - ya)*Ftr((x - xa) / (xb - xa));
+
+	return(res);
+}
+
+double Fangle(double x)
+{
+	double res;
+
+	if (x <= -1.) {
+		res = 0.;
+	}
+	else if (x >= 1.) {
+		res = x;
+	}
+	else {
+		res = (1. + x + (-140. * sin((M_PI*(1. + x)) / 2.) + (10. * sin((3. * M_PI*(1. + x)) / 2.)) / 3. + (2. * sin((5. * M_PI*(1. + x)) / 2.)) / 5.) / (64.*M_PI)) / 2.;
+	}
+
+	return(res);
+
+}
+
+double limlin(double x, double x0, double dx, double y0)
+{
+	double Fangle(double x);
+	return(y0 - dx * Fangle(-(x - x0) / dx));
+}
+
+double minlin(double x, double x0, double dx, double y0)
+{
+	double Fangle(double x);
+	return(y0 + dx * Fangle((x - x0) / dx));
+}
+
+double mins(double f1, double f2, double df)
+{
+	double limlin(double x, double x0, double dx, double y0);
+	return(limlin(f1, f2, df, f2));
+}
+
+double maxs(double f1, double f2, double df)
+{
+	double mins(double f1, double f2, double df);
+	return(-mins(-f1, -f2, df));
+}
+
+//=mins if dir < 0
+//=maxs if dir >= 0
+double minmaxs(double f1, double f2, double df, double dir)
+{
+	double mins(double f1, double f2, double df);
+	double maxs(double f1, double f2, double df);
+	if (dir >= 0) {
+		return(maxs(f1, f2, df));
+	}
+
+	return(mins(f1, f2, df));
+}
+
+static double sinth0(double *X0, double *X, void(*vofx)(double*, double*));
+static double sinth1in(double *X0, double *X, void(*vofx)(double*, double*));
+static double th2in(double *X0, double *X, void(*vofx)(double*, double*));
+static void to1stquadrant(double *Xin, double *Xout, int *ismirrored);
+static double func1(double *X0, double *X, void(*vofx)(double*, double*));
+static double func2(double *X0, double *X, void(*vofx)(double*, double*));
+
+//Converts copies Xin to Xout and converts
+//but sets Xout[2] to lie in the 1st quadrant, i.e. Xout[2] \in [-1,0])
+//if the point had to be mirrored
+void to1stquadrant(double *Xin, double *Xout, int *ismirrored)
+{
+	double ntimes;
+	int j;
+
+	DLOOPA Xout[j] = Xin[j];
+
+	//bring the angle variables to -2..2 (for X) and -2pi..2pi (for V)
+	ntimes = floor((Xin[2] + 2.0) / 4.0);
+	//this forces -2 < Xout[2] < 2
+	Xout[2] -= 4. * ntimes;
+
+	*ismirrored = 0;
+
+	if (Xout[2] > 0.) {
+		Xout[2] = -Xout[2];
+		*ismirrored = 1 - *ismirrored;
+	}
+
+	//now force -1 < Xout[2] < 0
+	if (Xout[2] < -1.) {
+		Xout[2] = -2. - Xout[2];
+		*ismirrored = 1 - *ismirrored;
+	}
+}
+
+double sinth0(double *X0, double *X, void(*vofx)(double*, double*))
+{
+	double V0[NDIM];
+	double Vc0[NDIM];
+	double Xc0[NDIM];
+	int j;
+
+	//X1 = {0, X[1], X0[1], 0}
+	DLOOPA Xc0[j] = X[j];
+	Xc0[2] = X0[2];
+
+	vofx(Xc0, Vc0);
+	vofx(X0, V0);
+
+
+	return(V0[1] * sin(V0[2]) / Vc0[1]);
+}
+
+double sinth1in(double *X0, double *X, void(*vofx)(double*, double*))
+{
+	double V[NDIM];
+	double V0[NDIM];
+	double V0c[NDIM];
+	double X0c[NDIM];
+	int j;
+
+	//X1 = {0, X[1], X0[1], 0}
+	DLOOPA X0c[j] = X0[j];
+	X0c[2] = X[2];
+
+	vofx(X, V);
+	vofx(X0c, V0c);
+	vofx(X0, V0);
+
+	return(V0[1] * sin(V0c[2]) / V[1]);
+}
+
+
+double th2in(double *X0, double *X, void(*vofx)(double*, double*))
+{
+	double V[NDIM];
+	double V0[NDIM];
+	double Vc0[NDIM];
+	double Xc0[NDIM];
+	double Xcmid[NDIM];
+	double Vcmid[NDIM];
+	int j;
+	double res;
+	double th0;
+
+	DLOOPA Xc0[j] = X[j];
+	Xc0[2] = X0[2];
+	vofx(Xc0, Vc0);
+
+	DLOOPA Xcmid[j] = X[j];
+	Xcmid[2] = 0.;
+	vofx(Xcmid, Vcmid);
+
+	vofx(X0, V0);
+	vofx(X, V);
+
+	th0 = asin(sinth0(X0, X, vofx));
+
+	res = (V[2] - Vc0[2]) / (Vcmid[2] - Vc0[2]) * (Vcmid[2] - th0) + th0;
+
+	return(res);
+}
+
+//Adjusts V[2]=theta so that a few innermost cells around the pole
+//become cylindrical
+//ASSUMES: poles are at
+//            X[2] = -1 and +1, which correspond to
+//            V[2] = 0 and pi
+void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
+{
+	double npiovertwos;
+	double X[NDIM], V[NDIM];
+	double Vin[NDIM];
+	double X0[NDIM], V0[NDIM];
+	double Xtr[NDIM], Vtr[NDIM];
+	double f1, f2, dftr;
+	double sinth, th;
+	int j, ismirrored;
+
+	vofx(Xin, Vin);
+
+	// BRING INPUT TO 1ST QUADRANT:  X[2] \in [-1 and 0]
+	to1stquadrant(Xin, X, &ismirrored);
+	vofx(X, V);
+
+	//initialize X0: cylindrify region
+	//X[1] < X0[1] && X[2] < X0[2] (value of X0[3] not used)
+	X0[0] = Xin[0];
+	/*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
+	X0[1] = pow(log(38.*(double)N3 / 250./1.5 - RB), 1. / RADEXP);
+	X0[2] = -1. + 1. / ((double)(N2));
+	X0[3] = 0.;
+	/*3D jet Rout 10000 Rg 1024x400x100*/
+	/*X0[1] = pow(log(600. - RB), 1. / RADEXP);
+	X0[2] = -1. + 3. / (double)N2;
+	X0[3] = 0.;*/
+	vofx(X0, V0);
+
+	//{0, roughly midpoint between grid origin and x10, -1, 0}
+	DLOOPA Xtr[j] = X[j];
+	//3D jet
+	//Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
+	Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
+	vofx(Xtr, Vtr);
+
+	f1 = func1(X0, X, vofx);
+	f2 = func2(X0, X, vofx);
+	dftr = func2(X0, Xtr, vofx) - func1(X0, Xtr, vofx);
+
+	// Compute new theta
+	sinth = maxs(V[1] * f1, V[1] * f2, Vtr[1] * fabs(dftr) + SMALL) / V[1];
+
+	th = asin(sinth);
+
+	//initialize Vout with the original values
+	DLOOPA Vout[j] = Vin[j];
+
+	//apply change in theta in the original quadrant
+	if (0 == ismirrored) {
+		Vout[2] = Vin[2] + (th - V[2]);
+	}
+	else {
+		//if mirrrored, flip the sign
+		Vout[2] = Vin[2] - (th - V[2]);
+	}
+}
+
+double func1(double *X0, double *X, void(*vofx)(double*, double*))
+{
+	double V[NDIM];
+
+	vofx(X, V);
+
+	return(sin(V[2]));
+}
+
+double func2(double *X0, double *X, void(*vofx)(double*, double*))
+{
+	double V[NDIM];
+	double Xca[NDIM];
+	double func2;
+	int j;
+	double sth1in, sth2in, sth1inaxis, sth2inaxis;
+
+	//{0, X[1], -1, 0}
+	DLOOPA Xca[j] = X[j];
+	Xca[2] = -1.;
+
+	vofx(X, V);
+
+	sth1in = sinth1in(X0, X, vofx);
+	sth2in = sin(th2in(X0, X, vofx));
+
+	sth1inaxis = sinth1in(X0, Xca, vofx);
+	sth2inaxis = sin(th2in(X0, Xca, vofx));
+
+	func2 = minmaxs(sth1in, sth2in, fabs(sth2inaxis - sth1inaxis) + SMALL, X[1] - X0[1]);
+
+	return(func2);
+}
+
+void gcov_func2(double r, double th, double gcov[][NDIM])
+{
+	int j, k;
+	double sth, cth, s2, rho2;
+	DLOOP gcov[j][k] = 0.;
+
+	cth = cos(th);
+	sth = sin(th);
+
+	s2 = sth*sth;
+	rho2 = r*r + a*a*cth*cth;
+
+	//compute Jacobian x1,x2,x3 -> r,th,phi
+
+	gcov[TT][TT] = (-1. + 2.*r / rho2);
+	gcov[TT][1] = (2.*r / rho2);
+	gcov[TT][3] = (-2.*a*r*s2 / rho2);
+
+	gcov[1][TT] = gcov[TT][1];
+	gcov[1][1] = (1. + 2.*r / rho2);
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
+
+	gcov[2][2] = rho2;
+
+	gcov[3][TT] = gcov[TT][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
 }

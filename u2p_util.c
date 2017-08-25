@@ -86,7 +86,7 @@ void primtoU_g(
 	       ) {
   int i,j ;
   FTYPE rho0 ;
-  static FTYPE ucon[NDIM],ucov[NDIM],bcon[NDIM],bcov[NDIM],ncov[NDIM] ;
+  FTYPE ucon[NDIM],ucov[NDIM],bcon[NDIM],bcov[NDIM],ncov[NDIM] ;
   FTYPE gamma,n_dot_b,bsq,u,p,w, alpha ;
 
 	
@@ -103,8 +103,10 @@ void primtoU_g(
   lower_g(bcon,gcov,bcov) ;
 
   n_dot_b = 0. ;
+  //#pragma ivdepreduction(+: n_dot_b)
   for(i=0;i<4;i++) n_dot_b += ncov[i]*bcon[i] ;
   bsq = 0. ;
+  //#pragma ivdepreduction(+: bsq)
   for(i=0;i<4;i++) bsq += bcov[i]*bcon[i] ;
 
   rho0 = prim[RHO] ;
@@ -114,7 +116,7 @@ void primtoU_g(
 
   // Now set the conserved variables themselves, using HARM's definition:
   U[RHO] = ucon[0]*rho0 ;
-	#pragma simd
+   #pragma ivdep
   for( i = 0; i < 4; i++) {
     U[QCOV0+i] = gamma*(w + bsq)*ucov[i] 
       - (p + bsq/2.)*ncov[i] 
@@ -127,7 +129,7 @@ void primtoU_g(
   U[BCON1] = prim[BCON1] ;
   U[BCON2] = prim[BCON2] ;
   U[BCON3] = prim[BCON3] ;
-	#pragma simd
+   #pragma ivdep
   for(i = 0; i < NPR; i++ ) {
     U[i] *= gdet;
   }
@@ -170,6 +172,7 @@ void ucon_calc_g(FTYPE prim[NPR],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
 
   u_tilde_sq = 0. ;
   for(i=0;i<NDIM;i++)
+	//#pragma ivdepreduction(+: u_tilde_sq)
     for(j=0;j<NDIM;j++)
       u_tilde_sq += gcov[i][j]*u_tilde_con[i]*u_tilde_con[j] ;
   u_tilde_sq = fabs(u_tilde_sq) ;
@@ -177,7 +180,7 @@ void ucon_calc_g(FTYPE prim[NPR],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
   gamma = sqrt(1. + u_tilde_sq) ;
 
   lapse = sqrt(-1./gcon[0][0]) ;
-	#pragma simd
+   #pragma ivdep
   for(i=0;i<NDIM;i++) ucon[i] = u_tilde_con[i] - lapse*gamma*gcon[0][i] ;
 
   return ;
@@ -195,7 +198,7 @@ void ucon_calc_g(FTYPE prim[NPR],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
 void raise_g(FTYPE vcov[NDIM], FTYPE gcon[NDIM][NDIM], FTYPE vcon[NDIM])
 {
   int i,j;
-	#pragma simd
+  #pragma ivdep
   for(i=0;i<NDIM;i++) {
     vcon[i] = 0. ;
     for(j=0;j<NDIM;j++) 
@@ -217,7 +220,7 @@ void raise_g(FTYPE vcov[NDIM], FTYPE gcon[NDIM][NDIM], FTYPE vcon[NDIM])
 void lower_g(FTYPE vcon[NDIM], FTYPE gcov[NDIM][NDIM], FTYPE vcov[NDIM])
 {
   int i,j;
-	#pragma simd
+   #pragma ivdep
   for(i=0;i<NDIM;i++) {
     vcov[i] = 0. ;
     for(j=0;j<NDIM;j++) 
@@ -246,7 +249,7 @@ void ncov_calc(FTYPE gcon[NDIM][NDIM],FTYPE ncov[NDIM])
   lapse = sqrt(-1./gcon[0][0]) ;
 
   ncov[0] = -lapse ;
-#pragma simd
+   #pragma ivdep
   for( i = 1; i < NDIM; i++) { 
     ncov[i] = 0. ;
   }
@@ -274,21 +277,22 @@ void ncov_calc(FTYPE gcon[NDIM][NDIM],FTYPE ncov[NDIM])
 void bcon_calc_g(FTYPE prim[NPR],FTYPE ucon[NDIM],FTYPE ucov[NDIM],
 		 FTYPE ncov[NDIM],FTYPE bcon[NDIM]) 
 {
-  static FTYPE Bcon[NDIM] ;
+  FTYPE Bcon[NDIM] ;
   FTYPE u_dot_B ;
   FTYPE gamma ;
   int i ;
 
   // Bcon = \mathcal{B}^\mu  of the paper:
   Bcon[0] = 0. ;
-#pragma simd
+  #pragma ivdep
   for(i=1;i<NDIM;i++) Bcon[i] = -ncov[0] * prim[BCON1+i-1] ;
 
   u_dot_B = 0. ;
+  //#pragma ivdepreduction(+:u_dot_B)
   for(i=0;i<NDIM;i++) u_dot_B += ucov[i]*Bcon[i] ;
 
   gamma = -ucon[0]*ncov[0] ;
-#pragma simd
+  #pragma ivdep
   for(i=0;i<NDIM;i++) bcon[i] = (Bcon[i] + ucon[i]*u_dot_B)/gamma ;
 }
 

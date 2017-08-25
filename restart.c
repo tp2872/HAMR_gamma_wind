@@ -42,313 +42,224 @@
 
 ***********************************************************************************/
 
-
 /* restart functions; restart_init and restart_dump */
-
 #include "decs.h"
 
-/***********************************************************************/
-/***********************************************************************
-  restart_write():
-     -- writes current state of primitive variables to the 
-        checkpointing/restart file. 
-     -- uses ASCII text format ;
-     -- when changing this routine, be sure to make analogous changes 
-        in restart_read();
-************************************************************************/
-void restart_write()
+void rdump_block_write(MPI_File *fp, int n)
 {
-  FILE *fp ;
-  int idum,i,j,z, k, l ;
-  int int_size = sizeof(int);
-  int double_size = sizeof(double);
-  MPI_Barrier(MPI_COMM_WORLD);
-  for (l = 0; l < numtasks; l++){
-	  if (rank == l){
-		  if (rank == 0){
-			  if (rdump_cnt % 2 == 0) {
-				  fp = fopen("dumps/rdump0.bin", "wb");
-				  fprintf(stderr, "RESTART  file=dumps/rdump0\n");
-			  }
-			  else {
-				  fp = fopen("dumps/rdump1.bin", "wb");
-				  fprintf(stderr, "RESTART file=dumps/rdump1\n");
-			  }
-			  if (fp == NULL) {
-				  fprintf(stderr, "Cannot open restart file\n");
-				  exit(2);
-			  }
-		  }
-		  else{
-			  if (rdump_cnt % 2 == 0) {
-				  fp = fopen("dumps/rdump0.bin", "ab");
-			  }
-			  else {
-				  fp = fopen("dumps/rdump1.bin", "ab");
-			  }
-			  if (fp == NULL) {
-				  fprintf(stderr, "Cannot open restart file\n");
-				  exit(2);
-			  }
-		  }
-		  /*************************************************************
-		  Write the header of the restart file:
-		  *************************************************************/
-		  if (rank == 0){
-			  int N1_print = N1;
-			  int N2_print = N2;
-			  int N3_print = N3;
-			  fwrite(&N1_print, int_size, 1, fp);
-			  fwrite(&N2_print, int_size, 1, fp);
-			  fwrite(&N3_print, int_size, 1, fp);
-			  fwrite(&n_rows, int_size, 1, fp);
-			  fwrite(&n_columns, int_size, 1, fp);
-			  fwrite(&n_stacks, int_size, 1, fp);
-			  fwrite(&t, double_size, 1, fp);
-			  fwrite(&tf, double_size, 1, fp);
-			  fwrite(&fractheta, double_size, 1, fp);
-			  fwrite(&nstep, int_size, 1, fp);
-			  fwrite(&a, double_size, 1, fp);
-			  fwrite(&gam, double_size, 1, fp);
-			  fwrite(&cour, double_size, 1, fp);
-			  fwrite(&DTd, double_size, 1, fp);
-			  fwrite(&DTl, double_size, 1, fp);
-			  fwrite(&DTi, double_size, 1, fp);
-			  fwrite(&DTr, int_size, 1, fp);
-			  fwrite(&dump_cnt, int_size, 1, fp);
-			  fwrite(&image_cnt, int_size, 1, fp);
-			  fwrite(&rdump_cnt, int_size, 1, fp);
-			  fwrite(&dt, double_size, 1, fp);
-			  fwrite(&lim, int_size, 1, fp);
-			  fwrite(&failed, int_size, 1, fp);
-			  fwrite(&Rin, double_size, 1, fp);
-			  fwrite(&Rout, double_size, 1, fp);
-			  fwrite(&hslope, double_size, 1, fp);
-			  fwrite(&R0, double_size, 1, fp);
-		  }
+	int i, j, z, k;
 
-		  /*************************************************************
-		  Write the body of the restart file:
-		  *************************************************************/
-		  ZSLOOP3D(-N1G + N1_MPI_offset, N1_MPI_offset + N1_MPI - 1+N1G, -N2G + N2_MPI_offset, N2_MPI_offset + N2_MPI - 1+N2G, -N3G + N3_MPI_offset, N3_MPI_offset + N3_MPI - 1+N3G) {
-			  PLOOP fwrite(&(p[index(i, j, z)][k]), double_size, 1, fp);
-		  }
-		  fclose(fp);
-		  rdump_cnt++;
-	  }
-	  MPI_Barrier(MPI_COMM_WORLD);
-  }
-  return;
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
+		for (k = 0; k < NPR; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[n][index(n, i, j, z)][k];
+		for (k = 0; k < NDIM; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k + NPR)] = ps[n][index(n, i, j, z)][k];
+	}
+	MPI_File_iwrite(fp[0], array_rdump[n], (NPR + NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), MPI_DOUBLE, &req_block_rdump[n][0]);
 }
 
-/***********************************************************************/
-/***********************************************************************
-  restart_init():
-     -- main driver for setting initial conditions from a checkpoint 
-        or restart file. 
-     -- determines if there are any restart files to use and then 
-         lets the  user choose if there are more than one file. 
-     -- then calls initializes run with restart data;
-************************************************************************/
-int restart_init()
+void rdump_block_read(FILE *fp, int n)
 {
-  FILE *fp, *fp1, *fp0 ;
-  char ans[100] ;
-  int i,j,k, l, nofile=0;
-  double r, th, phi;
-  double trash;
+	int i, j, z, k;
+	int double_size = sizeof(double);
 
-  /********************************************************************
-   Check to see which restart files exist. 
-   Use the only one that exists, else prompt user to decide 
-     which one to use if we have a choice : 
-  ********************************************************************/
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
+		PLOOP fread(&(p[n][index(n, i, j, z)][k]), double_size, 1, fp);
+		#if(STAGGERED)
+		for (k = 0; k<NDIM; k++) fread(&(ps[n][index(n, i, j, z)][k]), double_size, 1, fp);
+		for (k = 0; k<NDIM; k++) ps[n][index(n, i, j, z)][k]*=1.0;
+		#endif
+ 		p[n][index(n, i, j, z)][B1]*=1.0;
+		p[n][index(n, i, j, z)][B2]*=1.0;
+		p[n][index(n, i, j, z)][B3]*=1.0;
+	}
+}
 
-    fp0 = fopen("dumps/rdump0.bin", "rb");
-	fp1 = fopen("dumps/rdump1.bin", "rb");
-	#if (RESTART==1)
-    fp0=NULL;
-	#elif (RESTART==0)
-    fp1 = NULL;
-    #endif
+void restart_write(void)
+{
+	int n;
+	char filename[100], dirpath[100];
+	FILE *param;
+	if (rank == 0){
+		//sprintf(dirpath, "mkdir rdumps%d", dump_cnt);
+		//system(dirpath);
+		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/parameter");
+		else sprintf(filename, "rdumps1/parameter");
+		param = fopen(filename, "wb");
+		if (rank == 0) dump_params(param);
+		fclose(param);
+	}
+	for (n = 0; n < n_active; n++){
+		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
+		else sprintf(filename, "rdumps1/rdump%d",  n_ord[n]);
+		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &rdump[n_ord[n]]);
+		rdump_block_write(&rdump[n_ord[n]], n_ord[n]);
+	}
+	first_rdump = 1;
 
-  if ((fp0 == NULL) && (fp1 == NULL)) {
-	  if (rank == 0){
-		  fprintf(stderr, "No restart file\n");
-	  }
-	  nofile = 1;
-  }
-  for (l = 0; l < numtasks; l++){
-	  if (rank == l){
-		  if(nofile==0) {
-			  if (rank == 0){
-				  fprintf(stderr, "\nRestart file exists! \n");
-			  }
-			  if (fp0 == NULL) {
-				  if (rank == 0){
-					  fprintf(stderr, "Using dumps/rdump1 ... \n");
-				  }
-				  fp = fopen("dumps/rdump1.bin", "rb");
-			  }
-			  else if (fp1 == NULL) {
-				  if (rank == 0){
-					  fprintf(stderr, "Using dumps/rdump0 ... \n");
-				  }
-				  fp = fopen("dumps/rdump0.bin", "rb");;
-			  }
-			  else {
-				  if (rank == 0){
-					  fprintf(stderr, "Use dumps/rdump0 (0) or dumps/rdump1 (1)?   [0|1]  \n");
-				  }
-				  fscanf(stdin, "%s", ans);
-				  if (strncmp(ans, "0", 1) == 0) {
-					  fp = fopen("dumps/rdump0.bin", "rb");
-				  }
-				  else{
-					  fp = fopen("dumps/rdump1.bin", "rb");
-				  }
-			  }
-			 
-			  /********************************************************************
-			   Now that we know we are restarting from a checkpoint file, then
-			   we need to read in data, assign grid functions and define the grid:
-			   ********************************************************************/
-			  /* set up global arrays */
-			  set_arrays();
-			  
-			  /*Read in file*/
-			  restart_read(fp);
-			  fclose(fp);
+	if (rank==0)fprintf(stderr, "Restart write to %s complete!\n", filename);
+	rdump_cnt++;
+}
 
-			  /* set metric functions */
-			  set_grid();
-			  
-			  #if( DO_FONT_FIX ) 
-			  set_Katm();
-			  #endif 
+void param_read(FILE *fp){
+	int int_size = sizeof(int);
+	int double_size = sizeof(double);
+	int u;
+
+	//Print out essential stuff for restart
+	fread(&t, double_size, 1, fp);
+	fread(&n_active, int_size, 1, fp);
+	fread(&n_active_total, int_size, 1, fp);
+	fread(&nstep, int_size, 1, fp);
+	fread(&DTd, double_size, 1, fp);
+	fread(&DTl, double_size, 1, fp);
+	fread(&DTr, double_size, 1, fp);
+	fread(&dump_cnt, int_size, 1, fp);
+	fread(&rdump_cnt, int_size, 1, fp);
+	fread(&dt, double_size, 1, fp);
+	fread(&failed, int_size, 1, fp);
 	
-			  /***********************************************************************
-				Make any changes to parameters in restart file  here:
-				e.g., cour = 0.4 , change in limiter...
-				************************************************************************/
-			  //lim = MC ;
-			  //cour = 0.9 ;
-			  //lim = VANL ;
-			  //tf = 4000. ;
+	if (calc_mem(n_active_total)>((double)numtasks*(double)(N_GPU)* 4. * (pow(10., 9.))) && rank == 0){
+		fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by reading in too many blocks! Code will segfault! \n");
+		max_levels -= 1;
+	}
 
-			  if (rank == 0){
-				  fprintf(stderr, "done with restart init.\n");
-			  }
-		  }
-	  }
-	  MPI_Barrier(MPI_COMM_WORLD);
+	//Print out stuff that should be checked later
+	int BS1_print = BS_1;
+	int BS2_print = BS_2;
+	int BS3_print = BS_3;
+	int NB_print = NB;
+	int NB1_print = NB_1;
+	int NB2_print = NB_2;
+	int NB3_print = NB_3;
+	int stag = STAGGERED;
+	int B = BRAVO;
+	int T = TANGO;
+	int C = CHARLIE;
+	int D = DELTA;
+	int r1 = REF_1;
+	int r2 = REF_2;
+	int r3 = REF_3;
+	int nl = N_LEVELS;
+	int rx = RADEXP;
+	int rt = RTRANS;
+	int rb = RB;
+	int docyl = DOCYLINDRIFYCOORDS;
+	int dk = DOKTOT;
+
+	fread(&BS1_print, int_size, 1, fp);
+	fread(&BS2_print, int_size, 1, fp);
+	fread(&BS3_print, int_size, 1, fp);
+	fread(&NB_print, int_size, 1, fp);
+	fread(&NB1_print, int_size, 1, fp);
+	fread(&NB2_print, int_size, 1, fp);
+	fread(&NB3_print, int_size, 1, fp);
+	fread(&startx[1], double_size, 1, fp);
+	fread(&startx[2], double_size, 1, fp);
+	fread(&startx[3], double_size, 1, fp);
+	fread(&dx[0][1], double_size, 1, fp);
+	fread(&dx[0][2], double_size, 1, fp);
+	fread(&dx[0][3], double_size, 1, fp);
+	fread(&tf, double_size, 1, fp);
+	fread(&a, double_size, 1, fp);
+	fread(&gam, double_size, 1, fp);
+	fread(&cour, double_size, 1, fp);
+	fread(&Rin, double_size, 1, fp);
+	fread(&Rout, double_size, 1, fp);
+	fread(&R0, double_size, 1, fp);
+	fread(&fractheta, double_size, 1, fp);
+	fread(&lim, int_size, 1, fp);
+	fread(&stag, int_size, 1, fp);
+	fread(&B, int_size, 1, fp);
+	fread(&T, int_size, 1, fp);
+	fread(&C, int_size, 1, fp);
+	fread(&D, int_size, 1, fp);
+	fread(&r1, int_size, 1, fp);
+	fread(&r2, int_size, 1, fp);
+	fread(&r3, int_size, 1, fp);
+	fread(&nl, int_size, 1, fp);
+	fread(&rx, int_size, 1, fp);
+	fread(&rt, int_size, 1, fp);
+	fread(&rb, int_size, 1, fp);
+	fread(&docyl, int_size, 1, fp);
+	fread(&dk, int_size, 1, fp);
 	
-	  if (nofile == 1){
-		  return(0);
-	  }
-  }
-
-  /* bound */
-  bound_prim(p,1);
-
- /* done! */
-  return(1) ;
+	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1
+		|| NB2_print != NB_2 || NB3_print != NB_3 || stag != STAGGERED 
+		|| B != BRAVO || T != TANGO || C != CHARLIE || D != DELTA || r1 != REF_1 || r2 != REF_2
+		|| r3 != REF_3 || nl != N_LEVELS || rx != RADEXP || rt != RTRANS || rb != RB || docyl != DOCYLINDRIFYCOORDS
+		|| dk != DOKTOT){
+		fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
+	}
+	//Read AMR grid hierarchy
+	for (u = 0; u <= n_max; u++){
+		fread(&block[u][AMR_REFINED], int_size, 1, fp);
+	}
+	for (u = 0; u <= n_max; u++){
+		fread(&block[u][AMR_ACTIVE], int_size, 1, fp);
+	}
 }
 
-/***********************************************************************/
-/***********************************************************************
-  restart_read():
-     -- reads in data from the restart file, which is specified in 
-         restart_init() but is usually named "dumps/rdump[0,1]" 
-************************************************************************/
-void restart_read(FILE *fp)
+int restart_read(void)
 {
-  int idum,i,j,z,k,l,point;
-  int int_size = sizeof(int);
-  int double_size = sizeof(double);
-  double trash;
+	int n;
+	char filename[100], dirpath[100];
+	FILE *rdump;
 
-  /*************************************************************
-	  READ the header of the restart file: 
-  *************************************************************/
-  fread(&idum, int_size, 1,fp );
-  if(idum != N1 && rank==0 ) {
-    fprintf(stderr,"Error reading restart file; N1 differs. Select N1=%d. \n", idum-ibound) ;
-    exit(3) ;
-  }
-  fread(&idum, int_size, 1, fp);
-  if(idum != N2 && rank==0) {
-	  fprintf(stderr, "Error reading restart file. N2 differs. Select N2=%d. \n", idum - jbound);
-    exit(4) ;
-  }
-  fread(&idum, int_size, 1, fp);
-  if (idum != N3 && rank == 0) {
-	  fprintf(stderr, "Error reading restart file. N3 differs. Select N3=%d. \n", idum - zbound);
-	  exit(5);
-  }
-  fread(&idum, int_size, 1, fp);
-  if (idum != n_rows && rank==0){
-	  fprintf(stderr, "Error reading restart file, n_rows differs!\n");
-	  exit(6);
-  }
-  fread(&idum, int_size, 1, fp);
-  if (idum != n_columns && rank == 0){
-	  fprintf(stderr, "Error reading restart file, n_columns differs!\n");
-	  exit(7);
-  }
-  fread(&idum, int_size, 1, fp);
-  if (idum != n_stacks && rank == 0){
-	  fprintf(stderr, "Error reading restart file, n_stacks differs!\n");
-	  exit(8);
-  }
-  fread(&t, double_size,1,fp );
-  fread(&tf, double_size, 1, fp);
-  fread(&fractheta, double_size, 1, fp);
-  fread(&nstep, int_size, 1, fp);
-  fread(&a, double_size, 1, fp);
-  fread(&gam, double_size, 1, fp);
-  fread(&cour, double_size, 1, fp);
-  fread(&DTd, double_size, 1, fp);
-  fread(&DTl, double_size, 1, fp);
-  fread(&DTi, double_size, 1, fp);
-  fread(&DTr, int_size, 1, fp);
-  fread(&dump_cnt, int_size, 1, fp);
-  fread(&image_cnt, int_size, 1, fp);
-  fread(&rdump_cnt, int_size, 1, fp);
-  fread(&dt, double_size, 1, fp);
-  fread(&lim, int_size, 1, fp);
-  fread(&failed, int_size, 1, fp);
-  fread(&Rin, double_size, 1, fp);
-  fread(&Rout, double_size, 1, fp);
-  fread(&hslope, double_size, 1, fp);
-  fread(&R0, double_size, 1, fp);
+	for (n = 0; n < n_active; n++){
+		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
+		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
+		rdump = fopen(filename, "rb");
+		if (rdump == NULL) {
+			if (rank == 0) fprintf(stderr, "Cannot open restart file %s\n", filename);
+			return 0;
+		}
+		rdump_block_read(rdump, n_ord[n]);
+		fclose(rdump);
+	}
+	if (n_active == 0) {
+		return 0;
+	}
+	/*Disable injection of matter after restart for elliptical orbits*/
+	#if (ELLIPTICAL2)
+	sourceflag = 0.;
+	#endif
 
-  /*************************************************************
-	  READ the body of the restart file: 
-  *************************************************************/	
-  for (l = 0; l < numtasks; l++){
-	  if (rank == l){
-		  ZSLOOP3D(-N1G + N1_MPI_offset, N1_MPI_offset + N1_MPI - 1 + N1G, -N2G + N2_MPI_offset, N2_MPI_offset + N2_MPI - 1 + N2G,
-			  -N3G + N3_MPI_offset, N3_MPI_offset + N3_MPI - 1 + N3G){
-			  PLOOP fread(&(p[index(i, j, z)][k]), double_size, 1, fp);
-			  /*if (boundfreeze1 || boundfreeze2){
-				 for(point=0; point<N_POINTS; point++){
-					 if (i == ibound+point){
-						  PLOOP pbound[j][k][points] = p[ibound+point][j][k];
-					  }
-				  }
-			  }*/
-		  }
-	  }
-	  else{
-		  ZSLOOP3D(-N1G + aN1_MPI_offset[l], aN1_MPI_offset[l] + aN1_MPI[l] - 1 + N1G, -N2G + aN2_MPI_offset[l], aN2_MPI_offset[l] + aN2_MPI[l] - 1 + N2G,
-			  -N3G + aN3_MPI_offset[l], aN3_MPI_offset[l] + aN3_MPI[l] - 1 + N3G) {
-			  PLOOP fread(&trash, double_size, 1, fp);
-		  }
-	  }
-  }
-  return ;
+	#if( DO_FONT_FIX ) 
+	set_Katm();
+	#endif 
+
+	if (rank == 0){
+		fprintf(stderr, "done with restart init %s \n", filename);
+	}
+
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+
+	/* bound */
+	bound_prim(p, 1);
+
+	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	#endif
+	return 1;
 }
 
-#undef FMT_DBL_OUT
-#undef FMT_INT_OUT
+int restart_read_param(void)
+{
+	int n;
+	char filename[100], dirpath[100];
+	FILE *param;
+
+	if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/parameter");
+	else sprintf(filename, "rdumps1/parameter");
+	param = fopen(filename, "rb");
+	if (param == NULL) {
+		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
+		return 0;
+	}
+	param_read(param);
+	fclose(param);
+	return 1;
+}
+
+

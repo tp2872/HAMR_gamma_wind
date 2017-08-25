@@ -60,35 +60,62 @@
            |CORN    FACE2        |
            ----------------------
 ***************************************************************************/
-void coord(int i, int j, int z, int loc, double *X)
+void coord(int n, int i, int j, int z, int loc, double * restrict X)
 {
-        if(loc == FACE1) {
-            X[1] = startx[1] + i*dx[1] ;
-            X[2] = startx[2] + (j + 0.5)*dx[2] ;
-			X[3] = startx[3] + (z + 0.5)*dx[3];
+	X[0] = 0.0;
+	int j_local = j;
+	if (j < 0) j_local = -j-1;
+	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j;
+	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2) j_local = j;
+	if(loc == FACE1) {
+            X[1] = startx[1] + i*dx[n][1] ;
+			X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
+			X[3] = startx[3] + (z + 0.5)*dx[n][3];
         }
         else if(loc == FACE2) {
-            X[1] = startx[1] + (i + 0.5)*dx[1] ;
-            X[2] = startx[2] + j*dx[2] ;
-			X[3] = startx[3] + (z + 0.5)*dx[3];
+			X[1] = startx[1] + (i + 0.5)*dx[n][1];
+			X[2] = startx[2] + j_local*dx[n][2];
+			X[3] = startx[3] + (z + 0.5)*dx[n][3];
         }
 		else if (loc == FACE3) {
-			X[1] = startx[1] + (i + 0.5)*dx[1];
-			X[2] = startx[2] + (j + 0.5)*dx[2];
-			X[3] = startx[3] + z*dx[3];
+			X[1] = startx[1] + (i + 0.5)*dx[n][1];
+			X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
+			X[3] = startx[3] + z*dx[n][3];
 		}
         else if(loc == CENT) {
-            X[1] = startx[1] + (i + 0.5)*dx[1] ;
-            X[2] = startx[2] + (j + 0.5)*dx[2] ;
-			X[3] = startx[3] + (z + 0.5)*dx[3];
+			X[1] = startx[1] + (i + 0.5)*dx[n][1];
+			X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
+			X[3] = startx[3] + (z + 0.5)*dx[n][3];
         }
         else {
-            X[1] = startx[1] + i*dx[1] ;
-            X[2] = startx[2] + j*dx[2] ;
-			X[3] = startx[3] + z*dx[3];
+			X[1] = startx[1] + i*dx[n][1];
+			X[2] = startx[2] + j_local*dx[n][2];
+			X[3] = startx[3] + z*dx[n][3];
         }
 
+		if (j < 0){
+			X[2] = X[2] + 1;
+			X[2] = -X[2];
+			X[2] = X[2] - 1;
+		}
+		if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2){
+		}
+		else if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])){
+			X[2] = X[2] + 1;
+			X[2] = 4. - X[2];
+			X[2] = X[2] - 1;
+		}
+
         return ;
+}
+
+void coord_double(int n, double i, double j, double z, double * restrict X)
+{
+	X[0] = 0.0;
+	X[1] = startx[1] + i*dx[n][1];
+	X[2] = startx[2] + j*dx[n][2];
+	X[3] = startx[3] + z*dx[n][3];
+	return;
 }
 
 /* assumes gcov has been set first; returns determinant */
@@ -167,13 +194,16 @@ void conn_func(double *X, struct of_geom *geom, double conn[][NDIM][NDIM])
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
-void lower(double *ucon, struct of_geom *geom, double *ucov)
+void lower(double * restrict ucon, struct of_geom * restrict geom, double * restrict ucov)
 {
 	int i, j;
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 0; i < NDIM; i++){
 		ucov[i] = 0.0;
-		for (j = 0; j < NDIM; j++){
+	}
+	for (j = 0; j < NDIM; j++){
+		 #pragma ivdep
+		for (i = 0; i < NDIM; i++){
 			ucov[i] += geom->gcov[i][j] * ucon[j];
 		}
 	}
@@ -181,13 +211,16 @@ void lower(double *ucon, struct of_geom *geom, double *ucov)
 }
 
 /* Raises a covariant rank-1 tensor to a contravariant one */
-void raise(double *ucov, struct of_geom *geom, double *ucon)
+void raise(double * restrict ucov, struct of_geom * restrict geom, double * restrict ucon)
 {
 	int i, j;
-	//#pragma omp simd
+	 #pragma ivdep
 	for (i = 0; i < NDIM; i++){
 		ucon[i] = 0.0;
-		for (j = 0; j < NDIM; j++){
+	}
+	for (j = 0; j < NDIM; j++){
+		 #pragma ivdep
+		for (i = 0; i < NDIM; i++){
 			ucon[i] += geom->gcon[i][j] * ucov[j];
 		}
 	}
@@ -195,27 +228,41 @@ void raise(double *ucov, struct of_geom *geom, double *ucon)
 }
 
 /* load local geometry into structure geom */
-void get_geometry(int ii, int jj, int ff, struct of_geom *geom)
+void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restrict geom)
 {
 	int i, j;
 	for (i = 0; i < NDIM; i++){
-		//#pragma omp simd
+		 #pragma ivdep
 		for (j = 0; j < NDIM; j++){
-			geom->gcon[i][j] = gcon[index2(ii, jj)][ff][i][j];
-			geom->gcov[i][j] = gcov[index2(ii, jj)][ff][i][j];
+			geom->gcon[i][j] = gcon[n][index2(n,ii, jj, zz)][ff][i][j];
+			geom->gcov[i][j] = gcov[n][index2(n,ii, jj, zz)][ff][i][j];
 		}
 	}
-	geom->g = gdet[index2(ii, jj)][ff];
+	#if(GPU_DEBUG)
+	geom->gcon[1][0] = geom->gcon[0][1];
+	geom->gcov[1][0] = geom->gcov[0][1];
+	geom->gcon[2][0] = geom->gcon[0][2];
+	geom->gcov[2][0] = geom->gcov[0][2];
+	geom->gcon[2][1] = geom->gcon[1][2];
+	geom->gcov[2][1] = geom->gcov[1][2];
+	geom->gcon[3][0] = geom->gcon[0][3];
+	geom->gcov[3][0] = geom->gcov[0][3];
+	geom->gcon[3][1] = geom->gcon[1][3];
+	geom->gcov[3][1] = geom->gcov[1][3];
+	geom->gcon[3][2] = geom->gcon[2][3];
+	geom->gcov[3][2] = geom->gcov[2][3];
+	#endif
+	geom->g = gdet[n][index2(n,ii, jj,zz)][ff];
 }
 
 /*Load local geometry into structure geom for cases where the values are not stored in the memory 
 such as during image output for MPI on the host node*/
-void get_geometry_direct(int ii, int jj, int ff, struct of_geom *geom)
+void get_geometry_direct(int ii, int jj, int zz, int ff, struct of_geom *geom)
 {
 	int j, k;
 	double X[NDIM];
 	double gcov_local[NDIM][NDIM], gcon_local[NDIM][NDIM], gdet_local;
-	coord(ii, jj,0, ff, X);
+	coord(0, ii, jj,zz, ff, X);
 	gcov_func(X, gcov_local);
 	gcon_func(gcov_local, gcon_local);
 	gdet_local = gdet_func(gcov_local);
@@ -229,11 +276,11 @@ void get_geometry_direct(int ii, int jj, int ff, struct of_geom *geom)
 #undef EPS
 
 /* Boyer-Lindquist ("bl") metric functions */
-void blgset(int i, int j, struct of_geom *geom)
+void blgset(int n, int i, int j, struct of_geom *geom)
 {
 	double r, th,phi, X[NDIM];
 
-	coord(i, j,0, CENT, X);
+	coord(n, i, j, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 
 	if (th < 0) th *= -1.;
@@ -253,6 +300,34 @@ double bl_gdet_func(double r, double th)
 	return(
 		r*r*fabs(sin(th))*(1. + 0.5*(a2 / r2)*(1. + cos(2.*th)))
 		);
+}
+
+void kerr_gcov_func(double r, double th, double gcov[][NDIM])
+{
+	int j, k;
+	double sth, cth, s2, a2, rho2, DD, mu;
+
+	DLOOP gcov[j][k] = 0.;
+
+	sth = fabs(sin(th));
+	s2 = sth*sth;
+	cth = cos(th);
+	a2 = a*a;
+	rho2 = r*r + a*a*cth*cth;	
+
+	gcov[TT][TT] = (-1. + 2.*r / rho2);
+	gcov[TT][1] = (2.*r / rho2);
+	gcov[TT][3] = (-2.*a*r*s2 / rho2);
+
+	gcov[1][TT] = gcov[TT][1];
+	gcov[1][1] = (1. + 2.*r / rho2);
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
+
+	gcov[2][2] = rho2;
+
+	gcov[3][TT] = gcov[TT][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
 }
 
 void bl_gcov_func(double r, double th, double gcov[][NDIM])
