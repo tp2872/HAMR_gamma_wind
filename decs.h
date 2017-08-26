@@ -573,6 +573,10 @@ MNEMONICS SECTION
 #define M_PI 3.14159265358979323846264338327950288 
 #endif 
 
+#ifndef MV2_COMM_WORLD_LOCAL_RANK 
+#define MV2_COMM_WORLD_LOCAL_RANK 0
+#endif 
+
 /*Set number of AMR parameters*/
 #define NV 79
 
@@ -1376,12 +1380,10 @@ extern double * Bufferboundsend5_MPI[NB];
 extern double * Bufferboundsend6_MPI[NB];
 extern double * Bufferboundsend7_MPI[NB];
 extern double * Bufferboundsend8_MPI[NB];
-extern cl_event boundevent[NB][600];
-extern cl_event boundevent1[NB][100];
-extern cl_event boundevent2[NB][100];
+extern cudaEvent_t boundevent[NB][600];
+extern cudaEvent_t boundevent1[NB][100];
+extern cudaEvent_t boundevent2[NB][100];
 extern int receive_tag;
-extern cl_event cornevent[NB][16];
-
 
 /*Timing/benchmarking decleration*/
 extern clock_t begin1, end1, begin2, end2;
@@ -1539,7 +1541,7 @@ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 void GPU_benchmark(void);
 void GPU_init(void);
-void set_arrays_GPU(int n);
+void set_arrays_GPU(int n, int device);
 void GPU_write(int n);
 void GPU_finish(int n);
 void GPU_hcor(int n);

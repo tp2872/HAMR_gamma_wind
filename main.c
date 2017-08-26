@@ -1621,7 +1621,8 @@ void MPI_initialize(int argc, char *argv[])
 	int dims[3], periods[3], coords[3];
 
 	/*Get basic initialisation*/
-	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
+	cudaSetDevice(MV2_COMM_WORLD_LOCAL_RANK);
+	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 	//rc = MPI_Init(&argc, &argv);
 	if (rc != MPI_SUCCESS) {
 		fprintf(stderr, "Error starting MPI program. Terminating.\n");
@@ -1678,8 +1679,8 @@ void MPI_initialize(int argc, char *argv[])
 	//else{
 		//Initialize normal communicator
 		mpi_cartcomm = MPI_COMM_WORLD;
-		MPI_Comm_rank(mpi_cartcomm, &rank);
-		MPI_Comm_split(mpi_cartcomm, rank, rank, &mpi_self);
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+		MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);
 
 	//}
 	

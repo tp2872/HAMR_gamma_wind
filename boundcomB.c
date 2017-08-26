@@ -2,20 +2,7 @@
 
 void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendB1[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendB1[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendB1[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendB1[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendB1[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendB1[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendB1[n], 6, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsendB1[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsendB1[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendB1[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendB1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-		if (status != 0) printf("Error pack_send_B1: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+
 	}
 	else{
 		int i, j, z, k;
@@ -31,20 +18,7 @@ void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 
 void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendB2[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendB2[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendB2[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendB2[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendB2[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendB2[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendB2[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsendB2[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsendB2[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendB2[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendB2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-		if (status != 0) printf("Error pack_send_B2: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+
 	}
 	else{
 		int i, j, z, k;
@@ -60,20 +34,7 @@ void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 
 void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict prim[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendB3[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendB3[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendB3[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendB3[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendB3[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendB3[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendB3[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsendB3[n], 7, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsendB3[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendB3[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendB3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-		if (status != 0) printf("Error pack_send_B3: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+
 	}
 	else{
 		int i, j, z, k;
@@ -89,23 +50,7 @@ void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 
 void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendBaverage1[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendBaverage1[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendBaverage1[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendBaverage1[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendBaverage1[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendBaverage1[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendBaverage1[n], 6, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsendBaverage1[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsendBaverage1[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendBaverage1[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendBaverage1[n], 10, sizeof(cl_mem), (void *)&Imagegdet[n]);
 
-		global_work_size_bound[n][0] = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendBaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-		if (status != 0) printf("Error  pack_send_B_average3: %d \n", status);
-
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -125,23 +70,7 @@ void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 
 void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict F2[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendBaverage2[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendBaverage2[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendBaverage2[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendBaverage2[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendBaverage2[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendBaverage2[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendBaverage2[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsendBaverage2[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsendBaverage2[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendBaverage2[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendBaverage2[n], 10, sizeof(cl_mem), (void *)&Imagegdet[n]);
 
-		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendBaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-		if (status != 0) printf("Error pack_send_B_average2: %d \n", status);
-
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -161,21 +90,7 @@ void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 
 void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict F3[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendBaverage3[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendBaverage3[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendBaverage3[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendBaverage3[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendBaverage3[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendBaverage3[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendBaverage3[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsendBaverage3[n], 7, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsendBaverage3[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendBaverage3[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendBaverage3[n], 10, sizeof(cl_mem), (void *)&Imagegdet[n]);
-		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendBaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-		if (status != 0) printf("Error pack_send_B_average3: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+
 	}
 	else{
 		int i, j, z, k;
@@ -196,24 +111,7 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 
 void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, cl_mem *Bufferp, cl_mem *Bufferboundreceive, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_unpackreceiveB1[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 6, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 8, sizeof(cl_int), &div);
-		clSetKernelArg(kernel_unpackreceiveB1[n], 9, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceiveB1[n], 10, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceiveB1[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
 
-		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveB1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-		if (status != 0) printf("Error unpack_receive_B1: %d \n",status);
-		if (boundevent != NULL) clReleaseEvent(boundevent[0]);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z;
@@ -232,25 +130,7 @@ void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 
 void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, cl_mem *Bufferp, cl_mem *Bufferboundreceive, cl_event *boundevent, int neg){
 	if (gpu == 1){
-		clSetKernelArg(kernel_unpackreceiveB2[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 8, sizeof(cl_int), &div);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 9, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceiveB2[n], 10, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceiveB2[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
-		clSetKernelArg(kernel_unpackreceiveB2[n], 12, sizeof(cl_int), &neg);
 
-		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveB2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-		if (status != 0) printf("Error unpack_receive_B2: %d \n", status);
-		if (boundevent != NULL) clReleaseEvent(boundevent[0]);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z;
@@ -271,24 +151,7 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 
 void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, cl_mem *Bufferp, cl_mem *Bufferboundreceive, cl_event *boundevent){
 	if (gpu == 1){
-		clSetKernelArg(kernel_unpackreceiveB3[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 7, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 8, sizeof(cl_int), &div);
-		clSetKernelArg(kernel_unpackreceiveB3[n], 9, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceiveB3[n], 10, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceiveB3[n], 11, sizeof(cl_mem), (void *)&Imagegdet[n]);
 
-		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
-		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveB3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-		if (status != 0) printf("Error unpack_receive_B3: %d \n", status);
-		if (boundevent != NULL) clReleaseEvent(boundevent[0]);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z;
@@ -337,9 +200,7 @@ void B_send1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send2_fine, F1, &(Bufferp[n]), &(Buffersend2fine[n]), &(boundevent[n][520]));
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][520]);
-						clReleaseEvent(boundevent[n][520]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend2fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2)*N3_GPU[n] / (1 + REF_3)*sizeof(double), send2_fine[n], 0, NULL, NULL);
+						
 					}
 					rc += MPI_Isend(&send2_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N2_GPU[n]) / (1 + REF_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (520 * NB + n)%MPI_TAG_MAX, mpi_cartcomm, &req[37]);
 					MPI_Request_free(&req[37]);
@@ -355,9 +216,7 @@ void B_send1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 				N2_GPU[n], N3_GPU[n], send4_fine, F1, &(Bufferp[n]), &(Buffersend4fine[n]), &(boundevent[n][540]));
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
-					clWaitForEvents(1, &boundevent[n][540]);
-					clReleaseEvent(boundevent[n][540]);
-					clEnqueueReadBuffer(commandQueueGPU[n], Buffersend4fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N3_GPU[n] * N2_GPU[n] * sizeof(double), send4_fine[n], 0, NULL, NULL);
+				
 				}
 				rc += MPI_Isend(&send4_fine[n][0], NDIM*N3_GPU[n] * N2_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (440 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 				MPI_Request_free(&req[0]);
@@ -382,9 +241,7 @@ void B_send1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send4_fine, F1, &(Bufferp[n]), &(Buffersend4fine[n]), &(boundevent[n][540]));
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][540]);
-						clReleaseEvent(boundevent[n][540]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend4fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2)*N3_GPU[n] / (1 + REF_3)*sizeof(double), send4_fine[n], 0, NULL, NULL);
+						
 					}
 					rc += MPI_Isend(&send4_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N2_GPU[n]) / (1 + REF_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (540 * NB + n)%MPI_TAG_MAX, mpi_cartcomm, &req[37]);
 					MPI_Request_free(&req[37]);
@@ -407,9 +264,7 @@ void B_send2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 						N1_GPU[n], N3_GPU[n], send3_fine, F2, &(Bufferp[n]), &(Buffersend3fine[n]), &(boundevent[n][530]));
 					if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 						if (gpu == 1){
-							clWaitForEvents(1, &boundevent[n][530]);
-							clReleaseEvent(boundevent[n][530]);
-							clEnqueueReadBuffer(commandQueueGPU[n], Buffersend3fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N3_GPU[n] * N1_GPU[n] * sizeof(double), send3_fine[n], 0, NULL, NULL);
+						
 						}
 						rc += MPI_Isend(&send3_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (430 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 						MPI_Request_free(&req[0]);
@@ -467,9 +322,7 @@ void B_send2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 						N1_GPU[n], N3_GPU[n], send1_fine, F2, &(Bufferp[n]), &(Buffersend1fine[n]), &(boundevent[n][510]));
 					if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 						if (gpu == 1){
-							clWaitForEvents(1, &boundevent[n][510]);
-							clReleaseEvent(boundevent[n][510]);
-							clEnqueueReadBuffer(commandQueueGPU[n], Buffersend1fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N3_GPU[n] * N1_GPU[n] * sizeof(double), send1_fine[n], 0, NULL, NULL);
+							
 						}
 						rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (410 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 						MPI_Request_free(&req[0]);
@@ -486,9 +339,7 @@ void B_send2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 					N1_GPU[n], N3_GPU[n], send1_fine, F2, &(Bufferp[n]), &(Buffersend1fine[n]), &(boundevent[n][510]));
 				if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][510]);
-						clReleaseEvent(boundevent[n][510]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend1fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N3_GPU[n] * N1_GPU[n] * sizeof(double), send1_fine[n], 0, NULL, NULL);
+						
 					}
 					rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (410 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 					MPI_Request_free(&req[0]);
@@ -514,9 +365,7 @@ void B_send2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send1_fine, F2, &(Bufferp[n]), &(Buffersend1fine[n]), &(boundevent[n][510]));
 				if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][510]);
-						clReleaseEvent(boundevent[n][510]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend1fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N1_GPU[n] / (1 + REF_1)*N3_GPU[n] / (1 + REF_3)*sizeof(double), send1_fine[n], 0, NULL, NULL);
+					
 					}
 					rc += MPI_Isend(&send1_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (510 * NB + n)%MPI_TAG_MAX, mpi_cartcomm, &req[37]);
 					MPI_Request_free(&req[37]);
@@ -555,9 +404,7 @@ void B_send3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send5_fine, F3, &(Bufferp[n]), &(Buffersend5fine[n]), &(boundevent[n][550]));
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][550]);
-						clReleaseEvent(boundevent[n][550]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend5fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2)*N1_GPU[n] / (1 + REF_1)*sizeof(double), send5_fine[n], 0, NULL, NULL);
+						
 					}
 					rc += MPI_Isend(&send5_fine[n][0], NDIM*(N2_GPU[n]) / (1 + REF_2)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (550 * NB + n)%MPI_TAG_MAX, mpi_cartcomm, &req[37]);
 					MPI_Request_free(&req[37]);
@@ -572,9 +419,7 @@ void B_send3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			pack_send_B3(n, 0, N1_GPU[n], 0, N2_GPU[n], 0, D3, N1_GPU[n], N2_GPU[n], send6_fine, F3, &(Bufferp[n]), &(Buffersend6fine[n]), &(boundevent[n][560]));
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
-					clWaitForEvents(1, &boundevent[n][560]);
-					clReleaseEvent(boundevent[n][560]);
-					clEnqueueReadBuffer(commandQueueGPU[n], Buffersend6fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N2_GPU[n] * N1_GPU[n] * sizeof(double), send6_fine[n], 0, NULL, NULL);
+				
 				}
 				rc += MPI_Isend(&send6_fine[n][0], NDIM*N2_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (460 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 				MPI_Request_free(&req[0]);
@@ -599,9 +444,7 @@ void B_send3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send6_fine, F3, &(Bufferp[n]), &(Buffersend6fine[n]), &(boundevent[n][560]));
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][560]);
-						clReleaseEvent(boundevent[n][560]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend6fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2)*N1_GPU[n] / (1 + REF_1)*sizeof(double), send6_fine[n], 0, NULL, NULL);
+						
 					}
 					rc += MPI_Isend(&send6_fine[n][0], NDIM*(N2_GPU[n]) / (1 + REF_2)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (560 * NB + n)%MPI_TAG_MAX, mpi_cartcomm, &req[37]);
 					MPI_Request_free(&req[37]);
@@ -623,8 +466,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][521], &Statbound[n][521]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec2_1fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive2_1fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B1(n, n, 0, 1, 0, N2_GPU[n] / (1 + REF_2), 0, N3_GPU[n] / (1 + REF_3),
 					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_1fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_1fine[n]), NULL);
 			}
@@ -635,8 +476,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][522], &Statbound[n][522]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec2_2fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive2_2fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B1(n, n, 0, 1, 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_2fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_2fine[n]), NULL);
 				}
@@ -648,8 +487,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][523], &Statbound[n][523]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec2_3fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive2_3fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B1(n, n, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, N3_GPU[n] / (1 + REF_3),
 						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_3fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_3fine[n]), NULL);
 				}
@@ -661,8 +498,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_2 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][524], &Statbound[n][524]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec2_4fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive2_4fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B1(n, n, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_4fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_4fine[n]), NULL);
 				}
@@ -680,8 +515,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][440], &Statbound[n][440]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec4fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] *N2_GPU[n] *sizeof(double), receive4_fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
 					N2_GPU[n], N3_GPU[n], receive4_fine, F1, 0, &(Bufferp[n]), &(Bufferrec4fine[n]), NULL);
 			}
@@ -694,8 +527,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][545], &Statbound[n][545]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec4_5fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive4_5fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n] / (1 + REF_2), 0, N3_GPU[n] / (1 + REF_3),
 					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_5fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_5fine[n]), NULL);
 			}
@@ -706,8 +537,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][546], &Statbound[n][546]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec4_6fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive4_6fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_6fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_6fine[n]), NULL);
 				}
@@ -719,8 +548,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][547], &Statbound[n][547]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec4_7fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive4_7fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, N3_GPU[n] / (1 + REF_3),
 						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_7fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_7fine[n]), NULL);
 				}
@@ -732,8 +559,6 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_2==1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][548], &Statbound[n][548]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec4_8fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N2_GPU[n] / (1 + REF_2)*sizeof(double), receive4_8fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_8fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_8fine[n]), NULL);
 				}
@@ -756,8 +581,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && block[n][AMR_COORD3] >=NB_3*pow(1+REF_3,block[n][AMR_LEVEL])/2){
 				if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][430], &Statbound[n][430]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec3fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] * N1_GPU[n] * sizeof(double), receive3_fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
 						N1_GPU[n], N3_GPU[n], receive3_fine, F2, 0, &(Bufferp[n]), &(Bufferrec3fine[n]), NULL, 1);
 				}
@@ -774,8 +597,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][531], &Statbound[n][531]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec3_1fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive3_1fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, 1, 0, N3_GPU[n] / (1 + REF_3),
 					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_1fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_1fine[n]), NULL, 0);
 			}
@@ -786,8 +607,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][532], &Statbound[n][532]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec3_2fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive3_2fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_2fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_2fine[n]), NULL, 0);
 				}
@@ -799,8 +618,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][535], &Statbound[n][535]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec3_5fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive3_5fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, 1, 0, N3_GPU[n] / (1 + REF_3),
 						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_5fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_5fine[n]), NULL, 0);
 				}
@@ -812,8 +629,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1==1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][536], &Statbound[n][536]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec3_6fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive3_6fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_6fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_6fine[n]), NULL, 0);
 				}
@@ -833,8 +648,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 				if (block[n][AMR_COORD3] >= NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
 					if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 						MPI_Wait(&boundreqs[n][410], &Statbound[n][410]);
-						if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] * N1_GPU[n] * sizeof(double), receive1_fine[n], 0, NULL, NULL);
-						if (gpu == 1) clFlush(commandQueueGPU[n]);
 						unpack_receive_B2(n, n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
 							N1_GPU[n], N3_GPU[n], receive1_fine, F2, 0, &(Bufferp[n]), &(Bufferrec1fine[n]), NULL, 1);
 					}
@@ -847,8 +660,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			else{
 				if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][410], &Statbound[n][410]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] *N1_GPU[n] *sizeof(double), receive1_fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
 						N1_GPU[n], N3_GPU[n], receive1_fine, F2, 0, &(Bufferp[n]), &(Bufferrec1fine[n]), NULL, 0);
 				}
@@ -862,8 +673,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][513], &Statbound[n][513]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1_3fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive1_3fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n] / (1 + REF_3),
 					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_3fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_3fine[n]), NULL, 0);
 			}
@@ -874,8 +683,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][514], &Statbound[n][514]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1_4fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive1_4fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n], N2_GPU[n] + 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_4fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_4fine[n]), NULL, 0);
 				}
@@ -887,8 +694,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][517], &Statbound[n][517]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1_7fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive1_7fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n] / (1 + REF_3),
 						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_7fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_7fine[n]), NULL, 0);
 				}
@@ -900,8 +705,6 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1==1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][518], &Statbound[n][518]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1_8fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N3_GPU[n] / (1 + REF_3) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive1_8fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
 						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_8fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_8fine[n]), NULL, 0);
 				}
@@ -922,8 +725,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][551], &Statbound[n][551]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec5_1fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive5_1fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, N2_GPU[n] / (1 + REF_2), 0, D3,
 					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_1fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_1fine[n]), NULL);
 			}
@@ -934,8 +735,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][553], &Statbound[n][553]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec5_3fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive5_3fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, D3,
 						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_3fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_3fine[n]), NULL);
 				}
@@ -947,8 +746,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][555], &Statbound[n][555]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec5_5fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive5_5fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, N2_GPU[n] / (1 + REF_2), 0, D3,
 						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_5fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_5fine[n]), NULL);
 				}
@@ -960,8 +757,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1==1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][557], &Statbound[n][557]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec5_7fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive5_7fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, D3,
 						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_7fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_7fine[n]), NULL);
 				}
@@ -979,8 +774,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][460], &Statbound[n][460]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec6fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] *N1_GPU[n] *sizeof(double), receive6_fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B3(n, n, 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
 					N1_GPU[n], N2_GPU[n], receive6_fine, F3, 0, &(Bufferp[n]), &(Bufferrec6fine[n]), NULL);
 			}
@@ -993,8 +786,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				MPI_Wait(&boundreqs[n][562], &Statbound[n][562]);
-				if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec6_2fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive6_2fine[n], 0, NULL, NULL);
-				if (gpu == 1) clFlush(commandQueueGPU[n]);
 				unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n], N3_GPU[n] + D3,
 					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_2fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_2fine[n]), NULL);
 			}
@@ -1005,8 +796,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][564], &Statbound[n][564]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec6_4fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive6_4fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
 						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_4fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_4fine[n]), NULL);
 				}
@@ -1018,8 +807,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][566], &Statbound[n][566]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec6_6fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive6_6fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n], N3_GPU[n] + D3,
 						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_6fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_6fine[n]),NULL);
 				}
@@ -1031,8 +818,6 @@ void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 			if (REF_1==1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					MPI_Wait(&boundreqs[n][568], &Statbound[n][568]);
-					if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec6_8fine[n], CL_FALSE, (int)0 * sizeof(double), NDIM*N2_GPU[n] / (1 + REF_2) *N1_GPU[n] / (1 + REF_1)*sizeof(double), receive6_8fine[n], 0, NULL, NULL);
-					if (gpu == 1) clFlush(commandQueueGPU[n]);
 					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
 						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_8fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_8fine[n]), NULL);
 				}

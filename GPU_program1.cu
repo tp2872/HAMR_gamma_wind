@@ -1,5 +1,5 @@
 extern "C" {
-	#include "decsCUDA.h"
+	#include "decs.h"
 }
 #include <cuda.h>
 /*Whether or not to use the 3D version of the code*/

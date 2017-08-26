@@ -812,11 +812,10 @@ double * Bufferboundsend5_MPI[NB];
 double * Bufferboundsend6_MPI[NB];
 double * Bufferboundsend7_MPI[NB];
 double * Bufferboundsend8_MPI[NB];
-cl_event boundevent[NB][600];
-cl_event boundevent1[NB][100];
-cl_event boundevent2[NB][100];
+cudaEvent_t boundevent[NB][600];
+cudaEvent_t boundevent1[NB][100];
+cudaEvent_t boundevent2[NB][100];
 int receive_tag;
-cl_event cornevent[NB][16];
 
 /*Timers*/
 clock_t begin1, end1, begin2, end2;

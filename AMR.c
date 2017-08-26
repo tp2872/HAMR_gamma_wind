@@ -471,6 +471,9 @@ void set_AMR(void){
 		//No node assigned yet
 		block[n][AMR_NODE] = -1;
 
+		//No special GPU assigned yet
+		block[n][AMR_GPU] = 0;
+
 		//For the moment only activate the 0 level blocks
 		if (block[n][AMR_LEVEL] == 0){
 			block[n][AMR_ACTIVE] = 1;
@@ -605,7 +608,7 @@ void balance_load(void){
 					#endif
 				}
 				#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-				set_arrays_GPU(n_ord_total_RM[i]);
+				set_arrays_GPU(n_ord_total_RM[i], block[n_ord_total_RM[i]][AMR_GPU]);
 				GPU_write(n_ord_total_RM[i]);
 				#endif
 			}
@@ -685,8 +688,13 @@ void balance_load_gpu(void){
 				gpu = fp + ((steps_RM[n] - ip) - (steps_RM[n] - ip) % y) / y;
 			}
 			if (gpu >= N_GPU) fprintf(stderr, "Error balance_load_gpu() \n");
-			block[n_ord_RM[n]][AMR_GPU] = gpu;
-			commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu * NQ + n%NQ];
+			if (gpu != block[n_ord_RM[n]][AMR_GPU]){
+				GPU_finish(n_ord_RM[n]);
+				block[n_ord_RM[n]][AMR_GPU] = gpu;
+				commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu * NQ + n%NQ];
+				set_arrays_GPU(n_ord_RM[n],gpu);
+				GPU_write(n_ord_RM[n]);
+			}
 			n_active_local_max[gpu]++;
 			n_active_local_min[gpu]++;
 		}
@@ -1674,7 +1682,7 @@ void derefine(int n){
 	
 	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
 	if (block[n][AMR_NODE] == rank){
-		set_arrays_GPU(n);
+		set_arrays_GPU(n, block[n][AMR_GPU]);
 		GPU_write(n);
 	}
 	#endif
@@ -2072,7 +2080,6 @@ void pre_refine(void){
 	int n1, i, j, z;
 	for (n1 = 0; n1 < n_active; n1++){
 		#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-		clFinish(commandQueueGPU[n_ord[n1]]);
 		GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
@@ -2130,7 +2137,7 @@ void refine(int n){
 			refine_cell(n, n_child, 0, 0, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 0, 0, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD1]);
+			set_arrays_GPU(block[n][AMR_CHILD1], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD1]);
 			#endif
 		}
@@ -2144,7 +2151,7 @@ void refine(int n){
 			refine_cell(n, n_child, 0, 0, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 0, 1, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD2]);
+			set_arrays_GPU(block[n][AMR_CHILD2], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD2]);
 			#endif
 		}
@@ -2157,7 +2164,7 @@ void refine(int n){
 			refine_cell(n, n_child, 0, 1, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 1, 0, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD3]);
+			set_arrays_GPU(block[n][AMR_CHILD3], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD3]);
 			#endif
 		}
@@ -2170,7 +2177,7 @@ void refine(int n){
 			refine_cell(n, n_child, 0, 1, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 1, 1, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD4]);
+			set_arrays_GPU(block[n][AMR_CHILD4], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD4]);
 			#endif
 		}
@@ -2184,7 +2191,7 @@ void refine(int n){
 			refine_cell(n, n_child, 1, 0, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 0, 0, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD5]);
+			set_arrays_GPU(block[n][AMR_CHILD5], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD5]);
 			#endif
 		}
@@ -2197,7 +2204,7 @@ void refine(int n){
 			refine_cell(n, n_child, 1, 0, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 0, 1, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD6]);
+			set_arrays_GPU(block[n][AMR_CHILD6], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD6]);
 			#endif
 		}
@@ -2210,7 +2217,7 @@ void refine(int n){
 			refine_cell(n, n_child, 1, 1, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 1, 0, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD7]);
+			set_arrays_GPU(block[n][AMR_CHILD7], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD7]);
 			#endif
 		}
@@ -2223,7 +2230,7 @@ void refine(int n){
 			refine_cell(n, n_child, 1, 1, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 1, 1, ps);
 			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-			set_arrays_GPU(block[n][AMR_CHILD8]);
+			set_arrays_GPU(block[n][AMR_CHILD8], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD8]);
 			#endif
 		}
@@ -2751,7 +2758,7 @@ void check_refcrit(void){
 							#endif
 						}
 						#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-						set_arrays_GPU(n_send);
+						set_arrays_GPU(n_send, block[n_send][AMR_GPU]);
 						GPU_write(n_send);
 						#endif
 					}
