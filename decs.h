@@ -290,6 +290,10 @@ void free_arrays(int n);
 /*Whether or not to use a staggered grid*/
 #define STAGGERED (1)
 
+/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
+#define HLLF  (1.0)
+#define LAXF  (0.0)
+
 /*Wheter or not to use a non symmetric metric for tilted disk*/
 #define NONSYMMETRIC (0)
 
@@ -640,7 +644,6 @@ extern double(*restrict dU_s[NB])[NPR];
 /*GPU variables*/
 #if (OpenCL_enable==1)
 #define FTYPE2 cl_double
-extern int nr_workgroups[NB];
 extern FTYPE2 *F1_1[NB];
 extern FTYPE2 *F2_1[NB];
 extern FTYPE2 *F3_1[NB];
@@ -890,9 +893,23 @@ extern cudaStream_t commandQueue[NQ*N_GPU];
 extern cudaStream_t commandQueueGPU[NB];
 extern int fix_mem[NB];
 extern int fix_mem2[NB];
+extern int nr_workgroups[NB];
+extern int nr_workgroups1[NB];
+extern int nr_workgroups2[NB];
+extern int nr_workgroups2_1[NB];
+extern int nr_workgroups2_2[NB];
+extern int nr_workgroups2_3[NB];
+extern int nr_workgroups3[NB];
+extern int nr_workgroups_special[NB];
+extern int nr_workgroups1_special[NB];
+extern int nr_workgroups2_special[NB];
+extern int nr_workgroups3_special[NB];
 extern int global_work_size[NB][1];
 extern int global_work_size1[NB][1];
 extern int global_work_size2[NB][1];
+extern int global_work_size2_1[NB][1];
+extern int global_work_size2_2[NB][1];
+extern int global_work_size2_3[NB][1];
 extern int global_work_size3[NB][1];
 extern int global_work_size_bound[NB][1];
 extern int global_work_offset[NB][1];
@@ -931,8 +948,6 @@ extern double * Bufferdiagflux[NB];
 extern int * Bufferpflag[NB];
 extern int * Bufferfailimage[NB];
 extern double * BufferKatm[NB];
-
-
 extern double * Buffersend1[NB];
 extern double * Buffersend1_3[NB];
 extern double * Buffersend1_4[NB];
@@ -1699,3 +1714,22 @@ void rdump_block_read(FILE *fp, int n);
 void rdump_block_write(MPI_File *fp, int n);
 int restart_read_param(void);
 int rm_order(void);
+
+/** Evolution functions in step_ch.c **/
+double advance(int flag);
+double advance_GPU(void);
+double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int dir, int flag, int n);
+double fluxcalc_GPU(int n);
+void   flux_ct(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n);
+void const_transport1(double(*restrict p[NB])[NPR], int n);
+void const_transport_bound(void);
+void const_transport2(double(*restrict psi[NB])[NDIM], double(*restrict psf[NB])[NDIM], double Dt, int n);
+void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], double(*restrict pf[NB])[NPR], double(*restrict psf[NB])[NDIM], double Dt, int n);
+void GPU_consttransport1(int flag, double Dt, int n);
+void GPU_consttransport2(int flag, double Dt, int n);
+void GPU_consttransport3(int flag, double Dt, int n);
+void set_timelevel(void);
+void GPU_consttransport_bound(void);
+void read_time_GPU(void);
+void set_timelevel_jet(void);
+void set_prestep(void);

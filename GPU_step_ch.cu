@@ -425,9 +425,9 @@ void set_arrays_GPU(int n, int device){
 	cudaSetDevice(i);
 
 	//Create events
-	for (i = 0; i < 600; i++) cudaEventCreate(&boundevent[n][i])
-	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent1[n][i])
-	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent2[n][i])
+	for (i = 0; i < 600; i++) cudaEventCreate(&boundevent[n][i]);
+	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent1[n][i]);
+	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent2[n][i]);
 
 	/*Allocate memory to 1D arrays*/
 	p_1[n] = (FTYPE2(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(FTYPE2));
@@ -724,23 +724,23 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&receive6_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2));
 	#endif
 	#endif
-	cudaMalloc(&send1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
-	cudaMalloc(&send2_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
-	cudaMalloc(&send3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
-	cudaMalloc(&send4_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	cudaHostRegister(send1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	//cudaMalloc(&send2_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	cudaHostRegister(send3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	//cudaMalloc(&send4_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
 	#if(N3G>0)
-	cudaMalloc(&send5_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
-	cudaMalloc(&send6_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
+	//cudaMalloc(&send5_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
+	//cudaMalloc(&send6_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
 	#endif
-	cudaMalloc(&receive1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
-	cudaMalloc(&receive2_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
-	cudaMalloc(&receive3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
-	cudaMalloc(&receive4_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	cudaHostRegister(receive1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	//cudaMalloc(&receive2_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	cudaHostRegister(receive3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
+	//cudaMalloc(&receive4_fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
 	#if(N3G>0)
-	cudaMalloc(&receive5_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
-	cudaMalloc(&receive6_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
+	//cudaMalloc(&receive5_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
+	//cudaMalloc(&receive6_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(FTYPE2));
 	#endif
-	#if(N_LEVELS>1)
+	/*#if(N_LEVELS>1)
 	cudaMalloc(&receive1_3fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2));
 	cudaMalloc(&receive1_4fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2));
 	cudaMalloc(&receive1_7fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(FTYPE2));
@@ -767,7 +767,7 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&receive6_6fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2));
 	cudaMalloc(&receive6_8fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(FTYPE2));
 	#endif
-	#endif
+	#endif*/
 	cudaMalloc(&send1_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
 	cudaMalloc(&send2_E[n], 2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
 	cudaMalloc(&send3_E[n], 2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(FTYPE2));
@@ -1629,7 +1629,7 @@ void GPU_write(int n)
 	}
 	status = cudaMemcpy(BufferdU[n], dU_GPU[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
 	#endif
-	
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Initialize memory items that have to be passed on to the GPU*/
 	status = cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
 	status += cudaMemcpy(Bufferph_1[n], ph_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(FTYPE2), cudaMemcpyHostToDevice);
@@ -1682,6 +1682,7 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 
 void GPU_fluxcalc2D(int dir, int flag, int n)
 {
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Calculate reconstructed left state*/
 	GPU_fluxcalcprep(dir, flag, 1, n);
 	if (flag == 1){
@@ -1730,6 +1731,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 void GPU_fix_flux(int n)
 {
 	/*Run kernel*/
+	cudaSetDevice(block[n][AMR_GPU]);
 	status = fix_flux << < nr_workgroups_special[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], block[n][AMR_NBR1], block[n][AMR_NBR2], block[n][AMR_NBR3], block[n][AMR_NBR4]);
 	if (status != 0)printf("Error fixflux %d \n", status);
 }
@@ -1740,6 +1742,7 @@ void GPU_consttransport_bound(void){
 	gpu = 1;
 	#if(PRESTEP)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
 		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 		#endif
@@ -1756,6 +1759,7 @@ void GPU_consttransport_bound(void){
 
 	//For last timestep synchronize electric fields immediately
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
 		#endif
@@ -1772,6 +1776,7 @@ void GPU_consttransport_bound(void){
 
 	//For first timestep do not synchronize electrice fields 
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 		#endif
@@ -1787,32 +1792,86 @@ void GPU_consttransport_bound(void){
 	}
 	#else
 	#if(!TIMESTEP_JET)
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_send_corn(E_corn, BufferE_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+	}
 	#endif
 	
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send1(E_corn, BufferE_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, BufferE_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, BufferE_1, n_ord[n], 2);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_send1(E_corn, BufferE_1, n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_rec1(E_corn, BufferE_1, n_ord[n], 1);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send2(E_corn, BufferE_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, BufferE_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, BufferE_1, n_ord[n], 2);
+		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
+	}
+
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_send2(E_corn, BufferE_1, n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_rec2(E_corn, BufferE_1, n_ord[n], 1);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
+	}
 
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send3(E_corn, BufferE_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, BufferE_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, BufferE_1, n_ord[n], 2);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_send3(E_corn, BufferE_1, n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_rec3(E_corn, BufferE_1, n_ord[n], 1);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
+	}
 
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_send_corn(E_corn, BufferE_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+	}	
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+	}
 
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_send_corn(E_corn, BufferE_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+	}
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
+	}
 	#endif
 	#endif
 	#endif
@@ -1825,6 +1884,7 @@ void GPU_consttransport1(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + N1G) * (N2_GPU[n] + N2G) * (N3_GPU[n] + N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + N1G) * (N2_GPU[n] + N2G) * (N3_GPU[n] + N3G)) / LOCAL_WORK_SIZE;
 
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
 		status = consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, Bufferph_1[n], Bufferstorage1[n], Buffergcov[n], Buffergcon[n], Buffergdet[n]);
@@ -1839,6 +1899,7 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) / LOCAL_WORK_SIZE;
 
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
 		status = consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, BufferE_1[n], Bufferstorage1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], 
@@ -1855,6 +1916,7 @@ void GPU_consttransport3(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) / LOCAL_WORK_SIZE;
 
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
 		status = consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, dx[n][1], dx[n][2], dx[n][3], Buffergdet[n], Bufferps_1[n], Bufferps_1[n], BufferE_1[n], Dt);
@@ -1867,6 +1929,7 @@ void GPU_consttransport3(int flag, double Dt, int n){
 
 void GPU_flux_ct1(int n)
 {
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	status = flux_ct1 << < nr_workgroups3[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n]);
 	if (status != 0) printf("Error fluxct1 %d\n", status);
@@ -1874,6 +1937,7 @@ void GPU_flux_ct1(int n)
 
 void GPU_flux_ct2(int n)
 {
+	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	status = flux_ct2 << < nr_workgroups3[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n]);
 	if (status != 0) printf("Error fluxct2 %d\n", status);
@@ -1888,6 +1952,7 @@ void GPU_fixuputoprim(int flag, int n)
 {
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * N1G) * (N2_GPU[n] + 2 * N2G) * (N3_GPU[n] + 2 * N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * N1G) * (N2_GPU[n] + 2 * N2G) * (N3_GPU[n] + 2 * N3G)) / LOCAL_WORK_SIZE;
+	cudaSetDevice(block[n][AMR_GPU]);
 	if (flag == 1){
 		status = fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, Bufferp_1[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n]);
 	}
@@ -1899,6 +1964,7 @@ void GPU_fixuputoprim(int flag, int n)
 
 void GPU_fixup(int flag, int n, double Dt)
 {
+	cudaSetDevice(block[n][AMR_GPU]);
 	if (flag == 0){
 		status = fixup << < nr_workgroups1[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BS_1, BS_2, BS_3, Bufferp_1[n], Bufferp_1[n], Bufferph_1[n], Bufferpsh_1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n],
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
@@ -1918,11 +1984,13 @@ void GPU_boundprim(int bound_force)
 
 	if (bound_force == 1) nstep = -1;
 	for (n = 0; n < n_active; n++){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
 	}
 	#if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim2(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(0, n_ord[n]);
 	}
@@ -1944,6 +2012,7 @@ void GPU_boundprim(int bound_force)
 	}
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 3);
 			flux_rec2(F2, BufferF2_1, n_ord[n], 3);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 3);
@@ -1965,6 +2034,7 @@ void GPU_boundprim(int bound_force)
 		}
 
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
@@ -1991,32 +2061,38 @@ void GPU_boundprim(int bound_force)
 
 	rc = 0;
 	for (n = 0; n < n_active; n++){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, Bufferp_1, 0, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, 0, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, Bufferp_1, 0, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, Bufferph_1, 0, n_ord[n]);
 	}
 
 	if (N3 > 1){
 		for (n = 0; n < n_active; n++){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 		}
 
 		for (n = 0; n < n_active; n++){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, Bufferp_1, 0, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, Bufferph_1, 0, n_ord[n]);
 		}
@@ -2121,11 +2197,16 @@ void GPU_read(int n)
 
 void GPU_finish(int n)
 {
-	//Attention
-	//clFinish(commandQueueGPU[n]);
-	
+	int i;
+
 	//Select correct CUDA device
 	cudaSetDevice(block[n][AMR_GPU]);
+
+	//Destroy CUDA events associated with block
+	for (i = 0; i < 600; i++) cudaEventDestroy(boundevent[n][i]);
+	for (i = 0; i < 100; i++) cudaEventDestroy(boundevent1[n][i]);
+	for (i = 0; i < 100; i++) cudaEventDestroy(boundevent2[n][i]);
+
 	free(p_1[n]);
 	free(dq_1[n]);
 	#if(STAGGERED)
@@ -2169,468 +2250,470 @@ void GPU_finish(int n)
 	status += cudaFree(Imagegcon[n]);
 	status += cudaFree(Imageconn[n]);
 	status += cudaFree(Imagegdet[n]);
-	status += cudaFreeHost(Buffersend1[n]);
-	status += cudaFreeHost(Buffersend1_3[n]);
-	status += cudaFreeHost(Buffersend1_4[n]);
-	status += cudaFreeHost(Buffersend1_7[n]);
-	status += cudaFreeHost(Buffersend1_8[n]);
-	status += cudaFreeHost(Buffersend2[n]);
-	status += cudaFreeHost(Buffersend2_1[n]);
-	status += cudaFreeHost(Buffersend2_2[n]);
-	status += cudaFreeHost(Buffersend2_3[n]);
-	status += cudaFreeHost(Buffersend2_4[n]);
-	status += cudaFreeHost(Buffersend3[n]);
-	status += cudaFreeHost(Buffersend3_1[n]);
-	status += cudaFreeHost(Buffersend3_2[n]);
-	status += cudaFreeHost(Buffersend3_5[n]);
-	status += cudaFreeHost(Buffersend3_6[n]);
-	status += cudaFreeHost(Buffersend4[n]);
-	status += cudaFreeHost(Buffersend4_5[n]);
-	status += cudaFreeHost(Buffersend4_6[n]);
-	status += cudaFreeHost(Buffersend4_7[n]);
-	status += cudaFreeHost(Buffersend4_8[n]);
+	status += cudaFree(Buffersend1[n]);
+	status += cudaFree(Buffersend1_3[n]);
+	status += cudaFree(Buffersend1_4[n]);
+	status += cudaFree(Buffersend1_7[n]);
+	status += cudaFree(Buffersend1_8[n]);
+	status += cudaFree(Buffersend2[n]);
+	status += cudaFree(Buffersend2_1[n]);
+	status += cudaFree(Buffersend2_2[n]);
+	status += cudaFree(Buffersend2_3[n]);
+	status += cudaFree(Buffersend2_4[n]);
+	status += cudaFree(Buffersend3[n]);
+	status += cudaFree(Buffersend3_1[n]);
+	status += cudaFree(Buffersend3_2[n]);
+	status += cudaFree(Buffersend3_5[n]);
+	status += cudaFree(Buffersend3_6[n]);
+	status += cudaFree(Buffersend4[n]);
+	status += cudaFree(Buffersend4_5[n]);
+	status += cudaFree(Buffersend4_6[n]);
+	status += cudaFree(Buffersend4_7[n]);
+	status += cudaFree(Buffersend4_8[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Buffersend5[n]);
-	status += cudaFreeHost(Buffersend5_1[n]);
-	status += cudaFreeHost(Buffersend5_3[n]);
-	status += cudaFreeHost(Buffersend5_5[n]);
-	status += cudaFreeHost(Buffersend5_7[n]);
-	status += cudaFreeHost(Buffersend6[n]);
-	status += cudaFreeHost(Buffersend6_2[n]);
-	status += cudaFreeHost(Buffersend6_4[n]);
-	status += cudaFreeHost(Buffersend6_6[n]);
-	status += cudaFreeHost(Buffersend6_8[n]);
+	status += cudaFree(Buffersend5[n]);
+	status += cudaFree(Buffersend5_1[n]);
+	status += cudaFree(Buffersend5_3[n]);
+	status += cudaFree(Buffersend5_5[n]);
+	status += cudaFree(Buffersend5_7[n]);
+	status += cudaFree(Buffersend6[n]);
+	status += cudaFree(Buffersend6_2[n]);
+	status += cudaFree(Buffersend6_4[n]);
+	status += cudaFree(Buffersend6_6[n]);
+	status += cudaFree(Buffersend6_8[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1[n]);
-	status += cudaFreeHost(Bufferrec1_3[n]);
-	status += cudaFreeHost(Bufferrec1_4[n]);
-	status += cudaFreeHost(Bufferrec1_7[n]);
-	status += cudaFreeHost(Bufferrec1_8[n]);
-	status += cudaFreeHost(Bufferrec2[n]);
-	status += cudaFreeHost(Bufferrec2_1[n]);
-	status += cudaFreeHost(Bufferrec2_2[n]);
-	status += cudaFreeHost(Bufferrec2_3[n]);
-	status += cudaFreeHost(Bufferrec2_4[n]);
-	status += cudaFreeHost(Bufferrec3[n]);
-	status += cudaFreeHost(Bufferrec3_1[n]);
-	status += cudaFreeHost(Bufferrec3_2[n]);
-	status += cudaFreeHost(Bufferrec3_5[n]);
-	status += cudaFreeHost(Bufferrec3_6[n]);
-	status += cudaFreeHost(Bufferrec4[n]);
-	status += cudaFreeHost(Bufferrec4_5[n]);
-	status += cudaFreeHost(Bufferrec4_6[n]);
-	status += cudaFreeHost(Bufferrec4_7[n]);
-	status += cudaFreeHost(Bufferrec4_8[n]);
+	status += cudaFree(Bufferrec1[n]);
+	status += cudaFree(Bufferrec1_3[n]);
+	status += cudaFree(Bufferrec1_4[n]);
+	status += cudaFree(Bufferrec1_7[n]);
+	status += cudaFree(Bufferrec1_8[n]);
+	status += cudaFree(Bufferrec2[n]);
+	status += cudaFree(Bufferrec2_1[n]);
+	status += cudaFree(Bufferrec2_2[n]);
+	status += cudaFree(Bufferrec2_3[n]);
+	status += cudaFree(Bufferrec2_4[n]);
+	status += cudaFree(Bufferrec3[n]);
+	status += cudaFree(Bufferrec3_1[n]);
+	status += cudaFree(Bufferrec3_2[n]);
+	status += cudaFree(Bufferrec3_5[n]);
+	status += cudaFree(Bufferrec3_6[n]);
+	status += cudaFree(Bufferrec4[n]);
+	status += cudaFree(Bufferrec4_5[n]);
+	status += cudaFree(Bufferrec4_6[n]);
+	status += cudaFree(Bufferrec4_7[n]);
+	status += cudaFree(Bufferrec4_8[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5[n]);
-	status += cudaFreeHost(Bufferrec5_1[n]);
-	status += cudaFreeHost(Bufferrec5_3[n]);
-	status += cudaFreeHost(Bufferrec5_5[n]);
-	status += cudaFreeHost(Bufferrec5_7[n]);
-	status += cudaFreeHost(Bufferrec6[n]);
-	status += cudaFreeHost(Bufferrec6_2[n]);
-	status += cudaFreeHost(Bufferrec6_4[n]);
-	status += cudaFreeHost(Bufferrec6_6[n]);
-	status += cudaFreeHost(Bufferrec6_8[n]);
+	status += cudaFree(Bufferrec5[n]);
+	status += cudaFree(Bufferrec5_1[n]);
+	status += cudaFree(Bufferrec5_3[n]);
+	status += cudaFree(Bufferrec5_5[n]);
+	status += cudaFree(Bufferrec5_7[n]);
+	status += cudaFree(Bufferrec6[n]);
+	status += cudaFree(Bufferrec6_2[n]);
+	status += cudaFree(Bufferrec6_4[n]);
+	status += cudaFree(Bufferrec6_6[n]);
+	status += cudaFree(Bufferrec6_8[n]);
 	#endif
-	status += cudaFreeHost(tempBufferrec1[n]);
-	status += cudaFreeHost(tempBufferrec1_3[n]);
-	status += cudaFreeHost(tempBufferrec1_4[n]);
-	status += cudaFreeHost(tempBufferrec1_7[n]);
-	status += cudaFreeHost(tempBufferrec1_8[n]);
-	status += cudaFreeHost(tempBufferrec2[n]);
-	status += cudaFreeHost(tempBufferrec2_1[n]);
-	status += cudaFreeHost(tempBufferrec2_2[n]);
-	status += cudaFreeHost(tempBufferrec2_3[n]);
-	status += cudaFreeHost(tempBufferrec2_4[n]);
-	status += cudaFreeHost(tempBufferrec3[n]);
-	status += cudaFreeHost(tempBufferrec3_1[n]);
-	status += cudaFreeHost(tempBufferrec3_2[n]);
-	status += cudaFreeHost(tempBufferrec3_5[n]);
-	status += cudaFreeHost(tempBufferrec3_6[n]);
-	status += cudaFreeHost(tempBufferrec4[n]);
-	status += cudaFreeHost(tempBufferrec4_5[n]);
-	status += cudaFreeHost(tempBufferrec4_6[n]);
-	status += cudaFreeHost(tempBufferrec4_7[n]);
-	status += cudaFreeHost(tempBufferrec4_8[n]);
+	status += cudaFree(tempBufferrec1[n]);
+	status += cudaFree(tempBufferrec1_3[n]);
+	status += cudaFree(tempBufferrec1_4[n]);
+	status += cudaFree(tempBufferrec1_7[n]);
+	status += cudaFree(tempBufferrec1_8[n]);
+	status += cudaFree(tempBufferrec2[n]);
+	status += cudaFree(tempBufferrec2_1[n]);
+	status += cudaFree(tempBufferrec2_2[n]);
+	status += cudaFree(tempBufferrec2_3[n]);
+	status += cudaFree(tempBufferrec2_4[n]);
+	status += cudaFree(tempBufferrec3[n]);
+	status += cudaFree(tempBufferrec3_1[n]);
+	status += cudaFree(tempBufferrec3_2[n]);
+	status += cudaFree(tempBufferrec3_5[n]);
+	status += cudaFree(tempBufferrec3_6[n]);
+	status += cudaFree(tempBufferrec4[n]);
+	status += cudaFree(tempBufferrec4_5[n]);
+	status += cudaFree(tempBufferrec4_6[n]);
+	status += cudaFree(tempBufferrec4_7[n]);
+	status += cudaFree(tempBufferrec4_8[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(tempBufferrec5[n]);
-	status += cudaFreeHost(tempBufferrec5_1[n]);
-	status += cudaFreeHost(tempBufferrec5_3[n]);
-	status += cudaFreeHost(tempBufferrec5_5[n]);
-	status += cudaFreeHost(tempBufferrec5_7[n]);
-	status += cudaFreeHost(tempBufferrec6[n]);
-	status += cudaFreeHost(tempBufferrec6_2[n]);
-	status += cudaFreeHost(tempBufferrec6_4[n]);
-	status += cudaFreeHost(tempBufferrec6_6[n]);
-	status += cudaFreeHost(tempBufferrec6_8[n]);
+	status += cudaFree(tempBufferrec5[n]);
+	status += cudaFree(tempBufferrec5_1[n]);
+	status += cudaFree(tempBufferrec5_3[n]);
+	status += cudaFree(tempBufferrec5_5[n]);
+	status += cudaFree(tempBufferrec5_7[n]);
+	status += cudaFree(tempBufferrec6[n]);
+	status += cudaFree(tempBufferrec6_2[n]);
+	status += cudaFree(tempBufferrec6_4[n]);
+	status += cudaFree(tempBufferrec6_6[n]);
+	status += cudaFree(tempBufferrec6_8[n]);
 	#endif
-	status += cudaFreeHost(Buffersend1flux[n]);
-	status += cudaFreeHost(Buffersend2flux[n]);
-	status += cudaFreeHost(Buffersend3flux[n]);
-	status += cudaFreeHost(Buffersend4flux[n]);
+	status += cudaFree(Buffersend1flux[n]);
+	status += cudaFree(Buffersend2flux[n]);
+	status += cudaFree(Buffersend3flux[n]);
+	status += cudaFree(Buffersend4flux[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Buffersend5flux[n]);
-	status += cudaFreeHost(Buffersend6flux[n]);
+	status += cudaFree(Buffersend5flux[n]);
+	status += cudaFree(Buffersend6flux[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1flux[n]);
-	status += cudaFreeHost(Bufferrec2flux[n]);
-	status += cudaFreeHost(Bufferrec3flux[n]);
-	status += cudaFreeHost(Bufferrec4flux[n]);
+	status += cudaFree(Bufferrec1flux[n]);
+	status += cudaFree(Bufferrec2flux[n]);
+	status += cudaFree(Bufferrec3flux[n]);
+	status += cudaFree(Bufferrec4flux[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5flux[n]);
-	status += cudaFreeHost(Bufferrec6flux[n]);
+	status += cudaFree(Bufferrec5flux[n]);
+	status += cudaFree(Bufferrec6flux[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3flux[n]);
-	status += cudaFreeHost(Bufferrec1_4flux[n]);
-	status += cudaFreeHost(Bufferrec1_7flux[n]);
-	status += cudaFreeHost(Bufferrec1_8flux[n]);
-	status += cudaFreeHost(Bufferrec2_1flux[n]);
-	status += cudaFreeHost(Bufferrec2_2flux[n]);
-	status += cudaFreeHost(Bufferrec2_3flux[n]);
-	status += cudaFreeHost(Bufferrec2_4flux[n]);
-	status += cudaFreeHost(Bufferrec3_1flux[n]);
-	status += cudaFreeHost(Bufferrec3_2flux[n]);
-	status += cudaFreeHost(Bufferrec3_5flux[n]);
-	status += cudaFreeHost(Bufferrec3_6flux[n]);
-	status += cudaFreeHost(Bufferrec4_5flux[n]);
-	status += cudaFreeHost(Bufferrec4_6flux[n]);
-	status += cudaFreeHost(Bufferrec4_7flux[n]);
-	status += cudaFreeHost(Bufferrec4_8flux[n]);
+	status += cudaFree(Bufferrec1_3flux[n]);
+	status += cudaFree(Bufferrec1_4flux[n]);
+	status += cudaFree(Bufferrec1_7flux[n]);
+	status += cudaFree(Bufferrec1_8flux[n]);
+	status += cudaFree(Bufferrec2_1flux[n]);
+	status += cudaFree(Bufferrec2_2flux[n]);
+	status += cudaFree(Bufferrec2_3flux[n]);
+	status += cudaFree(Bufferrec2_4flux[n]);
+	status += cudaFree(Bufferrec3_1flux[n]);
+	status += cudaFree(Bufferrec3_2flux[n]);
+	status += cudaFree(Bufferrec3_5flux[n]);
+	status += cudaFree(Bufferrec3_6flux[n]);
+	status += cudaFree(Bufferrec4_5flux[n]);
+	status += cudaFree(Bufferrec4_6flux[n]);
+	status += cudaFree(Bufferrec4_7flux[n]);
+	status += cudaFree(Bufferrec4_8flux[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1flux[n]);
-	status += cudaFreeHost(Bufferrec5_3flux[n]);
-	status += cudaFreeHost(Bufferrec5_5flux[n]);
-	status += cudaFreeHost(Bufferrec5_7flux[n]);
-	status += cudaFreeHost(Bufferrec6_2flux[n]);
-	status += cudaFreeHost(Bufferrec6_4flux[n]);
-	status += cudaFreeHost(Bufferrec6_6flux[n]);
-	status += cudaFreeHost(Bufferrec6_8flux[n]);
+	status += cudaFree(Bufferrec5_1flux[n]);
+	status += cudaFree(Bufferrec5_3flux[n]);
+	status += cudaFree(Bufferrec5_5flux[n]);
+	status += cudaFree(Bufferrec5_7flux[n]);
+	status += cudaFree(Bufferrec6_2flux[n]);
+	status += cudaFree(Bufferrec6_4flux[n]);
+	status += cudaFree(Bufferrec6_6flux[n]);
+	status += cudaFree(Bufferrec6_8flux[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1flux1[n]);
-	status += cudaFreeHost(Bufferrec2flux1[n]);
-	status += cudaFreeHost(Bufferrec3flux1[n]);
-	status += cudaFreeHost(Bufferrec4flux1[n]);
+	status += cudaFree(Bufferrec1flux1[n]);
+	status += cudaFree(Bufferrec2flux1[n]);
+	status += cudaFree(Bufferrec3flux1[n]);
+	status += cudaFree(Bufferrec4flux1[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5flux1[n]);
-	status += cudaFreeHost(Bufferrec6flux1[n]);
+	status += cudaFree(Bufferrec5flux1[n]);
+	status += cudaFree(Bufferrec6flux1[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3flux1[n]);
-	status += cudaFreeHost(Bufferrec1_4flux1[n]);
-	status += cudaFreeHost(Bufferrec1_7flux1[n]);
-	status += cudaFreeHost(Bufferrec1_8flux1[n]);
-	status += cudaFreeHost(Bufferrec2_1flux1[n]);
-	status += cudaFreeHost(Bufferrec2_2flux1[n]);
-	status += cudaFreeHost(Bufferrec2_3flux1[n]);
-	status += cudaFreeHost(Bufferrec2_4flux1[n]);
-	status += cudaFreeHost(Bufferrec3_1flux1[n]);
-	status += cudaFreeHost(Bufferrec3_2flux1[n]);
-	status += cudaFreeHost(Bufferrec3_5flux1[n]);
-	status += cudaFreeHost(Bufferrec3_6flux1[n]);
-	status += cudaFreeHost(Bufferrec4_5flux1[n]);
-	status += cudaFreeHost(Bufferrec4_6flux1[n]);
-	status += cudaFreeHost(Bufferrec4_7flux1[n]);
-	status += cudaFreeHost(Bufferrec4_8flux1[n]);
+	status += cudaFree(Bufferrec1_3flux1[n]);
+	status += cudaFree(Bufferrec1_4flux1[n]);
+	status += cudaFree(Bufferrec1_7flux1[n]);
+	status += cudaFree(Bufferrec1_8flux1[n]);
+	status += cudaFree(Bufferrec2_1flux1[n]);
+	status += cudaFree(Bufferrec2_2flux1[n]);
+	status += cudaFree(Bufferrec2_3flux1[n]);
+	status += cudaFree(Bufferrec2_4flux1[n]);
+	status += cudaFree(Bufferrec3_1flux1[n]);
+	status += cudaFree(Bufferrec3_2flux1[n]);
+	status += cudaFree(Bufferrec3_5flux1[n]);
+	status += cudaFree(Bufferrec3_6flux1[n]);
+	status += cudaFree(Bufferrec4_5flux1[n]);
+	status += cudaFree(Bufferrec4_6flux1[n]);
+	status += cudaFree(Bufferrec4_7flux1[n]);
+	status += cudaFree(Bufferrec4_8flux1[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1flux1[n]);
-	status += cudaFreeHost(Bufferrec5_3flux1[n]);
-	status += cudaFreeHost(Bufferrec5_5flux1[n]);
-	status += cudaFreeHost(Bufferrec5_7flux1[n]);
-	status += cudaFreeHost(Bufferrec6_2flux1[n]);
-	status += cudaFreeHost(Bufferrec6_4flux1[n]);
-	status += cudaFreeHost(Bufferrec6_6flux1[n]);
-	status += cudaFreeHost(Bufferrec6_8flux1[n]);
+	status += cudaFree(Bufferrec5_1flux1[n]);
+	status += cudaFree(Bufferrec5_3flux1[n]);
+	status += cudaFree(Bufferrec5_5flux1[n]);
+	status += cudaFree(Bufferrec5_7flux1[n]);
+	status += cudaFree(Bufferrec6_2flux1[n]);
+	status += cudaFree(Bufferrec6_4flux1[n]);
+	status += cudaFree(Bufferrec6_6flux1[n]);
+	status += cudaFree(Bufferrec6_8flux1[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3flux2[n]);
-	status += cudaFreeHost(Bufferrec1_4flux2[n]);
-	status += cudaFreeHost(Bufferrec1_7flux2[n]);
-	status += cudaFreeHost(Bufferrec1_8flux2[n]);
-	status += cudaFreeHost(Bufferrec2_1flux2[n]);
-	status += cudaFreeHost(Bufferrec2_2flux2[n]);
-	status += cudaFreeHost(Bufferrec2_3flux2[n]);
-	status += cudaFreeHost(Bufferrec2_4flux2[n]);
-	status += cudaFreeHost(Bufferrec3_1flux2[n]);
-	status += cudaFreeHost(Bufferrec3_2flux2[n]);
-	status += cudaFreeHost(Bufferrec3_5flux2[n]);
-	status += cudaFreeHost(Bufferrec3_6flux2[n]);
-	status += cudaFreeHost(Bufferrec4_5flux2[n]);
-	status += cudaFreeHost(Bufferrec4_6flux2[n]);
-	status += cudaFreeHost(Bufferrec4_7flux2[n]);
-	status += cudaFreeHost(Bufferrec4_8flux2[n]);
+	status += cudaFree(Bufferrec1_3flux2[n]);
+	status += cudaFree(Bufferrec1_4flux2[n]);
+	status += cudaFree(Bufferrec1_7flux2[n]);
+	status += cudaFree(Bufferrec1_8flux2[n]);
+	status += cudaFree(Bufferrec2_1flux2[n]);
+	status += cudaFree(Bufferrec2_2flux2[n]);
+	status += cudaFree(Bufferrec2_3flux2[n]);
+	status += cudaFree(Bufferrec2_4flux2[n]);
+	status += cudaFree(Bufferrec3_1flux2[n]);
+	status += cudaFree(Bufferrec3_2flux2[n]);
+	status += cudaFree(Bufferrec3_5flux2[n]);
+	status += cudaFree(Bufferrec3_6flux2[n]);
+	status += cudaFree(Bufferrec4_5flux2[n]);
+	status += cudaFree(Bufferrec4_6flux2[n]);
+	status += cudaFree(Bufferrec4_7flux2[n]);
+	status += cudaFree(Bufferrec4_8flux2[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1flux2[n]);
-	status += cudaFreeHost(Bufferrec5_3flux2[n]);
-	status += cudaFreeHost(Bufferrec5_5flux2[n]);
-	status += cudaFreeHost(Bufferrec5_7flux2[n]);
-	status += cudaFreeHost(Bufferrec6_2flux2[n]);
-	status += cudaFreeHost(Bufferrec6_4flux2[n]);
-	status += cudaFreeHost(Bufferrec6_6flux2[n]);
-	status += cudaFreeHost(Bufferrec6_8flux2[n]);
+	status += cudaFree(Bufferrec5_1flux2[n]);
+	status += cudaFree(Bufferrec5_3flux2[n]);
+	status += cudaFree(Bufferrec5_5flux2[n]);
+	status += cudaFree(Bufferrec5_7flux2[n]);
+	status += cudaFree(Bufferrec6_2flux2[n]);
+	status += cudaFree(Bufferrec6_4flux2[n]);
+	status += cudaFree(Bufferrec6_6flux2[n]);
+	status += cudaFree(Bufferrec6_8flux2[n]);
 	#endif
-	status += cudaFreeHost(Buffersend1fine[n]);
-	status += cudaFreeHost(Buffersend2fine[n]);
-	status += cudaFreeHost(Buffersend3fine[n]);
-	status += cudaFreeHost(Buffersend4fine[n]);
+	/*
+	status += cudaFree(Buffersend1fine[n]);
+	status += cudaFree(Buffersend2fine[n]);
+	status += cudaFree(Buffersend3fine[n]);
+	status += cudaFree(Buffersend4fine[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Buffersend5fine[n]);
-	status += cudaFreeHost(Buffersend6fine[n]);
+	status += cudaFree(Buffersend5fine[n]);
+	status += cudaFree(Buffersend6fine[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1fine[n]);
-	status += cudaFreeHost(Bufferrec2fine[n]);
-	status += cudaFreeHost(Bufferrec3fine[n]);
-	status += cudaFreeHost(Bufferrec4fine[n]);
+	status += cudaFree(Bufferrec1fine[n]);
+	status += cudaFree(Bufferrec2fine[n]);
+	status += cudaFree(Bufferrec3fine[n]);
+	status += cudaFree(Bufferrec4fine[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5fine[n]);
-	status += cudaFreeHost(Bufferrec6fine[n]);
+	status += cudaFree(Bufferrec5fine[n]);
+	status += cudaFree(Bufferrec6fine[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3fine[n]);
-	status += cudaFreeHost(Bufferrec1_4fine[n]);
-	status += cudaFreeHost(Bufferrec1_7fine[n]);
-	status += cudaFreeHost(Bufferrec1_8fine[n]);
-	status += cudaFreeHost(Bufferrec2_1fine[n]);
-	status += cudaFreeHost(Bufferrec2_2fine[n]);
-	status += cudaFreeHost(Bufferrec2_3fine[n]);
-	status += cudaFreeHost(Bufferrec2_4fine[n]);
-	status += cudaFreeHost(Bufferrec3_1fine[n]);
-	status += cudaFreeHost(Bufferrec3_2fine[n]);
-	status += cudaFreeHost(Bufferrec3_5fine[n]);
-	status += cudaFreeHost(Bufferrec3_6fine[n]);
-	status += cudaFreeHost(Bufferrec4_5fine[n]);
-	status += cudaFreeHost(Bufferrec4_6fine[n]);
-	status += cudaFreeHost(Bufferrec4_7fine[n]);
-	status += cudaFreeHost(Bufferrec4_8fine[n]);
+	status += cudaFree(Bufferrec1_3fine[n]);
+	status += cudaFree(Bufferrec1_4fine[n]);
+	status += cudaFree(Bufferrec1_7fine[n]);
+	status += cudaFree(Bufferrec1_8fine[n]);
+	status += cudaFree(Bufferrec2_1fine[n]);
+	status += cudaFree(Bufferrec2_2fine[n]);
+	status += cudaFree(Bufferrec2_3fine[n]);
+	status += cudaFree(Bufferrec2_4fine[n]);
+	status += cudaFree(Bufferrec3_1fine[n]);
+	status += cudaFree(Bufferrec3_2fine[n]);
+	status += cudaFree(Bufferrec3_5fine[n]);
+	status += cudaFree(Bufferrec3_6fine[n]);
+	status += cudaFree(Bufferrec4_5fine[n]);
+	status += cudaFree(Bufferrec4_6fine[n]);
+	status += cudaFree(Bufferrec4_7fine[n]);
+	status += cudaFree(Bufferrec4_8fine[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1fine[n]);
-	status += cudaFreeHost(Bufferrec5_3fine[n]);
-	status += cudaFreeHost(Bufferrec5_5fine[n]);
-	status += cudaFreeHost(Bufferrec5_7fine[n]);
-	status += cudaFreeHost(Bufferrec6_2fine[n]);
-	status += cudaFreeHost(Bufferrec6_4fine[n]);
-	status += cudaFreeHost(Bufferrec6_6fine[n]);
-	status += cudaFreeHost(Bufferrec6_8fine[n]);
+	status += cudaFree(Bufferrec5_1fine[n]);
+	status += cudaFree(Bufferrec5_3fine[n]);
+	status += cudaFree(Bufferrec5_5fine[n]);
+	status += cudaFree(Bufferrec5_7fine[n]);
+	status += cudaFree(Bufferrec6_2fine[n]);
+	status += cudaFree(Bufferrec6_4fine[n]);
+	status += cudaFree(Bufferrec6_6fine[n]);
+	status += cudaFree(Bufferrec6_8fine[n]);
 	#endif
-	status += cudaFreeHost(Buffersend1E[n]);
-	status += cudaFreeHost(Buffersend2E[n]);
-	status += cudaFreeHost(Buffersend3E[n]);
-	status += cudaFreeHost(Buffersend4E[n]);
+	*/
+	status += cudaFree(Buffersend1E[n]);
+	status += cudaFree(Buffersend2E[n]);
+	status += cudaFree(Buffersend3E[n]);
+	status += cudaFree(Buffersend4E[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Buffersend5E[n]);
-	status += cudaFreeHost(Buffersend6E[n]);
+	status += cudaFree(Buffersend5E[n]);
+	status += cudaFree(Buffersend6E[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1E[n]);
-	status += cudaFreeHost(Bufferrec2E[n]);
-	status += cudaFreeHost(Bufferrec3E[n]);
-	status += cudaFreeHost(Bufferrec4E[n]);
+	status += cudaFree(Bufferrec1E[n]);
+	status += cudaFree(Bufferrec2E[n]);
+	status += cudaFree(Bufferrec3E[n]);
+	status += cudaFree(Bufferrec4E[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5E[n]);
-	status += cudaFreeHost(Bufferrec6E[n]);
+	status += cudaFree(Bufferrec5E[n]);
+	status += cudaFree(Bufferrec6E[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3E[n]);
-	status += cudaFreeHost(Bufferrec1_4E[n]);
-	status += cudaFreeHost(Bufferrec1_7E[n]);
-	status += cudaFreeHost(Bufferrec1_8E[n]);
-	status += cudaFreeHost(Bufferrec2_1E[n]);
-	status += cudaFreeHost(Bufferrec2_2E[n]);
-	status += cudaFreeHost(Bufferrec2_3E[n]);
-	status += cudaFreeHost(Bufferrec2_4E[n]);
-	status += cudaFreeHost(Bufferrec3_1E[n]);
-	status += cudaFreeHost(Bufferrec3_2E[n]);
-	status += cudaFreeHost(Bufferrec3_5E[n]);
-	status += cudaFreeHost(Bufferrec3_6E[n]);
-	status += cudaFreeHost(Bufferrec4_5E[n]);
-	status += cudaFreeHost(Bufferrec4_6E[n]);
-	status += cudaFreeHost(Bufferrec4_7E[n]);
-	status += cudaFreeHost(Bufferrec4_8E[n]);
+	status += cudaFree(Bufferrec1_3E[n]);
+	status += cudaFree(Bufferrec1_4E[n]);
+	status += cudaFree(Bufferrec1_7E[n]);
+	status += cudaFree(Bufferrec1_8E[n]);
+	status += cudaFree(Bufferrec2_1E[n]);
+	status += cudaFree(Bufferrec2_2E[n]);
+	status += cudaFree(Bufferrec2_3E[n]);
+	status += cudaFree(Bufferrec2_4E[n]);
+	status += cudaFree(Bufferrec3_1E[n]);
+	status += cudaFree(Bufferrec3_2E[n]);
+	status += cudaFree(Bufferrec3_5E[n]);
+	status += cudaFree(Bufferrec3_6E[n]);
+	status += cudaFree(Bufferrec4_5E[n]);
+	status += cudaFree(Bufferrec4_6E[n]);
+	status += cudaFree(Bufferrec4_7E[n]);
+	status += cudaFree(Bufferrec4_8E[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1E[n]);
-	status += cudaFreeHost(Bufferrec5_3E[n]);
-	status += cudaFreeHost(Bufferrec5_5E[n]);
-	status += cudaFreeHost(Bufferrec5_7E[n]);
-	status += cudaFreeHost(Bufferrec6_2E[n]);
-	status += cudaFreeHost(Bufferrec6_4E[n]);
-	status += cudaFreeHost(Bufferrec6_6E[n]);
-	status += cudaFreeHost(Bufferrec6_8E[n]);
+	status += cudaFree(Bufferrec5_1E[n]);
+	status += cudaFree(Bufferrec5_3E[n]);
+	status += cudaFree(Bufferrec5_5E[n]);
+	status += cudaFree(Bufferrec5_7E[n]);
+	status += cudaFree(Bufferrec6_2E[n]);
+	status += cudaFree(Bufferrec6_4E[n]);
+	status += cudaFree(Bufferrec6_6E[n]);
+	status += cudaFree(Bufferrec6_8E[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1E1[n]);
-	status += cudaFreeHost(Bufferrec2E1[n]);
-	status += cudaFreeHost(Bufferrec3E1[n]);
-	status += cudaFreeHost(Bufferrec4E1[n]);
+	status += cudaFree(Bufferrec1E1[n]);
+	status += cudaFree(Bufferrec2E1[n]);
+	status += cudaFree(Bufferrec3E1[n]);
+	status += cudaFree(Bufferrec4E1[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5E1[n]);
-	status += cudaFreeHost(Bufferrec6E1[n]);
+	status += cudaFree(Bufferrec5E1[n]);
+	status += cudaFree(Bufferrec6E1[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3E1[n]);
-	status += cudaFreeHost(Bufferrec1_4E1[n]);
-	status += cudaFreeHost(Bufferrec1_7E1[n]);
-	status += cudaFreeHost(Bufferrec1_8E1[n]);
-	status += cudaFreeHost(Bufferrec2_1E1[n]);
-	status += cudaFreeHost(Bufferrec2_2E1[n]);
-	status += cudaFreeHost(Bufferrec2_3E1[n]);
-	status += cudaFreeHost(Bufferrec2_4E1[n]);
-	status += cudaFreeHost(Bufferrec3_1E1[n]);
-	status += cudaFreeHost(Bufferrec3_2E1[n]);
-	status += cudaFreeHost(Bufferrec3_5E1[n]);
-	status += cudaFreeHost(Bufferrec3_6E1[n]);
-	status += cudaFreeHost(Bufferrec4_5E1[n]);
-	status += cudaFreeHost(Bufferrec4_6E1[n]);
-	status += cudaFreeHost(Bufferrec4_7E1[n]);
-	status += cudaFreeHost(Bufferrec4_8E1[n]);
+	status += cudaFree(Bufferrec1_3E1[n]);
+	status += cudaFree(Bufferrec1_4E1[n]);
+	status += cudaFree(Bufferrec1_7E1[n]);
+	status += cudaFree(Bufferrec1_8E1[n]);
+	status += cudaFree(Bufferrec2_1E1[n]);
+	status += cudaFree(Bufferrec2_2E1[n]);
+	status += cudaFree(Bufferrec2_3E1[n]);
+	status += cudaFree(Bufferrec2_4E1[n]);
+	status += cudaFree(Bufferrec3_1E1[n]);
+	status += cudaFree(Bufferrec3_2E1[n]);
+	status += cudaFree(Bufferrec3_5E1[n]);
+	status += cudaFree(Bufferrec3_6E1[n]);
+	status += cudaFree(Bufferrec4_5E1[n]);
+	status += cudaFree(Bufferrec4_6E1[n]);
+	status += cudaFree(Bufferrec4_7E1[n]);
+	status += cudaFree(Bufferrec4_8E1[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1E1[n]);
-	status += cudaFreeHost(Bufferrec5_3E1[n]);
-	status += cudaFreeHost(Bufferrec5_5E1[n]);
-	status += cudaFreeHost(Bufferrec5_7E1[n]);
-	status += cudaFreeHost(Bufferrec6_2E1[n]);
-	status += cudaFreeHost(Bufferrec6_4E1[n]);
-	status += cudaFreeHost(Bufferrec6_6E1[n]);
-	status += cudaFreeHost(Bufferrec6_8E1[n]);
+	status += cudaFree(Bufferrec5_1E1[n]);
+	status += cudaFree(Bufferrec5_3E1[n]);
+	status += cudaFree(Bufferrec5_5E1[n]);
+	status += cudaFree(Bufferrec5_7E1[n]);
+	status += cudaFree(Bufferrec6_2E1[n]);
+	status += cudaFree(Bufferrec6_4E1[n]);
+	status += cudaFree(Bufferrec6_6E1[n]);
+	status += cudaFree(Bufferrec6_8E1[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3E2[n]);
-	status += cudaFreeHost(Bufferrec1_4E2[n]);
-	status += cudaFreeHost(Bufferrec1_7E2[n]);
-	status += cudaFreeHost(Bufferrec1_8E2[n]);
-	status += cudaFreeHost(Bufferrec2_1E2[n]);
-	status += cudaFreeHost(Bufferrec2_2E2[n]);
-	status += cudaFreeHost(Bufferrec2_3E2[n]);
-	status += cudaFreeHost(Bufferrec2_4E2[n]);
-	status += cudaFreeHost(Bufferrec3_1E2[n]);
-	status += cudaFreeHost(Bufferrec3_2E2[n]);
-	status += cudaFreeHost(Bufferrec3_5E2[n]);
-	status += cudaFreeHost(Bufferrec3_6E2[n]);
-	status += cudaFreeHost(Bufferrec4_5E2[n]);
-	status += cudaFreeHost(Bufferrec4_6E2[n]);
-	status += cudaFreeHost(Bufferrec4_7E2[n]);
-	status += cudaFreeHost(Bufferrec4_8E2[n]);
+	status += cudaFree(Bufferrec1_3E2[n]);
+	status += cudaFree(Bufferrec1_4E2[n]);
+	status += cudaFree(Bufferrec1_7E2[n]);
+	status += cudaFree(Bufferrec1_8E2[n]);
+	status += cudaFree(Bufferrec2_1E2[n]);
+	status += cudaFree(Bufferrec2_2E2[n]);
+	status += cudaFree(Bufferrec2_3E2[n]);
+	status += cudaFree(Bufferrec2_4E2[n]);
+	status += cudaFree(Bufferrec3_1E2[n]);
+	status += cudaFree(Bufferrec3_2E2[n]);
+	status += cudaFree(Bufferrec3_5E2[n]);
+	status += cudaFree(Bufferrec3_6E2[n]);
+	status += cudaFree(Bufferrec4_5E2[n]);
+	status += cudaFree(Bufferrec4_6E2[n]);
+	status += cudaFree(Bufferrec4_7E2[n]);
+	status += cudaFree(Bufferrec4_8E2[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(Bufferrec5_1E2[n]);
-	status += cudaFreeHost(Bufferrec5_3E2[n]);
-	status += cudaFreeHost(Bufferrec5_5E2[n]);
-	status += cudaFreeHost(Bufferrec5_7E2[n]);
-	status += cudaFreeHost(Bufferrec6_2E2[n]);
-	status += cudaFreeHost(Bufferrec6_4E2[n]);
-	status += cudaFreeHost(Bufferrec6_6E2[n]);
-	status += cudaFreeHost(Bufferrec6_8E2[n]);
+	status += cudaFree(Bufferrec5_1E2[n]);
+	status += cudaFree(Bufferrec5_3E2[n]);
+	status += cudaFree(Bufferrec5_5E2[n]);
+	status += cudaFree(Bufferrec5_7E2[n]);
+	status += cudaFree(Bufferrec6_2E2[n]);
+	status += cudaFree(Bufferrec6_4E2[n]);
+	status += cudaFree(Bufferrec6_6E2[n]);
+	status += cudaFree(Bufferrec6_8E2[n]);
 	#endif
 	#if(N3G>0)
-	status += cudaFreeHost(BuffersendE1corn9[n]);
-	status += cudaFreeHost(BuffersendE1corn10[n]);
-	status += cudaFreeHost(BuffersendE1corn11[n]);
-	status += cudaFreeHost(BuffersendE1corn12[n]);
-	status += cudaFreeHost(BuffersendE2corn5[n]);
-	status += cudaFreeHost(BuffersendE2corn6[n]);
-	status += cudaFreeHost(BuffersendE2corn7[n]);
-	status += cudaFreeHost(BuffersendE2corn8[n]);
+	status += cudaFree(BuffersendE1corn9[n]);
+	status += cudaFree(BuffersendE1corn10[n]);
+	status += cudaFree(BuffersendE1corn11[n]);
+	status += cudaFree(BuffersendE1corn12[n]);
+	status += cudaFree(BuffersendE2corn5[n]);
+	status += cudaFree(BuffersendE2corn6[n]);
+	status += cudaFree(BuffersendE2corn7[n]);
+	status += cudaFree(BuffersendE2corn8[n]);
 	#endif
-	status += cudaFreeHost(BuffersendE3corn1[n]);
-	status += cudaFreeHost(BuffersendE3corn2[n]);
-	status += cudaFreeHost(BuffersendE3corn3[n]);
-	status += cudaFreeHost(BuffersendE3corn4[n]);
+	status += cudaFree(BuffersendE3corn1[n]);
+	status += cudaFree(BuffersendE3corn2[n]);
+	status += cudaFree(BuffersendE3corn3[n]);
+	status += cudaFree(BuffersendE3corn4[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(BufferrecE1corn9[n]);
-	status += cudaFreeHost(BufferrecE1corn10[n]);
-	status += cudaFreeHost(BufferrecE1corn11[n]);
-	status += cudaFreeHost(BufferrecE1corn12[n]);
-	status += cudaFreeHost(BufferrecE2corn5[n]);
-	status += cudaFreeHost(BufferrecE2corn6[n]);
-	status += cudaFreeHost(BufferrecE2corn7[n]);
-	status += cudaFreeHost(BufferrecE2corn8[n]);
+	status += cudaFree(BufferrecE1corn9[n]);
+	status += cudaFree(BufferrecE1corn10[n]);
+	status += cudaFree(BufferrecE1corn11[n]);
+	status += cudaFree(BufferrecE1corn12[n]);
+	status += cudaFree(BufferrecE2corn5[n]);
+	status += cudaFree(BufferrecE2corn6[n]);
+	status += cudaFree(BufferrecE2corn7[n]);
+	status += cudaFree(BufferrecE2corn8[n]);
 	#endif
-	status += cudaFreeHost(BufferrecE3corn1[n]);
-	status += cudaFreeHost(BufferrecE3corn2[n]);
-	status += cudaFreeHost(BufferrecE3corn3[n]);
-	status += cudaFreeHost(BufferrecE3corn4[n]);
+	status += cudaFree(BufferrecE3corn1[n]);
+	status += cudaFree(BufferrecE3corn2[n]);
+	status += cudaFree(BufferrecE3corn3[n]);
+	status += cudaFree(BufferrecE3corn4[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(BufferrecE1corn9_3[n]);
-	status += cudaFreeHost(BufferrecE1corn9_7[n]);
-	status += cudaFreeHost(BufferrecE1corn10_1[n]);
-	status += cudaFreeHost(BufferrecE1corn10_5[n]);
-	status += cudaFreeHost(BufferrecE1corn11_2[n]);
-	status += cudaFreeHost(BufferrecE1corn11_6[n]);
-	status += cudaFreeHost(BufferrecE1corn12_4[n]);
-	status += cudaFreeHost(BufferrecE1corn12_8[n]);
-	status += cudaFreeHost(BufferrecE2corn5_2[n]);
-	status += cudaFreeHost(BufferrecE2corn5_4[n]);
-	status += cudaFreeHost(BufferrecE2corn6_1[n]);
-	status += cudaFreeHost(BufferrecE2corn6_3[n]);
-	status += cudaFreeHost(BufferrecE2corn7_5[n]);
-	status += cudaFreeHost(BufferrecE2corn7_7[n]);
-	status += cudaFreeHost(BufferrecE2corn8_6[n]);
-	status += cudaFreeHost(BufferrecE2corn8_8[n]);
+	status += cudaFree(BufferrecE1corn9_3[n]);
+	status += cudaFree(BufferrecE1corn9_7[n]);
+	status += cudaFree(BufferrecE1corn10_1[n]);
+	status += cudaFree(BufferrecE1corn10_5[n]);
+	status += cudaFree(BufferrecE1corn11_2[n]);
+	status += cudaFree(BufferrecE1corn11_6[n]);
+	status += cudaFree(BufferrecE1corn12_4[n]);
+	status += cudaFree(BufferrecE1corn12_8[n]);
+	status += cudaFree(BufferrecE2corn5_2[n]);
+	status += cudaFree(BufferrecE2corn5_4[n]);
+	status += cudaFree(BufferrecE2corn6_1[n]);
+	status += cudaFree(BufferrecE2corn6_3[n]);
+	status += cudaFree(BufferrecE2corn7_5[n]);
+	status += cudaFree(BufferrecE2corn7_7[n]);
+	status += cudaFree(BufferrecE2corn8_6[n]);
+	status += cudaFree(BufferrecE2corn8_8[n]);
 	#endif
-	status += cudaFreeHost(BufferrecE3corn1_3[n]);
-	status += cudaFreeHost(BufferrecE3corn1_4[n]);
-	status += cudaFreeHost(BufferrecE3corn2_1[n]);
-	status += cudaFreeHost(BufferrecE3corn2_2[n]);
-	status += cudaFreeHost(BufferrecE3corn3_5[n]);
-	status += cudaFreeHost(BufferrecE3corn3_6[n]);
-	status += cudaFreeHost(BufferrecE3corn4_7[n]);
-	status += cudaFreeHost(BufferrecE3corn4_8[n]);
+	status += cudaFree(BufferrecE3corn1_3[n]);
+	status += cudaFree(BufferrecE3corn1_4[n]);
+	status += cudaFree(BufferrecE3corn2_1[n]);
+	status += cudaFree(BufferrecE3corn2_2[n]);
+	status += cudaFree(BufferrecE3corn3_5[n]);
+	status += cudaFree(BufferrecE3corn3_6[n]);
+	status += cudaFree(BufferrecE3corn4_7[n]);
+	status += cudaFree(BufferrecE3corn4_8[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(tempBufferrecE1corn9[n]);
-	status += cudaFreeHost(tempBufferrecE1corn10[n]);
-	status += cudaFreeHost(tempBufferrecE1corn11[n]);
-	status += cudaFreeHost(tempBufferrecE1corn12[n]);
-	status += cudaFreeHost(tempBufferrecE2corn5[n]);
-	status += cudaFreeHost(tempBufferrecE2corn6[n]);
-	status += cudaFreeHost(tempBufferrecE2corn7[n]);
-	status += cudaFreeHost(tempBufferrecE2corn8[n]);
+	status += cudaFree(tempBufferrecE1corn9[n]);
+	status += cudaFree(tempBufferrecE1corn10[n]);
+	status += cudaFree(tempBufferrecE1corn11[n]);
+	status += cudaFree(tempBufferrecE1corn12[n]);
+	status += cudaFree(tempBufferrecE2corn5[n]);
+	status += cudaFree(tempBufferrecE2corn6[n]);
+	status += cudaFree(tempBufferrecE2corn7[n]);
+	status += cudaFree(tempBufferrecE2corn8[n]);
 	#endif
-	status += cudaFreeHost(tempBufferrecE3corn1[n]);
-	status += cudaFreeHost(tempBufferrecE3corn2[n]);
-	status += cudaFreeHost(tempBufferrecE3corn3[n]);
-	status += cudaFreeHost(tempBufferrecE3corn4[n]);
+	status += cudaFree(tempBufferrecE3corn1[n]);
+	status += cudaFree(tempBufferrecE3corn2[n]);
+	status += cudaFree(tempBufferrecE3corn3[n]);
+	status += cudaFree(tempBufferrecE3corn4[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(tempBufferrecE1corn9_3[n]);
-	status += cudaFreeHost(tempBufferrecE1corn9_7[n]);
-	status += cudaFreeHost(tempBufferrecE1corn10_1[n]);
-	status += cudaFreeHost(tempBufferrecE1corn10_5[n]);
-	status += cudaFreeHost(tempBufferrecE1corn11_2[n]);
-	status += cudaFreeHost(tempBufferrecE1corn11_6[n]);
-	status += cudaFreeHost(tempBufferrecE1corn12_4[n]);
-	status += cudaFreeHost(tempBufferrecE1corn12_8[n]);
-	status += cudaFreeHost(tempBufferrecE2corn5_2[n]);
-	status += cudaFreeHost(tempBufferrecE2corn5_4[n]);
-	status += cudaFreeHost(tempBufferrecE2corn6_1[n]);
-	status += cudaFreeHost(tempBufferrecE2corn6_3[n]);
-	status += cudaFreeHost(tempBufferrecE2corn7_5[n]);
-	status += cudaFreeHost(tempBufferrecE2corn7_7[n]);
-	status += cudaFreeHost(tempBufferrecE2corn8_6[n]);
-	status += cudaFreeHost(tempBufferrecE2corn8_8[n]);
+	status += cudaFree(tempBufferrecE1corn9_3[n]);
+	status += cudaFree(tempBufferrecE1corn9_7[n]);
+	status += cudaFree(tempBufferrecE1corn10_1[n]);
+	status += cudaFree(tempBufferrecE1corn10_5[n]);
+	status += cudaFree(tempBufferrecE1corn11_2[n]);
+	status += cudaFree(tempBufferrecE1corn11_6[n]);
+	status += cudaFree(tempBufferrecE1corn12_4[n]);
+	status += cudaFree(tempBufferrecE1corn12_8[n]);
+	status += cudaFree(tempBufferrecE2corn5_2[n]);
+	status += cudaFree(tempBufferrecE2corn5_4[n]);
+	status += cudaFree(tempBufferrecE2corn6_1[n]);
+	status += cudaFree(tempBufferrecE2corn6_3[n]);
+	status += cudaFree(tempBufferrecE2corn7_5[n]);
+	status += cudaFree(tempBufferrecE2corn7_7[n]);
+	status += cudaFree(tempBufferrecE2corn8_6[n]);
+	status += cudaFree(tempBufferrecE2corn8_8[n]);
 	#endif
-	status += cudaFreeHost(tempBufferrecE3corn1_3[n]);
-	status += cudaFreeHost(tempBufferrecE3corn1_4[n]);
-	status += cudaFreeHost(tempBufferrecE3corn2_1[n]);
-	status += cudaFreeHost(tempBufferrecE3corn2_2[n]);
-	status += cudaFreeHost(tempBufferrecE3corn3_5[n]);
-	status += cudaFreeHost(tempBufferrecE3corn3_6[n]);
-	status += cudaFreeHost(tempBufferrecE3corn4_7[n]);
-	status += cudaFreeHost(tempBufferrecE3corn4_8[n]);
+	status += cudaFree(tempBufferrecE3corn1_3[n]);
+	status += cudaFree(tempBufferrecE3corn1_4[n]);
+	status += cudaFree(tempBufferrecE3corn2_1[n]);
+	status += cudaFree(tempBufferrecE3corn2_2[n]);
+	status += cudaFree(tempBufferrecE3corn3_5[n]);
+	status += cudaFree(tempBufferrecE3corn3_6[n]);
+	status += cudaFree(tempBufferrecE3corn4_7[n]);
+	status += cudaFree(tempBufferrecE3corn4_8[n]);
 	#if(N3G>0)
-	status += cudaFreeHost(BufferrecE1corn9_32[n]);
-	status += cudaFreeHost(BufferrecE1corn9_72[n]);
-	status += cudaFreeHost(BufferrecE1corn10_12[n]);
-	status += cudaFreeHost(BufferrecE1corn10_52[n]);
-	status += cudaFreeHost(BufferrecE1corn11_22[n]);
-	status += cudaFreeHost(BufferrecE1corn11_62[n]);
-	status += cudaFreeHost(BufferrecE1corn12_42[n]);
-	status += cudaFreeHost(BufferrecE1corn12_82[n]);
-	status += cudaFreeHost(BufferrecE2corn5_22[n]);
-	status += cudaFreeHost(BufferrecE2corn5_42[n]);
-	status += cudaFreeHost(BufferrecE2corn6_12[n]);
-	status += cudaFreeHost(BufferrecE2corn6_32[n]);
-	status += cudaFreeHost(BufferrecE2corn7_52[n]);
-	status += cudaFreeHost(BufferrecE2corn7_72[n]);
-	status += cudaFreeHost(BufferrecE2corn8_62[n]);
-	status += cudaFreeHost(BufferrecE2corn8_82[n]);
+	status += cudaFree(BufferrecE1corn9_32[n]);
+	status += cudaFree(BufferrecE1corn9_72[n]);
+	status += cudaFree(BufferrecE1corn10_12[n]);
+	status += cudaFree(BufferrecE1corn10_52[n]);
+	status += cudaFree(BufferrecE1corn11_22[n]);
+	status += cudaFree(BufferrecE1corn11_62[n]);
+	status += cudaFree(BufferrecE1corn12_42[n]);
+	status += cudaFree(BufferrecE1corn12_82[n]);
+	status += cudaFree(BufferrecE2corn5_22[n]);
+	status += cudaFree(BufferrecE2corn5_42[n]);
+	status += cudaFree(BufferrecE2corn6_12[n]);
+	status += cudaFree(BufferrecE2corn6_32[n]);
+	status += cudaFree(BufferrecE2corn7_52[n]);
+	status += cudaFree(BufferrecE2corn7_72[n]);
+	status += cudaFree(BufferrecE2corn8_62[n]);
+	status += cudaFree(BufferrecE2corn8_82[n]);
 	#endif
-	status += cudaFreeHost(BufferrecE3corn1_32[n]);
-	status += cudaFreeHost(BufferrecE3corn1_42[n]);
-	status += cudaFreeHost(BufferrecE3corn2_12[n]);
-	status += cudaFreeHost(BufferrecE3corn2_22[n]);
-	status += cudaFreeHost(BufferrecE3corn3_52[n]);
-	status += cudaFreeHost(BufferrecE3corn3_62[n]);
-	status += cudaFreeHost(BufferrecE3corn4_72[n]);
-	status += cudaFreeHost(BufferrecE3corn4_82[n]);
+	status += cudaFree(BufferrecE3corn1_32[n]);
+	status += cudaFree(BufferrecE3corn1_42[n]);
+	status += cudaFree(BufferrecE3corn2_12[n]);
+	status += cudaFree(BufferrecE3corn2_22[n]);
+	status += cudaFree(BufferrecE3corn3_52[n]);
+	status += cudaFree(BufferrecE3corn3_62[n]);
+	status += cudaFree(BufferrecE3corn4_72[n]);
+	status += cudaFree(BufferrecE3corn4_82[n]);
 
 	if (status != 0) printf("Error in GPU_finish_1: %d \n", status);
 }

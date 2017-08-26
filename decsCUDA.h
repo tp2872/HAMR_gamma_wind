@@ -1,215 +1,73 @@
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <time.h>
+__global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size);
+__global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size);
+__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size);
+__global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size);
+__global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size);
+__global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU);
+__global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int jsize2, int zsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
+	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size);
+__global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int zsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
+	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int reverse, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size);
+__global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int jsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
+	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size);
+__global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
+	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size);
+__global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
+	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size);
+__global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
+	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size);
+__global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
+	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size);
+__global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
+	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size);
+__global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
+	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size);
+__global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int mode, int work_size);
+__global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int mode, int work_size);
+__global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int mode, int work_size);
+__global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size);
+__global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size);
+__global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size);
+__global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size);
+__global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size);
+__global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size);
+__global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size);
+__global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 *   F, __global FTYPE2 *  dq, __global FTYPE2 *  p, int dir, int lim, int number, __global FTYPE2 *  V);
+__global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 *  F, __global FTYPE2 *  dq, __global FTYPE2 *  pv, __global FTYPE2 *  ps, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int lim, int dir,
+	FTYPE2 gam, FTYPE2 cour, __global FTYPE2*  dtij, int POLE_1, int POLE_2, __global FTYPE2* storage1, __global FTYPE2* storage2, __global FTYPE2* storage3, __global FTYPE2* storage4, double dx_1, double dx_2, double dx_3);
+__global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4);
+__global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 *  pb_i, __global FTYPE2 *  E_cent, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet);
+__global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 *  emf, __global FTYPE2 *  E_cent, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3,
+	__global FTYPE2 *  pb_i, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int POLE_1, int POLE_2);
+__global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2, double dx_3, const  FTYPE2* __restrict__ gdet_GPU, __global FTYPE2 *  psi, __global FTYPE2 *  psf,
+	__global FTYPE2 *  E_corn, double Dt);
+__global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2 *  emf);
+__global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2 *  emf);
+__global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FTYPE2* pb_i, __global FTYPE2* pf_i, __global FTYPE2 *  psf,
+	__global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2* radius, __global int* pflag, __global int* failimage,
+	const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, const  FTYPE2* __restrict__ conn, __global FTYPE2* Katm, FTYPE2 gam, FTYPE2 dx_1, FTYPE2 dx_2, FTYPE2 dx_3, FTYPE2 a, FTYPE2 Dt, int flag);
+__global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 *  pv, __global int *  pflag, __global int *  failimage, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet);
+__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 *   pv, const  FTYPE2* __restrict__ gcov,const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int NBR_2, int NBR_4, __global FTYPE2 *  ps);
+__global__ void boundprim2(int N1, int N2, int N3, __global FTYPE2 *  pv, const  FTYPE2* __restrict__ gdet, int NBR_1, int NBR_3, __global FTYPE2 *  ps);
 
-/* numerical parameters */
-extern double Rin,Rout,hslope,R0,fractheta ;
-extern double cour;
-extern int lim;
-
-/* physics parameters */
-extern double a ;
-extern double gam ;
-#define NPR        (8)        /* number of primitive variables */
-#define NDIM       (4)        /* number of total dimensions.  Never changes */
-#define NPG        (5)        /* number of positions on grid for grid functions */
-#define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
-#define NIMG       (4)        /* Number of types of images to make, kind of */
-#define NFAIL	   (5)        /* Number of types of failure images to make*/
-
-/*Set freezing point*/
-#define ibound 0
-#define jbound 0
-#define zbound 0
-
-#define boundfreeze1 0 //Movie playback(not yet fully implemented)
-#define boundfreeze2 0 //Frozen boundary at i=ibound-1
-#if boundfreeze2==1
-#define N_POINTS 2
-#elif boundfreeze1==1
-#define N_POINTS 10
-#else
-#define N_POINTS 1
-#endif
-/*************************************************************************
-    MACROS
-*************************************************************************/
-/* loop over all active zones */
-#define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
-#define ZLOOP_MPI for(i=N1_MPI_offset;i<N1_MPI_offset + N1_MPI;i++)for(j=N2_MPI_offset;j<N2_MPI_offset + N2_MPI ;j++)
-#if (N3>1)
-#define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
-#define ZLOOP3D_MPI for(i=N1_MPI_offset;i<N1_MPI_offset + N1_MPI;i++)for(j=N2_MPI_offset;j<N2_MPI_offset + N2_MPI ;j++)for(z=N3_MPI_offset;z<N3_MPI_offset + N3_MPI ;z++)
-#else
-#define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
-#define ZLOOP3D_MPI for(i=N1_MPI_offset;i<N1_MPI_offset + N1_MPI;i++)for(j=N2_MPI_offset;j<N2_MPI_offset + N2_MPI ;j++)for(z=N3_MPI_offset;z<N3_MPI_offset + N3_MPI ;z++)
-#endif
-
-/* loop over all active zones */
-#define IMAGELOOP for(j=0;j<N2;j++)for(i=0;i<N1;i++)
-
-/* specialty loop */
-#define ZSLOOP(istart,istop,jstart,jstop) for(i=istart;i<=istop;i++) for(j=jstart;j<=jstop;j++)
-#if (N3>1)
-#define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
-#else
-#define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
-#endif
-
-
-/* grid functions */
-extern double(*   p)[NPR];
-extern double(*   ph)[NPR];
-extern double(*  dq)[NPR];
-extern double(*  F1)[NPR];
-extern double(*  F2)[NPR];
-extern double(*  F3)[NPR];
-extern int(*  pflag);
-extern double (* conn)[NDIM][NDIM][NDIM] ;
-extern double (* gcon)[NPG][NDIM][NDIM] ;
-extern double (* gcov)[NPG][NDIM][NDIM] ;
-extern double (* gdet)[NPG];
-extern int(* failimage)[NFAIL];
-extern double Katm[2000];
-
-/*MPI variables*/
-extern int n_rows;
-extern int n_columns;
-extern int n_stacks;
-extern int n1_MPI;
-extern int n2_MPI;
-extern int n3_MPI;
-extern int N1_MPI;
-extern int N2_MPI;
-extern int N3_MPI;
-extern int N1_MPI_offset;
-extern int N2_MPI_offset;
-extern int N3_MPI_offset;
-extern int numtasks, rank;
-extern int N1_tot;
-extern int N2_tot;
-extern int N3_tot;
-
-/*CUDA variables*/
-extern int fix_mem;
-extern int fix_mem2;
-extern int nr_workgroups;
-extern size_t global_work_size[1];
-extern size_t global_work_size_bound[1];
-extern size_t global_work_offset[1];
-extern size_t global_work_size_special[1];
-extern size_t global_work_size_special1[1];
-extern size_t global_work_size_special2[1];
-extern size_t global_work_size_special3[1];
-extern size_t local_work_size[1];
-extern double* BufferF1_1;
-extern double* BufferF2_1;
-extern double* BufferF3_1;
-extern double* Bufferdq_1;
-extern double* Bufferstorage1;
-extern double* Bufferstorage2;
-extern double* Bufferstorage3;
-extern double* Bufferstorage4;
-extern double* Bufferp_1;
-extern double* Bufferph_1;
-extern double* Bufferpbound_1;
-extern double* Buffergcov;
-extern double* Buffergcon;
-extern double* Bufferconn;
-extern double* Buffergdet;
-extern double* Bufferdtij;
-extern double* Bufferdiagflux;
-extern int* Bufferpflag;
-extern int* Bufferfailimage;
-extern double* BufferKatm;
-extern int* BufferaN1_MPI;
-extern int* BufferaN1_MPI_offset;
-extern int* BufferaN2_MPI;
-extern int* BufferaN2_MPI_offset;
-extern int* BufferaN3_MPI;
-extern int* BufferaN3_MPI_offset;
-extern int* Buffern1_MPI;
-extern int* Buffern2_MPI;
-extern int* Buffern3_MPI;
-extern int* Bufferrank;
-extern double* Bufferboundrec1_MPI;
-extern double* Bufferboundrec2_MPI;
-extern double* Bufferboundrec3_MPI;
-extern double* Bufferboundrec4_MPI;
-extern double* Bufferboundrec5_MPI;
-extern double* Bufferboundrec6_MPI;
-extern double* Bufferboundrec7_MPI;
-extern double* Bufferboundrec8_MPI;
-extern double* Bufferboundsend1_MPI;
-extern double* Bufferboundsend2_MPI;
-extern double* Bufferboundsend3_MPI;
-extern double* Bufferboundsend4_MPI;
-extern double* Bufferboundsend5_MPI;
-extern double* Bufferboundsend6_MPI;
-extern double* Bufferboundsend7_MPI;
-extern double* Bufferboundsend8_MPI;
-extern double* Buffercornrec1_MPI;
-extern double* Buffercornrec2_MPI;
-extern double* Buffercornrec3_MPI;
-extern double* Buffercornrec4_MPI;
-extern double* Buffercornrec5_MPI;
-extern double* Buffercornrec6_MPI;
-extern double* Buffercornrec7_MPI;
-extern double* Buffercornrec8_MPI;
-extern double* Buffercornsend1_MPI;
-extern double* Buffercornsend2_MPI;
-extern double* Buffercornsend3_MPI;
-extern double* Buffercornsend4_MPI;
-extern double* Buffercornsend5_MPI;
-extern double* Buffercornsend6_MPI;
-extern double* Buffercornsend7_MPI;
-extern double* Buffercornsend8_MPI;
-extern int *aN1_MPI_offset;
-extern int *aN2_MPI_offset;
-extern int *aN3_MPI_offset;
-extern int *aN1_MPI;
-extern int *aN2_MPI;
-extern int *aN3_MPI;
- 
-/*GPU variables*/
-#define FTYPE2 double
-extern FTYPE2 *F1_1;
-extern FTYPE2 *F2_1;
-extern FTYPE2 *F3_1;
-extern FTYPE2 *dq_1;
-extern FTYPE2 *p_1;
-extern FTYPE2 *ph_1;
-extern FTYPE2 *pbound_1;
-extern FTYPE2 *gcov_GPU;
-extern FTYPE2 *gcon_GPU;
-extern FTYPE2 *conn_GPU;
-extern FTYPE2 *gdet_GPU;
-extern FTYPE2 *dtij_GPU;
-extern FTYPE2 *Katm_GPU;
-extern int *pflag_GPU;
-extern int *failimage_GPU;
-
-/*Function definitions*/
-double fluxcalc_GPU(int dir, int flag);
-void GPU_init(void);
-void GPU_write(void);
-void GPU_fluxcalcprep(int dir,int flag);
-void GPU_fluxcalc2D(int dir, int flag);
-void GPU_fix_flux(void);
-void GPU_flux_ct1(void);
-void GPU_flux_ct2(void);
-void GPU_diag_flux(void);
-void GPU_Utoprim(int flag, double Dt);
-void GPU_fixuputoprim(int flag);
-void GPU_fixup(int flag);
-void GPU_boundprim(int flag,int MPI);
-void GPU_boundprim1(int flag);
-void GPU_boundprim2(int flag);
-void GPU_boundprim3(int flag);
-void GPU_boundsend(int flag);
-void GPU_boundrec(int flag);
-void GPU_read(void);
-int index(int i, int j, int z);
-int index2(int i, int j);
-int index3(int i, int j);
+		

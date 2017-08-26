@@ -52,28 +52,7 @@
 #include "decs.h"
 /** algorithmic choices **/
 
-/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (1.0)
-#define LAXF  (0.0)
 
-/** end algorithmic choices **/
-double advance(int flag);
-double advance_GPU(void);
-double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int dir, int flag, int n);
-double fluxcalc_GPU(int n);
-void   flux_ct(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n);
-void const_transport1(double(*restrict p[NB])[NPR], int n);
-void const_transport_bound(void);
-void const_transport2(double(*restrict psi[NB])[NDIM], double(*restrict psf[NB])[NDIM], double Dt, int n);
-void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], double(*restrict pf[NB])[NPR], double(*restrict psf[NB])[NDIM], double Dt, int n);
-void GPU_consttransport1(int flag, double Dt, int n);
-void GPU_consttransport2(int flag, double Dt, int n);
-void GPU_consttransport3(int flag, double Dt, int n);
-void set_timelevel(void);
-void GPU_consttransport_bound(void);
-void read_time_GPU(void);
-void set_timelevel_jet(void);
-void set_prestep(void);
 /***********************************************************************************************/
 /***********************************************************************************************
   step_ch():
@@ -687,15 +666,6 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 					#pragma ivdep
 					PLOOP F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
 						+ LAXF*(0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k])));
-					/*k = B1;
-					F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-						+ LAXF*(0.5*(F_l[k] + F_r[k] - 0.*ctop*(U_r[k] - U_l[k])));
-					k = B2;
-					F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-						+ LAXF*(0.5*(F_l[k] + F_r[k] - 0.*ctop*(U_r[k] - U_l[k])));					
-					k = B3;
-					F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-						+ LAXF*(0.5*(F_l[k] + F_r[k] - 0.*ctop*(U_r[k] - U_l[k])));*/
 					#endif
 
 					/* evaluate restriction on timestep */
@@ -966,7 +936,11 @@ void E_average(void){
 	if (numtasks >= MAX_RANK && rank == 0)fprintf(stderr, "Please increase MAX_RANK in E_average! \n");
 
 	//Read in average value of E1 at pole for every block on node
-	for (n = 0; n<n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) read_E_avg(E_avg, E_avg_x, E_avg_y, n_ord[n]);
+	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n][AMR_GPU]);
+		read_E_avg(E_avg, E_avg_x, E_avg_y, n_ord[n]);
+	}
+
 	//If block is not on node send the data to other node over MPI
 	for (i = 0; i < NB_1; i++){
 		//Which nodes have an active block around a slice in phi for a given i
@@ -1116,7 +1090,10 @@ void E_average(void){
 	}
 
 	//Write average value of E1 at pole for every block on node
-	for (n = 0; n<n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1)write_E_avg(E_avg_new, E_avg_new_x, E_avg_new_y, n_ord[n]);
+	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n][AMR_GPU]);
+		write_E_avg(E_avg_new, E_avg_new_x, E_avg_new_y, n_ord[n]);
+	}
 }
 
 void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]), double(*restrict E_avg_y[NB][2]), int n){
@@ -1129,9 +1106,10 @@ void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2])
 	isize = (N1_GPU[n] + N1G);
 	zsize = (N3_GPU[n] + N3G);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(Buffersend1fine[n]), NULL);
-		if (gpu == 1) clEnqueueReadBuffer(commandQueueGPU[n], Buffersend1fine[n], CL_TRUE, (int)0 * sizeof(double), (int)(isize*zsize)*sizeof(double), send1_fine[n], 0, NULL, NULL);
-		if (gpu == 1) clFlush(commandQueueGPU[n]);
+		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(send1_fine[n]), NULL);
+		if (gpu == 1){
+			cudaStreamSynchronize(commandQueueGPU[n]);
+		}
 		for (i = i1; i < i2; i++){
 			E_avg[n][0][i] = 0.;
 			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
@@ -1142,9 +1120,10 @@ void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2])
 		}
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(Buffersend3fine[n]), NULL);
-		if (gpu == 1) clEnqueueReadBuffer(commandQueueGPU[n], Buffersend3fine[n], CL_TRUE, (int)0 * sizeof(double), (int)(isize*zsize)*sizeof(double), send3_fine[n], 0, NULL, NULL);
-		if (gpu == 1) clFlush(commandQueueGPU[n]);
+		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(send3_fine[n]), NULL);
+		if (gpu == 1){
+			cudaStreamSynchronize(commandQueueGPU[n]);
+		}
 		for (i = i1; i < i2; i++){
 			E_avg[n][1][i] = 0.;
 			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
@@ -1174,10 +1153,7 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 				receive1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][0][i];
 			}
 		}
-
-		if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec1fine[n], CL_FALSE, 0, isize*zsize*sizeof(double), receive1_fine[n], 0, NULL, NULL);
-		if (gpu == 1) clFlush(commandQueueGPU[n]);
-		unpack_receive2_E(n, n,n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec1fine[n]), NULL, NULL, NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive1_fine[n]), NULL, NULL, NULL, 4, 0, 0, 0, 0);
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){
@@ -1188,9 +1164,7 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 				receive3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][1][i];
 			}
 		}
-		if (gpu == 1) clEnqueueWriteBuffer(commandQueueGPU[n], Bufferrec3fine[n], CL_FALSE, 0, isize*zsize*sizeof(double), receive3_fine[n], 0, NULL, NULL);
-		if (gpu == 1) clFlush(commandQueueGPU[n]);
-		unpack_receive2_E(n, n,n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec3fine[n]), NULL, NULL, NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive3_fine[n]), NULL, NULL, NULL, 4, 0, 0, 0, 0);
 	}
 }
 
@@ -1289,7 +1263,6 @@ void step_ch_debug()
 	//GPU_boundprim(0,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 	//GPU_fixuputoprim(0);  /* Fix the failure points using interpolation and updated ghost zone values */
 	//GPU_boundprim(0,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-	clFinish(commandQueueGPU[0]);
 	fprintf(stderr, "\n h_dt(GPU%d): %f     ", rank, ndt);
 	
 	for (n = 0; n < n_active; n++){
@@ -1346,7 +1319,6 @@ void step_ch_debug()
 	//GPU_boundprim(1,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 	//GPU_fixuputoprim(1);  /* Fix the failure points using interpolation and updated ghost zone values */
 	//GPU_boundprim(1,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-	clFinish(commandQueueGPU[0]);
 	fprintf(stderr, "f_dt(GPU%d): %f     ", rank, ndt);
 	
 	for (n = 0; n < n_active; n++){

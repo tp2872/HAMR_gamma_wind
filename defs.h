@@ -90,7 +90,6 @@ double(*restrict dU_s[NB])[NPR];
 /*GPU variables*/
 #if (OpenCL_enable==1)
 //#define FTYPE2 cl_double
-int nr_workgroups[NB];
 FTYPE2 *F1_1[NB];
 FTYPE2 *F2_1[NB];
 FTYPE2 *F3_1[NB];
@@ -322,9 +321,23 @@ cudaStream_t commandQueue[NQ*N_GPU];
 cudaStream_t commandQueueGPU[NB];
 int fix_mem[NB];
 int fix_mem2[NB];
+int nr_workgroups[NB];
+int nr_workgroups1[NB];
+int nr_workgroups2[NB];
+int nr_workgroups2_1[NB];
+int nr_workgroups2_2[NB];
+int nr_workgroups2_3[NB];
+int nr_workgroups3[NB];
+int nr_workgroups_special[NB];
+int nr_workgroups1_special[NB];
+int nr_workgroups2_special[NB];
+int nr_workgroups3_special[NB];
 int global_work_size[NB][1];
 int global_work_size1[NB][1];
 int global_work_size2[NB][1];
+int global_work_size2_1[NB][1];
+int global_work_size2_2[NB][1];
+int global_work_size2_3[NB][1];
 int global_work_size3[NB][1];
 int global_work_size_bound[NB][1];
 int global_work_offset[NB][1];
@@ -363,8 +376,6 @@ double * Bufferdiagflux[NB];
 int * Bufferpflag[NB];
 int * Bufferfailimage[NB];
 double * BufferKatm[NB];
-
-
 double * Buffersend1[NB];
 double * Buffersend1_3[NB];
 double * Buffersend1_4[NB];

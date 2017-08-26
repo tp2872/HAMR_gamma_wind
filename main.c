@@ -369,7 +369,7 @@ void free_arrays(int n)
 	free(E_avg_new_y[n][1]);
 	free(send[n]);
 	free(receive[n]);
-	#if(CPU_OPENMP || PINNED==0)
+	//#if(CPU_OPENMP || PINNED==0)
 	free(receive1[n]);
 	free(receive2[n]);
 	free(receive3[n]);
@@ -836,7 +836,7 @@ void free_arrays(int n)
 	free(receive_E1_corn11_22[n]);
 	free(receive_E1_corn12_22[n]);
 	#endif
-	#endif
+	//#endif
 	free(Katm[n]);
 	free(array[n]);
 	free(array_rdump[n]);
@@ -906,7 +906,7 @@ void set_arrays(int n)
 	#endif
 	send[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)  ,sizeof(double));
-	#if(CPU_OPENMP|| PINNED==0)
+	//#if(CPU_OPENMP|| PINNED==0)
 	receive1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
@@ -1383,7 +1383,7 @@ void set_arrays(int n)
 	receive_E1_corn12_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
 	#endif
 	#endif
-	#endif
+	//#endif
 }
 
 int index(int n, int i, int j, int z)

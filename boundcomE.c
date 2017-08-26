@@ -4,29 +4,13 @@ void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsend1E[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsend1E[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsend1E[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsend1E[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsend1E[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsend1E[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsend1E[n], 6, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsend1E[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsend1E[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsend1E[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsend1E[n], 10, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsend1E[n], 11, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
-
+		int nr_workgroups_bound = ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j2 - j1)*(z2 - z1);
+		status = packsend1E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend1E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
 			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend1E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
 		if (status != 0) printf("Error packsend1E: %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -61,28 +45,13 @@ void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsend2E[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsend2E[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsend2E[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsend2E[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsend2E[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsend2E[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsend2E[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsend2E[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsend2E[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsend2E[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsend2E[n], 10, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsend2E[n], 11, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
+		int nr_workgroups_bound = ceil((double)((i2 - i1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1)*(z2 - z1);
+		status = packsend2E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend2E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
-			cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend2E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
 		if (status != 0) printf("Error packsend2E: %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -117,28 +86,13 @@ void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsend3E[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsend3E[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsend3E[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsend3E[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsend3E[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsend3E[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsend3E[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsend3E[n], 7, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsend3E[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsend3E[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsend3E[n], 10, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsend3E[n], 11, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
+		int nr_workgroups_bound = ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1)*(j2 - j1);
+		status = packsend3E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend3E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
-			cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend3E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
 		if (status != 0) printf("Error packsend3E: %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -169,39 +123,17 @@ void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 	}
 }
 
-void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent1){
 	int first_timestep = (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]);
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		int mode = 0;
-		clSetKernelArg(kernel_packsendEaverage1[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendEaverage1[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendEaverage1[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendEaverage1[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendEaverage1[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendEaverage1[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendEaverage1[n], 6, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsendEaverage1[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsendEaverage1[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendEaverage1[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendEaverage1[n], 10, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendEaverage1[n], 11, sizeof(cl_int), &first_timestep);
-		clSetKernelArg(kernel_packsendEaverage1[n], 12, sizeof(cl_int), &mode);
-
-		global_work_size_bound[n][0] = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
+		int nr_workgroups_bound = ceil((double)((j2 - j1)/(1+REF_2)*(z2 - z1)/(1+REF_3)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
+		status = packsendEaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);
+			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
-		clFlush(commandQueueGPU[n]);
-		mode = 1;
-		clSetKernelArg(kernel_packsendEaverage1[n], 12, sizeof(cl_int), &mode);
-		status += clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		if (status != 0) printf("Error packsendaverage1: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+		if (status != 0) printf("Error packsendEaverage1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -237,85 +169,19 @@ void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 				}
 			}
 		}
-
-		double avg;
-		//Here we average the intermediate of the electric fields at the fine-course boundary so that no artifacts are created by loss of causal connection
-		/*for (i = i1; i < i2; i++)for (j = j1; j < j2; j += 1 + REF_2)for (z = z1; z < z2 - (1 + REF_3); z += (1 + REF_3)){
-		k = 2;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 2 * REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + REF_3)][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + 2 * REF_3)][k]);
-		}
-		for (i = i1; i < i2; i++)for (j = j1; j < j2 - 1 + REF_2; j += 1 + REF_2)for (z = z1; z < z2; z += (1 + REF_3)){
-		k = 3;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 2 * REF_2, z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + REF_3)][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 2 * REF_2, z + N3_GPU_offset[n] + REF_3)][k]);
-		}
-
-		for (i = i1; i < i2; i++) for (j = j1; j < j2; j += 1 + REF_2) for (z = z1; z < z2; z += (1 + REF_3)){
-		k = 2;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + REF_3)][k] = avg;
-
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-
-		k = 3;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		}*/
 	}
 }
-void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent1){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		int mode = 0;
-		clSetKernelArg(kernel_packsendEaverage2[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendEaverage2[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendEaverage2[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendEaverage2[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendEaverage2[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendEaverage2[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendEaverage2[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsendEaverage2[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_packsendEaverage2[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendEaverage2[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendEaverage2[n], 10, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendEaverage2[n], 11, sizeof(cl_int), &first_timestep);
-		clSetKernelArg(kernel_packsendEaverage2[n], 12, sizeof(cl_int), &mode);
-
-		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
+		int nr_workgroups_bound = ceil((double)((i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
+		status = packsendEaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
+			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
-		clFlush(commandQueueGPU[n]);
-		mode = 1;
-		clSetKernelArg(kernel_packsendEaverage2[n], 12, sizeof(cl_int), &mode);
-		status += clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		if (status != 0) printf("Error packsendaverage2: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+		if (status != 0) printf("Error packsendEaverage2: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -343,83 +209,20 @@ void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 					E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
 			}
 		}
-		double avg;
-		//Here we average the intermediate of the electric fields at the fine-course boundary so that no artifacts are created by loss of causal connection
-		/*for (j = j1; j < j2; j++)for (i = i1; i < i2; i += 1 + REF_1)for (z = z1; z < z2 - (1 + REF_3); z += 1 + REF_3){
-		k = 1;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 2 * REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 2 * REF_3)][k]);
-		}
-		for (j = j1; j < j2; j++)for (i = i1; i < i2 - (1 + REF_1); i += 1 + REF_1)for (z = z1; z < z2; z += 1 + REF_3){
-		k = 3;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + 2 * REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + 2 * REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
-		}
-		for (j = j1; j < j2; j++)for (i = i1; i < i2; i += 1 + REF_1)for (z = z1; z < z2; z += 1 + REF_3){
-		k = 1;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-
-		k = 3;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		}*/
 	}
 }
 
-void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict E[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict E[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent1){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		int mode = 0;
-		clSetKernelArg(kernel_packsendEaverage3[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendEaverage3[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendEaverage3[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendEaverage3[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendEaverage3[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendEaverage3[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendEaverage3[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_packsendEaverage3[n], 7, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_packsendEaverage3[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendEaverage3[n], 9, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendEaverage3[n], 10, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendEaverage3[n], 11, sizeof(cl_int), &first_timestep);
-		clSetKernelArg(kernel_packsendEaverage3[n], 12, sizeof(cl_int), &mode);
-
-		global_work_size_bound[n][0] = (j2 - j1) / (1 + REF_2)*(i2 - i1) / (1 + REF_1);
+		int nr_workgroups_bound = ceil((double)((i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
+		status = packsendEaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
+			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
-		clFlush(commandQueueGPU[n]);
-		mode = 1;
-		clSetKernelArg(kernel_packsendEaverage3[n], 12, sizeof(cl_int), &mode);
-		status += clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendEaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		if (status != 0) printf("Error packsendaverage2: %d \n", status);
-		clFlush(commandQueueGPU[n]);
+		if (status != 0) printf("Error packsendEaverage3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -447,47 +250,6 @@ void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 					E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
 			}
 		}
-		double avg;
-		//Here we average the intermediate of the electric fields at the fine-course boundary so that no artifacts are created by loss of causal connection
-		/*for (z = z1; z < z2; z++)for (i = i1; i < i2; i += 1 + REF_1)for (j = j1; j < j2 - (1 + REF_2); j += 1 + REF_2){
-		k = 1;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 2 * REF_2, z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + 2 * REF_2, z + N3_GPU_offset[n])][k]);
-		}
-		for (z = z1; z < z2; z++)for (i = i1; i < i2 - (1 + REF_1); i += 1 + REF_1)for (j = j1; j < j2; j += 1 + REF_2){
-		k = 2;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + 2 * REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		= 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + 2 * REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
-		}
-		for (z = z1; z < z2; z++)for (i = i1; i < i2; i += 1 + REF_1)for (j = j1; j < j2; j += 1 + REF_2){
-		k = 1;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-
-		k = 2;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-		avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-		+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-		}*/
 	}
 }
 
@@ -498,45 +260,16 @@ void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 	int timelevel_rec = block[n_rec2][AMR_TIMELEVEL];
 
 	if (gpu == 1){
-		//if (n == AMR_coord_linear(1, 1, 4, 0) && n_rec == AMR_coord_linear(2, 4, 9, 0)) printf("test3: d1: %d d2: %d \n", d1, d2);
-		//if (n == AMR_coord_linear(1, 2, 5, 0) && n_rec == AMR_coord_linear(1, 1, 5, 0)) printf("test4: d1: %d d2: %d \n", d1, d2);
-		//if (n == 5)printf("errors %d %d %d \n", n_rec, j1 + d1, j2 + d2);
 		int j22 = j2 + 1;
 		int z22 = z2 + D3;
-		clSetKernelArg(kernel_unpackreceive1E[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceive1E[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceive1E[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceive1E[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceive1E[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceive1E[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceive1E[n], 6, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_unpackreceive1E[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_unpackreceive1E[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceive1E[n], 9, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceive1E[n], 10, sizeof(cl_mem), (void *)&(Buffertemp1[0]));
-		clSetKernelArg(kernel_unpackreceive1E[n], 11, sizeof(cl_mem), (void *)&(Buffertemp2[0]));
-		clSetKernelArg(kernel_unpackreceive1E[n], 12, sizeof(cl_int), &calc_corr);
-		clSetKernelArg(kernel_unpackreceive1E[n], 13, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceive1E[n], 14, sizeof(cl_int), &block[n][AMR_NSTEP]);
-		clSetKernelArg(kernel_unpackreceive1E[n], 15, sizeof(cl_int), &timelevel);
-		clSetKernelArg(kernel_unpackreceive1E[n], 16, sizeof(cl_int), &timelevel_rec);
-		clSetKernelArg(kernel_unpackreceive1E[n], 17, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_unpackreceive1E[n], 18, sizeof(cl_int), &d1);
-		clSetKernelArg(kernel_unpackreceive1E[n], 19, sizeof(cl_int), &d2);
-		clSetKernelArg(kernel_unpackreceive1E[n], 20, sizeof(cl_int), &e1);
-		clSetKernelArg(kernel_unpackreceive1E[n], 21, sizeof(cl_int), &e2);
-
-		global_work_size_bound[n][0] = (j22 - j1)*(z22 - z1);
+		int nr_workgroups_bound = ceil((double)((j22 - j1)*(z22 - z1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j22 - j1)*(z22 - z1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
-			cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive1E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-			if (boundevent != NULL) clReleaseEvent(boundevent[0]);
+			if (boundevent != NULL) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive1E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
+		status = unpackreceive1E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor,d1,d2,e1,e2, work_size);
 		if (status != 0) printf("Unpack1e: %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -636,39 +369,14 @@ void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 	if (gpu == 1){
 		int i22 = i2 + 1;
 		int z22 = z2 + D3;
-		clSetKernelArg(kernel_unpackreceive2E[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceive2E[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceive2E[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceive2E[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceive2E[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceive2E[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceive2E[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_unpackreceive2E[n], 7, sizeof(cl_int), &zsize);
-		clSetKernelArg(kernel_unpackreceive2E[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceive2E[n], 9, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceive2E[n], 10, sizeof(cl_mem), (void *)&(Buffertemp1[0]));
-		clSetKernelArg(kernel_unpackreceive2E[n], 11, sizeof(cl_mem), (void *)&(Buffertemp2[0]));
-		clSetKernelArg(kernel_unpackreceive2E[n], 12, sizeof(cl_int), &calc_corr);
-		clSetKernelArg(kernel_unpackreceive2E[n], 13, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceive2E[n], 14, sizeof(cl_int), &block[n][AMR_NSTEP]);
-		clSetKernelArg(kernel_unpackreceive2E[n], 15, sizeof(cl_int), &timelevel);
-		clSetKernelArg(kernel_unpackreceive2E[n], 16, sizeof(cl_int), &timelevel_rec);
-		clSetKernelArg(kernel_unpackreceive2E[n], 17, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_unpackreceive2E[n], 18, sizeof(cl_int), &d1);
-		clSetKernelArg(kernel_unpackreceive2E[n], 19, sizeof(cl_int), &d2);
-		clSetKernelArg(kernel_unpackreceive2E[n], 20, sizeof(cl_int), &e1);
-		clSetKernelArg(kernel_unpackreceive2E[n], 21, sizeof(cl_int), &e2);
-		global_work_size_bound[n][0] = (i22 - i1)*(z22 - z1);
+		int nr_workgroups_bound = ceil((double)((i22 - i1)*(z22 - z1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i22 - i1)*(z22 - z1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
-			cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive2E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-			if (boundevent != NULL) clReleaseEvent(boundevent[0]);
+			if (boundevent != NULL) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive2E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
+		status = unpackreceive2E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, d1, d2, e1, e2, work_size);
 		if (status != 0) printf("Error unpack_receive2_E %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, j, z, k;
@@ -781,38 +489,14 @@ void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 	if (gpu == 1){
 		int i22 = i2 + 1;
 		int j22 = j2 + 1;
-		clSetKernelArg(kernel_unpackreceive3E[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceive3E[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceive3E[n], 2, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceive3E[n], 3, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceive3E[n], 4, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceive3E[n], 5, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceive3E[n], 6, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_unpackreceive3E[n], 7, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_unpackreceive3E[n], 8, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceive3E[n], 9, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceive3E[n], 10, sizeof(cl_mem), (void *)&(Buffertemp1[0]));
-		clSetKernelArg(kernel_unpackreceive3E[n], 11, sizeof(cl_mem), (void *)&(Buffertemp2[0]));
-		clSetKernelArg(kernel_unpackreceive3E[n], 12, sizeof(cl_int), &calc_corr);
-		clSetKernelArg(kernel_unpackreceive3E[n], 13, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceive3E[n], 14, sizeof(cl_int), &block[n][AMR_NSTEP]);
-		clSetKernelArg(kernel_unpackreceive3E[n], 15, sizeof(cl_int), &timelevel);
-		clSetKernelArg(kernel_unpackreceive3E[n], 16, sizeof(cl_int), &timelevel_rec);
-		clSetKernelArg(kernel_unpackreceive3E[n], 17, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_unpackreceive3E[n], 18, sizeof(cl_int), &e1);
-		clSetKernelArg(kernel_unpackreceive3E[n], 19, sizeof(cl_int), &e2);
-		clSetKernelArg(kernel_unpackreceive3E[n], 20, sizeof(cl_int), &d1);
-		clSetKernelArg(kernel_unpackreceive3E[n], 21, sizeof(cl_int), &d2);
-		global_work_size_bound[n][0] = (j22 - j1)*(i22 - i1);
+		int nr_workgroups_bound = ceil((double)((i22 - i1)*(j22 - j1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i22 - i1)*(j22 - j1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
-			cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
-			clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive3E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-			if (boundevent != NULL) clReleaseEvent(boundevent[0]);
+			if (boundevent != NULL) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		else{
-			clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive3E[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
-		clFlush(commandQueueGPU[n]);
+		status = unpackreceive3E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, d1, d2, e1, e2, work_size);
+		if (status != 0) printf("Error unpack_receive3_E %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -916,24 +600,13 @@ void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *s
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendE1corn[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendE1corn[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendE1corn[n], 2, sizeof(cl_int), &j);
-		clSetKernelArg(kernel_packsendE1corn[n], 3, sizeof(cl_int), &z);
-		clSetKernelArg(kernel_packsendE1corn[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendE1corn[n], 5, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendE1corn[n], 6, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendE1corn[n], 7, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (i2 - i1);
+		int nr_workgroups_bound = ceil((double)((i2-i1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2-i1);
+		status = packsendE1corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE1corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE1corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		if (status != 0) printf("Error packsendE1corn %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, k;
@@ -958,24 +631,13 @@ void pack_send_E2_corn(int n, int n_rec, int i, int j1, int j2, int z, double *s
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendE2corn[n], 0, sizeof(cl_int), &i);
-		clSetKernelArg(kernel_packsendE2corn[n], 1, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendE2corn[n], 2, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendE2corn[n], 3, sizeof(cl_int), &z);
-		clSetKernelArg(kernel_packsendE2corn[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendE2corn[n], 5, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendE2corn[n], 6, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendE2corn[n], 7, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (j2 - j1);
+		int nr_workgroups_bound = ceil((double)((j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j2 - j1);
+		status = packsendE2corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE2corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE2corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		if (status != 0) printf("Error packsendE2corn %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int j, k;
@@ -1000,24 +662,13 @@ void pack_send_E3_corn(int n, int n_rec, int i, int j, int z1, int z2, double *s
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendE3corn[n], 0, sizeof(cl_int), &i);
-		clSetKernelArg(kernel_packsendE3corn[n], 1, sizeof(cl_int), &j);
-		clSetKernelArg(kernel_packsendE3corn[n], 2, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendE3corn[n], 3, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendE3corn[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendE3corn[n], 5, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendE3corn[n], 6, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendE3corn[n], 7, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (z2 - z1);
+		int nr_workgroups_bound = ceil((double)((z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (z2 - z1);
+		status = packsendE3corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE3corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
+			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE3corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
-		if (status != 0) printf("Error packsendE2corn %d \n", status);
-		clFlush(commandQueueGPU[n]);
+		if (status != 0) printf("Error packsendE3corn %d \n", status);
 	}
 	else{
 		int z, k;
@@ -1042,24 +693,13 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendE1corncourse[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_packsendE1corncourse[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_packsendE1corncourse[n], 2, sizeof(cl_int), &j);
-		clSetKernelArg(kernel_packsendE1corncourse[n], 3, sizeof(cl_int), &z);
-		clSetKernelArg(kernel_packsendE1corncourse[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendE1corncourse[n], 5, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendE1corncourse[n], 6, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendE1corncourse[n], 7, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1);
+		int nr_workgroups_bound = ceil((double)((i2 - i1)/(1+REF_1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1) / (1 + REF_1);
+		status = packsendE1corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE1corncourse[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE1corncourse[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		if (status != 0) printf("Error packsendE1corncourse %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, k;
@@ -1095,24 +735,13 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendE2corncourse[n], 0, sizeof(cl_int), &i);
-		clSetKernelArg(kernel_packsendE2corncourse[n], 1, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_packsendE2corncourse[n], 2, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_packsendE2corncourse[n], 3, sizeof(cl_int), &z);
-		clSetKernelArg(kernel_packsendE2corncourse[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendE2corncourse[n], 5, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendE2corncourse[n], 6, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendE2corncourse[n], 7, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (j2 - j1) / (1 + REF_2);
+		int nr_workgroups_bound = ceil((double)((j2 - j1) / (1 + REF_2)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j2 - j1) / (1 + REF_2);
+		status = packsendE2corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j1, j2, z, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE2corncourse[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE2corncourse[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		if (status != 0) printf("Error packsendE2corncourse %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int j, k;
@@ -1147,24 +776,13 @@ void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, do
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_packsendE3corncourse[n], 0, sizeof(cl_int), &i);
-		clSetKernelArg(kernel_packsendE3corncourse[n], 1, sizeof(cl_int), &j);
-		clSetKernelArg(kernel_packsendE3corncourse[n], 2, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_packsendE3corncourse[n], 3, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_packsendE3corncourse[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_packsendE3corncourse[n], 5, sizeof(cl_mem), (void *)&(Bufferboundsend[0]));
-		clSetKernelArg(kernel_packsendE3corncourse[n], 6, sizeof(cl_double), &factor);
-		clSetKernelArg(kernel_packsendE3corncourse[n], 7, sizeof(cl_int), &first_timestep);
-		global_work_size_bound[n][0] = (z2 - z1) / (1 + REF_3);
+		int nr_workgroups_bound = ceil((double)((z2 - z1) / (1 + REF_3)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (z2 - z1) / (1 + REF_3);
+		status = packsendE3corncourse << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j, z1, z2, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE3corncourse[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
-			cudaEventRecord(boundevent[0],commandQueueGPU[n]);;
-		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendE3corncourse[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
+			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		if (status != 0) printf("Error packsendE3corncourse %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int z, k;
@@ -1201,31 +819,14 @@ void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j,
 	int timelevel_rec = block[n_rec2][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 2, sizeof(cl_int), &j);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 3, sizeof(cl_int), &z);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 5, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 6, sizeof(cl_mem), (void *)&(Buffertemp1[0]));
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 7, sizeof(cl_mem), (void *)&(Buffertemp2[0]));
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 8, sizeof(cl_int), &calc_corr);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 9, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 10, sizeof(cl_int), &block[n][AMR_NSTEP]);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 11, sizeof(cl_int), &timelevel);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 12, sizeof(cl_int), &timelevel_rec);
-		clSetKernelArg(kernel_unpackreceiveE1corn[n], 13, sizeof(cl_double), &factor);
-		global_work_size_bound[n][0] = i2 - i1;
+		int nr_workgroups_bound = ceil((double)((i2 - i1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
-			cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveE1corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-			if (boundevent != NULL) clReleaseEvent(boundevent[0]);
+			if (boundevent != NULL)cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveE1corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
+		status = unpackreceiveE1corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j, z, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		if (status != 0) printf("Error receiveE1corn %d \n", status);
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int i, k;
@@ -1296,33 +897,14 @@ void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i, int j1, int j2,
 	int timelevel_rec = block[n_rec2][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 0, sizeof(cl_int), &i);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 1, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 2, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 3, sizeof(cl_int), &z);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 5, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 6, sizeof(cl_mem), (void *)&(Buffertemp1[0]));
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 7, sizeof(cl_mem), (void *)&(Buffertemp2[0]));
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 8, sizeof(cl_int), &calc_corr);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 9, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 10, sizeof(cl_int), &block[n][AMR_NSTEP]);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 11, sizeof(cl_int), &timelevel);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 12, sizeof(cl_int), &timelevel_rec);
-		clSetKernelArg(kernel_unpackreceiveE2corn[n], 13, sizeof(cl_double), &factor);
-		global_work_size_bound[n][0] = j2 - j1;
-		//cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0]);
+		int nr_workgroups_bound = ceil((double)((j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j2 - j1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
-			cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveE2corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-			if (boundevent != NULL) clReleaseEvent(boundevent[0]);
+			if (boundevent != NULL)cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveE2corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
+		status = unpackreceiveE2corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j1, j2, z, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		if (status != 0) printf("Error receiveE2corn %d \n", status);
-
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int j, k;
@@ -1394,35 +976,14 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 
 	if (gpu == 1){
-		//if (n == 0)printf("errors %d %d %d \n", n_rec,i,j);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 0, sizeof(cl_int), &i);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 1, sizeof(cl_int), &j);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 2, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 3, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 4, sizeof(cl_mem), (void *)&(Bufferp[0]));
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 5, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 6, sizeof(cl_mem), (void *)&(Buffertemp1[0]));
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 7, sizeof(cl_mem), (void *)&(Buffertemp2[0]));
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 8, sizeof(cl_int), &calc_corr);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 9, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 10, sizeof(cl_int), &block[n][AMR_NSTEP]);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 11, sizeof(cl_int), &timelevel);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 12, sizeof(cl_int), &timelevel_rec);
-		clSetKernelArg(kernel_unpackreceiveE3corn[n], 13, sizeof(cl_double), &factor);
-		global_work_size_bound[n][0] = z2 - z1;
-		//cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0]);
+		int nr_workgroups_bound = ceil((double)((z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (z2 - z1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
-			cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveE3corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent != NULL), boundevent, NULL);
-			if (boundevent != NULL) clReleaseEvent(boundevent[0]);
+			if (boundevent != NULL)cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		else{
-			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceiveE3corn[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
-		}
+		status = unpackreceiveE3corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j, z1, z2, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		if (status != 0) printf("unpack_receive_E3_corn: %d \n", status);
-
-
-		clFlush(commandQueueGPU[n]);
 	}
 	else{
 		int z, k;

@@ -3055,8 +3055,7 @@ __global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 *  pv, __gl
 	}
 }
 
-__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 *   pv, const  FTYPE2* __restrict__ gcov,
-	const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int NBR_2, int NBR_4, __global FTYPE2 *  ps)
+__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 *   pv, const  FTYPE2* __restrict__ gcov,const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int NBR_2, int NBR_4, __global FTYPE2 *  ps)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
