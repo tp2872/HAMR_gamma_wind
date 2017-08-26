@@ -47,13 +47,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="decs.h" />
+    <ClInclude Include="decsCUDA.h" />
     <ClInclude Include="defs.h" />
+    <ClInclude Include="decs_MPI.h" />
     <ClInclude Include="u2p_defs.h" />
     <ClInclude Include="u2p_util.h" />
   </ItemGroup>
   <ItemGroup>
     <none Include="GPU_program1.cl" />
+    <None Include="GPU_program1.cu" />
     <none Include="GPU_program2.cl" />
+    <None Include="GPU_program2.cu" />
+    <None Include="GPU_step_ch.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ED290CB7-A2E8-413A-AAD7-C80F0E068C82}</ProjectGuid>

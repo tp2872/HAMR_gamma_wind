@@ -42,7 +42,7 @@
 
 ***********************************************************************************/
 
-#include "decs.h"
+#include "decs_MPI.h"
 
 void FMSS_write(FILE *fp){
 	int i, j, z;

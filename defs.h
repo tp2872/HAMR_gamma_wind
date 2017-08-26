@@ -42,7 +42,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 ***********************************************************************************/
 #include <malloc.h>
-#include "cuda.h"
 
 /*************************************************************************
 GLOBAL ARRAYS SECTION
@@ -144,6 +143,7 @@ int max1D_MPI;
 MPI_Request req[100], boundreqs[NB][600], cornreqs[NB][16];
 MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
 MPI_Comm  mpi_cartcomm, mpi_self;
+MPI_Comm row_comm[8];
 #endif
 int mpi_nbrs[4][2];
 int mpi_corns[3][5][2];
@@ -317,8 +317,6 @@ double ldot = 0.;
 /*CUDA variables decleration*/
 int gpu;
 int status;
-cudaStream_t commandQueue[NQ*N_GPU];
-cudaStream_t commandQueueGPU[NB];
 int fix_mem[NB];
 int fix_mem2[NB];
 int nr_workgroups[NB];
@@ -823,9 +821,6 @@ double * Bufferboundsend5_MPI[NB];
 double * Bufferboundsend6_MPI[NB];
 double * Bufferboundsend7_MPI[NB];
 double * Bufferboundsend8_MPI[NB];
-cudaEvent_t boundevent[NB][600];
-cudaEvent_t boundevent1[NB][100];
-cudaEvent_t boundevent2[NB][100];
 int receive_tag;
 
 /*Timers*/

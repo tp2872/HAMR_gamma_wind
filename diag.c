@@ -42,7 +42,7 @@
 
 ***********************************************************************************/
 
-#include "decs.h"
+#include "decs_MPI.h"
 
 /* all diagnostics subroutine */
 void diag(int call_code);

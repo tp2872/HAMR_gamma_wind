@@ -43,7 +43,7 @@
 ***********************************************************************************/
 //new
 
-#include "decs.h"
+#include "decs_MPI.h"
 void bound_prim1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], int n);
 void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], int n);
 

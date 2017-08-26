@@ -1,4 +1,4 @@
-#include "decs.h"
+#include "decs_MPI.h"
 int AMR_coord_linear_RM(int level, int i, int j, int z);
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
 int rm_order2(void);

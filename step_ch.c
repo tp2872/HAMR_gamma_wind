@@ -49,7 +49,7 @@
  *
 **/
 
-#include "decs.h"
+#include "decs_MPI.h"
 /** algorithmic choices **/
 
 
@@ -147,9 +147,6 @@ void set_timelevel_jet(void){
 		}
 	}
 }
-
-//Maximum 2^8 timelevels
-MPI_Comm row_comm[8];
 
 /*Calculate for every block the timestep. This function should be node independent*/
 void set_timelevel(void){
@@ -937,7 +934,6 @@ void E_average(void){
 
 	//Read in average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n][AMR_GPU]);
 		read_E_avg(E_avg, E_avg_x, E_avg_y, n_ord[n]);
 	}
 
@@ -1091,7 +1087,6 @@ void E_average(void){
 
 	//Write average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n][AMR_GPU]);
 		write_E_avg(E_avg_new, E_avg_new_x, E_avg_new_y, n_ord[n]);
 	}
 }
@@ -1105,6 +1100,8 @@ void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2])
 	z2 = N3_GPU[n] + N3G;
 	isize = (N1_GPU[n] + N1G);
 	zsize = (N3_GPU[n] + N3G);
+	
+	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(send1_fine[n]), NULL);
 		if (gpu == 1){
@@ -1144,6 +1141,7 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 	z2 = N3_GPU[n] + N3G;
 	isize = (N1_GPU[n] + N1G);
 	zsize = (N3_GPU[n] + N3G);
+	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){	
 			if (gpu == 1)for (z = z1; z < z2; z++){
@@ -1391,3 +1389,400 @@ void step_ch_debug()
 #endif
 }
 
+
+void GPU_step_ch()
+{
+	double ndt, inmsg;
+	int i, j, z, k, n, uu;
+
+	if (rank == 0){
+		//fprintf(stderr, "h");
+	}
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_PRESTEP] = 0;
+	}
+	for (uu = 0; uu < 2 * AMR_MAXTIMELEVEL; uu++){
+		set_prestep();
+		ndt = advance_GPU();   /* time step primitive variables to the half step */
+
+		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+
+		nstep++;
+#if(PRESTEP)
+		for (n = 0; n < n_active; n++){
+			if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && (block[n_ord[n]][AMR_PRESTEP] != 0))block[n_ord[n]][AMR_PRESTEP] = 0;
+			else if (block[n_ord[n]][AMR_PRESTEP] == 1)block[n_ord[n]][AMR_PRESTEP] = 2;
+		}
+#endif
+	}
+
+	/* Repeat and rinse for the full time (aka corrector) step:  */
+	if (rank == 0){
+		//fprintf(stderr, "f");
+	}
+
+	/* Determine next time increment based on current characteristic speeds: */
+	if (dt < 1.e-9) {
+		fprintf(stderr, "timestep too small\n");
+		exit(11);
+	}
+
+	/* increment time */
+	t += (double)(AMR_MAXTIMELEVEL)*dt;
+
+	/* set next timestep */
+	if (ndt > SAFE*dt) ndt = SAFE*dt;
+	dt = ndt;
+
+	/*Calculate smallest timestep for all MPI threads*/
+
+#if (MPI_enable)
+	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+#endif
+
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+
+#if(TIMESTEP_JET)
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
+#endif
+
+	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
+}
+
+void GPU_step_ch()
+{
+	double ndt, inmsg;
+	int i, j, z, k, n, uu;
+
+	if (rank == 0){
+		//fprintf(stderr, "h");
+	}
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_PRESTEP] = 0;
+	}
+	for (uu = 0; uu < 2 * AMR_MAXTIMELEVEL; uu++){
+		set_prestep();
+		ndt = advance_GPU();   /* time step primitive variables to the half step */
+
+		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+
+		nstep++;
+		#if(PRESTEP)
+		for (n = 0; n < n_active; n++){
+			if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && (block[n_ord[n]][AMR_PRESTEP] != 0))block[n_ord[n]][AMR_PRESTEP] = 0;
+			else if (block[n_ord[n]][AMR_PRESTEP] == 1)block[n_ord[n]][AMR_PRESTEP] = 2;
+		}
+		#endif
+	}
+
+	/* Repeat and rinse for the full time (aka corrector) step:  */
+	if (rank == 0){
+		//fprintf(stderr, "f");
+	}
+
+	/* Determine next time increment based on current characteristic speeds: */
+	if (dt < 1.e-9) {
+		fprintf(stderr, "timestep too small\n");
+		exit(11);
+	}
+
+	/* increment time */
+	t += (double)(AMR_MAXTIMELEVEL)*dt;
+
+	/* set next timestep */
+	if (ndt > SAFE*dt) ndt = SAFE*dt;
+	dt = ndt;
+
+	/*Calculate smallest timestep for all MPI threads*/
+
+	#if (MPI_enable)
+	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	#endif
+
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+
+	#if(TIMESTEP_JET)
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
+	#endif
+
+	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
+}
+
+void set_prestep(void){
+	int n;
+
+	#if(PRESTEP)
+	int timelevel_min = AMR_MAXTIMELEVEL;
+	int blocks_per_timestep = 0;
+	int blocks_this_timestep = 0;
+
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_NSTEP] = nstep;
+	}
+	//Find the minimum timelevel on this node
+	for (n = 0; n < n_active; n++){
+		if (block[n_ord[n]][AMR_TIMELEVEL] < timelevel_min) timelevel_min = block[n_ord[n]][AMR_TIMELEVEL];
+	}
+
+	//Calculate the number of blocks you want to evolve simultaneously
+	blocks_per_timestep = (count_node[0] - count_node[0] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
+	for (n = 0; n < n_active; n++){
+		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
+	}
+
+	//If you don't have sufficient blocks this timestep preevolve some blocks if available
+	if ((nstep % timelevel_min) == timelevel_min - 1){
+		for (n = 0; n < n_active; n++){
+			if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
+				block[n_ord[n]][AMR_PRESTEP] = 1;
+				block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
+				blocks_this_timestep++;
+			}
+		}
+	}
+
+	#if(N_GPU>1)
+	for (gpu = 0; gpu < N_GPU; gpu++){
+		timelevel_min = AMR_MAXTIMELEVEL;
+		blocks_per_timestep = 0;
+		blocks_this_timestep = 0;
+		//Find the minimum timelevel on this gpu
+		for (n = 0; n < n_active_gpu[gpu]; n++){
+			if (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] < timelevel_min) timelevel_min = block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL];
+		}
+
+		//Calculate the number of blocks you want to evolve simultaneously
+		blocks_per_timestep = (count_gpu[gpu] - count_gpu[gpu] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
+		for (n = 0; n < n_active_gpu[gpu]; n++){
+			if (nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) == block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1 || block[n_ord[n]][AMR_PRESTEP] == 1 || block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
+		}
+
+		//If you don't have sufficient blocks this timestep preevolve some blocks if available
+		if ((nstep % timelevel_min) == timelevel_min - 1){
+			for (n = 0; n < n_active_gpu[gpu]; n++){
+				if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) != block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1
+					&& (block[n_ord_gpu[gpu][n]][AMR_PRESTEP] == 0) && (block[n_ord_gpu[gpu][n]][AMR_POLE] == 0)){
+					block[n_ord_gpu[gpu][n]][AMR_PRESTEP] = 1;
+					block[n_ord_gpu[gpu][n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) - (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1));
+					blocks_this_timestep++;
+				}
+			}
+		}
+	}
+	#endif
+	//If at end of switchtimelevel do not pre-evolve
+	for (n = 0; n < n_active; n++){
+		if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){
+			block[n_ord[n]][AMR_PRESTEP] = 0;
+			block[n_ord[n]][AMR_NSTEP] = nstep;
+		}
+	}
+	#else
+	for (n = 0; n < n_active; n++){
+		block[n_ord[n]][AMR_PRESTEP] = 0;
+		block[n_ord[n]][AMR_NSTEP] = nstep;
+	}
+	#endif
+}
+
+double advance_GPU(void)
+{
+	int i, n;
+	double timestep;
+	gpu = 1;
+
+
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 0){
+		ndt1 = ndt2 = ndt3 = 1e9;
+		for (n = 0; n < n_active; n++){
+			bdt[n_ord[n]][0] = bdt[n_ord[n]][1] = bdt[n_ord[n]][2] = bdt[n_ord[n]][3] = 1e9;
+		}
+	}
+	for (n = 0; n < n_active; n++){
+		prestep_half[n_ord[n]] = (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
+			|| (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) < block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
+		prestep_full[n_ord[n]] = (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
+			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
+	}
+
+	#if(N1G>0)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
+	}
+
+	read_time_GPU();
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][1] = fluxcalc_GPU(n_ord[n]);
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt1 = 1e9;
+		for (n = 0; n < n_active; n++){
+			if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+			}
+			else{
+				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+
+	#else
+	ndt1 = 1e9;
+	#endif
+	#if(N2G>0)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
+	}
+
+	read_time_GPU();
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][2] = fluxcalc_GPU(n_ord[n]);
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt2 = 1e9;
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+			}
+			else{
+				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+
+	#else
+	ndt2 = 1e9;
+	#endif
+	#if(N3G>0)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
+	}
+
+	read_time_GPU();
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][3] = fluxcalc_GPU(n_ord[n]);
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt3 = 1e9;
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+			}
+			else{
+				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+	#else
+	ndt3 = 1e9;
+	#endif
+
+	gpu = 1;
+	rc = 0;
+
+	//MPI communication
+	/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+	if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+	break;
+	}
+	}*/
+
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
+		flux_send1(F1, BufferF1_1, n_ord[n]);
+		flux_send2(F2, BufferF2_1, n_ord[n]);
+		#if(N3G>0)
+		flux_send3(F3, BufferF3_1, n_ord[n]);
+		#endif
+	}
+
+	#if(PRESTEP)
+	//For last timestep synchronize electric fields immediately
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		flux_rec1(F1, BufferF1_1, n_ord[n], 5);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 5);
+		#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 5);
+		#endif
+	}
+
+	//For first timestep do not synchronize electrice fields 
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
+		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
+		#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
+		#endif
+	}
+	#else
+	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+		#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+		#endif
+	}
+
+	//For first timestep do not synchronize electrice fields
+	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
+		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
+		#if(N3G>0)
+		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
+		#endif
+	}
+	#endif
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
+
+	#if(!TRANS_BOUND)
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1 || prestep_half[n_ord[n]] == 1) GPU_fix_flux(n_ord[n]);
+	#endif
+	#if(STAGGERED)
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport1(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+	#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
+	rc = 0;
+	GPU_consttransport_bound();
+	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
+	#endif
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+
+	#else
+	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct1(n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);
+	#endif
+
+	for (n = 0; n < n_active; n++){
+		if (prestep_full[n_ord[n]] == 1){
+			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
+			GPU_fixup(1, n_ord[n], timestep);
+		}
+		else if (prestep_half[n_ord[n]] == 1){
+			timestep = 0.5 * dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
+			GPU_fixup(0, n_ord[n], timestep);
+		}
+	}
+
+	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		ndt = 1e9;
+		for (n = 0; n < n_active; n++){
+			bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+			}
+			else{
+				ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			}
+		}
+	}
+
+	//ndt = defcon * 1. / (1. / ndt1 + 1. / ndt2 + 1. / ndt3);
+	return defcon * ndt;
+	return 0.;
+}

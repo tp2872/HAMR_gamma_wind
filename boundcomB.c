@@ -1,6 +1,6 @@
-#include "decs.h"
+#include "decs_MPI.h"
 
-void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -16,7 +16,7 @@ void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 	}
 }
 
-void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -32,7 +32,7 @@ void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict prim[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -48,7 +48,7 @@ void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -68,7 +68,7 @@ void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 }
 
-void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict F2[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict F2[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -88,7 +88,7 @@ void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 }
 
-void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict F3[NB])[NDIM], cl_mem *Bufferp, cl_mem *Bufferboundsend, cl_event *boundevent){
+void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict F3[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -109,7 +109,7 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 }
 
 
-void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, cl_mem *Bufferp, cl_mem *Bufferboundreceive, cl_event *boundevent){
+void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -128,7 +128,7 @@ void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	}
 }
 
-void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, cl_mem *Bufferp, cl_mem *Bufferboundreceive, cl_event *boundevent, int neg){
+void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg){
 	if (gpu == 1){
 
 	}
@@ -149,7 +149,7 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	}
 }
 
-void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, cl_mem *Bufferp, cl_mem *Bufferboundreceive, cl_event *boundevent){
+void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -169,7 +169,7 @@ void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 }
 
 /*Send boundaries between compute nodes through MPI*/
-void B_send1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void B_send1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 #if (MPI_enable)
 	//MPI_Barrier(mpi_cartcomm);
 
@@ -252,7 +252,7 @@ void B_send1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 #endif
 }
 
-void B_send2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 #if (MPI_enable)
 	//Exchange boundary cells for MPI threads
 	//Positive X2
@@ -376,7 +376,7 @@ void B_send2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 #endif
 }
 
-void B_send3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void B_send3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
@@ -458,7 +458,7 @@ void B_send3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
 
 
 /*Receive boundaries for compute nodes through MPI*/
-void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void B_rec1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
@@ -572,7 +572,7 @@ void B_rec1(double(*restrict F1[NB])[NDIM], cl_mem Bufferp[NB], int n){
 #endif
 }
 
-void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void B_rec2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 #if (MPI_enable)
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0){
@@ -717,7 +717,7 @@ void B_rec2(double(*restrict F2[NB])[NDIM], cl_mem Bufferp[NB], int n){
 	}
 #endif
 }
-void B_rec3(double(*restrict F3[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void B_rec3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){

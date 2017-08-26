@@ -52,9 +52,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <time.h>
 #include <CL/cl.h>
 #include <cuda.h>
-#include <mpi.h>
+#include <cuda_runtime.h>
 #include <omp.h>
-#include "decsCUDA.h"
 
 /*************************************************************************
 COMPILE-TIME PARAMETERS :
@@ -593,16 +592,11 @@ extern int n_ord[NB], n_ord_gpu[N_GPU][NB], n_ord_total[NB], n_ord_RM[NB], n_ord
 extern int n_active, n_active_gpu[N_GPU], n_active_total, n_max;
 
 extern double tilt_temp;
-extern MPI_File fdump[100], fdumpdiag[100], rdump[NB];
-extern MPI_Request req_block[NB][1];
-extern MPI_Request req_block_rdump[NB][1];
-extern MPI_Request req_blockdiag[NB][1];
 extern float *array[NB], *array_diag[NB];
 extern double *array_rdump[NB];
 extern int first_dump, first_rdump;
 extern int max_levels;
 extern int reduce_timestep;
-extern MPI_Request request_timelevel[NB];
 extern int prestep_half[NB], prestep_full[NB];
 
 /* for debug */
@@ -695,11 +689,7 @@ extern int N2_GPU_offset[NB];
 extern int N3_GPU_offset[NB];
 extern int numtasks, rank, rc;
 extern int max1D_MPI;
-#if (MPI_enable)
-extern MPI_Request req[100], boundreqs[NB][600], cornreqs[NB][16];
-extern MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
-extern MPI_Comm  mpi_cartcomm, mpi_self;
-#endif
+
 extern int mpi_nbrs[4][2];
 extern int mpi_corns[3][5][2];
 extern double *send[NB], *receive[NB];
@@ -892,6 +882,9 @@ extern int gpu;
 extern int status;
 extern cudaStream_t commandQueue[NQ*N_GPU];
 extern cudaStream_t commandQueueGPU[NB];
+extern cudaEvent_t boundevent[NB][600];
+extern cudaEvent_t boundevent1[NB][100];
+extern cudaEvent_t boundevent2[NB][100];
 extern int fix_mem[NB];
 extern int fix_mem2[NB];
 extern int nr_workgroups[NB];
@@ -1396,9 +1389,7 @@ extern double * Bufferboundsend5_MPI[NB];
 extern double * Bufferboundsend6_MPI[NB];
 extern double * Bufferboundsend7_MPI[NB];
 extern double * Bufferboundsend8_MPI[NB];
-extern cudaEvent_t boundevent[NB][600];
-extern cudaEvent_t boundevent1[NB][100];
-extern cudaEvent_t boundevent2[NB][100];
+
 extern int receive_tag;
 
 /*Timing/benchmarking decleration*/
@@ -1623,9 +1614,6 @@ void vcon_to_ucon(double vcon[NDIM], struct of_state *q, struct of_geom *geom);
 int write_to_dump(int is_dry_run, FILE *fp, double *buf, double val);
 
 
-
-
-
 void gcov_func2(double r, double th, double gcovp[][NDIM]);
 void coord_transform2(double *V, int ii, int jj, int zz);
 
@@ -1652,17 +1640,6 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	double b3_1, double b3_2, double b3_3, double b3_4, double b3_5, double b3_6, double b3_7, double b3_8
 	, int n_rec1, int n_rec2, int n_rec3, int n_rec4, int n_rec5, int n_rec6);
 
-void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize,
-	double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR], double * *Bufferp, double * *Bufferboundreceive, double * *tempBufferboundreceive, cl_event *boundevent1, cl_event *boundevent2, int mpi);
-void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int isize, int zsize,
-	double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR], double * *Bufferp, double * *Bufferboundreceive, double * *tempBufferboundreceive, cl_event *boundevent1, cl_event *boundevent2, int mpi);
-void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int isize, int jsize,
-	double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR], double * *Bufferp, double * *Bufferboundreceive, double * *tempBufferboundreceive, cl_event *boundevent1, cl_event *boundevent2, int mpi);
-
-void pack_send1_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM]);
-void pack_send2_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM]);
-void pack_send3_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict prim[NB])[NDIM]);
-
 void E_send1(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n);
 void E_send2(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n);
 void E_send3(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n);
@@ -1678,8 +1655,6 @@ void E3_send_corn(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n);
 void E1_receive_corn(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n, int calc_corr);
 void E2_receive_corn(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n, int calc_corr);
 void E3_receive_corn(double(*restrict E[NB])[NDIM], double * Bufferp[NB], int n, int calc_corr);
-void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double * *Bufferp, double * *Bufferboundsend, cl_event *boundevent1);
-void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NDIM], double * *Bufferp, double * *Bufferboundreceive, double * *Buffertemp1, double * *Buffertemp2, cl_event *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
 
 void B_rec1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n);
 void B_rec2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n);
@@ -1703,16 +1678,12 @@ void post_refine(void);
 void dump_new(void);
 void gdump_new(void);
 void dump_params(FILE *fp);
-void dump_block(MPI_File *fp, int n);
-void dump_blockdiag(MPI_File *fp, int n);
-
 void gdump_block(FILE *fp, int n);
 double divb_calc(int n, int i, int j, int z);
 
 void dump_params(FILE *fp);
 void param_read(FILE *fp);
 void rdump_block_read(FILE *fp, int n);
-void rdump_block_write(MPI_File *fp, int n);
 int restart_read_param(void);
 int rm_order(void);
 
@@ -1734,3 +1705,78 @@ void GPU_consttransport_bound(void);
 void read_time_GPU(void);
 void set_timelevel_jet(void);
 void set_prestep(void);
+void mpi_synch(void);
+
+
+void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int reverse);
+void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+
+void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
+void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void unpack_receive1_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent1, int calc_corr);
+void unpack_receive2_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent1, int calc_corr);
+void unpack_receive3_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NPR],
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent1, int calc_corr);
+
+void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1);
+void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB],
+	double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
+void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB],
+	double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
+void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1[NB], double *temp2[NB],
+	double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr, int d1, int d2, int e1, int e2);
+void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_E2_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_E3_corn(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_E2_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_E3_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB], double(*restrict E[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j, int z, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NDIM],
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr);
+void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j, int z, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NDIM],
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr);
+void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j, int z, double *receive[NB], double *temp1[NB], double *temp2[NB], double(*restrict prim[NB])[NDIM],
+	double **Bufferp, double **Bufferboundreceive, double **Buffertemp1, double **Buffertemp2, cudaEvent_t *boundevent, int calc_corr);
+void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent);
+void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent);
+void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg);
+void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent);
+
+
+
+
+
+
+

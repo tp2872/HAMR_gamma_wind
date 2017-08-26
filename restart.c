@@ -43,7 +43,7 @@
 ***********************************************************************************/
 
 /* restart functions; restart_init and restart_dump */
-#include "decs.h"
+#include "decs_MPI.h"
 
 void rdump_block_write(MPI_File *fp, int n)
 {
