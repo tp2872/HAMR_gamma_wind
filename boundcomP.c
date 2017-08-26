@@ -17,6 +17,7 @@ void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 
 		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
 		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+		cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send1 %d", status);
 
 		clFlush(commandQueueGPU[n]);
@@ -60,6 +61,7 @@ void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 
 		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
 		status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+		cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send2 %d",status);
 
 		clFlush(commandQueueGPU[n]);
@@ -105,6 +107,7 @@ void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
 
 		status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+		cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send3 %d", status);
 
 		clFlush(commandQueueGPU[n]);
@@ -149,6 +152,7 @@ void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 		global_work_size_bound[n][0] = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
 
 		status=clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+		cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send_average1 %d", status);
 
 		clFlush(commandQueueGPU[n]);
@@ -211,6 +215,7 @@ void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 
 		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
 		status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+		cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send_average2 %d", status);
 
 		clFlush(commandQueueGPU[n]);
@@ -273,6 +278,7 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 
 		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
 		status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+		cudaEventRecord(boundevent1[0],commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send_average3 %d", status);
 
 		clFlush(commandQueueGPU[n]);
@@ -349,6 +355,7 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 
 		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep==-1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL)clReleaseEvent(boundevent1[0]);
 		}
@@ -425,6 +432,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 
 		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL)clReleaseEvent(boundevent1[0]);
 		}
@@ -544,6 +552,7 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 
 		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL)clReleaseEvent(boundevent1[0]);
 		}
@@ -615,6 +624,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 
 		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceivecoarse1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL)clReleaseEvent(boundevent1[0]);
 		}
@@ -713,6 +723,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 
 		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceivecoarse2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL)clReleaseEvent(boundevent1[0]);
 		}
@@ -811,6 +822,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 
 		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceivecoarse3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL)clReleaseEvent(boundevent1[0]);
 		}

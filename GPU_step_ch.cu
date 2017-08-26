@@ -2123,7 +2123,9 @@ void GPU_finish(int n)
 {
 	//Attention
 	//clFinish(commandQueueGPU[n]);
-
+	
+	//Select correct CUDA device
+	cudaSetDevice(block[n][AMR_GPU]);
 	free(p_1[n]);
 	free(dq_1[n]);
 	#if(STAGGERED)

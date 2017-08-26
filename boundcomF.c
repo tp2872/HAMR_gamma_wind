@@ -19,6 +19,7 @@ void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend1flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+			cudaEventRecord(boundevent1[0]);
 		}
 		else{
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend1flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
@@ -60,6 +61,7 @@ void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend2flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+			cudaEventRecord(boundevent1[0]);
 		}
 		else{
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend2flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
@@ -101,6 +103,7 @@ void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend3flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+			cudaEventRecord(boundevent1[0]);
 		}
 		else{
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsend3flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
@@ -142,6 +145,7 @@ void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		global_work_size_bound[n][0] = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendfluxaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent1);
+			cudaEventRecord(boundevent1[0]);
 		}
 		else{
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendfluxaverage1[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
@@ -192,6 +196,7 @@ void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendfluxaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
+			cudaEventRecord(boundevent[0]);
 		}
 		else{
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendfluxaverage2[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
@@ -242,6 +247,7 @@ void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		global_work_size_bound[n][0] = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendfluxaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, boundevent);
+			cudaEventRecord(boundevent[0]);
 		}
 		else{
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_packsendfluxaverage3[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 0, NULL, NULL);
@@ -299,6 +305,7 @@ void unpack_receive1_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 
 		global_work_size_bound[n][0] = (j2 - j1)*(z2 - z1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive1flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL) clReleaseEvent(boundevent1[0]);
 		}
@@ -403,6 +410,7 @@ void unpack_receive2_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 
 		global_work_size_bound[n][0] = (i2 - i1)*(z2 - z1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive2flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL) clReleaseEvent(boundevent1[0]);
 		}
@@ -510,6 +518,7 @@ void unpack_receive3_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 
 		global_work_size_bound[n][0] = (i2 - i1)*(j2 - j1);
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 			status = clEnqueueNDRangeKernel(commandQueueGPU[n], kernel_unpackreceive3flux[n], 1, global_work_offset[n], global_work_size_bound[n], NULL, 1 * (boundevent1 != NULL), boundevent1, NULL);
 			if (boundevent1 != NULL) clReleaseEvent(boundevent1[0]);
 		}
