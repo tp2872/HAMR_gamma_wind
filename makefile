@@ -45,60 +45,42 @@
 ########  gcc generally used for debugging with -g option so we can use gdb 
 USEICC = 0
 
-
-ifeq ($(USEICC),1)
-CC       = icc
-#CCFLAGS  = -O3 -axW -tpp7
-#CCFLAGS  = -O2
-endif
-
 ifeq ($(USEICC),0)
-CC       = cc 
-
-#CCFLAGS  = -I /opt/apps/cuda/7.0/include -lOpenCL -openmp -O3 -restrict
-#CCFLAGS  = -I /opt/nvidia/cudatoolkit7.0/default/include -lOpenCL -openmp -O3 -restrict
-#CCFLAGS  = -I /usr/local/cuda-7.0/include -L/usr/local/cuda-7.0/lib64 -lOpenCL -openmp -O3 -restrict
-CCFLAGS  = -lOpenCL -qopenmp -O3
-#CCFLAGS  = -I /cm/shared/apps/amdappsdk/2.9/include/ -L /cm/shared/apps/amdappsdk/2.9/lib/x86_64/ -lOpenCL -openmp -O3 -restrict
-#CCFLAGS = -O3  -framework OpenCL -fopenmp -I /System/Library/Frameworks/OpenCL.framework/Versions/A/Headers -L /System/Library/Frameworks/OpenCL.framework/Versions/A/lib #-fsanitize=address -fno-omit-frame-pointer -g -ggdb
-
-#CC       = icc 
-#CCFLAGS  = -mmic -openmp -O2 -restrict
+CC       = cc
+CCFLAGS  = -qopenmp -O3
 endif
 
 
-EXTRALIBS = -lm
+EXTRALIBS = -lm -L/opt/apps/cuda/6.5/lib64 -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
+CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
+
+
 
 .c.o:
 	$(CC_COMPILE) $*.c
-
+	
+.cu.o:
+	$(CUDA_COMPILE) $*.cu
+	
 EXE = harm
 all: $(EXE)
 
-
-SRCS = \
-AMR.c boundcomB.c boundcomE.c boundcomF.c boundcomP.c \
-bounds.c coord.c diag.c dump.c fixup.c \
-image.c init.c interp.c main.c metric.c lu.c \
-phys.c ranc.c restart.c step_ch.c \
-utoprim_1dfix1.c utoprim_1dvsq2fix1.c utoprim_2d.c u2p_util.c
-
 OBJS = \
-AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o \
 image.o init.o interp.o main.o metric.o lu.o \
 phys.o ranc.o restart.o step_ch.o \
-utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o
+utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o \
+GPU_program1.o GPU_program2.o GPU_step_ch.o
 
-INCS = decs.h  defs.h  u2p_defs.h  u2p_util.h
+INCS = decs.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h
 
 $(OBJS) : $(INCS) makefile
 
 $(EXE): $(OBJS) $(INCS) makefile
-	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE)
+	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE) 
 
 
 #image_interp: image_interp.c
@@ -107,7 +89,6 @@ $(EXE): $(OBJS) $(INCS) makefile
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
-
 
 newrun:
 	/bin/rm -rf dumps images ener.out
