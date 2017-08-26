@@ -1,7 +1,3 @@
-extern "C" {
-	#include "decs.h"
-}
-#include <cuda.h>
 /*Whether or not to use the 3D version of the code*/
 #define ThreeD (1)
 
@@ -2200,7 +2196,7 @@ __device__ FTYPE2 bsq_calc(FTYPE2 *  pr, struct of_geom *  geom)
 }
 
 
-__global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 *   F, __global FTYPE2 *  dq, __global FTYPE2 *  p, int dir, int lim, int number, __global FTYPE2 *  V)
+__global__ void fluxcalcprep(int N1, int N2, int N3, FTYPE2 *   F, FTYPE2 *  dq, FTYPE2 *  p, int dir, int lim, int number, FTYPE2 *  V)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + 2 * D3)*(N2 + 2 * D2);
@@ -2298,8 +2294,8 @@ __global__ void fluxcalcprep(int N1, int N2, int N3, __global FTYPE2 *   F, __gl
 }
 
 
-__global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 *  F, __global FTYPE2 *  dq, __global FTYPE2 *  pv, __global FTYPE2 *  ps, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int lim, int dir,
-	FTYPE2 gam, FTYPE2 cour, __global FTYPE2*  dtij, int POLE_1, int POLE_2, __global FTYPE2* storage1, __global FTYPE2* storage2, __global FTYPE2* storage3, __global FTYPE2* storage4, double dx_1, double dx_2, double dx_3)
+__global__ void fluxcalc2D2(int N1, int N2, int N3, FTYPE2 *  F, FTYPE2 *  dq, FTYPE2 *  pv, FTYPE2 *  ps, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int lim, int dir,
+	FTYPE2 gam, FTYPE2 cour, FTYPE2*  dtij, int POLE_1, int POLE_2, FTYPE2* storage1, FTYPE2* storage2, FTYPE2* storage3, FTYPE2* storage4, double dx_1, double dx_2, double dx_3)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -2435,7 +2431,7 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, __global FTYPE2 *  F, __glob
 	}
 }
 
-__global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
+__global__ void fix_flux(int N1, int N2, int N3, FTYPE2 *  F1, FTYPE2 *  F2, FTYPE2 *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
@@ -2495,7 +2491,7 @@ __global__ void fix_flux(int N1, int N2, int N3, __global FTYPE2 *  F1, __global
 	#endif
 }
 
-__global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 *  pb_i, __global FTYPE2 *  E_cent, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet)
+__global__ void consttransport1(int N1, int N2, int N3, FTYPE2 *  pb_i, FTYPE2 *  E_cent, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + N3G)*(N2 + N2G);
@@ -2529,8 +2525,8 @@ __global__ void consttransport1(int N1, int N2, int N3, __global FTYPE2 *  pb_i,
 	}
 }
 
-__global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 *  emf, __global FTYPE2 *  E_cent, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3,
-	__global FTYPE2 *  pb_i, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int POLE_1, int POLE_2)
+__global__ void consttransport2(int N1, int N2, int N3, FTYPE2 *  emf, FTYPE2 *  E_cent, FTYPE2 *  F1, FTYPE2 *  F2, FTYPE2 *  F3,
+	FTYPE2 *  pb_i, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int POLE_1, int POLE_2)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2601,8 +2597,8 @@ __global__ void consttransport2(int N1, int N2, int N3, __global FTYPE2 *  emf, 
 	}
 }
 
-__global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2, double dx_3, const  FTYPE2* __restrict__ gdet_GPU, __global FTYPE2 *  psi, __global FTYPE2 *  psf,
-	__global FTYPE2 *  E_corn, double Dt)
+__global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2, double dx_3, const  FTYPE2* __restrict__ gdet_GPU, FTYPE2 *  psi, FTYPE2 *  psf,
+	FTYPE2 *  E_corn, double Dt)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2638,7 +2634,7 @@ __global__ void consttransport3(int N1, int N2, int N3, double dx_1, double dx_2
 	}
 }
 
-__global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2 *  emf)
+__global__ void flux_ct1(int N1, int N2, int N3, FTYPE2 *  F1, FTYPE2 *  F2, FTYPE2 *  F3, FTYPE2 *  emf)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2670,7 +2666,7 @@ __global__ void flux_ct1(int N1, int N2, int N3, __global FTYPE2 *  F1, __global
 	}
 }
 
-__global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2 *  emf)
+__global__ void flux_ct2(int N1, int N2, int N3, FTYPE2 *  F1, FTYPE2 *  F2, FTYPE2 *  F3, FTYPE2 *  emf)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + D3)*(N2 + D2);
@@ -2722,9 +2718,9 @@ __global__ void flux_ct2(int N1, int N2, int N3, __global FTYPE2 *  F1, __global
 	}
 }
 
-__global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FTYPE2* pb_i, __global FTYPE2* pf_i, __global FTYPE2 *  psf,
-	__global FTYPE2 *  F1, __global FTYPE2 *  F2, __global FTYPE2 *  F3, __global FTYPE2* radius, __global int* pflag, __global int* failimage,
-	const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, const  FTYPE2* __restrict__ conn, __global FTYPE2* Katm, FTYPE2 gam, FTYPE2 dx_1, FTYPE2 dx_2, FTYPE2 dx_3, FTYPE2 a, FTYPE2 Dt, int flag)
+__global__ void fixup(int N1, int N2, int N3, FTYPE2* pi_i, FTYPE2* pb_i, FTYPE2* pf_i, FTYPE2 *  psf,
+	FTYPE2 *  F1, FTYPE2 *  F2, FTYPE2 *  F3, FTYPE2* radius, int* pflag, int* failimage,
+	const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, const  FTYPE2* __restrict__ conn, FTYPE2* Katm, FTYPE2 gam, FTYPE2 dx_1, FTYPE2 dx_2, FTYPE2 dx_3, FTYPE2 a, FTYPE2 Dt, int flag)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = N3*N2;
@@ -3022,7 +3018,7 @@ __global__ void fixup(int N1, int N2, int N3, __global FTYPE2* pi_i, __global FT
 /* 1357910  */
 #define AVG6_2(pr,icurr,jcurr,zcurr, N1, N2, N3, k) (1.0/6.0*(pr[k*(ksize)+(icurr+1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr+1)*isize+(jcurr-1)+ zcurr]*(N3+2*N3G)+pr[k*(ksize)+(icurr-1)*isize+(jcurr+1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr-1)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr+1)]+pr[k*(ksize)+(icurr)*isize+(jcurr)*(N3+2*N3G) + (zcurr-1)]))
 
-__global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 *  pv, __global int *  pflag, __global int *  failimage, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet)
+__global__ void fixuputoprim(int N1, int N2, int N3, FTYPE2 *  pv, int *  pflag, int *  failimage, const  FTYPE2* __restrict__ gcov, const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
@@ -3055,7 +3051,7 @@ __global__ void fixuputoprim(int N1, int N2, int N3, __global FTYPE2 *  pv, __gl
 	}
 }
 
-__global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 *   pv, const  FTYPE2* __restrict__ gcov,const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int NBR_2, int NBR_4, __global FTYPE2 *  ps)
+__global__ void boundprim1(int N1, int N2, int N3, FTYPE2 *   pv, const  FTYPE2* __restrict__ gcov,const  FTYPE2* __restrict__ gcon, const  FTYPE2* __restrict__ gdet, int NBR_2, int NBR_4, FTYPE2 *  ps)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (N3 + 2 * N3G)*(N2 + 2 * N2G);
@@ -3180,7 +3176,7 @@ __global__ void boundprim1(int N1, int N2, int N3, __global FTYPE2 *   pv, const
 	}
 }
 
-__global__ void boundprim2(int N1, int N2, int N3, __global FTYPE2 *  pv, const  FTYPE2* __restrict__ gdet, int NBR_1, int NBR_3, __global FTYPE2 *  ps)
+__global__ void boundprim2(int N1, int N2, int N3, FTYPE2 *  pv, const  FTYPE2* __restrict__ gdet, int NBR_1, int NBR_3, FTYPE2 *  ps)
 {
 	int j, jref, k;
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;

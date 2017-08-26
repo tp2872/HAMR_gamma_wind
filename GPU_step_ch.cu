@@ -1,7 +1,4 @@
-extern "C" {
 #include "decs.h"
-}
-#include "cuda.h"
 
 void GPU_step_ch()
 {
@@ -49,9 +46,9 @@ void GPU_step_ch()
 
 	/*Calculate smallest timestep for all MPI threads*/
 
-		#if (MPI_enable)
+	#if (MPI_enable)
 	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-		#endif
+	#endif
 
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
 

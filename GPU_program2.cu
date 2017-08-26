@@ -1,13 +1,75 @@
-extern "C" {
-	#include "decsCUDA.h"
-}
 #include <cuda.h>
+
+#define FTYPE2 double 
+
+/*Whether or not to use the 3D version of the code*/
+#define ThreeD (1)
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
 #define NT 0
 
-__global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
+/*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
+#define REF_1 0
+#define REF_2 0
+#define REF_3 1
+
+/*Set block size in each dimension*/
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
+
+#define STAGGERED (1)
+
+/*Enable fma operations for improved performance on AMD GPUs*/
+#define AMD 1
+
+/*Set workgroup size*/
+#define LOCAL_WORK_SIZE 64
+
+/*Set the grid size for 2D and 3D*/
+#define NG 2
+#define N1G 2
+#define N2G 2
+#define N3G ((ThreeD>0)?(NG):(0))
+#define D1 (1)
+#define D2 (1)
+#define D3 ((ThreeD>0)?(1):(0))
+
+/*Define variable quantities*/
+#define NPG 5
+#define NPR 9
+#define NDIM 4
+
+/* mnemonics for centering of grid functions */
+#define FACE1	(0)	
+#define FACE2	(1)
+#define FACE3	(4)
+#define CORN	(2)
+#define CENT	(3)
+
+__device__ FTYPE2 slope_lim(FTYPE2 y1, FTYPE2 y2, FTYPE2 y3, int dir);
+
+__device__ FTYPE2 slope_lim(FTYPE2 y1, FTYPE2 y2, FTYPE2 y3, int dir)
+{
+	FTYPE2 Dqm, Dqp, Dqc, s;
+	/* woodward, or monotonized central, slope limiter */
+	Dqm = (1.5)*(y2 - y1);
+	Dqp = (1.5)*(y3 - y2);
+	Dqc = 0.5*(y3 - y1);
+	s = Dqm*Dqp;
+	if (s <= 0.) return 0.;
+	else {
+		if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
+			return(Dqm);
+		else if (fabs(Dqp) < fabs(Dqc))
+			return(Dqp);
+		else
+			return(Dqc);
+	}
+}
+
+__global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  ps, FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -19,22 +81,22 @@ __global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int js
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-#pragma unroll NG
+			#pragma unroll NG
 			for (i = i1; i < i2; i++){
 				send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 			}
 		}
-#if(STAGGERED)
+		#if(STAGGERED)
 		for (i = i1; i <i2; i++){
 			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+(i + N1G + (i1>N1G))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G), FACE1, 0)));
 			send[(NPR + 1)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 			send[(NPR + 2)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 		}
-#endif
+		#endif
 	}
 }
 
-__global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
+__global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  ps, FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -46,22 +108,22 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-#pragma unroll NG
+			#pragma unroll NG
 			for (j = j1; j < j2; j++){
 				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			}
 		}
-#if(STAGGERED)
+		#if(STAGGERED)
 		for (j = j1; j <j2; j++){
 			send[(NPR + 0)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
 			send[(NPR + 1)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+icurr*isize + (j + N2G + (j1>N2G))*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + (j1>N2G), icurr, FACE2, 0)));
 			send[(NPR + 2)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 		}
-#endif
+		#endif
 	}
 }
 
-__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
+__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  ps, FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -73,22 +135,22 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-#pragma unroll NG
+			#pragma unroll NG
 			for (z = z1; z < z2; z++){
 				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 			}
 		}
-#if(STAGGERED)
+		#if(STAGGERED)
 		for (z = z1; z <z2; z++){
 			send[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
 			send[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 			send[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G))] * readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE3, 0)));
 		}
-#endif
+		#endif
 	}
 }
 
-__global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
+__global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  ps, FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -102,7 +164,7 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-#pragma unroll NG
+			#pragma unroll NG
 			for (i = i1; i < i2; i += 1 + REF_1){
 				send[k*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.125*(
 					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
@@ -110,7 +172,7 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 					pv[k*(ksize)+(i + REF_1 + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + REF_1 + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
 			}
 		}
-#if(STAGGERED)
+		#if(STAGGERED)
 		for (i = i1; i <i2; i += 1 + REF_1){
 			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
 				0.25*(ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + REF_1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + REF_1))*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G)*(1 + REF_1), FACE1, 0))) +
@@ -130,11 +192,11 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 			ps[2 * (ksize)+(i + N1G + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + REF_1, FACE3, 0))) +
 			ps[2 * (ksize)+(i + N1G + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G + REF_1)*(BS_2 + 2 * N2G) + (jcurr + REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, i + N1G + REF_1, FACE3, 0))));
 		}
-#endif
+		#endif
 	}
 }
 
-__global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
+__global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  ps, FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -147,7 +209,7 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 	
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-#pragma unroll NG
+			#pragma unroll NG
 			for (j = j1; j < j2; j += 1 + REF_2){
 				send[k*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.125*(
 					pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
@@ -155,7 +217,7 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 					pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr + REF_3]);
 			}
 		}
-#if(STAGGERED)
+		#if(STAGGERED)
 		for (j = j1; j <j2; j += 1 + REF_2){
 			send[(NPR + 0)*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] =
 				0.25*(ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0))) +
@@ -175,11 +237,11 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 			ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (j + N2G)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr + REF_1, FACE3, 0))) +
 			ps[2 * (ksize)+(icurr + REF_1)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + (zcurr)] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (j + N2G + REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G + REF_2, icurr + REF_1, FACE3, 0))));
 		}
-#endif
+		#endif
 	}
 }
 
-__global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  ps, __global FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
+__global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  ps, FTYPE2 *  send, const  FTYPE2* __restrict__ gdet_GPU)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -192,7 +254,7 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-#pragma unroll NG
+			#pragma unroll NG
 			for (z = z1; z < z2; z += 1 + REF_3){
 				send[k*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.125*(
 					pv[k*(ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G + REF_3] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] +
@@ -200,7 +262,7 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 					pv[k*(ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G + REF_3]);
 			}
 		}
-#if(STAGGERED)
+		#if(STAGGERED)
 		for (z = z1; z <z2; z += 1 + REF_3){
 			send[(NPR + 0)*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] =
 				0.25*(ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0))) +
@@ -220,12 +282,12 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 			ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr + REF_1, FACE3, 0))) +
 			ps[2 * (ksize)+(icurr + REF_1)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + REF_3))] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + REF_1)*(BS_2 + 2 * N2G) + (jcurr + REF_2)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr + REF_2, icurr + REF_1, FACE3, 0))));
 		}
-#endif
+		#endif
 	}
 }
 
-__global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int jsize2, int zsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
-	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
+__global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int jsize2, int zsize2, FTYPE2 *  p, FTYPE2 *  ph,
+	FTYPE2 *  ps, FTYPE2 *  psh, FTYPE2 *  receive, FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -302,7 +364,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset gradient to 0 at eg refinement steps
 		if (nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
-#pragma unroll NG
+				#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] = 0.0;
 				}
@@ -312,13 +374,13 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset primitve variables
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+				#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 					ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 				}
 			}
-#if(STAGGERED)
+			#if(STAGGERED)
 			for (i = i1; i <i2; i++){
 				if ((jcurr<N2G || jcurr >= BS_2 + N2G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
 					ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
@@ -338,13 +400,13 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 			}
-#endif
+			#endif
 		}
 	}
 }
 
-__global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int zsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
-	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int reverse, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
+__global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int zsize2, FTYPE2 *  p, FTYPE2 *  ph,
+	FTYPE2 *  ps, FTYPE2 *  psh, FTYPE2 *  receive, FTYPE2 *  tempreceive, int reverse, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -422,7 +484,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			//Reset gradient to 0 at eg refinement steps
 			if (nstep == -1){
 				for (k = 0; k < NPR + 3; k++){
-#pragma unroll NG
+					#pragma unroll NG
 					for (j = j1; j < j2; j++){
 						tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] = 0.0;
 					}
@@ -432,13 +494,13 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			//Reset primitve variables
 			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 				for (k = 0; k < NPR; k++){
-#pragma unroll NG
+					#pragma unroll NG
 					for (j = j1; j < j2; j++){
 						p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 						ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 					}
 				}
-#if(STAGGERED)
+				#if(STAGGERED)
 				for (j = j1; j <j2; j++){
 					ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 						gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
@@ -458,12 +520,12 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 					psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 						gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 				}
-#endif
+				#endif
 			}
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+				#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					if (k == 3 || k == 4 || k == 6 || k == 7) factor = -1.;
 					else factor = 1.;
@@ -471,7 +533,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 					ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = factor*receive[k*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 				}
 			}
-#if(STAGGERED)
+			#if(STAGGERED)
 			for (j = j1; j <j2; j++){
 				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE1, 0)));
@@ -490,13 +552,13 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (j + N2G)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(j + N2G, icurr, FACE3, 0)));
 			}
-#endif
+			#endif
 		}
 	}
 }
 
-__global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int jsize2, __global FTYPE2 *  p, __global FTYPE2 *  ph,
-	__global FTYPE2 *  ps, __global FTYPE2 *  psh, __global FTYPE2 *  receive, __global FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
+__global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int j_offset, int z1, int z2, int z_offset, int isize2, int jsize2, FTYPE2 *  p, FTYPE2 *  ph,
+	FTYPE2 *  ps, FTYPE2 *  psh, FTYPE2 *  receive, FTYPE2 *  tempreceive, int update_staggered, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -573,7 +635,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset gradient to 0 at eg refinement steps
 		if (nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
-#pragma unroll NG
+				#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] = 0.0;
 				}
@@ -583,13 +645,13 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset primitve variables
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+				#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
 					ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
 				}
 			}
-#if(STAGGERED)
+			#if(STAGGERED)
 			for (z = z1; z <z2; z++){
 				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
 					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE1, 0)));
@@ -608,12 +670,12 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] /
 					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, icurr, FACE2, 0)));
 			}
-#endif
+			#endif
 		}
 	}
 }
-__global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
-	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
+__global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 * p, FTYPE2 * ph, FTYPE2 * ps, FTYPE2 * psh, FTYPE2 * prim,
+	FTYPE2 *  receive, FTYPE2 *  temp1receive, FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
 {
 	int i, ii, ij, iz, is, js, zs, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -626,7 +688,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 	double avg, dq1, dq2, dq3;
 	
 	if (global_id < work_size){
-#pragma unroll NG
+		#pragma unroll NG
 		for (i = i1; i < i2; i++){
 			if (i1 < 0 && REF_1 == 1) ii = REF_1;
 			else if (REF_1 == 1) ii = 0;
@@ -669,7 +731,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 				ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
 			}
 
-#if(STAGGERED)
+			#if(STAGGERED)
 			if (js == 1){
 				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + ij*zsize2 + iz] + receive[(NPR + 1)*jsize2*zsize2*(i2 - i1) + ii*jsize2*zsize2 + (ij + REF_2)*zsize2 + iz]) /
 					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
@@ -702,13 +764,13 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			//psh[0*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+0)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
 			//psh[1*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+1)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
 			//psh[2*(ksize)+(i+N1G)*isize+jcurr*(BS_3+2*N3G)+zcurr] = receive[(NPR+2)*jsize2*zsize2*(i2-i1) + ii*jsize2*zsize2 + ij*zsize2+iz];
-#endif
+			#endif
 		}
 	}
 }
 
-__global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
-	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
+__global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 * p, FTYPE2 * ph, FTYPE2 * ps, FTYPE2 * psh, FTYPE2 * prim,
+	FTYPE2 *  receive, FTYPE2 *  temp1receive, FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
 {
 	int j, ii, ij, iz, is, js, zs, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -806,8 +868,8 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 * p, __global FTYPE2 * ph, __global FTYPE2 * ps, __global FTYPE2 * psh, __global FTYPE2 * prim,
-	__global FTYPE2 *  receive, __global FTYPE2 *  temp1receive, __global FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
+__global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 * p, FTYPE2 * ph, FTYPE2 * ps, FTYPE2 * psh, FTYPE2 * prim,
+	FTYPE2 *  receive, FTYPE2 *  temp1receive, FTYPE2 *  temp2receive, const  FTYPE2* __restrict__ gdet_GPU, int nstep, double dt, int timelevel, int timelevel_rec, int work_size)
 {
 	int z, ii, ij, iz, is, js, zs, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -899,7 +961,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -929,7 +991,7 @@ __global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	}
 }
 
-__global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -959,7 +1021,7 @@ __global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	}
 }
 
-__global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -989,8 +1051,8 @@ __global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	}
 }
 
-__global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
-	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size)
+__global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  receive,
+	FTYPE2 *  temp1, FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1087,8 +1149,8 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 	}
 }
 
-__global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
-	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size)
+__global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  receive,
+	FTYPE2 *  temp1, FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1185,8 +1247,8 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 	}
 }
 
-__global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  receive,
-	__global FTYPE2 *  temp1, __global FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size)
+__global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  receive,
+	FTYPE2 *  temp1, FTYPE2 *  temp2, int calc_corr, int nstep, int nstep2, int timelevel, int timelevel_rec, double factor, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1283,7 +1345,7 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 	}
 }
 
-__global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1317,7 +1379,7 @@ __global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1351,7 +1413,7 @@ __global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1385,7 +1447,7 @@ __global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int
 	}
 }
 
-__global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1419,7 +1481,7 @@ __global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int j
 	}
 }
 
-__global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1453,7 +1515,7 @@ __global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int i
 	}
 }
 
-__global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1487,7 +1549,7 @@ __global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int i
 	}
 }
 
-__global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int i, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1526,7 +1588,7 @@ __global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2
 	}
 }
 
-__global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1565,7 +1627,7 @@ __global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2
 	}
 }
 
-__global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size)
+__global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1604,7 +1666,7 @@ __global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2
 	}
 }
 
-__global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+__global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size)
 {
 	int i, k;
@@ -1705,7 +1767,7 @@ __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, 
 }
 
 
-__global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+__global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size)
 {
 	int j, k;
@@ -1811,7 +1873,7 @@ __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, 
 	}
 }
 
-__global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+__global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size)
 {
 	int z, k;
@@ -1911,7 +1973,7 @@ __global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, 
 	}
 }
 
-__global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size){
+__global__ void packsendE1corn(int i1, int i2, int j, int z, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = global_id + i1 + N1G;
 	int jcurr = j + N2G;
@@ -1925,7 +1987,7 @@ __global__ void packsendE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  
 	}
 }
 
-__global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size){
+__global__ void packsendE2corn(int i, int j1, int j2, int z, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = i + N1G;
 	int jcurr = global_id + j1 + N2G;
@@ -1939,7 +2001,7 @@ __global__ void packsendE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  
 	}
 }
 
-__global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size){
+__global__ void packsendE3corn(int i, int j, int z1, int z2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = i + N1G;
 	int jcurr = j + N2G;
@@ -1953,7 +2015,7 @@ __global__ void packsendE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  
 	}
 }
 
-__global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size){
+__global__ void packsendE1corncourse(int i1, int i2, int j, int z, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = global_id*(1 + REF_1) + i1 + N1G;
 	int jcurr = j + N2G;
@@ -1970,7 +2032,7 @@ __global__ void packsendE1corncourse(int i1, int i2, int j, int z, __global FTYP
 	}
 }
 
-__global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size){
+__global__ void packsendE2corncourse(int i, int j1, int j2, int z, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = i + N1G;
 	int jcurr = global_id*(1 + REF_2) + j1 + N2G;
@@ -1987,7 +2049,7 @@ __global__ void packsendE2corncourse(int i, int j1, int j2, int z, __global FTYP
 	}
 }
 
-__global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYPE2 *  pv, __global FTYPE2 *  send, double factor, int first_timestep, int work_size){
+__global__ void packsendE3corncourse(int i, int j, int z1, int z2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = i + N1G;
 	int jcurr = j + N2G;
@@ -2004,7 +2066,7 @@ __global__ void packsendE3corncourse(int i, int j, int z1, int z2, __global FTYP
 	}
 }
 
-__global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+__global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = global_id + i1 + N1G;
@@ -2052,7 +2114,7 @@ __global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, __global FTYPE
 	}
 }
 
-__global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+__global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = i + N1G;
@@ -2100,7 +2162,7 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, __global FTYPE
 	}
 }
 
-__global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, __global FTYPE2 *  prim, __global FTYPE2 *  receive, __global FTYPE2 *  temp1, __global FTYPE2 *  temp2,
+__global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size){
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int icurr = i + N1G;
