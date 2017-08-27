@@ -1516,7 +1516,7 @@ void GPU_consttransport_bound(void){
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
 	}
-
+	
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){

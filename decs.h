@@ -878,6 +878,7 @@ struct of_state {
 };
 
 /*CUDA variables decleration*/
+extern double **NULL_POINTER;
 extern int gpu;
 extern int status;
 extern cudaStream_t commandQueue[NQ*N_GPU];

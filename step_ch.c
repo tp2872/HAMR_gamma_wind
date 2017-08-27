@@ -1623,10 +1623,10 @@ double advance_GPU(void)
 	}*/
 
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
-		//flux_send1(F1, BufferF1_1, n_ord[n]);
-		//flux_send2(F2, BufferF2_1, n_ord[n]);
+		flux_send1(F1, BufferF1_1, n_ord[n]);
+		flux_send2(F2, BufferF2_1, n_ord[n]);
 		#if(N3G>0)
-		//flux_send3(F3, BufferF3_1, n_ord[n]);
+		flux_send3(F3, BufferF3_1, n_ord[n]);
 		#endif
 	}
 
@@ -1650,19 +1650,19 @@ double advance_GPU(void)
 	}
 	#else
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		//flux_rec1(F1, BufferF1_1, n_ord[n], 1);
-		//flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 		#if(N3G>0)
-		//flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+		flux_rec3(F3, BufferF3_1, n_ord[n], 1);
 		#endif
 	}
 
 	//For first timestep do not synchronize electrice fields
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
-		//flux_rec1(F1, BufferF1_1, n_ord[n], 2);
-		//flux_rec2(F2, BufferF2_1, n_ord[n], 2);
+		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
+		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
 		#if(N3G>0)
-		//flux_rec3(F3, BufferF3_1, n_ord[n], 2);
+		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
 		#endif
 	}
 	#endif 
@@ -1681,7 +1681,7 @@ double advance_GPU(void)
 	}
 	#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
 	rc = 0;
-	//GPU_consttransport_bound();
+	GPU_consttransport_bound();
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
 	#endif
 	for (n = 0; n < n_active; n++){
