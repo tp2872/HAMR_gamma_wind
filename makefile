@@ -50,44 +50,56 @@ CC       = cc
 CCFLAGS  = -fopenmp -O3
 endif
 
-
-EXTRALIBS = -lm -L/opt/apps/cuda/7.5/lib64 -lcudart -lcuda
+EXTRALIBS = -lm -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
 CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
+CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 -dlink
 
-.c.o:
-	$(CC_COMPILE) $*.c
 
-EXE = harm
-all: $(EXE)
+SRC1 = \
+AMR.c boundcomB.c boundcomE.c boundcomF.c boundcomP.c \
+bounds.c coord.c diag.c dump.c fixup.c \
+image.c init.c interp.c main.c metric.c lu.c \
+phys.c ranc.c restart.c step_ch.c \
+utoprim_1dfix1.c utoprim_1dvsq2fix1.c utoprim_2d.c u2p_util.c \
 
-OBJS = \
+SRC2 = \
+GPU_boundcomE.cu GPU_boundcomP.cu GPU_boundcomF.cu\
+GPU_program1.cu GPU_program2.cu GPU_step_ch.cu
+
+INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h
+
+OBJS1 = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o \
 image.o init.o interp.o main.o metric.o lu.o \
 phys.o ranc.o restart.o step_ch.o \
-utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o \
+utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o
+
+OBJS2 = \
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
-GPU_program1.o GPU_program1.o GPU_step_ch.o
+GPU_program1.o GPU_program2.o GPU_step_ch.o
 
+$(OBJS2) : $(SRC2) $(INCS)
+	$(CUDA_COMPILE) $(SRC2)
 
-INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h
+$(OBJS1) : $(SRC1) $(INCS)
+	$(CC_COMPILE) $(SRC1)
 
-$(OBJS) : $(INCS) makefile
+gpuCode.o : $(SRC2) $(INCS)
+	$(CUDA_LOAD) $(OBJS2) -o gpuCode.o
 
-$(EXE): $(OBJS) $(INCS) makefile
-	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE)
+EXE = harm
+all: $(EXE)
 
-
-#image_interp: image_interp.
-#	$(CC_LOAD) $(EXTRALIBS) image_interp.c -o image_interp
+$(EXE): $(OBJS1) $(OBJS2) gpuCode.o $(INCS) makefile
+	$(CC_LOAD) $(OBJS1) $(OBJS2) gpuCode.o $(EXTRALIBS) -o $(EXE)
 
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
-
 
 newrun:
 	/bin/rm -rf dumps images ener.out
