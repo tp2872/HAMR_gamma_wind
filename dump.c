@@ -41,7 +41,6 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 ***********************************************************************************/
-
 #include "decs_MPI.h"
 
 void FMSS_write(FILE *fp){
@@ -517,7 +516,7 @@ void gdump_block(FILE *fp, int n)
 }
 
 
-size_t write_to_dump( int is_dry_run, FILE *fp, double *buf, double val )
+int write_to_dump( int is_dry_run, FILE *fp, double *buf, double val )
 {
     if (is_dry_run) {
         return(1L);

@@ -1,6 +1,7 @@
 #include "decs_MPI.h"
+
 /*Send boundaries of Ees between compute nodes through MPI*/
-void E_send1(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void E_send1(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n){
 #if (MPI_enable)
 	//MPI_Barrier(mpi_cartcomm);
 
@@ -171,7 +172,7 @@ void E_send1(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
 #endif
 }
 
-void E_send2(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void E_send2(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n){
 #if (MPI_enable)
 	//Exchange boundary cells for MPI threads
 	//Positive X2
@@ -340,7 +341,7 @@ void E_send2(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
 #endif
 }
 
-void E_send3(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void E_send3(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
@@ -509,7 +510,7 @@ void E_send3(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
 }
 
 /*Receive boundaries for compute nodes through MPI*/
-void E_rec1(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_corr){
+void E_rec1(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_corr){
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
@@ -719,7 +720,7 @@ void E_rec1(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_c
 	}
 #endif
 }
-void E_rec2(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_corr){
+void E_rec2(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_corr){
 #if (MPI_enable)
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
@@ -930,7 +931,7 @@ void E_rec2(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_c
 	}
 #endif
 }
-void E_rec3(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_corr){
+void E_rec3(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_corr){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){
@@ -1143,7 +1144,7 @@ void E_rec3(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_c
 }
 
 
-void E1_send_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void E1_send_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n){
 	if (block[n][AMR_CORN9] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
 		if (block[block[n][AMR_CORN9]][AMR_ACTIVE] == 1 && (block[n][AMR_CORN9D] == n || (block[n][AMR_CORN9D] == -100 && block[n][AMR_TIMELEVEL]<block[block[n][AMR_CORN9]][AMR_TIMELEVEL]))){
 			pack_send_E1_corn(n, block[n][AMR_CORN9], 0, N1_GPU[n] + D1, 0, N3_GPU[n], send_E1_corn9, E, &(Bufferp[n]), &(BuffersendE1corn9[n]),
@@ -1398,7 +1399,7 @@ void E1_send_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
 	}
 }
 
-void E2_send_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void E2_send_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n){
 	if (block[n][AMR_CORN5] >= 0){
 		if (block[block[n][AMR_CORN5]][AMR_ACTIVE] == 1 && (block[n][AMR_CORN5D] == n || (block[n][AMR_CORN5D] == -100 && block[n][AMR_TIMELEVEL]<block[block[n][AMR_CORN5]][AMR_TIMELEVEL]))){
 			pack_send_E2_corn(n, block[n][AMR_CORN5], N1_GPU[n], 0, N2_GPU[n] + D2, 0, send_E2_corn5, E, &(Bufferp[n]), &(BuffersendE2corn5[n]),
@@ -1654,7 +1655,7 @@ void E2_send_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
 	}
 }
 
-void E3_send_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
+void E3_send_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n){
 	if (block[n][AMR_CORN1] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
 		if (block[block[n][AMR_CORN1]][AMR_ACTIVE] == 1 && (block[n][AMR_CORN1D] == n || (block[n][AMR_CORN1D] == -100 && block[n][AMR_TIMELEVEL]<block[block[n][AMR_CORN1]][AMR_TIMELEVEL]))){
 			pack_send_E3_corn(n, block[n][AMR_CORN1], N1_GPU[n], 0, 0, N3_GPU[n] + D3, send_E3_corn1, E, &(Bufferp[n]), &(BuffersendE3corn1[n]),
@@ -1910,7 +1911,7 @@ void E3_send_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n){
 }
 
 /*Receive boundaries for compute nodes through MPI*/
-void E1_receive_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_corr){
+void E1_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_corr){
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_CORN9] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
@@ -2099,7 +2100,7 @@ void E1_receive_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, i
 }
 
 /*Receive boundaries for compute nodes through MPI*/
-void E2_receive_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_corr){
+void E2_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_corr){
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_CORN5] >= 0){
@@ -2288,7 +2289,7 @@ void E2_receive_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, i
 }
 
 /*Receive boundaries for compute nodes through MPI*/
-void E3_receive_corn(double(*restrict E[NB])[NDIM], cl_mem Bufferp[NB], int n, int calc_corr){
+void E3_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_corr){
 #if (MPI_enable)
 	int n_print = block[AMR_coord_linear(0, 0, 0, 0)][AMR_CORN2D_1];
 

@@ -1,6 +1,6 @@
-#include "decs.h"
 #include "decsCUDA.h"
-
+extern "C" {
+#include "decs.h" 
 void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2){
 	if (gpu == 1){
 		int nr_workgroups_bound = ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
@@ -194,7 +194,7 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	if (gpu == 1){
 		int nr_workgroups_bound = ceil((double)((i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
-		 packsendaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
+		packsendaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		if (status != 0)printf("error pack_send_average3 %d", status);
 	}
@@ -386,35 +386,11 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	int update_staggered = ((nstep % (2 * block[n][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1) || nstep == -1);
 	if (gpu == 1){
-		clSetKernelArg(kernel_unpackreceive3[n], 0, sizeof(cl_int), &i1);
-		clSetKernelArg(kernel_unpackreceive3[n], 1, sizeof(cl_int), &i2);
-		clSetKernelArg(kernel_unpackreceive3[n], 2, sizeof(cl_int), &i_offset);
-		clSetKernelArg(kernel_unpackreceive3[n], 3, sizeof(cl_int), &j1);
-		clSetKernelArg(kernel_unpackreceive3[n], 4, sizeof(cl_int), &j2);
-		clSetKernelArg(kernel_unpackreceive3[n], 5, sizeof(cl_int), &j_offset);
-		clSetKernelArg(kernel_unpackreceive3[n], 6, sizeof(cl_int), &z1);
-		clSetKernelArg(kernel_unpackreceive3[n], 7, sizeof(cl_int), &z2);
-		clSetKernelArg(kernel_unpackreceive3[n], 8, sizeof(cl_int), &z_offset);
-		clSetKernelArg(kernel_unpackreceive3[n], 9, sizeof(cl_int), &isize);
-		clSetKernelArg(kernel_unpackreceive3[n], 10, sizeof(cl_int), &jsize);
-		clSetKernelArg(kernel_unpackreceive3[n], 11, sizeof(cl_mem), (void *)&(Bufferp_1[n]));
-		clSetKernelArg(kernel_unpackreceive3[n], 12, sizeof(cl_mem), (void *)&(Bufferph_1[n]));
-		clSetKernelArg(kernel_unpackreceive3[n], 13, sizeof(cl_mem), (void *)&(Bufferps_1[n]));
-		clSetKernelArg(kernel_unpackreceive3[n], 14, sizeof(cl_mem), (void *)&(Bufferpsh_1[n]));
-		clSetKernelArg(kernel_unpackreceive3[n], 15, sizeof(cl_mem), (void *)&(Bufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceive3[n], 16, sizeof(cl_mem), (void *)&(tempBufferboundreceive[0]));
-		clSetKernelArg(kernel_unpackreceive3[n], 17, sizeof(cl_int), &update_staggered);
-		clSetKernelArg(kernel_unpackreceive3[n], 18, sizeof(cl_mem), (void *)&Imagegdet[n]);
-		clSetKernelArg(kernel_unpackreceive3[n], 19, sizeof(cl_int), &nstep);
-		clSetKernelArg(kernel_unpackreceive3[n], 20, sizeof(cl_double), &dt);
-		clSetKernelArg(kernel_unpackreceive3[n], 21, sizeof(cl_int), &block[n][AMR_TIMELEVEL]);
-		clSetKernelArg(kernel_unpackreceive3[n], 22, sizeof(cl_int), &block[n_rec][AMR_TIMELEVEL]);
-
 		int nr_workgroups_bound = ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1)*(j2 - j1);
 		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (boundevent1 != NULL) cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[0], 0);
 		}
-		int work_size = (i2 - i1)*(j2 - j1);
 		 unpackreceive3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, jsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferboundreceive[0], tempBufferboundreceive[0],
 			update_staggered, Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
 		if (status != 0) printf("unpack_receive3 error! \n");
@@ -673,4 +649,5 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 #endif
 		}
 	}
+}
 }

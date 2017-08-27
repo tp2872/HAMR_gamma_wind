@@ -1,6 +1,6 @@
-#include "decs.h" 
 #include "decsCUDA.h"
-
+extern "C" {
+#include "decs.h" 
 void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent1){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
@@ -825,7 +825,7 @@ void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j,
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 			if (boundevent != NULL)cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		 unpackreceiveE1corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j, z, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+		 unpackreceiveE1corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j, z, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		if (status != 0) printf("Error receiveE1corn %d \n", status);
 	}
@@ -903,7 +903,7 @@ void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i, int j1, int j2,
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 			if (boundevent != NULL)cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		 unpackreceiveE2corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j1, j2, z, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+		 unpackreceiveE2corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j1, j2, z, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		if (status != 0) printf("Error receiveE2corn %d \n", status);
 	}
@@ -982,7 +982,7 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 		if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 			if (boundevent != NULL)cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
-		 unpackreceiveE3corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j, z1, z2, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
+		 unpackreceiveE3corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j, z1, z2, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		if (status != 0) printf("unpack_receive_E3_corn: %d \n", status);
 	}
@@ -1047,4 +1047,5 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 			}
 		}
 	}
+}
 }

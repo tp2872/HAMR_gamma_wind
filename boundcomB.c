@@ -302,9 +302,7 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send3_fine, F2, &(Bufferp[n]), &(Buffersend3fine[n]), &(boundevent[n][530]));
 				if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
-						clWaitForEvents(1, &boundevent[n][530]);
-						clReleaseEvent(boundevent[n][530]);
-						clEnqueueReadBuffer(commandQueueGPU[n], Buffersend3fine[n], CL_TRUE, (int)0 * sizeof(double), NDIM*N1_GPU[n] / (1 + REF_1)*N3_GPU[n] / (1 + REF_3)*sizeof(double), send3_fine[n], 0, NULL, NULL);
+					
 					}
 					rc += MPI_Isend(&send3_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (530 * NB + n)%MPI_TAG_MAX, mpi_cartcomm, &req[37]);
 					MPI_Request_free(&req[37]);

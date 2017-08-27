@@ -1,5 +1,6 @@
+#include "decs.h" 
 #include <mpi.h>
-#include "decs.h"
+
 extern MPI_Request req[100], boundreqs[NB][600], cornreqs[NB][16];
 extern MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
 extern MPI_Comm  mpi_cartcomm, mpi_self;

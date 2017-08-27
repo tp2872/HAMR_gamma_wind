@@ -54,6 +54,9 @@
     <ClInclude Include="u2p_util.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="GPU_boundcomE.cu" />
+    <None Include="GPU_boundcomF.cu" />
+    <None Include="GPU_boundcomP.cu" />
     <none Include="GPU_program1.cl" />
     <None Include="GPU_program1.cu" />
     <none Include="GPU_program2.cl" />

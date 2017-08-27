@@ -50,7 +50,6 @@
  * cfg 8-10-01
  *
  */
-
 #include "decs_MPI.h"
 
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
