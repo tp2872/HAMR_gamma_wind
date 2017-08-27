@@ -48,7 +48,6 @@
  * the primitive variables 
  *
 **/
-
 #include "decs_MPI.h"
 /** algorithmic choices **/
 
@@ -1387,66 +1386,6 @@ void step_ch_debug()
 	
 	/* done! */
 #endif
-}
-
-
-void GPU_step_ch()
-{
-	double ndt, inmsg;
-	int i, j, z, k, n, uu;
-
-	if (rank == 0){
-		//fprintf(stderr, "h");
-	}
-	for (n = 0; n < n_active; n++){
-		block[n_ord[n]][AMR_PRESTEP] = 0;
-	}
-	for (uu = 0; uu < 2 * AMR_MAXTIMELEVEL; uu++){
-		set_prestep();
-		ndt = advance_GPU();   /* time step primitive variables to the half step */
-
-		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-
-		nstep++;
-#if(PRESTEP)
-		for (n = 0; n < n_active; n++){
-			if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && (block[n_ord[n]][AMR_PRESTEP] != 0))block[n_ord[n]][AMR_PRESTEP] = 0;
-			else if (block[n_ord[n]][AMR_PRESTEP] == 1)block[n_ord[n]][AMR_PRESTEP] = 2;
-		}
-#endif
-	}
-
-	/* Repeat and rinse for the full time (aka corrector) step:  */
-	if (rank == 0){
-		//fprintf(stderr, "f");
-	}
-
-	/* Determine next time increment based on current characteristic speeds: */
-	if (dt < 1.e-9) {
-		fprintf(stderr, "timestep too small\n");
-		exit(11);
-	}
-
-	/* increment time */
-	t += (double)(AMR_MAXTIMELEVEL)*dt;
-
-	/* set next timestep */
-	if (ndt > SAFE*dt) ndt = SAFE*dt;
-	dt = ndt;
-
-	/*Calculate smallest timestep for all MPI threads*/
-
-#if (MPI_enable)
-	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-#endif
-
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
-
-#if(TIMESTEP_JET)
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
-#endif
-
-	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 }
 
 void GPU_step_ch()

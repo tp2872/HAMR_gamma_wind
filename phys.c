@@ -358,9 +358,9 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom,
 
 }
 
-double NewtonRaphson(double start, size_t max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq)
+double NewtonRaphson(double start, int max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq)
 {
-	size_t count = 0;
+	int count = 0;
 	double dx = start/1000000.0;
 	double x = start;
 	double diff, derivative;
