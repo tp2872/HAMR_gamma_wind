@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	defcon = 1. ;
 	time_spent3 = 0.0;
 	begin1 = clock();
-	while(t < tf) {
+	while(t < tf && nstep<20) {
 		/* step variables forward in time */
 		nstroke = 0 ;	
 

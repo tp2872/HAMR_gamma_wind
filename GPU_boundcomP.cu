@@ -7,7 +7,7 @@ void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 		int work_size = (j2 - j1)*(z2 - z1);
 		 packsend1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
-		if (status != 0)printf("error pack_send1 %d", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error pack_send1 %d", status);
 	}
 	else{
 		int i, j, z, k;
@@ -37,7 +37,7 @@ void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 		int work_size = (i2 - i1)*(z2 - z1);
 		 packsend2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
-		if (status != 0)printf("error pack_send2 %d", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error pack_send2 %d", status);
 	}
 	else{
 		int i, j, z, k;
@@ -68,7 +68,7 @@ void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 		int work_size = (i2 - i1)*(j2 - j1);
 		 packsend3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
-		if (status != 0)printf("error pack_send3 %d", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error pack_send3 %d", status);
 	}
 	else{
 		int i, j, z, k;
@@ -98,7 +98,7 @@ void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 		int work_size = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
 		 packsendaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
-		if (status != 0)printf("error pack_send_average1 %d", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error pack_send_average1 %d", status);
 	}
 	else{
 		int i, j, z, k;
@@ -147,7 +147,7 @@ void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 		int work_size = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
 		 packsendaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
-		if (status != 0)printf("error pack_send_average2 %d", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error pack_send_average2 %d", status);
 	}
 	else{
 		int i, j, z, k;
@@ -196,7 +196,7 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 		int work_size = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
 		packsendaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferps[0], Bufferboundsend[0], Buffergdet[n], work_size);
 		cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
-		if (status != 0)printf("error pack_send_average3 %d", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error pack_send_average3 %d", status);
 	}
 	else{
 		int i, j, z, k;
@@ -251,7 +251,7 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 		int work_size = (j2 - j1)*(z2 - z1);
 		 unpackreceive1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, jsize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferboundreceive[0], tempBufferboundreceive[0],
 			update_staggered, Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
-		if (status != 0) printf("unpack_receive1 error! %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("unpack_receive1 error! %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -300,7 +300,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 		int work_size = (i2 - i1)*(z2 - z1);
 		 unpackreceive2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferboundreceive[0], tempBufferboundreceive[0],
 			reverse, update_staggered, Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
-		if (status != 0) printf("unpack_receive2 error! \n");
+		if (cudaGetLastError() != cudaSuccess) printf("unpack_receive2 error! \n");
 	}
 	else{
 		int i, j, z, k;
@@ -393,7 +393,7 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 		}
 		 unpackreceive3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, jsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferboundreceive[0], tempBufferboundreceive[0],
 			update_staggered, Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
-		if (status != 0) printf("unpack_receive3 error! \n");
+		if (cudaGetLastError() != cudaSuccess) printf("unpack_receive3 error! \n");
 	}
 	else{
 		int i, j, z, k;
@@ -440,7 +440,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int work_size = (j2 - j1)*(z2 - z1);
 		 unpackreceivecoarse1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
-		if (status != 0)printf("error unpack_receive_coarse1: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess)printf("error unpack_receive_coarse1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -514,7 +514,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int work_size = (i2 - i1)*(z2 - z1);
 		 unpackreceivecoarse2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
-		if (status != 0)printf("error unpack_receive_coarse2");
+		if (cudaGetLastError() != cudaSuccess)printf("error unpack_receive_coarse2");
 	}
 	else{
 		int i, j, z, k;
@@ -588,7 +588,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int work_size = (i2 - i1)*(j2 - j1);
 		 unpackreceivecoarse3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
-		if (status != 0)printf("error unpack_receive_coarse3");
+		if (cudaGetLastError() != cudaSuccess)printf("error unpack_receive_coarse3");
 	}
 	else{
 		int i, j, z, k;

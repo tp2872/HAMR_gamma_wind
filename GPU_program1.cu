@@ -1545,13 +1545,14 @@ __device__ void primtoU(double *pr, struct of_state *q, struct of_geom *geom, do
 
 /* add in source terms to equations of motion */
 __device__ void source(int N1, int N2, double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam,
-	const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r, int global_id)
+	const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r, int test)
 {
 	double mhd[NDIM][NDIM];
 	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int k;
 	//struct of_state q ;
 	double conn;
+	int global_id = icurr*(N2 + 2 * N2G) + jcurr;
 	//get_state(ph, geom, &q) ;
 	mhd_calc(ph, 0, q, mhd[0], gam);
 	mhd_calc(ph, 1, q, mhd[1], gam);
@@ -2281,7 +2282,7 @@ __global__ void fluxcalcprep(int N1, int N2, int N3, double *   F, double *  dq,
 		#endif
 	}
 }
-
+#include <stdio.h>
 
 __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
 	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, double dx_1, double dx_2, double dx_3)
@@ -2320,7 +2321,6 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, d
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3; }
-
 	if (k == 1){
 		get_geometry(N1, N2, icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
@@ -2404,6 +2404,7 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, d
 				+ LAXF*(0.5*(temp1[k]
 				+ temp3[k] - ctop*(temp4[k] - temp2[k])));
 		}
+		if (icurr == 50 && jcurr == 50 && zcurr == 50)printf("rhogpu: %f %f %f \n", dq[global_id], cmax_l, p[0]);
 
 		cmax = MY_MAX(cmax, cmin);
 		local_dtij[local_id] = factor / cmax;

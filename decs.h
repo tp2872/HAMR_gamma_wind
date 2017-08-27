@@ -425,7 +425,7 @@ void free_arrays(int n);
 #endif
 
 /*Enable/disable PPM spatial reconstruction*/
-#define PPM (1)
+#define PPM (0)
 
 /*Whether or not to use the general relativistic van Leer slope limiter*/
 #define LEER (0)

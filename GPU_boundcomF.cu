@@ -11,7 +11,7 @@ void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			cudaEventRecord(boundevent1[0]);
 		}
-		if (status != 0) printf("Error fluxsend1: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsend1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -38,7 +38,7 @@ void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			cudaEventRecord(boundevent1[0]);
 		}
-		if (status != 0) printf("Error fluxsend2: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsend2: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -65,7 +65,7 @@ void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			cudaEventRecord(boundevent1[0]);
 		}
-		if (status != 0) printf("Error fluxsend3: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsend3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -92,7 +92,7 @@ void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			cudaEventRecord(boundevent1[0]);
 		}
-		if (status != 0) printf("Error fluxsendaverage1: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsendaverage1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -128,7 +128,7 @@ void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			cudaEventRecord(boundevent1[0]);
 		}
-		if (status != 0) printf("Error fluxsendaverage2: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsendaverage2: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -164,7 +164,7 @@ void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
 			cudaEventRecord(boundevent1[0]);
 		}
-		if (status != 0) printf("Error fluxsendaverage3: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsendaverage3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -202,7 +202,7 @@ void unpack_receive1_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 		}
 		 unpackreceive1flux << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
-		if (status != 0) printf("Error fluxrec1: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxrec1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -287,7 +287,7 @@ void unpack_receive2_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 		}
 		 unpackreceive2flux << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
-		if (status != 0) printf("Error fluxrec2: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxrec2: %d \n", status);
 
 	}
 	else{
@@ -373,7 +373,7 @@ void unpack_receive3_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 		}
 		 unpackreceive3flux << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
-		if (status != 0) printf("Error fluxrec3: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) printf("Error fluxrec3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
