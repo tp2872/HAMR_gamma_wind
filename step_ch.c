@@ -1563,7 +1563,6 @@ double advance_GPU(void)
 			}
 		}
 	}
-	printf("test: %f \n", ndt1);
 	#else
 	ndt1 = 1e9;
 	#endif
@@ -1586,8 +1585,6 @@ double advance_GPU(void)
 			}
 		}
 	}
-	printf("test: %f \n", ndt2);
-
 	#else
 	ndt2 = 1e9;
 	#endif
@@ -1610,8 +1607,6 @@ double advance_GPU(void)
 			}
 		}
 	}
-	printf("test: %f \n", ndt3);
-
 	#else
 	ndt3 = 1e9;
 	#endif
@@ -1702,11 +1697,11 @@ double advance_GPU(void)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1){
 			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			//GPU_fixup(1, n_ord[n], timestep);
+			GPU_fixup(1, n_ord[n], timestep);
 		}
 		else if (prestep_half[n_ord[n]] == 1){
 			timestep = 0.5 * dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			//GPU_fixup(0, n_ord[n], timestep);
+			GPU_fixup(0, n_ord[n], timestep);
 		}
 	}
 

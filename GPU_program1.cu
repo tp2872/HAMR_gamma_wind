@@ -42,7 +42,7 @@
 
 /*Enable fma operations for improved performance on AMD GPUs*/
 //#define OPENCLBUILDOPTIONS "-cl-mad-enable"
-#define AMD 0
+#define AMD 1
 
 /*Set workgroup size*/
 #define LOCAL_WORK_SIZE 64
@@ -2404,7 +2404,7 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, d
 				+ LAXF*(0.5*(temp1[k]
 				+ temp3[k] - ctop*(temp4[k] - temp2[k])));
 		}
-		if (icurr == 50 && jcurr == 50 && zcurr == 50)printf("rhogpu: %f %f %f \n", dq[global_id], cmax_l, p[0]);
+		//if (icurr == 15 && jcurr == 50 && zcurr == 50) printf("rhogpu: %f %f %f %f\n", dq[global_id], cmax, state.ucon[0] * state.ucov[0] + state.ucon[1] * state.ucov[1] + state.ucon[2] * state.ucov[2] + state.ucon[3] * state.ucov[3], gam);
 
 		cmax = MY_MAX(cmax, cmin);
 		local_dtij[local_id] = factor / cmax;
