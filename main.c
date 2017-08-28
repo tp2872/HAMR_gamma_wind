@@ -152,9 +152,6 @@ int main(int argc, char *argv[])
 			#endif
 			bound_prim(p, 1);
 
-			if (rank == 0) printf("Start refinement %d\n", rank);
-			check_refcrit();
-			diag(LOG_OUT);
 			#if (OpenCL_enable==1)
 			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			#endif
@@ -193,6 +190,7 @@ int main(int argc, char *argv[])
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
+			bound_prim(p, 1);
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);

@@ -512,7 +512,7 @@ void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 			if (boundevent != NULL) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		 unpackreceive3E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
-			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, d1, d2, e1, e2, work_size);
+			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, e1, e2, d1, d2, work_size);
 		 cudaDeviceSynchronize();
 		 status = cudaGetLastError();
 		if (cudaGetLastError() != status) printf("Error unpack_receive3_E %d \n", status);

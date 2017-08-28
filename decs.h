@@ -73,9 +73,9 @@ extern int tag_normal;
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 4
+#define NB_2 4
+#define NB_3 4
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -119,19 +119,19 @@ extern int tag_normal;
 //#define BS_2 18
 //#define BS_3 30
 
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
 #define DEREFINE_POLE (0)
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 2
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
 #define TIMESTEP_JET 0
@@ -258,7 +258,7 @@ void free_arrays(int n);
 #define TIMER 1
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 0
+#define COPY_BFIELD 1
 
 /*Set number of rows and columns for MPI processes*/
 #define MPI_columns (2) 
@@ -878,7 +878,7 @@ struct of_state {
 };
 
 /*CUDA variables decleration*/
-extern double **NULL_POINTER;
+extern double *NULL_POINTER[NB];
 extern int gpu;
 extern int status;
 extern cudaStream_t commandQueue[NQ*N_GPU];

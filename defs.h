@@ -315,7 +315,7 @@ double edot = 0.;
 double ldot = 0.;
 
 /*CUDA variables decleration*/
-double **NULL_POINTER;
+double *NULL_POINTER[NB];
 int gpu;
 int status;
 int fix_mem[NB];

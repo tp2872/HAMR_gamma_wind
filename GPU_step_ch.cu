@@ -39,12 +39,14 @@ void GPU_init(void)
 		for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[i*NQ + j]);
 		for (j = 0; j < N_GPU;j++) if(i != j) cudaDeviceEnablePeerAccess(j, 0);
 	}
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in creating streams: %d \n", cudaGetLastError());
+	status = cudaGetLastError();
+	if (cudaSuccess != status ) printf("Error in creating streams: %d \n", cudaGetLastError());
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 	cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting cache: %d \n", cudaGetLastError());
+	status = cudaGetLastError();
+	if (cudaSuccess != status) printf("Error in setting cache: %d \n", cudaGetLastError());
 
 }
 
@@ -92,7 +94,8 @@ void set_arrays_GPU(int n, int device){
 	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent1[n][i]);
 	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent2[n][i]);
 
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in creating events: %d \n", cudaGetLastError());
+	status = cudaGetLastError();
+	if (cudaSuccess != status ) printf("Error in creating events: %d \n", status);
 
 	/*Allocate memory to 1D arrays*/
 	p_1[n] = (double(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(double));
@@ -120,6 +123,7 @@ void set_arrays_GPU(int n, int device){
 	Katm_GPU[n] = (double(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
 
 	/*Allocate memory to buffers on GPU*/
+	cudaMalloc(&NULL_POINTER[n], NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
 	cudaMalloc(&BufferF1_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double));
 	cudaMalloc(&BufferF2_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double));
 	cudaMalloc(&BufferF3_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double));
@@ -149,7 +153,6 @@ void set_arrays_GPU(int n, int device){
 	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 3: %d \n", cudaGetLastError());
 	cudaHostAlloc(&dtij_GPU[n], (nr_workgroups[n] + 1)*sizeof(double), 0);
 	cudaMalloc(&Bufferdtij[n], (nr_workgroups[n] + 1)*sizeof(double));
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 4.0: %d \n", cudaGetLastError());
 	cudaMalloc(&Buffersend1[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend1_3[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
@@ -178,8 +181,6 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&Buffersend4_7[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	cudaMalloc(&Buffersend4_8[n], NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 4.1: %d \n", cudaGetLastError());
-
 	#if(N3G>0)
 	cudaMalloc(&Buffersend5[n], NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
@@ -390,7 +391,6 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&Bufferrec6_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	#endif
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 4.3: %d \n", cudaGetLastError());
 
 	cudaHostRegister(send1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	//cudaMalloc(&Buffersend2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
@@ -408,7 +408,6 @@ void set_arrays_GPU(int n, int device){
 	//cudaMalloc(&Bufferrec5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
 	//cudaMalloc(&Bufferrec6fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
 	#endif
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 4.5: %d \n", cudaGetLastError());
 
 	/*#if(N_LEVELS>1)
 	cudaMalloc(&Bufferrec1_3fine[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
@@ -601,14 +600,14 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferrecE3corn4_8[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
 	#if(N3G>0)
-	cudaMalloc(&BufferrecE1corn9[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn10[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn11[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn12[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn5[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn6[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn7[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn8[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn9[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn10[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn11[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn12[n], 1 * (N1_GPU[n] + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn5[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn6[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn7[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn8[n], 1 * (N2_GPU[n] + 2 * N2G)*sizeof(double));
 	#endif
 	cudaMalloc(&tempBufferrecE3corn1[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(double));
 	cudaMalloc(&tempBufferrecE3corn2[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(double));
@@ -616,22 +615,22 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&tempBufferrecE3corn4[n], 1 * (N3_GPU[n] + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	cudaMalloc(&BufferrecE1corn9_3[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn9_7[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn10_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn10_5[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn11_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn11_6[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn12_4[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn12_8[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn5_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn5_4[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn6_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn6_3[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn7_5[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn7_7[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn8_6[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn8_8[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn9_3[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn9_7[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn10_1[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn10_5[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn11_2[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn11_6[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn12_4[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn12_8[n], 1 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn5_2[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn5_4[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn6_1[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn6_3[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn7_5[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn7_7[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn8_6[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn8_8[n], 1 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	cudaMalloc(&tempBufferrecE3corn1_3[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	cudaMalloc(&tempBufferrecE3corn1_4[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
@@ -668,7 +667,8 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferrecE3corn4_72[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	cudaMalloc(&BufferrecE3corn4_82[n], 1 * (N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 4.6: %d \n", cudaGetLastError());
+	status = cudaGetLastError();
+	if (cudaSuccess != status) printf("Error in setting kernel arguments 4.6: %d \n", cudaGetLastError());
 
 	/*
 	#if(N_LEVELS>1)
@@ -1184,7 +1184,6 @@ void set_arrays_GPU(int n, int device){
 	cudaHostGetDevicePointer(&BufferrecE3corn4_82[n], receive_E3_corn4_22[n], 0);
 	#endif
 	*/
-if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 4: %d \n", cudaGetLastError());
 
 	/*Set arguments of kernel*/
 	int pg, d1, d2, k;
@@ -1227,9 +1226,8 @@ if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel argument
 		}
 	}
 	
-	status=0;
 	#if(LEER)
-	status =cudaMemcpy(BufferV[n], dq_1[n], 6 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);;
+	cudaMemcpy(BufferV[n], dq_1[n], 6 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);;
 	#endif
 	
 	#if(!NONSYMMETRIC)
@@ -1237,14 +1235,15 @@ if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel argument
 	cudaMalloc(&Buffergcov[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM*sizeof(double));
 	cudaMalloc(&Buffergcon[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM*sizeof(double));
 	cudaMalloc(&Bufferconn[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NDIM*NDIM*NDIM*sizeof(double));
-	status += cudaMemcpy(Buffergdet[n], gdet_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*sizeof(double), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Buffergcov[n], gcov_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM*sizeof(double), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Buffergcon[n], gcon_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM*sizeof(double), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Bufferconn[n], conn_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NDIM*NDIM*NDIM*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Buffergdet[n], gdet_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Buffergcov[n], gcov_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Buffergcon[n], gcon_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferconn[n], conn_GPU[n], ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NDIM*NDIM*NDIM*sizeof(double), cudaMemcpyHostToDevice);
 	#else
 	#endif
 
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 5: %d \n", cudaGetLastError());
+	status = cudaGetLastError();
+	if (cudaSuccess != status) printf("Error in setting kernel arguments 5: %d \n", cudaGetLastError());
 	free(gcov_GPU[n]);
 	free(gcon_GPU[n]);
 	free(conn_GPU[n]);
@@ -1308,16 +1307,16 @@ void GPU_write(int n)
 	#endif
 	cudaSetDevice(block[n][AMR_GPU]);
 	/*Initialize memory items that have to be passed on to the GPU*/
-	status = cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Bufferph_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferph_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
 	#if(STAGGERED)
-	status += cudaMemcpy(Bufferps_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Bufferpsh_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferps_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferpsh_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
 	#endif
-	status += cudaMemcpy(Bufferpflag[n], pflag_GPU[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Bufferfailimage[n], failimage_GPU[n], NFAIL*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(BufferKatm[n], Katm_GPU[n], (N1_GPU[n] + 2 * N1G)*sizeof(double), cudaMemcpyHostToDevice);
-	status += cudaMemcpy(Bufferradius[n], radius_GPU, (N1_GPU[n] + 2 * N1G)*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferpflag[n], pflag_GPU[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferfailimage[n], failimage_GPU[n], NFAIL*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(BufferKatm[n], Katm_GPU[n], (N1_GPU[n] + 2 * N1G)*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferradius[n], radius_GPU, (N1_GPU[n] + 2 * N1G)*sizeof(double), cudaMemcpyHostToDevice);
 
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -1501,7 +1500,6 @@ void GPU_consttransport_bound(void){
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-
 		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
 	}
 
@@ -1905,6 +1903,7 @@ void GPU_finish(int n)
 	free(Katm_GPU[n]);
 	
 	status += cudaFreeHost(Bufferdtij[n]);
+	status += cudaFree(NULL_POINTER[n]);
 	status += cudaFree(BufferF1_1[n]);
 	status += cudaFree(BufferF2_1[n]);
 	status += cudaFree(BufferF3_1[n]);

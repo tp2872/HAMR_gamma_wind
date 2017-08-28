@@ -15,9 +15,9 @@
 #define REF_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 #define STAGGERED (1)
 
@@ -82,14 +82,14 @@ __global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int js
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-			#pragma unroll NG
+			//#pragma unroll NG
 			for (i = i1; i < i2; i++){
 				send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 			}
 		}
 		#if(STAGGERED)
 		for (i = i1; i <i2; i++){
-			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+(i + N1G + (i1>N1G))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G +(i1>N1G))*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G), FACE1, 0)));
+			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+(i + N1G + (i1>N1G))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G +(i1>N1G))*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G + (i1>N1G), FACE1, 0)));
 			send[(NPR + 1)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)];//readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 			send[(NPR + 2)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i+N1G)*(BS_2 + 2 * N2G) + (jcurr)];// readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 		}
@@ -110,7 +110,7 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-			#pragma unroll NG
+			//#pragma unroll NG
 			for (j = j1; j < j2; j++){
 				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			}
@@ -138,7 +138,7 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-			#pragma unroll NG
+			//#pragma unroll NG
 			for (z = z1; z < z2; z++){
 				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 			}
@@ -167,7 +167,7 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-			#pragma unroll NG
+			//#pragma unroll NG
 			for (i = i1; i < i2; i += 1 + REF_1){
 				send[k*jsize2*zsize2*(i2 - i1) / (1 + REF_1) + (i - i1) / (1 + REF_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.125*(
 					pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
@@ -212,7 +212,7 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 	
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-			#pragma unroll NG
+			//#pragma unroll NG
 			for (j = j1; j < j2; j += 1 + REF_2){
 				send[k*isize2*zsize2*(j2 - j1) / (1 + REF_2) + (j - j1) / (1 + REF_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.125*(
 					pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr)*isize + (j + N2G + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
@@ -257,7 +257,7 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
-			#pragma unroll NG
+			//#pragma unroll NG
 			for (z = z1; z < z2; z += 1 + REF_3){
 				send[k*isize2*jsize2*(z2 - z1) / (1 + REF_3) + (z - z1) / (1 + REF_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.125*(
 					pv[k*(ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G + REF_3] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] +
@@ -367,7 +367,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset gradient to 0 at eg refinement steps
 		if (nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
-				#pragma unroll NG
+				//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] = 0.0;
 				}
@@ -377,7 +377,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset primitve variables
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR; k++){
-				#pragma unroll NG
+				//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 					ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
@@ -396,7 +396,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
 				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
+					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE3, 0)));
 
 				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] /
 					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + (jcurr)]; //readImageDouble(read_imagei(gdet_GPU, sample, (int4)(jcurr, i + N1G, FACE2, 0)));
@@ -487,7 +487,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			//Reset gradient to 0 at eg refinement steps
 			if (nstep == -1){
 				for (k = 0; k < NPR + 3; k++){
-					#pragma unroll NG
+					//#pragma unroll NG
 					for (j = j1; j < j2; j++){
 						tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))] = 0.0;
 					}
@@ -497,7 +497,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			//Reset primitve variables
 			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 				for (k = 0; k < NPR; k++){
-					#pragma unroll NG
+					//#pragma unroll NG
 					for (j = j1; j < j2; j++){
 						p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
 						ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))];
@@ -528,7 +528,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-				#pragma unroll NG
+				//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					if (k == 3 || k == 4 || k == 6 || k == 7) factor = -1.;
 					else factor = 1.;
@@ -638,7 +638,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset gradient to 0 at eg refinement steps
 		if (nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
-				#pragma unroll NG
+				//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					tempreceive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))] = 0.0;
 				}
@@ -648,7 +648,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		//Reset primitve variables
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR; k++){
-				#pragma unroll NG
+				//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
 					ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))];
@@ -691,7 +691,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 	double avg, dq1, dq2, dq3;
 	
 	if (global_id < work_size){
-		#pragma unroll NG
+		//#pragma unroll NG
 		for (i = i1; i < i2; i++){
 			if (i1 < 0 && REF_1 == 1) ii = REF_1;
 			else if (REF_1 == 1) ii = 0;
@@ -786,7 +786,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 	double avg, dq1, dq2, dq3;
 
 	if (global_id < work_size){
-#pragma unroll NG
+//#pragma unroll NG
 		for (j = j1; j < j2; j++){
 			if (j1 < 0 && REF_2 == 1) ij = REF_2;
 			else if (REF_2 == 1) ij = 0;
@@ -885,7 +885,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	double avg, dq1, dq2, dq3;
 
 	if (global_id < work_size){
-#pragma unroll NG
+//#pragma unroll NG
 		for (z = z1; z < z2; z++){
 			if (z1 < 0 && REF_3 == 1) iz = REF_3;
 			else if (REF_3 == 1) iz = 0;
@@ -977,7 +977,7 @@ __global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 				}
@@ -985,7 +985,7 @@ __global__ void packsend1flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 				}
@@ -1007,7 +1007,7 @@ __global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = factor*pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 				}
@@ -1015,7 +1015,7 @@ __global__ void packsend2flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] += factor*pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 				}
@@ -1037,7 +1037,7 @@ __global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = factor*pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 				}
@@ -1045,7 +1045,7 @@ __global__ void packsend3flux(int i1, int i2, int j1, int j2, int z1, int z2, in
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] += factor*pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 				}
@@ -1361,7 +1361,7 @@ __global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*factor*(
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
@@ -1371,7 +1371,7 @@ __global__ void packsendfluxaverage1(int i1, int i2, int j1, int j2, int z1, int
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (i = i1; i < i2; i++){
 					send[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + REF_2)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += 0.25*factor*(
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(i + N1G)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + zcurr] +
@@ -1395,7 +1395,7 @@ __global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] = 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
@@ -1405,7 +1405,7 @@ __global__ void packsendfluxaverage2(int i1, int i2, int j1, int j2, int z1, int
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (j = j1; j < j2; j++){
 					send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + REF_1)*zsize2 + (zcurr - z1 - N3G) / (1 + REF_3)] += 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + pv[k*(ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr + REF_3] + pv[k*(ksize)+(icurr + REF_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
@@ -1429,7 +1429,7 @@ __global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int
 	if (global_id < work_size){
 		if (first_timestep == 1){
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] = 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
@@ -1439,7 +1439,7 @@ __global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int
 		}
 		else{
 			for (k = 0; k < NPR; k++){
-#pragma unroll NG
+//#pragma unroll NG
 				for (z = z1; z < z2; z++){
 					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + REF_1)*jsize2 + (jcurr - j1 - N2G) / (1 + REF_2)] += 0.25*factor*(
 						pv[k*(ksize)+(icurr)*isize + (jcurr)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr)*isize + (jcurr + REF_2)*(BS_3 + 2 * N3G) + z + N3G] + pv[k*(ksize)+(icurr + REF_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
