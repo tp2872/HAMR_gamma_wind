@@ -1150,7 +1150,7 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 				receive1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][0][i];
 			}
 		}
-		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive1_fine[n]), NULL, NULL, NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive1_fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){
@@ -1161,7 +1161,7 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 				receive3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][1][i];
 			}
 		}
-		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive3_fine[n]), NULL, NULL, NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive3_fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
 	}
 }
 

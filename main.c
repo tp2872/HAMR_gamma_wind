@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
-
+			check_refcrit();
 			#if (OpenCL_enable==1)
 			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			#endif

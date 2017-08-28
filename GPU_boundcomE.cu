@@ -52,7 +52,7 @@ void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 		int work_size = (i2 - i1)*(z2 - z1);
 		 packsend2E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1){
-			cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
+			if(boundevent1!=NULL) cudaEventRecord(boundevent1[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();

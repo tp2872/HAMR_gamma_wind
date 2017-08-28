@@ -62,8 +62,8 @@ extern int tag_HLLC;
 extern int tag_normal;
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
-#define REF_1 0
-#define REF_2 0
+#define REF_1 1
+#define REF_2 1
 #define REF_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -73,9 +73,9 @@ extern int tag_normal;
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 6
-#define NB_3 2
+#define NB_1 4
+#define NB_2 4
+#define NB_3 4
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -124,7 +124,7 @@ extern int tag_normal;
 #define BS_3 24
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
@@ -134,10 +134,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
-#define TIMESTEP_JET 1
+#define TIMESTEP_JET 0
 
 /*Used for load balancing with hierarchical timestepping: Make NB1 the fastest moving index*/
-#define REVERSE_ORDERING 1
+#define REVERSE_ORDERING 0
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -148,7 +148,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define BI_1(i,j,z) NB_2*NB_3*2*i+NB_3*2*j+z
 
 //The time between refinement (AMR) steps
-#define TREF 100000.
+#define TREF 10.
 
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
@@ -279,7 +279,7 @@ void free_arrays(int n);
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (0)
+#define TRANS_BOUND (1)
 
 /*Wheter to set floors in lab frame*/
 #define ZAMO_FLOOR  (0)
