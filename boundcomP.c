@@ -717,7 +717,6 @@ void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 			pack_send3(n, block[n][AMR_NBR6], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G, 0, N3G, (N1_GPU[n] + 2 * N1G), (N2_GPU[n] + 2 * N2G), send6, prim,ps, &(Bufferp[n]), &(Bufferps[n]), &(Buffersend6[n]),
 				&(boundevent1[n][60]), &(boundevent2[n][60]));
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
-				rc += MPI_Irecv(&receive5[n][0], (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (50 * NB + block[n][AMR_NBR6]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][50]);
 				if (gpu == 1){
 					rc += MPI_Irecv(&Bufferrec5[n][0], (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G) * NG, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (50 * NB + block[n][AMR_NBR6]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][50]);
 					cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[n][60],0);

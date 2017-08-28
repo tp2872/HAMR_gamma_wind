@@ -521,7 +521,7 @@ void E_rec1(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_
 					MPI_Wait(&boundreqs[n][220], &Statbound[n][220]);
 				}
 				unpack_receive1_E(n, n, block[n][AMR_NBR4], 0, 1, 0, N2_GPU[n], 0, N3_GPU[n], N2_GPU[n] + N2G, N3_GPU[n] + N3G, receive2_E, receive2_E1, NULL, E,
-					&(Bufferp[n]), &(Bufferrec2E[n]), &(Bufferrec2E1[n]), NULL, NULL, calc_corr,
+					&(Bufferp[n]), &(Bufferrec2E[n]), &(Bufferrec2E1[n]), &(NULL_POINTER[n]), NULL, calc_corr,
 					3 - (3 * (block[n][AMR_CORN4D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN4D] != block[n][AMR_NBR4] && block[n][AMR_CORN4D] != n)*(block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN4D] != -100) - 3 * (block[n][AMR_CORN4D] == -100),
 					-2 + (3 * (block[n][AMR_CORN3D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN3D] != block[n][AMR_NBR4] && block[n][AMR_CORN3D] != n)* (block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN3D] != -100) + 3 * (block[n][AMR_CORN3D] == -100),
 					3 - (3 * (block[n][AMR_CORN8D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN8D] != block[n][AMR_NBR4] && block[n][AMR_CORN8D] != n)*(block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN8D] != -100) - 3 * (block[n][AMR_CORN8D] == -100),
@@ -624,7 +624,7 @@ void E_rec1(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_
 					MPI_Wait(&boundreqs[n][240], &Statbound[n][240]);
 				}
 				unpack_receive1_E(n, n, block[n][AMR_NBR2], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n] + N2G, N3_GPU[n] + N3G, receive4_E, receive4_E1, NULL, E, &(Bufferp[n]), &(Bufferrec4E[n]), &(Bufferrec4E1[n]), NULL, NULL, calc_corr,
+					N2_GPU[n] + N2G, N3_GPU[n] + N3G, receive4_E, receive4_E1, NULL, E, &(Bufferp[n]), &(Bufferrec4E[n]), &(Bufferrec4E1[n]), &(NULL_POINTER[n]), NULL, calc_corr,
 					3 - (3 * (block[n][AMR_CORN1D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN1D] != block[n][AMR_NBR2] && block[n][AMR_CORN1D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN1D] != -100) - 3 * (block[n][AMR_CORN1D] == -100),
 					-2 + (3 * (block[n][AMR_CORN2D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN2D] != block[n][AMR_NBR2] && block[n][AMR_CORN2D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN2D] != -100) + 3 * (block[n][AMR_CORN2D] == -100),
 					3 - (3 * (block[n][AMR_CORN5D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN5D] != block[n][AMR_NBR2] && block[n][AMR_CORN5D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN5D] != -100) - 3 * (block[n][AMR_CORN5D] == -100),
@@ -731,7 +731,7 @@ void E_rec2(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_
 					MPI_Wait(&boundreqs[n][230], &Statbound[n][230]);
 				}
 				unpack_receive2_E(n, n, block[n][AMR_NBR1], 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-					N1_GPU[n] + N1G, N3_GPU[n] + N3G, receive3_E, receive3_E1, NULL, E, &(Bufferp[n]), &(Bufferrec3E[n]), &(Bufferrec3E1[n]), NULL, NULL, calc_corr,
+					N1_GPU[n] + N1G, N3_GPU[n] + N3G, receive3_E, receive3_E1, NULL, E, &(Bufferp[n]), &(Bufferrec3E[n]), &(Bufferrec3E1[n]), &(NULL_POINTER[n]), NULL, calc_corr,
 					3 - (3 * (block[n][AMR_CORN4D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN4D] != block[n][AMR_NBR1] && block[n][AMR_CORN4D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN4D] != -100) - 3 * (block[n][AMR_CORN4D] == -100),
 					-2 + (3 * (block[n][AMR_CORN1D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN1D] != block[n][AMR_NBR1] && block[n][AMR_CORN1D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN1D] != -100) + 3 * (block[n][AMR_CORN1D] == -100),
 					3 - (3 * (block[n][AMR_CORN12D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN12D] != block[n][AMR_NBR1] && block[n][AMR_CORN12D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN12D] != -100) - 3 * (block[n][AMR_CORN12D] == -100),
@@ -835,7 +835,7 @@ void E_rec2(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_
 					MPI_Wait(&boundreqs[n][210], &Statbound[n][210]);
 				}
 				unpack_receive2_E(n, n, block[n][AMR_NBR3], 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-					N1_GPU[n] + N1G, N3_GPU[n] + N3G, receive1_E, receive1_E1, NULL, E, &(Bufferp[n]), &(Bufferrec1E[n]), &(Bufferrec1E1[n]), NULL, NULL, calc_corr,
+					N1_GPU[n] + N1G, N3_GPU[n] + N3G, receive1_E, receive1_E1, NULL, E, &(Bufferp[n]), &(Bufferrec1E[n]), &(Bufferrec1E1[n]), &(NULL_POINTER[n]), NULL, calc_corr,
 					3 - (3 * (block[n][AMR_CORN3D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN3D] != block[n][AMR_NBR3] && block[n][AMR_CORN3D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN3D] != -100) - 3 * (block[n][AMR_CORN3D] == -100),
 					-2 + (3 * (block[n][AMR_CORN2D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN2D] != block[n][AMR_NBR3] && block[n][AMR_CORN2D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN2D] != -100) + 3 * (block[n][AMR_CORN2D] == -100),
 					3 - (3 * (block[n][AMR_CORN11D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN11D] != block[n][AMR_NBR3] && block[n][AMR_CORN11D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN11D] != -100) - 3 * (block[n][AMR_CORN11D] == -100),
@@ -942,7 +942,7 @@ void E_rec3(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_
 					MPI_Wait(&boundreqs[n][250], &Statbound[n][250]);
 				}
 				unpack_receive3_E(n, n, block[n][AMR_NBR6], 0, N1_GPU[n], 0, N2_GPU[n], 0, D3,
-					N1_GPU[n] + N1G, N2_GPU[n] + N2G, receive5_E, receive5_E1, NULL, E, &(Bufferp[n]), &(Bufferrec5E[n]), &(Bufferrec5E1[n]), NULL, NULL, calc_corr,
+					N1_GPU[n] + N1G, N2_GPU[n] + N2G, receive5_E, receive5_E1, NULL, E, &(Bufferp[n]), &(Bufferrec5E[n]), &(Bufferrec5E1[n]), &(NULL_POINTER[n]), NULL, calc_corr,
 					3 - (3 * (block[n][AMR_CORN12D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN12D] != block[n][AMR_NBR6] && block[n][AMR_CORN12D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN12D] != -100) - 3 * (block[n][AMR_CORN12D] == -100),
 					-2 + (3 * (block[n][AMR_CORN11D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN11D] != block[n][AMR_NBR6] && block[n][AMR_CORN11D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN11D] != -100) + 3 * (block[n][AMR_CORN11D] == -100),
 					3 - (3 * (block[n][AMR_CORN8D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN8D] != block[n][AMR_NBR6] && block[n][AMR_CORN8D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN8D] != -100) - 3 * (block[n][AMR_CORN8D] == -100),
@@ -1043,10 +1043,10 @@ void E_rec3(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, int calc_
 			//receive from same level grid
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1){
-					MPI_Wait(&boundreqs[n][260], &Statbound[n][260]);
+					MPI_Wait(&boundreqs[n][260], &Statbound[n][260]);  
 				}
 				unpack_receive3_E(n, n, block[n][AMR_NBR5], 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n] + N1G, N2_GPU[n] + N2G, receive6_E, receive6_E1, NULL, E, &(Bufferp[n]), &(Bufferrec6E[n]), &(Bufferrec6E1[n]), NULL, NULL, calc_corr,
+					N1_GPU[n] + N1G, N2_GPU[n] + N2G, receive6_E, receive6_E1, NULL, E, &(Bufferp[n]), &(Bufferrec6E[n]), &(Bufferrec6E1[n]), &(NULL_POINTER[n]), NULL, calc_corr,
 					3 - (3 * (block[n][AMR_CORN9D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN9D] != block[n][AMR_NBR5] && block[n][AMR_CORN9D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN9D] != -100) - 3 * (block[n][AMR_CORN9D] == -100),
 					-2 + (3 * (block[n][AMR_CORN10D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN10D] != block[n][AMR_NBR5] && block[n][AMR_CORN10D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN10D] != -100) + 3 * (block[n][AMR_CORN10D] == -100),
 					3 - (3 * (block[n][AMR_CORN7D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN7D] != block[n][AMR_NBR5] && block[n][AMR_CORN7D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN7D] != -100) - 3 * (block[n][AMR_CORN7D] == -100),
@@ -1922,7 +1922,7 @@ void E1_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][461], &Statbound[n][461]);
 				}
 				unpack_receive_E1_corn(n, n, block[n][AMR_CORN9], 0, N1_GPU[n], 0, N3_GPU[n], receive_E1_corn11, tempreceive_E1_corn11, NULL, E,
-					&(Bufferp[n]), &(BufferrecE1corn11[n]), &(tempBufferrecE1corn11[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE1corn11[n]), &(tempBufferrecE1corn11[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E1_corn(n, block[n][AMR_CORN9], block[n][AMR_CORN9], 0, N1_GPU[n], 0, N3_GPU[n], send_E1_corn11, receive_E1_corn11, NULL, E,
@@ -1968,7 +1968,7 @@ void E1_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][462], &Statbound[n][462]);
 				}
 				unpack_receive_E1_corn(n, n, block[n][AMR_CORN10], 0, N1_GPU[n], N2_GPU[n], N3_GPU[n], receive_E1_corn12, tempreceive_E1_corn12, NULL, E,
-					&(Bufferp[n]), &(BufferrecE1corn12[n]), &(tempBufferrecE1corn12[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE1corn12[n]), &(tempBufferrecE1corn12[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E1_corn(n, block[n][AMR_CORN10], block[n][AMR_CORN10], 0, N1_GPU[n], N2_GPU[n], N3_GPU[n], send_E1_corn12, receive_E1_corn12, NULL, E,
@@ -2014,7 +2014,7 @@ void E1_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][459], &Statbound[n][459]);
 				}
 				unpack_receive_E1_corn(n, n, block[n][AMR_CORN11], 0, N1_GPU[n], N2_GPU[n], 0, receive_E1_corn9, tempreceive_E1_corn9, NULL, E,
-					&(Bufferp[n]), &(BufferrecE1corn9[n]), &(tempBufferrecE1corn9[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE1corn9[n]), &(tempBufferrecE1corn9[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E1_corn(n, block[n][AMR_CORN11], block[n][AMR_CORN11], 0, N1_GPU[n], N2_GPU[n], 0, send_E1_corn9, receive_E1_corn9, NULL, E,
@@ -2059,7 +2059,7 @@ void E1_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][460], &Statbound[n][460]);
 				}
 				unpack_receive_E1_corn(n, n, block[n][AMR_CORN12], 0, N1_GPU[n], 0, 0, receive_E1_corn10, tempreceive_E1_corn10, NULL, E,
-					&(Bufferp[n]), &(BufferrecE1corn10[n]), &(tempBufferrecE1corn10[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE1corn10[n]), &(tempBufferrecE1corn10[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E1_corn(n, block[n][AMR_CORN12], block[n][AMR_CORN12], 0, N1_GPU[n], 0, 0, send_E1_corn10, receive_E1_corn10, NULL, E,
@@ -2111,7 +2111,7 @@ void E2_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][457], &Statbound[n][457]);
 				}
 				unpack_receive_E2_corn(n, n, block[n][AMR_CORN5], N1_GPU[n], 0, N2_GPU[n], 0, receive_E2_corn7, tempreceive_E2_corn7, NULL, E,
-					&(Bufferp[n]), &(BufferrecE2corn7[n]), &(tempBufferrecE2corn7[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE2corn7[n]), &(tempBufferrecE2corn7[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E2_corn(n, block[n][AMR_CORN5], block[n][AMR_CORN5], N1_GPU[n], 0, N2_GPU[n], 0, send_E2_corn7, receive_E2_corn7, NULL, E,
@@ -2157,7 +2157,7 @@ void E2_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][458], &Statbound[n][458]);
 				}
 				unpack_receive_E2_corn(n, n, block[n][AMR_CORN6], N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], receive_E2_corn8, tempreceive_E2_corn8, NULL, E,
-					&(Bufferp[n]), &(BufferrecE2corn8[n]), &(tempBufferrecE2corn8[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE2corn8[n]), &(tempBufferrecE2corn8[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E2_corn(n, block[n][AMR_CORN6], block[n][AMR_CORN6], N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], send_E2_corn8, receive_E2_corn8, NULL, E,
@@ -2203,7 +2203,7 @@ void E2_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][455], &Statbound[n][455]);
 				}
 				unpack_receive_E2_corn(n, n, block[n][AMR_CORN7], 0, 0, N2_GPU[n], N3_GPU[n], receive_E2_corn5, tempreceive_E2_corn5, NULL, E,
-					&(Bufferp[n]), &(BufferrecE2corn5[n]), &(tempBufferrecE2corn5[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE2corn5[n]), &(tempBufferrecE2corn5[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E2_corn(n, block[n][AMR_CORN7], block[n][AMR_CORN7], 0, 0, N2_GPU[n], N3_GPU[n], send_E2_corn5, receive_E2_corn5, NULL, E,
@@ -2248,7 +2248,7 @@ void E2_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][456], &Statbound[n][456]);
 				}
 				unpack_receive_E2_corn(n, n, block[n][AMR_CORN8], 0, 0, N2_GPU[n], 0, receive_E2_corn6, tempreceive_E2_corn6, NULL, E,
-					&(Bufferp[n]), &(BufferrecE2corn6[n]), &(tempBufferrecE2corn6[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE2corn6[n]), &(tempBufferrecE2corn6[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E2_corn(n, block[n][AMR_CORN8], block[n][AMR_CORN8], 0, 0, N2_GPU[n], 0, send_E2_corn6, receive_E2_corn6, NULL, E,
@@ -2302,7 +2302,7 @@ void E3_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][453], &Statbound[n][453]);
 				}
 				unpack_receive_E3_corn(n, n, block[n][AMR_CORN1], N1_GPU[n], 0, 0, N3_GPU[n], receive_E3_corn3, tempreceive_E3_corn3, NULL, E,
-					&(Bufferp[n]), &(BufferrecE3corn3[n]), &(tempBufferrecE3corn3[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE3corn3[n]), &(tempBufferrecE3corn3[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E3_corn(n, block[n][AMR_CORN1], block[n][AMR_CORN1], N1_GPU[n], 0, 0, N3_GPU[n], send_E3_corn3, receive_E3_corn3, NULL, E,
@@ -2348,7 +2348,7 @@ void E3_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][454], &Statbound[n][454]);
 				}
 				unpack_receive_E3_corn(n, n, block[n][AMR_CORN2], N1_GPU[n], N2_GPU[n], 0, N3_GPU[n], receive_E3_corn4, tempreceive_E3_corn4, NULL, E,
-					&(Bufferp[n]), &(BufferrecE3corn4[n]), &(tempBufferrecE3corn4[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE3corn4[n]), &(tempBufferrecE3corn4[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E3_corn(n, block[n][AMR_CORN2], block[n][AMR_CORN2], N1_GPU[n], N2_GPU[n], 0, N3_GPU[n], send_E3_corn4, receive_E3_corn4, NULL, E,
@@ -2395,7 +2395,7 @@ void E3_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][451], &Statbound[n][451]);
 				}
 				unpack_receive_E3_corn(n, n, block[n][AMR_CORN3], 0, N2_GPU[n], 0, N3_GPU[n], receive_E3_corn1, tempreceive_E3_corn1, NULL, E,
-					&(Bufferp[n]), &(BufferrecE3corn1[n]), &(tempBufferrecE3corn1[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE3corn1[n]), &(tempBufferrecE3corn1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E3_corn(n, block[n][AMR_CORN3], block[n][AMR_CORN3], 0, N2_GPU[n], 0, N3_GPU[n], send_E3_corn1, receive_E3_corn1, NULL, E,
@@ -2440,7 +2440,7 @@ void E3_receive_corn(double(*restrict E[NB])[NDIM], double *Bufferp[NB], int n, 
 					MPI_Wait(&boundreqs[n][452], &Statbound[n][452]);
 				}
 				unpack_receive_E3_corn(n, n, block[n][AMR_CORN4], 0, 0, 0, N3_GPU[n], receive_E3_corn2, tempreceive_E3_corn2, NULL, E,
-					&(Bufferp[n]), &(BufferrecE3corn2[n]), &(tempBufferrecE3corn2[n]), NULL, NULL, calc_corr);
+					&(Bufferp[n]), &(BufferrecE3corn2[n]), &(tempBufferrecE3corn2[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive_E3_corn(n, block[n][AMR_CORN4], block[n][AMR_CORN4], 0, 0, 0, N3_GPU[n], send_E3_corn2, receive_E3_corn2, NULL, E,

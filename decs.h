@@ -128,7 +128,7 @@ extern int tag_normal;
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -275,11 +275,11 @@ void free_arrays(int n);
 #define NQ (40/N_GPU)
 
 /*Pin or don't pin memory for GPU transfers*/
-#define PINNED 1
+#define GPU_DIRECT 0
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1)
+#define TRANS_BOUND (0)
 
 /*Wheter to set floors in lab frame*/
 #define ZAMO_FLOOR  (0)

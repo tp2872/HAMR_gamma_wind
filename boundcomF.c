@@ -419,7 +419,7 @@ void flux_send3(double(*restrict F3[NB])[NPR], double * Bufferp[NB], int n){
 			}
 		}
 	}
-
+	  
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6]][AMR_TIMELEVEL] > block[n][AMR_TIMELEVEL]){
@@ -514,7 +514,7 @@ void flux_rec1(double(*restrict F1[NB])[NPR], double * Bufferp[NB], int n, int c
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1){
 					MPI_Wait(&boundreqs[n][120], &Statbound[n][120]);
 				}
-				unpack_receive1_flux(n, n, block[n][AMR_NBR4], 0, 1, 0, N2_GPU[n], 0, N3_GPU[n], N2_GPU[n], N3_GPU[n], receive2_flux, receive2_flux1, NULL, F1, &(Bufferp[n]), &(Bufferrec2flux[n]), &(Bufferrec2flux1[n]), NULL, NULL, calc_corr);
+				unpack_receive1_flux(n, n, block[n][AMR_NBR4], 0, 1, 0, N2_GPU[n], 0, N3_GPU[n], N2_GPU[n], N3_GPU[n], receive2_flux, receive2_flux1, NULL, F1, &(Bufferp[n]), &(Bufferrec2flux[n]), &(Bufferrec2flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive1_flux(n, block[n][AMR_NBR4], block[n][AMR_NBR4], 0, 1, 0, N2_GPU[n], 0, N3_GPU[n], N2_GPU[n], N3_GPU[n], send2_flux, receive2_flux1, NULL, F1,
@@ -593,7 +593,7 @@ void flux_rec1(double(*restrict F1[NB])[NPR], double * Bufferp[NB], int n, int c
 					MPI_Wait(&boundreqs[n][140], &Statbound[n][140]);
 				}
 				unpack_receive1_flux(n, n, block[n][AMR_NBR2], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n], N3_GPU[n], receive4_flux, receive4_flux1, NULL, F1, &(Bufferp[n]), &(Bufferrec4flux[n]), &(Bufferrec4flux1[n]), NULL, NULL, calc_corr);
+					N2_GPU[n], N3_GPU[n], receive4_flux, receive4_flux1, NULL, F1, &(Bufferp[n]), &(Bufferrec4flux[n]), &(Bufferrec4flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive1_flux(n, block[n][AMR_NBR2], block[n][AMR_NBR2], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
@@ -677,7 +677,7 @@ void flux_rec2(double(*restrict F2[NB])[NPR], double * Bufferp[NB], int n, int c
 					MPI_Wait(&boundreqs[n][130], &Statbound[n][130]);
 				}
 				unpack_receive2_flux(n, n, block[n][AMR_NBR1], 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-					N1_GPU[n], N3_GPU[n], receive3_flux, receive3_flux1, NULL, F2, &(Bufferp[n]), &(Bufferrec3flux[n]), &(Bufferrec3flux1[n]), NULL, NULL, calc_corr);
+					N1_GPU[n], N3_GPU[n], receive3_flux, receive3_flux1, NULL, F2, &(Bufferp[n]), &(Bufferrec3flux[n]), &(Bufferrec3flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive2_flux(n, block[n][AMR_NBR1], block[n][AMR_NBR1], 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
@@ -757,7 +757,7 @@ void flux_rec2(double(*restrict F2[NB])[NPR], double * Bufferp[NB], int n, int c
 					MPI_Wait(&boundreqs[n][110], &Statbound[n][110]);
 				}
 				unpack_receive2_flux(n, n, block[n][AMR_NBR3], 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-					N1_GPU[n], N3_GPU[n], receive1_flux, receive1_flux1, NULL, F2, &(Bufferp[n]), &(Bufferrec1flux[n]), &(Bufferrec1flux1[n]), NULL, NULL, calc_corr);
+					N1_GPU[n], N3_GPU[n], receive1_flux, receive1_flux1, NULL, F2, &(Bufferp[n]), &(Bufferrec1flux[n]), &(Bufferrec1flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive2_flux(n, block[n][AMR_NBR3], block[n][AMR_NBR3], 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
@@ -840,7 +840,7 @@ void flux_rec3(double(*restrict F3[NB])[NPR], double * Bufferp[NB], int n, int c
 					MPI_Wait(&boundreqs[n][150], &Statbound[n][150]);
 				}
 				unpack_receive3_flux(n, n, block[n][AMR_NBR6], 0, N1_GPU[n], 0, N2_GPU[n], 0, D3,
-					N1_GPU[n], N2_GPU[n], receive5_flux, receive5_flux1, NULL, F3, &(Bufferp[n]), &(Bufferrec5flux[n]), &(Bufferrec5flux1[n]), NULL, NULL, calc_corr);
+					N1_GPU[n], N2_GPU[n], receive5_flux, receive5_flux1, NULL, F3, &(Bufferp[n]), &(Bufferrec5flux[n]), &(Bufferrec5flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive3_flux(n, block[n][AMR_NBR6], block[n][AMR_NBR6], 0, N1_GPU[n], 0, N2_GPU[n], 0, D3,
@@ -920,7 +920,7 @@ void flux_rec3(double(*restrict F3[NB])[NPR], double * Bufferp[NB], int n, int c
 					MPI_Wait(&boundreqs[n][160], &Statbound[n][160]);
 				}
 				unpack_receive3_flux(n, n, block[n][AMR_NBR5], 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n], N2_GPU[n], receive6_flux, receive6_flux1, NULL, F3, &(Bufferp[n]), &(Bufferrec6flux[n]), &(Bufferrec6flux1[n]), NULL, NULL, calc_corr);
+					N1_GPU[n], N2_GPU[n], receive6_flux, receive6_flux1, NULL, F3, &(Bufferp[n]), &(Bufferrec6flux[n]), &(Bufferrec6flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
 				unpack_receive3_flux(n, block[n][AMR_NBR5], block[n][AMR_NBR5], 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
