@@ -37,14 +37,14 @@ void GPU_init(void)
 {
 	int i, j, pos;
 	//Create concurrent commandqueues
-	for (i = 0; i < N_GPU; i++){
-		cudaSetDevice(i);
+	for (i = 0; i < 1; i++){
+		cudaSetDevice(rank%N_GPU);
 		for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[i*NQ + j]);
 		status = cudaGetLastError();
 		if (cudaSuccess != status) printf("Error in creating streams1: %d \n", status);
-		for (j = 0; j < N_GPU; j++){
-			cudaDeviceCanAccessPeer(&pos, i, j);
-			if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
+		for (j = 0; j < rank%N_GPU; j++){
+			//cudaDeviceCanAccessPeer(&pos, i, j);
+			//if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
 		}
 		status = cudaGetLastError();
 		if (cudaSuccess != status) printf("Error in creating streams2: %d \n", status);
@@ -1193,7 +1193,7 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	#endif
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error in setting kernel arguments 4.6: %d \n", cudaGetLastError());
+	if (cudaSuccess != status) printf("Error in setting kernel arguments 4.6: %d \n", status);
 
 	/*Set arguments of kernel*/
 	int pg, d1, d2, k;
@@ -1318,10 +1318,10 @@ void GPU_write(int n)
 	cudaSetDevice(block[n][AMR_GPU]);
 	/*Initialize memory items that have to be passed on to the GPU*/
 	cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(Bufferph_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferph_1[n], ph_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
 	#if(STAGGERED)
 	cudaMemcpy(Bufferps_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(Bufferpsh_1[n], ps_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(Bufferpsh_1[n], psh_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
 	#endif
 	cudaMemcpy(Bufferpflag[n], pflag_GPU[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(Bufferfailimage[n], failimage_GPU[n], NFAIL*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int), cudaMemcpyHostToDevice);
@@ -1851,6 +1851,7 @@ void GPU_read(int n)
 {
 	int i, j, z, k, l, pg, d1, d2;
 	cudaSetDevice(block[n][AMR_GPU]);
+	cudaDeviceSynchronize();
 	cudaMemcpy(p_1[n], Bufferp_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(ph_1[n], Bufferph_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost);
 	#if(STAGGERED)
@@ -1913,7 +1914,8 @@ void GPU_finish(int n)
 	free(failimage_GPU[n]);
 	free(Katm_GPU[n]);
 	
-	status += cudaFreeHost(Bufferdtij[n]);
+	status += cudaFreeHost(dtij_GPU[n]);
+	status += cudaFree(Bufferdtij[n]);
 	status += cudaFree(BufferF1_1[n]);
 	status += cudaFree(BufferF2_1[n]);
 	status += cudaFree(BufferF3_1[n]);
@@ -2876,10 +2878,6 @@ void GPU_finish(int n)
 	status += cudaFreeHost(BufferrecE3corn4_72[n]);
 	status += cudaFreeHost(BufferrecE3corn4_82[n]);
 	#endif
-	cudaFreeHost(send1_fine);
-	cudaFreeHost(send3_fine);
-	cudaFreeHost(receive1_fine);
-	cudaFreeHost(receive3_fine);
 	
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();

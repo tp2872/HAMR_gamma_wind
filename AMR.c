@@ -473,7 +473,7 @@ void set_AMR(void){
 		block[n][AMR_NODE] = -1;
 
 		//No special GPU assigned yet
-		block[n][AMR_GPU] = 0;
+		block[n][AMR_GPU] = rank%N_GPU;
 
 		//For the moment only activate the 0 level blocks
 		if (block[n][AMR_LEVEL] == 0){
@@ -690,9 +690,9 @@ void balance_load_gpu(void){
 			}
 			if (gpu >= N_GPU) fprintf(stderr, "Error balance_load_gpu() \n");
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])	GPU_finish(n_ord_RM[n]);
-			block[n_ord_RM[n]][AMR_GPU] = gpu;
+			block[n_ord_RM[n]][AMR_GPU] = rank%N_GPU;
 			commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu * NQ + n%NQ];
-			if (gpu != block[n_ord_RM[n]][AMR_GPU])set_arrays_GPU(n_ord_RM[n], gpu);
+			if (gpu != block[n_ord_RM[n]][AMR_GPU])set_arrays_GPU(n_ord_RM[n], block[n_ord_RM[n]][AMR_GPU]);
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])GPU_write(n_ord_RM[n]);
 			n_active_local_max[gpu]++;
 			n_active_local_min[gpu]++;

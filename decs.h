@@ -128,7 +128,7 @@ extern int tag_normal;
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -269,7 +269,7 @@ void free_arrays(int n);
 #define N_GPUx 1
 #define N_GPUy 1
 #define N_GPUz 1
-#define N_GPU 1
+#define N_GPU 4
 
 /*Set the number of commandqueues per GPU*/
 #define NQ (40/N_GPU)
