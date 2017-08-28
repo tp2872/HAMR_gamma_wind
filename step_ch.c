@@ -1551,7 +1551,7 @@ double advance_GPU(void)
 	}
 
 	read_time_GPU();
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][1] = fluxcalc_GPU(n_ord[n]);
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][1] = fluxcalc_GPU(n_ord[n],1);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt1 = 1e9;
 		for (n = 0; n < n_active; n++){
@@ -1573,7 +1573,7 @@ double advance_GPU(void)
 	}
 
 	read_time_GPU();
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][2] = fluxcalc_GPU(n_ord[n]);
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][2] = fluxcalc_GPU(n_ord[n],2);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt2 = 1e9;
 		for (n = 0; n < n_active; n++){
@@ -1595,7 +1595,7 @@ double advance_GPU(void)
 	}
 
 	read_time_GPU();
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][3] = fluxcalc_GPU(n_ord[n]);
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][3] = fluxcalc_GPU(n_ord[n],3);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){

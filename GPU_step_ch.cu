@@ -6,22 +6,25 @@ void read_time_GPU(void){
 	int n;
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1){
-			cudaMemcpyAsync(dtij_GPU[n_ord[n]], Bufferdtij[n_ord[n]], (int)((nr_workgroups[n_ord[n]] - 1) * sizeof(double)), cudaMemcpyDeviceToHost, commandQueueGPU[n_ord[n]]);
+			cudaMemcpyAsync(dtij_GPU[n_ord[n]], Bufferdtij[n_ord[n]], (int)((nr_workgroups[n_ord[n]]) * sizeof(double)), cudaMemcpyDeviceToHost, commandQueueGPU[n_ord[n]]);
 		}
 	}
 }
 
 /*Do last step of reduction of timestep on CPU*/
-double fluxcalc_GPU(int n)
+double fluxcalc_GPU(int n, int dir)
 {
 	double ndt;
 	int y;
 	ndt = 1.e9;
-
+	int nr;
+	if (dir == 1) nr = nr_workgroups2_1[n];
+	else if (dir == 2) nr = nr_workgroups2_2[n];
+	else if (dir == 3) nr = nr_workgroups2_3[n];
 	cudaStreamSynchronize(commandQueueGPU[n_ord[n]]);
 	status = cudaGetLastError();
 	if(status!=0) printf("Error fluxcalc_GPU %d\n", status);
-	for (y = 0; y < nr_workgroups[n] - 1; y++){
+	for (y = 0; y < nr; y++){
 		if (dtij_GPU[n][y] < ndt && dtij_GPU[n][y] < 1.e9 && dtij_GPU[n][y] > 1.e-6){
 			ndt = dtij_GPU[n][y];
 		}

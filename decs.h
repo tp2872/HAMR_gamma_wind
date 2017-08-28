@@ -73,9 +73,9 @@ extern int tag_normal;
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_1 2
+#define NB_2 6
+#define NB_3 2
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -124,7 +124,7 @@ extern int tag_normal;
 #define BS_3 24
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
@@ -134,10 +134,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
-#define TIMESTEP_JET 0
+#define TIMESTEP_JET 1
 
 /*Used for load balancing with hierarchical timestepping: Make NB1 the fastest moving index*/
-#define REVERSE_ORDERING 0
+#define REVERSE_ORDERING 1
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -496,7 +496,7 @@ void free_arrays(int n);
 
 /*Define local work size for GPU. Needed to optimize GPU performance*/
 #if(GPU_ENABLED == 1 || GPU_DEBUG == 1 || GPU_BENCHMARK==1) 
-#define LOCAL_WORK_SIZE 64
+#define LOCAL_WORK_SIZE 128
 #else
 #define LOCAL_WORK_SIZE 1
 #endif
@@ -1692,7 +1692,7 @@ int rm_order(void);
 double advance(int flag);
 double advance_GPU(void);
 double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int dir, int flag, int n);
-double fluxcalc_GPU(int n);
+double fluxcalc_GPU(int n, int dir);
 void   flux_ct(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n);
 void const_transport1(double(*restrict p[NB])[NPR], int n);
 void const_transport_bound(void);

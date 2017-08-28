@@ -43,6 +43,7 @@
 ***********************************************************************************/
 #include "decs_MPI.h"
 #include "defs.h"
+#include "cudaProfiler.h"
 
 /*****************************************************************/
 /*****************************************************************
@@ -122,6 +123,8 @@ int main(int argc, char *argv[])
 	defcon = 1. ;
 	time_spent3 = 0.0;
 	begin1 = clock();
+	//cuProfilerStart();
+
 	while(t < tf) {
 		/* step variables forward in time */
 		nstroke = 0 ;	
@@ -208,7 +211,7 @@ int main(int argc, char *argv[])
 			begin1 = clock();
 		}
 		#endif
-
+		//cuProfilerStop();
 		/* deal with failed timestep, though we usually exit upon failure */
 		if(failed) {
 			restart_read() ;

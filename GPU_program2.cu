@@ -25,7 +25,7 @@
 #define AMD 1
 
 /*Set workgroup size*/
-#define LOCAL_WORK_SIZE 64
+#define LOCAL_WORK_SIZE 128
 
 /*Set the grid size for 2D and 3D*/
 #define NG 2

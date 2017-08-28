@@ -45,7 +45,7 @@
 #define AMD 1
 
 /*Set workgroup size*/
-#define LOCAL_WORK_SIZE 64
+#define LOCAL_WORK_SIZE 128
 
 /* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
 #define USE_ISENTROPIC 1
