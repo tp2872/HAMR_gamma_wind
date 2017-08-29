@@ -1621,7 +1621,9 @@ void MPI_initialize(int argc, char *argv[])
 	int dims[3], periods[3], coords[3];
 
 	/*Get basic initialisation*/
-	cudaSetDevice(MV2_COMM_WORLD_LOCAL_RANK%N_GPU);
+	local_rank = atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	cudaSetDevice(local_rank%N_GPU);
+
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 	//rc = MPI_Init(&argc, &argv);
 	if (rc != MPI_SUCCESS) {

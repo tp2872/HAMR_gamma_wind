@@ -73,9 +73,9 @@ extern int tag_normal;
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 4
+#define NB_2 4
+#define NB_3 4
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -119,16 +119,16 @@ extern int tag_normal;
 //#define BS_2 18
 //#define BS_3 30
 
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
 #define DEREFINE_POLE (0)
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -148,7 +148,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define BI_1(i,j,z) NB_2*NB_3*2*i+NB_3*2*j+z
 
 //The time between refinement (AMR) steps
-#define TREF 10000.
+#define TREF 10.
 
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
@@ -272,7 +272,7 @@ void free_arrays(int n);
 #define N_GPU 4
 
 /*Set the number of commandqueues per GPU*/
-#define NQ (40/N_GPU)
+#define NQ (40)
 
 /*Pin or don't pin memory for GPU transfers*/
 #define GPU_DIRECT 0
@@ -577,9 +577,9 @@ MNEMONICS SECTION
 #define M_PI 3.14159265358979323846264338327950288 
 #endif 
 
-#ifndef MV2_COMM_WORLD_LOCAL_RANK 
-#define MV2_COMM_WORLD_LOCAL_RANK 0
-#endif 
+//#ifndef MV2_COMM_WORLD_LOCAL_RANK 
+//#define MV2_COMM_WORLD_LOCAL_RANK 0
+//#endif 
 
 /*Set number of AMR parameters*/
 #define NV 79
@@ -687,7 +687,7 @@ extern int count_gpu[32];
 extern int N1_GPU_offset[NB];
 extern int N2_GPU_offset[NB];
 extern int N3_GPU_offset[NB];
-extern int numtasks, rank, rc;
+extern int numtasks, rank,local_rank, rc;
 extern int max1D_MPI;
 
 extern int mpi_nbrs[4][2];

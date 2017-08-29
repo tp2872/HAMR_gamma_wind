@@ -36,25 +36,21 @@ double fluxcalc_GPU(int n, int dir)
 void GPU_init(void)
 {
 	int i, j, pos;
+	
 	//Create concurrent commandqueues
-	for (i = 0; i < 1; i++){
-		cudaSetDevice(rank%N_GPU);
-		for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[i*NQ + j]);
-		status = cudaGetLastError();
-		if (cudaSuccess != status) printf("Error in creating streams1: %d \n", status);
-		for (j = 0; j < rank%N_GPU; j++){
-			//cudaDeviceCanAccessPeer(&pos, i, j);
-			//if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
-		}
-		status = cudaGetLastError();
-		if (cudaSuccess != status) printf("Error in creating streams2: %d \n", status);
-
-		/*Set cache config, this is fastest on NVIDIA Kepler*/
-		cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
-		cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-		status = cudaGetLastError();
-		if (cudaSuccess != status) printf("Error in setting cache: %d \n", cudaGetLastError());
+	cudaSetDevice(local_rank%N_GPU);
+	for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[j]);
+	for (j = 0; j < N_GPU; j++){
+		cudaDeviceCanAccessPeer(&pos, local_rank%N_GPU, j);
+		if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
 	}
+
+	/*Set cache config, this is fastest on NVIDIA Kepler*/
+	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+	//cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+	
+	status = cudaGetLastError();
+	if (cudaSuccess != status) printf("Error in setting cache: %d \n", cudaGetLastError());
 }
 
 void set_arrays_GPU(int n, int device){

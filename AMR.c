@@ -473,7 +473,7 @@ void set_AMR(void){
 		block[n][AMR_NODE] = -1;
 
 		//No special GPU assigned yet
-		block[n][AMR_GPU] = rank%N_GPU;
+		block[n][AMR_GPU] = local_rank%N_GPU;
 
 		//For the moment only activate the 0 level blocks
 		if (block[n][AMR_LEVEL] == 0){
@@ -649,8 +649,6 @@ void balance_load(void){
 void balance_load_gpu(void){
 	int i, g, tt, fp, ip, y, q, rem, n, gpu;
 	int n_active_steps = 0;
-	int timelevel_cutoff = AMR_MAXTIMELEVEL;
-	int n_active_local_max[N_GPU], n_active_local_min[N_GPU];
 	int steps_RM[NB];
 
 	//Find the appropriate GPU assuming Z ordering
@@ -661,57 +659,28 @@ void balance_load_gpu(void){
 	#endif
 
 	//Loop over number of GPUs
-	n_active_local_max[0] = 0;
-	n_active_local_min[0] = 1;
-	do{
-		if (n_active_local_max[0] > MAX_BLOCKS / N_GPU || (n_active_local_min[0] == 0 && n_active > N_GPU)) timelevel_cutoff /= 2;
-		n_active_steps = 0;
-		for (g = 0; g < N_GPU; g++) n_active_local_max[g] = 0;
-		for (g = 0; g < N_GPU; g++) n_active_local_min[g] = 0;
-		for (n = 0; n < n_active; n++){
-			steps_RM[n] = n_active_steps + AMR_MAXTIMELEVEL / 2 / MY_MIN(block[n_ord_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
-			n_active_steps += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
-		}
-
-		tt = -1, ip = 0, fp = 0, rem, gpu = 0;
-		rem = n_active_steps % (N_GPU); //remainder of last unfilled block
-		y = (n_active_steps - rem) / (N_GPU); //number of blocks/gpu
-
-		for (n = 0; n < n_active; n++){
-			gpu = (steps_RM[n] - steps_RM[n] % (y + 1)) / (y + 1);
-			if (gpu >= rem){
-				if (tt == -1){
-					fp = gpu;
-					ip = steps_RM[n] - steps_RM[n] % (y + 1);
-					tt = 0;
-				}
-				gpu = fp + ((steps_RM[n] - ip) - (steps_RM[n] - ip) % y) / y;
-			}
-			gpu = MV2_COMM_WORLD_LOCAL_RANK%N_GPU;;
-			if (gpu >= N_GPU) fprintf(stderr, "Error balance_load_gpu() \n");
-			if (gpu != block[n_ord_RM[n]][AMR_GPU])	GPU_finish(n_ord_RM[n]);
-			block[n_ord_RM[n]][AMR_GPU] = MV2_COMM_WORLD_LOCAL_RANK%N_GPU;
-			commandQueueGPU[n_ord_RM[n]] = commandQueue[block[n_ord_RM[n]][AMR_GPU] * NQ + n%NQ];
-			if (gpu != block[n_ord_RM[n]][AMR_GPU])set_arrays_GPU(n_ord_RM[n], block[n_ord_RM[n]][AMR_GPU]);
-			if (gpu != block[n_ord_RM[n]][AMR_GPU])GPU_write(n_ord_RM[n]);
-			n_active_local_max[gpu]++;
-			n_active_local_min[gpu]++;
-		}
-
-		for (i = 1; i < N_GPU; i++){
-			n_active_local_max[0] = MY_MAX(n_active_local_max[0], n_active_local_max[i]);
-			n_active_local_min[0] = MY_MIN(n_active_local_min[0], n_active_local_min[i]);
-		}
-	} while ((n_active_local_max[0] > MAX_BLOCKS / N_GPU || (n_active_local_min[0] == 0 && n_active > N_GPU)) && timelevel_cutoff >= 2);
-
-	for (i = 0; i < N_GPU; i++){
-		count_gpu[i] = 0;
-		for (n = 0; n < n_active; n++){
-			if (block[n_ord_RM[n]][AMR_GPU] == i)count_gpu[i] += AMR_MAXTIMELEVEL / block[n_ord_RM[n]][AMR_TIMELEVEL];
-		}
+	for (n = 0; n < n_active; n++){
+		steps_RM[n] = n_active_steps + AMR_MAXTIMELEVEL / 2 / block[n_ord_RM[n]][AMR_TIMELEVEL];
+		n_active_steps += AMR_MAXTIMELEVEL / block[n_ord_RM[n]][AMR_TIMELEVEL];
 	}
-	if (rank == 0) fprintf(stderr, "Number of active blocks on node 0 per GPU (total, min,max): %d %d %d %d \n", MV2_COMM_WORLD_LOCAL_RANK, n_active, n_active_local_min[0], n_active_local_max[0]);
 
+	tt = -1, ip = 0, fp = 0, rem, gpu = 0;
+	rem = n_active_steps % (NQ); //remainder of last unfilled block
+	y = (n_active_steps - rem) / (NQ); //number of blocks/gpu
+
+	for (n = 0; n < n_active; n++){
+		gpu = (steps_RM[n] - steps_RM[n] % (y + 1)) / (y + 1);
+		if (gpu >= rem){
+			if (tt == -1){
+				fp = gpu;
+				ip = steps_RM[n] - steps_RM[n] % (y + 1);
+				tt = 0;
+			}
+			gpu = fp + ((steps_RM[n] - ip) - (steps_RM[n] - ip) % y) / y;
+		}
+		if (gpu >= NQ) fprintf(stderr, "Error balance_load_gpu() \n");
+		commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu];
+	}
 }
 
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */

@@ -137,7 +137,7 @@ int N3_GPU[NB];
 int N1_GPU_offset[NB];
 int N2_GPU_offset[NB];
 int N3_GPU_offset[NB];
-int numtasks, rank, rc;
+int numtasks, rank, local_rank, rc;
 int max1D_MPI;
 #if (MPI_enable)
 MPI_Request req[100], boundreqs[NB][600], cornreqs[NB][16];
