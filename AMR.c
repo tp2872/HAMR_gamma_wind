@@ -488,7 +488,6 @@ void set_AMR(void){
 
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
-
 	activate_blocks();
 	set_corners();
 
@@ -688,10 +687,11 @@ void balance_load_gpu(void){
 				}
 				gpu = fp + ((steps_RM[n] - ip) - (steps_RM[n] - ip) % y) / y;
 			}
+			gpu = MV2_COMM_WORLD_LOCAL_RANK%N_GPU;;
 			if (gpu >= N_GPU) fprintf(stderr, "Error balance_load_gpu() \n");
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])	GPU_finish(n_ord_RM[n]);
 			block[n_ord_RM[n]][AMR_GPU] = MV2_COMM_WORLD_LOCAL_RANK%N_GPU;
-			commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu * NQ + n%NQ];
+			commandQueueGPU[n_ord_RM[n]] = commandQueue[block[n_ord_RM[n]][AMR_GPU] * NQ + n%NQ];
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])set_arrays_GPU(n_ord_RM[n], block[n_ord_RM[n]][AMR_GPU]);
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])GPU_write(n_ord_RM[n]);
 			n_active_local_max[gpu]++;

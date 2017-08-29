@@ -103,7 +103,7 @@ void param_read(FILE *fp){
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
 	int u;
-
+	double dummy;
 	//Print out essential stuff for restart
 	fread(&t, double_size, 1, fp);
 	fread(&n_active, int_size, 1, fp);
@@ -111,12 +111,12 @@ void param_read(FILE *fp){
 	fread(&nstep, int_size, 1, fp);
 	fread(&DTd, double_size, 1, fp);
 	fread(&DTl, double_size, 1, fp);
-	fread(&DTr, double_size, 1, fp);
+	fread(&dummy, double_size, 1, fp);
 	fread(&dump_cnt, int_size, 1, fp);
 	fread(&rdump_cnt, int_size, 1, fp);
 	fread(&dt, double_size, 1, fp);
 	fread(&failed, int_size, 1, fp);
-	
+
 	if (calc_mem(n_active_total)>((double)numtasks*(double)(N_GPU)* 4. * (pow(10., 9.))) && rank == 0){
 		fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by reading in too many blocks! Code will segfault! \n");
 		max_levels -= 1;
@@ -181,7 +181,7 @@ void param_read(FILE *fp){
 	fread(&rb, int_size, 1, fp);
 	fread(&docyl, int_size, 1, fp);
 	fread(&dk, int_size, 1, fp);
-	
+
 	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1
 		|| NB2_print != NB_2 || NB3_print != NB_3 || stag != STAGGERED 
 		|| B != BRAVO || T != TANGO || C != CHARLIE || D != DELTA || r1 != REF_1 || r2 != REF_2
