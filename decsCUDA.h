@@ -64,8 +64,17 @@ __global__ void consttransport3(int i, int j, int z, double dx_1, double dx_2, d
 	double *  E_corn, double Dt);
 __global__ void flux_ct1(int i, int j, int z, double *  F1, double *  F2, double *  F3, double *  emf);
 __global__ void flux_ct2(int i, int j, int z, double *  F1, double *  F2, double *  F3, double *  emf);
-__global__ void fixup(int i, int j, int z, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void Utoprim0(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step);
+__global__ void Utoprim1(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step);
+__global__ void Utoprim2(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step);
+__global__ void fixup(int i, int j, int z, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int flag);
 __global__ void fixuputoprim(int i, int j, int z, double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void boundprim1(int i, int j, int z, double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps);

@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	tref = t + TREF;
 	defcon = 1. ;
 	time_spent3 = 0.0;
-	begin1 = clock();
+	begin1 = time(NULL);
 	//cuProfilerStart();
 
 	while(t < tf) {
@@ -1620,10 +1620,9 @@ void MPI_initialize(int argc, char *argv[])
 	int i, j, z, len, dim, corn, rankloop;
 	int dims[3], periods[3], coords[3];
 
-	int direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
-	if (direct != 1){
+	int rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
+	if (rdma_direct != 1){
 		printf("MPICH_RDMA_ENABLED_CUDA not enabled!\n");
-		//exit(EXIT_FAILURE);
 	}
 
 	/*Get basic initialisation*/

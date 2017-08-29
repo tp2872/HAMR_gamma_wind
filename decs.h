@@ -1552,7 +1552,7 @@ void GPU_finish(int n);
 void GPU_hcor(int n);
 void GPU_fixup(int flag, int n, double Dt);
 void GPU_fixuputoprim(int flag, int n);
-void GPU_Utoprim(int flag, int n);
+void GPU_Utoprim(int flag, int n, double Dt);
 void GPU_fluxcalc2D(int dir, int flag, int n);
 void GPU_fluxcalcprep(int dir, int flag, int ppm_enable, int n);
 void GPU_flux_ct1(int n);
