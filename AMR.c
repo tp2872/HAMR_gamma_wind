@@ -690,7 +690,7 @@ void balance_load_gpu(void){
 			}
 			if (gpu >= N_GPU) fprintf(stderr, "Error balance_load_gpu() \n");
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])	GPU_finish(n_ord_RM[n]);
-			block[n_ord_RM[n]][AMR_GPU] = rank%N_GPU;
+			block[n_ord_RM[n]][AMR_GPU] = MV2_COMM_WORLD_LOCAL_RANK%N_GPU;
 			commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu * NQ + n%NQ];
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])set_arrays_GPU(n_ord_RM[n], block[n_ord_RM[n]][AMR_GPU]);
 			if (gpu != block[n_ord_RM[n]][AMR_GPU])GPU_write(n_ord_RM[n]);
@@ -710,7 +710,7 @@ void balance_load_gpu(void){
 			if (block[n_ord_RM[n]][AMR_GPU] == i)count_gpu[i] += AMR_MAXTIMELEVEL / block[n_ord_RM[n]][AMR_TIMELEVEL];
 		}
 	}
-	if (rank == 0) fprintf(stderr, "Number of active blocks on node 0 per GPU (total, min,max): %d %d %d \n", n_active, n_active_local_min[0], n_active_local_max[0]);
+	if (rank == 0) fprintf(stderr, "Number of active blocks on node 0 per GPU (total, min,max): %d %d %d %d \n", MV2_COMM_WORLD_LOCAL_RANK, n_active, n_active_local_min[0], n_active_local_max[0]);
 
 }
 

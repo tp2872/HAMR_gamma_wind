@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 			#if (OpenCL_enable == 1)
 			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			#endif
-			end1 = clock();
+			end1 = time(NULL);
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1)/ CLOCKS_PER_SEC);
+				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1));
 				fprintf(stderr, "MPI-time: %f ", time_spent3);
 				fprintf(stderr, "dt1: %f ", ndt1);
 				fprintf(stderr, "dt2: %f ", ndt2);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;
-			begin1 = clock();
+			begin1 = time(NULL);
 		}
 		#endif
 		//cuProfilerStop();
@@ -1621,7 +1621,7 @@ void MPI_initialize(int argc, char *argv[])
 	int dims[3], periods[3], coords[3];
 
 	/*Get basic initialisation*/
-	cudaSetDevice(MV2_COMM_WORLD_LOCAL_RANK);
+	cudaSetDevice(MV2_COMM_WORLD_LOCAL_RANK%N_GPU);
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 	//rc = MPI_Init(&argc, &argv);
 	if (rc != MPI_SUCCESS) {
