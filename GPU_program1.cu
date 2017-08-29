@@ -1478,7 +1478,7 @@ __device__ void raise(double *  ucov, struct of_geom *  geom, double *  ucon);
 __device__ void lower(double *  ucon, struct of_geom *  geom, double *  ucov);
 __device__ void  primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double gam);
 __device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam);
-__device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom, int js, double *  vmax, double *  vmin, double gam);
+__device__ void vchar(int N1, int N2, int icurr, int jcurr, double *  pr, struct of_state *  q, const  double* __restrict__ misc_GPU, int js, double *  vmax, double *  vmin, double gam);
 __device__ void mhd_calc(double *  pr, int dir, struct of_state *  q, double *  mhd, double gam);
 __device__ void source(int N1, int N2, double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ Imageconn,
 struct of_state *  q, double a, double r);
@@ -1501,7 +1501,7 @@ __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 
 	/* now solve for v-- we can use the same u^t because
 	* it didn't change under KS -> KS' */
-	alpha = 1. / sqrt(-geom->gcon[TT][TT]);
+	alpha = rsqrt(-geom->gcon[TT][TT]);
 	SLOOPA beta[j] = geom->gcon[TT][j] * alpha*alpha;
 	gamma = alpha*ucon[TT];
 
@@ -1512,7 +1512,7 @@ __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 {
-	double AA, BB, CC, DD, one_over_alpha_sq;
+	double AA, BB, CC, DD;
 	//compute the Lorentz factor based on contravariant 3-velocity
 	AA = geom->gcov[TT][TT];
 	BB = 2.*(geom->gcov[TT][1] * vcon[1] +
@@ -1527,10 +1527,8 @@ __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 
 	DD = -1. / (AA + BB + CC);
 
-	one_over_alpha_sq = -geom->gcon[TT][TT];
-
-	if (DD<one_over_alpha_sq) {
-		DD = one_over_alpha_sq;
+	if (DD<-geom->gcon[TT][TT]) {
+		DD = -geom->gcon[TT][TT];
 	}
 
 	*ut = sqrt(DD);
@@ -1548,11 +1546,11 @@ __device__ void source(int N1, int N2, double *  ph, struct of_geom *  geom, int
 	const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
 {
 	double mhd[NDIM][NDIM];
+	int global_id = icurr*(N2 + 2 * N2G) + jcurr;
 	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int k;
 	//struct of_state q ;
 	double conn;
-	int global_id = icurr*(N2 + 2 * N2G) + jcurr;
 	//get_state(ph, geom, &q) ;
 	mhd_calc(ph, 0, q, mhd[0], gam);
 	mhd_calc(ph, 1, q, mhd[1], gam);
@@ -1663,34 +1661,24 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct o
 	PLOOP flux[k] *= geom->g;
 }
 
-__device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom, int js, double *  vmax, double *  vmin, double gam)
+__device__ void vchar(int N1, int N2, int icurr, int jcurr, double *  pr, struct of_state *  q, const  double* __restrict__ misc_GPU, int js, double *  vmax, double *  vmin, double gam)
 {
-	double discr, vp, vm, bsq, EE, EF, va2, cs2, cms2, rho, u;
-	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
+	double discr, vp, vm, bsq, EE, EF, va2, cs2, cms2;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
+	int global_id = icurr*(N2 + 2 * N2G) + jcurr;
+	int fix_mem2 = LOCAL_WORK_SIZE - ((N2 + 2 * N2G)*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int j;
-
-	#pragma unroll 4
-	DLOOPA Acov[j] = 0.;
-	Acov[js] = 1.;
-	raise(Acov, geom, Acon);
-
-	#pragma unroll 4
-	DLOOPA Bcov[j] = 0.;
-	Bcov[TT] = 1.;
-	raise(Bcov, geom, Bcon);
 
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon, q->bcov);
-	rho = pr[RHO];
-	u = pr[UU];
+
 	#if AMD
-	EF = fma(gam, u, rho);
+	EF = fma(gam, pr[UU], pr[RHO]);
 	#else
 	EF = rho + gam*u;
 	#endif
 	EE = bsq + EF;
-	cs2 = gam*(gam - 1.)*u / EF;
+	cs2 = gam*(gam - 1.)*pr[UU] / EF;
 	va2 = bsq / EE;
 
 
@@ -1715,14 +1703,17 @@ __device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom
 
 	/* now require that speed of wave measured by observer
 	q->ucon is cms2 */
-	Asq = dot(Acon, Acov);
-	Bsq = dot(Bcon, Bcov);
+	
+	Asq = misc_GPU[((js - 1) * 3 + 0)*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + global_id];
+	Bsq = misc_GPU[((js - 1) * 3 + 1)*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + global_id];
+	AB = misc_GPU[((js - 1) * 3 + 2)*((N2 + 2 * N2G)*(N1 + 2 * N1G) + fix_mem2) + global_id];
+
 	Au = q->ucon[js];
 	Bu = q->ucon[TT];
-	AB = dot(Acon, Bcov);
-	Au2 = Au*Au;
-	Bu2 = Bu*Bu;
-	AuBu = Au*Bu;
+
+	Au2 = q->ucon[js] * q->ucon[js];
+	Bu2 = q->ucon[TT] * q->ucon[TT];
+	AuBu = q->ucon[js] * q->ucon[TT];
 	#if AMD
 	A = fma(-(Bsq + Bu2), cms2, Bu2);
 	B = 2.* fma(-(AB + AuBu), cms2, AuBu);
@@ -1824,12 +1815,10 @@ __device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double
 __device__ void mhd_calc(double *pr, int dir, struct of_state *q, double *mhd, double gam)
 {
 	int j;
-	double r, u, P, w, bsq, eta, ptot;
+	double P, w, bsq, eta, ptot;
 
-	r = pr[RHO];
-	u = pr[UU];
-	P = (gam - 1.)*u;
-	w = P + r + u;
+	P = (gam - 1.)*pr[UU];
+	w = P + pr[RHO] + pr[UU];
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
 	#if AMD
@@ -2285,7 +2274,7 @@ __global__ void fluxcalcprep(int N1, int N2, int N3, double *   F, double *  dq,
 #include <stdio.h>
 
 __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
-	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, double dx_1, double dx_2, double dx_3)
+	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, const  double* __restrict__ misc, double dx_1, double dx_2, double dx_3)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -2358,7 +2347,7 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, d
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp1, gam);
 		primtoflux(p, &state, TT, &geom, temp2, gam);
-		vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
+		vchar(N1, N2, icurr, jcurr, p, &state, misc, dir, &cmax_l, &cmin_l, gam);
 
 			#if(PPM || LEER)
 			#pragma unroll 9
@@ -2392,7 +2381,7 @@ __global__ void fluxcalc2D2(int N1, int N2, int N3, double *  F, double *  dq, d
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp3, gam);
 		primtoflux(p, &state, TT, &geom, temp4, gam);
-		vchar(p, &state, &geom, dir, &cmax_r, &cmin_r, gam);
+		vchar(N1,N2,icurr, jcurr, p, &state, misc, dir, &cmax_r, &cmin_r, gam);
 
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));

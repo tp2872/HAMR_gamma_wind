@@ -635,7 +635,7 @@ extern double(*restrict dU_s[NB])[NPR];
 
 /*GPU variables*/
 #if (OpenCL_enable==1)
-#define FTYPE2 cl_double
+#define FTYPE2 double
 extern FTYPE2 *F1_1[NB];
 extern FTYPE2 *F2_1[NB];
 extern FTYPE2 *F3_1[NB];
@@ -650,6 +650,7 @@ extern FTYPE2 *gcov_GPU[NB];
 extern FTYPE2 *gcon_GPU[NB];
 extern FTYPE2 *conn_GPU[NB];
 extern FTYPE2 *gdet_GPU[NB];
+extern FTYPE2 *misc_GPU[NB];
 extern FTYPE2 *dtij_GPU[NB];
 extern FTYPE2 *Katm_GPU[NB];
 extern int *pflag_GPU[NB];
@@ -917,6 +918,7 @@ extern double * Bufferconn[NB];
 extern double * Buffergcov[NB];
 extern double * Buffergcon[NB];
 extern double * Buffergdet[NB];
+extern double * Buffermisc[NB];
 extern double * BufferF1_1[NB];
 extern double * BufferF2_1[NB];
 extern double * BufferF3_1[NB];

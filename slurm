@@ -20,7 +20,7 @@
 module swap PrgEnv-cray PrgEnv-intel
 module load cudatoolkit
 export OMP_NUM_THREADS=16
-MPICH_RDMA_ENABLED_CUDA=1
+export MPICH_RDMA_ENABLED_CUDA=1
 ###qsub -I -l nodes=4:ppn=1:xk -l walltime=00:30:00 -q debug
 cd /scratch/sciteam/liska/NEW/LTDISKS25A93T60
 make clean
