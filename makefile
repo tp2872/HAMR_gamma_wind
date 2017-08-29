@@ -46,16 +46,16 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = mpicc 
-CCFLAGS  = -fopenmp -O3
+CC       = cc 
+CCFLAGS  =  -fopenmp -O3
 endif
 
-EXTRALIBS = -lm -L/opt/apps/cuda/9.0/lib64 -lcudart -lcuda
+EXTRALIBS = -lm -L/opt/apps/cuda/7.5/lib64 -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = nvcc -arch=compute_60 -code=sm_60 -c 
+CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = nvcc -arch=compute_60 -code=sm_60 -dlink
+CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 -dlink
 
 test = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_step_ch.cu GPU_program1.cu GPU_program2.cu
 

@@ -38,19 +38,21 @@ void GPU_init(void)
 	int i, j, pos;
 	
 	//Create concurrent commandqueues
-	cudaSetDevice(local_rank%N_GPU);
+	////cudaSetDevice(local_rank%N_GPU);
 	for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[j]);
+
 	for (j = 0; j < N_GPU; j++){
 		cudaDeviceCanAccessPeer(&pos, local_rank%N_GPU, j);
 		if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
+
 	}
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 	//cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-	
+
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error in setting cache: %d \n", cudaGetLastError());
+	if (cudaSuccess != status) printf("Error in setting cache: %d \n", status);
 }
 
 void set_arrays_GPU(int n, int device){
@@ -90,7 +92,7 @@ void set_arrays_GPU(int n, int device){
 	nr_workgroups3[n] = (int)ceil((double)global_work_size3[n][0] / (double)LOCAL_WORK_SIZE);
 
 	//Select correct CUDA device
-	cudaSetDevice(device);
+	////cudaSetDevice(device);
 
 	//Create events
 	for (i = 0; i < 600; i++) cudaEventCreate(&boundevent[n][i]);
@@ -146,7 +148,6 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&Bufferpsh_1[n], 3 * ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double));
 	#endif
 	cudaMalloc(&Bufferpbound_1[n], N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n])*sizeof(double));
-	cudaMalloc(&Bufferdtij[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) / LOCAL_WORK_SIZE*sizeof(double));
 	cudaMalloc(&Bufferpflag[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(int));
 	cudaMalloc(&Bufferfailimage[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(int));
 	cudaMalloc(&Bufferdiagflux[n], 3 * MY_MAX((N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G))*sizeof(double));
@@ -1311,7 +1312,7 @@ void GPU_write(int n)
 	}
 	status = cudaMemcpy(BufferdU[n], dU_GPU[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
 	#endif
-	cudaSetDevice(block[n][AMR_GPU]);
+	////cudaSetDevice(block[n][AMR_GPU]);
 	/*Initialize memory items that have to be passed on to the GPU*/
 	cudaMemcpy(Bufferp_1[n], p_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(Bufferph_1[n], ph_1[n], NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*sizeof(double), cudaMemcpyHostToDevice);
@@ -1367,7 +1368,7 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 
 void GPU_fluxcalc2D(int dir, int flag, int n)
 {
-	cudaSetDevice(block[n][AMR_GPU]);
+	////cudaSetDevice(block[n][AMR_GPU]);
 	/*Calculate reconstructed left state*/
 	GPU_fluxcalcprep(dir, flag, 1, n);
 	if (flag == 1){
@@ -1419,7 +1420,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 void GPU_fix_flux(int n)
 {
 	/*Run kernel*/
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	 fix_flux << < nr_workgroups_special[n], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], block[n][AMR_NBR1], block[n][AMR_NBR2], block[n][AMR_NBR3], block[n][AMR_NBR4]);
 	// cudaDeviceSynchronize();
 	 status = cudaGetLastError();
@@ -1432,7 +1433,7 @@ void GPU_consttransport_bound(void){
 	gpu = 1;
 	#if(PRESTEP)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
 		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 		#endif
@@ -1449,7 +1450,7 @@ void GPU_consttransport_bound(void){
 
 	//For last timestep synchronize electric fields immediately
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 5);
 		#endif
@@ -1466,7 +1467,7 @@ void GPU_consttransport_bound(void){
 
 	//For first timestep do not synchronize electrice fields 
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 		#endif
@@ -1483,38 +1484,38 @@ void GPU_consttransport_bound(void){
 	#else
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	#endif
 	
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send1(E_corn, BufferE_1, n_ord[n]);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
 	}
 
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send2(E_corn, BufferE_1, n_ord[n]);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
@@ -1524,41 +1525,41 @@ void GPU_consttransport_bound(void){
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send3(E_corn, BufferE_1, n_ord[n]);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
 	}
 
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}	
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
 
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	#endif
@@ -1573,7 +1574,7 @@ void GPU_consttransport1(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + N1G) * (N2_GPU[n] + N2G) * (N3_GPU[n] + N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + N1G) * (N2_GPU[n] + N2G) * (N3_GPU[n] + N3G)) / LOCAL_WORK_SIZE;
 
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
 		 consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], Bufferph_1[n], Bufferstorage1[n], Buffergcov[n], Buffergcon[n], Buffergdet[n]);
@@ -1590,7 +1591,7 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) / LOCAL_WORK_SIZE;
 
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
 		 consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], BufferE_1[n], Bufferstorage1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], 
@@ -1609,7 +1610,7 @@ void GPU_consttransport3(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + D1) * (N2_GPU[n] + D2) * (N3_GPU[n] + D3)) / LOCAL_WORK_SIZE;
 
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
 		 consttransport3 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], dx[n][1], dx[n][2], dx[n][3], Buffergdet[n], Bufferps_1[n], Bufferps_1[n], BufferE_1[n], Dt);
@@ -1624,7 +1625,7 @@ void GPU_consttransport3(int flag, double Dt, int n){
 
 void GPU_flux_ct1(int n)
 {
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	 flux_ct1 << < nr_workgroups3[n], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n]);
 	// cudaDeviceSynchronize();
@@ -1634,7 +1635,7 @@ void GPU_flux_ct1(int n)
 
 void GPU_flux_ct2(int n)
 {
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	 flux_ct2 << < nr_workgroups3[n], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n]);
 	 //cudaDeviceSynchronize();
@@ -1651,7 +1652,7 @@ void GPU_fixuputoprim(int flag, int n)
 {
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((N1_GPU[n] + 2 * N1G) * (N2_GPU[n] + 2 * N2G) * (N3_GPU[n] + 2 * N3G)) % LOCAL_WORK_SIZE) + (N1_GPU[n] + 2 * N1G) * (N2_GPU[n] + 2 * N2G) * (N3_GPU[n] + 2 * N3G)) / LOCAL_WORK_SIZE;
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	if (flag == 1){
 		 fixuputoprim << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], Bufferp_1[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n]);
 	}
@@ -1665,7 +1666,7 @@ void GPU_fixuputoprim(int flag, int n)
 
 void GPU_fixup(int flag, int n, double Dt)
 {
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	if (flag == 0){
 		 fixup << < nr_workgroups1[n], local_work_size[0], 0, commandQueueGPU[n] >> > (N1_GPU[n], N2_GPU[n], N3_GPU[n], Bufferp_1[n], Bufferp_1[n], Bufferph_1[n], Bufferpsh_1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n],
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
@@ -1687,13 +1688,13 @@ void GPU_boundprim(int bound_force)
 
 	if (bound_force == 1) nstep = -1;
 	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
 	}
 	#if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim2(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(0, n_ord[n]);
 	}
@@ -1715,7 +1716,7 @@ void GPU_boundprim(int bound_force)
 	}
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 3);
 			flux_rec2(F2, BufferF2_1, n_ord[n], 3);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 3);
@@ -1737,7 +1738,7 @@ void GPU_boundprim(int bound_force)
 		}
 
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
@@ -1764,38 +1765,38 @@ void GPU_boundprim(int bound_force)
 
 	rc = 0;
 	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, Bufferp_1, 0, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, 0, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, Bufferp_1, 0, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, Bufferph_1, 0, n_ord[n]);
 	}
 
 	if (N3 > 1){
 		for (n = 0; n < n_active; n++){
-			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 		}
 
 		for (n = 0; n < n_active; n++){
-			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, Bufferp_1, 0, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, Bufferph_1, 0, n_ord[n]);
 		}
@@ -1846,7 +1847,7 @@ void GPU_boundprim2(int flag, int n)
 void GPU_read(int n)
 {
 	int i, j, z, k, l, pg, d1, d2;
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 	cudaDeviceSynchronize();
 	cudaMemcpy(p_1[n], Bufferp_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(ph_1[n], Bufferph_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost);
@@ -1890,7 +1891,7 @@ void GPU_finish(int n)
 	int i;
 
 	//Select correct CUDA device
-	cudaSetDevice(block[n][AMR_GPU]);
+	//cudaSetDevice(block[n][AMR_GPU]);
 
 	//Destroy CUDA events associated with block
 	for (i = 0; i < 600; i++) cudaEventDestroy(boundevent[n][i]);

@@ -1100,7 +1100,7 @@ void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2])
 	isize = (N1_GPU[n] + N1G);
 	zsize = (N3_GPU[n] + N3G);
 	
-	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
+	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(send1_fine[n]), NULL);
 		if (gpu == 1){
@@ -1140,7 +1140,7 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 	z2 = N3_GPU[n] + N3G;
 	isize = (N1_GPU[n] + N1G);
 	zsize = (N3_GPU[n] + N3G);
-	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
+	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){	
 			if (gpu == 1)for (z = z1; z < z2; z++){
@@ -1480,35 +1480,7 @@ void set_prestep(void){
 		}
 	}
 
-	#if(N_GPU>1)
-	for (gpu = 0; gpu < N_GPU; gpu++){
-		timelevel_min = AMR_MAXTIMELEVEL;
-		blocks_per_timestep = 0;
-		blocks_this_timestep = 0;
-		//Find the minimum timelevel on this gpu
-		for (n = 0; n < n_active_gpu[gpu]; n++){
-			if (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] < timelevel_min) timelevel_min = block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL];
-		}
-
-		//Calculate the number of blocks you want to evolve simultaneously
-		blocks_per_timestep = (count_gpu[gpu] - count_gpu[gpu] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
-		for (n = 0; n < n_active_gpu[gpu]; n++){
-			if (nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) == block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1 || block[n_ord[n]][AMR_PRESTEP] == 1 || block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
-		}
-
-		//If you don't have sufficient blocks this timestep preevolve some blocks if available
-		if ((nstep % timelevel_min) == timelevel_min - 1){
-			for (n = 0; n < n_active_gpu[gpu]; n++){
-				if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) != block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1
-					&& (block[n_ord_gpu[gpu][n]][AMR_PRESTEP] == 0) && (block[n_ord_gpu[gpu][n]][AMR_POLE] == 0)){
-					block[n_ord_gpu[gpu][n]][AMR_PRESTEP] = 1;
-					block[n_ord_gpu[gpu][n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL]) - (block[n_ord_gpu[gpu][n]][AMR_TIMELEVEL] - 1));
-					blocks_this_timestep++;
-				}
-			}
-		}
-	}
-	#endif
+	
 	//If at end of switchtimelevel do not pre-evolve
 	for (n = 0; n < n_active; n++){
 		if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){

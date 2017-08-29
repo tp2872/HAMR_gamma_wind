@@ -128,7 +128,7 @@ extern int tag_normal;
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -148,7 +148,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define BI_1(i,j,z) NB_2*NB_3*2*i+NB_3*2*j+z
 
 //The time between refinement (AMR) steps
-#define TREF 10.
+#define TREF 100000.
 
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
@@ -266,16 +266,13 @@ void free_arrays(int n);
 #define MPI_stacks (1) 
 
 /*Set numbers of GPUs PER node*/
-#define N_GPUx 1
-#define N_GPUy 1
-#define N_GPUz 1
-#define N_GPU 4
+#define N_GPU 1
 
 /*Set the number of commandqueues per GPU*/
 #define NQ (40)
 
 /*Pin or don't pin memory for GPU transfers*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/

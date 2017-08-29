@@ -1620,8 +1620,14 @@ void MPI_initialize(int argc, char *argv[])
 	int i, j, z, len, dim, corn, rankloop;
 	int dims[3], periods[3], coords[3];
 
+	int direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
+	if (direct != 1){
+		printf("MPICH_RDMA_ENABLED_CUDA not enabled!\n");
+		//exit(EXIT_FAILURE);
+	}
+
 	/*Get basic initialisation*/
-	local_rank = atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	local_rank = 0;// atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
 	cudaSetDevice(local_rank%N_GPU);
 
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
