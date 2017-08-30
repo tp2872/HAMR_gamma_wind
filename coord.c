@@ -401,7 +401,7 @@ void set_points(int n)
 	/* Grid parameters*/
 	a = 0.9375;
 	Rin = 0.85*(1. + sqrt(1. - a*a));
-	Rout = 150.;
+	Rout = 100000.;
 	lim = MC;
 	failed = 0;	/* start slow */
 	cour = 0.9;

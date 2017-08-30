@@ -57,7 +57,7 @@ CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c
 CC_LOAD     = $(CC) $(CCFLAGS) 
 CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 -dlink
 
-test = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_step_ch.cu GPU_program1.cu GPU_program2.cu
+GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_step_ch.cu GPU_program1.cu GPU_program2.cu
 
 .c.o:
 	$(CC_COMPILE) $*.c
@@ -80,6 +80,7 @@ INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h
 $(OBJS) : $(INCS) makefile
 
 $(EXE): $(OBJS) $(INCS) makefile
+	$(CUDA_COMPILE) $(GPU_FILES)
 	$(CUDA_LOAD) GPU_boundcomP.o GPU_boundcomF.o GPU_boundcomE.o GPU_step_ch.o GPU_program1.o GPU_program2.o -o GPU.o
 	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE)
 

@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	diag(INIT_OUT);
 	#endif
 
-	//DTl = 20.0;
+	DTl = 20.0;
 	bound_prim(p, 1);
 	tdump = t + DTd;
 	timage = t + DTi;

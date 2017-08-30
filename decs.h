@@ -67,15 +67,15 @@ extern int tag_normal;
 #define REF_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS 3
 
 /*Set the number of dimensions to refine*/
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 4
+#define NB_2 12
+#define NB_3 10
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -115,20 +115,16 @@ extern int tag_normal;
 #endif
 
 /*Set block size in each dimension*/
-//#define BS_1 30
-//#define BS_2 18
-//#define BS_3 30
-
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
 #define DEREFINE_POLE (0)
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 4
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -140,7 +136,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Calculate block indices for each AMR level*/
 #define BI_T(bi0, bi1, bi2) (8)*(8)*bi0+(8)*bi1+bi2
@@ -148,7 +144,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define BI_1(i,j,z) NB_2*NB_3*2*i+NB_3*2*j+z
 
 //The time between refinement (AMR) steps
-#define TREF 100000.
+#define TREF 10.
 
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
@@ -276,7 +272,7 @@ void free_arrays(int n);
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (0)
+#define TRANS_BOUND (1)
 
 /*Wheter to set floors in lab frame*/
 #define ZAMO_FLOOR  (0)
@@ -299,8 +295,8 @@ void free_arrays(int n);
 #define ELLIPTICAL2 (0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.)
+#define TILTED (1)
+#define TILT_ANGLE (45.)
 
 /*Whether or not to allow inflow for fluxes (see fix_flux())*/
 #define INFLOW 0
@@ -493,7 +489,7 @@ void free_arrays(int n);
 
 /*Define local work size for GPU. Needed to optimize GPU performance*/
 #if(GPU_ENABLED == 1 || GPU_DEBUG == 1 || GPU_BENCHMARK==1) 
-#define LOCAL_WORK_SIZE 64
+#define LOCAL_WORK_SIZE 128
 #else
 #define LOCAL_WORK_SIZE 1
 #endif
@@ -635,7 +631,7 @@ extern double(*restrict dU_s[NB])[NPR];
 
 /*GPU variables*/
 #if (OpenCL_enable==1)
-#define FTYPE2 double
+#define FTYPE2 cl_double
 extern FTYPE2 *F1_1[NB];
 extern FTYPE2 *F2_1[NB];
 extern FTYPE2 *F3_1[NB];
@@ -650,7 +646,6 @@ extern FTYPE2 *gcov_GPU[NB];
 extern FTYPE2 *gcon_GPU[NB];
 extern FTYPE2 *conn_GPU[NB];
 extern FTYPE2 *gdet_GPU[NB];
-extern FTYPE2 *misc_GPU[NB];
 extern FTYPE2 *dtij_GPU[NB];
 extern FTYPE2 *Katm_GPU[NB];
 extern int *pflag_GPU[NB];
@@ -918,7 +913,6 @@ extern double * Bufferconn[NB];
 extern double * Buffergcov[NB];
 extern double * Buffergcon[NB];
 extern double * Buffergdet[NB];
-extern double * Buffermisc[NB];
 extern double * BufferF1_1[NB];
 extern double * BufferF2_1[NB];
 extern double * BufferF3_1[NB];

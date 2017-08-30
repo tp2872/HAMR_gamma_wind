@@ -55,7 +55,7 @@ __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, double *  prim
 
 __global__ void fluxcalcprep(int i, int j, int z, double *   F, double *  dq, double *  p, int dir, int lim, int number, double *  V);
 __global__ void fluxcalc2D2(int i, int j, int z, double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
-	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, const  double* __restrict__ misc, double dx_1, double dx_2, double dx_3);
+	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, double dx_1, double dx_2, double dx_3);
 __global__ void fix_flux(int i, int j, int z, double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4);
 __global__ void consttransport1(int i, int j, int z, double *  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void consttransport2(int i, int j, int z, double *  emf, double *  E_cent, double *  F1, double *  F2, double *  F3,

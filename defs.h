@@ -88,7 +88,7 @@ double(*restrict dU_s[NB])[NPR];
 
 /*GPU variables*/
 #if (OpenCL_enable==1)
-//#define FTYPE2 double
+//#define FTYPE2 cl_double
 FTYPE2 *F1_1[NB];
 FTYPE2 *F2_1[NB];
 FTYPE2 *F3_1[NB];
@@ -102,7 +102,6 @@ FTYPE2 *gcov_GPU[NB];
 FTYPE2 *gcon_GPU[NB];
 FTYPE2 *conn_GPU[NB];
 FTYPE2 *gdet_GPU[NB];
-FTYPE2 *misc_GPU[NB];
 FTYPE2 *dtij_GPU[NB];
 FTYPE2 *dU_GPU[NB];
 FTYPE2 *Katm_GPU[NB];
@@ -358,7 +357,6 @@ double * Bufferconn[NB];
 double * Buffergcov[NB];
 double * Buffergcon[NB];
 double * Buffergdet[NB];
-double * Buffermisc[NB];
 double * BufferF1_1[NB];
 double * BufferF2_1[NB];
 double * BufferF3_1[NB];
