@@ -464,7 +464,7 @@ void free_arrays(int n);
 #define UUMINLIMIT  (1.e-20)
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (50.*FLOORFACTOR)
+#define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (2500.*FLOORFACTOR)
 #define UORHOMAX (150.*FLOORFACTOR)
 
@@ -489,7 +489,7 @@ void free_arrays(int n);
 
 /*Define local work size for GPU. Needed to optimize GPU performance*/
 #if(GPU_ENABLED == 1 || GPU_DEBUG == 1 || GPU_BENCHMARK==1) 
-#define LOCAL_WORK_SIZE 128
+#define LOCAL_WORK_SIZE 64
 #else
 #define LOCAL_WORK_SIZE 1
 #endif
