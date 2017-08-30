@@ -550,6 +550,7 @@ void balance_load(void){
 	if (rank == 0 && timelevel_cutoff != AMR_MAXTIMELEVEL) fprintf(stderr, "Error in balance_load. Due to too little/many blocks the maximum timelevel can't be honoured and the hierarchical timestepping is downgraded! \n");
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
 	if (rank == 0) fprintf(stderr, "Load balance started, timelevel_cutoff %d %d %d! \n", timelevel_cutoff, n_active_local_min, n_active_local_max);
+
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
@@ -561,7 +562,6 @@ void balance_load(void){
 			}
 		}
 	}
-
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
 			if (NODE[i] == rank){
@@ -595,7 +595,6 @@ void balance_load(void){
 			}
 		}
 	}
-
 
 	//Then use MPI_wait to receive data 
 	for (i = 0; i < n_active_total; i++){

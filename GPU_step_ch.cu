@@ -101,7 +101,6 @@ void set_arrays_GPU(int n, int device){
 
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) printf("Error in creating events: %d \n", status);
-	printf("hallo1");
 
 	/*Allocate memory to 1D arrays*/
 	p_1[n] = (double(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(double));
@@ -118,9 +117,7 @@ void set_arrays_GPU(int n, int device){
 	gcon_GPU[n] = (double(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(double));
 	conn_GPU[n] = (double(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NDIM*NDIM*NDIM, sizeof(double));
 	gdet_GPU[n] = (double(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG, sizeof(double));
-
 	misc_GPU[n] = (double(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*(3*3), sizeof(double));
-	printf("hallo2");
 
 	#else
 	gcov_GPU[n] = (double(*))calloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG*NDIM*NDIM, sizeof(double));
@@ -1238,46 +1235,43 @@ void set_arrays_GPU(int n, int device){
 			#endif
 
 			int j2, dir;
-			printf("hallo1");
 			double Acov[NDIM], Acon[NDIM], Bcov[NDIM], Bcon[NDIM], Asq[NDIM], Bsq[NDIM], AB[NDIM];
-			struct of_geom *geom;
+			struct of_geom geom;
 			dir = 1;
-			get_geometry(n, i, j, z, FACE1, geom);
+			get_geometry(n, i, j, z, FACE1, &geom);
 			for(j2=0;j2<NDIM;j2++) Acov[j2] = 0.;
 			Acov[dir] = 1.;
-			raise(Acov, geom, Acon);
-			for (j2 = 0; j2< NDIM; j2++) DLOOPA Bcov[j2] = 0.;
+			raise(Acov, &geom, Acon);
+			for (j2 = 0; j2< NDIM; j2++) Bcov[j2] = 0.;
 			Bcov[TT] = 1.;
-			raise(Bcov, geom, Bcon);
+			raise(Bcov, &geom, Bcon);
 			Asq[dir - 1] = dot(Acon, Acov);
 			Bsq[dir - 1] = dot(Bcon, Bcov);
 			AB[dir - 1] = dot(Acon, Bcov);
-			printf("hallo2");
 
 			dir = 2;
-			get_geometry(n, i, j, z, FACE2, geom);
+			get_geometry(n, i, j, z, FACE2, &geom);
 			for (j2 = 0; j2<NDIM; j2++) Acov[j2] = 0.;
 			Acov[dir] = 1.;
-			raise(Acov, geom, Acon);
-			for (j2 = 0; j2< NDIM; j2++) DLOOPA Bcov[j2] = 0.;
+			raise(Acov, &geom, Acon);
+			for (j2 = 0; j2< NDIM; j2++) Bcov[j2] = 0.;
 			Bcov[TT] = 1.;
-			raise(Bcov, geom, Bcon);
+			raise(Bcov, &geom, Bcon);
 			Asq[dir - 1] = dot(Acon, Acov);
 			Bsq[dir - 1] = dot(Bcon, Bcov);
 			AB[dir - 1] = dot(Acon, Bcov);
 
 			dir = 3;
-			get_geometry(n, i, j, z, FACE3, geom);
+			get_geometry(n, i, j, z, FACE3, &geom);
 			for (j2 = 0; j2<NDIM; j2++) Acov[j2] = 0.;
 			Acov[dir] = 1.;
-			raise(Acov, geom, Acon);
-			for (j2 = 0; j2< NDIM; j2++) DLOOPA Bcov[j2] = 0.;
+			raise(Acov, &geom, Acon);
+			for (j2 = 0; j2< NDIM; j2++) Bcov[j2] = 0.;
 			Bcov[TT] = 1.;
-			raise(Bcov, geom, Bcon);
+			raise(Bcov, &geom, Bcon);
 			Asq[dir - 1] = dot(Acon, Acov);
 			Bsq[dir - 1] = dot(Bcon, Bcov);
 			AB[dir - 1] = dot(Acon, Bcov);
-			printf("hallo3");
 
 			for (d1 = 0; d1 < NDIM - 1; d1++){
 				misc_GPU[n][(3 * d1 + 0) * ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])
@@ -1287,8 +1281,6 @@ void set_arrays_GPU(int n, int device){
 				misc_GPU[n][(3 * d1 + 2) * ((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])
 					+ (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = AB[d1];
 			}
-			printf("hallo4");
-
 		}
 	}
 	
