@@ -15,9 +15,9 @@
 #define REF_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 #define STAGGERED (1)
 
@@ -25,7 +25,7 @@
 #define AMD 1
 
 /*Set workgroup size*/
-#define LOCAL_WORK_SIZE 128
+#define LOCAL_WORK_SIZE 64
 
 /*Set the grid size for 2D and 3D*/
 #define NG 2

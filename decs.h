@@ -73,9 +73,9 @@ extern int tag_normal;
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -119,9 +119,9 @@ extern int tag_normal;
 //#define BS_2 18
 //#define BS_3 30
 
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
 #define DEREFINE_POLE (0)
@@ -493,7 +493,7 @@ void free_arrays(int n);
 
 /*Define local work size for GPU. Needed to optimize GPU performance*/
 #if(GPU_ENABLED == 1 || GPU_DEBUG == 1 || GPU_BENCHMARK==1) 
-#define LOCAL_WORK_SIZE 128
+#define LOCAL_WORK_SIZE 64
 #else
 #define LOCAL_WORK_SIZE 1
 #endif

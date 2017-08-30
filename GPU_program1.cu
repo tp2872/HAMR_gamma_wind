@@ -45,7 +45,7 @@
 #define AMD 1
 
 /*Set workgroup size*/
-#define LOCAL_WORK_SIZE 128
+#define LOCAL_WORK_SIZE 64
 
 /* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
 #define USE_ISENTROPIC 1
@@ -1607,7 +1607,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 	double Y = (gam - 1.)*epsilon / T_target;
 	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
 	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
-	double bsq = bsq_calc(ph, geom);
+	double bsq = dot(q->bcon,q->bcov);
 	if (bsq / ph[RHO]<1. || r<10.){
 		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
 			dU[UU] += -q->ucov[0] * lambda;
