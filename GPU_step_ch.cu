@@ -1197,7 +1197,7 @@ void set_arrays_GPU(int n, int device){
 	#pragma omp parallel private(i, j, z, k, pg, d1, d2)
 	{
 		#pragma omp for collapse(2) schedule(dynamic)
-		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
+		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]){
 			for (pg = 0; pg < NPG; pg++){
 				#if(!NONSYMMETRIC)
 				gdet_GPU[n][pg*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n]) + (i - N1_GPU_offset[n] + N1G)*(N2_GPU[n] + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)] = gdet[n][index2(n, i, j, z)][pg];
@@ -1731,15 +1731,9 @@ void GPU_boundprim(int bound_force)
 	#if(PRESTEP)
 	rc = 0;
 	//MPI communication
-	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-			break;
-		}
-	}
-
+	mpi_synch();
 	if (rank == 0){
-		begin2 = clock();
+		begin2 =clock();
 	}
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
