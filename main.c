@@ -150,14 +150,10 @@ int main(int argc, char *argv[])
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
 			#if (OpenCL_enable==1)
-			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
 			check_refcrit();
-			#if (OpenCL_enable==1)
-			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
-			#endif
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
 			tref += TREF;
@@ -166,7 +162,6 @@ int main(int argc, char *argv[])
 		/* Handle output frequencies: */
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
-			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			diag(DUMP_OUT) ;
@@ -175,7 +170,6 @@ int main(int argc, char *argv[])
 
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
-			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			
@@ -187,7 +181,6 @@ int main(int argc, char *argv[])
 		#if TIMER
 		if (nstep % (2*320) == 0){
 			#if (OpenCL_enable == 1)
-			//for (n = 0; n < n_active; n++) clFinish(commandQueueGPU[n_ord[n]]);
 			#endif
 			end1 = time(NULL);
 			#if (OpenCL_enable==1)

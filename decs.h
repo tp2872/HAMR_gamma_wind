@@ -50,7 +50,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#include <CL/cl.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <omp.h>
@@ -631,7 +630,7 @@ extern double(*restrict dU_s[NB])[NPR];
 
 /*GPU variables*/
 #if (OpenCL_enable==1)
-#define FTYPE2 cl_double
+#define FTYPE2 double
 extern FTYPE2 *F1_1[NB];
 extern FTYPE2 *F2_1[NB];
 extern FTYPE2 *F3_1[NB];

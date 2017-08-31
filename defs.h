@@ -88,7 +88,7 @@ double(*restrict dU_s[NB])[NPR];
 
 /*GPU variables*/
 #if (OpenCL_enable==1)
-//#define FTYPE2 cl_double
+//#define FTYPE2 double
 FTYPE2 *F1_1[NB];
 FTYPE2 *F2_1[NB];
 FTYPE2 *F3_1[NB];
@@ -105,8 +105,8 @@ FTYPE2 *gdet_GPU[NB];
 FTYPE2 *dtij_GPU[NB];
 FTYPE2 *dU_GPU[NB];
 FTYPE2 *Katm_GPU[NB];
-cl_int *pflag_GPU[NB];
-cl_int *failimage_GPU[NB];
+int *pflag_GPU[NB];
+int *failimage_GPU[NB];
 #endif
 
 /*MPI variables*/
