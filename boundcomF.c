@@ -493,6 +493,7 @@ void flux_send3(double(*restrict F3[NB])[NPR], double * Bufferp[NB], int n){
 						rc += MPI_Isend(&Buffersend6flux[n][0], NPR*(N2_GPU[n]) / (1 + REF_2)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], ((160 * NB + n) % MPI_TAG_MAX), mpi_cartcomm, &req[37]);
 					}
 					else{
+						rc += MPI_Isend(&send6_flux[n][0], NPR*(N2_GPU[n]) / (1 + REF_2)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], ((160 * NB + n) % MPI_TAG_MAX), mpi_cartcomm, &req[37]);
 					}
 					MPI_Request_free(&req[37]);
 				}

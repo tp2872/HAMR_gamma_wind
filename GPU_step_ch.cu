@@ -1484,7 +1484,7 @@ void GPU_consttransport_bound(void){
 		#endif
 		#endif
 	}
-	//#else
+	#else
 	#if(!TIMESTEP_JET)
 	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){

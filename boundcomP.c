@@ -653,7 +653,6 @@ void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 				(N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_7, prim,ps, &(Bufferp[n]), &(Bufferps[n]), &(Buffersend5_7[n]),
 				&(boundevent1[n][57]), &(boundevent2[n][57]));
 			if (block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-				rc += MPI_Irecv(&receive6_8[n][0], (NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) * NG, MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (60 * NB + block[block[n][AMR_NBR5]][AMR_CHILD7]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][68]);
 				if (gpu == 1){
 					rc += MPI_Irecv(&Bufferrec6_8[n][0], (NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) * NG, MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (60 * NB + block[block[n][AMR_NBR5]][AMR_CHILD7]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][68]);
 					cudaStreamSynchronize(commandQueueGPU[n]); cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[n][57],0);
@@ -822,7 +821,7 @@ void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 							rc += MPI_Irecv(&Bufferrec5_7[n][0], (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) * NG, MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (57 * NB + block[block[n][AMR_NBR6]][AMR_PARENT]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][57]);
 						}
 						cudaStreamSynchronize(commandQueueGPU[n]); cudaStreamWaitEvent(commandQueueGPU[n], boundevent1[n][60],0);
-						rc += MPI_Isend(&send6[n][0], (NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1) * NG, MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (60 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[33]);
+						rc += MPI_Isend(&Buffersend6[n][0], (NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1) * NG, MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (60 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[33]);
 					}
 					else{
 						if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){

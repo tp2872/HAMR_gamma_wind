@@ -74,8 +74,8 @@ extern int tag_normal;
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 12
-#define NB_3 10
+#define NB_2 4
+#define NB_3 4
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -115,7 +115,7 @@ extern int tag_normal;
 #endif
 
 /*Set block size in each dimension*/
-#define BS_1 180
+#define BS_1 30
 #define BS_2 18
 #define BS_3 30
 
