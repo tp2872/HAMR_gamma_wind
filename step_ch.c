@@ -1102,28 +1102,28 @@ void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2])
 	
 	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(send1_fine[n]), NULL);
+		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(Buffersend1fine[n]), NULL);
 		if (gpu == 1){
 			cudaStreamSynchronize(commandQueueGPU[n]);
 		}
 		for (i = i1; i < i2; i++){
 			E_avg[n][0][i] = 0.;
 			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
-				E_avg[n][0][i] += send1_fine[n][(i - i1)*zsize + (z - z1)];
+				E_avg[n][0][i] += Buffersend1fine[n][(i - i1)*zsize + (z - z1)];
 			}
 			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg[n][0][i] += send1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
 			E_avg[n][0][i] /= (double)(N3_GPU[n] + D3);
 		}
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(send3_fine[n]), NULL);
+		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(Buffersend3fine[n]), NULL);
 		if (gpu == 1){
 			cudaStreamSynchronize(commandQueueGPU[n]);
 		}
 		for (i = i1; i < i2; i++){
 			E_avg[n][1][i] = 0.;
 			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
-				E_avg[n][1][i] += send3_fine[n][(i - i1)*zsize + (z - z1)];
+				E_avg[n][1][i] += Buffersend3fine[n][(i - i1)*zsize + (z - z1)];
 			}
 			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg[n][1][i] += send3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
 			E_avg[n][1][i] /= (double)(N3_GPU[n] + D3);
@@ -1144,24 +1144,24 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){	
 			if (gpu == 1)for (z = z1; z < z2; z++){
-				receive1_fine[n][(i - i1)*zsize + (z - z1)] = E_avg[n][0][i];
+				Bufferrec1fine[n][(i - i1)*zsize + (z - z1)] = E_avg[n][0][i];
 			}
 			else for (z = z1; z < z2; z++){
 				receive1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][0][i];
 			}
 		}
-		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive1_fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec1fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){
 			if (gpu == 1)for (z = z1; z < z2; z++){
-				receive3_fine[n][(i - i1)*zsize + (z - z1)] = E_avg[n][1][i];
+				Bufferrec3fine[n][(i - i1)*zsize + (z - z1)] = E_avg[n][1][i];
 			}
 			else for (z = z1; z < z2; z++){
 				receive3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][1][i];
 			}
 		}
-		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(receive3_fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec3fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
 	}
 }
 

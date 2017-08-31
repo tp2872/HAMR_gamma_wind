@@ -397,21 +397,21 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	#endif
 
-	cudaHostRegister(send1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
-	//cudaMalloc(&Buffersend2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaHostRegister(send3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
-	//cudaMalloc(&Buffersend4fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
+	cudaHostAlloc(&Buffersend1fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Buffersend2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Buffersend4fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
-	//cudaMalloc(&Buffersend5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
-	//cudaMalloc(&Buffersend6fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
+	//cudaHostAlloc(&Buffersend5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
+	//cudaHostAlloc(&Buffersend6fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
 	#endif
-	cudaHostRegister(receive1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
-	//cudaMalloc(&Bufferrec2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaHostRegister(receive3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
-	//cudaMalloc(&Bufferrec4fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
+	cudaHostAlloc(&Bufferrec1fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Bufferrec2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Bufferrec4fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
-	//cudaMalloc(&Bufferrec5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
-	//cudaMalloc(&Bufferrec6fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
+	//cudaHostAlloc(&Bufferrec5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
+	//cudaHostAlloc(&Bufferrec6fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
 	#endif
 
 	/*#if(N_LEVELS>1)
@@ -913,17 +913,17 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	#endif
 
-	cudaHostRegister(send1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend1fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	//cudaHostAlloc(&Buffersend2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
-	cudaHostRegister(send3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	//cudaHostAlloc(&Buffersend4fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
 	//cudaHostAlloc(&Buffersend5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
 	//cudaHostAlloc(&Buffersend6fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
 	#endif
-	cudaHostRegister(receive1_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	//cudaHostAlloc(&Bufferrec2fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
-	cudaHostRegister(receive3_fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	//cudaHostAlloc(&Bufferrec4fine[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
 	//cudaHostAlloc(&Bufferrec5fine[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double),0);
@@ -2186,18 +2186,19 @@ void GPU_finish(int n)
 	status += cudaFree(Bufferrec6_6flux2[n]);
 	status += cudaFree(Bufferrec6_8flux2[n]);
 	#endif
-	/*
 	status += cudaFree(Buffersend1fine[n]);
-	status += cudaFree(Buffersend2fine[n]);
 	status += cudaFree(Buffersend3fine[n]);
+	status += cudaFree(Bufferrec1fine[n]);
+	status += cudaFree(Bufferrec3fine[n]);
+
+	/*
+	status += cudaFree(Buffersend2fine[n]);
 	status += cudaFree(Buffersend4fine[n]);
 	#if(N3G>0)
 	status += cudaFree(Buffersend5fine[n]);
 	status += cudaFree(Buffersend6fine[n]);
 	#endif
-	status += cudaFree(Bufferrec1fine[n]);
 	status += cudaFree(Bufferrec2fine[n]);
-	status += cudaFree(Bufferrec3fine[n]);
 	status += cudaFree(Bufferrec4fine[n]);
 	#if(N3G>0)
 	status += cudaFree(Bufferrec5fine[n]);
@@ -2652,18 +2653,19 @@ void GPU_finish(int n)
 	status += cudaFreeHost(Bufferrec6_6flux2[n]);
 	status += cudaFreeHost(Bufferrec6_8flux2[n]);
 	#endif
-	/*
 	status += cudaFreeHost(Buffersend1fine[n]);
-	status += cudaFreeHost(Buffersend2fine[n]);
 	status += cudaFreeHost(Buffersend3fine[n]);
+	status += cudaFreeHost(Bufferrec1fine[n]);
+	status += cudaFreeHost(Bufferrec3fine[n]);
+
+	/*
+	status += cudaFreeHost(Buffersend2fine[n]);
 	status += cudaFreeHost(Buffersend4fine[n]);
 	#if(N3G>0)
 	status += cudaFreeHost(Buffersend5fine[n]);
 	status += cudaFreeHost(Buffersend6fine[n]);
 	#endif
-	status += cudaFreeHost(Bufferrec1fine[n]);
 	status += cudaFreeHost(Bufferrec2fine[n]);
-	status += cudaFreeHost(Bufferrec3fine[n]);
 	status += cudaFreeHost(Bufferrec4fine[n]);
 	#if(N3G>0)
 	status += cudaFreeHost(Bufferrec5fine[n]);
