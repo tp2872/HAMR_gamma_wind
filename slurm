@@ -17,6 +17,8 @@
 
 module swap PrgEnv-cray PrgEnv-gnu
 module load cudatoolkit
+export MPICH_NEMESIS_ASYNC_PROGRESS=1
+export MPICH_MAX_THREAD_SAFETY=multiple
 export MPICH_RDMA_ENABLED_CUDA=1
 cd /scratch/sciteam/liska/TDISKS25A93T45S
 make clean

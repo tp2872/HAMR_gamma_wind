@@ -1432,7 +1432,7 @@ void GPU_consttransport_bound(void){
 
 	gpu = 1;
 	#if(PRESTEP)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
@@ -1450,7 +1450,7 @@ void GPU_consttransport_bound(void){
 	}
 
 	//For last timestep synchronize electric fields immediately
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
@@ -1468,7 +1468,7 @@ void GPU_consttransport_bound(void){
 	}
 
 	//For first timestep do not synchronize electrice fields 
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
@@ -1486,95 +1486,95 @@ void GPU_consttransport_bound(void){
 	}
 	#else
 	#if(!TIMESTEP_JET)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	#endif
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send1(E_corn, BufferE_1, n_ord[n]);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send2(E_corn, BufferE_1, n_ord[n]);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send3(E_corn, BufferE_1, n_ord[n]);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}	
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
@@ -1753,7 +1753,7 @@ void GPU_boundprim(int bound_force)
 		begin2 =clock();
 	}
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
-		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 3);
@@ -1775,7 +1775,7 @@ void GPU_boundprim(int bound_force)
 			#endif
 			#endif
 		}
-		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
@@ -1803,28 +1803,28 @@ void GPU_boundprim(int bound_force)
 
 
 	rc = 0;
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, Bufferp_1, 0, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, 0, n_ord[n]);
 	}
 
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, Bufferp_1, 0, n_ord[n]);
@@ -1832,13 +1832,13 @@ void GPU_boundprim(int bound_force)
 	}
 
 	if (N3 > 1){
-		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 		}
-		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, Bufferp_1, 0, n_ord[n]);

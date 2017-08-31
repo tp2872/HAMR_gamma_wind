@@ -268,7 +268,7 @@ void free_arrays(int n);
 #define NQ (40)
 
 /*Pin or don't pin memory for GPU transfers*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/
