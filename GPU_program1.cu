@@ -2711,7 +2711,7 @@ __global__ void Utoprim0(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
-	/*int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = N3*N2;
 	int zcurr = (global_id % (isize)) % N3;
 	int jcurr = ((global_id - zcurr) % (isize)) / (N3);
@@ -2756,14 +2756,14 @@ __global__ void Utoprim0(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 		for (k = 0; k< NPR; k++){
 			U_i[k*(ksize)+global_id] = Dt*(dU[k] + U[k]);
 		}
-	}*/
+	}
 }
 
 __global__ void Utoprim1(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
-	/*int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = N3*N2;
 	int zcurr = (global_id % (isize)) % N3;
 	int jcurr = ((global_id - zcurr) % (isize)) / (N3);
@@ -2793,14 +2793,14 @@ __global__ void Utoprim1(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 		for (k = 0; k< NPR; k++){
 			pi_i[k*(ksize)+global_id] = U[k];
 		}
-	}*/
+	}
 }
 
 __global__ void Utoprim2(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
-	/*int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = N3*N2;
 	int zcurr = (global_id % (isize)) % N3;
 	int jcurr = ((global_id - zcurr) % (isize)) / (N3);
@@ -2844,10 +2844,10 @@ __global__ void Utoprim2(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 		for (k = 0; k<NPR; k++){
 			pf_i[k*(ksize)+global_id] = pi[k];
 		}
-	}*/
+	}
 }
 
-/*__global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
@@ -3088,10 +3088,10 @@ __global__ void Utoprim2(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 			}
 		}
 	}
-}*/
+}
 
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
-__global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+/*__global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i,double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
@@ -3369,7 +3369,7 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 			pf_i[k*(ksize)+global_id] = pf[k];
 		}
 	}
-}
+}*/
 
 /* 26 */
 #define AVG2_1(pr,icurr,jcurr,zcurr, N1, N2, N3,k) (0.5*(pr[k*(ksize)+(icurr)*isize+(jcurr+1)*(N3+2*N3G) + zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr-1)*(N3+2*N3G)+ zcurr]))
