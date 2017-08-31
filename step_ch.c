@@ -1666,11 +1666,9 @@ double advance_GPU(void)
 		if (prestep_full[n_ord[n]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
-	#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
 	rc = 0;
 	GPU_consttransport_bound();
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
-	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);

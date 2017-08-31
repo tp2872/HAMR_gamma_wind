@@ -1782,7 +1782,6 @@ void GPU_boundprim(int bound_force)
 			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
 
-			#if(WHICHPROBLEM!=DISRUPTION_PROBLEM)
 			#if(!TIMESTEP_JET)
 			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 			#endif
@@ -1793,7 +1792,6 @@ void GPU_boundprim(int bound_force)
 			E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-			#endif
 			#endif
 			#endif
 		}

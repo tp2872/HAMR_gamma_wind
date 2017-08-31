@@ -2033,13 +2033,6 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 					1. / gdet[n_child][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*REF_1, 0.25*REF_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-
-
-			#if (WHICHPROBLEM==DISRUPTION_PROBLEM)
-			pb[n_child][ind0][1] = 0.;
-			pb[n_child][ind0][2] = 0.;
-			pb[n_child][ind0][3] = 0.;
-			#endif
 		}
 	}
 }

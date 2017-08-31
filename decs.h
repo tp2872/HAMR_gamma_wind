@@ -294,8 +294,8 @@ void free_arrays(int n);
 #define ELLIPTICAL2 (0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (45.)
+#define TILTED (0)
+#define TILT_ANGLE (0.)
 
 /*Whether or not to allow inflow for fluxes (see fix_flux())*/
 #define INFLOW 0
