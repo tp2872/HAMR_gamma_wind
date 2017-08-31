@@ -115,9 +115,9 @@ extern int tag_normal;
 #endif
 
 /*Set block size in each dimension*/
-#define BS_1 30
+#define BS_1 18
 #define BS_2 18
-#define BS_3 30
+#define BS_3 18
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
 #define DEREFINE_POLE (0)
@@ -136,7 +136,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 1
+#define PRESTEP 0
 
 /*Calculate block indices for each AMR level*/
 #define BI_T(bi0, bi1, bi2) (8)*(8)*bi0+(8)*bi1+bi2
@@ -254,7 +254,7 @@ void free_arrays(int n);
 #define TIMER 1
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 1
+#define COPY_BFIELD 0
 
 /*Set number of rows and columns for MPI processes*/
 #define MPI_columns (2) 
@@ -268,7 +268,7 @@ void free_arrays(int n);
 #define NQ (40)
 
 /*Pin or don't pin memory for GPU transfers*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/

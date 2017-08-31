@@ -290,110 +290,110 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&tempBufferrec6_8[n], NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	#endif
-	cudaMalloc(&Buffersend1flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Buffersend2flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Buffersend3flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Buffersend4flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend1flux[n], NPR*(N1_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Buffersend2flux[n], NPR*(N2_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Buffersend3flux[n], NPR*(N1_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Buffersend4flux[n], NPR*(N2_GPU[n])*(N3_GPU[n])*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&Buffersend5flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Buffersend6flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend5flux[n], NPR*(N1_GPU[n])*(N2_GPU[n])*sizeof(double));
+	cudaMalloc(&Buffersend6flux[n], NPR*(N1_GPU[n])*(N2_GPU[n])*sizeof(double));
 	#endif
-	cudaMalloc(&Bufferrec1flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4flux[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1flux[n], NPR*(N1_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec2flux[n], NPR*(N2_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec3flux[n], NPR*(N1_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec4flux[n], NPR*(N2_GPU[n])*(N3_GPU[n])*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&Bufferrec5flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6flux[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
-	#endif
-	#if(N_LEVELS>1)
-	cudaMalloc(&Bufferrec1_3flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_4flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_7flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_8flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_1flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_2flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_3flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_4flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_1flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_2flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_5flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_6flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_5flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_6flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_7flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_8flux[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	#if(N3G>0)
-	cudaMalloc(&Bufferrec5_1flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_3flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_5flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_7flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_2flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_4flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_6flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_8flux[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	#endif
-	#endif
-	cudaMalloc(&Bufferrec1flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2flux1[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4flux1[n], NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double));
-	#if(N3G>0)
-	cudaMalloc(&Bufferrec5flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6flux1[n], NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5flux[n], NPR*(N1_GPU[n])*(N2_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec6flux[n], NPR*(N1_GPU[n])*(N2_GPU[n])*sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	cudaMalloc(&Bufferrec1_3flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_4flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_7flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_8flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_1flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_2flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_3flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_4flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_1flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_2flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_5flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_6flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_5flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_6flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_7flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_8flux1[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_3flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_4flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_7flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_8flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_1flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_2flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_3flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_4flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_1flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_2flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_5flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_6flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_5flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_6flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_7flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_8flux[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&Bufferrec5_1flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_3flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_5flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_7flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_2flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_4flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_6flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_8flux1[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_1flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_3flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_5flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_7flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_2flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_4flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_6flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_8flux[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
 	#endif
-	cudaMalloc(&Bufferrec1_3flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_4flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_7flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec1_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_1flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_2flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_3flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec2_4flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_1flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_2flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_5flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec3_6flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_5flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_6flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_7flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	cudaMalloc(&Bufferrec4_8flux2[n], NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	#endif
+	cudaMalloc(&Bufferrec1flux1[n], NPR*(N1_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec2flux1[n], NPR*(N2_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec3flux1[n], NPR*(N1_GPU[n])*(N3_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec4flux1[n], NPR*(N2_GPU[n])*(N3_GPU[n])*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&Bufferrec5_1flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_3flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_5flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec5_7flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_2flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_4flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_6flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	cudaMalloc(&Bufferrec6_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5flux1[n], NPR*(N1_GPU[n])*(N2_GPU[n])*sizeof(double));
+	cudaMalloc(&Bufferrec6flux1[n], NPR*(N1_GPU[n])*(N2_GPU[n])*sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	cudaMalloc(&Bufferrec1_3flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_4flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_7flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_8flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_1flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_2flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_3flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_4flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_1flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_2flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_5flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_6flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_5flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_6flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_7flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_8flux1[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5_1flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_3flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_5flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_7flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_2flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_4flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_6flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_8flux1[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	#endif
+	cudaMalloc(&Bufferrec1_3flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_4flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_7flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_1flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_2flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_3flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_4flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_1flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_2flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_5flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_6flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_5flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_6flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_7flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_8flux2[n], NPR*(N2_GPU[n] / (1 + REF_2))*(N3_GPU[n] / (1 + REF_3))*sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5_1flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_3flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_5flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_7flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_2flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_4flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_6flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_8flux2[n], NPR*(N1_GPU[n] / (1 + REF_1))*(N2_GPU[n] / (1 + REF_2))*sizeof(double));
 	#endif
 	#endif
 
@@ -1432,7 +1432,7 @@ void GPU_consttransport_bound(void){
 
 	gpu = 1;
 	#if(PRESTEP)
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
@@ -1450,7 +1450,7 @@ void GPU_consttransport_bound(void){
 	}
 
 	//For last timestep synchronize electric fields immediately
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
@@ -1468,7 +1468,7 @@ void GPU_consttransport_bound(void){
 	}
 
 	//For first timestep do not synchronize electrice fields 
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#if(!TIMESTEP_JET)
@@ -1486,95 +1486,95 @@ void GPU_consttransport_bound(void){
 	}
 	#else
 	#if(!TIMESTEP_JET)
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	#endif
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send1(E_corn, BufferE_1, n_ord[n]);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send2(E_corn, BufferE_1, n_ord[n]);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_send3(E_corn, BufferE_1, n_ord[n]);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}	
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
@@ -1753,7 +1753,7 @@ void GPU_boundprim(int bound_force)
 		begin2 =clock();
 	}
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
-		#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 3);
@@ -1775,7 +1775,7 @@ void GPU_boundprim(int bound_force)
 			#endif
 			#endif
 		}
-		#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
@@ -1803,28 +1803,28 @@ void GPU_boundprim(int bound_force)
 
 
 	rc = 0;
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, Bufferp_1, 0, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, 0, n_ord[n]);
 	}
 
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 	}
 
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, Bufferp_1, 0, n_ord[n]);
@@ -1832,13 +1832,13 @@ void GPU_boundprim(int bound_force)
 	}
 
 	if (N3 > 1){
-		#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n]);
 		}
-		#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, Bufferp_1, 0, n_ord[n]);
@@ -2186,10 +2186,10 @@ void GPU_finish(int n)
 	status += cudaFree(Bufferrec6_6flux2[n]);
 	status += cudaFree(Bufferrec6_8flux2[n]);
 	#endif
-	status += cudaFree(Buffersend1fine[n]);
-	status += cudaFree(Buffersend3fine[n]);
-	status += cudaFree(Bufferrec1fine[n]);
-	status += cudaFree(Bufferrec3fine[n]);
+	status += cudaFreeHost(Buffersend1fine[n]);
+	status += cudaFreeHost(Buffersend3fine[n]);
+	status += cudaFreeHost(Bufferrec1fine[n]);
+	status += cudaFreeHost(Bufferrec3fine[n]);
 
 	/*
 	status += cudaFree(Buffersend2fine[n]);
