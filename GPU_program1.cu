@@ -3,7 +3,7 @@
 #define ThreeD (1)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R*/
-#define COOL_DISK (0)
+#define COOL_DISK (1)
 #define H_OVER_R (0.03)
 
 /*Wheter to set floors in lab frame*/
@@ -19,7 +19,7 @@
 #define INFLOW 0
 
 /*Set block size in each dimension*/
-#define BS_1 30
+#define BS_1 180
 #define BS_2 18
 #define BS_3 30
 
