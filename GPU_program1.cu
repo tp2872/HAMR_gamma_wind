@@ -2580,7 +2580,7 @@ __global__ void consttransport2(int N1, int N2, int N3, double *  emf, double * 
 			+ (-F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(v[1] <= 0.0) + dE_RIGHT_32_2* (double)(v[1]>0.0))));
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == N2 + N2G)){
-			emf[3 * (ksize)+global_id] = 0.5*(F2[B1*(ksize)+global_id] + F2[B1*(ksize)+global_id - isize]);
+			emf[3 * (ksize)+global_id] = 0.;
 			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
 		}
 	}

@@ -136,7 +136,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Calculate block indices for each AMR level*/
 #define BI_T(bi0, bi1, bi2) (8)*(8)*bi0+(8)*bi1+bi2
@@ -254,7 +254,7 @@ void free_arrays(int n);
 #define TIMER 1
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 0
+#define COPY_BFIELD 1
 
 /*Set number of rows and columns for MPI processes*/
 #define MPI_columns (2) 
