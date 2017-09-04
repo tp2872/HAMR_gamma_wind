@@ -287,7 +287,7 @@ void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 		if (status != cudaSuccess) printf("Unpack1e: %d \n", status);
 	}
 	else{
-		int i, j, z, k;
+		int i, j, z;
 		if (block[n_rec2][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
 			if (calc_corr == 1 && nstep % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1){
 				for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1 + e1*D3; z < z2 + e2*D3; z++){
@@ -396,7 +396,7 @@ void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 		if (status != cudaSuccess) printf("Error unpack_receive2_E %d \n", status);
 	}
 	else{
-		int i, j, z, k;
+		int i, j, z;
 		if (block[n_rec2][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
 			if (calc_corr == 1 && nstep % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1){
 				for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1 + e1*D3; z < z2 + e2*D3; z++){
@@ -518,7 +518,7 @@ void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 		if (status != cudaSuccess) printf("Error unpack_receive3_E %d \n", status);
 	}
 	else{
-		int i, j, z, k;
+		int i, j, z;
 
 		if (block[n_rec2][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
 			if (calc_corr == 1 && nstep % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1){
@@ -746,14 +746,6 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 					E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
 			}
 		}
-		double avg;
-		for (i = i1; i < i2; i += (1 + REF_1)){
-			k = 1;
-			//avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-			//	+ E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-			//E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-			//E[n][index(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-		}
 	}
 }
 
@@ -790,14 +782,6 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 					E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
 			}
 		}
-		double avg;
-		for (j = j1; j < j2; j += (1 + REF_2)){
-			k = 2;
-			//avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-			//	+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
-			//E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-			//E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k] = avg;
-		}
 	}
 }
 
@@ -833,14 +817,6 @@ void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, do
 					E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
 			}
 		}
-		double avg;
-		for (z = z1; z < z2; z += (1 + REF_3)){
-			k = 3;
-			//avg = 0.5*(E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-			//	+ E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
-			//E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = avg;
-			//E[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k] = avg;
-		}
 	}
 }
 
@@ -862,7 +838,7 @@ void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j,
 		if (status != cudaSuccess) printf("Error receiveE1corn %d \n", status);
 	}
 	else{
-		int i, k;
+		int i;
 		if (block[n_rec2][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
 			if (calc_corr == 1 && nstep % (2 * block[n][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1){
 				for (i = i1; i < i2; i++){
@@ -944,7 +920,7 @@ void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i, int j1, int j2,
 		if (status != cudaSuccess) printf("Error receiveE2corn %d \n", status);
 	}
 	else{
-		int j, k;
+		int j;
 		if (block[n_rec2][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
 			if (calc_corr == 1 && nstep % (2 * block[n][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1){
 				for (j = j1; j < j2; j++){
@@ -1025,7 +1001,7 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 		if (status != cudaSuccess) printf("unpack_receive_E3_corn: %d \n", status);
 	}
 	else{
-		int z, k;
+		int z;
 		if (block[n_rec2][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
 			if (calc_corr == 1 && nstep % (2 * block[n][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1){
 				for (z = z1; z < z2; z++){

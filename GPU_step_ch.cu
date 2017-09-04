@@ -35,7 +35,7 @@ double fluxcalc_GPU(int n, int dir)
 
 void GPU_init(void)
 {
-	int i, j, pos;
+	int j, pos;
 	
 	//Create concurrent commandqueues
 	////cudaSetDevice(local_rank%N_GPU);
@@ -44,7 +44,6 @@ void GPU_init(void)
 	for (j = 0; j < N_GPU; j++){
 		cudaDeviceCanAccessPeer(&pos, local_rank%N_GPU, j);
 		if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
-
 	}
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
@@ -57,9 +56,6 @@ void GPU_init(void)
 
 void set_arrays_GPU(int n, int device){
 	int i, j, z;
-	
-	/*N1 and N2 values to be exported to GPU memory*/
-	int offset = 0;
 
 	/*Set the global work size and make sure that it is a multiple of the group size. The Nvidia OpenCL framework crashes otherwise!*/
 	fix_mem[n] = LOCAL_WORK_SIZE - ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)) % LOCAL_WORK_SIZE;
@@ -1193,7 +1189,7 @@ void set_arrays_GPU(int n, int device){
 	if (cudaSuccess != status) printf("Error in setting kernel arguments 4.6: %d \n", status);
 
 	/*Set arguments of kernel*/
-	int pg, d1, d2, k;
+	int pg, d1, d2;
 	#pragma omp parallel private(i, j, z, k, pg, d1, d2)
 	{
 		#pragma omp for collapse(2) schedule(dynamic)
@@ -1260,7 +1256,7 @@ double check = 1.0;
 
 void GPU_write(int n)
 {
-	int i, j, z, k, l, pg, d1, d2;
+	int i, j, z, k;
 	double radius_GPU[(N1 + 2 * N1G)], r, th, phi, X[NDIM];
 	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
 		coord(n, i, 0, 0, CENT, X);
@@ -1726,7 +1722,7 @@ void GPU_fixup(int flag, int n, double Dt)
 
 void GPU_boundprim(int bound_force)
 {
-	int i, n;
+	int n;
 	int temp = nstep;
 	gpu = 1;
 
@@ -1888,7 +1884,7 @@ void GPU_boundprim2(int flag, int n)
 
 void GPU_read(int n)
 {
-	int i, j, z, k, l, pg, d1, d2;
+	int i, j, z, k;
 	//cudaSetDevice(block[n][AMR_GPU]);
 	cudaDeviceSynchronize();
 	cudaMemcpy(p_1[n], Bufferp_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost);

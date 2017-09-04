@@ -15,7 +15,7 @@
 #define REF_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 180
+#define BS_1 30
 #define BS_2 18
 #define BS_3 30
 
@@ -1452,7 +1452,7 @@ __global__ void packsendfluxaverage3(int i1, int i2, int j1, int j2, int z1, int
 
 __global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
-	int i, k;
+	int i;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % ((z2 - z1)) + z1 + N3G;
@@ -1486,7 +1486,7 @@ __global__ void packsend1E(int i1, int i2, int j1, int j2, int z1, int z2, int j
 
 __global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
-	int j, k;
+	int j;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % ((z2 - z1)) + z1 + N3G;
@@ -1520,7 +1520,7 @@ __global__ void packsend2E(int i1, int i2, int j1, int j2, int z1, int z2, int i
 
 __global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
-	int z, k;
+	int z;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int jcurr = global_id % ((j2 - j1)) + j1 + N2G;
@@ -1554,14 +1554,13 @@ __global__ void packsend3E(int i1, int i2, int j1, int j2, int z1, int z2, int i
 
 __global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
-	int i, k;
+	int i;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
 	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_2) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	double avg;
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
@@ -1593,14 +1592,13 @@ __global__ void packsendEaverage1(int i1, int i2, int j1, int j2, int z1, int z2
 
 __global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
-	int j, k;
+	int j;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % ((z2 - z1) / (1 + REF_3))*(1 + REF_3) + z1 + N3G;
 	int icurr = (global_id - global_id % ((z2 - z1) / (1 + REF_3))) / ((z2 - z1) / (1 + REF_3))*(1 + REF_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	double avg;
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
@@ -1632,14 +1630,13 @@ __global__ void packsendEaverage2(int i1, int i2, int j1, int j2, int z1, int z2
 
 __global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  pv, FTYPE2 *  send, double factor, int first_timestep, int work_size)
 {
-	int z, k;
+	int z;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int jcurr = global_id % ((j2 - j1) / (1 + REF_2))*(1 + REF_2) + j1 + N2G;
 	int icurr = (global_id - global_id % ((j2 - j1) / (1 + REF_2))) / ((j2 - j1) / (1 + REF_2))*(1 + REF_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	double avg;
 
 	if (global_id < work_size){
 		if (first_timestep == 1){
@@ -1672,7 +1669,7 @@ __global__ void packsendEaverage3(int i1, int i2, int j1, int j2, int z1, int z2
 __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size)
 {
-	int i, k;
+	int i;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int z22 = z2 + D3;
@@ -1773,7 +1770,7 @@ __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, 
 __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int zsize2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size)
 {
-	int j, k;
+	int j;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int z22 = z2 + D3;
@@ -1879,7 +1876,7 @@ __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, 
 __global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, FTYPE2 *  prim, FTYPE2 *  receive, FTYPE2 *  temp1, FTYPE2 *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int d1, int d2, int e1, int e2, int work_size)
 {
-	int z, k;
+	int z;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int j22 = j2 + 1;

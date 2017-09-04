@@ -2437,7 +2437,7 @@ void check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 16.0
+#define DENSITY_CUTOFF 0.5
 #endif
 
 //Refine on basis of some criteria
@@ -2585,7 +2585,7 @@ void check_refcrit(void){
 		}
 	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0);
 
-	if (tag==1 && count==0) fprintf(stderr, "Maximum number of blocks exceeded, refinement capped so refinement criterion can not anymore be honoured by H-AMR. Please select more nodes or adjust refinement criterion! \n");
+	if (tag==1 && count==0 && rank==0) fprintf(stderr, "Maximum number of blocks exceeded, refinement capped so refinement criterion can not anymore be honoured by H-AMR. Please select more nodes or adjust refinement criterion! \n");
 
 	pre_refine();
 	count = 0;

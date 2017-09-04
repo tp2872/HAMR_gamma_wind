@@ -1627,7 +1627,7 @@ void MPI_initialize(int argc, char *argv[])
 	local_rank = 0;// atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
 	cudaSetDevice(local_rank%N_GPU);
 
-	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
+	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
 	//rc = MPI_Init(&argc, &argv);
 	if (rc != MPI_SUCCESS) {
 		fprintf(stderr, "Error starting MPI program. Terminating.\n");

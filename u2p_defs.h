@@ -62,7 +62,7 @@
 #endif
 
 /* Adiabatic index used for the state equation */
-#define GAMMA	(gam)  
+#define GAMMA	5./3.  
 
 #define G_ISOTHERMAL (1.)
 

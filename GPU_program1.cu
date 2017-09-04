@@ -533,7 +533,6 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 	double  t32, t33, t34, t38, t5, t51, t67, t8, W, x_rho[1], rho, rho_g;
 
 	W = x[0];
-	W_for_gnr2_old = W_for_gnr2;
 	W_for_gnr2 = W;
 
 	// get rho from NR:
@@ -640,7 +639,6 @@ __device__ void lower_g(double ucon[NDIM], double gcov[NDIM][NDIM], double ucov[
 		gcov[3][1], ucon[1], fma(
 		gcov[3][2], ucon[2],
 		gcov[3][3] * ucon[3])));
-	return;
 	#else
 	ucov[0] = gcov[0][0] * ucon[0]
 		+ gcov[0][1] * ucon[1]
@@ -2781,7 +2779,7 @@ __global__ void Utoprim1(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 	struct of_state q;
 	double U[NPR], pi[NPR];
 	if (k == 1){
-		#pragma unroll NPR	
+		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			pi[k] = pi_i[k*(ksize)+global_id];
 		}
@@ -2789,7 +2787,7 @@ __global__ void Utoprim1(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 		get_state(pi, &geom, &q);
 		primtoU(pi, &q, &geom, U, gam);
 
-		#pragma unroll NPR	
+		#pragma unroll 9	
 		for (k = 0; k< NPR; k++){
 			pi_i[k*(ksize)+global_id] = U[k];
 		}
@@ -2818,7 +2816,7 @@ __global__ void Utoprim2(int N1, int N2, int N3, double* pi_i, double* pb_i, dou
 	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
 	double U[NPR], pi[NPR];
 	if (k == 1){
-		#pragma unroll NPR	
+		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			pi[k] = pb_i[k*(ksize)+global_id];
 			U[k] = U_i[k*(ksize)+global_id] + pi_i[k*(ksize)+global_id];
@@ -2865,11 +2863,9 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 	global_id = isize*icurr + (N3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(N1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int flag = 0, dofloor = 0, m;
-	double r, X, uuscal, rhoscal, rhoflr, uuflr;
-	double f, gamma, bsq;
-	double pf[NPR], pf_prefloor[NPR], U_ent, dpf[NPR], U_prefloor[NPR], dU[NPR], U[NPR];
-	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
-	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM], Xtrans;
+	double r, uuscal, rhoscal, rhoflr, uuflr;
+	double f, gamma, bsq, trans;
+	double pf[NPR], pf_prefloor[NPR], U[NPR];
 	struct of_geom geom;
 	struct of_state q;
 	int ksize = isize*(N1 + 2 * N1G) + fix_mem1;
@@ -2916,12 +2912,6 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 		bsq = dot(q.bcon, q.bcov);
 
 		//tie floors to the local values of magnetic field and internal energy density
-		//rhoflr=((rhoflr < bsq / BSQORHOMAX)?(bsq / (BSQORHOMAX)):(rhoflr));
-		//uuflr=((uuflr < bsq / BSQOUMAX)?(bsq / (BSQOUMAX)):(uuflr));
-		//rhoflr=(( rhoflr < pf[UU] / UORHOMAX)?(pf[UU] / (UORHOMAX)):(rhoflr));
-
-		//rhoflr=((rhoflr < RHOMINLIMIT)?(RHOMINLIMIT):(rhoflr));
-		//uuflr=((uuflr  < UUMINLIMIT)?(UUMINLIMIT):(uuflr));
 		if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
 		if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 		if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
@@ -2945,6 +2935,9 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 
 		#if( ZAMO_FLOOR )
 		if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
+			double betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+			double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+
 			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
 			//lower(q.ucon, &geom, q.ucov) ;
 			if (trans > 1.) {
@@ -3020,6 +3013,7 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 		}
 		#else
 		if (dofloor == 1) {
+			double  dpf[NPR], U_prefloor[NPR],X, dU[NPR],  one_over_ucondr_, Xtrans;
 			#pragma unroll 9
 			PLOOP dpf[k] = pf[k] - pf_prefloor[k];
 
@@ -3038,14 +3032,11 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 			if (pflag[global_id]){
 				failimage[global_id]++;
-				//pflag[global_id]=flag;
 				#if( DO_FONT_FIX ) 
-				U_ent = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
 				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[icurr]);
-					//pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, U_ent);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 					if (pflag[global_id]){
 						pflag[0] = 100;
 						failimage[2 * (ksize)+global_id]++;
@@ -3082,7 +3073,7 @@ __global__ void fixup(int N1, int N2, int N3, double* pi_i, double* pb_i, double
 		pf_i[KTOT*(ksize)+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
 		#endif
 		if (flag == 1){
-			#pragma unroll NPR
+			#pragma unroll 9
 			for (k = 0; k< NPR - DOKTOT; k++){
 				pf_i[k*(ksize)+global_id] = pf[k];
 			}

@@ -63,7 +63,6 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 ******************************************************************************/
 #include "u2p_util.h"
-#include "decs.h"
 #define NEWT_DIM 2
 
 /* these variables need to be shared between the functions
