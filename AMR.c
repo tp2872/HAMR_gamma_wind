@@ -679,7 +679,7 @@ void balance_load_gpu(void){
 			gpu = fp + ((steps_RM[n] - ip) - (steps_RM[n] - ip) % y) / y;
 		}
 		if (gpu >= NQ) fprintf(stderr, "Error balance_load_gpu() \n");
-		commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu];
+		//commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu];
 	}
 }
 

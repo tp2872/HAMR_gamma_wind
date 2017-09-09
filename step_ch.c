@@ -1603,9 +1603,8 @@ double advance_GPU(void)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status,req)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
 		flux_send1(F1, BufferF1_1, n_ord[n]);
-		flux_send2(F2, BufferF2_1, n_ord[n]);
-		
-#if(N3G>0)
+		flux_send2(F2, BufferF2_1, n_ord[n]);	
+		#if(N3G>0)
 		flux_send3(F3, BufferF3_1, n_ord[n]);
 		#endif
 	}
