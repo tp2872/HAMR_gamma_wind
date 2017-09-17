@@ -21,7 +21,7 @@ double fluxcalc_GPU(int n, int dir)
 	if (dir == 1) nr = nr_workgroups2_1[n];
 	else if (dir == 2) nr = nr_workgroups2_2[n];
 	else if (dir == 3) nr = nr_workgroups2_3[n];
-	cudaStreamSynchronize(commandQueueGPU[n_ord[n]]);
+	cudaStreamSynchronize(commandQueueGPU[n]);
 	status = cudaGetLastError();
 	if(status!=0) printf("Error fluxcalc_GPU %d\n", status);
 	for (y = 0; y < nr; y++){
