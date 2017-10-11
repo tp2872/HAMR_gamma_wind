@@ -2437,7 +2437,7 @@ void check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 0.5
+#define DENSITY_CUTOFF 16.0
 #endif
 
 //Refine on basis of some criteria
