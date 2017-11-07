@@ -1,6 +1,7 @@
 #include "decsCUDA.h"
 extern "C" {
-#include "decs.h" 
+#include "decs.h"
+}
 void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent, cudaEvent_t *boundevent2){
 	if (gpu == 1){
 		int nr_workgroups_bound = ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
@@ -673,4 +674,4 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		}
 	}
 }
-}
+

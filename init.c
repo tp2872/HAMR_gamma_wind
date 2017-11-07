@@ -211,9 +211,9 @@ void init_torus()
 	
 	double temp = a;
 	a = 0.9375;
-	rin = 12.5;
+	rin = 6.0;
 	//rmax = 14.6145;
-	rmax = 25.;
+	rmax = 12.;
 	//rmax = 14.6165;
 	///rin = 12.;
 	//rmax = 14.616;
@@ -237,9 +237,9 @@ void init_torus()
 	
     /* output choices */
 	tf = 200000000.0 ;
-	DTd = 25.;	/* dumping frequency, in units of M */
-	DTl = 50.0;	/* logfile frequency, in units of M */
-	DTi = 100.0; 	/* image file frequ., in units of M */
+	DTd = 2500.;	/* dumping frequency, in units of M */
+	DTl = 5000.0;	/* logfile frequency, in units of M */
+	DTi = 1000.0; 	/* image file frequ., in units of M */
 	DTr = 5.0 * 1000.; 	/* restart file frequ., in timesteps */
 
 	/* start diagnostic counters */
@@ -820,7 +820,7 @@ void set_mag(void){
 				bl_coord(X, &r, &th, &phi);
 				//dq[n_ord[n]][index(n_ord[n], i, j, z)][2] = q*r*r; //Toroidal
 				//dq[n_ord[n]][index(n_ord[n] ,i, j, z)][3] = dq[n_ord[n]][index(n_ord[n] ,i, j, z)][3]* pow(dq[n_ord[n]][index(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
-				dq[n_ord[n]][index(n_ord[n], i, j, z)][3] =  pow(q, 2.0) * pow(r, 3.0); //MAD
+				dq[n_ord[n]][index(n_ord[n], i, j, z)][3] = q;// pow(q, 2.0) * pow(r, 3.0); //MAD
 				//3d jet
 				//X[1] = log(r - RB);
 				//dq[n_ord[n]][index(n_ord[n], i, j, z)][3] = pow(dq[n_ord[n]][index(n_ord[n], i, j, z)][3], 3.0)* pow(r, 3.0)*(0.1 + 0.9*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 0.5), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.05), 2.0))) / 10;

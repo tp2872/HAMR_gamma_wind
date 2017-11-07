@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
+			balance_load();
 			tref += TREF;
 		}
 
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
+			if (dt>2.) break;
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
@@ -171,8 +173,7 @@ int main(int argc, char *argv[])
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-			#endif
-			
+			#endif			
 			if (dt>2.) break;
 			restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
@@ -186,6 +187,7 @@ int main(int argc, char *argv[])
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
+			if (dt>2.) break;
 			bound_prim(p, 1);
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
@@ -1619,14 +1621,10 @@ void MPI_initialize(int argc, char *argv[])
 	int dims[3], periods[3], coords[3];
 
 	int rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
-	if (rdma_direct != 1){
-		printf("MPICH_RDMA_ENABLED_CUDA not enabled!\n");
-	}
 
 	/*Get basic initialisation*/
-	local_rank = 0;// atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	local_rank = atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
 	cudaSetDevice(local_rank%N_GPU);
-
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
 	//rc = MPI_Init(&argc, &argv);
 	if (rc != MPI_SUCCESS) {
@@ -1637,37 +1635,6 @@ void MPI_initialize(int argc, char *argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
 	MPI_Get_processor_name(hostname, &len);
 
-	/*Handy for debugging, you don't have to change this value everytime if you want to test MPI vs non-MPI*/
-
-	/*if (numtasks != 1){
-		n_columns = MPI_columns;
-		n_rows = MPI_rows;
-		n_stacks = MPI_stacks;
-		}
-		else{
-		n_rows = 1;
-		n_columns = 1;
-		n_stacks = 1;
-		}
-		dims[0] = n_columns;
-		dims[1] = n_rows;
-		dims[2] = n_stacks;
-		periods[0] = 0;
-		periods[1] = 0;
-		periods[2] = 1;
-
-		//Initialize cartesian communicator
-		MPI_Cart_create(MPI_COMM_WORLD, 3, dims , periods , 1, &mpi_cartcomm);
-		MPI_Comm_rank(mpi_cartcomm, &rank);
-		MPI_Cart_coords(mpi_cartcomm,rank, 3,  coords);
-		//MPI_Errhandler_set(mpi_cartcomm, MPI_ERRORS_RETURN);
-		//N3_GPU[n_ord[n]] = coords[2];
-		//N2_GPU[n_ord[n]] = coords[1];
-		//N1_GPU[n_ord[n]] = coords[0];
-
-		for (dim = 0; dim < 3; dim++) {
-		MPI_Cart_shift(mpi_cartcomm, dim , 1, &mpi_nbrs[dim+1][0], &mpi_nbrs[dim+1][1]);
-		}*/
 	dims[0] = NB_1;
 	dims[1] = NB_2;
 	dims[2] = NB_3;
@@ -1675,44 +1642,20 @@ void MPI_initialize(int argc, char *argv[])
 	periods[1] = 0;
 	periods[2] = 1;
 
-	//Initialize cartesian communicator
-	//if(NB_1*NB_2*NB_3==numtasks){
-	//	MPI_Cart_create(MPI_COMM_WORLD, 3, dims, periods, 1, &mpi_cartcomm);
-	//	MPI_Comm_rank(mpi_cartcomm, &rank);
-	//	fprintf(stderr,"Using cartesian communicator for MPI /n");
-	//}
-	//else{
-		//Initialize normal communicator
-		mpi_cartcomm = MPI_COMM_WORLD;
-		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-		MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);
-
-	//}
-	
-	//if (MPI_THREAD_MULTIPLE != i && rank==0) fprintf(stderr, "MPI library has unsufficient threading support\n");
-
-	/*Give notice if programmer makes error in selecting the MPI_rows and MPI_column values in dec.h*/
-	//if (rank == 0 && n_rows*n_columns != numtasks){
-	//	fprintf(stderr, "Error: Number of tasks is not equal to rows*columns! \n");
-	//}
+	mpi_cartcomm = MPI_COMM_WORLD;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);
 
 	/*Give basic diagnostics*/
 	if (rank == 0){
+		if (rdma_direct != 1){
+			printf("MPICH_RDMA_ENABLED_CUDA not enabled!\n");
+		}
 		fprintf(stderr, "Number of MPI tasks: %d \nRunning on: %s\n", numtasks, hostname);
 		//fprintf(stderr, "MPI geometry(columns, rows, stacks) : (%d, %d, %d)\n", n_columns, n_rows, n_stacks);
 	}
 	#else
-	numtasks = 1;
-	rank = 0;
-	N1_GPU_offset[n_ord[n]] = 0;
-	N1_GPU[n_ord[n]] = N1;
-	N2_GPU_offset[n_ord[n]] = 0;
-	N2_GPU[n_ord[n]] = N2;
-	N3_GPU_offset[n_ord[n]] = 0;
-	N3_GPU[n_ord[n]] = N3;
-	n_rows = 1;
-	n_columns = 1;
-	n_stacks = 1;
+
 	#endif
 }
 

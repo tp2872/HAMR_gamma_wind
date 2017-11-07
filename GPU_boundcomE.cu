@@ -1,6 +1,7 @@
 #include "decsCUDA.h"
 extern "C" {
-#include "decs.h" 
+#include "decs.h"
+}
 void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
@@ -1061,5 +1062,4 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 			}
 		}
 	}
-}
 }

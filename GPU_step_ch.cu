@@ -1,6 +1,8 @@
 #include "decsCUDA.h"
 extern "C" {
-#include "decs.h" 
+#include "decs.h"
+}
+
 /*Start reading timestep from GPU*/
 void read_time_GPU(void){
 	//int n;
@@ -29,7 +31,6 @@ double fluxcalc_GPU(int n, int dir)
 			ndt = dtij_GPU[n][y];
 		}
 	}
-
 	return(ndt);
 }
 
@@ -2921,5 +2922,4 @@ void GPU_finish(int n)
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) printf("Error in GPU_finish_1: %d \n", status);
-}
 }

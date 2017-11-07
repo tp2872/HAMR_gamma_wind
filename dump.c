@@ -232,6 +232,28 @@ void dump_new(void){
 	int n, u;
 	char filename[100], dirpath[100];
 
+	//First close dump files in progress
+	int u_stride = 200;
+	int u_max = (n_active_total - n_active_total%u_stride) / u_stride;
+	if (n_active_total%u_stride != 0) u_max++;
+
+	if (first_dump == 1){
+		for (n = 0; n < n_active; n++){
+			MPI_Wait(&req_block[n_ord[n]][0], &Statbound[n_ord[n]][0]);
+			if (dump_cnt % 1 == 0){
+				MPI_Wait(&req_blockdiag[n_ord[n]][0], &Statbound[n_ord[n]][1]);
+			}
+		}
+
+		for (u = 0; u < u_max; u++){
+			MPI_File_close(&fdump[u]);
+			if (dump_cnt % 1 == 0){
+				MPI_File_close(&fdumpdiag[u]);
+			}
+		}
+	}
+	first_dump = 0;
+
 	if (rank == 0){
 		FILE *fparam;
 		sprintf(dirpath, "mkdir dumps%d", dump_cnt);
@@ -249,10 +271,7 @@ void dump_new(void){
 		gdump_grid(grid);
 		fclose(grid);
 	}
-	
-	int u_stride=200;
-	int u_max=(n_active_total-n_active_total%u_stride)/u_stride;
-	if(n_active_total%u_stride!=0) u_max++;
+
 	
 	first_dump = 1;
 	

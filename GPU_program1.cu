@@ -3,7 +3,7 @@
 #define ThreeD (1)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.03)
 
 /*Wheter to set floors in lab frame*/
@@ -19,9 +19,9 @@
 #define INFLOW 0
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 32
+#define BS_2 32
+#define BS_3 32
 
 #define STAGGERED (1)
 
@@ -177,7 +177,7 @@
 #define QCOV3	4
 
 /* Adiabatic index used for the state equation */
-#define GAMMA	(5./3.)  
+#define GAMMA	(4./3.)  
 #define G_ISOTHERMAL (1.)
 
 #if( USE_ISENTROPIC ) 
