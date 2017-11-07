@@ -61,20 +61,20 @@ extern int tag_HLLC;
 extern int tag_normal;
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
-#define REF_1 0
-#define REF_2 0
+#define REF_1 1
+#define REF_2 1
 #define REF_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS 3
 
 /*Set the number of dimensions to refine*/
 #define N_DIMS 3
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 3
-#define NB_2 6
-#define NB_3 2
+#define NB_1 4
+#define NB_2 12
+#define NB_3 10
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
 #define NB (NB_1*NB_2*NB_3)
@@ -114,28 +114,28 @@ extern int tag_normal;
 #endif
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
-#define BS_3 32
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 4
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
-#define TIMESTEP_JET 1
+#define TIMESTEP_JET 0
 
 /*Used for load balancing with hierarchical timestepping: Make NB1 the fastest moving index*/
-#define REVERSE_ORDERING 1
+#define REVERSE_ORDERING 0
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Calculate block indices for each AMR level*/
 #define BI_T(bi0, bi1, bi2) (8)*(8)*bi0+(8)*bi1+bi2
@@ -253,7 +253,7 @@ void free_arrays(int n);
 #define TIMER 1
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 1
+#define COPY_BFIELD 0
 
 /*Set number of rows and columns for MPI processes*/
 #define MPI_columns (2) 
@@ -261,13 +261,13 @@ void free_arrays(int n);
 #define MPI_stacks (1) 
 
 /*Set numbers of GPUs PER node*/
-#define N_GPU 4
+#define N_GPU 1
 
 /*Set the number of commandqueues per GPU*/
 #define NQ (40)
 
 /*Pin or don't pin memory for GPU transfers*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/
@@ -294,7 +294,7 @@ void free_arrays(int n);
 #define ELLIPTICAL2 (0)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
+#define TILTED (1)
 #define TILT_ANGLE (45.)
 
 /*Whether or not to allow inflow for fluxes (see fix_flux())*/

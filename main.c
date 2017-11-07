@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 		#endif
 
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if(!DEREFINE_POLE)
+			/*#if(!DEREFINE_POLE)
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -156,8 +156,8 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
-			balance_load();
-			tref += TREF;
+			//balance_load();
+			tref += TREF;*/
 		}
 
 		/* Handle output frequencies: */
@@ -1623,7 +1623,7 @@ void MPI_initialize(int argc, char *argv[])
 	int rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
 
 	/*Get basic initialisation*/
-	local_rank = atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	local_rank = 0;// atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
 	cudaSetDevice(local_rank%N_GPU);
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
 	//rc = MPI_Init(&argc, &argv);
