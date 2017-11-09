@@ -925,15 +925,12 @@ void const_transport2(double(*restrict psi[NB])[NDIM], double(*restrict psf[NB])
 	}
 }
 
-#define MAX_RANK 18000
 void E_average(void){
-	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[MAX_RANK], send_tag2[MAX_RANK];
-
-	if (numtasks >= MAX_RANK && rank == 0)fprintf(stderr, "Please increase MAX_RANK in E_average! \n");
+	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB];
 
 	//Read in average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		read_E_avg(E_avg, E_avg_x, E_avg_y, n_ord[n]);
+		read_E_avg(E_avg1, E_avg2, n_ord[n]);
 	}
 
 	//If block is not on node send the data to other node over MPI
@@ -950,13 +947,12 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, 0, z);
 				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					E_avg[number][0]=(double(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-					rc = MPI_Irecv(&(E_avg[number][0][0]), (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][490]);
+					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, block[number][AMR_NODE], (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][490]);
 				}
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag1[u] == 1 && u!=rank){
-							rc = MPI_Isend(&(E_avg[number][0][0]), (BS_1 + 2 * N1G), MPI_DOUBLE, u, (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+							rc = MPI_Isend(&E_avg1[i*NB_3+z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 							MPI_Request_free(&req[0]);
 						}
 					}
@@ -974,13 +970,12 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, NB_2 - 1, z);
 				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					E_avg[number][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-					rc = MPI_Irecv(&(E_avg[number][1][0]), (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][491]);
+					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, block[number][AMR_NODE], (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][491]);
 				}
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag2[u] == 1 && u != rank){
-							rc = MPI_Isend(&(E_avg[number][1][0]), (BS_1 + 2 * N1G), MPI_DOUBLE, u, (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 							MPI_Request_free(&req[0]);
 						}
 					}
@@ -1027,71 +1022,37 @@ void E_average(void){
 	//Average the first component of the E_field for both poles
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		if (block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
-			z_max = NB_3*pow(1 + REF_3, block[n_ord[n]][AMR_LEVEL]);
+			z_max = NB_3;
 			for (z = 0; z < z_max; z++){
 				number=AMR_coord_linear(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
 				for (i = 0; i < BS_1 + N1G; i++){
-					if (z == 0)E_avg_new[n_ord[n]][0][i] = E_avg[number][0][i] / ((double)z_max);
-					else E_avg_new[n_ord[n]][0][i] += E_avg[number][0][i] / ((double)z_max);
+					if (z == 0)E_avg1_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] = E_avg1[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
+					else E_avg1_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] += E_avg1[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
 				}
 			}
 		}
-
+		
 		if (block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
-			z_max = NB_3*pow(1 + REF_3, block[n_ord[n]][AMR_LEVEL]);
+			z_max = NB_3;
 			for (z = 0; z < z_max; z++){
 				number=AMR_coord_linear(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
 				for (i = 0; i < BS_1 + N1G; i++){
-					if (z == 0)E_avg_new[n_ord[n]][1][i] = E_avg[number][1][i] / ((double)z_max);
-					else E_avg_new[n_ord[n]][1][i] += E_avg[number][1][i] / ((double)z_max);
+					if (z == 0)E_avg2_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] = E_avg2[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
+					else E_avg2_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] += E_avg2[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
 				}
 			}
 		}
 	}
 
-
-	for (i = 0; i < NB_1; i++){
-		if (nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1){
-			for (u = 0; u < numtasks; u++){
-				send_tag1[u] = 0;
-				for (z = 0; z < NB_3; z++){
-					number = AMR_coord_linear(0, i, 0, z);
-					if (block[number][AMR_NODE] == u) send_tag1[u] = 1;
-				}
-			}
-			//Which nodes have an active block around a slice in phi for a given i
-			for (z = 0; z < NB_3; z++){
-				number = AMR_coord_linear(0, i, 0, z);
-				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					free(E_avg[number][0]);
-				}
-			}
-		}
-		if (nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1){
-			for (u = 0; u < numtasks; u++){
-				send_tag2[u] = 0;
-				for (z = 0; z < NB_3; z++){
-					number = AMR_coord_linear(0, i, NB_2 - 1, z);
-					if (block[number][AMR_NODE] == u) send_tag2[u] = 1;
-				}
-			}
-			for (z = 0; z < NB_3; z++){
-				number = AMR_coord_linear(0, i, NB_2 - 1, z);
-				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					free(E_avg[number][1]);
-				}
-			}
-		}
-	}
 
 	//Write average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		write_E_avg(E_avg_new, E_avg_new_x, E_avg_new_y, n_ord[n]);
+		write_E_avg(E_avg1_new, E_avg2_new, n_ord[n]);
 	}
 }
 
-void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]), double(*restrict E_avg_y[NB][2]), int n){
-	int i,i1,i2, z, z1,z2, isize, zsize;
+void read_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G], int n){
+	int i, i1, i2, z, z1, z2, isize, zsize;
 	//double ph;
 	i1 = 0;
 	i2 = N1_GPU[n] + N1G;
@@ -1107,31 +1068,31 @@ void read_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2])
 			cudaStreamSynchronize(commandQueueGPU[n]);
 		}
 		for (i = i1; i < i2; i++){
-			E_avg[n][0][i] = 0.;
+			E_avg1[block[n][AMR_COORD1]*NB_3+ block[n][AMR_COORD3]][i] = 0.;
 			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
-				E_avg[n][0][i] += Buffersend1fine[n][(i - i1)*zsize + (z - z1)];
+				E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += Buffersend1fine[n][(i - i1)*zsize + (z - z1)];
 			}
-			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg[n][0][i] += send1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
-			E_avg[n][0][i] /= (double)(N3_GPU[n] + D3);
+			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += send1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
+			E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] /= (double)(N3_GPU[n] + D3);
 		}
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(Buffersend3fine[n]), &(boundevent[n][399]));
+		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(Buffersend3fine[n]), &(boundevent[n][398]));
 		if (gpu == 1){
 			cudaStreamSynchronize(commandQueueGPU[n]);
 		}
 		for (i = i1; i < i2; i++){
-			E_avg[n][1][i] = 0.;
+			E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] = 0.;
 			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
-				E_avg[n][1][i] += Buffersend3fine[n][(i - i1)*zsize + (z - z1)];
+				E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += Buffersend3fine[n][(i - i1)*zsize + (z - z1)];
 			}
-			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg[n][1][i] += send3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
-			E_avg[n][1][i] /= (double)(N3_GPU[n] + D3);
+			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += send3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
+			E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] /= (double)(N3_GPU[n] + D3);
 		}
 	}
 }
 
-void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]), double(*restrict E_avg_y[NB][2]), int n){
+void write_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G], int n){
 	int i, i1, i2, z, z1, z2, isize, zsize;
 	//double  ph1, ph2;
 	i1 = 0;
@@ -1144,10 +1105,10 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){	
 			if (gpu == 1)for (z = z1; z < z2; z++){
-				Bufferrec1fine[n][(i - i1)*zsize + (z - z1)] = E_avg[n][0][i];
+				Bufferrec1fine[n][(i - i1)*zsize + (z - z1)] = E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
 			}
 			else for (z = z1; z < z2; z++){
-				receive1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][0][i];
+				receive1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
 			}
 		}
 		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec1fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
@@ -1155,10 +1116,10 @@ void write_E_avg(double(*restrict E_avg[NB][2]), double(*restrict E_avg_x[NB][2]
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){
 			if (gpu == 1)for (z = z1; z < z2; z++){
-				Bufferrec3fine[n][(i - i1)*zsize + (z - z1)] = E_avg[n][1][i];
+				Bufferrec3fine[n][(i - i1)*zsize + (z - z1)] = E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
 			}
 			else for (z = z1; z < z2; z++){
-				receive3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg[n][1][i];
+				receive3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
 			}
 		}
 		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec3fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);

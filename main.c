@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 		#endif
 
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			/*#if(!DEREFINE_POLE)
+			#if(!DEREFINE_POLE)
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -156,8 +156,7 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
-			//balance_load();
-			tref += TREF;*/
+			tref += TREF;
 		}
 
 		/* Handle output frequencies: */
@@ -175,7 +174,7 @@ int main(int argc, char *argv[])
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif			
 			if (dt>2.) break;
-			restart_write(); //do restart dumb simultaneous with log
+			//restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 
@@ -314,7 +313,7 @@ void set_arrays_image(void)
 
 void free_arrays(int n)
 {
-	int i, j, z, k;
+	int i, j, z, k, u;
 
 	free(pbound[n]);
 	free(p[n]);
@@ -350,10 +349,6 @@ void free_arrays(int n)
 	#if (ELLIPTICAL2)
 	free(dU_s[n]); 
 	#endif
-	free(E_avg[n][0]);
-	free(E_avg[n][1]);
-	free(E_avg_new[n][0]);
-	free(E_avg_new[n][1]);
 	free(E_avg_x[n][0]);
 	free(E_avg_x[n][1]);
 	free(E_avg_new_x[n][0]);
@@ -842,7 +837,7 @@ void free_arrays(int n)
 
 void set_arrays(int n)
 {
-	int i, j, z, k;
+	int i, j, z, k, u;
 	array[n] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
 	array_rdump[n] = (double *)calloc((NPR+NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), sizeof(double));
 	array_diag[n] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
@@ -851,10 +846,6 @@ void set_arrays(int n)
 	pbound[n] = (double(*)[NPR][N_POINTS])calloc((N2 + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NPR][N_POINTS]));
 	p[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
 	V[n] = (double(*)[6])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[6]));
-	E_avg[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_new[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_new[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
 	E_avg_x[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
 	E_avg_x[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
 	E_avg_new_x[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
