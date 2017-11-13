@@ -133,14 +133,14 @@ void bound_prim1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 					//#pragma omp   simd
 					for (i = -N1G; i < 0; i++){
 						for (k = 0; k < NPR; k++){
-							prim[n][index(n, i, j, z)][k] = prim[n][index(n, 0, j, z)][k];
+							prim[n][index_3D(n, i, j, z)][k] = prim[n][index_3D(n, 0, j, z)][k];
 						}
 						#if(STAGGERED)
 						for (k = 2; k < NDIM; k++){
-							ps[n][index(n, i, j, z)][k] = ps[n][index(n, 0, j, z)][k];
+							ps[n][index_3D(n, i, j, z)][k] = ps[n][index_3D(n, 0, j, z)][k];
 						}
 						#endif
-						pflag[n][index(n, i, j, z)] = pflag[n][index(n, 0, j, z)];
+						pflag[n][index_3D(n, i, j, z)] = pflag[n][index_3D(n, 0, j, z)];
 					}
 					#if( RESCALE )
 					get_geometry(0, j, CENT, &geom);
@@ -169,11 +169,11 @@ void bound_prim1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 					#endif
 					
 					for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL]); i < N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) + N1G; i++){
-						PLOOP prim[n][index(n, i, j, z)][k] = prim[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) - 1, j, z)][k];
-						pflag[n][index(n, i, j, z)] = pflag[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) - 1, j, z)];
+						PLOOP prim[n][index_3D(n, i, j, z)][k] = prim[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) - 1, j, z)][k];
+						pflag[n][index_3D(n, i, j, z)] = pflag[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) - 1, j, z)];
 						#if(STAGGERED)
 						for (k = 2; k < NDIM; k++){
-							ps[n][index(n, i, j, z)][k] = ps[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) - 1, j, z)][k];
+							ps[n][index_3D(n, i, j, z)][k] = ps[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) - 1, j, z)][k];
 						}
 						#endif
 					}
@@ -199,10 +199,10 @@ void bound_prim1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 				#pragma omp for collapse(2) schedule(static, (N2_GPU[n]+2*N2G)*(N3_GPU[n]+2*N3G)/nthreads)	
 				for (j = N2_GPU_offset[n] - 2; j < N2_GPU_offset[n] + N2_GPU[n] + 2; j++){
 					for (z = -N3G + N3_GPU_offset[n]; z < N3_GPU[n] + N3_GPU_offset[n] + N3G; z++) {
-						inflow_check(prim[n][index(n, -1, j, z)], n, i, j, z, 0);
-						inflow_check(prim[n][index(n, -2, j, z)], n, i, j, z, 0);
+						inflow_check(prim[n][index_3D(n, -1, j, z)], n, i, j, z, 0);
+						inflow_check(prim[n][index_3D(n, -2, j, z)], n, i, j, z, 0);
 						#if(N1G==3)
-						inflow_check(prim[n][index(n, -3, j, z)], n, i, j, z, 0);
+						inflow_check(prim[n][index_3D(n, -3, j, z)], n, i, j, z, 0);
 						#endif
 					}
 				}
@@ -218,10 +218,10 @@ void bound_prim1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 				#pragma omp for collapse(2) schedule(static, (N2_GPU[n]+2*N2G)*(N3_GPU[n]+2*N3G)/nthreads)	
 				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + N2_GPU[n] + N2G; j++){
 					for (z = -N3G + N3_GPU_offset[n]; z < N3_GPU[n] + N3_GPU_offset[n] + N3G; z++) {
-						inflow_check(prim[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)], n, i, j, z, 1);
-						inflow_check(prim[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) + 1, j, z)], n, i, j, z, 1);
+						inflow_check(prim[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)], n, i, j, z, 1);
+						inflow_check(prim[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) + 1, j, z)], n, i, j, z, 1);
 						#if(N1G==3)
-						inflow_check(prim[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) + 2, j, z)], n, i, j, z, 1);
+						inflow_check(prim[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]) + 2, j, z)], n, i, j, z, 1);
 						#endif
 					}
 				}
@@ -250,11 +250,11 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 							continue;
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
-								prim[n][index(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[n][index(n, i, jref, z)][k];
+								prim[n][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[n][index_3D(n, i, jref, z)][k];
 							}
 							else {
 								//everything else copy (both poles)
-								prim[n][index(n, i, j, z)][k] = prim[n][index(n, i, jref, z)][k];
+								prim[n][index_3D(n, i, j, z)][k] = prim[n][index_3D(n, i, jref, z)][k];
 							}
 						}
 					}
@@ -276,11 +276,11 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 							continue;
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
-								prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - jref, z)][k];
+								prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - jref, z)][k];
 							}
 							else {
 								//everything else copy (both poles)
-								prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j, z)][k] = prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - jref, z)][k];
+								prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j, z)][k] = prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - jref, z)][k];
 							}
 						}
 					}
@@ -300,26 +300,26 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 				for (z = -N3G + N3_GPU_offset[n]; z < N3_GPU[n] + N3_GPU_offset[n] + N3G; z++) {
 					//#pragma omp   simd
 					PLOOP{
-						prim[n][index(n, i, -1, z)][k] = prim[n][index(n, i, 0, z)][k];
-						prim[n][index(n, i, -2, z)][k] = prim[n][index(n, i, 1, z)][k];
+						prim[n][index_3D(n, i, -1, z)][k] = prim[n][index_3D(n, i, 0, z)][k];
+						prim[n][index_3D(n, i, -2, z)][k] = prim[n][index_3D(n, i, 1, z)][k];
 						#if(N1G==3)
-						prim[n][index(n, i, -3, z)][k] = prim[n][index(n, i, 2, z)][k];
+						prim[n][index_3D(n, i, -3, z)][k] = prim[n][index_3D(n, i, 2, z)][k];
 						#endif
 					}
-					pflag[n][index(n, i, -1, z)] = pflag[n][index(n, i, 0, z)];
+					pflag[n][index_3D(n, i, -1, z)] = pflag[n][index_3D(n, i, 0, z)];
 					#if(STAGGERED)
 					k = 1;
-					ps[n][index(n, i, -1, z)][k] = ps[n][index(n, i, 0, z)][k];
-					ps[n][index(n, i, -2, z)][k] = ps[n][index(n, i, 1, z)][k];
+					ps[n][index_3D(n, i, -1, z)][k] = ps[n][index_3D(n, i, 0, z)][k];
+					ps[n][index_3D(n, i, -2, z)][k] = ps[n][index_3D(n, i, 1, z)][k];
 					#if(N2G==3)
-					ps[n][index(n, i, -3, z)][k] = ps[n][index(n, i, 2, z)][k];
+					ps[n][index_3D(n, i, -3, z)][k] = ps[n][index_3D(n, i, 2, z)][k];
 					#endif
 					#if(N3>1)
 					k = 3;
-					ps[n][index(n, i, -1, z)][k] = ps[n][index(n, i, 0, z)][k];
-					ps[n][index(n, i, -2, z)][k] = ps[n][index(n, i, 1, z)][k];
+					ps[n][index_3D(n, i, -1, z)][k] = ps[n][index_3D(n, i, 0, z)][k];
+					ps[n][index_3D(n, i, -2, z)][k] = ps[n][index_3D(n, i, 1, z)][k];
 					#if(N2G==3)
-					ps[n][index(n, -3, j, z)][k] = ps[n][index(n, i, 2, z)][k];
+					ps[n][index_3D(n, -3, j, z)][k] = ps[n][index_3D(n, i, 2, z)][k];
 					#endif
 					#endif			
 					#endif
@@ -336,26 +336,26 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 				for (z = -N3G + N3_GPU_offset[n]; z < N3_GPU[n] + N3_GPU_offset[n] + N3G; z++) {
 					//#pragma omp   simd
 					PLOOP{
-						prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
-						prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
+						prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
+						prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
 						#if(N1G==3)
-						prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
+						prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
 						#endif
 					}
-					pflag[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)] = pflag[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)];
+					pflag[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)] = pflag[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)];
 					#if(STAGGERED)
 					k = 1;
-					ps[n][index(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL])-1, z)][k];
-					ps[n][index(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL])-2, z)][k];
+					ps[n][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL])-1, z)][k];
+					ps[n][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL])-2, z)][k];
 					#if(N2G==3)
-					ps[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
+					ps[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
 					#endif
 					#if(N3>1)
 					k = 3;
-					ps[n][index(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
-					ps[n][index(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
+					ps[n][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
+					ps[n][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
 					#if(N2G==3)
-					ps[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
+					ps[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
 					#endif
 					#endif			
 					#endif
@@ -373,8 +373,8 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < N3_GPU[n] + N3_GPU_offset[n] + N3G; z++) {
 					for (j = -N2G; j < 0; j++) {
-						prim[n][index(n, i, j, z)][U2] *= -1.;
-						prim[n][index(n, i, j, z)][B2] *= -1.;
+						prim[n][index_3D(n, i, j, z)][U2] *= -1.;
+						prim[n][index_3D(n, i, j, z)][B2] *= -1.;
 					}
 				}
 			}
@@ -388,8 +388,8 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + N1_GPU[n] + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < N3_GPU[n] + N3_GPU_offset[n] + N3G; z++) {
 					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + N2G; j++) {
-						prim[n][index(n, i, j, z)][U2] *= -1.;
-						prim[n][index(n, i, j, z)][B2] *= -1.;
+						prim[n][index_3D(n, i, j, z)][U2] *= -1.;
+						prim[n][index_3D(n, i, j, z)][B2] *= -1.;
 					}
 				}
 			}
@@ -403,7 +403,7 @@ void pack_send1_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 		for (j = j1; j < j2; j++){
 			for (z = z1; z < z2; z++){
 				k = 1;
-				send[n][NDIM*(i - i1)*zsize*jsize + NDIM*(j - j1)*zsize + NDIM*(z - z1) + k] = prim[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
+				send[n][NDIM*(i - i1)*zsize*jsize + NDIM*(j - j1)*zsize + NDIM*(z - z1) + k] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
 			}
 		}
 	}
@@ -415,7 +415,7 @@ void pack_send2_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 		for (i = i1; i < i2; i++){
 			for (z = z1; z < z2; z++){
 				k = 2;
-				send[n][NDIM*(j - j1)*zsize*isize + NDIM*(i - i1)*zsize + NDIM*(z - z1) + k] = prim[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
+				send[n][NDIM*(j - j1)*zsize*isize + NDIM*(i - i1)*zsize + NDIM*(z - z1) + k] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
 			}
 		}
 	}
@@ -427,7 +427,7 @@ void pack_send3_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 		for (i = i1; i < i2; i++){
 			for (j = j1; z < j2; z++){
 				k = 3;
-				send[n][NDIM*(z - z1)*jsize*isize + NDIM*(i - i1)*jsize + NDIM*(j - j1) + k] = prim[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
+				send[n][NDIM*(z - z1)*jsize*isize + NDIM*(i - i1)*jsize + NDIM*(j - j1) + k] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
 			}
 		}
 	}

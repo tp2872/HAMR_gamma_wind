@@ -79,10 +79,10 @@ void step_ch()
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup(ph, n_ord[n]);
 		}
 		/*for (n = 0; n < n_active; n++){
-			if (pflag[n_ord[n]][index(n_ord[n], N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] == 100){
+			if (pflag[n_ord[n]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] == 100){
 				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
 				else fixup_utoprim(ph, n_ord[n]);
-				pflag[n_ord[n]][index(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
+				pflag[n_ord[n]][index_3D(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
 			}
 		}*/
 		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
@@ -245,7 +245,7 @@ double advance(int flag)
 			{
 				#pragma omp for collapse(2) schedule(static,N1_GPU[n_ord[n]]*N2_GPU[n_ord[n]]/nthreads)
 				ZLOOP3D_MPI{
-					ind0 = index(n_ord[n], i, j, z);
+					ind0 = index_3D(n_ord[n], i, j, z);
 					#pragma ivdep
 					PLOOP ph[n_ord[n]][ind0][k] = p[n_ord[n]][ind0][k];        /* needed for Utoprim */
 				}
@@ -354,13 +354,13 @@ void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], doubl
 		#pragma omp for collapse(2) schedule(static,N1_GPU[n]*N2_GPU[n]/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
-			source(pb[n][index(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
-			get_state(pi[n][index(n, i, j, z)], &geom, &q);
-			primtoU(pi[n][index(n, i, j, z)], &q, &geom, U);
-			ind0 = index(n, i, j, z);
-			ind1 = index(n, i + D1, j, z);
-			ind2 = index(n, i, j + D2, z);
-			ind3 = index(n, i, j, z + D3);
+			source(pb[n][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
+			get_state(pi[n][index_3D(n, i, j, z)], &geom, &q);
+			primtoU(pi[n][index_3D(n, i, j, z)], &q, &geom, U);
+			ind0 = index_3D(n, i, j, z);
+			ind1 = index_3D(n, i + D1, j, z);
+			ind2 = index_3D(n, i, j + D2, z);
+			ind3 = index_3D(n, i, j, z + D3);
 			#pragma ivdep
 			PLOOP{
 				U[k] += Dt*(
@@ -378,31 +378,31 @@ void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], doubl
 
 			#if(ELLIPTICAL2)
 			if(z==0){
-				PLOOP U[k] += Dt*(dU_s[n][index2(n,i,j,z)][k]);
+				PLOOP U[k] += Dt*(dU_s[n][index_2D(n,i,j,z)][k]);
 			}
 			#endif
 
 			#if STAGGERED
-			U[B1] = 0.5*(psf[n][index(n, i, j, z)][1] * gdet[n][index2(n, i, j, z)][FACE1] + psf[n][index(n, i + D1, j, z)][1] * gdet[n][index2(n, i + D1, j, z)][FACE1]);
-			U[B2] = 0.5*(psf[n][index(n, i, j, z)][2] * gdet[n][index2(n, i, j, z)][FACE2] + psf[n][index(n, i, j + D2, z)][2] * gdet[n][index2(n, i, j + D2, z)][FACE2]);
+			U[B1] = 0.5*(psf[n][index_3D(n, i, j, z)][1] * gdet[n][index_2D(n, i, j, z)][FACE1] + psf[n][index_3D(n, i + D1, j, z)][1] * gdet[n][index_2D(n, i + D1, j, z)][FACE1]);
+			U[B2] = 0.5*(psf[n][index_3D(n, i, j, z)][2] * gdet[n][index_2D(n, i, j, z)][FACE2] + psf[n][index_3D(n, i, j + D2, z)][2] * gdet[n][index_2D(n, i, j + D2, z)][FACE2]);
 			#if(N3G>0)
-			U[B3] = 0.5*(psf[n][index(n, i, j, z)][3] * gdet[n][index2(n, i, j, z)][FACE3] + psf[n][index(n, i, j, z + D3)][3] * gdet[n][index2(n, i, j, z + D3)][FACE3]);
+			U[B3] = 0.5*(psf[n][index_3D(n, i, j, z)][3] * gdet[n][index_2D(n, i, j, z)][FACE3] + psf[n][index_3D(n, i, j, z + D3)][3] * gdet[n][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
 			pflag[n][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[n][ind0]);
 
 			#if( DO_FONT_FIX ) 
-			if (pflag[n][index(n, i, j, z)]) {
-				failimage[n][index(n, i, j, z)][0]++;
+			if (pflag[n][index_3D(n, i, j, z)]) {
+				failimage[n][index_3D(n, i, j, z)][0]++;
 				#if DOKTOT
-				pflag[n][index(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[n][index(n, i, j, z)], pf[n][index(n, i, j, z)][KTOT]);
+				pflag[n][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[n][index_3D(n, i, j, z)], pf[n][index_3D(n, i, j, z)][KTOT]);
 				#endif
-				if (pflag[n][index(n, i, j, z)]) {
-					failimage[n][index(n, i, j, z)][1]++;
-					if (pflag[n][index(n, i, j, z)]){
-						pflag[n][index(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[n][index(n, i, j, z)], pf[n][index(n, i, j, z)][KTOT]);
-						pflag[n][index(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-						failimage[n][index(n, i, j, z)][2]++;
+				if (pflag[n][index_3D(n, i, j, z)]) {
+					failimage[n][index_3D(n, i, j, z)][1]++;
+					if (pflag[n][index_3D(n, i, j, z)]){
+						pflag[n][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[n][index_3D(n, i, j, z)], pf[n][index_3D(n, i, j, z)][KTOT]);
+						pflag[n][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+						failimage[n][index_3D(n, i, j, z)][2]++;
 					}
 				}
 			}
@@ -453,7 +453,7 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 			#pragma omp for schedule(static,1)
 			ZSLOOP(N1_GPU_offset[n] - 2, N1_GPU_offset[n] + N1_GPU[n] + 1, N2_GPU_offset[n] - 2, N2_GPU_offset[n] + N2_GPU[n] + 1) 	{
 				get_geometry(n,i, j,z, CENT, &geom);
-				rescale(pr[n][index(n ,i, j, z)], FORWARD, dir, i, j, CENT, &geom);
+				rescale(pr[n][index_3D(n ,i, j, z)], FORWARD, dir, i, j, CENT, &geom);
 			}
 			#endif
 
@@ -462,7 +462,7 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + N3_GPU[n] - 1 + D3){
 				// #pragma ivdep
 				PLOOP{
-					dq[n][index(n, i, j, z)][k] = slope_lim(pr[n][index(n, i - idel, j - jdel, z - zdel)][k], pr[n][index(n, i, j, z)][k], pr[n][index(n, i + idel, j + jdel, z + zdel)][k]);
+					dq[n][index_3D(n, i, j, z)][k] = slope_lim(pr[n][index_3D(n, i - idel, j - jdel, z - zdel)][k], pr[n][index_3D(n, i, j, z)][k], pr[n][index_3D(n, i + idel, j + jdel, z + zdel)][k]);
 				}
 			}
 
@@ -471,8 +471,8 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 				for (z = (N3_GPU_offset[n] - idel - jdel)*D3; z <= (N3_GPU_offset[n] + N3_GPU[n])*D3; z++){
 					get_geometry(n, i, j, z, face, &geom);
 					/* this avoids problems on the pole */
-					ind0 = index(n, i, j, z);
-					ind1 = index(n, i - idel, j - jdel, z - zdel);
+					ind0 = index_3D(n, i, j, z);
+					ind1 = index_3D(n, i - idel, j - jdel, z - zdel);
 
 					#pragma ivdep
 					PLOOP{
@@ -690,7 +690,7 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 			#pragma omp for schedule(static,1)
 			ZSLOOP(N1_GPU_offset[n] - 2, N1_GPU_offset[n] + N1_GPU[n] + 1, N2_GPU_offset[n] - 2, N2_GPU_offset[n] + N2_GPU[n] + 1) 	{
 				get_geometry(n,i, j,z, CENT, &geom);
-				rescale(pr[n][index(n ,i, j, z)], REVERSE, dir, i, j, CENT, &geom);
+				rescale(pr[n][index_3D(n ,i, j, z)], REVERSE, dir, i, j, CENT, &geom);
 			}
 			#endif
 		}
@@ -786,14 +786,14 @@ void const_transport1(double(*restrict pb[NB])[NPR], int n){
 	{
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n] * D1-D1, (N1_GPU_offset[n] + N1_GPU[n])*D1, N2_GPU_offset[n] * D2-D2, (N2_GPU_offset[n] + N2_GPU[n])*D2, N3_GPU_offset[n] * D3-D3, (N3_GPU_offset[n] + N3_GPU[n])*D3){
-			ind0 = index(n, i, j, z);
+			ind0 = index_3D(n, i, j, z);
 
 			//calculate the corner values of the electric field by averaging the Godunov fluxes, see formula 7 balsara&spicer
 			#if(N3G>0)
-			E_corn[n][ind0][1] = 0.25*(F3[n][ind0][B2] + F3[n][index(n, i, j - D2, z)][B2] - F2[n][ind0][B3] - F2[n][index(n, i, j, z - D3)][B3]);
-			E_corn[n][ind0][2] = 0.25*(F1[n][ind0][B3] + F1[n][index(n, i, j, z - D3)][B3] - F3[n][ind0][B1] - F3[n][index(n, i - D1, j, z)][B1]);
+			E_corn[n][ind0][1] = 0.25*(F3[n][ind0][B2] + F3[n][index_3D(n, i, j - D2, z)][B2] - F2[n][ind0][B3] - F2[n][index_3D(n, i, j, z - D3)][B3]);
+			E_corn[n][ind0][2] = 0.25*(F1[n][ind0][B3] + F1[n][index_3D(n, i, j, z - D3)][B3] - F3[n][ind0][B1] - F3[n][index_3D(n, i - D1, j, z)][B1]);
 			#endif
-			E_corn[n][ind0][3] = 0.25*(F2[n][ind0][B1] + F2[n][index(n, i - D1, j, z)][B1] - F1[n][ind0][B2] - F1[n][index(n, i, j - D2, z)][B2]);
+			E_corn[n][ind0][3] = 0.25*(F2[n][ind0][B1] + F2[n][index_3D(n, i - D1, j, z)][B1] - F1[n][ind0][B2] - F1[n][index_3D(n, i, j - D2, z)][B2]);
 
 			get_geometry(n, i, j, z, CENT, &geom);
 			get_state(pb[n][ind0], &geom, &q);
@@ -816,37 +816,37 @@ void const_transport1(double(*restrict pb[NB])[NPR], int n){
 			dE[n][ind0][LEFT][3][2] = (E_cent[3] - F2[n][ind0][B1]);
 
 			#if(N3G>0)
-			dE[n][ind0][RIGHT][1][2] = (-F2[n][index(n, i, j + D2, z)][B3] - E_cent[1]);
-			dE[n][ind0][RIGHT][1][3] = (F3[n][index(n, i, j, z + D3)][B2] - E_cent[1]);
-			dE[n][ind0][RIGHT][2][1] = (F1[n][index(n, i + D1, j, z)][B3] - E_cent[2]);
-			dE[n][ind0][RIGHT][2][3] = (-F3[n][index(n, i, j, z + D3)][B1] - E_cent[2]);
+			dE[n][ind0][RIGHT][1][2] = (-F2[n][index_3D(n, i, j + D2, z)][B3] - E_cent[1]);
+			dE[n][ind0][RIGHT][1][3] = (F3[n][index_3D(n, i, j, z + D3)][B2] - E_cent[1]);
+			dE[n][ind0][RIGHT][2][1] = (F1[n][index_3D(n, i + D1, j, z)][B3] - E_cent[2]);
+			dE[n][ind0][RIGHT][2][3] = (-F3[n][index_3D(n, i, j, z + D3)][B1] - E_cent[2]);
 			#endif
-			dE[n][ind0][RIGHT][3][1] = (-F1[n][index(n, i + D1, j, z)][B2] - E_cent[3]);
-			dE[n][ind0][RIGHT][3][2] = (F2[n][index(n, i, j + D2, z)][B1] - E_cent[3]);
+			dE[n][ind0][RIGHT][3][1] = (-F1[n][index_3D(n, i + D1, j, z)][B2] - E_cent[3]);
+			dE[n][ind0][RIGHT][3][2] = (F2[n][index_3D(n, i, j + D2, z)][B1] - E_cent[3]);
 		}
 
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n] * D1, (N1_GPU_offset[n] + N1_GPU[n])*D1, N2_GPU_offset[n] * D2, (N2_GPU_offset[n] + N2_GPU[n])*D2, N3_GPU_offset[n] * D3, (N3_GPU_offset[n] + N3_GPU[n])*D3){
-			ind0 = index(n, i, j, z);
+			ind0 = index_3D(n, i, j, z);
 			double v[NDIM];
 			get_geometry(n, i, j, z, CENT, &geom);
-			ucon_calc(pb[n][index(n, i, j, z)], &geom, v);
+			ucon_calc(pb[n][index_3D(n, i, j, z)], &geom, v);
 
-			E_corn[n][ind0][1] = 0.25*((-F2[n][ind0][B3] - (dE[n][ind0][LEFT][1][3] * (double)(v[2]<=0.0) + dE[n][index(n, i, j - D2, z)][LEFT][1][3] * (double)(v[2]>0.0)))
-				+ (-F2[n][index(n, i, j, z - D3)][B3] + (dE[n][index(n, i, j, z - D3)][RIGHT][1][3] * (double)(v[2]<=0.0) + dE[n][index(n, i, j - D2, z - D3)][RIGHT][1][3] * (double)(v[2]>0.0)))
-				+ (F3[n][ind0][B2] - (dE[n][ind0][LEFT][1][2] * (double)(v[3]<=0.0) + dE[n][index(n, i, j, z - D3)][LEFT][1][2] * (double)(v[3]>0.0)))
-				+ (F3[n][index(n, i, j - D2, z)][B2] + (dE[n][index(n, i, j - D2, z)][RIGHT][1][2] * (double)(v[3]<=0.0) + dE[n][index(n, i, j - D2, z - D3)][RIGHT][1][2] * (double)(v[3]>0.0))));
-			E_corn[n][ind0][2] = 0.25*((-F3[n][ind0][B1] - (dE[n][ind0][LEFT][2][1] * (double)(v[3] <= 0.0) + dE[n][index(n, i, j, z - D3)][LEFT][2][1] * (double)(v[3] > 0.0)))
-				+ (-F3[n][index(n, i - D1, j, z)][B1] + (dE[n][index(n, i - D1, j, z)][RIGHT][2][1] * (double)(v[3] <= 0.0) + dE[n][index(n, i - D1, j, z - D3)][RIGHT][2][1] * (double)(v[3] > 0.0)))
-				+ (F1[n][ind0][B3] - (dE[n][ind0][LEFT][2][3] * (double)(v[1] <= 0.0) + dE[n][index(n, i - D1, j, z)][LEFT][2][3] * (double)(v[1] > 0.0)))
-				+ (F1[n][index(n, i, j, z - D3)][B3] + (dE[n][index(n, i, j, z - D3)][RIGHT][2][3] * (double)(v[1] <= 0.0) + dE[n][index(n, i - D1, j, z - D3)][RIGHT][2][3] * (double)(v[1] > 0.0))));
-			E_corn[n][ind0][3] = 0.25*((F2[n][ind0][B1] - (dE[n][ind0][LEFT][3][1] * (double)(v[2] <= 0.0) + dE[n][index(n, i, j - D2, z)][LEFT][3][1] * (double)(v[2] > 0.0)))
-				+ (F2[n][index(n, i - D1, j, z)][B1] + (dE[n][index(n, i - D1, j, z)][RIGHT][3][1] * (double)(v[2] <= 0.0) + dE[n][index(n, i - D1, j - D2, z)][RIGHT][3][1] * (double)(v[2] > 0.0)))
-				+ (-F1[n][ind0][B2] - (dE[n][ind0][LEFT][3][2] * (double)(v[1] <= 0.0) + dE[n][index(n, i - D1, j, z)][LEFT][3][2] * (double)(v[1] > 0.0)))
-				+ (-F1[n][index(n, i, j - D2, z)][B2] + (dE[n][index(n, i, j - D2, z)][RIGHT][3][2] * (double)(v[1] <= 0.0) + dE[n][index(n, i - D1, j - D2, z)][RIGHT][3][2] * (double)(v[1] > 0.0))));
+			E_corn[n][ind0][1] = 0.25*((-F2[n][ind0][B3] - (dE[n][ind0][LEFT][1][3] * (double)(v[2]<=0.0) + dE[n][index_3D(n, i, j - D2, z)][LEFT][1][3] * (double)(v[2]>0.0)))
+				+ (-F2[n][index_3D(n, i, j, z - D3)][B3] + (dE[n][index_3D(n, i, j, z - D3)][RIGHT][1][3] * (double)(v[2]<=0.0) + dE[n][index_3D(n, i, j - D2, z - D3)][RIGHT][1][3] * (double)(v[2]>0.0)))
+				+ (F3[n][ind0][B2] - (dE[n][ind0][LEFT][1][2] * (double)(v[3]<=0.0) + dE[n][index_3D(n, i, j, z - D3)][LEFT][1][2] * (double)(v[3]>0.0)))
+				+ (F3[n][index_3D(n, i, j - D2, z)][B2] + (dE[n][index_3D(n, i, j - D2, z)][RIGHT][1][2] * (double)(v[3]<=0.0) + dE[n][index_3D(n, i, j - D2, z - D3)][RIGHT][1][2] * (double)(v[3]>0.0))));
+			E_corn[n][ind0][2] = 0.25*((-F3[n][ind0][B1] - (dE[n][ind0][LEFT][2][1] * (double)(v[3] <= 0.0) + dE[n][index_3D(n, i, j, z - D3)][LEFT][2][1] * (double)(v[3] > 0.0)))
+				+ (-F3[n][index_3D(n, i - D1, j, z)][B1] + (dE[n][index_3D(n, i - D1, j, z)][RIGHT][2][1] * (double)(v[3] <= 0.0) + dE[n][index_3D(n, i - D1, j, z - D3)][RIGHT][2][1] * (double)(v[3] > 0.0)))
+				+ (F1[n][ind0][B3] - (dE[n][ind0][LEFT][2][3] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j, z)][LEFT][2][3] * (double)(v[1] > 0.0)))
+				+ (F1[n][index_3D(n, i, j, z - D3)][B3] + (dE[n][index_3D(n, i, j, z - D3)][RIGHT][2][3] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j, z - D3)][RIGHT][2][3] * (double)(v[1] > 0.0))));
+			E_corn[n][ind0][3] = 0.25*((F2[n][ind0][B1] - (dE[n][ind0][LEFT][3][1] * (double)(v[2] <= 0.0) + dE[n][index_3D(n, i, j - D2, z)][LEFT][3][1] * (double)(v[2] > 0.0)))
+				+ (F2[n][index_3D(n, i - D1, j, z)][B1] + (dE[n][index_3D(n, i - D1, j, z)][RIGHT][3][1] * (double)(v[2] <= 0.0) + dE[n][index_3D(n, i - D1, j - D2, z)][RIGHT][3][1] * (double)(v[2] > 0.0)))
+				+ (-F1[n][ind0][B2] - (dE[n][ind0][LEFT][3][2] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j, z)][LEFT][3][2] * (double)(v[1] > 0.0)))
+				+ (-F1[n][index_3D(n, i, j - D2, z)][B2] + (dE[n][index_3D(n, i, j - D2, z)][RIGHT][3][2] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j - D2, z)][RIGHT][3][2] * (double)(v[1] > 0.0))));
 
-			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL]))) E_corn[n][ind0][1] = 0.5*(-F2[n][ind0][B3] - F2[n][index(n, i, j, z - D3)][B3]);
-			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL]))) E_corn[n][ind0][3] = 0.5*(F2[n][ind0][B1] + F2[n][index(n, i - D1, j, z)][B1]);
+			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL]))) E_corn[n][ind0][1] = 0.5*(-F2[n][ind0][B3] - F2[n][index_3D(n, i, j, z - D3)][B3]);
+			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL]))) E_corn[n][ind0][3] = 0.5*(F2[n][ind0][B1] + F2[n][index_3D(n, i - D1, j, z)][B1]);
 		}
 	}
 }
@@ -895,20 +895,20 @@ void const_transport2(double(*restrict psi[NB])[NDIM], double(*restrict psf[NB])
 		//update the staggered field components
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n], N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){
-			ind0 = index(n, i, j, z);
-			psf[n][index(n, i, j, z)][1] = psi[n][index(n, i, j, z)][1] - Dt / dx[n][2] * (E_corn[n][index(n, i, j + D2, z)][3] - E_corn[n][ind0][3]) / gdet[n][index2(n, i, j, z)][FACE1];
+			ind0 = index_3D(n, i, j, z);
+			psf[n][index_3D(n, i, j, z)][1] = psi[n][index_3D(n, i, j, z)][1] - Dt / dx[n][2] * (E_corn[n][index_3D(n, i, j + D2, z)][3] - E_corn[n][ind0][3]) / gdet[n][index_2D(n, i, j, z)][FACE1];
 			#if(N3G>0)
-			psf[n][index(n, i, j, z)][1] += Dt / dx[n][3] * (E_corn[n][index(n, i, j, z + D3)][2] - E_corn[n][ind0][2]) / gdet[n][index2(n, i, j, z)][FACE1];
+			psf[n][index_3D(n, i, j, z)][1] += Dt / dx[n][3] * (E_corn[n][index_3D(n, i, j, z + D3)][2] - E_corn[n][ind0][2]) / gdet[n][index_2D(n, i, j, z)][FACE1];
 			#endif
 		}
 
 		//update the staggered field components
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n], N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){
-			ind0 = index(n, i, j, z);
-			psf[n][index(n, i, j, z)][2] = psi[n][index(n, i, j, z)][2] + Dt / dx[n][1] * (E_corn[n][index(n, i + D1, j, z)][3] - E_corn[n][ind0][3]) / gdet[n][index2(n, i, j, z)][FACE2];
+			ind0 = index_3D(n, i, j, z);
+			psf[n][index_3D(n, i, j, z)][2] = psi[n][index_3D(n, i, j, z)][2] + Dt / dx[n][1] * (E_corn[n][index_3D(n, i + D1, j, z)][3] - E_corn[n][ind0][3]) / gdet[n][index_2D(n, i, j, z)][FACE2];
 			#if(N3G>0)
-			psf[n][index(n, i, j, z)][2] += -Dt / dx[n][3] * (E_corn[n][index(n, i, j, z + D3)][1] - E_corn[n][ind0][1]) / gdet[n][index2(n, i, j, z)][FACE2];
+			psf[n][index_3D(n, i, j, z)][2] += -Dt / dx[n][3] * (E_corn[n][index_3D(n, i, j, z + D3)][1] - E_corn[n][ind0][1]) / gdet[n][index_2D(n, i, j, z)][FACE2];
 			#endif		
 		}
 
@@ -916,9 +916,9 @@ void const_transport2(double(*restrict psi[NB])[NDIM], double(*restrict psf[NB])
 		#if(N3G>0)
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], (N3_GPU_offset[n] + N3_GPU[n])*D3){
-			ind0 = index(n, i, j, z);
-			psf[n][index(n, i, j, z)][3] = psi[n][index(n, i, j, z)][3] - Dt / dx[n][1] * (E_corn[n][index(n, i + D1, j, z)][2] - E_corn[n][ind0][2]) / gdet[n][index2(n, i, j, z)][FACE3]
-				+ Dt / dx[n][2] * (E_corn[n][index(n, i, j + D2, z)][1] - E_corn[n][ind0][1]) / gdet[n][index2(n, i, j, z)][FACE3];
+			ind0 = index_3D(n, i, j, z);
+			psf[n][index_3D(n, i, j, z)][3] = psi[n][index_3D(n, i, j, z)][3] - Dt / dx[n][1] * (E_corn[n][index_3D(n, i + D1, j, z)][2] - E_corn[n][ind0][2]) / gdet[n][index_2D(n, i, j, z)][FACE3]
+				+ Dt / dx[n][2] * (E_corn[n][index_3D(n, i, j + D2, z)][1] - E_corn[n][ind0][1]) / gdet[n][index_2D(n, i, j, z)][FACE3];
 		}
 		#endif
 
@@ -1147,43 +1147,43 @@ void flux_ct(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doubl
 	{
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + D3){
-			ind0 = index(n ,i, j, z);
+			ind0 = index_3D(n ,i, j, z);
 			#if (N2G>0 && N3G>0)
-			dq[n][ind0][1] = 0.25*(F2[n][ind0][B3] + F2[n][index(n ,i, j, z - 1)][B3] - F3[n][ind0][B2] - F3[n][index(n ,i, j - 1, z)][B2]);
+			dq[n][ind0][1] = 0.25*(F2[n][ind0][B3] + F2[n][index_3D(n ,i, j, z - 1)][B3] - F3[n][ind0][B2] - F3[n][index_3D(n ,i, j - 1, z)][B2]);
 			#endif
 			#if (N1G>0 && N3G>0)
-			dq[n][ind0][2] = 0.25*(F3[n][ind0][B1] + F3[n][index(n ,i - 1, j, z)][B1] - F1[n][ind0][B3] - F1[n][index(n ,i, j, z - 1)][B3]);
+			dq[n][ind0][2] = 0.25*(F3[n][ind0][B1] + F3[n][index_3D(n ,i - 1, j, z)][B1] - F1[n][ind0][B3] - F1[n][index_3D(n ,i, j, z - 1)][B3]);
 			#endif
 			#if (N1G>0 && N2G>0)
-			dq[n][ind0][3] = 0.25*(F1[n][ind0][B2] + F1[n][index(n ,i, j - 1, z)][B2] - F2[n][ind0][B1] - F2[n][index(n ,i - 1, j, z)][B1]);
+			dq[n][ind0][3] = 0.25*(F1[n][ind0][B2] + F1[n][index_3D(n ,i, j - 1, z)][B2] - F2[n][ind0][B1] - F2[n][index_3D(n ,i - 1, j, z)][B1]);
 			#else
-			dq[n][ind0][3] = 0.25*(F1[n][ind0][B2] + F1[n][index(n ,i, j - 1, z)][B2]);
+			dq[n][ind0][3] = 0.25*(F1[n][ind0][B2] + F1[n][index_3D(n ,i, j - 1, z)][B2]);
 			#endif
 		}
 
 		/* rewrite EMFs as fluxes, after Toth */
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n])/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) 	{
-			ind0 = index(n ,i, j, z);
+			ind0 = index_3D(n ,i, j, z);
 			#if (N1G>0)
 			F1[n][ind0][B1] = 0.;
 			#endif
 			#if (N1G>0 && N2G>0)
-			F1[n][ind0][B2] = 0.5*(dq[n][ind0][3] + dq[n][index(n ,i, j + 1, z)][3]);
+			F1[n][ind0][B2] = 0.5*(dq[n][ind0][3] + dq[n][index_3D(n ,i, j + 1, z)][3]);
 			#endif
 			#if (N1G>0 && N3G>0)
-			F1[n][ind0][B3] = -0.5*(dq[n][ind0][2] + dq[n][index(n ,i, j, z + 1)][2]);
+			F1[n][ind0][B3] = -0.5*(dq[n][ind0][2] + dq[n][index_3D(n ,i, j, z + 1)][2]);
 			#endif
 		}
 
 		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) 	{
-			ind0 = index(n ,i, j, z);
+			ind0 = index_3D(n ,i, j, z);
 			#if (N1G>0 && N2G>0)		
-			F2[n][ind0][B1] = -0.5*(dq[n][ind0][3] + dq[n][index(n ,i + 1, j, z)][3]);
+			F2[n][ind0][B1] = -0.5*(dq[n][ind0][3] + dq[n][index_3D(n ,i + 1, j, z)][3]);
 			#endif
 			#if (N2G>0 && N3G>0)
-			F2[n][ind0][B3] = 0.5*(dq[n][ind0][1] + dq[n][index(n ,i, j, z + 1)][1]);
+			F2[n][ind0][B3] = 0.5*(dq[n][ind0][1] + dq[n][index_3D(n ,i, j, z + 1)][1]);
 			#endif
 			#if(N2G>0)
 			F2[n][ind0][B2] = 0.;
@@ -1192,12 +1192,12 @@ void flux_ct(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doubl
 
 		#pragma omp for collapse(2) schedule(static,(N1_GPU[n])*(N2_GPU[n])/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + D3) 	{
-			ind0 = index(n ,i, j, z);
+			ind0 = index_3D(n ,i, j, z);
 			#if (N1G>0 && N3G>0)
-			F3[n][ind0][B1] = 0.5*(dq[n][ind0][2] + dq[n][index(n ,i + 1, j, z)][2]);
+			F3[n][ind0][B1] = 0.5*(dq[n][ind0][2] + dq[n][index_3D(n ,i + 1, j, z)][2]);
 			#endif
 			#if (N2G>0 && N3G>0)
-			F3[n][ind0][B2] = -0.5*(dq[n][ind0][1] + dq[n][index(n ,i, j + 1, z)][1]);
+			F3[n][ind0][B2] = -0.5*(dq[n][ind0][1] + dq[n][index_3D(n ,i, j + 1, z)][1]);
 			#endif
 			#if(N3G>0)
 			F3[n][ind0][B3] = 0.;
@@ -1236,8 +1236,8 @@ void step_ch_debug()
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
 			PLOOP{
-				F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
-				F2[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = p[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
+				F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
+				F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
 			}
 		}
 	}
@@ -1248,10 +1248,10 @@ void step_ch_debug()
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
 			PLOOP{
-				if (ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] > 1.001 || ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] < 0.999){
+				if (ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] > 1.001 || ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] < 0.999){
 					if (k != 8){
 						fprintf(stderr, " i1:%d, j:%d, z:%d, k: %d, rank:% d, value1: %f value2: %f  \n", i, j, z, k, rank,
-							log(ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k] * ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] * F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k]) / log(10.));
+							log(ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.));
 					}
 				}
 			}
@@ -1262,8 +1262,8 @@ void step_ch_debug()
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
 			PLOOP{
-				ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
-				p[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = F2[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
+				ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
+				p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
 			}
 		}
 	}
@@ -1292,8 +1292,8 @@ void step_ch_debug()
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
 			PLOOP{
-				F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = p[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
-				F2[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
+				F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
+				F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
 			}
 		}
 	}
@@ -1304,10 +1304,10 @@ void step_ch_debug()
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
 			PLOOP{
-				if (p[n_ord[n]][index(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k]>1.001 || p[n_ord[n]][index(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] < 0.999){
+				if (p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]>1.001 || p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] < 0.999){
 					if (k != 8){
 						fprintf(stderr, " i2:%d, j:%d, z: %d, k: %d, rank: %d, value1: %f, value2: %f  \n", i, j, z, k, rank,
-							log(p[n_ord[n]][index(n_ord[n] ,i, j, z)][k] * p[n_ord[n]][index(n_ord[n] ,i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k] * F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k]) / log(10.));
+							log(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.));
 					}
 				}
 			}
@@ -1318,8 +1318,8 @@ void step_ch_debug()
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
 			PLOOP{
-				p[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = F1[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
-				ph[n_ord[n]][index(n_ord[n] ,i, j, z)][k] = F2[n_ord[n]][index(n_ord[n] ,i, j, z)][k];
+				p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
+				ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
 			}
 		}
 	}

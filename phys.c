@@ -145,11 +145,11 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	PLOOP dU[k] = 0. ;
 
 	DLOOP {
-		dU[UU] += mhd[j][k] * conn[n][index2(n,ii,jj,zz)][k][0][j] ;
-		dU[U1] += mhd[j][k] * conn[n][index2(n, ii, jj, zz)][k][1][j];
-		dU[U2] += mhd[j][k] * conn[n][index2(n, ii, jj, zz)][k][2][j];
-		dU[U3] += mhd[j][k] * conn[n][index2(n, ii, jj, zz)][k][3][j];
-		//printf("(%d,%d,%f):%f\n", j, k, gcon[index2(ii, jj)][0][k][j] / gcon[index2(ii, jj)][0][j][k], log(fabs(gcon[index2(ii, jj)][0][k][j])));
+		dU[UU] += mhd[j][k] * conn[n][index_2D(n,ii,jj,zz)][k][0][j] ;
+		dU[U1] += mhd[j][k] * conn[n][index_2D(n, ii, jj, zz)][k][1][j];
+		dU[U2] += mhd[j][k] * conn[n][index_2D(n, ii, jj, zz)][k][2][j];
+		dU[U3] += mhd[j][k] * conn[n][index_2D(n, ii, jj, zz)][k][3][j];
+		//printf("(%d,%d,%f):%f\n", j, k, gcon[index_2D(ii, jj)][0][k][j] / gcon[index_2D(ii, jj)][0][j][k], log(fabs(gcon[index_2D(ii, jj)][0][k][j])));
 	}
 
 	//misc_source(ph, ii, jj, geom, &q, dU, Dt) ;

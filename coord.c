@@ -447,10 +447,10 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
 				#pragma ivdep
 				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-					F1[n][index(n,i, -1, z)][B2] = -F1[n][index(n,i, 0, z)][B2];
-					F3[n][index(n,i, -1, z)][B2] = -F3[n][index(n,i, 0, z)][B2];
+					F1[n][index_3D(n,i, -1, z)][B2] = -F1[n][index_3D(n,i, 0, z)][B2];
+					F3[n][index_3D(n,i, -1, z)][B2] = -F3[n][index_3D(n,i, 0, z)][B2];
 					#if INFLOW==0
-					PLOOP F2[n][index(n,i, 0, z)][k] = 0.;
+					PLOOP F2[n][index_3D(n,i, 0, z)][k] = 0.;
 					#endif	
 				}
 			}
@@ -464,11 +464,11 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
 				#pragma ivdep
 				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-					F1[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
-					F3[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+					F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+					F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
 				}
 				#if INFLOW==0
-				PLOOP F2[n][index(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = 0.;
+				PLOOP F2[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = 0.;
 				#endif	
 			}
 		}
@@ -481,7 +481,7 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
 					#pragma ivdep
 					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-						if (F1[n][index(n,0, j, z)][RHO] > 0.) F1[n][index(n,0, j, z)][RHO] = 0.;
+						if (F1[n][index_3D(n,0, j, z)][RHO] > 0.) F1[n][index_3D(n,0, j, z)][RHO] = 0.;
 					}
 				}
 			}
@@ -493,7 +493,7 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
 				#pragma ivdep
 					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-						if (F1[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[n][index(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
+						if (F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
 					}
 				}
 			}

@@ -50,8 +50,8 @@ void rdump_block_write(MPI_File *fp, int n)
 	int i, j, z, k;
 
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
-		for (k = 0; k < NPR; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[n][index(n, i, j, z)][k];
-		for (k = 0; k < NDIM; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k + NPR)] = ps[n][index(n, i, j, z)][k];
+		for (k = 0; k < NPR; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[n][index_3D(n, i, j, z)][k];
+		for (k = 0; k < NDIM; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k + NPR)] = ps[n][index_3D(n, i, j, z)][k];
 	}
 	MPI_File_iwrite(fp[0], array_rdump[n], (NPR + NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), MPI_DOUBLE, &req_block_rdump[n][0]);
 }
@@ -62,14 +62,14 @@ void rdump_block_read(FILE *fp, int n)
 	int double_size = sizeof(double);
 
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
-		PLOOP fread(&(p[n][index(n, i, j, z)][k]), double_size, 1, fp);
+		PLOOP fread(&(p[n][index_3D(n, i, j, z)][k]), double_size, 1, fp);
 		#if(STAGGERED)
-		for (k = 0; k<NDIM; k++) fread(&(ps[n][index(n, i, j, z)][k]), double_size, 1, fp);
-		for (k = 0; k<NDIM; k++) ps[n][index(n, i, j, z)][k]*=1.0;
+		for (k = 0; k<NDIM; k++) fread(&(ps[n][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+		for (k = 0; k<NDIM; k++) ps[n][index_3D(n, i, j, z)][k]*=1.0;
 		#endif
- 		p[n][index(n, i, j, z)][B1]*=1.0;
-		p[n][index(n, i, j, z)][B2]*=1.0;
-		p[n][index(n, i, j, z)][B3]*=1.0;
+ 		p[n][index_3D(n, i, j, z)][B1]*=1.0;
+		p[n][index_3D(n, i, j, z)][B2]*=1.0;
+		p[n][index_3D(n, i, j, z)][B3]*=1.0;
 	}
 }
 

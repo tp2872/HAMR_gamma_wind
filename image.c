@@ -189,7 +189,7 @@ void image_all( int image_count )
   for (n = 0; n < n_active; n++){
 	  ZLOOP3D_MPI{
 		  for (k = 0; k < NFAIL; k++) {
-			  failimage[n_ord[n]][index(n_ord[n], i, j, z)][k] = 0;
+			  failimage[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = 0;
 		  }
 	  }
   }

@@ -499,7 +499,7 @@ void set_AMR(void){
 #define MAX_BLOCKS (24*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 void balance_load(void){
 	int i, node, tt, fp, ip, y, rem, nr_timesteps, n_active_localsteps[NB], max_timelevel;
-	int i1, j1, z1, k, n,u;
+	int i1, j1, z1, k, n,u,b;
 	int n_active_total_steps = 0;
 	int steps_total_RM[NB];
 	int NODE[NB];
@@ -554,14 +554,14 @@ void balance_load(void){
 		for (n = 0; n < n_active_total; n++){
 			n_active_total_steps += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
 			NODE[n] = -1;
-			max_timelevel = MY_MAX(max_timelevel, block[n_ord_total_RM[n]][AMR_TIMELEVEL]);
+			max_timelevel = MY_MAX(max_timelevel, MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff));
 		}	
 		for (u = 0; u < numtasks; u++) n_active_localsteps[u]=0;
 
 		u = 0;
 		for (i = 0; i < n_active_total; i++){ //Allocate a node to the lower timelevels
 			if (block[n_ord_total_RM[i]][AMR_TIMELEVEL] != max_timelevel){
-				nr_timesteps = AMR_MAXTIMELEVEL / 2 / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
+				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
 				if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
 					n_active_localsteps[u] += nr_timesteps;
 					NODE[i] = u;
@@ -572,38 +572,41 @@ void balance_load(void){
 						if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
 							n_active_localsteps[u] += nr_timesteps;
 							NODE[i] = u;
+							break;
 						}
 					}
 				}
-				else break;
 			}
 		}
 		u = 0;
-		for (i = 0; i < n_active_total; i++){ //Allocate a node to the higher timelevels as long node is not full
-			if (block[n_ord_total_RM[i]][AMR_TIMELEVEL] == max_timelevel){
-				nr_timesteps = AMR_MAXTIMELEVEL / 2 / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
-				if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
-					n_active_localsteps[u] += nr_timesteps;
-					NODE[i] = u;
-				}
-				else if (u<numtasks - 1){
-					while (u<numtasks - 1){
-						u++;
-						if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
-							n_active_localsteps[u] += nr_timesteps;
-							NODE[i] = u;
+
+		for (b = 0; b <= log(AMR_MAXTIMELEVEL)/log(2); b++){
+			for (i = 0; i < n_active_total; i++){ //Allocate a node to the higher timelevels as long node is not full
+				if (block[n_ord_total_RM[i]][AMR_TIMELEVEL] == pow(2,b) && NODE[i]==-1){
+					nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
+					if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
+						n_active_localsteps[u] += nr_timesteps;
+						NODE[i] = u;
+					}
+					else if (u < numtasks - 1){
+						while (u < numtasks - 1){
+							u++;
+							if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
+								n_active_localsteps[u] += nr_timesteps;
+								NODE[i] = u;
+								break;
+							}
 						}
 					}
 				}
-				else break;
 			}
 		}
 		u = 0;
 		for (i = 0; i < n_active_total; i++){ //Allocate a node to the remaining tiles
 			if (NODE[i] == -1){
-				nr_timesteps = AMR_MAXTIMELEVEL / 2 / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
+				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
 				n_active_localsteps[u] += nr_timesteps;
-				NODE[i] = u;
+				NODE[i] = u%numtasks;
 				u++;
 			}
 		}
@@ -1493,16 +1496,16 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
 					for (k = 0; k < NPR; k++){
-						p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-							= 0.125/gdet[n][index2(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][CENT] * (
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT] +
-							p[n_child][index(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index2(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT]);
+						p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+							= 0.125/gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][CENT] * (
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT] +
+							p[n_child][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] * gdet[n][index_2D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][CENT]);
 					}
 				}
 			}
@@ -1522,49 +1525,49 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 						z_2 = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3;
 
 						get_geometry(n_child, i_1, j_1, z_1, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_1, j_1, z_1)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_1, j_1, z_1)], &q, &geom, dq[n_child][index(n_child, i_1, j_1, z_1)]);
+						get_state(p[n_child][index_3D(n_child, i_1, j_1, z_1)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_1, j_1, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_1, z_1)]);
 
 						get_geometry(n_child, i_1, j_1, z_2, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_1, j_1, z_2)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_1, j_1, z_2)], &q, &geom, dq[n_child][index(n_child, i_1, j_1, z_2)]);
+						get_state(p[n_child][index_3D(n_child, i_1, j_1, z_2)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_1, j_1, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_1, z_2)]);
 						
 						get_geometry(n_child, i_1, j_2, z_1, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_1, j_2, z_1)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_1, j_2, z_1)], &q, &geom, dq[n_child][index(n_child, i_1, j_2, z_1)]);
+						get_state(p[n_child][index_3D(n_child, i_1, j_2, z_1)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_1, j_2, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_2, z_1)]);
 
 						get_geometry(n_child, i_1, j_2, z_2, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_1, j_2, z_2)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_1, j_2, z_2)], &q, &geom, dq[n_child][index(n_child, i_1, j_2, z_2)]);
+						get_state(p[n_child][index_3D(n_child, i_1, j_2, z_2)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_1, j_2, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_2, z_2)]);
 						
 						get_geometry(n_child, i_2, j_1, z_1, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_2, j_1, z_1)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_2, j_1, z_1)], &q, &geom, dq[n_child][index(n_child, i_2, j_1, z_1)]);
+						get_state(p[n_child][index_3D(n_child, i_2, j_1, z_1)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_2, j_1, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_1, z_1)]);
 						
 						get_geometry(n_child, i_2, j_1, z_2, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_2, j_1, z_2)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_2, j_1, z_2)], &q, &geom, dq[n_child][index(n_child, i_2, j_1, z_2)]);
+						get_state(p[n_child][index_3D(n_child, i_2, j_1, z_2)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_2, j_1, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_1, z_2)]);
 						
 						get_geometry(n_child, i_2, j_1, z_1, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_2, j_2, z_1)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_2, j_2, z_1)], &q, &geom, dq[n_child][index(n_child, i_2, j_2, z_1)]);
+						get_state(p[n_child][index_3D(n_child, i_2, j_2, z_1)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_2, j_2, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_2, z_1)]);
 						
 						get_geometry(n_child, i_2, j_2, z_2, CENT, &geom);
-						get_state(p[n_child][index(n_child, i_2, j_2, z_2)], &geom, &q);
-						primtoU(p[n_child][index(n_child, i_2, j_2, z_2)], &q, &geom, dq[n_child][index(n_child, i_2, j_2, z_2)]);
+						get_state(p[n_child][index_3D(n_child, i_2, j_2, z_2)], &geom, &q);
+						primtoU(p[n_child][index_3D(n_child, i_2, j_2, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_2, z_2)]);
 
-						dq[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+						dq[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 							= 0.125  * (
-							dq[n_child][index(n_child, i_1, j_1, z_1)][k] +
-							dq[n_child][index(n_child, i_1, j_1, z_2)][k] +
-							dq[n_child][index(n_child, i_1, j_2, z_1)][k] +
-							dq[n_child][index(n_child, i_1, j_2, z_2)][k] +
-							dq[n_child][index(n_child, i_2, j_1, z_1)][k] +
-							dq[n_child][index(n_child, i_2, j_1, z_2)][k] +
-							dq[n_child][index(n_child, i_2, j_2, z_1)][k] +
-							dq[n_child][index(n_child, i_2, j_2, z_2)][k] );
+							dq[n_child][index_3D(n_child, i_1, j_1, z_1)][k] +
+							dq[n_child][index_3D(n_child, i_1, j_1, z_2)][k] +
+							dq[n_child][index_3D(n_child, i_1, j_2, z_1)][k] +
+							dq[n_child][index_3D(n_child, i_1, j_2, z_2)][k] +
+							dq[n_child][index_3D(n_child, i_2, j_1, z_1)][k] +
+							dq[n_child][index_3D(n_child, i_2, j_1, z_2)][k] +
+							dq[n_child][index_3D(n_child, i_2, j_2, z_1)][k] +
+							dq[n_child][index_3D(n_child, i_2, j_2, z_2)][k] );
 					}
-					pflag[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])] = Utoprim_2d(dq[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])], geom.gcov, geom.gcon, geom.g, p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])]);
+					pflag[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])] = Utoprim_2d(dq[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])], geom.gcov, geom.gcon, geom.g, p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])]);
 				}
 			}
 		}
@@ -1577,12 +1580,12 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 					jc = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
 					zc = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
 					k = 1;
-					ps[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-						= 1. / gdet[n][index2(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] * 0.25*(
-						ps[n_child][index(n_child, ic, jc, zc)][k] * gdet[n_child][index2(n_child, ic, jc, zc)][FACE1] +
-						ps[n_child][index(n_child, ic, jc + REF_2, zc)][k] * gdet[n_child][index2(n_child, ic, jc + REF_2, zc)][FACE1] +
-						ps[n_child][index(n_child, ic, jc, zc + REF_3)][k] * gdet[n_child][index2(n_child, ic, jc, zc + REF_3)][FACE1] +
-						ps[n_child][index(n_child, ic, jc + REF_2, zc + REF_3)][k] * gdet[n_child][index2(n_child, ic, jc + REF_2, zc + REF_3)][FACE1]);
+					ps[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+						= 1. / gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] * 0.25*(
+						ps[n_child][index_3D(n_child, ic, jc, zc)][k] * gdet[n_child][index_2D(n_child, ic, jc, zc)][FACE1] +
+						ps[n_child][index_3D(n_child, ic, jc + REF_2, zc)][k] * gdet[n_child][index_2D(n_child, ic, jc + REF_2, zc)][FACE1] +
+						ps[n_child][index_3D(n_child, ic, jc, zc + REF_3)][k] * gdet[n_child][index_2D(n_child, ic, jc, zc + REF_3)][FACE1] +
+						ps[n_child][index_3D(n_child, ic, jc + REF_2, zc + REF_3)][k] * gdet[n_child][index_2D(n_child, ic, jc + REF_2, zc + REF_3)][FACE1]);
 				}
 			}
 		}
@@ -1594,12 +1597,12 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 					jc = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
 					zc = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
 					k = 2;
-					ps[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-						= 1. / gdet[n][index2(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2] * 0.25*(
-						ps[n_child][index(n_child, ic, jc, zc)][k] * gdet[n_child][index2(n_child, ic, jc, zc)][FACE2] +
-						ps[n_child][index(n_child, ic + REF_1, jc, zc)][k] * gdet[n_child][index2(n_child, ic + REF_1, jc, zc)][FACE2] +
-						ps[n_child][index(n_child, ic, jc, zc + REF_3)][k] * gdet[n_child][index2(n_child, ic, jc, zc + REF_3)][FACE2] +
-						ps[n_child][index(n_child, ic + REF_1, jc, zc + REF_3)][k] * gdet[n_child][index2(n_child, ic + REF_1, jc, zc + REF_3)][FACE2]);
+					ps[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+						= 1. / gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2] * 0.25*(
+						ps[n_child][index_3D(n_child, ic, jc, zc)][k] * gdet[n_child][index_2D(n_child, ic, jc, zc)][FACE2] +
+						ps[n_child][index_3D(n_child, ic + REF_1, jc, zc)][k] * gdet[n_child][index_2D(n_child, ic + REF_1, jc, zc)][FACE2] +
+						ps[n_child][index_3D(n_child, ic, jc, zc + REF_3)][k] * gdet[n_child][index_2D(n_child, ic, jc, zc + REF_3)][FACE2] +
+						ps[n_child][index_3D(n_child, ic + REF_1, jc, zc + REF_3)][k] * gdet[n_child][index_2D(n_child, ic + REF_1, jc, zc + REF_3)][FACE2]);
 				}
 			}
 		}
@@ -1611,12 +1614,12 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 					jc = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
 					zc = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
 					k = 3;
-					ps[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-						= 1. / gdet[n][index2(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] * 0.25*(
-						ps[n_child][index(n_child, ic, jc, zc)][k] * gdet[n_child][index2(n_child, ic, jc, zc)][FACE3] +
-						ps[n_child][index(n_child, ic + REF_1, jc, zc)][k] * gdet[n_child][index2(n_child, ic + REF_1, jc, zc)][FACE3] +
-						ps[n_child][index(n_child, ic, jc + REF_2, zc)][k] * gdet[n_child][index2(n_child, ic, jc + REF_2, zc)][FACE3] +
-						ps[n_child][index(n_child, ic + REF_1, jc + REF_2, zc)][k] * gdet[n_child][index2(n_child, ic + REF_1, jc + REF_2, zc)][FACE3]);
+					ps[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+						= 1. / gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] * 0.25*(
+						ps[n_child][index_3D(n_child, ic, jc, zc)][k] * gdet[n_child][index_2D(n_child, ic, jc, zc)][FACE3] +
+						ps[n_child][index_3D(n_child, ic + REF_1, jc, zc)][k] * gdet[n_child][index_2D(n_child, ic + REF_1, jc, zc)][FACE3] +
+						ps[n_child][index_3D(n_child, ic, jc + REF_2, zc)][k] * gdet[n_child][index_2D(n_child, ic, jc + REF_2, zc)][FACE3] +
+						ps[n_child][index_3D(n_child, ic + REF_1, jc + REF_2, zc)][k] * gdet[n_child][index_2D(n_child, ic + REF_1, jc + REF_2, zc)][FACE3]);
 				}
 			}
 		}
@@ -1736,50 +1739,50 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 			z1 = (z - z % (1 + REF_3)) / (1 + REF_3) + N3_GPU_offset[n] + offset_3*N3_GPU[n] / 2 * REF_3;
 			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 0){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] - 0.25 * d1[n][index(n, i1, j1, z1)][k] - 0.25 * d2[n][index(n, i1, j1, z1)][k] - 0.25 * d3[n][index(n, i1, j1, z1)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d2[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d3[n][index_3D(n, i1, j1, z1)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 1){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] - 0.25 * d1[n][index(n, i1, j1, z1)][k] - 0.25 * d2[n][index(n, i1, j1, z1)][k] + 0.25 * d3[n][index(n, i1, j1, z1 + REF_3)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d2[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d3[n][index_3D(n, i1, j1, z1 + REF_3)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 0){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] - 0.25 * d1[n][index(n, i1, j1, z1)][k] + 0.25 * d2[n][index(n, i1, j1 + REF_2, z1)][k] - 0.25 * d3[n][index(n, i1, j1, z1)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d2[n][index_3D(n, i1, j1 + REF_2, z1)][k] - 0.25 * d3[n][index_3D(n, i1, j1, z1)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 1){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] - 0.25 * d1[n][index(n, i1, j1, z1)][k] + 0.25 * d2[n][index(n, i1, j1 + REF_2, z1)][k] + 0.25 * d3[n][index(n, i1, j1, z1 + REF_3)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d2[n][index_3D(n, i1, j1 + REF_2, z1)][k] + 0.25 * d3[n][index_3D(n, i1, j1, z1 + REF_3)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 0){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] + 0.25 * d1[n][index(n, i1 + REF_1, j1, z1)][k] - 0.25 * d2[n][index(n, i1, j1, z1)][k] - 0.25 * d3[n][index(n, i1, j1, z1)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[n][index_3D(n, i1 + REF_1, j1, z1)][k] - 0.25 * d2[n][index_3D(n, i1, j1, z1)][k] - 0.25 * d3[n][index_3D(n, i1, j1, z1)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 1){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] + 0.25 * d1[n][index(n, i1 + REF_1, j1, z1)][k] - 0.25 * d2[n][index(n, i1, j1, z1)][k] + 0.25 * d3[n][index(n, i1, j1, z1 + REF_3)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[n][index_3D(n, i1 + REF_1, j1, z1)][k] - 0.25 * d2[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d3[n][index_3D(n, i1, j1, z1 + REF_3)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 0){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] + 0.25 * d1[n][index(n, i1 + REF_1, j1, z1)][k] + 0.25 * d2[n][index(n, i1, j1 + REF_2, z1)][k] - 0.25 * d3[n][index(n, i1, j1, z1)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[n][index_3D(n, i1 + REF_1, j1, z1)][k] + 0.25 * d2[n][index_3D(n, i1, j1 + REF_2, z1)][k] - 0.25 * d3[n][index_3D(n, i1, j1, z1)][k];
 				}
 			}
 			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 1){
 				PLOOP{
-					prim[n_child][index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[n][index(n, i1, j1, z1)][k] + 0.25 * d1[n][index(n, i1 + REF_1, j1, z1)][k] + 0.25 * d2[n][index(n, i1, j1 + REF_2, z1)][k] + 0.25 * d3[n][index(n, i1, j1, z1 + REF_3)][k];
+					prim[n_child][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
+					prim[n][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[n][index_3D(n, i1 + REF_1, j1, z1)][k] + 0.25 * d2[n][index_3D(n, i1, j1 + REF_2, z1)][k] + 0.25 * d3[n][index_3D(n, i1, j1, z1 + REF_3)][k];
 				}
 			}
 			//Enforce strict conservation of conservative quantitites during refinement
@@ -1797,91 +1800,91 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 
 				//Calculate total conserved quantities in new cells
 				get_geometry(n_child, i_1, j_1, z_1, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_1, j_1, z_1)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_1, j_1, z_1)], &q, &geom, dq[n_child][index(n_child, i_1, j_1, z_1)]);
-				PLOOP U[k] = 0.125*(dq[n_child][index(n_child, i_1, j_1, z_1)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_1, j_1, z_1)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_1, j_1, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_1, z_1)]);
+				PLOOP U[k] = 0.125*(dq[n_child][index_3D(n_child, i_1, j_1, z_1)][k]);
 
 				get_geometry(n_child, i_1, j_1, z_2, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_1, j_1, z_2)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_1, j_1, z_2)], &q, &geom, dq[n_child][index(n_child, i_1, j_1, z_2)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_1, j_1, z_2)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_1, j_1, z_2)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_1, j_1, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_1, z_2)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_1, j_1, z_2)][k]);
 
 				get_geometry(n_child, i_1, j_2, z_1, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_1, j_2, z_1)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_1, j_2, z_1)], &q, &geom, dq[n_child][index(n_child, i_1, j_2, z_1)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_1, j_2, z_1)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_1, j_2, z_1)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_1, j_2, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_2, z_1)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_1, j_2, z_1)][k]);
 
 				get_geometry(n_child, i_1, j_2, z_2, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_1, j_2, z_2)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_1, j_2, z_2)], &q, &geom, dq[n_child][index(n_child, i_1, j_2, z_2)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_1, j_2, z_2)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_1, j_2, z_2)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_1, j_2, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_1, j_2, z_2)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_1, j_2, z_2)][k]);
 
 				get_geometry(n_child, i_2, j_1, z_1, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_2, j_1, z_1)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_2, j_1, z_1)], &q, &geom, dq[n_child][index(n_child, i_2, j_1, z_1)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_2, j_1, z_1)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_2, j_1, z_1)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_2, j_1, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_1, z_1)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_2, j_1, z_1)][k]);
 
 				get_geometry(n_child, i_2, j_1, z_2, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_2, j_1, z_2)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_2, j_1, z_2)], &q, &geom, dq[n_child][index(n_child, i_2, j_1, z_2)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_2, j_1, z_2)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_2, j_1, z_2)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_2, j_1, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_1, z_2)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_2, j_1, z_2)][k]);
 
 				get_geometry(n_child, i_2, j_2, z_1, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_2, j_2, z_1)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_2, j_2, z_1)], &q, &geom, dq[n_child][index(n_child, i_2, j_2, z_1)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_2, j_2, z_1)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_2, j_2, z_1)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_2, j_2, z_1)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_2, z_1)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_2, j_2, z_1)][k]);
 
 				get_geometry(n_child, i_2, j_2, z_2, CENT, &geom);
-				get_state(prim[n_child][index(n_child, i_2, j_2, z_2)], &geom, &q);
-				primtoU(prim[n_child][index(n_child, i_2, j_2, z_2)], &q, &geom, dq[n_child][index(n_child, i_2, j_2, z_2)]);
-				PLOOP U[k] += 0.125*(dq[n_child][index(n_child, i_2, j_2, z_2)][k]);
+				get_state(prim[n_child][index_3D(n_child, i_2, j_2, z_2)], &geom, &q);
+				primtoU(prim[n_child][index_3D(n_child, i_2, j_2, z_2)], &q, &geom, dq[n_child][index_3D(n_child, i_2, j_2, z_2)]);
+				PLOOP U[k] += 0.125*(dq[n_child][index_3D(n_child, i_2, j_2, z_2)][k]);
 
 				//Calculate conserved quantities in old cell
 				get_geometry(n, i1, j1, z1, CENT, &geom);
-				get_state(prim[n][index(n, i1, j1, z1)], &geom, &q);
-				primtoU(prim[n][index(n, i1, j1, z1)], &q, &geom, dq[n][index(n, i1, j1, z1)]);
-				PLOOP U0[k] = (dq[n][index(n, i1, j1, z1)][k]);
+				get_state(prim[n][index_3D(n, i1, j1, z1)], &geom, &q);
+				primtoU(prim[n][index_3D(n, i1, j1, z1)], &q, &geom, dq[n][index_3D(n, i1, j1, z1)]);
+				PLOOP U0[k] = (dq[n][index_3D(n, i1, j1, z1)][k]);
 
 				//Normalize new conserved quantities in children to parent cell and convert back to primitive variables
 				PLOOP factor[k] = U0[k] / U[k];
 				
-				PLOOP dq[n_child][index(n_child, i_1, j_1, z_1)][k] *= factor[k];
+				PLOOP dq[n_child][index_3D(n_child, i_1, j_1, z_1)][k] *= factor[k];
 				get_geometry(n_child, i_1, j_1, z_1, CENT, &geom);
-				pflag[n_child][index(n_child, i_1, j_1, z_1)] = Utoprim_2d(dq[n_child][index(n_child, i_1, j_1, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_1, j_1, z_1)]);
+				pflag[n_child][index_3D(n_child, i_1, j_1, z_1)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_1, j_1, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_1, j_1, z_1)]);
 				if (REF_3 == 1){
-					PLOOP dq[n_child][index(n_child, i_1, j_1, z_2)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_1, j_1, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_1, j_1, z_2, CENT, &geom);
-					pflag[n_child][index(n_child, i_1, j_1, z_2)]=Utoprim_2d(dq[n_child][index(n_child, i_1, j_1, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_1, j_1, z_2)]);
+					pflag[n_child][index_3D(n_child, i_1, j_1, z_2)]=Utoprim_2d(dq[n_child][index_3D(n_child, i_1, j_1, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_1, j_1, z_2)]);
 				}
 				if (REF_2 == 1){
-					PLOOP dq[n_child][index(n_child, i_1, j_2, z_1)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_1, j_2, z_1)][k] *= factor[k];
 					get_geometry(n_child, i_1, j_2, z_1, CENT, &geom);
-					pflag[n_child][index(n_child, i_1, j_1, z_2)] = Utoprim_2d(dq[n_child][index(n_child, i_1, j_2, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_1, j_2, z_1)]);
+					pflag[n_child][index_3D(n_child, i_1, j_1, z_2)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_1, j_2, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_1, j_2, z_1)]);
 				}
 				if (REF_2==1 && REF_3 == 1){
-					PLOOP dq[n_child][index(n_child, i_1, j_2, z_2)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_1, j_2, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_1, j_2, z_2, CENT, &geom);
-					pflag[n_child][index(n_child, i_1, j_2, z_2)] = Utoprim_2d(dq[n_child][index(n_child, i_1, j_2, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_1, j_2, z_2)]);
+					pflag[n_child][index_3D(n_child, i_1, j_2, z_2)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_1, j_2, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_1, j_2, z_2)]);
 				}
 				if (REF_1 == 1){
-					PLOOP dq[n_child][index(n_child, i_2, j_1, z_1)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_2, j_1, z_1)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_1, z_1, CENT, &geom);
-					pflag[n_child][index(n_child, i_2, j_1, z_1)] = Utoprim_2d(dq[n_child][index(n_child, i_2, j_1, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_2, j_1, z_1)]);
+					pflag[n_child][index_3D(n_child, i_2, j_1, z_1)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_2, j_1, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_2, j_1, z_1)]);
 				}
 				if (REF_1 == 1 && REF_3==1){
-					PLOOP dq[n_child][index(n_child, i_2, j_1, z_2)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_2, j_1, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_1, z_2, CENT, &geom);
-					pflag[n_child][index(n_child, i_2, j_1, z_2)] = Utoprim_2d(dq[n_child][index(n_child, i_2, j_1, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_2, j_1, z_2)]);
+					pflag[n_child][index_3D(n_child, i_2, j_1, z_2)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_2, j_1, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_2, j_1, z_2)]);
 				}
 				if (REF_1 == 1 && REF_2 == 1){
-					PLOOP dq[n_child][index(n_child, i_2, j_2, z_1)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_2, j_2, z_1)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_2, z_1, CENT, &geom);
-					pflag[n_child][index(n_child, i_2, j_2, z_1)] = Utoprim_2d(dq[n_child][index(n_child, i_2, j_2, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_2, j_2, z_1)]);
+					pflag[n_child][index_3D(n_child, i_2, j_2, z_1)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_2, j_2, z_1)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_2, j_2, z_1)]);
 				}
 				if (REF_1 == 1 && REF_2 == 1 && REF_3 == 1){
-					PLOOP dq[n_child][index(n_child, i_2, j_2, z_2)][k] *= factor[k];
+					PLOOP dq[n_child][index_3D(n_child, i_2, j_2, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_2, z_2, CENT, &geom);
-					pflag[n_child][index(n_child, i_2, j_2, z_2)] = Utoprim_2d(dq[n_child][index(n_child, i_2, j_2, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index(n_child, i_2, j_2, z_2)]);
+					pflag[n_child][index_3D(n_child, i_2, j_2, z_2)] = Utoprim_2d(dq[n_child][index_3D(n_child, i_2, j_2, z_2)], geom.gcov, geom.gcon, geom.g, prim[n_child][index_3D(n_child, i_2, j_2, z_2)]);
 				}
 			}*/
 		}
@@ -1947,8 +1950,8 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			z1 = (z - z % (1 + REF_3)) / (1 + REF_3);
 
 			//index of child
-			ind0 = index(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
-			ind2 = index2(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
+			ind0 = index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
+			ind2 = index_2D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
 
 			//face centered magnetic field components of neighbouring cells that are refined allready
 			b1_1 = b1_2 = b1_3 = b1_4 = b1_5 = b1_6 = b1_7 = b1_8 = 0.;
@@ -2113,9 +2116,9 @@ void pre_refine(void){
 		{
 			#pragma omp for collapse(2) schedule(dynamic)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n1]] - N1G, N1_GPU_offset[n_ord[n1]] + N1_GPU[n_ord[n1]] + N1G - 1, -N2G + N2_GPU_offset[n_ord[n1]], N2_GPU_offset[n_ord[n1]] + N2_GPU[n_ord[n1]] + N2G - 1, N3_GPU_offset[n_ord[n1]] - N3G, N3_GPU_offset[n_ord[n1]] + N3_GPU[n_ord[n1]] + N3G - 1) {
-				psh[n_ord[n1]][index(n_ord[n1], i, j, z)][1] = ps[n_ord[n1]][index(n_ord[n1], i, j, z)][1] * gdet[n_ord[n1]][index2(n_ord[n1], i, j, z)][FACE1];
-				psh[n_ord[n1]][index(n_ord[n1], i, j, z)][2] = ps[n_ord[n1]][index(n_ord[n1], i, j, z)][2] * gdet[n_ord[n1]][index2(n_ord[n1], i, j, z)][FACE2];
-				psh[n_ord[n1]][index(n_ord[n1], i, j, z)][3] = ps[n_ord[n1]][index(n_ord[n1], i, j, z)][3] * gdet[n_ord[n1]][index2(n_ord[n1], i, j, z)][FACE3];
+				psh[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][1] = ps[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][1] * gdet[n_ord[n1]][index_2D(n_ord[n1], i, j, z)][FACE1];
+				psh[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][2] = ps[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][2] * gdet[n_ord[n1]][index_2D(n_ord[n1], i, j, z)][FACE2];
+				psh[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][3] = ps[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][3] * gdet[n_ord[n1]][index_2D(n_ord[n1], i, j, z)][FACE3];
 			}
 		}
 	}
@@ -2146,10 +2149,10 @@ void refine(int n){
 			#pragma omp for collapse(2) schedule(dynamic)
 			ZSLOOP3D(-D1, N1_GPU[n] - 1 + D1, -D2, N2_GPU[n] - 1 + D2, -D3, N3_GPU[n] - 1 + D3) {
 				PLOOP{
-					F1[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[n][index(n, i + N1_GPU_offset[n] - D1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index(n, i + N1_GPU_offset[n] + D1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-					F2[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - D2, z + N3_GPU_offset[n])][k], p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + D2, z + N3_GPU_offset[n])][k]);
+					F1[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[n][index_3D(n, i + N1_GPU_offset[n] - D1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index_3D(n, i + N1_GPU_offset[n] + D1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
+					F2[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - D2, z + N3_GPU_offset[n])][k], p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + D2, z + N3_GPU_offset[n])][k]);
 					#if(N3>1)
-					F3[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - D3)][k], p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + D3)][k]);
+					F3[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - D3)][k], p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + D3)][k]);
 					#endif
 				}
 			}
@@ -2307,28 +2310,28 @@ double B1_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	double B1p, B1m, d2B1p, d2B1m, d3B1p, d3B1m, d1B2p, d1B2m, d1B3p, d1B3m;
 	double d23B1p, d23B1m, d13B2p, d13B2m, d12B3p, d12B3m;
 
-	B1p = pb[n][index(n, i + D1, j, z)][1];
-	B1m = pb[n][index(n, i, j, z)][1];
+	B1p = pb[n][index_3D(n, i + D1, j, z)][1];
+	B1m = pb[n][index_3D(n, i, j, z)][1];
 
 	d2B1p = b1_7 + b1_8 - b1_5 - b1_6; //5,6,7,8
 	d2B1m = b1_3 + b1_4 - b1_2 - b1_1; //1,2,3,4
-	if (n_rec4 < 0) d2B1p = 0.;// slope_lim(pb[n][index(n, i + D1, j - D2, z)][1], pb[n][index(n, i + D1, j, z)][1], pb[n][index(n, i + D1, j + D2, z)][1]);
-	if (n_rec2 < 0) d2B1m = 0.;// slope_lim(pb[n][index(n, i, j - D2, z)][1], pb[n][index(n, i, j, z)][1], pb[n][index(n, i, j + D2, z)][1]);
+	if (n_rec4 < 0) d2B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j - D2, z)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j + D2, z)][1]);
+	if (n_rec2 < 0) d2B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j + D2, z)][1]);
 	
 	d3B1p = b1_6 + b1_8 - b1_5 - b1_7; //5,6,7,8
 	d3B1m = b1_2 + b1_4 - b1_1 - b1_3; //1,2,3,4
-	if (n_rec4 < 0) d3B1p = 0.;// slope_lim(pb[n][index(n, i + D1, j, z - D3)][1], pb[n][index(n, i + D1, j, z)][1], pb[n][index(n, i + D1, j, z + D3)][1]);
-	if (n_rec2 < 0) d3B1m = 0.;// slope_lim(pb[n][index(n, i, j, z - D3)][1], pb[n][index(n, i, j, z)][1], pb[n][index(n, i, j, z + D3)][1]);
+	if (n_rec4 < 0) d3B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j, z - D3)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j, z + D3)][1]);
+	if (n_rec2 < 0) d3B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j, z + D3)][1]);
 
 	d1B2p = b2_7 + b2_8 - b2_3 - b2_4; //3,4,7,8
 	d1B2m = b2_5 + b2_6 - b2_1 - b2_2; //1,2,5,6
-	if (n_rec1 < 0) d1B2p = 0.;// slope_lim(pb[n][index(n, i - D1, j + D2, z)][2], pb[n][index(n, i, j + D2, z)][2], pb[n][index(n, i + D1, j + D2, z)][2]);
-	if (n_rec3 < 0) d1B2m = 0.;// slope_lim(pb[n][index(n, i - D1, j, z)][2], pb[n][index(n, i, j, z)][2], pb[n][index(n, i + D1, j, z)][2]);
+	if (n_rec1 < 0) d1B2p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i + D1, j + D2, z)][2]);
+	if (n_rec3 < 0) d1B2m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i + D1, j, z)][2]);
 
 	d1B3p = b3_6 + b3_8 - b3_2 - b3_4; //2,4,6,8
 	d1B3m = b3_5 + b3_7 - b3_1 - b3_3; //1,3,5,7
-	if (n_rec6 < 0) d1B3p = 0.;// slope_lim(pb[n][index(n, i - D1, j, z + D3)][3], pb[n][index(n, i, j, z + D3)][3], pb[n][index(n, i + D1, j, z + D3)][3]);
-	if (n_rec5 < 0) d1B3m = 0.;// slope_lim(pb[n][index(n, i - D1, j, z)][3], pb[n][index(n, i, j, z)][3], pb[n][index(n, i + D1, j, z)][3]);
+	if (n_rec6 < 0) d1B3p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i + D1, j, z + D3)][3]);
+	if (n_rec5 < 0) d1B3m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i + D1, j, z)][3]);
 	
 	d23B1p = 4.*(b1_5 + b1_8 - b1_6 - b1_7); //5,6,7,8
 	d23B1m = 4.*(b1_1 + b1_4 - b1_2 - b1_3); //1,2,3,4
@@ -2370,23 +2373,23 @@ double B2_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 
 	d1B2p = b2_7 + b2_8 - b2_3 - b2_4; //3,4,7,8
 	d1B2m = b2_5 + b2_6 - b2_1 - b2_2; //1,2,5,6
-	if (n_rec1 < 0) d1B2p = 0.;// slope_lim(pb[n][index(n, i - D1, j + D2, z)][2], pb[n][index(n, i, j + D2, z)][2], pb[n][index(n, i + D1, j + D2, z)][2]);
-	if (n_rec3 < 0) d1B2m = 0.;// slope_lim(pb[n][index(n, i - D1, j, z)][2], pb[n][index(n, i, j, z)][2], pb[n][index(n, i + D1, j, z)][2]);
+	if (n_rec1 < 0) d1B2p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i + D1, j + D2, z)][2]);
+	if (n_rec3 < 0) d1B2m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i + D1, j, z)][2]);
 
 	d3B2p = b2_4 + b2_8 - b2_3 - b2_7; //3,7,4,8
 	d3B2m = b2_2 + b2_6 - b2_1 - b2_5; //2,6,1,5
-	if (n_rec1 < 0) d3B2p = 0.;// slope_lim(pb[n][index(n, i, j + D2, z - D3)][2], pb[n][index(n, i, j + D2, z)][2], pb[n][index(n, i, j + D2, z + D3)][2]);
-	if (n_rec3 < 0) d3B2m = 0.;// slope_lim(pb[n][index(n, i, j, z - D3)][2], pb[n][index(n, i, j, z)][2], pb[n][index(n, i, j, z + D3)][2]);
+	if (n_rec1 < 0) d3B2p = 0.;// slope_lim(pb[n][index_3D(n, i, j + D2, z - D3)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z + D3)][2]);
+	if (n_rec3 < 0) d3B2m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i, j, z + D3)][2]);
 
 	d2B1p = b1_7 + b1_8 - b1_5 - b1_6; //5,6,7,8
 	d2B1m = b1_3 + b1_4 - b1_2 - b1_1; //1,2,3,4
-	if (n_rec4 < 0) d2B1p = 0.;// slope_lim(pb[n][index(n, i + D1, j - D2, z)][1], pb[n][index(n, i + D1, j, z)][1], pb[n][index(n, i + D1, j + D2, z)][1]);
-	if (n_rec2 < 0) d2B1m = 0.;// slope_lim(pb[n][index(n, i, j - D2, z)][1], pb[n][index(n, i, j, z)][1], pb[n][index(n, i, j + D2, z)][1]);
+	if (n_rec4 < 0) d2B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j - D2, z)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j + D2, z)][1]);
+	if (n_rec2 < 0) d2B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j + D2, z)][1]);
 
 	d2B3p = b3_4 + b3_8 - b3_2 - b3_6; //2,4,6,8
 	d2B3m = b3_3 + b3_7 - b3_1 - b3_5; //1,3,5,7
-	if (n_rec6 < 0) d2B3p = 0.;// slope_lim(pb[n][index(n, i, j - D2, z + D3)][3], pb[n][index(n, i, j, z + D3)][3], pb[n][index(n, i, j + D2, z + D3)][3]);
-	if (n_rec5 < 0) d2B3m = 0.;// slope_lim(pb[n][index(n, i, j - D2, z)][3], pb[n][index(n, i, j, z)][3], pb[n][index(n, i, j + D2, z)][3]);
+	if (n_rec6 < 0) d2B3p = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i, j + D2, z + D3)][3]);
+	if (n_rec5 < 0) d2B3m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i, j + D2, z)][3]);
 
 	d23B1p = 4.*(b1_5 + b1_8 - b1_6 - b1_7); //5,6,7,8
 	d23B1m = 4.*(b1_1 + b1_4 - b1_2 - b1_3); //1,2,3,4
@@ -2395,8 +2398,8 @@ double B2_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
 	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
 
-	B2p = pb[n][index(n, i, j + D2, z)][2];
-	B2m = pb[n][index(n, i, j, z)][2];
+	B2p = pb[n][index_3D(n, i, j + D2, z)][2];
+	B2m = pb[n][index_3D(n, i, j, z)][2];
 
 	a123 = d23B1p - d23B1m;
 	b123 = d13B2p - d13B2m;
@@ -2429,23 +2432,23 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 
 	d1B3p = b3_6 + b3_8 - b3_2 - b3_4; //2,4,6,8
 	d1B3m = b3_5 + b3_7 - b3_1 - b3_3; //1,3,5,7
-	if (n_rec6 < 0) d1B3p = 0.;// slope_lim(pb[n][index(n, i - D1, j, z + D3)][3], pb[n][index(n, i, j, z + D3)][3], pb[n][index(n, i + D1, j, z + D3)][3]);
-	if (n_rec5 < 0) d1B3m = 0.;// slope_lim(pb[n][index(n, i - D1, j, z)][3], pb[n][index(n, i, j, z)][3], pb[n][index(n, i + D1, j, z)][3]);
+	if (n_rec6 < 0) d1B3p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i + D1, j, z + D3)][3]);
+	if (n_rec5 < 0) d1B3m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i + D1, j, z)][3]);
 
 	d2B3p = b3_4 + b3_8 - b3_2 - b3_6; //2,4,6,8
 	d2B3m = b3_3 + b3_7 - b3_1 - b3_5; //1,3,5,7
-	if (n_rec6 < 0) d2B3p = 0.;// slope_lim(pb[n][index(n, i, j - D2, z + D3)][3], pb[n][index(n, i, j, z + D3)][3], pb[n][index(n, i, j + D2, z + D3)][3]);
-	if (n_rec5 < 0) d2B3m = 0.;// slope_lim(pb[n][index(n, i, j - D2, z)][3], pb[n][index(n, i, j, z)][3], pb[n][index(n, i, j + D2, z)][3]);
+	if (n_rec6 < 0) d2B3p = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i, j + D2, z + D3)][3]);
+	if (n_rec5 < 0) d2B3m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i, j + D2, z)][3]);
 
 	d3B1p = b1_6 + b1_8 - b1_5 - b1_7; //5,6,7,8
 	d3B1m = b1_2 + b1_4 - b1_1 - b1_3; //1,2,3,4
-	if (n_rec4 < 0) d3B1p = 0.;// slope_lim(pb[n][index(n, i + D1, j, z - D3)][1], pb[n][index(n, i + D1, j, z)][1], pb[n][index(n, i + D1, j, z + D3)][1]);
-	if (n_rec2 < 0) d3B1m = 0.;// slope_lim(pb[n][index(n, i, j, z - D3)][1], pb[n][index(n, i, j, z)][1], pb[n][index(n, i, j, z + D3)][1]);
+	if (n_rec4 < 0) d3B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j, z - D3)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j, z + D3)][1]);
+	if (n_rec2 < 0) d3B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j, z + D3)][1]);
 
 	d3B2p = b2_4 + b2_8 - b2_3 - b2_7; //3,7,4,8
 	d3B2m = b2_2 + b2_6 - b2_1 - b2_5; //2,6,1,5
-	if (n_rec1 < 0) d3B2p = 0.;// slope_lim(pb[n][index(n, i, j + D2, z - D3)][2], pb[n][index(n, i, j + D2, z)][2], pb[n][index(n, i, j + D2, z + D3)][2]);
-	if (n_rec3 < 0) d3B2m = 0.;// slope_lim(pb[n][index(n, i, j, z - D3)][2], pb[n][index(n, i, j, z)][2], pb[n][index(n, i, j, z + D3)][2]);
+	if (n_rec1 < 0) d3B2p = 0.;// slope_lim(pb[n][index_3D(n, i, j + D2, z - D3)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z + D3)][2]);
+	if (n_rec3 < 0) d3B2m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i, j, z + D3)][2]);
 
 	d23B1p = 4.*(b1_5 + b1_8 - b1_6 - b1_7); //5,6,7,8
 	d23B1m = 4.*(b1_1 + b1_4 - b1_2 - b1_3); //1,2,3,4
@@ -2454,8 +2457,8 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
 	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
 
-	B3p = pb[n][index(n, i, j, z + D3)][3];
-	B3m = pb[n][index(n, i, j, z)][3];
+	B3p = pb[n][index_3D(n, i, j, z + D3)][3];
+	B3m = pb[n][index_3D(n, i, j, z)][3];
 
 	a123 = d23B1p - d23B1m;
 	b123 = d13B2p - d13B2m;
@@ -2834,7 +2837,7 @@ double calc_rhomax(int n){
 	double rhomax=0.0;
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
-			if (p[n][index(n, i, j, z)][RHO] > rhomax) rhomax = p[n][index(n, i, j, z)][RHO];
+			if (p[n][index_3D(n, i, j, z)][RHO] > rhomax) rhomax = p[n][index_3D(n, i, j, z)][RHO];
 		}
 	}
 	return rhomax;

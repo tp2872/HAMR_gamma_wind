@@ -43,8 +43,7 @@
 ***********************************************************************************/
 #include "decs_MPI.h"
 #include "defs.h"
-#include "cudaProfiler.h"
-
+//#include "cudaProfiler.h"
 /*****************************************************************/
 /*****************************************************************
    main():
@@ -122,7 +121,7 @@ int main(int argc, char *argv[])
 	tref = t + TREF;
 	defcon = 1. ;
 	time_spent3 = 0.0;
-	begin1 = time(NULL);
+	begin1 = clock();
 	//cuProfilerStart();
 
 	while(t < tf) {
@@ -162,27 +161,27 @@ int main(int argc, char *argv[])
 		/* Handle output frequencies: */
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			if (dt>2.) break;
-			diag(DUMP_OUT) ;
+			//diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif			
 			if (dt>2.) break;
 			//restart_write(); //do restart dumb simultaneous with log
-			tlog +=  DTl;
+			//tlog +=  DTl;
 		}			
-
+		
 		#if TIMER
 		if (nstep % (2*320) == 0){
 			#if (OpenCL_enable == 1)
 			#endif
-			end1 = time(NULL);
+			end1 = clock();
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -193,7 +192,7 @@ int main(int argc, char *argv[])
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1));
+				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC);
 				fprintf(stderr, "MPI-time: %f ", time_spent3);
 				fprintf(stderr, "dt1: %f ", ndt1);
 				fprintf(stderr, "dt2: %f ", ndt2);
@@ -201,8 +200,8 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "nstep: %d \n", nstep);
 				fflush(stderr);
 			}
-			time_spent3 = 0.0;
-			begin1 = time(NULL);
+			time_spent3 = 0.0;			
+			begin1 = clock();			
 		}
 		#endif
 		//cuProfilerStop();
@@ -1377,11 +1376,11 @@ void set_arrays(int n)
 	//#endif
 }
 
-int index(int n, int i, int j, int z)
+int index_3D(int n, int i, int j, int z)
 {
 	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(N3_GPU[n] + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
 }
-int index2(int n, int i, int j, int z)
+int index_2D(int n, int i, int j, int z)
 {
 	#if(!NONSYMMETRIC)
 	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G) + ((j - N2_GPU_offset[n]) + N2G));
@@ -1435,14 +1434,14 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n,i, j, z, CENT, X);
-			gcov_func(X, gcov[n][index2(n, i, j, z)][CENT]);
-			gdet[n][index2(n, i, j, z)][CENT] = gdet_func(gcov[n][index2(n, i, j, z)][CENT]);
-			if (j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])-1 && TRANS_BOUND == 1)gdet[n][index2(n, i, j, z)][CENT] *= 1.0;
-			gcon_func(gcov[n][index2(n, i, j, z)][CENT], gcon[n][index2(n, i, j, z)][CENT]);
+			gcov_func(X, gcov[n][index_2D(n, i, j, z)][CENT]);
+			gdet[n][index_2D(n, i, j, z)][CENT] = gdet_func(gcov[n][index_2D(n, i, j, z)][CENT]);
+			if (j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])-1 && TRANS_BOUND == 1)gdet[n][index_2D(n, i, j, z)][CENT] *= 1.0;
+			gcon_func(gcov[n][index_2D(n, i, j, z)][CENT], gcon[n][index_2D(n, i, j, z)][CENT]);
 			get_geometry(n, i, j, z, CENT, &geom);
-			conn_func(X, &geom, conn[n][index2(n, i, j, z)]);
+			conn_func(X, &geom, conn[n][index_2D(n, i, j, z)]);
 			if ((j == -1 || j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])) && (TRANS_BOUND==1)){
-				//for (i1 = 0; i1 < NDIM; i1++)for (j1 = 0; j1 < NDIM; j1++)for (z1 = 0; z1 < NDIM; z1++)conn[n][index2(n, i, j, z)][i1][j1][z1] = 0.;
+				//for (i1 = 0; i1 < NDIM; i1++)for (j1 = 0; j1 < NDIM; j1++)for (z1 = 0; z1 < NDIM; z1++)conn[n][index_2D(n, i, j, z)][i1][j1][z1] = 0.;
 			}
 
 			/* corner-centered */
@@ -1451,9 +1450,9 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n, i, j, z, FACE1, X);
-			gcov_func(X, gcov[n][index2(n, i, j, z)][CORN]);
-			gdet[n][index2(n, i, j, z)][CORN] = gdet_func(gcov[n][index2(n, i, j, z)][CORN]);
-			gcon_func(gcov[n][index2(n, i, j, z)][CORN], gcon[n][index2(n, i, j, z)][CORN]);
+			gcov_func(X, gcov[n][index_2D(n, i, j, z)][CORN]);
+			gdet[n][index_2D(n, i, j, z)][CORN] = gdet_func(gcov[n][index_2D(n, i, j, z)][CORN]);
+			gcon_func(gcov[n][index_2D(n, i, j, z)][CORN], gcon[n][index_2D(n, i, j, z)][CORN]);
 
 			/* r-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, CORN, X);
@@ -1461,9 +1460,9 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, CORN, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, CORN, X);
 			else coord(n, i, j, z, FACE1, X);
-			gcov_func(X, gcov[n][index2(n, i, j, z)][FACE1]);
-			gdet[n][index2(n, i, j, z)][FACE1] = gdet_func(gcov[n][index2(n, i, j, z)][FACE1]);
-			gcon_func(gcov[n][index2(n, i, j, z)][FACE1], gcon[n][index2(n, i, j, z)][FACE1]);
+			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE1]);
+			gdet[n][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE1]);
+			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE1], gcon[n][index_2D(n, i, j, z)][FACE1]);
 			
 			/* phi-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
@@ -1471,9 +1470,9 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n, i, j, z, FACE3, X);
-			gcov_func(X, gcov[n][index2(n, i, j, z)][FACE3]);
-			gdet[n][index2(n, i, j, z)][FACE3] = gdet_func(gcov[n][index2(n, i, j, z)][FACE3]);
-			gcon_func(gcov[n][index2(n, i, j, z)][FACE3], gcon[n][index2(n, i, j, z)][FACE3]);
+			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE3]);
+			gdet[n][index_2D(n, i, j, z)][FACE3] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE3]);
+			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE3], gcon[n][index_2D(n, i, j, z)][FACE3]);
 
 			/* theta-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
@@ -1490,14 +1489,14 @@ void set_grid(int n)
 				a = 0.;
 			}
 			else coord(n, i, j, z, FACE2, X);
-			gcov_func(X, gcov[n][index2(n, i, j, z)][FACE2]);
+			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE2]);
 			if ((j == 0  || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])) && TRANS_BOUND==1){
-				//gcov[n][index2(n, i, j, z)][FACE2][2][1] = 0.;
-				//gcov[n][index2(n, i, j, z)][FACE2][1][2] = 0.;
-				//gcov[n][index2(n, i, j, z)][FACE2][2][3] = 0.;
-				//gcov[n][index2(n, i, j, z)][FACE2][3][2] = 0.;
-				//gcov[n][index2(n, i, j, z)][FACE2][1][3] = 0.;
-				//gcov[n][index2(n, i, j, z)][FACE2][3][1] = 0.;
+				//gcov[n][index_2D(n, i, j, z)][FACE2][2][1] = 0.;
+				//gcov[n][index_2D(n, i, j, z)][FACE2][1][2] = 0.;
+				//gcov[n][index_2D(n, i, j, z)][FACE2][2][3] = 0.;
+				//gcov[n][index_2D(n, i, j, z)][FACE2][3][2] = 0.;
+				//gcov[n][index_2D(n, i, j, z)][FACE2][1][3] = 0.;
+				//gcov[n][index_2D(n, i, j, z)][FACE2][3][1] = 0.;
 			}
 			/*if (j == -1 || j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])){
 				double dxdxp[NDIM][NDIM], dxdxp_inv[NDIM][NDIM];
@@ -1506,10 +1505,10 @@ void set_grid(int n)
 				invert_matrix(dxdxp, dxdxp_inv);
 				for (I = 0; I<NDIM; I++){
 					for (J = 0; J<NDIM; J++){
-						gcon[n][index2(n, i, j, z)][FACE2][I][J] = 0.;
+						gcon[n][index_2D(n, i, j, z)][FACE2][I][J] = 0.;
 						for (K = 0; K<NDIM; K++) {
 							for (L = 0; L<NDIM; L++){
-								gcon[n][index2(n, i, j, z)][FACE2][I][J] += gcov[n][index2(n, i, j, z)][FACE2][K][L] * dxdxp_inv[K][I] * dxdxp_inv[L][J];
+								gcon[n][index_2D(n, i, j, z)][FACE2][I][J] += gcov[n][index_2D(n, i, j, z)][FACE2][K][L] * dxdxp_inv[K][I] * dxdxp_inv[L][J];
 							}
 						}
 					}
@@ -1518,17 +1517,17 @@ void set_grid(int n)
 				dxdxp_func(X, dxdxp);
 				for (I = 0; I < NDIM; I++){
 					for (J = 0; J < NDIM; J++){
-						gcov[n][index2(n, i, j, z)][FACE2][I][J] = 0.;
+						gcov[n][index_2D(n, i, j, z)][FACE2][I][J] = 0.;
 						for (K = 0; K < NDIM; K++) {
 							for (L = 0; L < NDIM; L++){
-								gcov[n][index2(n, i, j, z)][FACE2][I][J] += gcon[n][index2(n, i, j, z)][FACE2][K][L] * dxdxp[K][I] * dxdxp[L][J];
+								gcov[n][index_2D(n, i, j, z)][FACE2][I][J] += gcon[n][index_2D(n, i, j, z)][FACE2][K][L] * dxdxp[K][I] * dxdxp[L][J];
 							}
 						}
 					}
 				}
 			}*/
-			gdet[n][index2(n, i, j, z)][FACE2] = gdet_func(gcov[n][index2(n, i, j, z)][FACE2]);
-			gcon_func(gcov[n][index2(n, i, j, z)][FACE2], gcon[n][index2(n, i, j, z)][FACE2]);	
+			gdet[n][index_2D(n, i, j, z)][FACE2] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE2]);
+			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE2], gcon[n][index_2D(n, i, j, z)][FACE2]);	
 		}
 	}
 
@@ -1537,52 +1536,52 @@ void set_grid(int n)
 		//Set temporary array with r, th, phi distances between pixels in x1,x2,x3-->0,1,2 at the faces of the cell and x1,x2,x3-->3,4,5 at the cell centres
 		coord(n, i, j, z, FACE1, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index(n, i, j, z)][0] = r;
+		dq[n][index_3D(n, i, j, z)][0] = r;
 		
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index(n, i, j, z)][3] = r;
+		dq[n][index_3D(n, i, j, z)][3] = r;
 
 		coord(n, i, j, z, FACE2, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index(n, i, j, z)][1] = th;
+		dq[n][index_3D(n, i, j, z)][1] = th;
 		
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index(n, i, j, z)][4] = th;
+		dq[n][index_3D(n, i, j, z)][4] = th;
 
 		coord(n, i, j, z, FACE3, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index(n, i, j, z)][2] = phi;
+		dq[n][index_3D(n, i, j, z)][2] = phi;
 		
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index(n, i, j, z)][5] = phi;
+		dq[n][index_3D(n, i, j, z)][5] = phi;
 
-		for (k = 0; k < 6; k++) V[n][index(n, i, j, z)][k] = 0.0;
+		for (k = 0; k < 6; k++) V[n][index_3D(n, i, j, z)][k] = 0.0;
 	}
 	ZSLOOP3D(-N1G + N1_GPU_offset[n],-N1G + N1_GPU_offset[n], -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
-		V[n][index(n, i, j, z)][3] = V[n][index(n, i, j, z)][0] + 0.5*sqrt(gcov[n][index2(n, i, j, z)][FACE1][1][1]);//(r*sin(th)*dphi)^2
+		V[n][index_3D(n, i, j, z)][3] = V[n][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE1][1][1]);//(r*sin(th)*dphi)^2
 	}
 
 	ZSLOOP3D(-D1 + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], -N2G + N2_GPU_offset[n], -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
-		V[n][index(n, i, j, z)][4] = V[n][index(n, i, j, z)][1] + 0.5*sqrt(gcov[n][index2(n, i, j, z)][FACE2][2][2]);//(r*sin(th)*dphi)^2
+		V[n][index_3D(n, i, j, z)][4] = V[n][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE2][2][2]);//(r*sin(th)*dphi)^2
 	}
 
 	ZSLOOP3D(-D1 + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], -N3G + N3_GPU_offset[n]) {
-		V[n][index(n, i, j, z)][5] = V[n][index(n, i, j, z)][2] + 0.5*sqrt(gcov[n][index2(n, i, j, z)][FACE3][3][3]);//(r*sin(th)*dphi)^2
+		V[n][index_3D(n, i, j, z)][5] = V[n][index_3D(n, i, j, z)][2] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE3][3][3]);//(r*sin(th)*dphi)^2
 	}
 
 	ZSLOOP3D(-D1+ N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
 		//Calculate distances between pixels in x1,x2,x3-->0,1,2 at the faces of the cell and x1,x2,x3-->3,4,5 at the cell centres
-		V[n][index(n, i, j, z)][0] = V[n][index(n, i - D1, j, z)][3] + 0.5*sqrt(gcov[n][index2(n, i - D1, j, z)][CENT][1][1]);
-		V[n][index(n, i, j, z)][3] = V[n][index(n, i, j, z)][0] + 0.5*sqrt(gcov[n][index2(n, i, j, z)][FACE1][1][1]);
+		V[n][index_3D(n, i, j, z)][0] = V[n][index_3D(n, i - D1, j, z)][3] + 0.5*sqrt(gcov[n][index_2D(n, i - D1, j, z)][CENT][1][1]);
+		V[n][index_3D(n, i, j, z)][3] = V[n][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE1][1][1]);
 		
-		V[n][index(n, i, j, z)][1] = V[n][index(n, i, j - D2, z)][4] + 0.5*sqrt(gcov[n][index2(n, i, j - D2, z)][CENT][2][2]);
-		V[n][index(n, i, j, z)][4] = V[n][index(n, i, j, z)][1] + 0.5*sqrt(gcov[n][index2(n, i, j, z)][FACE2][2][2]);
+		V[n][index_3D(n, i, j, z)][1] = V[n][index_3D(n, i, j - D2, z)][4] + 0.5*sqrt(gcov[n][index_2D(n, i, j - D2, z)][CENT][2][2]);
+		V[n][index_3D(n, i, j, z)][4] = V[n][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE2][2][2]);
 
-		V[n][index(n, i, j, z)][2] = V[n][index(n, i, j, z - D3)][5] + 0.5*sqrt(gcov[n][index2(n, i, j, z - D3)][CENT][3][3]);
-		V[n][index(n, i, j, z)][5] = V[n][index(n, i, j, z)][2] + 0.5*sqrt(gcov[n][index2(n, i, j, z)][FACE3][3][3]);
+		V[n][index_3D(n, i, j, z)][2] = V[n][index_3D(n, i, j, z - D3)][5] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z - D3)][CENT][3][3]);
+		V[n][index_3D(n, i, j, z)][5] = V[n][index_3D(n, i, j, z)][2] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE3][3][3]);
 	}
 	#endif
 
@@ -1591,8 +1590,8 @@ void set_grid(int n)
 	#if ZIRI_DUMP
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
 		coord(n,i, j, z, CENT, X);
-		dxdxp_func(X, dxdxp_z[n][index(n ,i,j,z)]);
-		//invert_matrix(dxdxp_z[n][index(n ,i,j,z)], dxpdx_z[n][index(n ,i,j,z)]);
+		dxdxp_func(X, dxdxp_z[n][index_3D(n ,i,j,z)]);
+		//invert_matrix(dxdxp_z[n][index_3D(n ,i,j,z)], dxpdx_z[n][index_3D(n ,i,j,z)]);
 	}
 	#endif
 
@@ -1602,11 +1601,9 @@ void set_grid(int n)
 
 /*This function initialises the MPI structure. It divides the grid(N1, N2, N3) among the MPI processes.
 The host node is node 0 by default.*/
-
 void MPI_initialize(int argc, char *argv[])
 {
-
-#if (MPI_enable)
+	#if (MPI_enable)
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 	int i, j, z, len, dim, corn, rankloop;
 	int dims[3], periods[3], coords[3];
@@ -1614,10 +1611,13 @@ void MPI_initialize(int argc, char *argv[])
 	int rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
 
 	/*Get basic initialisation*/
-	local_rank = 0;// atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	local_rank = getenv("MV2_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	//local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	cudaSetDevice(local_rank%N_GPU);
+	
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
 	//rc = MPI_Init(&argc, &argv);
+
 	if (rc != MPI_SUCCESS) {
 		fprintf(stderr, "Error starting MPI program. Terminating.\n");
 		MPI_Abort(MPI_COMM_WORLD, rc);
@@ -1643,10 +1643,7 @@ void MPI_initialize(int argc, char *argv[])
 			printf("MPICH_RDMA_ENABLED_CUDA not enabled!\n");
 		}
 		fprintf(stderr, "Number of MPI tasks: %d \nRunning on: %s\n", numtasks, hostname);
-		//fprintf(stderr, "MPI geometry(columns, rows, stacks) : (%d, %d, %d)\n", n_columns, n_rows, n_stacks);
 	}
-	#else
-
 	#endif
 }
 

@@ -57,7 +57,7 @@ void FMSS_write(FILE *fp){
 		fwrite(&i_double, double_size, 1, fp);
 		fwrite(&j_double, double_size, 1, fp);
 		fwrite(&z_double, double_size, 1, fp);
-		fwrite(&(connected[index2(n_ord[n] ,i, j, 0)]), double_size, 1, fp);
+		fwrite(&(connected[index_2D(n_ord[n] ,i, j, 0)]), double_size, 1, fp);
 	}
 }
 
@@ -153,45 +153,45 @@ void dump(FILE *fp)
 			fwrite(&r, double_size, 1, fp);
 			fwrite(&th, double_size, 1, fp);
 			fwrite(&phi, double_size, 1, fp);
-			for (k = 0; k < 8; k++) fwrite(&(p[n_ord[n]][index(n_ord[n] ,i, j, z)][k]), double_size, 1, fp);
+			for (k = 0; k < 8; k++) fwrite(&(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]), double_size, 1, fp);
 
 			/* divb flux-ct defn; corner-centered.  Useonly interior corners */
 			if (i > 0 && j > 0 && i < N1 && j < N2) {
 				divb = fabs(
 					#if(N1>1)
 					0.25*(
-					+p[n_ord[n]][index(n_ord[n] ,i, j, z)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i, j, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i, j, z - dz)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i, j, z - dz)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i, j - dj, z)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i, j - dj, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i, j - dj, z - dz)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i, j - dj, z - dz)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - 1, j, z)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i - 1, j, z)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - 1, j, z - dz)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i - 1, j, z - dz)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - 1, j - dj, z)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i - 1, j - dj, z)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - 1, j - dj, z - dz)][B1] * gdet[n_ord[n]][index2(n_ord[n] ,i - 1, j - dj, z - dz)][CENT]
+					+p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i, j, z - dz)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j, z - dz)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i, j - dj, z)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j - dj, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i, j - dj, z - dz)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j - dj, z - dz)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - 1, j, z)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - 1, j, z)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - 1, j, z - dz)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - 1, j, z - dz)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - 1, j - dj, z)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - 1, j - dj, z)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - 1, j - dj, z - dz)][B1] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - 1, j - dj, z - dz)][CENT]
 					) / dx[n_ord[n]][1]
 					#endif
 					#if(N2>1)
 					+ 0.25*(
-					+p[n_ord[n]][index(n_ord[n] ,i, j, z)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i, j, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i, j, z - dz)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i, j, z - dz)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i - di, j, z)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i - di, j, z - dz)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j, z - dz)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i, j - 1, z)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i, j - 1, z)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i, j - 1, z - dz)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i, j - 1, z - dz)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - di, j - 1, z)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j - 1, z)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - di, j - 1, z - dz)][B2] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j - 1, z - dz)][CENT]
+					+p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i, j, z - dz)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j, z - dz)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i - di, j, z)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i - di, j, z - dz)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j, z - dz)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i, j - 1, z)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j - 1, z)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i, j - 1, z - dz)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j - 1, z - dz)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - di, j - 1, z)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j - 1, z)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - di, j - 1, z - dz)][B2] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j - 1, z - dz)][CENT]
 					) / dx[n_ord[n]][2]
 					#endif
 					#if(N3>1)
 					+ 0.25*(
-					+p[n_ord[n]][index(n_ord[n] ,i, j, z)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i, j, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i - di, j, z)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i, j - dj, z)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i, j - dj, z)][CENT]
-					+ p[n_ord[n]][index(n_ord[n] ,i - di, j - dj, z)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j - dj, z)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i, j, z - 1)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i, j, z - 1)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - di, j, z - 1)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j, z - 1)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i, j - dj, z - 1)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i, j - dj, z - 1)][CENT]
-					- p[n_ord[n]][index(n_ord[n] ,i - di, j - dj, z - 1)][B3] * gdet[n_ord[n]][index2(n_ord[n] ,i - di, j - dj, z - 1)][CENT]
+					+p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i - di, j, z)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i, j - dj, z)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j - dj, z)][CENT]
+					+ p[n_ord[n]][index_3D(n_ord[n] ,i - di, j - dj, z)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j - dj, z)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i, j, z - 1)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j, z - 1)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - di, j, z - 1)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j, z - 1)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i, j - dj, z - 1)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i, j - dj, z - 1)][CENT]
+					- p[n_ord[n]][index_3D(n_ord[n] ,i - di, j - dj, z - 1)][B3] * gdet[n_ord[n]][index_2D(n_ord[n] ,i - di, j - dj, z - 1)][CENT]
 					) / dx[n_ord[n]][3]
 					#endif
 					);
@@ -202,20 +202,20 @@ void dump(FILE *fp)
 
 			if (!failed) {
 				get_geometry(n_ord[n], i, j, z, CENT, &geom);
-				get_state(p[n_ord[n]][index(n_ord[n] ,i, j, z)], &geom, &q);
+				get_state(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)], &geom, &q);
 
 				for (k = 0; k < NDIM; k++) fwrite(&(q.ucon[k]), double_size, 1, fp);
 				for (k = 0; k < NDIM; k++) fwrite(&(q.ucov[k]), double_size, 1, fp);
 				for (k = 0; k < NDIM; k++) fwrite(&(q.bcon[k]), double_size, 1, fp);
 				for (k = 0; k < NDIM; k++) fwrite(&(q.bcov[k]), double_size, 1, fp);
 
-				vchar(p[n_ord[n]][index(n_ord[n] ,i, j, z)], &q, &geom, 1, &vmax, &vmin, i, j, z);
+				vchar(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)], &q, &geom, 1, &vmax, &vmin, i, j, z);
 				fwrite(&vmin, double_size, 1, fp);
 				fwrite(&vmax, double_size, 1, fp);
 
-				vchar(p[n_ord[n]][index(n_ord[n] ,i, j, z)], &q, &geom, 2, &vmax, &vmin, i, j, z);
-				double v0 = (double)(failimage[n_ord[n]][index(n_ord[n], i, j, z)][0]);
-				double v1 = (double)(failimage[n_ord[n]][index(n_ord[n], i, j, z)][1]);
+				vchar(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)], &q, &geom, 2, &vmax, &vmin, i, j, z);
+				double v0 = (double)(failimage[n_ord[n]][index_3D(n_ord[n], i, j, z)][0]);
+				double v1 = (double)(failimage[n_ord[n]][index_3D(n_ord[n], i, j, z)][1]);
 				fwrite(&v0, double_size, 1, fp);
 				fwrite(&v1, double_size, 1, fp);
 				//fwrite(&vmin, double_size, 1, fp);
@@ -432,16 +432,16 @@ void dump_block(MPI_File *fp, int n)
 	int NB_print = NB;
 
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[n][index(n, i, j, z)][0];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[n][index(n, i, j, z)][1];
+		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[n][index_3D(n, i, j, z)][0];
+		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[n][index_3D(n, i, j, z)][1];
 
 		get_geometry(n, i, j, z, CENT, &geom);
-		get_state(p[n][index(n, i, j, z)], &geom, &q);
+		get_state(p[n][index_3D(n, i, j, z)], &geom, &q);
 		
 		for (k = 0; k < NDIM; k++) array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + (k + 2)] = (float)q.ucon[k];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = (float)p[n][index(n, i, j, z)][5];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[n][index(n, i, j, z)][6];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[n][index(n, i, j, z)][7];
+		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = (float)p[n][index_3D(n, i, j, z)][5];
+		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[n][index_3D(n, i, j, z)][6];
+		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[n][index_3D(n, i, j, z)][7];
 	}
 	MPI_File_iwrite(fp[0], array[n], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[n][0]);
 }
@@ -460,9 +460,9 @@ void dump_blockdiag(MPI_File *fp, int n)
 
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
 		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 0] = (float)divb_calc(n, i, j, z);
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[n][index(n, i, j, z)][0];
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 2] = (float)failimage[n][index(n, i, j, z)][1];
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 3] = (float)failimage[n][index(n, i, j, z)][2];
+		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[n][index_3D(n, i, j, z)][0];
+		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 2] = (float)failimage[n][index_3D(n, i, j, z)][1];
+		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 3] = (float)failimage[n][index_3D(n, i, j, z)][2];
 	}
 	MPI_File_iwrite(fp[0], array_diag[n], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[n][0]);
 }

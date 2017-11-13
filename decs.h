@@ -45,7 +45,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //#define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 //#define OPENCLBUILDOPTIONS "-cl-mad-enable"
 #define restrict
-#define index(n,i,j,k) index0(n,i,j,k)
+#define index_3D(n,i,j,k) index0(n,i,j,k)
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -261,13 +261,13 @@ void free_arrays(int n);
 #define MPI_stacks (1) 
 
 /*Set numbers of GPUs PER node*/
-#define N_GPU 1
+#define N_GPU 4
 
 /*Set the number of commandqueues per GPU*/
 #define NQ (40)
 
 /*Pin or don't pin memory for GPU transfers*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 #define MPI_TAG_MAX 1264576
 
 /*Use transmissive boundary condition at pole*/
@@ -631,7 +631,6 @@ extern double(*restrict gdet[NB])[NPG];
 extern double(*restrict dU_s[NB])[NPR];
 
 /*GPU variables*/
-#if (OpenCL_enable==1)
 #define FTYPE2 double
 extern FTYPE2 *F1_1[NB];
 extern FTYPE2 *F2_1[NB];
@@ -651,7 +650,6 @@ extern FTYPE2 *dtij_GPU[NB];
 extern FTYPE2 *Katm_GPU[NB];
 extern int *pflag_GPU[NB];
 extern int *failimage_GPU[NB];
-#endif
 
 /*MPI variables*/
 extern int nthreads;
@@ -1505,8 +1503,8 @@ void get_geometry(int n, int i, int j, int z, int loc, struct of_geom *geom);
 void get_geometry_direct(int ii, int jj, int zz, int ff, struct of_geom *geom);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void image_all(int image_count);
-int index(int n, int i, int j, int z);
-int index2(int n, int i, int j, int z);
+int index_3D(int n, int i, int j, int z);
+int index_2D(int n, int i, int j, int z);
 int index3(int i, int j);
 void init(void);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
