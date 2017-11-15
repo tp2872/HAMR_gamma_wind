@@ -508,7 +508,7 @@ void free_arrays(int n)
 	free(receive6_6fine[n]);
 	free(receive6_8fine[n]);
 	#endif
-	#if(CPU_OPENMP)
+	#if(CPU_OPENMP || GPU_DIRECT==0)
 	free(receive1_flux[n]);
 	free(receive2_flux[n]);
 	free(receive3_flux[n]);
@@ -1041,7 +1041,7 @@ void set_arrays(int n)
 	receive6_6fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
 	receive6_8fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	#if(CPU_OPENMP)
+	#if(CPU_OPENMP || GPU_DIRECT==0)
 	receive1_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive2_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive3_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));

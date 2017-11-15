@@ -895,7 +895,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[n][AMR_NBR4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][20], &Statbound[n][20]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec2[n][0], &receive2[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2[n][0], &receive2[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive1(n, block[n][AMR_NBR4], 0, -N1G, 0, 0, -N2G, N2_GPU[n] + N2G, 0, -N3G, N3_GPU[n] + N3G, (N2_GPU[n] + 2 * N2G), (N3_GPU[n] + 2 * N3G), receive2, tempreceive2, prim,
 					&(Bufferp[n]), &(Bufferrec2[n]), &(tempBufferrec2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4]][AMR_TIMELEVEL]);
 			}
@@ -911,7 +911,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][21], &Statbound[n][21]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_1[n][0], &receive2_1[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_1[n][0], &receive2_1[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD5], 0, -N1G, 0, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 					(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_1, tempreceive2_1, prim,
 					&(Bufferp[n]), &(Bufferrec2_1[n]), &(tempBufferrec2_1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL]);
@@ -926,7 +926,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][22], &Statbound[n][22]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_2[n][0], &receive2_2[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_2[n][0], &receive2_2[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD6], 0, -N1G, 0, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + REF_3*D3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_2, tempreceive2_2, prim,
 						&(Bufferp[n]), &(Bufferrec2_2[n]), &(tempBufferrec2_2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL]);
@@ -942,7 +942,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][23], &Statbound[n][23]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_3[n][0], &receive2_3[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_3[n][0], &receive2_3[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD7], 0, -N1G, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + REF_2*D2, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_3, tempreceive2_3, prim,
 						&(Bufferp[n]), &(Bufferrec2_3[n]), &(tempBufferrec2_3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL]);
@@ -958,7 +958,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][24], &Statbound[n][24]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_4[n][0], &receive2_4[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_4[n][0], &receive2_4[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD8], 0, -N1G, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + REF_2*D2, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + REF_3*D3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_4, tempreceive2_4, prim,
 						&(Bufferp[n]), &(Bufferrec2_4[n]), &(tempBufferrec2_4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL]);
@@ -977,7 +977,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][21], &Statbound[n][21]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_1[n][0], &receive2_1[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_1[n][0], &receive2_1[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_1, send4_5, tempreceive2_1, prim,
 						&(Bufferp[n]), &(Bufferrec2_1[n]), &(Buffersend4_5[n]), &(tempBufferrec2_1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4]][AMR_TIMELEVEL]);
@@ -993,7 +993,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][22], &Statbound[n][22]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_2[n][0], &receive2_2[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_2[n][0], &receive2_2[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_2, send4_6, tempreceive2_2, prim,
 						&(Bufferp[n]), &(Bufferrec2_2[n]), &(Buffersend4_6[n]), &(tempBufferrec2_2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1009,7 +1009,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][23], &Statbound[n][23]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_3[n][0], &receive2_3[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_3[n][0], &receive2_3[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_3, send4_7, tempreceive2_3, prim,
 						&(Bufferp[n]), &(Bufferrec2_3[n]), &(Buffersend4_7[n]), &(tempBufferrec2_3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1025,7 +1025,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][24], &Statbound[n][24]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec2_4[n][0], &receive2_4[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec2_4[n][0], &receive2_4[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_4, send4_8, tempreceive2_4, prim,
 						&(Bufferp[n]), &(Bufferrec2_4[n]), &(Buffersend4_8[n]), &(tempBufferrec2_4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1048,7 +1048,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[n][AMR_NBR2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][40], &Statbound[n][40]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec4[n][0], &receive4[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4[n][0], &receive4[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive1(n, block[n][AMR_NBR2], 0, N1_GPU[n], N1_GPU[n] + N1G, 0, -N2G, N2_GPU[n] + N2G, 0, -N3G, N3_GPU[n] + N3G, (N2_GPU[n] + 2 * N2G), (N3_GPU[n] + 2 * N3G), receive4, tempreceive4, prim,
 					&(Bufferp[n]), &(Bufferrec4[n]), &(tempBufferrec4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2]][AMR_TIMELEVEL]);
 			}
@@ -1063,7 +1063,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][45], &Statbound[n][45]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_5[n][0], &receive4_5[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_5[n][0], &receive4_5[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD1], 0, N1_GPU[n], N1_GPU[n] + N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 					(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_5, tempreceive4_5, prim,
 					&(Bufferp[n]), &(Bufferrec4_5[n]), &(tempBufferrec4_5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL]);
@@ -1078,7 +1078,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][46], &Statbound[n][46]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_6[n][0], &receive4_6[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_6[n][0], &receive4_6[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD2], 0, N1_GPU[n], N1_GPU[n] + N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + REF_3*D3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_6, tempreceive4_6, prim,
 						&(Bufferp[n]), &(Bufferrec4_6[n]), &(tempBufferrec4_6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL]);
@@ -1094,7 +1094,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][47], &Statbound[n][47]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_7[n][0], &receive4_7[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_7[n][0], &receive4_7[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD3], 0, N1_GPU[n], N1_GPU[n] + N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_7, tempreceive4_7, prim,
 						&(Bufferp[n]), &(Bufferrec4_7[n]), &(tempBufferrec4_7[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL]);
@@ -1110,7 +1110,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][48], &Statbound[n][48]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_8[n][0], &receive4_8[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_8[n][0], &receive4_8[n][0], (int)((NPR + 3)*(N2_GPU[n] + 2 * N2G) / (1 + REF_2) *(N3_GPU[n] + 2 * N3G) / (1 + REF_3) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD4], 0, N1_GPU[n], N1_GPU[n] + N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_8, tempreceive4_8, prim,
 						&(Bufferp[n]), &(Bufferrec4_8[n]), &(tempBufferrec4_8[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL]);
@@ -1129,7 +1129,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 						MPI_Wait(&boundreqs[n][45], &Statbound[n][45]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_5[n][0], &receive4_5[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_5[n][0], &receive4_5[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_5, send2_1, tempreceive4_5, prim,
 						&(Bufferp[n]), &(Bufferrec4_5[n]), &(Buffersend2_1[n]), &(tempBufferrec4_5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1145,7 +1145,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 						MPI_Wait(&boundreqs[n][46], &Statbound[n][46]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_6[n][0], &receive4_6[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_6[n][0], &receive4_6[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_6, send2_2, tempreceive4_6, prim,
 						&(Bufferp[n]), &(Bufferrec4_6[n]), &(Buffersend2_2[n]), &(tempBufferrec4_6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1161,7 +1161,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 						MPI_Wait(&boundreqs[n][47], &Statbound[n][47]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_7[n][0], &receive4_7[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_7[n][0], &receive4_7[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_7, send2_3, tempreceive4_7, prim,
 						&(Bufferp[n]), &(Bufferrec4_7[n]), &(Buffersend2_3[n]), &(tempBufferrec4_7[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1177,7 +1177,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 						MPI_Wait(&boundreqs[n][48], &Statbound[n][48]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec4_8[n][0], &receive4_8[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec4_8[n][0], &receive4_8[n][0], (int)((NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)  *(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_8, send2_4, tempreceive4_8, prim,
 						&(Bufferp[n]), &(Bufferrec4_8[n]), &(Buffersend2_4[n]), &(tempBufferrec4_8[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1203,7 +1203,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[n][AMR_NBR1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][30], &Statbound[n][30]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec3[n][0], &receive3[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3[n][0], &receive3[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 					unpack_receive2(n, block[n][AMR_NBR1], 0, -N1G, N1_GPU[n] + N1G, 0, -N2G, 0, 0, -N3G, N3_GPU[n] + N3G, (N1_GPU[n] + 2 * N1G), (N3_GPU[n] + 2 * N3G), receive3, tempreceive3, prim,
 						&(Bufferp[n]), &(Bufferrec3[n]), &(tempBufferrec3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 1);
@@ -1231,7 +1231,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][31], &Statbound[n][31]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_1[n][0], &receive3_1[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_1[n][0], &receive3_1[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD3], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G, 0, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_1, tempreceive3_1, prim,
 						&(Bufferp[n]), &(Bufferrec3_1[n]), &(tempBufferrec3_1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1246,7 +1246,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][32], &Statbound[n][32]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_2[n][0], &receive3_2[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_2[n][0], &receive3_2[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD4], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G, 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_2, tempreceive3_2, prim,
 							&(Bufferp[n]), &(Bufferrec3_2[n]), &(tempBufferrec3_2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1262,7 +1262,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][35], &Statbound[n][35]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_5[n][0], &receive3_5[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_5[n][0], &receive3_5[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD7], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G, 0, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_5, tempreceive3_5, prim,
 							&(Bufferp[n]), &(Bufferrec3_5[n]), &(tempBufferrec3_5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1278,7 +1278,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][36], &Statbound[n][36]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_6[n][0], &receive3_6[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_6[n][0], &receive3_6[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD8], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G, 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_6, tempreceive3_6, prim,
 							&(Bufferp[n]), &(Bufferrec3_6[n]), &(tempBufferrec3_6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1297,7 +1297,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 							MPI_Wait(&boundreqs[n][31], &Statbound[n][31]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_1[n][0], &receive3_1[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_1[n][0], &receive3_1[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_1, send1_3, tempreceive3_1, prim,
 							&(Bufferp[n]), &(Bufferrec3_1[n]), &(Buffersend1_3[n]), &(tempBufferrec3_1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1313,7 +1313,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 							MPI_Wait(&boundreqs[n][32], &Statbound[n][32]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_2[n][0], &receive3_2[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_2[n][0], &receive3_2[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_2, send1_4, tempreceive3_2, prim,
 							&(Bufferp[n]), &(Bufferrec3_2[n]), &(Buffersend1_4[n]), &(tempBufferrec3_2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1329,7 +1329,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 							MPI_Wait(&boundreqs[n][35], &Statbound[n][35]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_5[n][0], &receive3_5[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_5[n][0], &receive3_5[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_5, send1_7, tempreceive3_5, prim,
 							&(Bufferp[n]), &(Bufferrec3_5[n]), &(Buffersend1_7[n]), &(tempBufferrec3_5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1345,7 +1345,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
 							MPI_Wait(&boundreqs[n][36], &Statbound[n][36]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec3_6[n][0], &receive3_6[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec3_6[n][0], &receive3_6[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_6, send1_8, tempreceive3_6, prim,
 							&(Bufferp[n]), &(Bufferrec3_6[n]), &(Buffersend1_8[n]), &(tempBufferrec3_6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1367,7 +1367,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[n][AMR_NBR3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][10], &Statbound[n][10]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec1[n][0], &receive1[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1[n][0], &receive1[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 					unpack_receive2(n, block[n][AMR_NBR3], 0, -N1G, N1_GPU[n] + N1G, 0, N2_GPU[n], N2_GPU[n] + N2G, 0, -N3G, N3_GPU[n] + N3G, (N1_GPU[n] + 2 * N1G), (N3_GPU[n] + 2 * N3G), receive1, tempreceive1, prim,
 						&(Bufferp[n]), &(Bufferrec1[n]), &(tempBufferrec1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 1);
@@ -1395,7 +1395,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][13], &Statbound[n][13]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_3[n][0], &receive1_3[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_3[n][0], &receive1_3[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD1], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, N2_GPU[n], N2_GPU[n] + N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_3, tempreceive1_3, prim,
 						&(Bufferp[n]), &(Bufferrec1_3[n]), &(tempBufferrec1_3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1410,7 +1410,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][14], &Statbound[n][14]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_4[n][0], &receive1_4[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_4[n][0], &receive1_4[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD2], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, N2_GPU[n], N2_GPU[n] + N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_4, tempreceive1_4, prim,
 							&(Bufferp[n]), &(Bufferrec1_4[n]), &(tempBufferrec1_4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1426,7 +1426,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][17], &Statbound[n][17]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_7[n][0], &receive1_7[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_7[n][0], &receive1_7[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD5], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, N2_GPU[n], N2_GPU[n] + N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_7, tempreceive1_7, prim,
 							&(Bufferp[n]), &(Bufferrec1_7[n]), &(tempBufferrec1_7[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1442,7 +1442,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][18], &Statbound[n][18]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_8[n][0], &receive1_8[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_8[n][0], &receive1_8[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N3_GPU[n] + 2 * N3G) / (1 + REF_3)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD6], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, N2_GPU[n], N2_GPU[n] + N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_8, tempreceive1_8, prim,
 							&(Bufferp[n]), &(Bufferrec1_8[n]), &(tempBufferrec1_8[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), 0);
@@ -1461,7 +1461,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][13], &Statbound[n][13]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_3[n][0], &receive1_3[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_3[n][0], &receive1_3[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_3, send3_1, tempreceive1_3, prim,
 							&(Bufferp[n]), &(Bufferrec1_3[n]), &(Buffersend3_1[n]), &(tempBufferrec1_3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1477,7 +1477,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][14], &Statbound[n][14]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_4[n][0], &receive1_4[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_4[n][0], &receive1_4[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_4, send3_2, tempreceive1_4, prim,
 							&(Bufferp[n]), &(Bufferrec1_4[n]), &(Buffersend3_2[n]), &(tempBufferrec1_4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1493,7 +1493,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][17], &Statbound[n][17]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_7[n][0], &receive1_7[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_7[n][0], &receive1_7[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_7, send3_5, tempreceive1_7, prim,
 							&(Bufferp[n]), &(Bufferrec1_7[n]), &(Buffersend3_5[n]), &(tempBufferrec1_7[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1509,7 +1509,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 							MPI_Wait(&boundreqs[n][18], &Statbound[n][18]);
 						}
-						if (gpu == 1) cudaMemcpyAsync(&Bufferrec1_8[n][0], &receive1_8[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+						if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec1_8[n][0], &receive1_8[n][0], (int)((NPR + 3)*(N1_GPU[n]  / (1 + REF_1) + 2 * N1G)  *(N3_GPU[n]  / (1 + REF_3) + 2 * N3G)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_8, send3_6, tempreceive1_8, prim,
 							&(Bufferp[n]), &(Bufferrec1_8[n]), &(Buffersend3_6[n]), &(tempBufferrec1_8[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1535,7 +1535,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[n][AMR_NBR6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][50], &Statbound[n][50]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec5[n][0], &receive5[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N2_GPU[n] + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5[n][0], &receive5[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N2_GPU[n] + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive3(n, block[n][AMR_NBR6], 0, -N1G, N1_GPU[n] + N1G, 0, -N2G, N2_GPU[n] + N2G, 0, -N3G, 0, (N1_GPU[n] + 2 * N1G), (N2_GPU[n] + 2 * N2G), receive5, tempreceive5, prim,
 					&(Bufferp[n]), &(Bufferrec5[n]), &(tempBufferrec5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6]][AMR_TIMELEVEL]);
 			}
@@ -1550,7 +1550,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][51], &Statbound[n][51]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_1[n][0], &receive5_1[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_1[n][0], &receive5_1[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD2], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G, 0,
 					(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_1, tempreceive5_1, prim,
 					&(Bufferp[n]), &(Bufferrec5_1[n]), &(tempBufferrec5_1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL]);
@@ -1565,7 +1565,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][53], &Statbound[n][53]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_3[n][0], &receive5_3[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_3[n][0], &receive5_3[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD4], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, -N3G, 0,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_3, tempreceive5_3, prim,
 						&(Bufferp[n]), &(Bufferrec5_3[n]), &(tempBufferrec5_3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL]);
@@ -1581,7 +1581,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][55], &Statbound[n][55]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_5[n][0], &receive5_5[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_5[n][0], &receive5_5[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD6], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G, 0,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_5, tempreceive5_5, prim,
 						&(Bufferp[n]), &(Bufferrec5_5[n]), &(tempBufferrec5_5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL]);
@@ -1597,7 +1597,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][57], &Statbound[n][57]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_7[n][0], &receive5_7[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_7[n][0], &receive5_7[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD8], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, -N3G, 0,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_7, tempreceive5_7, prim,
 						&(Bufferp[n]), &(Bufferrec5_7[n]), &(tempBufferrec5_7[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL]);
@@ -1616,7 +1616,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][51], &Statbound[n][51]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_1[n][0], &receive5_1[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_1[n][0], &receive5_1[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_1, send6_2, tempreceive5_1, prim,
 						&(Bufferp[n]), &(Bufferrec5_1[n]), &(Buffersend6_2[n]), &(tempBufferrec5_1[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1632,7 +1632,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][53], &Statbound[n][53]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_3[n][0], &receive5_3[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_3[n][0], &receive5_3[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_3, send6_4, tempreceive5_3, prim,
 						&(Bufferp[n]), &(Bufferrec5_3[n]), &(Buffersend6_4[n]), &(tempBufferrec5_3[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1648,7 +1648,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][55], &Statbound[n][55]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_5[n][0], &receive5_5[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_5[n][0], &receive5_5[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_5, send6_6, tempreceive5_5, prim,
 						&(Bufferp[n]), &(Bufferrec5_5[n]), &(Buffersend6_6[n]), &(tempBufferrec5_5[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1664,7 +1664,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][57], &Statbound[n][57]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec5_7[n][0], &receive5_7[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec5_7[n][0], &receive5_7[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_7, send6_8, tempreceive5_7, prim,
 						&(Bufferp[n]), &(Bufferrec5_7[n]), &(Buffersend6_8[n]), &(tempBufferrec5_7[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1686,7 +1686,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[n][AMR_NBR5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][60], &Statbound[n][60]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec6[n][0], &receive6[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N2_GPU[n] + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6[n][0], &receive6[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N2_GPU[n] + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive3(n, block[n][AMR_NBR5], 0, -N1G, N1_GPU[n] + N1G, 0, -N2G, N2_GPU[n] + N2G, 0, N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] + 2 * N1G), (N2_GPU[n] + 2 * N2G), receive6, tempreceive6, prim,
 					&(Bufferp[n]), &(Bufferrec6[n]), &(tempBufferrec6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5]][AMR_TIMELEVEL]);
 			}
@@ -1701,7 +1701,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
 					MPI_Wait(&boundreqs[n][62], &Statbound[n][62]);
 				}
-				if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_2[n][0], &receive6_2[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+				if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_2[n][0], &receive6_2[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 				unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD1], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, N3_GPU[n], N3_GPU[n] + N3G,
 					(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_2, tempreceive6_2, prim,
 					&(Bufferp[n]), &(Bufferrec6_2[n]), &(tempBufferrec6_2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL]);
@@ -1716,7 +1716,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][64], &Statbound[n][64]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_4[n][0], &receive6_4[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_4[n][0], &receive6_4[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD3], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, N3_GPU[n], N3_GPU[n] + N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_4, tempreceive6_4, prim,
 						&(Bufferp[n]), &(Bufferrec6_4[n]), &(tempBufferrec6_4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL]);
@@ -1732,7 +1732,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][66], &Statbound[n][66]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_6[n][0], &receive6_6[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_6[n][0], &receive6_6[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD5], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, N3_GPU[n], N3_GPU[n] + N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_6, tempreceive6_6, prim,
 						&(Bufferp[n]), &(Bufferrec6_6[n]), &(tempBufferrec6_6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL]);
@@ -1748,7 +1748,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][68], &Statbound[n][68]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_8[n][0], &receive6_8[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_8[n][0], &receive6_8[n][0], (int)((NPR + 3)*(N1_GPU[n] + 2 * N1G) / (1 + REF_1)  *(N2_GPU[n] + 2 * N2G) / (1 + REF_2)* NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD7], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, N3_GPU[n], N3_GPU[n] + N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_8, tempreceive6_8, prim,
 						&(Bufferp[n]), &(Bufferrec6_8[n]), &(tempBufferrec6_8[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL]);
@@ -1767,7 +1767,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][62], &Statbound[n][62]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_2[n][0], &receive6_2[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_2[n][0], &receive6_2[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_2, send5_1, tempreceive6_2, prim,
 						&(Bufferp[n]), &(Bufferrec6_2[n]), &(Buffersend5_1[n]), &(tempBufferrec6_2[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1783,7 +1783,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][64], &Statbound[n][64]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_4[n][0], &receive6_4[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_4[n][0], &receive6_4[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_4, send5_3, tempreceive6_4, prim,
 						&(Bufferp[n]), &(Bufferrec6_4[n]), &(Buffersend5_3[n]), &(tempBufferrec6_4[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1799,7 +1799,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][66], &Statbound[n][66]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_6[n][0], &receive6_6[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_6[n][0], &receive6_6[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_6, send5_5, tempreceive6_6, prim,
 						&(Bufferp[n]), &(Bufferrec6_6[n]), &(Buffersend5_5[n]), &(tempBufferrec6_6[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
@@ -1815,7 +1815,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
 						MPI_Wait(&boundreqs[n][68], &Statbound[n][68]);
 					}
-					if (gpu == 1) cudaMemcpyAsync(&Bufferrec6_8[n][0], &receive6_8[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
+					if (gpu == 1 && GPU_DIRECT == 0) cudaMemcpyAsync(&Bufferrec6_8[n][0], &receive6_8[n][0], (int)((NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G) *(N2_GPU[n] / (1 + REF_2) + 2 * N2G) * NG) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_8, send5_7, tempreceive6_8, prim,
 						&(Bufferp[n]), &(Bufferrec6_8[n]), &(Buffersend5_7[n]), &(tempBufferrec6_8[n]), &(boundevent1[n][0]), &(boundevent1[n][0]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
