@@ -71,7 +71,7 @@ void step_ch()
 		fprintf(stderr, "h");
 	}
 
-	for (u = 0; u < AMR_MAXTIMELEVEL; u++){
+	for (u = 0; u < 2*AMR_MAXTIMELEVEL; u++){
 		set_prestep();
 		ndt = advance(0);
 		for (n = 0; n < n_active; n++){
@@ -102,7 +102,7 @@ void step_ch()
 	//nstep++;
 
 	/* increment time */
-	t += (double)(AMR_MAXTIMELEVEL)*0.5*dt;
+	t += (double)(AMR_MAXTIMELEVEL)*dt;
 
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;

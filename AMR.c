@@ -709,8 +709,9 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
 
 	bound_prim(p, 1);
+	#if(GPU_ENABLED)
 	GPU_boundprim(1);
-
+	#endif
 	if (rank == 0) fprintf(stderr, "Load balance finished! \n");
 }
 
@@ -2506,7 +2507,7 @@ void check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 16.0
+#define DENSITY_CUTOFF 0.5
 #endif
 
 //Refine on basis of some criteria

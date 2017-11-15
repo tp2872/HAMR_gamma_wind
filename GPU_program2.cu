@@ -7,7 +7,7 @@
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
-#define NT 1
+#define NT 0
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -15,9 +15,9 @@
 #define REF_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 #define STAGGERED (1)
 

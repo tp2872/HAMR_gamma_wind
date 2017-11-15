@@ -118,10 +118,10 @@ int main(int argc, char *argv[])
 	tdump = t + DTd;
 	timage = t + DTi;
 	tlog = t + DTl;
-	tref = t + TREF;
+	tref = t + 30.;
 	defcon = 1. ;
 	time_spent3 = 0.0;
-	begin1 = clock();
+	begin1 = time(NULL);
 	//cuProfilerStart();
 
 	while(t < tf) {
@@ -145,17 +145,22 @@ int main(int argc, char *argv[])
 		#if(GPU_DEBUG)
 		step_ch_debug();
 		#endif
-
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
+			//MPI_Barrier(mpi_cartcomm);
+			//if (rank == 0) fprintf(stderr, "Starting test! \n");
+			//MPI_Irecv(&Bufferrec4_5[n_ord[0]][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, mpi_cartcomm, &boundreqs[n_ord[0]][45]);
+			//MPI_Wait(&boundreqs[n_ord[0]][45], &Statbound[n_ord[0]][45]);
+			//fprintf(stderr, "Received erronous message on rank %d \n", rank);
+			MPI_Barrier(mpi_cartcomm);
 			bound_prim(p, 1);
 			check_refcrit();
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
-			tref += TREF;
+			tref += 30.0;
 		}
 
 		/* Handle output frequencies: */
@@ -170,29 +175,29 @@ int main(int argc, char *argv[])
 
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
-			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif			
 			if (dt>2.) break;
-			//restart_write(); //do restart dumb simultaneous with log
-			//tlog +=  DTl;
+			restart_write(); //do restart dumb simultaneous with log
+			tlog +=  DTl;
 		}			
 		
 		#if TIMER
-		if (nstep % (2*320) == 0){
+		if (nstep % (2*640) == 0){
 			#if (OpenCL_enable == 1)
 			#endif
-			end1 = clock();
+			end1 = time(NULL);
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			if (dt>2.) break;
-			bound_prim(p, 1);
+
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC);
+				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1));
 				fprintf(stderr, "MPI-time: %f ", time_spent3);
 				fprintf(stderr, "dt1: %f ", ndt1);
 				fprintf(stderr, "dt2: %f ", ndt2);
@@ -201,7 +206,7 @@ int main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;			
-			begin1 = clock();			
+			begin1 = time(NULL);			
 		}
 		#endif
 		//cuProfilerStop();
@@ -1615,8 +1620,8 @@ void MPI_initialize(int argc, char *argv[])
 	//local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	cudaSetDevice(local_rank%N_GPU);
 	
-	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
-	//rc = MPI_Init(&argc, &argv);
+	//rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
+	rc = MPI_Init(&argc, &argv);
 
 	if (rc != MPI_SUCCESS) {
 		fprintf(stderr, "Error starting MPI program. Terminating.\n");

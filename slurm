@@ -5,7 +5,7 @@
 #PBS -q high
 #PBS -l nodes=300:ppn=16:xk
 ### set the wallclock time
-#PBS -l walltime=00:30:00
+#PBS -l walltime=00:45:00
 ### set the job name
 #PBS -N TDISKS25A93T45S_CUDA
 ### set the job stdout and stderr
@@ -15,10 +15,8 @@
 #PBS -m bea
 #PBS -M matthewliska92@gmail.com
 
-module swap PrgEnv-cray PrgEnv-intel
+module swap PrgEnv-cray PrgEnv-gnu
 module load cudatoolkit
-export MPICH_NEMESIS_ASYNC_PROGRESS=1
-export MPICH_MAX_THREAD_SAFETY=multiple
 export MPICH_RDMA_ENABLED_CUDA=1
 cd /scratch/sciteam/liska/TDISKS25A93T45S
 make clean

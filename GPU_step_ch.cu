@@ -43,12 +43,12 @@ void GPU_init(void)
 	//for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[j]);
 
 	for (j = 0; j < N_GPU; j++){
-		cudaDeviceCanAccessPeer(&pos, local_rank%N_GPU, j);
-		if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
+		//cudaDeviceCanAccessPeer(&pos, local_rank%N_GPU, j);
+		//if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
 	}
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
-	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
+	//cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 	//cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
 	status = cudaGetLastError();

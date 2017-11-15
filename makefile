@@ -50,7 +50,7 @@ CC       = cc
 CCFLAGS  =  -fopenmp -O3
 endif
 
-EXTRALIBS = -lm -L/opt/apps/cuda/7.5/lib64 -lcudart -lcuda
+EXTRALIBS = -lm -L/opt/apps/cuda/7.5/lib64 -lcudart
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
 CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c 
