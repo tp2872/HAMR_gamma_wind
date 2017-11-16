@@ -123,7 +123,7 @@ extern int tag_normal;
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 4
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -135,7 +135,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 1
+#define PRESTEP 0
 
 /*Calculate block indices for each AMR level*/
 #define BI_T(bi0, bi1, bi2) (8)*(8)*bi0+(8)*bi1+bi2
@@ -487,11 +487,7 @@ void free_arrays(int n);
 #define FMT_INT_OUT "%10d"
 
 /*Define local work size for GPU. Needed to optimize GPU performance*/
-#if(GPU_ENABLED == 1 || GPU_DEBUG == 1 || GPU_BENCHMARK==1) 
 #define LOCAL_WORK_SIZE 64
-#else
-#define LOCAL_WORK_SIZE 1
-#endif
 
 /*************************************************************************
 MNEMONICS SECTION
@@ -872,7 +868,7 @@ struct of_state {
 /*CUDA variables decleration*/
 extern double *NULL_POINTER[NB];
 extern int gpu;
-extern int status;
+extern cudaError_t status;
 extern cudaStream_t commandQueue[NQ*N_GPU];
 extern cudaStream_t commandQueueGPU[NB];
 extern cudaEvent_t boundevent[NB][600];

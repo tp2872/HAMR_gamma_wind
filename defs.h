@@ -317,7 +317,7 @@ double ldot = 0.;
 /*CUDA variables decleration*/
 double *NULL_POINTER[NB];
 int gpu;
-int status;
+cudaError_t status;
 int fix_mem[NB];
 int fix_mem2[NB];
 cudaStream_t commandQueue[NQ*N_GPU];
