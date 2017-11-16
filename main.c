@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
 	balance_load();
 	#if(GPU_ENABLED)
-	balance_load_gpu();
+	//balance_load_gpu();
 	#endif
 
 	/* do initial diagnostics */
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	tref = t + 30.;
 	defcon = 1. ;
 	time_spent3 = 0.0;
-	begin1 = time(NULL);
+	begin1 = clock();;
 	//cuProfilerStart();
 
 	while(t < tf) {
@@ -148,16 +148,16 @@ int main(int argc, char *argv[])
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
 			#if (OpenCL_enable==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 			#endif
-			//MPI_Barrier(mpi_cartcomm);
+			//MPI_Barrier(MPI_COMM_WORLD);
 			//if (rank == 0) fprintf(stderr, "Starting test! \n");
-			//MPI_Irecv(&Bufferrec4_5[n_ord[0]][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, mpi_cartcomm, &boundreqs[n_ord[0]][45]);
+			//MPI_Irecv(&Bufferrec4_5[n_ord[0]][0], 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &boundreqs[n_ord[0]][45]);
 			//MPI_Wait(&boundreqs[n_ord[0]][45], &Statbound[n_ord[0]][45]);
 			//fprintf(stderr, "Received erronous message on rank %d \n", rank);
-			MPI_Barrier(mpi_cartcomm);
-			bound_prim(p, 1);
-			check_refcrit();
+			//MPI_Barrier(MPI_COMM_WORLD);
+			//bound_prim(p, 1);
+			//check_refcrit();
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
 			tref += 30.0;
@@ -175,10 +175,10 @@ int main(int argc, char *argv[])
 
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if (OpenCL_enable==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif			
 			if (dt>2.) break;
-			restart_write(); //do restart dumb simultaneous with log
+			//restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 		
@@ -186,18 +186,18 @@ int main(int argc, char *argv[])
 		if (nstep % (2*640) == 0){
 			#if (OpenCL_enable == 1)
 			#endif
-			end1 = time(NULL);
+			end1 = clock();;
 			#if (OpenCL_enable==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			if (dt>2.) break;
 
 			diag(LOG_OUT);
-			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+			//MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			//MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			//MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1));
+				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC);
 				fprintf(stderr, "MPI-time: %f ", time_spent3);
 				fprintf(stderr, "dt1: %f ", ndt1);
 				fprintf(stderr, "dt2: %f ", ndt2);
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;			
-			begin1 = time(NULL);			
+			begin1 = clock();			
 		}
 		#endif
 		//cuProfilerStop();
@@ -277,7 +277,7 @@ int derefine_pole(void){
 				refine(AMR_coord_linear(l, i, j, z));
 			}
 		}
-		MPI_Barrier(mpi_cartcomm);
+		MPI_Barrier(MPI_COMM_WORLD);
 		post_refine();
 		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
 	}
@@ -1041,7 +1041,7 @@ void set_arrays(int n)
 	receive6_6fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
 	receive6_8fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	#if(CPU_OPENMP || GPU_DIRECT==0)
+	#if(1)
 	receive1_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive2_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
 	receive3_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
@@ -1613,12 +1613,12 @@ void MPI_initialize(int argc, char *argv[])
 	int i, j, z, len, dim, corn, rankloop;
 	int dims[3], periods[3], coords[3];
 
-	int rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
+	int rdma_direct = 1;// getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
 
 	/*Get basic initialisation*/
 	local_rank = getenv("MV2_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
 	//local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
-	cudaSetDevice(local_rank%N_GPU);
+	//cudaSetDevice(local_rank%N_GPU);
 	
 	//rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &i);
 	rc = MPI_Init(&argc, &argv);
@@ -1640,7 +1640,7 @@ void MPI_initialize(int argc, char *argv[])
 
 	mpi_cartcomm = MPI_COMM_WORLD;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);
+	//MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);
 
 	/*Give basic diagnostics*/
 	if (rank == 0){
@@ -1654,10 +1654,11 @@ void MPI_initialize(int argc, char *argv[])
 
 void mpi_synch(void){
 	int i;
-	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-		break;
-		}
-	}
+	//for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+	//	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+	//	if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+	//	break;
+	//	}
+	//
+	MPI_Barrier(MPI_COMM_WORLD);
 }

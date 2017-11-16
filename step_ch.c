@@ -1356,18 +1356,15 @@ void GPU_step_ch()
 	int i, j, z, k, n, uu;
 
 	if (rank == 0){
-		//fprintf(stderr, "h");
+		fprintf(stderr, "h");
 	}
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
 	}
 	for (uu = 0; uu < 2 * AMR_MAXTIMELEVEL; uu++){
 		set_prestep();
-		//ndt = advance_GPU();   /* time step primitive variables to the half step */
+		ndt = advance_GPU();   /* time step primitive variables to the half step */
 		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-		//bound_prim(p, 1);
-		//bound_prim(ph, 0);
-		//GPU_consttransport_bound();
 		nstep++;
 		#if(PRESTEP)
 		for (n = 0; n < n_active; n++){
@@ -1376,10 +1373,10 @@ void GPU_step_ch()
 		}
 		#endif
 	}
-	dt = 0.01;
+
 	/* Repeat and rinse for the full time (aka corrector) step:  */
 	if (rank == 0){
-		//fprintf(stderr, "f");
+		fprintf(stderr, "f");
 	}
 
 	/* Determine next time increment based on current characteristic speeds: */
@@ -1401,7 +1398,7 @@ void GPU_step_ch()
 	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 	#endif
 
-	//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
 
 	#if(TIMESTEP_JET)
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
@@ -1485,7 +1482,7 @@ double advance_GPU(void)
 		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
 	}
-	read_time_GPU();
+	//read_time_GPU();
 	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][1] = fluxcalc_GPU(n_ord[n],1);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt1 = 1e9;
@@ -1506,7 +1503,7 @@ double advance_GPU(void)
 		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
 	}
-	read_time_GPU();
+	//read_time_GPU();
 	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][2] =  fluxcalc_GPU(n_ord[n],2);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt2 = 1e9;
@@ -1527,7 +1524,7 @@ double advance_GPU(void)
 		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
 		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
 	}
-	read_time_GPU();
+	//read_time_GPU();
 	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][3] =fluxcalc_GPU(n_ord[n], 3);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt3 = 1e9;
@@ -1585,16 +1582,16 @@ double advance_GPU(void)
 		//flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 		//flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 		#if(N3G>0)
-		//flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+	//	flux_rec3(F3, BufferF3_1, n_ord[n], 1);
 		#endif
 	}
 
 	//For first timestep do not synchronize electrice fields
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
-		//flux_rec1(F1, BufferF1_1, n_ord[n], 2);
-		//flux_rec2(F2, BufferF2_1, n_ord[n], 2);
+	//	flux_rec1(F1, BufferF1_1, n_ord[n], 2);
+	//	flux_rec2(F2, BufferF2_1, n_ord[n], 2);
 		#if(N3G>0)
-		//flux_rec3(F3, BufferF3_1, n_ord[n], 2);
+	//	flux_rec3(F3, BufferF3_1, n_ord[n], 2);
 		#endif
 	}
 	#endif 
@@ -1628,13 +1625,13 @@ double advance_GPU(void)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1){
 			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			//GPU_Utoprim(1, n_ord[n], timestep);
-			//GPU_fixup(1, n_ord[n], timestep);
+			GPU_Utoprim(1, n_ord[n], timestep);
+			GPU_fixup(1, n_ord[n], timestep);
 		}
 		else if (prestep_half[n_ord[n]] == 1){
 			timestep = 0.5 * dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			//GPU_Utoprim(0, n_ord[n], timestep);
-			//GPU_fixup(0, n_ord[n], timestep);
+			GPU_Utoprim(0, n_ord[n], timestep);
+			GPU_fixup(0, n_ord[n], timestep);
 		}
 	}
 
@@ -3132,9 +3129,9 @@ void GPU_boundprim(int bound_force)
 
 	if (bound_force == 1) nstep = -1;
 	for (n = 0; n < n_active; n++){
-		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		//if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
-		//else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
 	}
 #if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++){
@@ -3323,7 +3320,7 @@ void GPU_finish(int n)
 	free(Katm_GPU[n]);
 
 	status += cudaFreeHost(dtij_GPU[n]);
-	//status += cudaFree(Bufferdtij[n]);
+	status += cudaFree(Bufferdtij[n]);
 	status += cudaFree(BufferF1_1[n]);
 	status += cudaFree(BufferF2_1[n]);
 	status += cudaFree(BufferF3_1[n]);

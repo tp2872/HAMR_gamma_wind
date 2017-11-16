@@ -242,7 +242,7 @@ int restart_read(void)
 	}
 
 	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(MPI_COMM_WORLD);
 	#endif
 
 	/* bound */
