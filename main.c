@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 			#endif
 			end1 = clock();;
 			#if (OpenCL_enable==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			if (dt>2.) break;
 

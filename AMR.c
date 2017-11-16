@@ -491,7 +491,7 @@ void set_AMR(void){
 	activate_blocks();
 	set_corners();
 
-	MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	balance_load();
 }
@@ -544,8 +544,8 @@ void balance_load(void){
 				n_active_local_min = n_active_local_max;
 			}
 		}
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);*/
 		if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
@@ -613,8 +613,8 @@ void balance_load(void){
 
 		n_active_local_max = n_active_localsteps[rank];
 		n_active_local_min = n_active_local_max;
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 	} while ((n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
 	if (rank == 0 && timelevel_cutoff != AMR_MAXTIMELEVEL) fprintf(stderr, "Error in balance_load. Due to too little/many blocks the maximum timelevel can't be honoured and the hierarchical timestepping is downgraded! \n");
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
@@ -622,9 +622,9 @@ void balance_load(void){
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
-				rc = MPI_Isend(&p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[i], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][0]);
+				rc = MPI_Isend(&p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[i], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_ord_total_RM[i]][0]);
 				#if STAGGERED
-				rc += MPI_Isend(&ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[i], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][1]);
+				rc += MPI_Isend(&ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[i], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_ord_total_RM[i]][1]);
 				#endif
 				if (rc != 0)fprintf(stderr, "Error balance_load send %d", rc);
 			}
@@ -638,9 +638,9 @@ void balance_load(void){
 				set_arrays(n_ord_total_RM[i]);
 				set_grid(n_ord_total_RM[i]);
 				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
-					rc = MPI_Irecv(&p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][10]);
+					rc = MPI_Irecv(&p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_ord_total_RM[i]][10]);
 					#if STAGGERED
-					rc += MPI_Irecv(&ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][11]);
+					rc += MPI_Irecv(&ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_ord_total_RM[i]][11]);
 					#endif
 					if (rc != 0)fprintf(stderr, "Error balance_load receive %d", rc);
 				}
@@ -699,11 +699,11 @@ void balance_load(void){
 	int min_steps = count_node[0];
 	int max_steps = count_node[0];
 	int total_steps = count_node[0];
-	MPI_Allreduce(MPI_IN_PLACE, &min1, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &max1, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &min_steps, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &max_steps, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &total_steps, 1, MPI_INT, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &min1, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &max1, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &min_steps, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &max_steps, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &total_steps, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
 	if (rank == 0) fprintf(stderr, "Number of active blocks (total, min,max): %d %d %d \n", n_active_total, min1, max1);
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
@@ -2137,7 +2137,7 @@ void pre_refine(void){
 
 void refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
-	//MPI_Barrier(mpi_cartcomm);
+	//MPI_Barrier(MPI_COMM_WORLD);
 	if(rank==0) fprintf(stderr, "Refining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 	check_nesting(n); //First make sure nesting criteria are satisfied
 
@@ -2272,7 +2272,7 @@ void refine(int n){
 	#endif
 	free_arrays(n);
 }
-	//MPI_Barrier(mpi_cartcomm);
+	//MPI_Barrier(MPI_COMM_WORLD);
 	//Take note that block becomes refined
 	block[n][AMR_ACTIVE] = 0;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
@@ -2553,7 +2553,7 @@ void check_refcrit(void){
 	}
 	first_rdump = 0;
 
-	MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(MPI_COMM_WORLD);
 	begin1 = time(NULL);
 	do{
 		tag = 0;
@@ -2578,13 +2578,13 @@ void check_refcrit(void){
 				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 				for (task = 0; task < numtasks; task++){
 					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, MPI_COMM_WORLD, &req[0]);
 						MPI_Request_free(&req[0]);
 					}
 				}
 			}
 			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, MPI_COMM_WORLD, &request_timelevel[n_ord_total[n]]);
 			}
 		}
 		for (n = 0; n < n_active_total; n++){
@@ -2644,13 +2644,13 @@ void check_refcrit(void){
 				}
 			}
 		}
-		//MPI_Barrier(mpi_cartcomm);
+		//MPI_Barrier(MPI_COMM_WORLD);
 
 		post_refine();
 		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0){
 			balance_load();
 			#if(GPU_ENABLED)
-			balance_load_gpu();
+			//balance_load_gpu();
 			#endif
 		}
 	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0);
@@ -2666,13 +2666,13 @@ void check_refcrit(void){
 			rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 			for (task = 0; task<numtasks; task++){
 				if (rank != task){
-					rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+					rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, MPI_COMM_WORLD, &req[0]);
 					MPI_Request_free(&req[0]);
 				}
 			}
 		}
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n]%MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+			rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n]%MPI_TAG_MAX, MPI_COMM_WORLD, &request_timelevel[n_ord_total[n]]);
 		}
 	}
 	for (n = 0; n < n_active_total; n++){
@@ -2717,9 +2717,9 @@ void check_refcrit(void){
 					//if (rank==0)fprintf(stderr,"check_refcrit %d %d %d \n ", block[n_send][AMR_NODE],node, rank);
 					rc = 0;
 					if (block[n_send][AMR_NODE] == rank){
-						rc += MPI_Isend(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (50 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][598]);
+						rc += MPI_Isend(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (50 * NB + n_send) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_send][598]);
 						#if STAGGERED
-						rc += MPI_Isend(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (51 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][597]);
+						rc += MPI_Isend(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (51 * NB + n_send) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_send][597]);
 						#endif
 					}
 					if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
@@ -2742,9 +2742,9 @@ void check_refcrit(void){
 						set_arrays(n_send);
 						set_grid(n_send);
 						if (block[n_send][AMR_NODE] >= 0){
-							rc += MPI_Irecv(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][596]);
+							rc += MPI_Irecv(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * NB + n_send) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_send][596]);
 							#if STAGGERED
-							rc += MPI_Irecv(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][595]);
+							rc += MPI_Irecv(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * NB + n_send) % MPI_TAG_MAX, MPI_COMM_WORLD, &boundreqs[n_send][595]);
 							#endif
 						}
 					}
@@ -2822,7 +2822,7 @@ void check_refcrit(void){
 	balance_load_gpu();
 	#endif
 
-	MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(MPI_COMM_WORLD);
 	end1 = time(NULL);
 	if (rank == 0) fprintf(stderr, "Runtime load balance: %f \n", (double)(end1 - begin1));
 
