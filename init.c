@@ -376,12 +376,12 @@ void init_torus()
 	a = temp;
 	#if (MPI_enable)
 	/*Share rhomax among MPI processes*/
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 
 	/*Share umax among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
 	#endif
 
 	/* Normalize the densities so that max(rho) = 1 */
@@ -549,7 +549,7 @@ void init_disruption()
 
   }
 	#if (MPI_enable)
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(mpi_cartcomm);
 	#endif
   //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
   //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
@@ -608,12 +608,12 @@ void init_disruption()
   }
   #if (MPI_enable)
   /*Share rhomax among MPI processes*/
-  MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Barrier(mpi_cartcomm);
+  MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
   
   /*Share umax among MPI processes*/
-  MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+  MPI_Barrier(mpi_cartcomm);
   #endif
   
   /* Normalize the densities so that max(rho) = 1 */
@@ -765,12 +765,12 @@ void set_mag(void){
 
 	#if (MPI_enable)
 	/*Share rhomax among MPI processes*/
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 
 	/*Share umax among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
 	#endif
 
 	/* Normalize the densities so that max(rho) = 1 */
@@ -932,9 +932,9 @@ void set_mag(void){
 
 	#if (MPI_enable)
 	/*Share bsq_max among MPI processes*/
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
 	#endif
 
 	if (rank == 0){
@@ -968,9 +968,9 @@ void set_mag(void){
 
 	/*Share bsq_max among MPI processes*/
 	#if (MPI_enable)
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
 	#endif
 
 	beta_act = (gam - 1.)*umax / (0.5*bsq_max);

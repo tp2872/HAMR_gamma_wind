@@ -15,9 +15,9 @@
 #define REF_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 #define STAGGERED (1)
 

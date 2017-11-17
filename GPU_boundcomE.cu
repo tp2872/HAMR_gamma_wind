@@ -13,7 +13,7 @@ void pack_send1_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsend1E: %d \n", status);
 	}
 	else{
@@ -56,7 +56,7 @@ void pack_send2_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsend2E: %d \n", status);
 	}
 	else{
@@ -99,7 +99,7 @@ void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsend3E: %d \n", status);
 	}
 	else{
@@ -142,7 +142,7 @@ void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendEaverage1: %d \n", status);
 	}
 	else{
@@ -192,7 +192,7 @@ void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendEaverage2: %d \n", status);
 	}
 	else{
@@ -235,7 +235,7 @@ void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendEaverage3: %d \n", status);
 	}
 	else{
@@ -284,7 +284,7 @@ void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 		 unpackreceive1E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, d1, d2, e1, e2, work_size);
 		 //cudaDeviceSynchronize();
-		 status =cudaGetLastError();
+		 status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Unpack1e: %d \n", status);
 	}
 	else{
@@ -393,7 +393,7 @@ void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 		 unpackreceive2E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, d1, d2, e1, e2, work_size);
 		 //cudaDeviceSynchronize();
-		 status =cudaGetLastError();
+		 status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error unpack_receive2_E %d \n", status);
 	}
 	else{
@@ -515,7 +515,7 @@ void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 		 unpackreceive3E << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, e1, e2, d1, d2, work_size);
 		 //cudaDeviceSynchronize();
-		 status =cudaGetLastError();
+		 status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error unpack_receive3_E %d \n", status);
 	}
 	else{
@@ -627,7 +627,7 @@ void pack_send_E1_corn(int n, int n_rec, int i1, int i2, int j, int z, double *s
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendE1corn %d \n", status);
 	}
 	else{
@@ -660,7 +660,7 @@ void pack_send_E2_corn(int n, int n_rec, int i, int j1, int j2, int z, double *s
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendE2corn %d \n", status);
 	}
 	else{
@@ -693,7 +693,7 @@ void pack_send_E3_corn(int n, int n_rec, int i, int j, int z1, int z2, double *s
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendE3corn %d \n", status);
 	}
 	else{
@@ -726,7 +726,7 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendE1corncourse %d \n", status);
 	}
 	else{
@@ -762,7 +762,7 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendE2corncourse %d \n", status);
 	}
 	else{
@@ -797,7 +797,7 @@ void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, do
 			cudaEventRecord(boundevent[0], commandQueueGPU[n]);;
 		}
 		//cudaDeviceSynchronize();
-		status =cudaGetLastError();
+		status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error packsendE3corncourse %d \n", status);
 	}
 	else{
@@ -835,7 +835,7 @@ void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j,
 		 unpackreceiveE1corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j, z, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		 //cudaDeviceSynchronize();
-		 status =cudaGetLastError();
+		 status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error receiveE1corn %d \n", status);
 	}
 	else{
@@ -917,7 +917,7 @@ void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i, int j1, int j2,
 		 unpackreceiveE2corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j1, j2, z, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		 //cudaDeviceSynchronize();
-		 status =cudaGetLastError();
+		 status = cudaGetLastError();
 		if (status != cudaSuccess) printf("Error receiveE2corn %d \n", status);
 	}
 	else{
@@ -998,7 +998,7 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 		 unpackreceiveE3corn << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i, j, z1, z2, Bufferp[0], Bufferboundreceive[0], Buffertemp1[0], Buffertemp2[0],
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		 //cudaDeviceSynchronize();
-		 status =cudaGetLastError();
+		 status = cudaGetLastError();
 		if (status != cudaSuccess) printf("unpack_receive_E3_corn: %d \n", status);
 	}
 	else{

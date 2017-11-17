@@ -72,12 +72,12 @@ void diag(int call_code)
 			}
 		}
 		#if (MPI_enable)
-		MPI_Barrier(MPI_COMM_WORLD);
-		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-		MPI_Allreduce(MPI_IN_PLACE, &imax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-		MPI_Allreduce(MPI_IN_PLACE, &jmax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-		MPI_Allreduce(MPI_IN_PLACE, &zmax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(mpi_cartcomm);
+		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+		MPI_Allreduce(MPI_IN_PLACE, &imax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
+		MPI_Allreduce(MPI_IN_PLACE, &jmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
+		MPI_Allreduce(MPI_IN_PLACE, &zmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
+		MPI_Barrier(mpi_cartcomm);
 		#endif
 		icurr = imax;
 		jcurr = jmax;
@@ -94,7 +94,7 @@ void diag(int call_code)
 	if (call_code == INIT_OUT) {
 		// make regular dump and gdump file
 		#if (MPI_enable)
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(mpi_cartcomm);
 		#endif
 		if (rank == 0){
 			fprintf(stderr, "GDUMP started \n");
@@ -108,7 +108,7 @@ void diag(int call_code)
 		call_code == FINAL_OUT) {
 		// make regular dump file 
 		#if (MPI_enable)
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(mpi_cartcomm);
 		#endif
 		if (rank == 0){
 			fprintf(stderr, "DUMP%d started \n", dump_cnt);
