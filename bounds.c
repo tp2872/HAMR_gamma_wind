@@ -433,9 +433,6 @@ void pack_send3_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-
-
-
 void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type){
     struct of_geom geom ;
     double ucon[NDIM] ;
