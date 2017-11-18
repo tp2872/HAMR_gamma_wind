@@ -140,7 +140,7 @@ int N3_GPU_offset[NB];
 int numtasks, rank, local_rank, rc;
 int max1D_MPI;
 #if (MPI_enable)
-MPI_Request req[100], boundreqs[NB][600], cornreqs[NB][16];
+MPI_Request req[NB], boundreqs[NB][600], cornreqs[NB][16];
 MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
 MPI_Comm  mpi_cartcomm, mpi_self;
 MPI_Comm row_comm[8];

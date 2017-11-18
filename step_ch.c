@@ -112,11 +112,6 @@ void step_ch()
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
 
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
-	#if(TIMESTEP_JET)
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
-	#endif
-
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 	/* done! */
 }
@@ -169,8 +164,8 @@ void set_timelevel(void){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
 			for (task = 0; task < numtasks; task++){
 				if (task!=rank){
-					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Request_free(&req[0]);
+					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[n_ord_total[n]]);
+					MPI_Request_free(&req[n_ord_total[n]]);
 				}
 			}
 		}
@@ -260,10 +255,10 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][1] = fluxcalc(ph, F1, 1, 1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][1] = fluxcalc(p, F1, 1, 0, n_ord[n]);
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
-		}
-		else if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		//	ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+		//}
+		if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 			ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
@@ -276,10 +271,10 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[n_ord[n]][2] = fluxcalc(ph, F2, 2, 1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][2] = fluxcalc(p, F2, 2, 0, n_ord[n]);
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
-		}
-		else if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		//	ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+		//}
+		if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 			ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
@@ -292,10 +287,10 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[n_ord[n]][3] = fluxcalc(ph, F3, 3, 1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][3] = fluxcalc(p, F3, 3, 0, n_ord[n]);
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
-		}
-		else if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		//	ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+		//}
+		if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 			ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
@@ -326,11 +321,10 @@ double advance(int flag)
 
 	for (n = 0; n < n_active; n++){
 		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
-		}
-		else if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
+		//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		//	ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+		//}
+		if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 			ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
@@ -951,8 +945,8 @@ void E_average(void){
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag1[u] == 1 && u!=rank){
-							rc = MPI_Isend(&E_avg1[i*NB_3+z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-							MPI_Request_free(&req[0]);
+							rc = MPI_Isend(&E_avg1[i*NB_3+z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[i]);
+							MPI_Request_free(&req[i]);
 						}
 					}
 				}
@@ -974,8 +968,8 @@ void E_average(void){
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag2[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-							MPI_Request_free(&req[0]);
+							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[i]);
+							MPI_Request_free(&req[i]);
 						}
 					}
 				}
@@ -1395,10 +1389,10 @@ void GPU_step_ch()
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
-	#if(TIMESTEP_JET)
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
-	#endif
+	//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+	//#if(TIMESTEP_JET)
+	//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
+	//#endif
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 }
@@ -1486,12 +1480,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt1 = 1e9;
 		for (n = 0; n < n_active; n++){
-			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
-			}
-			else{
+			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+			//	ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+			//}
+			//else{
 				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-			}
+			//}
 		}
 	}
 	#else
@@ -1510,12 +1504,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt2 = 1e9;
 		for (n = 0; n < n_active; n++){
-			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
-			}
-			else{
+			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+			//	ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+			//}
+			//else{
 				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-		    }
+		  //  }
 	}
 }
 	#else
@@ -1534,12 +1528,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
-			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
-			}
-			else{
+			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+			//	ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+			//}
+			//else{
 				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-			}
+			//}
 		}
 	}
 	#else
@@ -1556,7 +1550,7 @@ double advance_GPU(void)
 	break;
 	}
 	}*/
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status,req)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
 		flux_send1(F1, BufferF1_1, n_ord[n]);
 		flux_send2(F2, BufferF2_1, n_ord[n]);	
@@ -1586,7 +1580,7 @@ double advance_GPU(void)
 		#endif
 	}
 	#else
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status,req)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
@@ -1596,7 +1590,7 @@ double advance_GPU(void)
 	}
 
 	//For first timestep do not synchronize electrice fields
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status,req)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
 		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
@@ -1634,7 +1628,7 @@ double advance_GPU(void)
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);
 	#endif
 
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status,timestep)
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[n_ord[n]] == 1){
 			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
@@ -1652,12 +1646,12 @@ double advance_GPU(void)
 		ndt = 1e9;
 		for (n = 0; n < n_active; n++){
 			bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-				ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
-			}
-			else{
+			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+			//	ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+			//}
+			//else{
 				ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-			}
+			//}
 		}
 	}
 

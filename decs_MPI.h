@@ -1,7 +1,7 @@
 #include "decs.h" 
 #include <mpi.h>
 
-extern MPI_Request req[100], boundreqs[NB][600], cornreqs[NB][16];
+extern MPI_Request req[NB], boundreqs[NB][600], cornreqs[NB][16];
 extern MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
 extern MPI_Comm  mpi_cartcomm, mpi_self;
 extern MPI_Comm row_comm[8];

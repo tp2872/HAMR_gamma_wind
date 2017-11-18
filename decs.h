@@ -126,7 +126,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_MAXTIMELEVEL 8
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 320
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
 #define TIMESTEP_JET 0

@@ -2544,7 +2544,7 @@ void check_refcrit(void){
 	begin1 = time(NULL);
 	
 	//First calculate non-reduced timestep
-	/*ndt = 1e9;
+	ndt = 1e9;
 	for (n = 0; n < n_active; n++){
 		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
 		ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
@@ -2557,7 +2557,7 @@ void check_refcrit(void){
 	set_timelevel();
 	#if(TIMESTEP_JET)
 	set_timelevel_jet();
-	#endif*/
+	#endif
 	do{
 		tag = 0;
 		count = 0;
@@ -2831,9 +2831,9 @@ void check_refcrit(void){
 
 	//Start very conservatively
 	dt /= 2.;
-	for (n = 0; n < n_active_total; n ++){
-		block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
-	}
+	//for (n = 0; n < n_active_total; n ++){
+		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+	//}
 }
 
 double calc_rhomax(int n){
