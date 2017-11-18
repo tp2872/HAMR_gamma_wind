@@ -299,42 +299,35 @@ int derefine_pole(void){
  *****************************************************************/
 void set_arrays_image(void)
 {
-	int i;
-	#if(IMAGE_ON)
-	//psave = (double(*)[NPR])calloc((N1 + 2 * N1G)*(N2 + 2 * N2G),sizeof(double[NPR]));
-	//fsave = (double(*)[NFAIL])calloc((N1 + 2 * N1G)*(N2 + 2 * N2G),sizeof(double[NFAIL]));
-	//fimage = (double(**))calloc(NIMG ,sizeof(double *));
-	for (i = 0; i < NIMG; i++){
-		//fimage[i] = (double(*))calloc(NIMG*N1*N2 ,sizeof(double));
-	}
-	#endif
+	
 }
 
 void free_arrays(int n)
 {
-	int i, j, z, k, u;
-
-	free(pbound[n]);
+	//free(pbound[n]);
 	free(p[n]);
+	free(ph[n]);
+	#if(LEER)
 	free(V[n]);
+	#endif
 	#if(STAGGERED)
 	free(ps[n]);
 	free(psh[n]); 
-	free(dE[n]);
 	#endif
-	free(E_corn[n]);
 	free(dq[n]);
-	//#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
 	free(F1[n]);
 	free(F2[n]);
 	free(F3[n]);
-	free(ph[n]);
-	//#endif
+	#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
 	#if(STAGGERED)
 	free(stor1[n]);
 	free(stor2[n]);
+	free(dE[n]);
 	#endif
+	free(E_corn[n]);
 	free(pflag[n]);
+	#endif
+
 	free(failimage[n]);
 	free(conn[n]); 
 	free(gcov[n]); 
@@ -348,17 +341,6 @@ void free_arrays(int n)
 	#if (ELLIPTICAL2)
 	free(dU_s[n]); 
 	#endif
-	free(E_avg_x[n][0]);
-	free(E_avg_x[n][1]);
-	free(E_avg_new_x[n][0]);
-	free(E_avg_new_x[n][1]);
-	free(E_avg_y[n][0]);
-	free(E_avg_y[n][1]);
-	free(E_avg_new_y[n][0]);
-	free(E_avg_new_y[n][1]);
-	free(send[n]);
-	free(receive[n]);
-	//#if(CPU_OPENMP || PINNED==0)
 	free(receive1[n]);
 	free(receive2[n]);
 	free(receive3[n]);
@@ -836,540 +818,528 @@ void free_arrays(int n)
 
 void set_arrays(int n)
 {
-	int i, j, z, k, u;
-	array[n] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
-	array_rdump[n] = (double *)calloc((NPR+NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), sizeof(double));
-	array_diag[n] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
-
-	Katm[n] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	pbound[n] = (double(*)[NPR][N_POINTS])calloc((N2 + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NPR][N_POINTS]));
-	p[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	V[n] = (double(*)[6])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[6]));
-	E_avg_x[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_x[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_new_x[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_new_x[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_y[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_y[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_new_y[n][0] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	E_avg_new_y[n][1] = (double(*))calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	array[n] = (float *)malloc(9 * BS_1*BS_2*BS_3* sizeof(float));
+	array_rdump[n] = (double *)malloc((NPR+NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)* sizeof(double));
+	array_diag[n] = (float *)malloc(4 * BS_1*BS_2*BS_3* sizeof(float));
+	Katm[n] = (double(*))malloc((N1_GPU[n] + 2 * N1G)*sizeof(double));
+	p[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
+	ph[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NPR]));
 	#if(STAGGERED)
-	ps[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NDIM]));
-	psh[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NDIM]));
-	dE[n] = (double(*)[2][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[2][NDIM][NDIM]));
+	ps[n] = (double(*)[NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NDIM]));
+	psh[n] = (double(*)[NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NDIM]));
 	#endif
-	E_corn[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NDIM]));
+	#if(LEER)
+	V[n] = (double(*)[6])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[6]));
+	#endif
 	dq[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	//#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
-	F1[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	F2[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	F3[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	ph[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	//#endif
+	F1[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
+	F2[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
+	F3[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
+	#if(CPU_OPENMP)
+	pflag[n] = (int(*))malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(int));
 	#if(STAGGERED)
-	stor1[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	stor2[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
+	stor1[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NPR]));
+	stor2[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NPR]));
+	dE[n] = (double(*)[2][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[2][NDIM][NDIM]));
 	#endif
-	pflag[n] = (int(*))calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(int));
-	failimage[n] = (int(*)[NFAIL])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(int[NFAIL]));
+	E_corn[n] = (double(*)[NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NDIM]));
+	#endif
+	failimage[n] = (int(*)[NFAIL])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(int[NFAIL]));
 	#if(!NONSYMMETRIC)
-	conn[n] = (double(*)[NDIM][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G),sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G) ,sizeof(double[NPG][NDIM][NDIM]));
-	gcon[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G),sizeof(double[NPG][NDIM][NDIM]));
-	gdet[n] = (double(*)[NPG])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G),sizeof(double[NPG]));
+	conn[n] = (double(*)[NDIM][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[n] = (double(*)[NPG][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G) *sizeof(double[NPG][NDIM][NDIM]));
+	gcon[n] = (double(*)[NPG][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double[NPG][NDIM][NDIM]));
+	gdet[n] = (double(*)[NPG])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double[NPG]));
 	#else
-	conn[n] = (double(*)[NDIM][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NPG][NDIM][NDIM]));
-	gcon[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPG][NDIM][NDIM]));
-	gdet[n] = (double(*)[NPG])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPG]));
+	conn[n] = (double(*)[NDIM][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[n] = (double(*)[NPG][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) *sizeof(double[NPG][NDIM][NDIM]));
+	gcon[n] = (double(*)[NPG][NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPG][NDIM][NDIM]));
+	gdet[n] = (double(*)[NPG])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPG]));
 	#endif
 	#if(ZIRI_DUMP)
-	dump_buffer[n] = (double(*))calloc(N1_GPU[n] * N2_GPU[n] * N3_GPU[n] * 13 ,sizeof(double));
-	dxdxp_z[n] = (double(*)[NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
-	dxpdx_z[n] = (double(*)[NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
+	dump_buffer[n] = (double(*))malloc(N1_GPU[n] * N2_GPU[n] * N3_GPU[n] * 13 *sizeof(double));
+	dxdxp_z[n] = (double(*)[NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) *sizeof(double[NDIM][NDIM]));
+	dxpdx_z[n] = (double(*)[NDIM][NDIM])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) *sizeof(double[NDIM][NDIM]));
 	#endif
 	#if (ELLIPTICAL2)
-	dU_s[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G),sizeof(double[NPR]));
+	dU_s[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*sizeof(double[NPR]));
 	#endif
-	send[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)  ,sizeof(double));
-	//#if(CPU_OPENMP|| PINNED==0)
-	receive1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	receive1[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive3[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	receive6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	receive5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	receive6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	tempreceive1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	tempreceive2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	tempreceive3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	tempreceive4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	tempreceive1[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	tempreceive2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	tempreceive3[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	tempreceive4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	tempreceive5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	tempreceive6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	tempreceive5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	tempreceive6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	send1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	send1[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send3[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) * (N1_GPU[n] + 2 * N1G),sizeof(double));
-	send6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) * (N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	send5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) * (N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) * (N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	send1_3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send1_4[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send1_7[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send1_8[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive1_4[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive1_7[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive1_8[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_4[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_7[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_8[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send2_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send2_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send2_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send2_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive2_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive2_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive2_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send3_1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send3_2[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send3_5[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send3_6[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive3_2[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive3_5[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive3_6[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_2[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_5[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_6[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send4_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send4_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send4_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send4_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive4_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive4_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive4_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
+	send1_3[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send1_4[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send1_7[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send1_8[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive1_3[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive1_4[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive1_7[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive1_8[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive1_3[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive1_4[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive1_7[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive1_8[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send2_1[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send2_2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send2_3[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send2_4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive2_1[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive2_2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive2_3[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive2_4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive2_1[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive2_2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive2_3[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive2_4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send3_1[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send3_2[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send3_5[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send3_6[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive3_1[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive3_2[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive3_5[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive3_6[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive3_1[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive3_2[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive3_5[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive3_6[n] = (double *)malloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send4_5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send4_6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send4_7[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	send4_8[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive4_5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive4_6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive4_7[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive4_8[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive4_5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive4_6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive4_7[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive4_8[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	send5_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send5_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send5_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send5_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive5_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive5_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive5_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	send6_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send6_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send6_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send6_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive6_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive6_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive6_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
+	send5_1[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	send5_3[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	send5_5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	send5_7[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_1[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive5_3[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive5_5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive5_7[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive5_1[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive5_3[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive5_5[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive5_7[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send6_2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	send6_4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	send6_6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	send6_8[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive6_4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive6_6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive6_8[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive6_2[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive6_4[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive6_6[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive6_8[n] = (double *)malloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
 	#endif
-	receive1_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive2_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive3_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive4_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	receive1_fine[n] = (double *)malloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive2_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive3_fine[n] = (double *)malloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive4_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	receive6_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	receive5_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	receive6_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	send1_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send2_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send3_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send4_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	send1_fine[n] = (double *)malloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send2_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send3_fine[n] = (double *)malloc(NG * NPR*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send4_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G),sizeof(double));
-	send6_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	send5_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send6_fine[n] = (double *)malloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_3fine[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_4fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_7fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_8fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_1fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_2fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_3fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_4fine[n] = (double *)calloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_1fine[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_2fine[n] = (double *)calloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_5fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_6fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_5fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_6fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_7fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_8fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_3fine[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive1_4fine[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive1_7fine[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive1_8fine[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive2_1fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive2_2fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive2_3fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive2_4fine[n] = (double *)malloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive3_1fine[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive3_2fine[n] = (double *)malloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive3_5fine[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive3_6fine[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive4_5fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive4_6fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive4_7fine[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
+	receive4_8fine[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	receive5_1fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5fine[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6fine[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8fine[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
 	#if(CPU_OPENMP)
-	receive1_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive2_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive3_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive4_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	receive1_flux[n] = (double *)malloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive2_flux[n] = (double *)malloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive3_flux[n] = (double *)malloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive4_flux[n] = (double *)malloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	receive6_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	receive5_flux[n] = (double *)malloc(NPR* (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	receive6_flux[n] = (double *)malloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_flux1[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive2_flux1[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive3_flux1[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive4_flux1[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	receive1_flux1[n] = (double *)malloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive2_flux1[n] = (double *)malloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive3_flux1[n] = (double *)malloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive4_flux1[n] = (double *)malloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_flux1[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	receive6_flux1[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	receive5_flux1[n] = (double *)malloc(NPR* (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	receive6_flux1[n] = (double *)malloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive1_3flux[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_4flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_7flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_8flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_1flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_2flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_3flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_4flux[n] = (double *)calloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_1flux[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_2flux[n] = (double *)calloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_5flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_6flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_5flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_6flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_7flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_8flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
+	receive1_3flux[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_4flux[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_7flux[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_8flux[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_1flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_2flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_3flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_4flux[n] = (double *)malloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_1flux[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_2flux[n] = (double *)malloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_5flux[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_6flux[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_5flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_6flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_7flux[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_8flux[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_1flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_3flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_5flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_7flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_2flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_4flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_6flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_8flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
+	receive5_1flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5flux[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6flux[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8flux[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
-	receive1_3flux1[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_4flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_7flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_8flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_1flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_2flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_3flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_4flux1[n] = (double *)calloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_1flux1[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_2flux1[n] = (double *)calloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_5flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_6flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_5flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_6flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_7flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_8flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
+	receive1_3flux1[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_4flux1[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_7flux1[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_8flux1[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_1flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_2flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_3flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_4flux1[n] = (double *)malloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_1flux1[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_2flux1[n] = (double *)malloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_5flux1[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_6flux1[n] = (double *)malloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_5flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_6flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_7flux1[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_8flux1[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_1flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_3flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_5flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_7flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_2flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_4flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_6flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_8flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
+	receive5_1flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5flux1[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6flux1[n] = (double *)malloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8flux1[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
-	receive1_3flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_4flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_7flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_8flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_1flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_2flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_3flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_4flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_1flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_2flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_5flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_6flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_5flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_6flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_7flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_8flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
+	receive1_3flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_4flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_7flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_8flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_1flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_2flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_3flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_4flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_1flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_2flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_5flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_6flux2[n] = (double *)malloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_5flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_6flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_7flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_8flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_1flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_3flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_5flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_7flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_2flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_4flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_6flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_8flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
+	receive5_1flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8flux2[n] = (double *)malloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
-	receive1_3E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_4E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_7E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_8E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_1E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_2E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_3E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_4E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_1E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_2E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_5E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_6E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_5E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_6E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_7E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_8E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
+	receive1_3E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_4E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_7E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_8E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_1E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_2E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_3E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_4E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_1E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_2E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_5E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_6E[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_5E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_6E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_7E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_8E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_1E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_3E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_5E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_7E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_2E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_4E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_6E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_8E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
+	receive5_1E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8E[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
-	receive1_3E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_4E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_7E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_8E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_1E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_2E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_3E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_4E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_1E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_2E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_5E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_6E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_5E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_6E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_7E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_8E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
+	receive1_3E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_4E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_7E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_8E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_1E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_2E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_3E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_4E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_1E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_2E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_5E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_6E1[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_5E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_6E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_7E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_8E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_1E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_3E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_5E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_7E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_2E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_4E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_6E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_8E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
+	receive5_1E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8E1[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
-	receive1_3E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_4E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_7E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive1_8E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_1E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_2E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_3E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive2_4E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_1E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_2E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_5E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive3_6E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_5E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_6E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_7E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
-	receive4_8E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) ,sizeof(double));
+	receive1_3E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_4E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_7E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive1_8E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_1E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_2E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_3E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive2_4E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_1E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_2E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_5E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive3_6E2[n] = (double *)malloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_5E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_6E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_7E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
+	receive4_8E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_1E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_3E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_5E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive5_7E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_2E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_4E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_6E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
-	receive6_8E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G),sizeof(double));
+	receive5_1E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_3E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_5E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive5_7E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_2E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_4E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_6E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
+	receive6_8E2[n] = (double *)malloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G)* sizeof(double));
 	#endif
 	#endif
-	send1_flux[n] = (double *)calloc(NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send2_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send3_flux[n] = (double *)calloc(NPR*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send4_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	send1_flux[n] = (double *)malloc(NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send2_flux[n] = (double *)malloc(NPR*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send3_flux[n] = (double *)malloc(NPR*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send4_flux[n] = (double *)malloc(NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G),sizeof(double));
-	send6_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	send5_flux[n] = (double *)malloc(NPR*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send6_flux[n] = (double *)malloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive2_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive3_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive4_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	receive1_E[n] = (double *)malloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive2_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive3_E[n] = (double *)malloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive4_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	receive6_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	receive5_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	receive6_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_E1[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive2_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive3_E1[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
-	receive4_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	receive1_E1[n] = (double *)malloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive2_E1[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive3_E1[n] = (double *)malloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
+	receive4_E1[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
-	receive6_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	receive5_E1[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
+	receive6_E1[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
-	send1_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send2_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send3_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G),sizeof(double));
-	send4_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double));
+	send1_E[n] = (double *)malloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send2_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send3_E[n] = (double *)malloc(2 * (N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send4_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G),sizeof(double));
-	send6_E[n] = (double *)calloc(2*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) ,sizeof(double));
+	send5_E[n] = (double *)malloc(2 * (N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send6_E[n] = (double *)malloc(2*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) * sizeof(double));
 	#endif
 	
-	send_E3_corn1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	send_E3_corn2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	send_E3_corn3[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	send_E3_corn4[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	send_E3_corn1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send_E3_corn2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send_E3_corn3[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	send_E3_corn4[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	send_E2_corn5[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	send_E2_corn6[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	send_E2_corn7[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	send_E2_corn8[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	send_E1_corn9[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	send_E1_corn10[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	send_E1_corn11[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	send_E1_corn12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	send_E2_corn5[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	send_E2_corn6[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	send_E2_corn7[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	send_E2_corn8[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	send_E1_corn9[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send_E1_corn10[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send_E1_corn11[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	send_E1_corn12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	receive_E3_corn1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn3[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn4[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	receive_E3_corn1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn3[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn4[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn6[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn7[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn8[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E1_corn9[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn10[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn11[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	receive_E2_corn5[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn6[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn7[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn8[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E1_corn9[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn10[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn11[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	tempreceive_E3_corn1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn3[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn4[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	tempreceive_E3_corn1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn3[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn4[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn6[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn7[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn8[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E1_corn9[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn10[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn11[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	tempreceive_E2_corn5[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn6[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn7[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn8[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E1_corn9[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn10[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn11[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive_E3_corn1_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn2_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn3_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn4_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	receive_E3_corn1_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn2_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn3_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn4_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn6_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn7_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn8_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E1_corn9_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn10_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn11_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn12_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	receive_E2_corn5_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn6_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn7_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn8_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E1_corn9_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn10_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn11_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn12_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	receive_E3_corn1_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn2_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn3_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn4_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	receive_E3_corn1_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn2_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn3_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn4_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn6_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn7_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn8_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E1_corn9_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn10_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn11_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn12_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	receive_E2_corn5_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn6_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn7_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn8_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E1_corn9_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn10_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn11_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn12_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	tempreceive_E3_corn1_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn2_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn3_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn4_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	tempreceive_E3_corn1_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn2_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn3_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn4_1[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn6_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn7_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn8_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E1_corn9_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn10_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn11_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn12_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	tempreceive_E2_corn5_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn6_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn7_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn8_1[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E1_corn9_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn10_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn11_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn12_1[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	tempreceive_E3_corn1_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn2_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn3_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	tempreceive_E3_corn4_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	tempreceive_E3_corn1_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn2_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn3_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	tempreceive_E3_corn4_2[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn6_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn7_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E2_corn8_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	tempreceive_E1_corn9_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn10_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn11_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	tempreceive_E1_corn12_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	tempreceive_E2_corn5_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn6_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn7_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E2_corn8_2[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	tempreceive_E1_corn9_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn10_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn11_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	tempreceive_E1_corn12_2[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	receive_E3_corn1_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn2_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn3_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn4_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	receive_E3_corn1_12[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn2_12[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn3_12[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn4_12[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn6_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn7_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn8_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E1_corn9_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn10_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn11_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn12_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	receive_E2_corn5_12[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn6_12[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn7_12[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn8_12[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E1_corn9_12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn10_12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn11_12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn12_12[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
-	receive_E3_corn1_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn2_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn3_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
-	receive_E3_corn4_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G),sizeof(double));
+	receive_E3_corn1_22[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn2_22[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn3_22[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
+	receive_E3_corn4_22[n] = (double *)malloc((N3_GPU[n] + 2 * N3G)* sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn6_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn7_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E2_corn8_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G),sizeof(double));
-	receive_E1_corn9_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn10_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn11_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
-	receive_E1_corn12_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G),sizeof(double));
+	receive_E2_corn5_22[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn6_22[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn7_22[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E2_corn8_22[n] = (double *)malloc((N2_GPU[n] + 2 * N2G)* sizeof(double));
+	receive_E1_corn9_22[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn10_22[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn11_22[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
+	receive_E1_corn12_22[n] = (double *)malloc((N1_GPU[n] + 2 * N1G)* sizeof(double));
 	#endif
 	#endif
 	#endif
@@ -1480,7 +1450,6 @@ void set_grid(int n)
 				//coord(n, i, 1, z, FACE2, X);
 				a = 0. ;
 				coord(n, i, j, z, FACE2, X);
-
 			}
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==1){
@@ -1490,42 +1459,6 @@ void set_grid(int n)
 			}
 			else coord(n, i, j, z, FACE2, X);
 			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE2]);
-			if ((j == 0  || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])) && TRANS_BOUND==1){
-				//gcov[n][index_2D(n, i, j, z)][FACE2][2][1] = 0.;
-				//gcov[n][index_2D(n, i, j, z)][FACE2][1][2] = 0.;
-				//gcov[n][index_2D(n, i, j, z)][FACE2][2][3] = 0.;
-				//gcov[n][index_2D(n, i, j, z)][FACE2][3][2] = 0.;
-				//gcov[n][index_2D(n, i, j, z)][FACE2][1][3] = 0.;
-				//gcov[n][index_2D(n, i, j, z)][FACE2][3][1] = 0.;
-			}
-			/*if (j == -1 || j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])){
-				double dxdxp[NDIM][NDIM], dxdxp_inv[NDIM][NDIM];
-				int I, J, K, L;
-				dxdxp_func(X, dxdxp);
-				invert_matrix(dxdxp, dxdxp_inv);
-				for (I = 0; I<NDIM; I++){
-					for (J = 0; J<NDIM; J++){
-						gcon[n][index_2D(n, i, j, z)][FACE2][I][J] = 0.;
-						for (K = 0; K<NDIM; K++) {
-							for (L = 0; L<NDIM; L++){
-								gcon[n][index_2D(n, i, j, z)][FACE2][I][J] += gcov[n][index_2D(n, i, j, z)][FACE2][K][L] * dxdxp_inv[K][I] * dxdxp_inv[L][J];
-							}
-						}
-					}
-				}
-				coord(n, i, j, z, FACE2, X);
-				dxdxp_func(X, dxdxp);
-				for (I = 0; I < NDIM; I++){
-					for (J = 0; J < NDIM; J++){
-						gcov[n][index_2D(n, i, j, z)][FACE2][I][J] = 0.;
-						for (K = 0; K < NDIM; K++) {
-							for (L = 0; L < NDIM; L++){
-								gcov[n][index_2D(n, i, j, z)][FACE2][I][J] += gcon[n][index_2D(n, i, j, z)][FACE2][K][L] * dxdxp[K][I] * dxdxp[L][J];
-							}
-						}
-					}
-				}
-			}*/
 			gdet[n][index_2D(n, i, j, z)][FACE2] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE2]);
 			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE2], gcon[n][index_2D(n, i, j, z)][FACE2]);	
 		}
@@ -1628,14 +1561,6 @@ void MPI_initialize(int argc, char *argv[])
 
 	MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
 	MPI_Get_processor_name(hostname, &len);
-
-	dims[0] = NB_1;
-	dims[1] = NB_2;
-	dims[2] = NB_3;
-	periods[0] = 0;
-	periods[1] = 0;
-	periods[2] = 1;
-
 	mpi_cartcomm = MPI_COMM_WORLD;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);

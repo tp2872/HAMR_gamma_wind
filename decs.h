@@ -123,10 +123,10 @@ extern int tag_normal;
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 4
+#define AMR_MAXTIMELEVEL 8
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 320
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
 #define TIMESTEP_JET 0
@@ -253,7 +253,7 @@ void free_arrays(int n);
 #define TIMER 1
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 0
+#define COPY_BFIELD 1
 
 /*Set number of rows and columns for MPI processes*/
 #define MPI_columns (2) 

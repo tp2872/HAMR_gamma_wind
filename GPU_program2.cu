@@ -6,7 +6,7 @@
 #define ThreeD (1)
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 320
 #define NT 1
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/

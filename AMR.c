@@ -5,25 +5,6 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
 int rm_order2(void);
 
 void test_AMR(void){
-	int n;
-	//int level = 2;
-	//int i = 1;
-	//int j = 2;
-	//int z = 2;
-	//n=AMR_coord_linear(level, i, j, z);
-	//printf("n:%d, ", n);
-	//AMR_coord_cart(n, &level, &i, &j, &z);
-	//printf("level:%d, i:%d, j:%d, z:%d \n", level,i,j,z);
-
-	//set_AMR();
-	for (n = 0; n < NB; n++){
-		if (block[n][AMR_ACTIVE] == 1){
-			printf("Block: %d, Level: %d NBR1: %d, NBR2: %d, NBR3: %d, NBR4: %d NBR5: %d, NBR6: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_NBR1], block[n][AMR_NBR2], block[n][AMR_NBR3], block[n][AMR_NBR4], block[n][AMR_NBR5], block[n][AMR_NBR6]);
-			printf("Block: %d, Level: %d coord1: %d, coord2: %d, coord3: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
-		}
-	}
-	//printf("Block: %d, Level: %d NBR1: %d, NBR2: %d, NBR3: %d, NBR4: %d \n", n);
-
 }
 
 int AMR_coord_linear(int level, int i, int j, int z){
@@ -496,7 +477,7 @@ void set_AMR(void){
 	balance_load();
 }
 
-#define MAX_BLOCKS (24*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define MAX_BLOCKS (36*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 void balance_load(void){
 	int i, node, tt, fp, ip, y, rem, nr_timesteps, n_active_localsteps[NB], max_timelevel;
 	int i1, j1, z1, k, n,u,b;
@@ -514,7 +495,7 @@ void balance_load(void){
 	int n_active_local_min = 1;
 
 	do{
-		if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
+		/*if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
 		n_active_local_min = 0;
@@ -545,8 +526,8 @@ void balance_load(void){
 			}
 		}
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
-		/*if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
+		if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
 		n_active_local_min = 0;
@@ -614,7 +595,7 @@ void balance_load(void){
 		n_active_local_max = n_active_localsteps[rank];
 		n_active_local_min = n_active_local_max;
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
 	} while ((n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
 	if (rank == 0 && timelevel_cutoff != AMR_MAXTIMELEVEL) fprintf(stderr, "Error in balance_load. Due to too little/many blocks the maximum timelevel can't be honoured and the hierarchical timestepping is downgraded! \n");
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
@@ -716,7 +697,7 @@ void balance_load(void){
 
 
 void balance_load_gpu(void){
-	int i, g, tt, fp, ip, y, q, rem, n, gpu;
+	/*int i, g, tt, fp, ip, y, q, rem, n, gpu;
 	int n_active_steps = 0;
 	int steps_RM[NB];
 
@@ -749,7 +730,7 @@ void balance_load_gpu(void){
 		}
 		if (gpu >= NQ) fprintf(stderr, "Error balance_load_gpu() \n");
 		//commandQueueGPU[n_ord_RM[n]] = commandQueue[gpu];
-	}
+	}*/
 }
 
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
@@ -1512,7 +1493,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 		}
 
 		//Average conserved quantitites
-		#pragma omp for collapse(2) schedule(dynamic)
+		/*#pragma omp for collapse(2) schedule(dynamic)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -1570,7 +1551,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 					pflag[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])] = Utoprim_2d(dq[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])], geom.gcov, geom.gcon, geom.g, p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])]);
 				}
 			}
-		}
+		}*/
 		#if STAGGERED
 		#pragma omp for collapse(2) schedule(dynamic)
 		for (i = i1; i < i2 + D1; i++){
@@ -2554,6 +2535,25 @@ void check_refcrit(void){
 
 	MPI_Barrier(mpi_cartcomm);
 	begin1 = time(NULL);
+	//First calculate non-reduced timestep
+	set_timelevel();
+	#if(TIMESTEP_JET)
+	set_timelevel_jet();
+	#endif
+	ndt = 1e9;
+	for (n = 0; n < n_active; n++){
+		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+			ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+		}
+		else{
+			ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+		}
+	}
+	dt = defcon*ndt;
+	#if (MPI_enable)
+	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	#endif
 	do{
 		tag = 0;
 		count = 0;
@@ -2815,7 +2815,10 @@ void check_refcrit(void){
 	}
 
 	post_refine();
-
+	set_timelevel();
+	#if(TIMESTEP_JET)
+	set_timelevel_jet();
+	#endif
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();

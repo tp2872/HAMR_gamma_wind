@@ -66,9 +66,6 @@ void diag(int call_code)
 					zmax = z*pow(1 + REF_3, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					divbmax = divb;
 				}
-				//if (divb > 0.00000001 && i>0) printf("divb: %f n: %d level: %d POLE: %d COORD1: %d COORD2: %d COORD3: %d  i: %d, j: %d z: %d NBR_3: %d NBR_5: %d CORN10: %d CORN10D_1: %d, CORN10D_2: %d  \n", 
-				//	divb, n, block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_POLE], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i - N1_GPU_offset[n_ord[n]], j - N2_GPU_offset[n_ord[n]], z - N3_GPU_offset[n_ord[n]],
-				//	block[block[n_ord[n]][AMR_NBR3]][AMR_ACTIVE], block[block[n_ord[n]][AMR_NBR5]][AMR_ACTIVE], block[n_ord[n]][AMR_CORN10D], block[n_ord[n]][AMR_CORN10D_1], block[n_ord[n]][AMR_CORN10D_2]);
 			}
 		}
 		#if (MPI_enable)
@@ -232,7 +229,5 @@ double divb_calc(int n, int i, int j, int z){
 		#endif
 	);
 	#endif
-	//if (divb > 0.00000001) 
-	//printf("(n, i, j, z, divb): (%d, %d, %d, %d, %f)\n", n ,i,j,z, divb);
 	return divb;
 }

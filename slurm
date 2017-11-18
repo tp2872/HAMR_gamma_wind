@@ -15,7 +15,7 @@
 #PBS -m bea
 #PBS -M matthewliska92@gmail.com
 
-module swap PrgEnv-cray PrgEnv-gnu
+module swap PrgEnv-cray PrgEnv-intel
 module load cudatoolkit
 module swap cray-mpich/7.5.0 cray-mpich/7.5.3
 export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH 
