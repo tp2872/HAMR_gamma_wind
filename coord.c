@@ -399,18 +399,17 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 void set_points(int n)
 {
 	/* Grid parameters*/
-	a = 0.9375;
+	a = BH_SPIN;
 	Rin = 0.85*(1. + sqrt(1. - a*a));
 	Rout = 100000.;
 	lim = MC;
 	failed = 0;	/* start slow */
-	cour = 0.9;
+	cour = COUR;
 	if (dt>1e-5) dt = dt;
 	else dt = 1.e-5;
 	R0 = 0.0;
-	//t = 0.;
-	hslope = 0.6;
-	gam = 5. / 3.;
+	hslope = 0.6; //Not in use in H-AMR
+	gam = GAMMA;
 
 	if (N2 != 1) {
 		//2D problem, use full pi-wedge in theta

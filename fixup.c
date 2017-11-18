@@ -106,7 +106,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		dofloor = 1;
 	}
 
-	#if( ZAMO_FLOOR )
+	#if(DRIFT_FLOOR)
 	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
 		get_state(pv_prefloor, &geom, &q);
 		if (trans > 1.) {
@@ -404,10 +404,6 @@ void set_Katm( void )
 
 		  fixup1zone(i, j, N3_GPU_offset[n_ord[n]], n_ord[n], prim);
 		  Katm[n_ord[n]][i - (N1_GPU_offset[n_ord[n]]-N1G)] = (gam - 1.) * prim[UU] / pow(prim[RHO], G_tmp);
-
-		  //fflush(stdout);
-		  //fprintf(stdout,"Katm[%d] = %26.20e \n", i, Katm[i] );
-		  //fflush(stdout); 
 	  }
   }
   return;

@@ -63,7 +63,6 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 ******************************************************************************/
 #include "u2p_util.h"
-#define NEWT_DIM 2
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
@@ -73,8 +72,8 @@ FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[]);
-static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM], FTYPE *, FTYPE *, int));
-static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM], FTYPE *f, FTYPE *df, int n);
+static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int));
+static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n);
 static FTYPE x1_of_x0(FTYPE x0);
 static FTYPE pressure_W_vsq(FTYPE W, FTYPE vsq);
 static FTYPE dpdW_calc_vsq(FTYPE W, FTYPE vsq);
@@ -220,11 +219,11 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
 {
 
-	FTYPE x_2d[NEWT_DIM];
+	FTYPE x_2d[NEWT_DIM_2];
 	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	FTYPE rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
 	int i, j, n, retval, i_increase;
-	n = NEWT_DIM;
+	n = NEWT_DIM_2;
 
 	// Assume ok initially:
 	retval = 0;
@@ -442,12 +441,12 @@ general_newton_raphson():
 *****************************************************************/
 static int general_newton_raphson(FTYPE x[], int n,
 	void(*funcd) (FTYPE[], FTYPE[], FTYPE[],
-	FTYPE[][NEWT_DIM], FTYPE *,
+	FTYPE[][NEWT_DIM_2], FTYPE *,
 	FTYPE *, int))
 {
-	FTYPE f, df, dx[NEWT_DIM], x_old[NEWT_DIM];
-	FTYPE resid[NEWT_DIM], jac[NEWT_DIM][NEWT_DIM];
-	FTYPE errx, x_orig[NEWT_DIM];
+	FTYPE f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
+	FTYPE resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
+	FTYPE errx, x_orig[NEWT_DIM_2];
 	int    n_iter, id, jd, i_extra, doing_extra;
 	FTYPE dW, dvsq, vsq_old, vsq, W, W_old;
 
@@ -557,7 +556,7 @@ n    = dimension of x[];
 *********************************************************************************/
 
 static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
-	FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n)
+	FTYPE jac[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n)
 {
 	FTYPE  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
 	FTYPE t11;

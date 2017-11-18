@@ -69,26 +69,24 @@ utoprim_1dfix1.c:
 
 #include "u2p_util.h"
 
-#define NEWT_DIM 1
-
 #define LTRACE 0
 
 /* these variables need to be shared between the functions
    Utoprim_1D, residual, and utsq */
-FTYPE Bsq3,QdotBsq3,Qtsq3,Qdotn3,D3, K_atm3 ;
+FTYPE Bsq3,QdotBsq3,Qtsq3,Qdotn3,D_3, K_atm3 ;
 FTYPE W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old;
-#pragma omp threadprivate(W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old,Bsq3,QdotBsq3,Qtsq3,Qdotn3,D3, K_atm3)
+#pragma omp threadprivate(W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old,Bsq3,QdotBsq3,Qtsq3,Qdotn3,D_3, K_atm3)
 
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
 static FTYPE u_of_p(FTYPE p);
 static FTYPE pressure_of_rho(FTYPE rho0);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM],  FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[]);
-static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n);
-static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n);
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM], FTYPE *, FTYPE *, int) );
-static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n);
-static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM], FTYPE *, FTYPE *, int) );
+static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
+static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int) );
+static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
+static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int) );
 
 /**********************************************************************/
 /******************************************************************
@@ -268,7 +266,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 
   Qtsq3 = Qsq + Qdotn3*Qdotn3 ;
 
-  D3 = U[RHO] ;
+  D_3 = U[RHO] ;
 
   /* calculate W from last timestep and use for guess */
   utsq = 0. ;
@@ -289,7 +287,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	
   // Always calculate rho from D and gamma so that using D in EOS remains consistent
   //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D3 / gamma ;
+  rho0 = D_3 / gamma ;
   p = pressure_of_rho( rho0 );
   u = u_of_p(p);
   w = rho0 + u + p ;
@@ -359,7 +357,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
   // Recover the primitive variables from the scalars and conserved variables:
   gtmp = sqrt(1. - vsq);
   gamma = 1./gtmp ;
-  rho0 = D3 * gtmp;
+  rho0 = D_3 * gtmp;
 
   w = W * (1. - vsq) ;
 
@@ -448,12 +446,12 @@ static FTYPE dvsq_dW(FTYPE W)
 *****************************************************************/
 static int general_newton_raphson( FTYPE x[], int n, 
 				   void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
-						  FTYPE [][NEWT_DIM], FTYPE *, 
+						  FTYPE [][NEWT_DIM_1], FTYPE *, 
 						  FTYPE *, int) )
 {
-  FTYPE f, df, dx[NEWT_DIM], x_old[NEWT_DIM], resid[NEWT_DIM], 
-    jac[NEWT_DIM][NEWT_DIM];
-  FTYPE errx, x_orig[NEWT_DIM];
+  FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
+    jac[NEWT_DIM_1][NEWT_DIM_1];
+  FTYPE errx, x_orig[NEWT_DIM_1];
   int    n_iter, id, jd, i_extra, doing_extra;
   FTYPE dW,dvsq,vsq_old,vsq,W,W_old;
 
@@ -573,11 +571,11 @@ static int general_newton_raphson( FTYPE x[], int n,
 *****************************************************************/
 static int gnr2( FTYPE x[], int n, 
 			    void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
-					 FTYPE [][NEWT_DIM],FTYPE *,FTYPE *,int) )
+					 FTYPE [][NEWT_DIM_1],FTYPE *,FTYPE *,int) )
 {
-  FTYPE f, df, dx[NEWT_DIM], x_old[NEWT_DIM], resid[NEWT_DIM], 
-    jac[NEWT_DIM][NEWT_DIM];
-  FTYPE errx, x_orig[NEWT_DIM];
+  FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
+    jac[NEWT_DIM_1][NEWT_DIM_1];
+  FTYPE errx, x_orig[NEWT_DIM_1];
   int    n_iter, id,jd, i_extra, doing_extra;
   FTYPE dW,dvsq,vsq_old,vsq,W,W_old;
 
@@ -689,7 +687,7 @@ static int gnr2( FTYPE x[], int n,
  *********************************************************************************/
 //isentropic version:   eq.  (27)
 static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			 FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n)
+			 FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
   int retval, ntries;
   FTYPE  Dc, t1, t10,  t2 ,  t21,  t23,  t26,  t29,  t3 ,  t30;
@@ -724,7 +722,7 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[],
   rho_for_gnr2_old = rho_for_gnr2; 
   rho = rho_for_gnr2 = x_rho[0];
 
-  Dc = D3;
+  Dc = D_3;
   t1 = Dc*Dc;
   t2 = QdotBsq3*t1;
   t3 = t2*Bsq3;
@@ -760,12 +758,12 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
 //isothermal version:  eq. (27)
 static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			  FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n)
+			  FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
   double Dc ,   t1 ,   t10,   t2 ,   t21,   t23,   t26,   t3 ,   t5 ,   t8, W, rho ;
 
   W  = x[0];
-  Dc = D3;
+  Dc = D_3;
   t1 = Dc*Dc;
   t2 = QdotBsq3*t1;
   t3 = t2*Bsq3;
@@ -808,12 +806,12 @@ static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[],
  *********************************************************************************/
 // for the isentropic version:   eq.  (27)
 static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			 FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n)
+			 FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
 
   FTYPE A, B, C, rho, W, B0;
   
-  A = D3*D3;
+  A = D_3*D_3;
   B0 = A * GAMMA * K_atm3 ;
   B  =  B0 / (GAMMA - 1.);
   rho = x[0];

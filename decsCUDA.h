@@ -53,31 +53,31 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, double *  prim
 __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, double *  prim, double *  receive, double *  temp1, double *  temp2,
 	int calc_corr, int nstep, int nstep_2, int timelevel, int timelevel_rec, double factor, int work_size);
 
-__global__ void fluxcalcprep(int i, int j, int z, double *   F, double *  dq, double *  p, int dir, int lim, int number, double *  V);
-__global__ void fluxcalc2D2(int i, int j, int z, double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
+__global__ void fluxcalcprep(double *   F, double *  dq, double *  p, int dir, int lim, int number, double *  V);
+__global__ void fluxcalc2D2(double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
 	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, double dx_1, double dx_2, double dx_3);
-__global__ void fix_flux(int i, int j, int z, double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4);
-__global__ void consttransport1(int i, int j, int z, double *  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
-__global__ void consttransport2(int i, int j, int z, double *  emf, double *  E_cent, double *  F1, double *  F2, double *  F3,
+__global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4);
+__global__ void consttransport1(double *  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
+__global__ void consttransport2(double *  emf, double *  E_cent, double *  F1, double *  F2, double *  F3,
 	double *  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2);
-__global__ void consttransport3(int i, int j, int z, double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
+__global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
 	double *  E_corn, double Dt);
-__global__ void flux_ct1(int i, int j, int z, double *  F1, double *  F2, double *  F3, double *  emf);
-__global__ void flux_ct2(int i, int j, int z, double *  F1, double *  F2, double *  F3, double *  emf);
-__global__ void Utoprim0(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void flux_ct1(double *  F1, double *  F2, double *  F3, double *  emf);
+__global__ void flux_ct2(double *  F1, double *  F2, double *  F3, double *  emf);
+__global__ void Utoprim0(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step);
-__global__ void Utoprim1(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void Utoprim1(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step);
-__global__ void Utoprim2(int N1, int N2, int N3, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void Utoprim2(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step);
-__global__ void fixup(int i, int j, int z, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int flag);
-__global__ void fixuputoprim(int i, int j, int z, double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
-__global__ void boundprim1(int i, int j, int z, double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps);
-__global__ void boundprim2(int i, int j, int z, double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
+__global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
+__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps);
+__global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 
 		

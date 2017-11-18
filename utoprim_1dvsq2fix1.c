@@ -73,14 +73,12 @@ utoprim_1dvsq2fix1.c:
 
 #include "u2p_util.h"
 
-#define NEWT_DIM 1
-
 #define LTRACE 0
 
 /* these variables need to be shared between the functions
    Utoprim_1D, residual, and utsq */
-FTYPE Bsq2,QdotBsq2,Qtsq2,Qdotn2,D2, K_atm2 ;
-#pragma omp threadprivate(Bsq2,QdotBsq2,Qtsq2,Qdotn2,D2, K_atm2)
+FTYPE Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2 ;
+#pragma omp threadprivate(Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2)
 
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
@@ -89,8 +87,8 @@ static FTYPE u_of_p(FTYPE p);
 static FTYPE pressure_of_rho(FTYPE rho0);
 static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[]);
-static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n);
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM], FTYPE *, FTYPE *, int) );
+static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int) );
 
 /**********************************************************************/
 /******************************************************************
@@ -272,7 +270,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 
   Qtsq2 = Qsq + Qdotn2*Qdotn2 ;
 
-  D2 = U[RHO] ;
+  D_2 = U[RHO] ;
 
   /* calculate W from last timestep and use  for guess */
   utsq = 0. ;
@@ -293,7 +291,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	
   // Always calculate rho from D and gamma so that using D in EOS remains consistent
   //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D2 / gamma ;
+  rho0 = D_2 / gamma ;
   u = prim[UU] ;
   p = pressure_rho0_u(rho0,u) ;
   w = rho0 + u + p ;
@@ -397,12 +395,12 @@ static void validate_x(FTYPE x[1], FTYPE x0[1] )
 *****************************************************************/
 static int general_newton_raphson( FTYPE x[], int n, 
 				   void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
-						  FTYPE [][NEWT_DIM], FTYPE *, 
+						  FTYPE [][NEWT_DIM_1], FTYPE *, 
 						  FTYPE *, int) )
 {
-  FTYPE f, df, dx[NEWT_DIM], x_old[NEWT_DIM], resid[NEWT_DIM], 
-    jac[NEWT_DIM][NEWT_DIM];
-  FTYPE errx, x_orig[NEWT_DIM];
+  FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
+    jac[NEWT_DIM_1][NEWT_DIM_1];
+  FTYPE errx, x_orig[NEWT_DIM_1];
   int    n_iter, id, jd, i_extra, doing_extra;
   FTYPE dW,dvsq,vsq_old,vsq,W,W_old, rho,p,u;
 
@@ -527,7 +525,7 @@ static int general_newton_raphson( FTYPE x[], int n,
  *********************************************************************************/
 
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			FTYPE jac[][NEWT_DIM], FTYPE *f, FTYPE *df, int n)
+			FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
   FTYPE vsq,W,W0,Wsq,W3,dWdvsq , dpdrho, fact_tmp, rho, p, u  ;
   int retval, iters; 
@@ -596,7 +594,7 @@ static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u)
   FTYPE gtmp;
 
   gtmp = (1. - vsq);
-  *rho = D2 * sqrt(gtmp);
+  *rho = D_2 * sqrt(gtmp);
   *p = pressure_of_rho(*rho);
   *u = u_of_p(*p);
   
