@@ -473,6 +473,11 @@ void set_AMR(void){
 	set_corners();
 
 	MPI_Barrier(mpi_cartcomm);
+	//First calculate non-reduced timestep
+	set_timelevel();
+	#if(TIMESTEP_JET)
+	set_timelevel_jet();
+	#endif
 
 	balance_load();
 }
@@ -2501,6 +2506,8 @@ void check_refcrit(void){
 	int count;
 	int begin1, end1;
 
+	if(rank==0) fprintf(stderr,"Starting refinement! \n");
+
 	//First close dump files in progress
 	int u;
 	int u_stride = 200;
@@ -2535,25 +2542,22 @@ void check_refcrit(void){
 
 	MPI_Barrier(mpi_cartcomm);
 	begin1 = time(NULL);
+	
 	//First calculate non-reduced timestep
+	/*ndt = 1e9;
+	for (n = 0; n < n_active; n++){
+		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+		ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+	}
+	#if (MPI_enable)
+	MPI_Allreduce(MPI_IN_PLACE, &ndt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	#endif
+	if (ndt > SAFE*dt) ndt = SAFE*dt;
+	dt = ndt;
 	set_timelevel();
 	#if(TIMESTEP_JET)
 	set_timelevel_jet();
-	#endif
-	ndt = 1e9;
-	for (n = 0; n < n_active; n++){
-		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
-		}
-		else{
-			ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-		}
-	}
-	dt = defcon*ndt;
-	#if (MPI_enable)
-	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-	#endif
+	#endif*/
 	do{
 		tag = 0;
 		count = 0;
@@ -2815,10 +2819,7 @@ void check_refcrit(void){
 	}
 
 	post_refine();
-	set_timelevel();
-	#if(TIMESTEP_JET)
-	set_timelevel_jet();
-	#endif
+
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();

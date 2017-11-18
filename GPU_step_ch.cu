@@ -122,7 +122,7 @@ void set_arrays_GPU(int n, int device){
 	gdet_GPU[n] = (double(*))malloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n])*NPG* sizeof(double));
 	#endif
 	//pflag_GPU[n] = (int(*))malloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(int));
-	failimage_GPU[n] = (int(*))malloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL, *sizeof(int));
+	failimage_GPU[n] = (int(*))malloc(((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL *sizeof(int));
 	Katm_GPU[n] = (double(*))malloc((N1_GPU[n] + 2 * N1G) * sizeof(double));
 
 	/*Allocate memory to buffers on GPU*/

@@ -66,7 +66,7 @@ extern int tag_normal;
 #define REF_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 3
+#define N_LEVELS 2
 
 /*Set the number of dimensions to refine*/
 #define N_DIMS 3
@@ -114,9 +114,9 @@ extern int tag_normal;
 #endif
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1*/
 #define DEREFINE_POLE (0)
@@ -126,7 +126,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_MAXTIMELEVEL 8
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 320
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Enable the hierarchical timestepping routine for 2D jets*/
 #define TIMESTEP_JET 0

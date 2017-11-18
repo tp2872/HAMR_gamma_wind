@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	tdump = t + DTd;
 	timage = t + DTi;
 	tlog = t + DTl;
-	tref = t + TREF;
+	tref = t + 0.1*TREF;
 	defcon = 1. ;
 	time_spent3 = 0.0;
 	begin1 = clock();
@@ -318,6 +318,7 @@ void free_arrays(int n)
 	free(F1[n]);
 	free(F2[n]);
 	free(F3[n]);
+	free(pflag[n]);
 	#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
 	#if(STAGGERED)
 	free(stor1[n]);
@@ -325,9 +326,7 @@ void free_arrays(int n)
 	free(dE[n]);
 	#endif
 	free(E_corn[n]);
-	free(pflag[n]);
 	#endif
-
 	free(failimage[n]);
 	free(conn[n]); 
 	free(gcov[n]); 
@@ -835,8 +834,8 @@ void set_arrays(int n)
 	F1[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
 	F2[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
 	F3[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[NPR]));
-	#if(CPU_OPENMP)
 	pflag[n] = (int(*))malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(int));
+	#if(CPU_OPENMP)
 	#if(STAGGERED)
 	stor1[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NPR]));
 	stor2[n] = (double(*)[NPR])malloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)* sizeof(double[NPR]));
