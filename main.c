@@ -1539,15 +1539,14 @@ void MPI_initialize(int argc, char *argv[])
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 	int i, j, z, len, dim, corn, rankloop;
 	int dims[3], periods[3], coords[3];
-	int rdma_direct=0, local_rank;
+	int rdma_direct=0, local_rank=0;
 
 	/*Get basic initialisation*/
+	rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
 	if (getenv("MV2_COMM_WORLD_LOCAL_RANK") != NULL){
-		rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
 		local_rank = getenv("MV2_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
 	}
 	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
-		rdma_direct = 0;
 		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	}
 	cudaSetDevice(local_rank%N_GPU);

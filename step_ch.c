@@ -1452,7 +1452,6 @@ double advance_GPU(void)
 	double timestep;
 	gpu = 1;
 
-
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 0){
 		ndt1 = ndt2 = ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){

@@ -1190,7 +1190,7 @@ void set_arrays_GPU(int n, int device){
 
 	/*Set arguments of kernel*/
 	int pg, d1, d2;
-	#pragma omp parallel private(i, j, z, k, pg, d1, d2)
+	#pragma omp parallel private(i, j, z, pg, d1, d2)
 	{
 		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]){
@@ -1265,7 +1265,7 @@ void GPU_write(int n)
 		Katm_GPU[n][i - N1_GPU_offset[n] + N1G] = Katm[n][i - N1_GPU_offset[n] + N1G];
 	}
 
-	#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
+	#pragma omp parallel private(i, j, z, k)
 	{
 		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
@@ -1888,7 +1888,7 @@ void GPU_read(int n)
 	#endif
 	cudaMemcpy(failimage_GPU[n], Bufferfailimage[n], (int)((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost);
 
-	#pragma omp parallel private(i, j, z, k, l, pg, d1, d2)
+	#pragma omp parallel private(i, j, z, k)
 	{
 		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){

@@ -218,8 +218,8 @@ void B_send1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 				if (gpu == 1){
 				
 				}
-				rc += MPI_Isend(&send4_fine[n][0], NDIM*N3_GPU[n] * N2_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (440 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-				MPI_Request_free(&req[0]);
+				rc += MPI_Isend(&send4_fine[n][0], NDIM*N3_GPU[n] * N2_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (440 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
+				MPI_Request_free(&req[n]);
 			}
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
@@ -266,8 +266,8 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 						if (gpu == 1){
 						
 						}
-						rc += MPI_Isend(&send3_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (430 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-						MPI_Request_free(&req[0]);
+						rc += MPI_Isend(&send3_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (430 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
+						MPI_Request_free(&req[n]);
 					}
 				}
 				else if (block[n][AMR_COORD3] >= NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
@@ -322,8 +322,8 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 						if (gpu == 1){
 							
 						}
-						rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (410 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-						MPI_Request_free(&req[0]);
+						rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (410 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
+						MPI_Request_free(&req[n]);
 					}
 				}
 				else if (block[n][AMR_COORD3] >= NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
@@ -339,8 +339,8 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 					if (gpu == 1){
 						
 					}
-					rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (410 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Request_free(&req[0]);
+					rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (410 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
+					MPI_Request_free(&req[n]);
 				}
 			}
 		}
@@ -419,8 +419,8 @@ void B_send3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 				if (gpu == 1){
 				
 				}
-				rc += MPI_Isend(&send6_fine[n][0], NDIM*N2_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (460 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-				MPI_Request_free(&req[0]);
+				rc += MPI_Isend(&send6_fine[n][0], NDIM*N2_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (460 * NB + n) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
+				MPI_Request_free(&req[n]);
 			}
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){

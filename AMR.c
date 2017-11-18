@@ -767,7 +767,7 @@ void activate_blocks(void){
 	}
 
 	//Set the same array for each GPU on a single node
-	for (i = 0; i < N_GPU; i++){
+	/*for (i = 0; i < N_GPU; i++){
 		n_active_gpu[i] = 0;
 		for (n = 0; n < n_active; n++){
 			if (block[n_ord[n]][AMR_GPU] == i){
@@ -775,7 +775,7 @@ void activate_blocks(void){
 				n_active_gpu[i]++;
 			}
 		}
-	}
+	}*/
 }
 
 int rm_order2(void){
@@ -2581,8 +2581,8 @@ void check_refcrit(void){
 				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 				for (task = 0; task < numtasks; task++){
 					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-						MPI_Request_free(&req[0]);
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[n_ord_total[n]]);
+						MPI_Request_free(&req[n_ord_total[n]]);
 					}
 				}
 			}

@@ -47,15 +47,15 @@ USEICC = 0
 
 ifeq ($(USEICC),0)
 CC       = cc 
-CCFLAGS  =  -qopenmp -O3
+CCFLAGS  =  -fopenmp -O3
 endif
 
 EXTRALIBS = -lm -L/opt/apps/cuda/7.5/lib64 -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -c 
+CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -Xcompiler \-fopenmp -lgomp  -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 -dlink
+CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 -Xcompiler \-fopenmp -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_step_ch.cu GPU_program1.cu GPU_program2.cu
 
