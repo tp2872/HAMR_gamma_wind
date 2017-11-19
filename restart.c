@@ -45,6 +45,43 @@
 /* restart functions; restart_init and restart_dump */
 #include "decs_MPI.h"
 
+/*Write restart file*/
+void restart_write(void)
+{
+	int n;
+	char filename[100], dirpath[100];
+	FILE *param;
+
+	//First close rdump files in progress
+	if (first_rdump == 1){
+		for (n = 0; n < n_active; n++){
+			MPI_Wait(&req_block_rdump[n_ord[n]][0], &Statbound[n_ord[n]][0]);
+			MPI_File_close(&rdump[n_ord[n]]);
+		}
+	}
+	first_rdump = 0;
+
+	if (rank == 0){
+		//sprintf(dirpath, "mkdir rdumps%d", dump_cnt);
+		//system(dirpath);
+		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/parameter");
+		else sprintf(filename, "rdumps1/parameter");
+		param = fopen(filename, "wb");
+		if (rank == 0) dump_params(param);
+		fclose(param);
+	}
+	for (n = 0; n < n_active; n++){
+		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
+		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
+		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &rdump[n_ord[n]]);
+		rdump_block_write(&rdump[n_ord[n]], n_ord[n]);
+	}
+	first_rdump = 1;
+
+	if (rank == 0)fprintf(stderr, "Restart write to %s complete!\n", filename);
+	rdump_cnt++;
+}
+
 void rdump_block_write(MPI_File *fp, int n)
 {
 	int i, j, z, k;
@@ -73,40 +110,69 @@ void rdump_block_read(FILE *fp, int n)
 	}
 }
 
-void restart_write(void)
+/*Read restart file*/
+int restart_read(void)
+{
+	int n;
+	char filename[100], dirpath[100];
+	FILE *rdump;
+
+	for (n = 0; n < n_active; n++){
+		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
+		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
+		rdump = fopen(filename, "rb");
+		if (rdump == NULL) {
+			if (rank == 0) fprintf(stderr, "Cannot open restart file %s\n", filename);
+			return 0;
+		}
+		rdump_block_read(rdump, n_ord[n]);
+		fclose(rdump);
+	}
+	if (n_active == 0) {
+		return 0;
+	}
+	/*Disable injection of matter after restart for elliptical orbits*/
+	#if (ELLIPTICAL2)
+	sourceflag = 0.;
+	#endif
+
+	#if( DO_FONT_FIX ) 
+	set_Katm();
+	#endif 
+
+	if (rank == 0){
+		fprintf(stderr, "done with restart init %s \n", filename);
+	}
+
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+
+	/* bound */
+	bound_prim(p, 1);
+
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	#endif
+	return 1;
+}
+
+int restart_read_param(void)
 {
 	int n;
 	char filename[100], dirpath[100];
 	FILE *param;
 
-	//First close rdump files in progress
-	if (first_rdump == 1){
-		for (n = 0; n < n_active; n++){
-			MPI_Wait(&req_block_rdump[n_ord[n]][0], &Statbound[n_ord[n]][0]);
-			MPI_File_close(&rdump[n_ord[n]]);
-		}
+	if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/parameter");
+	else sprintf(filename, "rdumps1/parameter");
+	param = fopen(filename, "rb");
+	if (param == NULL) {
+		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
+		return 0;
 	}
-	first_rdump = 0;
-
-	if (rank == 0){
-		//sprintf(dirpath, "mkdir rdumps%d", dump_cnt);
-		//system(dirpath);
-		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/parameter");
-		else sprintf(filename, "rdumps1/parameter");
-		param = fopen(filename, "wb");
-		if (rank == 0) dump_params(param);
-		fclose(param);
-	}
-	for (n = 0; n < n_active; n++){
-		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
-		else sprintf(filename, "rdumps1/rdump%d",  n_ord[n]);
-		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &rdump[n_ord[n]]);
-		rdump_block_write(&rdump[n_ord[n]], n_ord[n]);
-	}
-	first_rdump = 1;
-
-	if (rank==0)fprintf(stderr, "Restart write to %s complete!\n", filename);
-	rdump_cnt++;
+	param_read(param);
+	fclose(param);
+	return 1;
 }
 
 void param_read(FILE *fp){
@@ -193,11 +259,11 @@ void param_read(FILE *fp){
 	fread(&dk, int_size, 1, fp);
 
 	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1
-		|| NB2_print != NB_2 || NB3_print != NB_3 || stag != STAGGERED 
+		|| NB2_print != NB_2 || NB3_print != NB_3 || stag != STAGGERED
 		|| B != BRAVO || T != TANGO || C != CHARLIE || D != DELTA || r1 != REF_1 || r2 != REF_2
 		|| r3 != REF_3 || nl != N_LEVELS || rx != RADEXP || rt != RTRANS || rb != RB || docyl != DOCYLINDRIFYCOORDS
 		|| dk != DOKTOT){
-		fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
+		if(rank==0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
 	}
 	//Read AMR grid hierarchy
 	for (u = 0; u <= n_max; u++){
@@ -206,70 +272,6 @@ void param_read(FILE *fp){
 	for (u = 0; u <= n_max; u++){
 		fread(&block[u][AMR_ACTIVE], int_size, 1, fp);
 	}
-}
-
-int restart_read(void)
-{
-	int n;
-	char filename[100], dirpath[100];
-	FILE *rdump;
-
-	for (n = 0; n < n_active; n++){
-		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
-		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
-		rdump = fopen(filename, "rb");
-		if (rdump == NULL) {
-			if (rank == 0) fprintf(stderr, "Cannot open restart file %s\n", filename);
-			return 0;
-		}
-		rdump_block_read(rdump, n_ord[n]);
-		fclose(rdump);
-	}
-	if (n_active == 0) {
-		return 0;
-	}
-	/*Disable injection of matter after restart for elliptical orbits*/
-	#if (ELLIPTICAL2)
-	sourceflag = 0.;
-	#endif
-
-	#if( DO_FONT_FIX ) 
-	set_Katm();
-	#endif 
-
-	if (rank == 0){
-		fprintf(stderr, "done with restart init %s \n", filename);
-	}
-
-	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
-	#endif
-
-	/* bound */
-	bound_prim(p, 1);
-
-	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
-	#endif
-	return 1;
-}
-
-int restart_read_param(void)
-{
-	int n;
-	char filename[100], dirpath[100];
-	FILE *param;
-
-	if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/parameter");
-	else sprintf(filename, "rdumps1/parameter");
-	param = fopen(filename, "rb");
-	if (param == NULL) {
-		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
-		return 0;
-	}
-	param_read(param);
-	fclose(param);
-	return 1;
 }
 
 

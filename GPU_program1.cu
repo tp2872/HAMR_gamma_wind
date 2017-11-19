@@ -1314,9 +1314,9 @@ __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 
 	/* now solve for v-- we can use the same u^t because
 	* it didn't change under KS -> KS' */
-	alpha = 1. / sqrt(-geom->gcon[TT][TT]);
-	SLOOPA beta[j] = geom->gcon[TT][j] * alpha*alpha;
-	gamma = alpha*ucon[TT];
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
+	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
+	gamma = alpha*ucon[0];
 
 
 	utcon[0] = 0;
@@ -1327,10 +1327,10 @@ __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 {
 	double AA, BB, CC, DD, one_over_alpha_sq;
 	//compute the Lorentz factor based on contravariant 3-velocity
-	AA = geom->gcov[TT][TT];
-	BB = 2.*(geom->gcov[TT][1] * vcon[1] +
-		geom->gcov[TT][2] * vcon[2] +
-		geom->gcov[TT][3] * vcon[3]);
+	AA = geom->gcov[0][0];
+	BB = 2.*(geom->gcov[0][1] * vcon[1] +
+		geom->gcov[0][2] * vcon[2] +
+		geom->gcov[0][3] * vcon[3]);
 	CC = geom->gcov[1][1] * vcon[1] * vcon[1] +
 		geom->gcov[2][2] * vcon[2] * vcon[2] +
 		geom->gcov[3][3] * vcon[3] * vcon[3] +
@@ -1340,7 +1340,7 @@ __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 
 	DD = -1. / (AA + BB + CC);
 
-	one_over_alpha_sq = -geom->gcon[TT][TT];
+	one_over_alpha_sq = -geom->gcon[0][0];
 
 	if (DD<one_over_alpha_sq) {
 		DD = one_over_alpha_sq;
@@ -1490,7 +1490,7 @@ __device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom
 
 	#pragma unroll 4
 	DLOOPA Bcov[j] = 0.;
-	Bcov[TT] = 1.;
+	Bcov[0] = 1.;
 	raise(Bcov, geom, Bcon);
 
 	/* find fast magnetosonic speed */
@@ -1531,7 +1531,7 @@ __device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom
 	Asq = dot(Acon, Acov);
 	Bsq = dot(Bcon, Bcov);
 	Au = q->ucon[js];
-	Bu = q->ucon[TT];
+	Bu = q->ucon[0];
 	AB = dot(Acon, Bcov);
 	Au2 = Au*Au;
 	Bu2 = Bu*Bu;
@@ -1761,9 +1761,9 @@ __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon)
 	double beta[NDIM];
 	int j;
 
-	alpha = 1. / sqrt(-geom->gcon[TT][TT]);
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
 	#pragma unroll 4
-	SLOOPA beta[j] = geom->gcon[TT][j] * alpha*alpha;
+	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
 
 	if (gamma_calc(pr, geom, &gamma)) {
 		// fflush(stderr);
@@ -1772,7 +1772,7 @@ __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon)
 		// fail(FAIL_GAMMA);
 	}
 
-	ucon[TT] = gamma / alpha;
+	ucon[0] = gamma / alpha;
 	#if AMD
 	#pragma unroll 4
 	SLOOPA ucon[j] = fma(-gamma, beta[j] / alpha, pr[U1 + j - 1]);
@@ -1789,15 +1789,15 @@ __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *
 	int j;
 
 	#if AMD
-	bcon[TT] = fma(pr[B1], ucov[1], fma(pr[B2], ucov[2], pr[B3] * ucov[3]));
+	bcon[0] = fma(pr[B1], ucov[1], fma(pr[B2], ucov[2], pr[B3] * ucov[3]));
 	#pragma unroll 3
 	for (j = 1; j<4; j++)
-		bcon[j] = (fma(bcon[TT], ucon[j], pr[B1 - 1 + j])) / ucon[TT];
+		bcon[j] = (fma(bcon[0], ucon[j], pr[B1 - 1 + j])) / ucon[0];
 	#else
-	bcon[TT] = pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3];
+	bcon[0] = pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3];
 	#pragma unroll 3
 	for (j = 1; j<4; j++)
-		bcon[j] = (pr[B1 - 1 + j] + bcon[TT] * ucon[j]) / ucon[TT];
+		bcon[j] = (pr[B1 - 1 + j] + bcon[0] * ucon[j]) / ucon[0];
 	#endif
 	return;
 }
@@ -1998,7 +1998,6 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 	return(dot(q.bcon, q.bcov));
 }
 
-
 __global__ void fluxcalcprep(double *   F, double *  dq, double *  p, int dir, int lim, int number, double *  V)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
@@ -2095,7 +2094,6 @@ __global__ void fluxcalcprep(double *   F, double *  dq, double *  p, int dir, i
 		#endif
 	}
 }
-#include <stdio.h>
 
 __global__ void fluxcalc2D2(double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
 	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, double dx_1, double dx_2, double dx_3)
@@ -2170,7 +2168,7 @@ __global__ void fluxcalc2D2(double *  F, double *  dq, double *  pv, double *  p
 
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp1, gam);
-		primtoflux(p, &state, TT, &geom, temp2, gam);
+		primtoflux(p, &state, 0, &geom, temp2, gam);
 		vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
 
 			#if(PPM || LEER)
@@ -2204,7 +2202,7 @@ __global__ void fluxcalc2D2(double *  F, double *  dq, double *  pv, double *  p
 		#endif
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp3, gam);
-		primtoflux(p, &state, TT, &geom, temp4, gam);
+		primtoflux(p, &state, 0, &geom, temp4, gam);
 		vchar(p, &state, &geom, dir, &cmax_r, &cmin_r, gam);
 
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
@@ -2212,15 +2210,14 @@ __global__ void fluxcalc2D2(double *  F, double *  dq, double *  pv, double *  p
 		ctop = MY_MAX(cmax, cmin);
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			F[k*(ksize)+global_id] = HLLF*((cmax*temp1[k] +
-				cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL))
-				+ LAXF*(0.5*(temp1[k]
-				+ temp3[k] - ctop*(temp4[k] - temp2[k])));
+			#if(HLLF)
+			F[k*(ksize)+global_id] = (cmax*temp1[k] +cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+			#else
+			F[k*(ksize)+global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
+			#endif
 		}
-		//if (icurr == 15 && jcurr == 50 && zcurr == 50) printf("rhogpu: %f %f %f %f\n", dq[global_id], cmax, state.ucon[0] * state.ucov[0] + state.ucon[1] * state.ucov[1] + state.ucon[2] * state.ucov[2] + state.ucon[3] * state.ucov[3], gam);
 
-		cmax = MY_MAX(cmax, cmin);
-		local_dtij[local_id] = factor / cmax;
+		local_dtij[local_id] = factor / ctop;
 	}
 	__syncthreads();
 	for (i = local_size / 2; i>1; i = i / 2){
@@ -2330,7 +2327,7 @@ __global__ void consttransport1(double *  pb_i, double *  E_cent, const  double*
 __global__ void consttransport2(double *  emf, double *  E_cent, double *  F1, double *  F2, double *  F3,
 	double *  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
 {
-	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
 	int zcurr = (global_id % (isize)) % (BS_3 + D3);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
@@ -2402,7 +2399,7 @@ __global__ void consttransport2(double *  emf, double *  E_cent, double *  F1, d
 __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
 	double *  E_corn, double Dt)
 {
-	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
 	int zcurr = (global_id % (isize)) % (BS_3 + D3);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
@@ -2438,7 +2435,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 
 __global__ void flux_ct1(double *  F1, double *  F2, double *  F3, double *  emf)
 {
-	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
 	int zcurr = (global_id % (isize)) % (BS_3 + D3);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
@@ -2659,6 +2656,7 @@ __global__ void Utoprim2(double* pi_i, double* pb_i, double* pf_i, double *  psf
 	}
 }
 
+#if(!V100)
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
@@ -2894,9 +2892,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 		}
 	}
 }
-
+#else
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
-/*__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* U_i,double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
@@ -3174,7 +3172,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 			pf_i[k*(ksize)+global_id] = pf[k];
 		}
 	}
-}*/
+}
+#endif
 
 /* 26 */
 #define AVG2_1(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k*(ksize)+(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k*(ksize)+(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]))

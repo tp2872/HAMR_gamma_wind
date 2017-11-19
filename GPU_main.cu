@@ -3,37 +3,6 @@ extern "C" {
 #include "decs.h"
 }
 
-/*Start reading timestep from GPU*/
-void read_time_GPU(void){
-	//int n;
-	//for (n = 0; n < n_active; n++){
-	//	if (prestep_full[n_ord[n]] == 1){
-	//		cudaMemcpyAsync(dtij_GPU[n_ord[n]], Bufferdtij[n_ord[n]], (int)((nr_workgroups[n_ord[n]]) * sizeof(double)), cudaMemcpyDeviceToHost, commandQueueGPU[n_ord[n]]);
-	//	}
-	//}
-}
-
-/*Do last step of reduction of timestep on CPU*/
-double fluxcalc_GPU(int n, int dir)
-{
-	double ndt;
-	int y;
-	ndt = 1.e9;
-	int nr;
-	if (dir == 1) nr = nr_workgroups2_1[n];
-	else if (dir == 2) nr = nr_workgroups2_2[n];
-	else if (dir == 3) nr = nr_workgroups2_3[n];
-	cudaStreamSynchronize(commandQueueGPU[n]);
-	status = cudaGetLastError();
-	if(status!=0) printf("Error fluxcalc_GPU %d\n", status);
-	for (y = 0; y < nr; y++){
-		if (dtij_GPU[n][y] < ndt && dtij_GPU[n][y] < 1.e9 && dtij_GPU[n][y] > 1.e-6){
-			ndt = dtij_GPU[n][y];
-		}
-	}
-	return(ndt);
-}
-
 void GPU_init(void)
 {
 	int j, pos;
@@ -109,7 +78,6 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	ph_1[n] = (double(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(double));
 	//dU_GPU[n] = (double(*))calloc(NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G)), sizeof(double));
-	//pbound_1[n] = (double(*))calloc(N_POINTS*NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G) + fix_mem[n]), sizeof(double));
 	#if(!NONSYMMETRIC)
 	gcov_GPU[n] = (double(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(double));
 	gcon_GPU[n] = (double(*))calloc(((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem2[n])*NPG*NDIM*NDIM, sizeof(double));
@@ -1319,10 +1287,6 @@ void GPU_write(int n)
 	if (cudaSuccess != status) printf("Error in GPU_write: %d \n", status);
 }
 
-void GPU_hcor(int n){
-
-}
-
 void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 {
 	/*Set arguments of kernel*/
@@ -1404,6 +1368,37 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	GPU_fluxcalcprep(dir, flag, 2, n);
 	printf("PPM and Leer not yet fully implemented this way... \n");
 	#endif
+}
+
+/*Start reading timestep from GPU*/
+void read_time_GPU(void){
+	//int n;
+	//for (n = 0; n < n_active; n++){
+	//	if (prestep_full[n_ord[n]] == 1){
+	//		cudaMemcpyAsync(dtij_GPU[n_ord[n]], Bufferdtij[n_ord[n]], (int)((nr_workgroups[n_ord[n]]) * sizeof(double)), cudaMemcpyDeviceToHost, commandQueueGPU[n_ord[n]]);
+	//	}
+	//}
+}
+
+/*Do last step of reduction of timestep on CPU*/
+double fluxcalc_GPU(int n, int dir)
+{
+	double ndt;
+	int y;
+	ndt = 1.e9;
+	int nr;
+	if (dir == 1) nr = nr_workgroups2_1[n];
+	else if (dir == 2) nr = nr_workgroups2_2[n];
+	else if (dir == 3) nr = nr_workgroups2_3[n];
+	cudaStreamSynchronize(commandQueueGPU[n]);
+	status = cudaGetLastError();
+	if (status != 0) printf("Error fluxcalc_GPU %d\n", status);
+	for (y = 0; y < nr; y++){
+		if (dtij_GPU[n][y] < ndt && dtij_GPU[n][y] < 1.e9 && dtij_GPU[n][y] > 1.e-6){
+			ndt = dtij_GPU[n][y];
+		}
+	}
+	return(ndt);
 }
 
 void GPU_fix_flux(int n)
@@ -1652,6 +1647,7 @@ void GPU_flux_ct2(int n)
 void GPU_Utoprim(int flag, int n, double Dt)
 {
 	//cudaSetDevice(block[n][AMR_GPU]);
+	#if(!V100)
 	if (flag == 0){
 		Utoprim0 << < nr_workgroups1[n], local_work_size[0], 0, commandQueueGPU[n] >> > (Bufferp_1[n], Bufferp_1[n], Bufferph_1[n], Bufferpsh_1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n],
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
@@ -1679,6 +1675,7 @@ void GPU_Utoprim(int flag, int n, double Dt)
 	}
 	status = cudaGetLastError();
 	if (cudaSuccess != status) printf("Error Utoprim1 %d\n", status);
+	#endif
 }
 
 void GPU_fixuputoprim(int flag, int n)
@@ -1840,7 +1837,6 @@ void GPU_boundprim(int bound_force)
 		end2 = clock();
 		time_spent3 += (double)(end2 - begin2) / CLOCKS_PER_SEC;
 	}
-	receive_tag = 0;
 
 	nstep = temp;
 }
@@ -1912,7 +1908,6 @@ void GPU_read(int n)
 	if (cudaSuccess != status )printf("Error in GPU_read: %d \n", status);
 }
 
-
 void GPU_finish(int n)
 {
 	int i;
@@ -1934,7 +1929,6 @@ void GPU_finish(int n)
 	#endif
 	free(ph_1[n]);
 	//free(dU_GPU[n]);
-	//free(pbound_1[n]);
 	//free(pflag_GPU[n]);
 	free(failimage_GPU[n]);
 	free(Katm_GPU[n]);

@@ -57,7 +57,7 @@ CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 -Xcompiler \-fopenmp -lgomp  -
 CC_LOAD     = $(CC) $(CCFLAGS) 
 CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 -Xcompiler \-fopenmp -lgomp -dlink
 
-GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_step_ch.cu GPU_program1.cu GPU_program2.cu
+GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
 .c.o:
 	$(CC_COMPILE) $*.c
@@ -68,11 +68,12 @@ all: $(EXE)
 OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o \
-image.o init.o interp.o main.o metric.o lu.o \
+init.o interp.o main.o metric.o lu.o \
 phys.o ranc.o restart.o step_ch.o \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
-GPU_program1.o GPU_program2.o GPU_step_ch.o GPU.o
+GPU_program1.o GPU_program2.o GPU_main.o\
+hllc.o const_trans.o LAS.o
 
 INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h
 
@@ -81,12 +82,9 @@ $(OBJS) : $(INCS) makefile
 
 $(EXE): $(OBJS) $(INCS) makefile
 	$(CUDA_COMPILE) $(GPU_FILES)
-	$(CUDA_LOAD) GPU_boundcomP.o GPU_boundcomF.o GPU_boundcomE.o GPU_step_ch.o GPU_program1.o GPU_program2.o -o GPU.o
+	$(CUDA_LOAD) GPU_boundcomP.o GPU_boundcomF.o GPU_boundcomE.o GPU_main.o GPU_program1.o GPU_program2.o -o GPU.o
 	$(CC_LOAD) $(OBJS) $(EXTRALIBS) -o $(EXE)
 
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
-
-newrun:
-	/bin/rm -rf dumps images ener.out

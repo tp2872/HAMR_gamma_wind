@@ -61,91 +61,6 @@ typedef struct {
   int nvars, nx, ny, nz; //resolution
 } extent;
 
-void elliptical_coord(double X_cart[NDIM], double pos_new[NDIM], double *r, double eccentricity){
-	double vu = pos_new[3];
-	double a_axis = *r; //semi-major axis
-	*r = fabs(pos_new[1] * (1. + eccentricity*cos(vu)) / (1. - pow(eccentricity, 2.))); //circular radius r_old corresponding to elliptical radius r_new
-	return;
-}
-
-void elliptical_vector(double X_cart[NDIM], double V_old[NDIM], double V_new[NDIM], double pos_new[NDIM], double *r, double *th, double eccentricity){
-	double bl_gcov[NDIM][NDIM];
-	double vu = pos_new[3];
-	double a_axis = *r; //semi-major axis
-	double b_axis = a_axis*sqrt(1. - pow(eccentricity, 2.)); //semi-minor axis
-	double period = pow(pow(a_axis, 3.)*4.*pow(M_PI, 2.), 0.5);
-	//convert from coordinate basis to ~orthonormal basis
-	bl_gcov_func(*r, *th, bl_gcov);
-	V_old[3] *= sqrt(bl_gcov[3][3]);
-	double slowdown_factor = V_old[3] * sqrt(*r); //calculate how sub-keplerian the flow is
-	V_new[3] = slowdown_factor*a_axis*b_axis*2.*M_PI / (period * pow(pos_new[1], 2.)); //calculate new toroidal velocity component
-	double p = a_axis*(1. - pow(eccentricity, 2.));
-	V_new[1] = p*eccentricity*V_new[3] * sin(vu) / pow(1. + eccentricity*cos(vu), 2.); //calculate new radial velocity component
-	V_new[2] = 0.;
-	V_old[3] /= sqrt(bl_gcov[3][3]);
-}
-
-void calc_source(){
-	int i, j, z, k, n;
-	double a_radius, b_radius, epsilon;
-	struct of_geom geom;
-	struct of_state q;
-	double p_source[NPR], U_s[NPR], om_kepler, r, th, phi, X[NDIM];
-	double velocity_factor = 0.7;
-
-	sourceflag = 1;
-	epsilon = sqrt(1 + 2.*(0.5*pow(velocity_factor, 2.) - 1.)*pow(velocity_factor, 2.));
-	a_radius = rmax / (1. + epsilon);
-	b_radius = a_radius*(1. - epsilon);
-	period_max = sqrt(pow(a_radius, 3)*4.*pow(M_PI, 2.));
-	fprintf(stderr, "Orbital parameters of eccentric orbit are e=%f a=%f p=%f \n", epsilon, a_radius, period_max);
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] - 1, 0, 0) {
-			for (k = 0; k < B1; k++){
-				p_source[k] = p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-			}
-			p_source[U3] *= velocity_factor;
-			p_source[B1] = 0.;
-			p_source[B2] = 0.;
-			p_source[B3] = 0.;
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			get_state(p_source, &geom, &q);
-			primtoflux(p_source, &q, TT, &geom, U_s);
-
-			//Calculate keplerian rotation rate
-			om_kepler = 1. / (pow(a_radius, 3. / 2.) + a);
-
-			//Define source term as the value at the apogee/ascending node divided by the orbital rotation frequency
-			for (k = 0; k < NPR; k++){
-				if (p_source[RHO] > pow(10., -2.)){
-					dU_s[n_ord[n]][index_2D(n_ord[n] ,i, j, z)][k] = U_s[k] * om_kepler / (2.*M_PI);
-				}
-				else{
-					dU_s[n_ord[n]][index_2D(n_ord[n] ,i, j, z)][k] = 0.;
-				}
-			}
-		}
-	}
-
-	//Reset the grid to floored values
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] - 1) {
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][RHO] = 1.e-7*RHOMIN;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][UU] = 1.e-7*UUMIN;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][U1] = 0.0;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][U2] = 0.0;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][U3] = 0.0;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][B1] = 0.0;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][B2] = 0.0;
-			p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.0;
-			//coord_transform(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)],n_ord[n], i, j, z);
-		}
-	}
-	for (n = 0; n < n_active; n++){
-		fixup(p, n_ord[n]);
-	}
-	bound_prim(p, 1);
-}
 
 void init()
 {
@@ -246,7 +161,6 @@ void init_torus()
 	dump_cnt = 0 ;
 	image_cnt = 0 ;
 	rdump_cnt = 0 ;
-	defcon = 1. ;
 
 	rhomax = 0. ;
 	umax = 0. ;
@@ -498,7 +412,6 @@ void init_disruption()
   dump_cnt = 0 ;
   image_cnt = 0 ;
   rdump_cnt = 0 ;
-  defcon = 1. ;
 
   //read ICs from file
   //for this, loop over all MPI processes
@@ -985,161 +898,21 @@ void set_mag(void){
 	bound_prim(p, 1);
 }
 
-//Transform coordinates to Cartesian
-void sph_to_cart(double X[NDIM], double *r, double *th, double *phi){
-	X[1] = r[0] * sin(th[0])*cos(phi[0]);
-	X[2] = r[0] * sin(th[0])*sin(phi[0]);
-	X[3] = r[0] * cos(th[0]);
-}
-
-//Rotate by angle tilt around y-axis, see wikipedia
-void rotate_coord(double X[NDIM], double tilt){
-	double X_tmp[NDIM];
-	int i;
-	for (i = 1; i < NDIM; i++){
-		X_tmp[i] = X[i];
-	}
-	X[1] = X_tmp[1] * cos(tilt) + X_tmp[3] * sin(tilt);
-	X[2] = X_tmp[2];
-	X[3] = -X_tmp[1] * sin(tilt) + X_tmp[3] * cos(tilt);
-}
-
-//Transform coordinates back to spherical
-void cart_to_sph(double X[NDIM], double *r, double *th, double *phi){
-	r[0] = sqrt(X[1] * X[1] + X[2] * X[2] + X[3] * X[3]);
-	th[0] = acos(X[3]/r[0]);
-	phi[0] = atan2(X[2],X[1]);
-}
-
-/*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
-void rotate_vector(double V[NDIM],double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
-	double bl_gcov[NDIM][NDIM], gdet1, gdet2;
-	double V_tmp[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
-	int i;
-	for (i = 1; i < NDIM; i++){
-		V_tmp[i] = V[i];
-		pos_new_tmp[i] = pos_new[i];
-	}
-
-	bl_gcov_func(*r, *th, bl_gcov);
-
-	V_tmp[1] *= sqrt(bl_gcov[1][1]);
-	V_tmp[2] *= sqrt(bl_gcov[2][2]);
-	V_tmp[3] *= sqrt(bl_gcov[3][3]);
-	//V_tmp[3] = sqrt(bl_gcov[3][3] * V_tmp[3] * V_tmp[3]+2.*bl_gcov[0][3] * V_tmp[0] * V_tmp[3]);
-
-	X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
-	X_tmp[2] = V_tmp[1] * sin(*th)*sin(*phi) + V_tmp[2] * cos(*th)*sin(*phi) + V_tmp[3] * cos(*phi);
-	X_tmp[3] = V_tmp[1] * cos(*th) - V_tmp[2] * sin(*th);
-
-	rotate_coord(X_tmp, tilt);
-
-	bl_gcov_func(pos_new[1], pos_new[2], bl_gcov);
-	//gdet2 = gdet_func(bl_gcov);
-	V[0] = V_tmp[0];
-	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcov[1][1]);
-	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2])) / sqrt(bl_gcov[2][2]);
-	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3])) / sqrt(bl_gcov[3][3]);
-	//V[3] = (-bl_gcov[0][3] * V[0] + V[3] / fabs(V[3])*sqrt(pow(bl_gcov[0][3] * V[0], 2.) + bl_gcov[3][3]*pow(V[3],2.))) / bl_gcov[3][3];
-}
-
-
-/*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
-void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
-	double bl_gcov[NDIM][NDIM],bl_gcon[NDIM][NDIM],bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], dxdxp[NDIM][NDIM],dxpdx[NDIM][NDIM], gdet1, gdet2;
-	double V_tmp[NDIM],X[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
-	double theta_solve, theta_old, derivative;
-	double delta_X2 = 0.1*M_PI / (double)N2*2. / M_PI;
-	int step = 0;
-	int i, j, k, l;
-	for (i = 1; i < NDIM; i++){
-		V_tmp[i] = V[i];
-		pos_new_tmp[i] = pos_new[i];
-	}
-
-	/*Calculate length of vector wrt orthonormal basis instead of coordinate basis*/
-	X[1] = pow(log(*r-RB), 1. / RADEXP);
-	X[2] = 2. / M_PI*(*th) - 1.;
-	X[3] = *phi;
-	do{
-		bl_coord(X, &(*r), &(theta_solve), &(*phi));
-		theta_solve -= *th;
-		theta_old = theta_solve;
-		X[2] += delta_X2;
-		bl_coord(X, &(*r), &(theta_solve), &(*phi));
-		theta_solve -= *th;
-		derivative = (theta_solve - theta_old) / delta_X2;
-		X[2] -= theta_solve / derivative;
-		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N1 && step<3);
-	kerr_gcov_func(*r, *th, bl_gcov);
-	invert_matrix(bl_gcov, bl_gcon);
-	dxdxp_func(X, dxdxp);
-	invert_matrix(dxdxp, dxpdx);
-
-	for (i = 0; i<NDIM; i++){
-		for (j = 0; j<NDIM; j++){
-			bl_gcon1[i][j] = 0;
-			for (k = 0; k<NDIM; k++) {
-				for (l = 0; l<NDIM; l++){
-					bl_gcon1[i][j] += bl_gcon[k][l] * dxpdx[i][k] * dxpdx[j][l];
-				}
-			}
-		}
-	}
-	gdet1 = gdet_func(bl_gcon1);
-	V_tmp[1] *= sqrt(bl_gcon1[1][1]);
-	V_tmp[2] *= sqrt(bl_gcon1[2][2]);
-	V_tmp[3] *= sqrt(bl_gcon1[3][3]);
-
-	/*Calculate Cartesian components (x, y, z) at pos_newition (r, th, phi) of vector V*/
-	X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
-	X_tmp[2] = V_tmp[1] * sin(*th)*sin(*phi) + V_tmp[2] * cos(*th)*sin(*phi) + V_tmp[3] * cos(*phi);
-	X_tmp[3] = V_tmp[1] * cos(*th) - V_tmp[2] * sin(*th);
-
-	/*Rotate vector over angle tilt around y-axis*/
-	rotate_coord(X_tmp, tilt);
-
-	/*Tranform vector back to coordinate basis (r, th, phi) at pos_newition (pos_new[1], pos_new[2], pos_new[3])*/
-	X[1] = pow(log(pos_new[1]-RB), 1. / RADEXP);
-	X[2] = 2. / M_PI*pos_new[2] - 1.;
-	X[3] = pos_new[3];
-	step = 0;
-	do{
-		bl_coord(X, &(pos_new[1]), &(theta_solve), &(pos_new[3]));
-		theta_solve -= pos_new[2];
-		theta_old = theta_solve;
-		X[2] += delta_X2;
-		bl_coord(X, &(pos_new[1]), &(theta_solve), &(pos_new[3]));
-		theta_solve -= pos_new[2];
-		derivative = (theta_solve - theta_old) / delta_X2;
-		X[2] -= theta_solve / derivative;
-		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N1 && step<3);
-	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
-	invert_matrix(bl_gcov, bl_gcon);
-
-	dxdxp_func(X, dxdxp);
-	invert_matrix(dxdxp, dxpdx);
-
-	for (i = 0; i<NDIM; i++){
-		for (j = 0; j<NDIM; j++){
-			bl_gcon2[i][j] = 0;
-			for (k = 0; k<NDIM; k++) {
-				for (l = 0; l<NDIM; l++){
-					bl_gcon2[i][j] += bl_gcon[k][l] * dxpdx[i][k] * dxpdx[j][l];
-				}
-			}
-		}
-	}
-	//gdet2 = gdet_func(bl_gcov2);
-	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2]))/sqrt(bl_gcon2[1][1]);
-	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2]))/sqrt(bl_gcon2[2][2]);
-	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3]))/sqrt(bl_gcon2[3][3]);
-}
 void init_monopole(double Rout_val)
 {
 	printf("Error. Monopole not implemented in this version\n");
+}
+
+double lfish_calc(double r)
+{
+	return(
+		((pow(a, 2) - 2.*a*sqrt(r) + pow(r, 2))*
+		((-2.*a*r*(pow(a, 2) - 2.*a*sqrt(r) + pow(r, 2))) /
+		sqrt(2.*a*sqrt(r) + (-3. + r)*r) +
+		((a + (-2. + r)*sqrt(r))*(pow(r, 3) + pow(a, 2)*(2. + r))) /
+		sqrt(1 + (2.*a) / pow(r, 1.5) - 3. / r))) /
+		(pow(r, 3)*sqrt(2.*a*sqrt(r) + (-3. + r)*r)*(pow(a, 2) + (-2. + r)*r))
+		);
 }
 
 /* this version starts w/ BL 4-velocity and
@@ -1162,10 +935,10 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 	ucon[2] = pr[U2];
 	ucon[3] = pr[U3];
 
-	AA = geom.gcov[TT][TT];
-	BB = 2.*(geom.gcov[TT][1] * ucon[1] +
-		geom.gcov[TT][2] * ucon[2] +
-		geom.gcov[TT][3] * ucon[3]);
+	AA = geom.gcov[0][0];
+	BB = 2.*(geom.gcov[0][1] * ucon[1] +
+		geom.gcov[0][2] * ucon[2] +
+		geom.gcov[0][3] * ucon[3]);
 	CC = 1. +
 		geom.gcov[1][1] * ucon[1] * ucon[1] +
 		geom.gcov[2][2] * ucon[2] * ucon[2] +
@@ -1175,7 +948,7 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 		geom.gcov[2][3] * ucon[2] * ucon[3]);
 
 	discr = BB*BB - 4.*AA*CC;
-	ucon[TT] = (-BB - sqrt(discr)) / (2.*AA);
+	ucon[0] = (-BB - sqrt(discr)) / (2.*AA);
 	/* now we've got ucon in BL coords */
 	old[1] = ucon[1];
 	old[2] = ucon[2];
@@ -1220,19 +993,241 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 	/* done! */
 }
 
-void coord_transform2(double *V, int ii, int jj, int zz)
-{
-
+//Transform coordinates to Cartesian
+void sph_to_cart(double X[NDIM], double *r, double *th, double *phi){
+	X[1] = r[0] * sin(th[0])*cos(phi[0]);
+	X[2] = r[0] * sin(th[0])*sin(phi[0]);
+	X[3] = r[0] * cos(th[0]);
 }
 
-double lfish_calc(double r)
-{
-	return(
-   ((pow(a,2) - 2.*a*sqrt(r) + pow(r,2))*
-      ((-2.*a*r*(pow(a,2) - 2.*a*sqrt(r) + pow(r,2)))/
-         sqrt(2.*a*sqrt(r) + (-3. + r)*r) +
-        ((a + (-2. + r)*sqrt(r))*(pow(r,3) + pow(a,2)*(2. + r)))/
-         sqrt(1 + (2.*a)/pow(r,1.5) - 3./r)))/
-    (pow(r,3)*sqrt(2.*a*sqrt(r) + (-3. + r)*r)*(pow(a,2) + (-2. + r)*r))
-	) ;
+//Rotate by angle tilt around y-axis, see wikipedia
+void rotate_coord(double X[NDIM], double tilt){
+	double X_tmp[NDIM];
+	int i;
+	for (i = 1; i < NDIM; i++){
+		X_tmp[i] = X[i];
+	}
+	X[1] = X_tmp[1] * cos(tilt) + X_tmp[3] * sin(tilt);
+	X[2] = X_tmp[2];
+	X[3] = -X_tmp[1] * sin(tilt) + X_tmp[3] * cos(tilt);
+}
+
+//Transform coordinates back to spherical
+void cart_to_sph(double X[NDIM], double *r, double *th, double *phi){
+	r[0] = sqrt(X[1] * X[1] + X[2] * X[2] + X[3] * X[3]);
+	th[0] = acos(X[3] / r[0]);
+	phi[0] = atan2(X[2], X[1]);
+}
+
+/*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
+void rotate_vector(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
+	double bl_gcov[NDIM][NDIM], gdet1, gdet2;
+	double V_tmp[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
+	int i;
+	for (i = 1; i < NDIM; i++){
+		V_tmp[i] = V[i];
+		pos_new_tmp[i] = pos_new[i];
+	}
+
+	bl_gcov_func(*r, *th, bl_gcov);
+
+	V_tmp[1] *= sqrt(bl_gcov[1][1]);
+	V_tmp[2] *= sqrt(bl_gcov[2][2]);
+	V_tmp[3] *= sqrt(bl_gcov[3][3]);
+	//V_tmp[3] = sqrt(bl_gcov[3][3] * V_tmp[3] * V_tmp[3]+2.*bl_gcov[0][3] * V_tmp[0] * V_tmp[3]);
+
+	X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
+	X_tmp[2] = V_tmp[1] * sin(*th)*sin(*phi) + V_tmp[2] * cos(*th)*sin(*phi) + V_tmp[3] * cos(*phi);
+	X_tmp[3] = V_tmp[1] * cos(*th) - V_tmp[2] * sin(*th);
+
+	rotate_coord(X_tmp, tilt);
+
+	bl_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+	//gdet2 = gdet_func(bl_gcov);
+	V[0] = V_tmp[0];
+	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcov[1][1]);
+	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2])) / sqrt(bl_gcov[2][2]);
+	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3])) / sqrt(bl_gcov[3][3]);
+	//V[3] = (-bl_gcov[0][3] * V[0] + V[3] / fabs(V[3])*sqrt(pow(bl_gcov[0][3] * V[0], 2.) + bl_gcov[3][3]*pow(V[3],2.))) / bl_gcov[3][3];
+}
+
+
+/*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
+void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
+	double bl_gcov[NDIM][NDIM], bl_gcon[NDIM][NDIM], bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], gdet1, gdet2;
+	double V_tmp[NDIM], X[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
+	double theta_solve, theta_old, derivative;
+	double delta_X2 = 0.1*M_PI / (double)N2*2. / M_PI;
+	int step = 0;
+	int i, j, k, l;
+	for (i = 1; i < NDIM; i++){
+		V_tmp[i] = V[i];
+		pos_new_tmp[i] = pos_new[i];
+	}
+
+	/*Calculate length of vector wrt orthonormal basis instead of coordinate basis*/
+	X[1] = pow(log(*r - RB), 1. / RADEXP);
+	X[2] = 2. / M_PI*(*th) - 1.;
+	X[3] = *phi;
+	do{
+		bl_coord(X, &(*r), &(theta_solve), &(*phi));
+		theta_solve -= *th;
+		theta_old = theta_solve;
+		X[2] += delta_X2;
+		bl_coord(X, &(*r), &(theta_solve), &(*phi));
+		theta_solve -= *th;
+		derivative = (theta_solve - theta_old) / delta_X2;
+		X[2] -= theta_solve / derivative;
+		step++;
+	} while (fabs(theta_solve)>2.*M_PI / (double)N1 && step<3);
+	kerr_gcov_func(*r, *th, bl_gcov);
+	invert_matrix(bl_gcov, bl_gcon);
+	dxdxp_func(X, dxdxp);
+	invert_matrix(dxdxp, dxpdx);
+
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			bl_gcon1[i][j] = 0;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					bl_gcon1[i][j] += bl_gcon[k][l] * dxpdx[i][k] * dxpdx[j][l];
+				}
+			}
+		}
+	}
+	gdet1 = gdet_func(bl_gcon1);
+	V_tmp[1] *= sqrt(bl_gcon1[1][1]);
+	V_tmp[2] *= sqrt(bl_gcon1[2][2]);
+	V_tmp[3] *= sqrt(bl_gcon1[3][3]);
+
+	/*Calculate Cartesian components (x, y, z) at pos_newition (r, th, phi) of vector V*/
+	X_tmp[1] = V_tmp[1] * sin(*th)*cos(*phi) + V_tmp[2] * cos(*th)*cos(*phi) - V_tmp[3] * sin(*phi);
+	X_tmp[2] = V_tmp[1] * sin(*th)*sin(*phi) + V_tmp[2] * cos(*th)*sin(*phi) + V_tmp[3] * cos(*phi);
+	X_tmp[3] = V_tmp[1] * cos(*th) - V_tmp[2] * sin(*th);
+
+	/*Rotate vector over angle tilt around y-axis*/
+	rotate_coord(X_tmp, tilt);
+
+	/*Tranform vector back to coordinate basis (r, th, phi) at pos_newition (pos_new[1], pos_new[2], pos_new[3])*/
+	X[1] = pow(log(pos_new[1] - RB), 1. / RADEXP);
+	X[2] = 2. / M_PI*pos_new[2] - 1.;
+	X[3] = pos_new[3];
+	step = 0;
+	do{
+		bl_coord(X, &(pos_new[1]), &(theta_solve), &(pos_new[3]));
+		theta_solve -= pos_new[2];
+		theta_old = theta_solve;
+		X[2] += delta_X2;
+		bl_coord(X, &(pos_new[1]), &(theta_solve), &(pos_new[3]));
+		theta_solve -= pos_new[2];
+		derivative = (theta_solve - theta_old) / delta_X2;
+		X[2] -= theta_solve / derivative;
+		step++;
+	} while (fabs(theta_solve)>2.*M_PI / (double)N1 && step<3);
+	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
+	invert_matrix(bl_gcov, bl_gcon);
+
+	dxdxp_func(X, dxdxp);
+	invert_matrix(dxdxp, dxpdx);
+
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			bl_gcon2[i][j] = 0;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					bl_gcon2[i][j] += bl_gcon[k][l] * dxpdx[i][k] * dxpdx[j][l];
+				}
+			}
+		}
+	}
+	//gdet2 = gdet_func(bl_gcov2);
+	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcon2[1][1]);
+	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2])) / sqrt(bl_gcon2[2][2]);
+	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3])) / sqrt(bl_gcon2[3][3]);
+}
+
+void elliptical_coord(double X_cart[NDIM], double pos_new[NDIM], double *r, double eccentricity){
+	double vu = pos_new[3];
+	double a_axis = *r; //semi-major axis
+	*r = fabs(pos_new[1] * (1. + eccentricity*cos(vu)) / (1. - pow(eccentricity, 2.))); //circular radius r_old corresponding to elliptical radius r_new
+	return;
+}
+
+void elliptical_vector(double X_cart[NDIM], double V_old[NDIM], double V_new[NDIM], double pos_new[NDIM], double *r, double *th, double eccentricity){
+	double bl_gcov[NDIM][NDIM];
+	double vu = pos_new[3];
+	double a_axis = *r; //semi-major axis
+	double b_axis = a_axis*sqrt(1. - pow(eccentricity, 2.)); //semi-minor axis
+	double period = pow(pow(a_axis, 3.)*4.*pow(M_PI, 2.), 0.5);
+	//convert from coordinate basis to ~orthonormal basis
+	bl_gcov_func(*r, *th, bl_gcov);
+	V_old[3] *= sqrt(bl_gcov[3][3]);
+	double slowdown_factor = V_old[3] * sqrt(*r); //calculate how sub-keplerian the flow is
+	V_new[3] = slowdown_factor*a_axis*b_axis*2.*M_PI / (period * pow(pos_new[1], 2.)); //calculate new toroidal velocity component
+	double p = a_axis*(1. - pow(eccentricity, 2.));
+	V_new[1] = p*eccentricity*V_new[3] * sin(vu) / pow(1. + eccentricity*cos(vu), 2.); //calculate new radial velocity component
+	V_new[2] = 0.;
+	V_old[3] /= sqrt(bl_gcov[3][3]);
+}
+
+void calc_source(){
+	int i, j, z, k, n;
+	double a_radius, b_radius, epsilon;
+	struct of_geom geom;
+	struct of_state q;
+	double p_source[NPR], U_s[NPR], om_kepler, r, th, phi, X[NDIM];
+	double velocity_factor = 0.7;
+
+	sourceflag = 1;
+	epsilon = sqrt(1 + 2.*(0.5*pow(velocity_factor, 2.) - 1.)*pow(velocity_factor, 2.));
+	a_radius = rmax / (1. + epsilon);
+	b_radius = a_radius*(1. - epsilon);
+	period_max = sqrt(pow(a_radius, 3)*4.*pow(M_PI, 2.));
+	fprintf(stderr, "Orbital parameters of eccentric orbit are e=%f a=%f p=%f \n", epsilon, a_radius, period_max);
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] - 1, 0, 0) {
+			for (k = 0; k < B1; k++){
+				p_source[k] = p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+			}
+			p_source[U3] *= velocity_factor;
+			p_source[B1] = 0.;
+			p_source[B2] = 0.;
+			p_source[B3] = 0.;
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			get_state(p_source, &geom, &q);
+			primtoflux(p_source, &q, 0, &geom, U_s);
+
+			//Calculate keplerian rotation rate
+			om_kepler = 1. / (pow(a_radius, 3. / 2.) + a);
+
+			//Define source term as the value at the apogee/ascending node divided by the orbital rotation frequency
+			for (k = 0; k < NPR; k++){
+				if (p_source[RHO] > pow(10., -2.)){
+					dU_s[n_ord[n]][index_2D(n_ord[n], i, j, z)][k] = U_s[k] * om_kepler / (2.*M_PI);
+				}
+				else{
+					dU_s[n_ord[n]][index_2D(n_ord[n], i, j, z)][k] = 0.;
+				}
+			}
+		}
+	}
+
+	//Reset the grid to floored values
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] - 1) {
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][RHO] = 1.e-7*RHOMIN;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][UU] = 1.e-7*UUMIN;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][B1] = 0.0;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][B2] = 0.0;
+			p[n_ord[n]][index_3D(n_ord[n], i, j, z)][B3] = 0.0;
+			//coord_transform(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)],n_ord[n], i, j, z);
+		}
+	}
+	for (n = 0; n < n_active; n++){
+		fixup(p, n_ord[n]);
+	}
+	bound_prim(p, 1);
 }

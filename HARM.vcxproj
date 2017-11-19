@@ -25,20 +25,21 @@
     <ClCompile Include="boundcomF.c" />
     <ClCompile Include="boundcomP.c" />
     <ClCompile Include="bounds.c" />
+    <ClCompile Include="const_trans.c" />
     <ClCompile Include="coord.c" />
     <ClCompile Include="diag.c" />
     <ClCompile Include="dump.c" />
     <ClCompile Include="fixup.c" />
-    <ClCompile Include="image.c" />
+    <ClCompile Include="hllc.c" />
     <ClCompile Include="init.c" />
     <ClCompile Include="interp.c" />
+    <ClCompile Include="LAS.c" />
     <ClCompile Include="lu.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="metric.c" />
     <ClCompile Include="phys.c" />
     <ClCompile Include="ranc.c" />
     <ClCompile Include="restart.c" />
-    <ClCompile Include="raycast.c" />
     <ClCompile Include="step_ch.c" />
     <ClCompile Include="u2p_util.c" />
     <ClCompile Include="utoprim_1dfix1.c" />
@@ -50,6 +51,7 @@
     <ClInclude Include="decsCUDA.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="decs_MPI.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="u2p_defs.h" />
     <ClInclude Include="u2p_util.h" />
   </ItemGroup>
@@ -59,7 +61,7 @@
     <None Include="GPU_boundcomP.cu" />
     <None Include="GPU_program1.cu" />
     <None Include="GPU_program2.cu" />
-    <None Include="GPU_step_ch.cu" />
+    <None Include="GPU_main.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ED290CB7-A2E8-413A-AAD7-C80F0E068C82}</ProjectGuid>

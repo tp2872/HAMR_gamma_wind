@@ -50,10 +50,69 @@
  * conditions 
  *
  **/
-double costh(double th, double ph, double tilt);
-double sinth(double th, double ph, double tilt);
-double cosph(double th, double ph, double tilt);
-double sinph(double th, double ph, double tilt);
+/***************************************************************************/
+/***************************************************************************
+coord():
+-------
+-- given the indices i,j and location in the cell, return with
+the values of X1,X2 there;
+-- the locations are defined by :
+-----------------------
+|                     |
+|                     |
+|FACE1   CENT         |
+|                     |
+|CORN    FACE2        |
+----------------------
+***************************************************************************/
+void coord(int n, int i, int j, int z, int loc, double * restrict X)
+{
+	X[0] = 0.0;
+	int j_local = j;
+	if (j < 0) j_local = -j - 1;
+	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j;
+	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2) j_local = j;
+	if (loc == FACE1) {
+		X[1] = startx[1] + i*dx[n][1];
+		X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
+		X[3] = startx[3] + (z + 0.5)*dx[n][3];
+	}
+	else if (loc == FACE2) {
+		X[1] = startx[1] + (i + 0.5)*dx[n][1];
+		X[2] = startx[2] + j_local*dx[n][2];
+		X[3] = startx[3] + (z + 0.5)*dx[n][3];
+	}
+	else if (loc == FACE3) {
+		X[1] = startx[1] + (i + 0.5)*dx[n][1];
+		X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
+		X[3] = startx[3] + z*dx[n][3];
+	}
+	else if (loc == CENT) {
+		X[1] = startx[1] + (i + 0.5)*dx[n][1];
+		X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
+		X[3] = startx[3] + (z + 0.5)*dx[n][3];
+	}
+	else {
+		X[1] = startx[1] + i*dx[n][1];
+		X[2] = startx[2] + j_local*dx[n][2];
+		X[3] = startx[3] + z*dx[n][3];
+	}
+
+	if (j < 0){
+		X[2] = X[2] + 1;
+		X[2] = -X[2];
+		X[2] = X[2] - 1;
+	}
+	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2){
+	}
+	else if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])){
+		X[2] = X[2] + 1;
+		X[2] = 4. - X[2];
+		X[2] = X[2] - 1;
+	}
+
+	return;
+}
 
 /* should return boyer-lindquist coordinte of point */
 void bl_coord(double * restrict X, double * restrict r, double * restrict th, double * restrict phi)
@@ -97,8 +156,8 @@ void vofx_matthewcoords(double *X, double *V){
 	else{
 		V[1] = (X[1] - Xtrans)*RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP) + RTRANS;
 	}
-	double A1 = 1. / (1. + pow(CHARLIE*(log(V[1]) / log(10.) - R1), DELTA));
-	double A2 = BRAVO*(log(V[1]) / log(10.) - R1) + TANGO;
+	double A1 = 1. / (1. + pow(CHARLIE*(log(V[1]) / log(10.)), DELTA));
+	double A2 = BRAVO*(log(V[1]) / log(10.)) + TANGO;
 	double A3 = pow(0.5, 1. - A2);
 	double sign = 1.;
 	double X_2 =(X[2]+1.0)/2.0;
@@ -113,286 +172,12 @@ void vofx_matthewcoords(double *X, double *V){
 	}
 	if (X_2 >= 0.5){
 		Xc = 1. - Xc;
-		//if (log(V[1]) / log(10.)>R1){
-			V[2] = M_PI - sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
-		//}
-		//else{
-		//	V[2] = M_PI - sign*(M_PI*Xc + omega*(1. - 1. / (1. - pow(log(V[1]) / log(10.) - R1, 3.)))*atan(zeta*pow(Xc, iota)) * (0.5 - Xc));
-		//}
-		//*th = M_PI - sign*(A1* M_PI*(1. - Xc) + M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))*(1. - A1) + 0.50*(1. - A1)*sin(M_PI + 2.*M_PI*(BRAVO*(1. - Xc) + A2*pow(1. - Xc, QUEBEC))));
+		V[2] = M_PI - sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
 	}
 	else{
-		//if (log(V[1]) / log(10.)>R1){
-			V[2] = sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
-	//	}
-	//	else{
-	//		V[2] = sign*(M_PI*Xc + omega*(1. - 1. / (1. - pow(log(V[1]) / log(10.) - R1, 3.)))*atan(zeta*pow(Xc, iota)) * (0.5 - Xc));
-	//	}
+		V[2] = sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
 	}
 	V[3] = X[3];
-}
-
-/* insert metric here */
-void gcov_func(double *X, double gcovp[][NDIM])
-{
-	int i, j, k, l;
-	double sth, cth, s2, rho2, sph, cph;
-	double r, th, phi;
-	double tfac, rfac, hfac, pfac;
-	double gcov[NDIM][NDIM];
-	double dxdxp[NDIM][NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxt[NDIM][NDIM], dxtdx[NDIM][NDIM];
-	double V[NDIM], Vp[NDIM];
-	double T1, T2, P1, P2, A;
-	double offset = 0.000000001;
-	double tilt = TILT_ANGLE / 180.*M_PI;
-	DLOOP gcov[j][k] = 0.;
-	#if(NONSYMMETRIC)
-	bl_coord(X, &r, &th, &phi);
-
-	//compute Jacobian r,th,phi->x,y,z (dx/dr)
-	dxdr[0][0] = 1.;
-	dxdr[0][1] = 0.;
-	dxdr[0][2] = 0.;
-	dxdr[0][3] = 0.;
-	dxdr[1][0] = 0.;
-	dxdr[1][1] = sin(th)*cos(phi);
-	dxdr[1][2] = r*cos(th)*cos(phi);
-	dxdr[1][3] = -r*sin(th)*sin(phi);
-	dxdr[2][0] = 0.;
-	dxdr[2][1] = sin(th)*sin(phi);
-	dxdr[2][2] = r*cos(th)*sin(phi);
-	dxdr[2][3] = r*sin(th)*cos(phi);
-	dxdr[3][0] = 0.;
-	dxdr[3][1] = cos(th);
-	dxdr[3][2] = -r*sin(th);
-	dxdr[3][3] = 0.;
-	invert_matrix(dxdr, drdx);
-
-	//compute Jacobian nt->t (dt/dnt)
-	dxdxt[0][0] = 1.;
-	dxdxt[0][1] = 0.;
-	dxdxt[0][2] = 0.;
-	dxdxt[0][3] = 0.;
-	dxdxt[1][0] = 0.;
-	dxdxt[1][1] = cos(tilt);
-	dxdxt[1][2] = 0.;
-	dxdxt[1][3] = -sin(tilt);
-	dxdxt[2][0] = 0.;
-	dxdxt[2][1] = 0.;
-	dxdxt[2][2] = 1.;
-	dxdxt[2][3] = 0.;
-	dxdxt[3][0] = 0.;
-	dxdxt[3][1] = sin(tilt);
-	dxdxt[3][2] = 0.0;
-	dxdxt[3][3] = cos(tilt);
-	invert_matrix(dxdxt, dxtdx);
-
-	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
-	dxdxp_func(X, dxdxp);
-
-	
-	Vp[1] = r*sin(th)*cos(phi);
-	Vp[2] = r*sin(th)*sin(phi);
-	Vp[3] = r*cos(th);
-
-	V[1] = Vp[1] * cos(-tilt) - Vp[3] * sin(-tilt);
-	V[2] = Vp[2];
-	V[3] = sin(-tilt)*Vp[1] + cos(-tilt)*Vp[3];
-	Vp[1] = sqrt(V[1] * V[1] + V[2] * V[2] + V[3] * V[3]);
-	Vp[2] = acos(V[3]/Vp[1]);
-	Vp[3] = atan2(V[2],V[1]);
-	if (Vp[2] < 0.0) Vp[2] *= -1;
-	if (Vp[2] > M_PI) Vp[2] = M_PI - (Vp[2] - M_PI);
-
-	#if(COORDSINGFIX)
-	if (fabs(Vp[2])<SINGSMALL){
-		if (Vp[2] >= 0.0) Vp[2] = SINGSMALL;
-		if (Vp[2]<0.0)  Vp[2] = -SINGSMALL;
-	}
-	if (fabs(M_PI - Vp[2]) <SINGSMALL){
-		if (Vp[2] >= M_PI) Vp[2] = M_PI + SINGSMALL;
-		if (Vp[2]<M_PI)  Vp[2] = M_PI - SINGSMALL;
-	}
-	#endif
-	//printf("r: %f %f, th: %f %f, phi: %f %f \n", r,Vp[1], th,Vp[2], phi,Vp[3]);
-	r = Vp[1];
-	th = Vp[2];
-	phi = Vp[3];
-
-	cth = cos(th);
-	sth = sin(th);
-
-	s2 = sth*sth;
-	rho2 = r*r + a*a*cth*cth;
-
-	gcov[TT][TT] = (-1. + 2.*r / rho2);
-	gcov[TT][1] = (2.*r / rho2);
-	gcov[TT][3] = (-2.*a*r*s2 / rho2);
-
-	gcov[1][TT] = gcov[TT][1];
-	gcov[1][1] = (1. + 2.*r / rho2);
-	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
-
-	gcov[2][2] = rho2;
-
-	gcov[3][TT] = gcov[TT][3];
-	gcov[3][1] = gcov[1][3];
-	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
-	#else
-	bl_coord(X, &r, &th, &phi);
-
-	cth = cos(th);
-	sth = sin(th);
-
-	s2 = sth*sth;
-	rho2 = r*r + a*a*cth*cth;
-
-	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
-	dxdxp_func(X, dxdxp);
-
-	gcov[TT][TT] = (-1. + 2.*r / rho2);
-	gcov[TT][1] = (2.*r / rho2);
-	gcov[TT][3] = (-2.*a*r*s2 / rho2);
-
-	gcov[1][TT] = gcov[TT][1];
-	gcov[1][1] = (1. + 2.*r / rho2);
-	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
-
-	gcov[2][2] = rho2;
-
-	gcov[3][TT] = gcov[TT][3];
-	gcov[3][1] = gcov[1][3];
-	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
-	#endif
-
-	#if(NONSYMMETRIC)
-	//compute Jacobian r,th,phi->x,y,z (dx/dr)
-	dxdr[0][0] = 1.;
-	dxdr[0][1] = 0.;
-	dxdr[0][2] = 0.;
-	dxdr[0][3] = 0.;
-	dxdr[1][0] = 0.;
-	dxdr[1][1] = sin(Vp[2])*cos(Vp[3]);
-	dxdr[1][2] = r*cos(Vp[2])*cos(Vp[3]);
-	dxdr[1][3] = -r*sin(Vp[2])*sin(Vp[3]);
-	dxdr[2][0] = 0.;
-	dxdr[2][1] = sin(Vp[2])*sin(Vp[3]);
-	dxdr[2][2] = r*cos(Vp[2])*sin(Vp[3]);
-	dxdr[2][3] = r*sin(Vp[2])*cos(Vp[3]);
-	dxdr[3][0] = 0.;
-	dxdr[3][1] = cos(Vp[2]);
-	dxdr[3][2] = -r*sin(Vp[2]);
-	dxdr[3][3] = 0.;
-	invert_matrix(dxdr, drdx);
-
-	//convert from kerr schild to cartesian coordinates
-	for (i = 0; i<NDIM; i++){
-		for (j = 0; j<NDIM; j++){
-			gcovp[i][j] = 0.;
-			for (k = 0; k<NDIM; k++) {
-				for (l = 0; l<NDIM; l++){
-					gcovp[i][j] += gcov[k][l] * drdx[k][i] * drdx[l][j];
-				}
-			}
-		}
-	}
-	//convert from cartesian to tilted cartesian coordinates
-	for (i = 0; i<NDIM; i++){
-		for (j = 0; j<NDIM; j++){
-			gcov[i][j] = 0.;
-			for (k = 0; k<NDIM; k++) {
-				for (l = 0; l<NDIM; l++){
-					gcov[i][j] += gcovp[k][l] * dxtdx[k][i] * dxtdx[l][j];
-				}
-			}
-		}
-	}
-
-	//compute Jacobian r,th,phi->x,y,z (dx/dr)
-	bl_coord(X, &r, &th, &phi);
-
-	dxdr[0][0] = 1.;
-	dxdr[0][1] = 0.;
-	dxdr[0][2] = 0.;
-	dxdr[0][3] = 0.;
-	dxdr[1][0] = 0.;
-	dxdr[1][1] = sin(th)*cos(phi);
-	dxdr[1][2] = r*cos(th)*cos(phi);
-	dxdr[1][3] = -r*sin(th)*sin(phi);
-	dxdr[2][0] = 0.;
-	dxdr[2][1] = sin(th)*sin(phi);
-	dxdr[2][2] = r*cos(th)*sin(phi);
-	dxdr[2][3] = r*sin(th)*cos(phi);
-	dxdr[3][0] = 0.;
-	dxdr[3][1] = cos(th);
-	dxdr[3][2] = -r*sin(th);
-	dxdr[3][3] = 0.;
-	invert_matrix(dxdr, drdx);
-
-	//convert back to tilted kerr-schild coordinates
-	for (i = 0; i<NDIM; i++){
-		for (j = 0; j<NDIM; j++){
-			gcovp[i][j] = 0.;
-			for (k = 0; k<NDIM; k++) {
-				for (l = 0; l<NDIM; l++){
-					gcovp[i][j] += gcov[k][l] * dxdr[k][i] * dxdr[l][j];
-				}
-			}
-		}
-	}
-	for (i = 0; i < NDIM; i++){
-		for (j = 0; j < NDIM; j++){
-			gcov[i][j] = gcovp[i][j];
-		}
-	}
-	#endif
-	//convert to code coordinates
-	for (i = 0; i<NDIM; i++){
-		for (j = 0; j<NDIM; j++){
-			gcovp[i][j] = 0.;
-			for (k = 0; k<NDIM; k++) {
-				for (l = 0; l<NDIM; l++){
-					gcovp[i][j] += gcov[k][l] * dxdxp[k][i] * dxdxp[l][j];
-				}
-			}
-		}
-	}
-}
-
-double costh(double th, double ph, double tilt){
-	return (-sin(th)*cos(ph)*sin(tilt) + cos(th)*cos(tilt));
-}
-
-double sinth(double th, double ph, double tilt){
-	return sqrt(1. - pow(costh(th, ph, tilt),2.));
-}
-
-double cosph(double th, double ph, double tilt){
-	return sqrt(1. - pow(sinph(th, ph, tilt), 2.0));
-}
-double sinph(double th, double ph, double tilt){
-	return sin(th)*sin(ph) / (fabs(sinth(th, ph, tilt))+0.0001);
-}
-
-/* NOTE: parameter hides global variable */
-void dxdxp_func(double *X, double dxdxp[][NDIM])
-{
-	int i, j, k, l;
-	double Xh[NDIM], Xl[NDIM];
-	double Vh[NDIM], Vl[NDIM];
-
-	for (k = 0; k<NDIM; k++) {
-		for (l = 0; l<NDIM; l++) Xh[l] = X[l];
-		for (l = 0; l<NDIM; l++) Xl[l] = X[l];
-		Xh[k] += 0.00001;
-		Xl[k] -= 0.00001;
-		Vh[0] = Xh[0];
-		Vl[0] = Xl[0];
-		bl_coord(Xh, &Vh[1], &Vh[2], &Vh[3]);
-		bl_coord(Xl, &Vl[1], &Vl[2], &Vl[3]);
-		for (j = 0; j<NDIM; j++)
-			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
-	}
 }
 
 /* some grid location, dxs */
@@ -435,130 +220,74 @@ void set_points(int n)
 	dx[n][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
 }
 
-void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n)
-{
-	int i,j,z,k;
-	double test;
-	if (block[n][AMR_NBR1] == -1){
-		#pragma omp parallel shared(block, n,n_ord,F1, F2, F3) private(i,z,k)
-		{
-			#pragma omp for schedule(static,1)
-			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
-				#pragma ivdep
-				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-					F1[n][index_3D(n,i, -1, z)][B2] = -F1[n][index_3D(n,i, 0, z)][B2];
-					F3[n][index_3D(n,i, -1, z)][B2] = -F3[n][index_3D(n,i, 0, z)][B2];
-					#if INFLOW==0
-					PLOOP F2[n][index_3D(n,i, 0, z)][k] = 0.;
-					#endif	
-				}
-			}
-		}
-	}
-
-	if (block[n][AMR_NBR3] == -1){
-		#pragma omp parallel shared(block,n,n_ord,F1, F2, F3) private(i,z,k)
-		{
-			#pragma omp for schedule(static,1)
-			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
-				#pragma ivdep
-				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-					F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
-					F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
-				}
-				#if INFLOW==0
-				PLOOP F2[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = 0.;
-				#endif	
-			}
-		}
-	}
-	if (INFLOW == 0){
-		if (block[n][AMR_NBR4] == -1){
-			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
-			{
-				#pragma omp for schedule(static,1)
-				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
-					#pragma ivdep
-					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-						if (F1[n][index_3D(n,0, j, z)][RHO] > 0.) F1[n][index_3D(n,0, j, z)][RHO] = 0.;
-					}
-				}
-			}
-		}
-		if (block[n][AMR_NBR2] == -1){
-			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
-			{
-				#pragma omp for schedule(static,1)
-				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
-				#pragma ivdep
-					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-						if (F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
-					}
-				}
-			}
-		}
-	}
-	return;
-}
-
-void rescale(double *pr, int which, int dir, int n, int ii, int jj, int zz, int face, struct of_geom *geom)
-{
-	double scale[NPR], r, th, phi, X[NDIM];
-	int k;
-
-	coord(n, ii, jj, zz, face, X);
-	bl_coord(X, &r, &th, &phi);
-
-	if (dir == 1) {
-		// optimized for pole
-		scale[RHO] = pow(r, 1.5);
-		scale[UU] = scale[RHO] * r;
-		scale[U1] = scale[RHO];
-		scale[U2] = 1.0;
-		scale[U3] = r * r;
-		scale[B1] = r * r;
-		scale[B2] = r * r;
-		scale[B3] = r * r;
-	}
-	else if (dir == 2) {
-		scale[RHO] = 1.0;
-		scale[UU] = 1.0;
-		scale[U1] = 1.0;
-		scale[U2] = 1.0;
-		scale[U3] = 1.0;
-		scale[B1] = 1.0;
-		scale[B2] = 1.0;
-		scale[B3] = 1.0;
-	}
-	else if (dir == 3) {
-		scale[RHO] = 1.0;
-		scale[UU] = 1.0;
-		scale[U1] = 1.0;
-		scale[U2] = 1.0;
-		scale[U3] = 1.0;
-		scale[B1] = 1.0;
-		scale[B2] = 1.0;
-		scale[B3] = 1.0;
-	}
-
-	if (which == FORWARD) {	// rescale before interpolation
-		PLOOP pr[k] *= scale[k];
-	} else if (which == REVERSE) {	// unrescale after interpolation
-		PLOOP pr[k] /= scale[k];
-	} else {
-		if (rank == 0){
-			fprintf(stderr, "no such rescale type!\n");
-		}
-		exit(100) ;
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 //  CYLINDRIFICATION
 //
 //////////////////////////////////////////////////////////////////////////////////////////
+//Adjusts V[2]=theta so that a few innermost cells around the pole
+//become cylindrical
+//ASSUMES: poles are at
+//            X[2] = -1 and +1, which correspond to
+//            V[2] = 0 and pi
+void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
+{
+	double npiovertwos;
+	double X[NDIM], V[NDIM];
+	double Vin[NDIM];
+	double X0[NDIM], V0[NDIM];
+	double Xtr[NDIM], Vtr[NDIM];
+	double f1, f2, dftr;
+	double sinth, th;
+	int j, ismirrored;
 
+	vofx(Xin, Vin);
+
+	// BRING INPUT TO 1ST QUADRANT:  X[2] \in [-1 and 0]
+	to1stquadrant(Xin, X, &ismirrored);
+	vofx(X, V);
+
+	//initialize X0: cylindrify region
+	//X[1] < X0[1] && X[2] < X0[2] (value of X0[3] not used)
+	X0[0] = Xin[0];
+	/*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
+	X0[1] = pow(log(38.*(double)N3 / 250./1.5 - RB), 1. / RADEXP);
+	X0[2] = -1. + 1. / ((double)(N2));
+	X0[3] = 0.;
+	/*3D jet Rout 10000 Rg 1024x400x100*/
+	/*X0[1] = pow(log(600. - RB), 1. / RADEXP);
+	X0[2] = -1. + 3. / (double)N2;
+	X0[3] = 0.;*/
+	vofx(X0, V0);
+
+	//{0, roughly midpoint between grid origin and x10, -1, 0}
+	DLOOPA Xtr[j] = X[j];
+	//3D jet
+	//Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
+	Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
+	vofx(Xtr, Vtr);
+
+	f1 = func1(X0, X, vofx);
+	f2 = func2(X0, X, vofx);
+	dftr = func2(X0, Xtr, vofx) - func1(X0, Xtr, vofx);
+
+	// Compute new theta
+	sinth = maxs(V[1] * f1, V[1] * f2, Vtr[1] * fabs(dftr) + SMALL) / V[1];
+
+	th = asin(sinth);
+
+	//initialize Vout with the original values
+	DLOOPA Vout[j] = Vin[j];
+
+	//apply change in theta in the original quadrant
+	if (0 == ismirrored) {
+		Vout[2] = Vin[2] + (th - V[2]);
+	}
+	else {
+		//if mirrrored, flip the sign
+		Vout[2] = Vin[2] - (th - V[2]);
+	}
+}
 //smooth step function:
 // Ftr = 0 if x < 0, Ftr = 1 if x > 1 and smoothly interps. in btw.
 double Ftr(double x)
@@ -653,13 +382,6 @@ double minmaxs(double f1, double f2, double df, double dir)
 
 	return(mins(f1, f2, df));
 }
-
-static double sinth0(double *X0, double *X, void(*vofx)(double*, double*));
-static double sinth1in(double *X0, double *X, void(*vofx)(double*, double*));
-static double th2in(double *X0, double *X, void(*vofx)(double*, double*));
-static void to1stquadrant(double *Xin, double *Xout, int *ismirrored);
-static double func1(double *X0, double *X, void(*vofx)(double*, double*));
-static double func2(double *X0, double *X, void(*vofx)(double*, double*));
 
 //Converts copies Xin to Xout and converts
 //but sets Xout[2] to lie in the 1st quadrant, i.e. Xout[2] \in [-1,0])
@@ -758,70 +480,6 @@ double th2in(double *X0, double *X, void(*vofx)(double*, double*))
 	return(res);
 }
 
-//Adjusts V[2]=theta so that a few innermost cells around the pole
-//become cylindrical
-//ASSUMES: poles are at
-//            X[2] = -1 and +1, which correspond to
-//            V[2] = 0 and pi
-void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
-{
-	double npiovertwos;
-	double X[NDIM], V[NDIM];
-	double Vin[NDIM];
-	double X0[NDIM], V0[NDIM];
-	double Xtr[NDIM], Vtr[NDIM];
-	double f1, f2, dftr;
-	double sinth, th;
-	int j, ismirrored;
-
-	vofx(Xin, Vin);
-
-	// BRING INPUT TO 1ST QUADRANT:  X[2] \in [-1 and 0]
-	to1stquadrant(Xin, X, &ismirrored);
-	vofx(X, V);
-
-	//initialize X0: cylindrify region
-	//X[1] < X0[1] && X[2] < X0[2] (value of X0[3] not used)
-	X0[0] = Xin[0];
-	/*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
-	X0[1] = pow(log(38.*(double)N3 / 250./1.5 - RB), 1. / RADEXP);
-	X0[2] = -1. + 1. / ((double)(N2));
-	X0[3] = 0.;
-	/*3D jet Rout 10000 Rg 1024x400x100*/
-	/*X0[1] = pow(log(600. - RB), 1. / RADEXP);
-	X0[2] = -1. + 3. / (double)N2;
-	X0[3] = 0.;*/
-	vofx(X0, V0);
-
-	//{0, roughly midpoint between grid origin and x10, -1, 0}
-	DLOOPA Xtr[j] = X[j];
-	//3D jet
-	//Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
-	Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
-	vofx(Xtr, Vtr);
-
-	f1 = func1(X0, X, vofx);
-	f2 = func2(X0, X, vofx);
-	dftr = func2(X0, Xtr, vofx) - func1(X0, Xtr, vofx);
-
-	// Compute new theta
-	sinth = maxs(V[1] * f1, V[1] * f2, Vtr[1] * fabs(dftr) + SMALL) / V[1];
-
-	th = asin(sinth);
-
-	//initialize Vout with the original values
-	DLOOPA Vout[j] = Vin[j];
-
-	//apply change in theta in the original quadrant
-	if (0 == ismirrored) {
-		Vout[2] = Vin[2] + (th - V[2]);
-	}
-	else {
-		//if mirrrored, flip the sign
-		Vout[2] = Vin[2] - (th - V[2]);
-	}
-}
-
 double func1(double *X0, double *X, void(*vofx)(double*, double*))
 {
 	double V[NDIM];
@@ -854,33 +512,4 @@ double func2(double *X0, double *X, void(*vofx)(double*, double*))
 	func2 = minmaxs(sth1in, sth2in, fabs(sth2inaxis - sth1inaxis) + SMALL, X[1] - X0[1]);
 
 	return(func2);
-}
-
-void gcov_func2(double r, double th, double gcov[][NDIM])
-{
-	int j, k;
-	double sth, cth, s2, rho2;
-	DLOOP gcov[j][k] = 0.;
-
-	cth = cos(th);
-	sth = sin(th);
-
-	s2 = sth*sth;
-	rho2 = r*r + a*a*cth*cth;
-
-	//compute Jacobian x1,x2,x3 -> r,th,phi
-
-	gcov[TT][TT] = (-1. + 2.*r / rho2);
-	gcov[TT][1] = (2.*r / rho2);
-	gcov[TT][3] = (-2.*a*r*s2 / rho2);
-
-	gcov[1][TT] = gcov[TT][1];
-	gcov[1][1] = (1. + 2.*r / rho2);
-	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
-
-	gcov[2][2] = rho2;
-
-	gcov[3][TT] = gcov[TT][3];
-	gcov[3][1] = gcov[1][3];
-	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
 }

@@ -48,7 +48,6 @@ int AMR_coord_linear(int level, int i, int j, int z){
 	return n;
 }
 
-
 int AMR_coord_linear_RM(int level, int i, int j, int z){
 	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n;
 
@@ -77,43 +76,6 @@ int AMR_coord_linear_RM(int level, int i, int j, int z){
 	return n;
 }
 
-
-//returns the number of the communicator for avereging of E field across polar axis
-int AMR_comm_linear(int level, int i, int j){
-	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n;
-
-	if (i < 0 || j < 0){
-		return -1;
-	}
-
-	for (y = 0; y < N_LEVELS; y++){
-		factor[y] = 1;
-		for (u = 0; u < N_LEVELS - y - 1; u++){
-			factor[y] = factor[y] * pow(2, REF_1 + REF_2) + 1;
-		}
-	}
-
-	index[0] = ((i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level) * NB_2 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level));
-		n = index[0] * factor[0];
-
-	for (u = level; u > 0; u--){
-		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
-		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
-		index[u] = coord[1] * (1 + REF_2) + coord[2]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
-		n += index[u] * factor[u] + 1;
-	}
-	return n;
-}
-	
-void AMR_setgroup(void){
-	int n, y;
-	int y_max = 0;
-	y_max = AMR_comm_linear(N_LEVELS - 1, pow(REF_1 + 1, N_LEVELS - 1)*NB_1 - 1, pow(REF_2 + 1, N_LEVELS - 1)*NB_2 - 1);
-
-	for (n = 0; n <= n_max; n++){
-		block[n][AMR_GROUP] = AMR_comm_linear(block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2]);
-	}
-}
 
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_coord_cart(int n, int *level, int *i, int *j, int *z){
@@ -438,12 +400,6 @@ void set_AMR(void){
 		N3_GPU[n] = BS_3;
 	}
 
-	//Set the groups for which to sum the E1 values at the pole for transmissive boundary conditions
-	AMR_setgroup();
-
-	//Allocate array for image output
-	//set_arrays_image();
-
 	for (n = 0; n <= n_max; n++){
 		set_points(n);
 
@@ -473,13 +429,15 @@ void set_AMR(void){
 	set_corners();
 
 	MPI_Barrier(mpi_cartcomm);
+
 	//First calculate non-reduced timestep
 	set_timelevel();
-	#if(TIMESTEP_JET)
-	set_timelevel_jet();
-	#endif
+
 
 	balance_load();
+	#if(GPU_ENABLED)
+	balance_load_gpu();
+	#endif
 }
 
 #define MAX_BLOCKS (36*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
@@ -643,7 +601,7 @@ void balance_load(void){
 				#if STAGGERED
 				MPI_Wait(&boundreqs[n_ord_total_RM[i]][1], &Statbound[n_ord_total_RM[i]][1]);
 				#endif
-				#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+				#if(GPU_ENABLED || GPU_DEBUG )
 				GPU_finish(n_ord_total_RM[i]);
 				#endif
 				free_arrays(n_ord_total_RM[i]);
@@ -662,7 +620,7 @@ void balance_load(void){
 					MPI_Wait(&boundreqs[n_ord_total_RM[i]][11], &Statbound[n_ord_total_RM[i]][11]);
 					#endif
 				}
-				#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+				#if(GPU_ENABLED || GPU_DEBUG )
 				set_arrays_GPU(n_ord_total_RM[i], block[n_ord_total_RM[i]][AMR_GPU]);
 				GPU_write(n_ord_total_RM[i]);
 				#endif
@@ -699,7 +657,6 @@ void balance_load(void){
 
 	if (rank == 0) fprintf(stderr, "Load balance finished! \n");
 }
-
 
 void balance_load_gpu(void){
 	/*int i, g, tt, fp, ip, y, q, rem, n, gpu;
@@ -746,9 +703,6 @@ void activate_blocks(void){
 	n_active_total = 0;
 	
 	for (n = 0; n <= n_max; n++){
-		flux_flag[n] = 0;
-
-
 		if (block[n][AMR_ACTIVE] == 1 && block[n][AMR_NODE] == rank){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active
 			n_ord[n_active] = n;
@@ -776,697 +730,6 @@ void activate_blocks(void){
 			}
 		}
 	}*/
-}
-
-int rm_order2(void){
-	int n, l, i, j, z, number;
-	int counter = 0;
-	int counter2 = 0;
-	for (n = 0; n <= n_max; n++){
-		AMR_coord_cart_RM(n, &l, &i, &j, &z); //transform to cartesian grid coordinates
-		number = AMR_coord_linear(l, i, j, z); //transform to normal lineair ordering
-		if (block[number][AMR_ACTIVE] == 1){
-			n_ord_total_RM[counter] = number;
-			counter++;
-		}
-		if (block[number][AMR_ACTIVE] == 1 && block[number][AMR_NODE] == rank){
-			n_ord_RM[counter2] = number;
-			counter2++;
-		}
-	}
-}
-
-void set_corners(void){
-	int n;
-	int counter0, counter1, counter2, counter3;
-	int counter0_1, counter1_1, counter2_1, counter3_1;
-	int counter0_2, counter1_2, counter2_2, counter3_2;
-
-	//Set the most important corner value of the electric field to break the degeneracy of E-fields at each corner
-	#if(TIMESTEP_JET)
-	for (n = 0; n < n_active_total; n++){
-		block[n_ord_total[n]][AMR_CORN1D] = -100;
-		block[n_ord_total[n]][AMR_CORN1D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN1D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN2D] = -100;
-		block[n_ord_total[n]][AMR_CORN2D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN2D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN3D] = -100;
-		block[n_ord_total[n]][AMR_CORN3D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN3D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN4D] = -100;
-		block[n_ord_total[n]][AMR_CORN4D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN4D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN5D] = -100;
-		block[n_ord_total[n]][AMR_CORN5D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN5D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN6D] = -100;
-		block[n_ord_total[n]][AMR_CORN6D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN6D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN7D] = -100;
-		block[n_ord_total[n]][AMR_CORN7D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN7D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN8D] = -100;
-		block[n_ord_total[n]][AMR_CORN8D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN8D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN9D] = -100;
-		block[n_ord_total[n]][AMR_CORN9D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN9D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN10D] = -100;
-		block[n_ord_total[n]][AMR_CORN10D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN10D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN11D] = -100;
-		block[n_ord_total[n]][AMR_CORN11D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN11D_2] = -100;
-		block[n_ord_total[n]][AMR_CORN12D] = -100;
-		block[n_ord_total[n]][AMR_CORN12D_1] = -100;
-		block[n_ord_total[n]][AMR_CORN12D_2] = -100;
-	}
-	#else
-	for (n = 0; n < n_active_total; n++){
-		//Corn 1
-		block[n_ord_total[n]][AMR_CORN1D] = -10;
-		block[n_ord_total[n]][AMR_CORN1D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN1D_2] = -10;
-
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			block[n_ord_total[n]][AMR_CORN1D] = n_ord_total[n];
-
-			//Corn 1
-			counter0 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter0_1 = AMR_MAXTIMELEVEL;
-			counter0_2 = AMR_MAXTIMELEVEL;
-			counter1 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter1_1 = AMR_MAXTIMELEVEL;
-			counter1_2 = AMR_MAXTIMELEVEL;
-			counter2 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter2_1 = AMR_MAXTIMELEVEL;
-			counter2_2 = AMR_MAXTIMELEVEL;
-			counter3_1 = AMR_MAXTIMELEVEL;
-			counter3_2 = AMR_MAXTIMELEVEL;
-
-			if (block[n_ord_total[n]][AMR_NBR1] >= 0 && block[n_ord_total[n]][AMR_POLE] != 1 && block[n_ord_total[n]][AMR_POLE] != 4){
-				if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1){
-					counter1 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL];
-					if (counter1 > counter0){
-						block[n_ord_total[n]][AMR_CORN1D] = block[n_ord_total[n]][AMR_NBR1];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_REFINED] == 1){
-					counter1_1 += 10000;
-					counter1_2 += 10000;
-					counter1 = 100000;
-					block[n_ord_total[n]][AMR_CORN1D] = -2;
-					counter1_1 -= block[block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL];
-					counter1_2 -= block[block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL];
-
-					if (counter1_1 > counter0_1) block[n_ord_total[n]][AMR_CORN1D_1] = block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD7];
-					if (counter1_2 > counter0_2) block[n_ord_total[n]][AMR_CORN1D_2] = block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD8];
-				}
-			}
-
-			if (block[n_ord_total[n]][AMR_NBR2] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR2]][AMR_ACTIVE] == 1){
-					counter2 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR2]][AMR_TIMELEVEL];
-					if ((counter2 > counter1) && (counter2>counter0))block[n_ord_total[n]][AMR_CORN1D] = block[n_ord_total[n]][AMR_NBR2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR2]][AMR_REFINED] == 1){
-					counter2_1 += 10000;
-					counter2_2 += 10000;
-					counter2 = 100000;
-					block[n_ord_total[n]][AMR_CORN1D] = -2;
-					counter2_1 -= block[block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL];
-					counter2_2 -= block[block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL];
-					if (counter2_1 > counter1_1) block[n_ord_total[n]][AMR_CORN1D_1] = block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD1];
-					if (counter2_2 > counter1_2) block[n_ord_total[n]][AMR_CORN1D_2] = block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD2];
-				}
-			}
-
-			if (block[n_ord_total[n]][AMR_CORN1] >= 0 && block[n_ord_total[n]][AMR_POLE] != 1 && block[n_ord_total[n]][AMR_POLE] != 3){
-				if (block[block[n_ord_total[n]][AMR_CORN1]][AMR_ACTIVE] == 1){
-					counter3 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_CORN1]][AMR_TIMELEVEL];
-					if ((counter3 > counter2) && (counter3>counter1) && (counter3>counter0)) block[n_ord_total[n]][AMR_CORN1D] = block[n_ord_total[n]][AMR_CORN1];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN1]][AMR_REFINED] == 1){
-					counter3_1 += 10000;
-					counter3_2 += 10000;
-					counter3 = 100000;
-					block[n_ord_total[n]][AMR_CORN1D] = -2;
-					counter3_1 -= block[block[block[n_ord_total[n]][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL];
-					counter3_2 -= block[block[block[n_ord_total[n]][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL];
-
-					if ((counter3_1 > counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN1D_1] = block[block[n_ord_total[n]][AMR_CORN1]][AMR_CHILD3];
-					if ((counter3_2 > counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN1D_2] = block[block[n_ord_total[n]][AMR_CORN1]][AMR_CHILD4];
-				}
-			}
-		}
-	}
-
-	for (n = 0; n < n_active_total; n++){
-		block[n_ord_total[n]][AMR_CORN2D] = -10;
-		block[n_ord_total[n]][AMR_CORN2D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN2D_2] = -10;
-		block[n_ord_total[n]][AMR_CORN3D] = -10;
-		block[n_ord_total[n]][AMR_CORN3D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN3D_2] = -10;
-		block[n_ord_total[n]][AMR_CORN4D] = -10;
-		block[n_ord_total[n]][AMR_CORN4D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN4D_2] = -10;
-
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			//Corn 2
-			if (block[n_ord_total[n]][AMR_CORN2] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN2D] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN1D];
-					block[n_ord_total[n]][AMR_CORN2D_1] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN1D_1];
-					block[n_ord_total[n]][AMR_CORN2D_2] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN1D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN2D] = -2;
-					block[n_ord_total[n]][AMR_CORN2D_1] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_CHILD5]][AMR_CORN1D];
-					block[n_ord_total[n]][AMR_CORN2D_2] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_CHILD6]][AMR_CORN1D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN2]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN2]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD7]){
-						block[n_ord_total[n]][AMR_CORN2D] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_CORN1D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN2D] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_CORN1D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN2]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN2])
-				{
-					block[n_ord_total[n]][AMR_CORN2D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR2]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR2]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL]) block[n_ord_total[n]][AMR_CORN2D] = block[n_ord_total[n]][AMR_NBR2];
-					if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_ACTIVE] == 1) block[n_ord_total[n]][AMR_CORN2D] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN1D]; //good
-				}
-			}
-
-			//Corn 3
-			if (block[n_ord_total[n]][AMR_CORN3] >= 0){
-				if (block[block[n_ord_total[n]][AMR_CORN3]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN3D] = block[block[n_ord_total[n]][AMR_CORN3]][AMR_CORN1D];
-					block[n_ord_total[n]][AMR_CORN3D_1] = block[block[n_ord_total[n]][AMR_CORN3]][AMR_CORN1D_1];
-					block[n_ord_total[n]][AMR_CORN3D_2] = block[block[n_ord_total[n]][AMR_CORN3]][AMR_CORN1D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN3]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN3D] = -2;
-					block[n_ord_total[n]][AMR_CORN3D_1] = block[block[block[n_ord_total[n]][AMR_CORN3]][AMR_CHILD5]][AMR_CORN1D];
-					block[n_ord_total[n]][AMR_CORN3D_2] = block[block[block[n_ord_total[n]][AMR_CORN3]][AMR_CHILD6]][AMR_CORN1D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN3]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD7]){
-						block[n_ord_total[n]][AMR_CORN3D] = block[block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT]][AMR_CORN1D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN3D] = block[block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT]][AMR_CORN1D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN3]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN3])
-				{
-					block[n_ord_total[n]][AMR_CORN3D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR3]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN3D] = block[n_ord_total[n]][AMR_NBR3];//good
-					if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR4]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN3D] = block[n_ord_total[n]][AMR_NBR4];//good
-				}
-			}
-
-			//Corn 4
-			if (block[n_ord_total[n]][AMR_CORN4] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN4D] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN1D];
-					block[n_ord_total[n]][AMR_CORN4D_1] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN1D_1];
-					block[n_ord_total[n]][AMR_CORN4D_2] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN1D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN4D] = -2;
-					block[n_ord_total[n]][AMR_CORN4D_1] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_CHILD5]][AMR_CORN1D];
-					block[n_ord_total[n]][AMR_CORN4D_2] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_CHILD6]][AMR_CORN1D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN4]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN4]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD7]){
-						block[n_ord_total[n]][AMR_CORN4D] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_CORN1D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN4D] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_CORN1D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN4]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN4])
-				{
-					block[n_ord_total[n]][AMR_CORN4D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1) block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN1D]; //good
-					if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN4D] = block[n_ord_total[n]][AMR_NBR1]; //good
-				}
-			}
-			if (block[n_ord_total[n]][AMR_NBR4] < 0){
-				block[n_ord_total[n]][AMR_CORN4D] = -100;
-				block[n_ord_total[n]][AMR_CORN4D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN4D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN3D] = -100;
-				block[n_ord_total[n]][AMR_CORN3D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN3D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR2] < 0){
-				block[n_ord_total[n]][AMR_CORN1D] = -100;
-				block[n_ord_total[n]][AMR_CORN1D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN1D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN2D] = -100;
-				block[n_ord_total[n]][AMR_CORN2D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN2D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR1] < 0 || block[n_ord_total[n]][AMR_POLE] == 1 || block[n_ord_total[n]][AMR_POLE] == 3){
-				block[n_ord_total[n]][AMR_CORN1D] = -100;
-				block[n_ord_total[n]][AMR_CORN1D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN1D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN4D] = -100;
-				block[n_ord_total[n]][AMR_CORN4D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN4D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR3] < 0 || block[n_ord_total[n]][AMR_POLE] == 2 || block[n_ord_total[n]][AMR_POLE] == 3){
-				block[n_ord_total[n]][AMR_CORN3D] = -100;
-				block[n_ord_total[n]][AMR_CORN3D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN3D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN2D] = -100;
-				block[n_ord_total[n]][AMR_CORN2D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN2D_2] = -100;
-			}
-		}
-	}
-
-	for (n = 0; n < n_active_total; n++){
-		//Corn 5
-		block[n_ord_total[n]][AMR_CORN5D] = -10;
-		block[n_ord_total[n]][AMR_CORN5D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN5D_2] = -10;
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			block[n_ord_total[n]][AMR_CORN5D] = n_ord_total[n];
-
-			//Corn 5
-			counter0 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter0_1 = AMR_MAXTIMELEVEL;
-			counter0_2 = AMR_MAXTIMELEVEL;
-			counter1 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter1_1 = AMR_MAXTIMELEVEL;
-			counter1_2 = AMR_MAXTIMELEVEL;
-			counter2 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter2_1 = AMR_MAXTIMELEVEL;
-			counter2_2 = AMR_MAXTIMELEVEL;
-			counter3_1 = AMR_MAXTIMELEVEL;
-			counter3_2 = AMR_MAXTIMELEVEL;
-
-			if (block[n_ord_total[n]][AMR_NBR6] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1){
-					counter1 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR6]][AMR_TIMELEVEL];
-					if (counter1 > counter0){
-						block[n_ord_total[n]][AMR_CORN5D] = block[n_ord_total[n]][AMR_NBR6];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_REFINED] == 1){
-					counter1_1 += 10000;
-					counter1_2 += 10000;
-					counter1 = 100000;
-					block[n_ord_total[n]][AMR_CORN5D] = -2;
-					counter1_1 -= block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL];
-					counter1_2 -= block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL];
-
-					if (counter1_1 > counter0_1) block[n_ord_total[n]][AMR_CORN5D_1] = block[block[n_ord_total[n]][AMR_NBR6]][AMR_CHILD6];
-					if (counter1_2 > counter0_2) block[n_ord_total[n]][AMR_CORN5D_2] = block[block[n_ord_total[n]][AMR_NBR6]][AMR_CHILD8];
-				}
-			}
-
-			if (block[n_ord_total[n]][AMR_NBR2] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR2]][AMR_ACTIVE] == 1){
-					counter2 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR2]][AMR_TIMELEVEL];
-					if ((counter2 > counter1) && (counter2>counter0))block[n_ord_total[n]][AMR_CORN5D] = block[n_ord_total[n]][AMR_NBR2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR2]][AMR_REFINED] == 1){
-					counter2_1 += 10000;
-					counter2_2 += 10000;
-					counter2 = 100000;
-					block[n_ord_total[n]][AMR_CORN5D] = -2;
-					counter2_1 -= block[block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL];
-					counter2_2 -= block[block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL];
-					if (counter2_1 > counter1_1) block[n_ord_total[n]][AMR_CORN5D_1] = block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD1];
-					if (counter2_2 > counter1_2) block[n_ord_total[n]][AMR_CORN5D_2] = block[block[n_ord_total[n]][AMR_NBR2]][AMR_CHILD3];
-				}
-			}
-
-			if (block[n_ord_total[n]][AMR_CORN5] >= 0){
-				if (block[block[n_ord_total[n]][AMR_CORN5]][AMR_ACTIVE] == 1){
-					counter3 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_CORN5]][AMR_TIMELEVEL];
-					if ((counter3 > counter2) && (counter3>counter1) && (counter3>counter0)) block[n_ord_total[n]][AMR_CORN5D] = block[n_ord_total[n]][AMR_CORN5];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN5]][AMR_REFINED] == 1){
-					counter3_1 += 10000;
-					counter3_2 += 10000;
-					counter3 = 100000;
-					block[n_ord_total[n]][AMR_CORN5D] = -2;
-					counter3_1 -= block[block[block[n_ord_total[n]][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL];
-					counter3_2 -= block[block[block[n_ord_total[n]][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL];
-
-					if ((counter3_1 > counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN5D_1] = block[block[n_ord_total[n]][AMR_CORN5]][AMR_CHILD2];
-					if ((counter3_2 > counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN5D_2] = block[block[n_ord_total[n]][AMR_CORN5]][AMR_CHILD4];
-				}
-			}
-		}
-	}
-
-	for (n = 0; n < n_active_total; n++){
-		block[n_ord_total[n]][AMR_CORN6D] = -10;
-		block[n_ord_total[n]][AMR_CORN6D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN6D_2] = -10;
-		block[n_ord_total[n]][AMR_CORN7D] = -10;
-		block[n_ord_total[n]][AMR_CORN7D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN7D_2] = -10;
-		block[n_ord_total[n]][AMR_CORN8D] = -10;
-		block[n_ord_total[n]][AMR_CORN8D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN8D_2] = -10;
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			//Corn 6
-			if (block[n_ord_total[n]][AMR_CORN6] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN6D] = block[block[n_ord_total[n]][AMR_NBR5]][AMR_CORN5D];
-					block[n_ord_total[n]][AMR_CORN6D_1] = block[block[n_ord_total[n]][AMR_NBR5]][AMR_CORN5D_1];
-					block[n_ord_total[n]][AMR_CORN6D_2] = block[block[n_ord_total[n]][AMR_NBR5]][AMR_CORN5D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN6D] = -2;
-					block[n_ord_total[n]][AMR_CORN6D_1] = block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_CHILD5]][AMR_CORN5D];
-					block[n_ord_total[n]][AMR_CORN6D_2] = block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_CHILD7]][AMR_CORN5D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN6]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN6]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD6]){
-						block[n_ord_total[n]][AMR_CORN6D] = block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_PARENT]][AMR_CORN5D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN6D] = block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_PARENT]][AMR_CORN5D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN6]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN6])
-				{
-					block[n_ord_total[n]][AMR_CORN6D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR2]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR2]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL]) block[n_ord_total[n]][AMR_CORN6D] = block[n_ord_total[n]][AMR_NBR2];
-					if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_ACTIVE] == 1) block[n_ord_total[n]][AMR_CORN6D] = block[block[n_ord_total[n]][AMR_NBR5]][AMR_CORN5D]; //good
-				}
-			}
-
-			//Corn 7
-			if (block[n_ord_total[n]][AMR_CORN7] >= 0){
-				if (block[block[n_ord_total[n]][AMR_CORN7]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN7D] = block[block[n_ord_total[n]][AMR_CORN7]][AMR_CORN5D];
-					block[n_ord_total[n]][AMR_CORN7D_1] = block[block[n_ord_total[n]][AMR_CORN7]][AMR_CORN5D_1];
-					block[n_ord_total[n]][AMR_CORN7D_2] = block[block[n_ord_total[n]][AMR_CORN7]][AMR_CORN5D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN7]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN7D] = -2;
-					block[n_ord_total[n]][AMR_CORN7D_1] = block[block[block[n_ord_total[n]][AMR_CORN7]][AMR_CHILD5]][AMR_CORN5D];
-					block[n_ord_total[n]][AMR_CORN7D_2] = block[block[block[n_ord_total[n]][AMR_CORN7]][AMR_CHILD7]][AMR_CORN5D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN7]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD6]){
-						block[n_ord_total[n]][AMR_CORN7D] = block[block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT]][AMR_CORN5D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN7D] = block[block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT]][AMR_CORN5D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN7]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN7])
-				{
-					block[n_ord_total[n]][AMR_CORN7D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR5]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN7D] = block[n_ord_total[n]][AMR_NBR5];//good
-					if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR4]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN7D] = block[n_ord_total[n]][AMR_NBR4];//good
-				}
-			}
-
-			//Corn 8
-			if (block[n_ord_total[n]][AMR_CORN8] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN8D] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN5D];
-					block[n_ord_total[n]][AMR_CORN8D_1] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN5D_1];
-					block[n_ord_total[n]][AMR_CORN8D_2] = block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN5D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN8D] = -2;
-					block[n_ord_total[n]][AMR_CORN8D_1] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_CHILD5]][AMR_CORN5D];
-					block[n_ord_total[n]][AMR_CORN8D_2] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_CHILD7]][AMR_CORN5D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN8]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN8]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD6]){
-						block[n_ord_total[n]][AMR_CORN8D] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_CORN5D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN8D] = block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_CORN5D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR4]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN8]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN8])
-				{
-					block[n_ord_total[n]][AMR_CORN8D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR4]][AMR_ACTIVE] == 1) block[block[n_ord_total[n]][AMR_NBR4]][AMR_CORN5D]; //good
-					if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR6]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN8D] = block[n_ord_total[n]][AMR_NBR6]; //good
-				}
-			}
-			
-			if (block[n_ord_total[n]][AMR_NBR4] < 0){
-				block[n_ord_total[n]][AMR_CORN8D] = -100;
-				block[n_ord_total[n]][AMR_CORN8D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN8D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN7D] = -100;
-				block[n_ord_total[n]][AMR_CORN7D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN7D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR2] < 0){
-				block[n_ord_total[n]][AMR_CORN5D] = -100;
-				block[n_ord_total[n]][AMR_CORN5D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN5D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN6D] = -100;
-				block[n_ord_total[n]][AMR_CORN6D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN6D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR6] < 0){
-				block[n_ord_total[n]][AMR_CORN5D] = -100;
-				block[n_ord_total[n]][AMR_CORN5D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN5D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN8D] = -100;
-				block[n_ord_total[n]][AMR_CORN8D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN8D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR5] < 0){
-				block[n_ord_total[n]][AMR_CORN7D] = -100;
-				block[n_ord_total[n]][AMR_CORN7D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN7D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN6D] = -100;
-				block[n_ord_total[n]][AMR_CORN6D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN6D_2] = -100;
-			}
-		}
-	}
-	//Set the most important corner value of the electric field to break the degeneracy of E-fields at each corner
-	for (n = 0; n < n_active_total; n++){
-		//Corn 9
-		block[n_ord_total[n]][AMR_CORN9D] = -10;
-		block[n_ord_total[n]][AMR_CORN9D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN9D_2] = -10;
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			block[n_ord_total[n]][AMR_CORN9D] = n_ord_total[n];
-
-			//Corn 1
-			counter0 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter0_1 = AMR_MAXTIMELEVEL;
-			counter0_2 = AMR_MAXTIMELEVEL;
-			counter1 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter1_1 = AMR_MAXTIMELEVEL;
-			counter1_2 = AMR_MAXTIMELEVEL;
-			counter2 = AMR_MAXTIMELEVEL - block[n_ord_total[n]][AMR_TIMELEVEL];
-			counter2_1 = AMR_MAXTIMELEVEL;
-			counter2_2 = AMR_MAXTIMELEVEL;
-			counter3_1 = AMR_MAXTIMELEVEL;
-			counter3_2 = AMR_MAXTIMELEVEL;
-
-			if (block[n_ord_total[n]][AMR_NBR1] >= 0 && block[n_ord_total[n]][AMR_POLE] != 1 && block[n_ord_total[n]][AMR_POLE] != 3){
-				if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1){
-					counter1 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL];
-					if (counter1 > counter0){
-						block[n_ord_total[n]][AMR_CORN9D] = block[n_ord_total[n]][AMR_NBR1];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_REFINED] == 1){
-					counter1_1 += 10000;
-					counter1_2 += 10000;
-					counter1 = 100000;
-					block[n_ord_total[n]][AMR_CORN9D] = -2;
-					counter1_1 -= block[block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL];
-					counter1_2 -= block[block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL];
-
-					if (counter1_1 > counter0_1) block[n_ord_total[n]][AMR_CORN9D_1] = block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD4];
-					if (counter1_2 > counter0_2) block[n_ord_total[n]][AMR_CORN9D_2] = block[block[n_ord_total[n]][AMR_NBR1]][AMR_CHILD8];
-				}
-			}
-
-			if (block[n_ord_total[n]][AMR_NBR5] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_ACTIVE] == 1){
-					counter2 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR5]][AMR_TIMELEVEL];
-					if ((counter2 > counter1) && (counter2>counter0))block[n_ord_total[n]][AMR_CORN9D] = block[n_ord_total[n]][AMR_NBR5];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_REFINED] == 1){
-					counter2_1 += 10000;
-					counter2_2 += 10000;
-					counter2 = 100000;
-					block[n_ord_total[n]][AMR_CORN9D] = -2;
-					counter2_1 -= block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL];
-					counter2_2 -= block[block[block[n_ord_total[n]][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL];
-					if (counter2_1 > counter1_1) block[n_ord_total[n]][AMR_CORN9D_1] = block[block[n_ord_total[n]][AMR_NBR5]][AMR_CHILD1];
-					if (counter2_2 > counter1_2) block[n_ord_total[n]][AMR_CORN9D_2] = block[block[n_ord_total[n]][AMR_NBR5]][AMR_CHILD5];
-				}
-			}
-
-			if (block[n_ord_total[n]][AMR_CORN9] >= 0 && block[n_ord_total[n]][AMR_POLE] != 1 && block[n_ord_total[n]][AMR_POLE] != 3){
-				if (block[block[n_ord_total[n]][AMR_CORN9]][AMR_ACTIVE] == 1){
-					counter3 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_CORN9]][AMR_TIMELEVEL];
-					if ((counter3 > counter2) && (counter3>counter1) && (counter3>counter0)) block[n_ord_total[n]][AMR_CORN9D] = block[n_ord_total[n]][AMR_CORN9];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN9]][AMR_REFINED] == 1){
-					counter3_1 += 10000;
-					counter3_2 += 10000;
-					counter3 = 100000;
-					block[n_ord_total[n]][AMR_CORN9D] = -2;
-					counter3_1 -= block[block[block[n_ord_total[n]][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL];
-					counter3_2 -= block[block[block[n_ord_total[n]][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL];
-
-					if ((counter3_1 > counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN9D_1] = block[block[n_ord_total[n]][AMR_CORN9]][AMR_CHILD3];
-					if ((counter3_2 > counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN9D_2] = block[block[n_ord_total[n]][AMR_CORN9]][AMR_CHILD7];
-				}
-			}
-		}
-	}
-
-	for (n = 0; n < n_active_total; n++){
-		block[n_ord_total[n]][AMR_CORN10D] = -10;
-		block[n_ord_total[n]][AMR_CORN10D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN10D_2] = -10;
-		block[n_ord_total[n]][AMR_CORN11D] = -10;
-		block[n_ord_total[n]][AMR_CORN11D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN11D_2] = -10;
-		block[n_ord_total[n]][AMR_CORN12D] = -10;
-		block[n_ord_total[n]][AMR_CORN12D_1] = -10;
-		block[n_ord_total[n]][AMR_CORN12D_2] = -10;
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
-			//Corn 10
-			if (block[n_ord_total[n]][AMR_CORN10] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN10D] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN9D];
-					block[n_ord_total[n]][AMR_CORN10D_1] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN9D_1];
-					block[n_ord_total[n]][AMR_CORN10D_2] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN9D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN10D] = -2;
-					block[n_ord_total[n]][AMR_CORN10D_1] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_CHILD2]][AMR_CORN9D];
-					block[n_ord_total[n]][AMR_CORN10D_2] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_CHILD6]][AMR_CORN9D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN10]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN10]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD4]){
-						block[n_ord_total[n]][AMR_CORN10D] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_CORN9D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN10D] = block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_CORN9D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN10]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN10])
-				{
-					block[n_ord_total[n]][AMR_CORN10D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR5]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL]) block[n_ord_total[n]][AMR_CORN10D] = block[n_ord_total[n]][AMR_NBR5];
-					if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_ACTIVE] == 1) block[n_ord_total[n]][AMR_CORN10D] = block[block[n_ord_total[n]][AMR_NBR3]][AMR_CORN9D]; //good
-				}
-			}
-
-			//Corn 11
-			if (block[n_ord_total[n]][AMR_CORN11] >= 0){
-				if (block[block[n_ord_total[n]][AMR_CORN11]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN11D] = block[block[n_ord_total[n]][AMR_CORN11]][AMR_CORN9D];
-					block[n_ord_total[n]][AMR_CORN11D_1] = block[block[n_ord_total[n]][AMR_CORN11]][AMR_CORN9D_1];
-					block[n_ord_total[n]][AMR_CORN11D_2] = block[block[n_ord_total[n]][AMR_CORN11]][AMR_CORN9D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN11]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN11D] = -2;
-					block[n_ord_total[n]][AMR_CORN11D_1] = block[block[block[n_ord_total[n]][AMR_CORN11]][AMR_CHILD2]][AMR_CORN9D];
-					block[n_ord_total[n]][AMR_CORN11D_2] = block[block[block[n_ord_total[n]][AMR_CORN11]][AMR_CHILD6]][AMR_CORN9D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN11]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD4]){
-						block[n_ord_total[n]][AMR_CORN11D] = block[block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT]][AMR_CORN9D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN11D] = block[block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT]][AMR_CORN9D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN11]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN11])
-				{
-					block[n_ord_total[n]][AMR_CORN11D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR3]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR3]][AMR_TIMELEVEL] <= block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN11D] = block[n_ord_total[n]][AMR_NBR3];//good
-					if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR6]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN11D] = block[n_ord_total[n]][AMR_NBR6];//good
-				}
-			}
-
-			//Corn 12
-			if (block[n_ord_total[n]][AMR_CORN12] >= 0){
-				if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1){
-					block[n_ord_total[n]][AMR_CORN12D] = block[block[n_ord_total[n]][AMR_NBR6]][AMR_CORN9D];
-					block[n_ord_total[n]][AMR_CORN12D_1] = block[block[n_ord_total[n]][AMR_NBR6]][AMR_CORN9D_1];
-					block[n_ord_total[n]][AMR_CORN12D_2] = block[block[n_ord_total[n]][AMR_NBR6]][AMR_CORN9D_2];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_REFINED] == 1){
-					block[n_ord_total[n]][AMR_CORN12D] = -2;
-					block[n_ord_total[n]][AMR_CORN12D_1] = block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_CHILD2]][AMR_CORN9D];
-					block[n_ord_total[n]][AMR_CORN12D_2] = block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_CHILD6]][AMR_CORN9D];
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN12]][AMR_PARENT] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN12]){
-					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD4]){
-						block[n_ord_total[n]][AMR_CORN12D] = block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_PARENT]][AMR_CORN9D_1];
-					}
-					else{
-						block[n_ord_total[n]][AMR_CORN12D] = block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_PARENT]][AMR_CORN9D_2];
-					}
-				}
-				else if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][AMR_NBR6]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_CORN12]][AMR_PARENT] != block[block[n_ord_total[n]][AMR_PARENT]][AMR_CORN12])
-				{
-					block[n_ord_total[n]][AMR_CORN12D] = n_ord_total[n];
-					if (block[block[n_ord_total[n]][AMR_NBR6]][AMR_ACTIVE] == 1) block[block[n_ord_total[n]][AMR_NBR6]][AMR_CORN9D]; //good
-					if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL] < block[n_ord_total[n]][AMR_TIMELEVEL])block[n_ord_total[n]][AMR_CORN12D] = block[n_ord_total[n]][AMR_NBR1]; //good
-				}
-			}
-			if (block[n_ord_total[n]][AMR_NBR6] < 0){
-				block[n_ord_total[n]][AMR_CORN12D] = -100;
-				block[n_ord_total[n]][AMR_CORN12D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN12D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN11D] = -100;
-				block[n_ord_total[n]][AMR_CORN11D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN11D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR5] < 0){
-				block[n_ord_total[n]][AMR_CORN9D] = -100;
-				block[n_ord_total[n]][AMR_CORN9D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN9D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN10D] = -100;
-				block[n_ord_total[n]][AMR_CORN10D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN10D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR1] < 0 || block[n_ord_total[n]][AMR_POLE] == 1 || block[n_ord_total[n]][AMR_POLE] == 3){
-				block[n_ord_total[n]][AMR_CORN9D] = -100;
-				block[n_ord_total[n]][AMR_CORN9D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN9D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN12D] = -100;
-				block[n_ord_total[n]][AMR_CORN12D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN12D_2] = -100;
-			}
-			if (block[n_ord_total[n]][AMR_NBR3] < 0 || block[n_ord_total[n]][AMR_POLE] == 2 || block[n_ord_total[n]][AMR_POLE] == 3){
-				block[n_ord_total[n]][AMR_CORN11D] = -100;
-				block[n_ord_total[n]][AMR_CORN11D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN11D_2] = -100;
-				block[n_ord_total[n]][AMR_CORN10D] = -100;
-				block[n_ord_total[n]][AMR_CORN10D_1] = -100;
-				block[n_ord_total[n]][AMR_CORN10D_2] = -100;
-			}
-		}
-	}
-	#endif
 }
 
 void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, int z2){
@@ -1626,7 +889,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD1] >= 0){
 			n_child = block[n][AMR_CHILD1];
 			block_average(n, n_child, 0, N1_GPU[n_child] / (1 + REF_1), 0, N2_GPU[n_child] / (1 + REF_2), 0, N3_GPU[n_child] / (1 + REF_3));
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD1]);
 			GPU_finish(block[n][AMR_CHILD1]);
 			#endif
@@ -1635,7 +898,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD2] >= 0 && REF_3 == 1){
 			n_child = block[n][AMR_CHILD2];
 			block_average(n, n_child, 0, N1_GPU[n_child] / (1 + REF_1), 0, N2_GPU[n_child] / (1 + REF_2), N3_GPU[n_child] / (1 + REF_3), N3_GPU[n_child]);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD2]);
 			GPU_finish(block[n][AMR_CHILD2]);
 			#endif
@@ -1644,7 +907,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD3] >= 0 && REF_2 == 1){
 			n_child = block[n][AMR_CHILD3];
 			block_average(n, n_child, 0, N1_GPU[n_child] / (1 + REF_1), N2_GPU[n_child] / (1 + REF_2), N2_GPU[n_child], 0, N3_GPU[n_child] / (1 + REF_3));
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD3]);
 			GPU_finish(block[n][AMR_CHILD3]);
 			#endif
@@ -1653,7 +916,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD4] >= 0 && REF_2 == 1 && REF_3 == 1){
 			n_child = block[n][AMR_CHILD4];
 			block_average(n, n_child, 0, N1_GPU[n_child] / (1 + REF_1), N2_GPU[n_child] / (1 + REF_2), N2_GPU[n_child], N3_GPU[n_child] / (1 + REF_3), N3_GPU[n_child]);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD4]);
 			GPU_finish(block[n][AMR_CHILD4]);
 			#endif
@@ -1662,7 +925,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD5] >= 0 && REF_1 == 1){
 			n_child = block[n][AMR_CHILD5];
 			block_average(n, n_child, N1_GPU[n_child] / (1 + REF_1), N1_GPU[n_child], 0, N2_GPU[n_child] / (1 + REF_2), 0, N3_GPU[n_child] / (1 + REF_3));
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD5]);
 			GPU_finish(block[n][AMR_CHILD5]);
 			#endif
@@ -1671,7 +934,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD6] >= 0 && REF_1 == 1 && REF_3 == 1){
 			n_child = block[n][AMR_CHILD6];
 			block_average(n, n_child, N1_GPU[n_child] / (1 + REF_1), N1_GPU[n_child], 0, N2_GPU[n_child] / (1 + REF_2), N3_GPU[n_child] / (1 + REF_3), N3_GPU[n_child]);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD6]);
 			GPU_finish(block[n][AMR_CHILD6]);
 			#endif
@@ -1680,7 +943,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD7] >= 0 && REF_1 == 1 && REF_2 == 1){
 			n_child = block[n][AMR_CHILD7];
 			block_average(n, n_child, N1_GPU[n_child] / (1 + REF_1), N1_GPU[n_child], N2_GPU[n_child] / (1 + REF_2), N2_GPU[n_child], 0, N3_GPU[n_child] / (1 + REF_3));
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD7]);
 			GPU_finish(block[n][AMR_CHILD7]);
 			#endif
@@ -1689,7 +952,7 @@ void derefine(int n){
 		if (block[n][AMR_CHILD8] >= 0 && REF_1 == 1 && REF_2 == 1 && REF_3 == 1){
 			n_child = block[n][AMR_CHILD8];
 			block_average(n, n_child, N1_GPU[n_child] / (1 + REF_1), N1_GPU[n_child], N2_GPU[n_child] / (1 + REF_2), N2_GPU[n_child], N3_GPU[n_child] / (1 + REF_3), N3_GPU[n_child]);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD8]);
 			GPU_finish(block[n][AMR_CHILD8]);
 			#endif
@@ -1703,7 +966,7 @@ void derefine(int n){
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_ACTIVE] = 0;
 	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++)block[block[n][i]][AMR_TIMELEVEL] = 1;
 	
-	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+	#if(GPU_ENABLED || GPU_DEBUG )
 	if (block[n][AMR_NODE] == rank){
 		set_arrays_GPU(n, block[n][AMR_GPU]);
 		GPU_write(n);
@@ -2095,7 +1358,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 void pre_refine(void){
 	int n1, i, j, z;
 	for (n1 = 0; n1 < n_active; n1++){
-		#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+		#if(GPU_ENABLED || GPU_DEBUG )
 		GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
@@ -2152,7 +1415,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 0, 0, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 0, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD1], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD1]);
 			#endif
@@ -2166,7 +1429,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 0, 0, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 0, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD2], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD2]);
 			#endif
@@ -2179,7 +1442,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 0, 1, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 1, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD3], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD3]);
 			#endif
@@ -2192,7 +1455,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 0, 1, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 0, 1, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD4], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD4]);
 			#endif
@@ -2206,7 +1469,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 1, 0, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 0, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD5], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD5]);
 			#endif
@@ -2219,7 +1482,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 1, 0, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 0, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD6], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD6]);
 			#endif
@@ -2232,7 +1495,7 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 1, 1, 0, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 1, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD7], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD7]);
 			#endif
@@ -2245,14 +1508,14 @@ void refine(int n){
 			block[n_child][AMR_NODE] = rank;
 			refine_cell(n, n_child, 1, 1, 1, p, F1, F2, F3);
 			refine_field(n, n_child, 1, 1, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+			#if(GPU_ENABLED || GPU_DEBUG )
 			set_arrays_GPU(block[n][AMR_CHILD8], block[n][AMR_GPU]);
 			GPU_write(block[n][AMR_CHILD8]);
 			#endif
 		}
 
 	//Clean up memory of parent block
-	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_finish(n);
 	#endif
 	free_arrays(n);
@@ -2280,191 +1543,10 @@ void post_refine(void){
 	reduce_timestep = 0;
 	//Set boundary conditions
 	bound_prim(p, 1);
-	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	#endif
 
-}
-
-double B1_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB])[NDIM],
-	double b1_1, double b1_2, double b1_3, double b1_4, double b1_5, double b1_6, double b1_7, double b1_8,
-	double b2_1, double b2_2, double b2_3, double b2_4, double b2_5, double b2_6, double b2_7, double b2_8,
-	double b3_1, double b3_2, double b3_3, double b3_4, double b3_5, double b3_6, double b3_7, double b3_8
-	, int n_rec1, int n_rec2, int n_rec3, int n_rec4, int n_rec5, int n_rec6){
-	double a0, a1, a2, a3, a11, a12, a13, b12, c13;
-	double a23, a123, a113, a112, c123, b123;
-	double B1p, B1m, d2B1p, d2B1m, d3B1p, d3B1m, d1B2p, d1B2m, d1B3p, d1B3m;
-	double d23B1p, d23B1m, d13B2p, d13B2m, d12B3p, d12B3m;
-
-	B1p = pb[n][index_3D(n, i + D1, j, z)][1];
-	B1m = pb[n][index_3D(n, i, j, z)][1];
-
-	d2B1p = b1_7 + b1_8 - b1_5 - b1_6; //5,6,7,8
-	d2B1m = b1_3 + b1_4 - b1_2 - b1_1; //1,2,3,4
-	if (n_rec4 < 0) d2B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j - D2, z)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j + D2, z)][1]);
-	if (n_rec2 < 0) d2B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j + D2, z)][1]);
-	
-	d3B1p = b1_6 + b1_8 - b1_5 - b1_7; //5,6,7,8
-	d3B1m = b1_2 + b1_4 - b1_1 - b1_3; //1,2,3,4
-	if (n_rec4 < 0) d3B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j, z - D3)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j, z + D3)][1]);
-	if (n_rec2 < 0) d3B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j, z + D3)][1]);
-
-	d1B2p = b2_7 + b2_8 - b2_3 - b2_4; //3,4,7,8
-	d1B2m = b2_5 + b2_6 - b2_1 - b2_2; //1,2,5,6
-	if (n_rec1 < 0) d1B2p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i + D1, j + D2, z)][2]);
-	if (n_rec3 < 0) d1B2m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i + D1, j, z)][2]);
-
-	d1B3p = b3_6 + b3_8 - b3_2 - b3_4; //2,4,6,8
-	d1B3m = b3_5 + b3_7 - b3_1 - b3_3; //1,3,5,7
-	if (n_rec6 < 0) d1B3p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i + D1, j, z + D3)][3]);
-	if (n_rec5 < 0) d1B3m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i + D1, j, z)][3]);
-	
-	d23B1p = 4.*(b1_5 + b1_8 - b1_6 - b1_7); //5,6,7,8
-	d23B1m = 4.*(b1_1 + b1_4 - b1_2 - b1_3); //1,2,3,4
-	d13B2p = 4.*(b2_3 + b2_8 - b2_4 - b2_7); //3,4,7,8
-	d13B2m = 4.*(b2_1 + b2_6 - b2_2 - b2_5); //1,2,5,6
-	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
-	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
-
-	a123 = d23B1p - d23B1m;
-	b123 = d13B2p - d13B2m;
-	c123 = d12B3p - d12B3m;
-	a113 = -b123 / 4. / (dx[n][1] * dx[n][2] * dx[n][3])*dx[n][1] * dx[n][1] * dx[n][3];
-	a112 = -c123 / 4. / (dx[n][1] * dx[n][2] * dx[n][3])*dx[n][1] * dx[n][1] * dx[n][2];
-	a1 = B1p - B1m;
-	a2 = 0.5*(d2B1p + d2B1m) + c123 * dx[n][1] / (16. * dx[n][3]);
-	a3 = 0.5*(d3B1p + d3B1m) + b123 * dx[n][1] / (16. * dx[n][2]);
-	a23 = 0.5*(d23B1p + d23B1m);
-	a12 = d2B1p - d2B1m;
-	b12 = d1B2p - d1B2m;
-	a13 = d3B1p - d3B1m;
-	c13 = d1B3p - d1B3m;
-	a11 = -0.5*(b12 / dx[n][2] + c13 / dx[n][3])*dx[n][1];
-	a0 = 0.5*(B1p + B1m) - a11 / 4.;
-
-	double var = a0 + a1*offset_1 + a2*offset_2 + a3*offset_3 + a11*offset_1*offset_1 + a12 * offset_1*offset_2 + a13*offset_1*offset_3 +
-		a23*offset_2*offset_3 + a123*offset_1*offset_2*offset_3 + a113*offset_1*offset_1*offset_3 + a112*offset_1*offset_1*offset_2;
-	return var;
-}
-
-
-double B2_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB])[NDIM],
-	double b1_1, double b1_2, double b1_3, double b1_4, double b1_5, double b1_6, double b1_7, double b1_8,
-	double b2_1, double b2_2, double b2_3, double b2_4, double b2_5, double b2_6, double b2_7, double b2_8,
-	double b3_1, double b3_2, double b3_3, double b3_4, double b3_5, double b3_6, double b3_7, double b3_8
-	, int n_rec1, int n_rec2, int n_rec3, int n_rec4, int n_rec5, int n_rec6){
-	double b0, b1, b2, b3, b12, b13, b22, b23, a123, b123, c123, b223, b122;
-	double B2p, B2m, a12, c23, d1B2p, d1B2m, d3B2p, d3B2m, d2B1p, d2B1m, d2B3p, d2B3m;
-	double d23B1p, d23B1m, d13B2p, d13B2m, d12B3p, d12B3m;
-
-	d1B2p = b2_7 + b2_8 - b2_3 - b2_4; //3,4,7,8
-	d1B2m = b2_5 + b2_6 - b2_1 - b2_2; //1,2,5,6
-	if (n_rec1 < 0) d1B2p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i + D1, j + D2, z)][2]);
-	if (n_rec3 < 0) d1B2m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i + D1, j, z)][2]);
-
-	d3B2p = b2_4 + b2_8 - b2_3 - b2_7; //3,7,4,8
-	d3B2m = b2_2 + b2_6 - b2_1 - b2_5; //2,6,1,5
-	if (n_rec1 < 0) d3B2p = 0.;// slope_lim(pb[n][index_3D(n, i, j + D2, z - D3)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z + D3)][2]);
-	if (n_rec3 < 0) d3B2m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i, j, z + D3)][2]);
-
-	d2B1p = b1_7 + b1_8 - b1_5 - b1_6; //5,6,7,8
-	d2B1m = b1_3 + b1_4 - b1_2 - b1_1; //1,2,3,4
-	if (n_rec4 < 0) d2B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j - D2, z)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j + D2, z)][1]);
-	if (n_rec2 < 0) d2B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j + D2, z)][1]);
-
-	d2B3p = b3_4 + b3_8 - b3_2 - b3_6; //2,4,6,8
-	d2B3m = b3_3 + b3_7 - b3_1 - b3_5; //1,3,5,7
-	if (n_rec6 < 0) d2B3p = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i, j + D2, z + D3)][3]);
-	if (n_rec5 < 0) d2B3m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i, j + D2, z)][3]);
-
-	d23B1p = 4.*(b1_5 + b1_8 - b1_6 - b1_7); //5,6,7,8
-	d23B1m = 4.*(b1_1 + b1_4 - b1_2 - b1_3); //1,2,3,4
-	d13B2p = 4.*(b2_3 + b2_8 - b2_4 - b2_7); //3,4,7,8
-	d13B2m = 4.*(b2_1 + b2_6 - b2_2 - b2_5); //1,2,5,6
-	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
-	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
-
-	B2p = pb[n][index_3D(n, i, j + D2, z)][2];
-	B2m = pb[n][index_3D(n, i, j, z)][2];
-
-	a123 = d23B1p - d23B1m;
-	b123 = d13B2p - d13B2m;
-	c123 = d12B3p - d12B3m;
-	b223 = -a123 / 4. / (dx[n][1] * dx[n][2] * dx[n][3])*dx[n][2] * dx[n][2] * dx[n][3];
-	b122 = -c123 / 4. / (dx[n][1] * dx[n][2] * dx[n][3])*dx[n][1] * dx[n][2] * dx[n][2];
-	b1 = 0.5*(d1B2p + d1B2m) + c123 * dx[n][2] / (16. * dx[n][3]);
-	b2 = B2p - B2m;
-	b3 = 0.5*(d3B2p + d3B2m) + a123 * dx[n][2] / (16. * dx[n][1]);
-	b13 = 0.5*(d13B2p + d13B2m);
-	b12 = d1B2p - d1B2m;
-	b23 = d3B2p - d3B2m;
-	a12 = d2B1p - d2B1m;
-	c23 = d2B3p - d2B3m;
-	b22 = -0.5*(a12 / dx[n][1] + c23 / dx[n][3])*dx[n][2];
-	b0 = 0.5*(B2p + B2m) - b22 / 4.;
-	double var = b0 + b1*offset_1 + b2*offset_2 + b3*offset_3 + b12*offset_1*offset_2 + b22*offset_2*offset_2 + b23*offset_2*offset_3 +
-		b13*offset_1*offset_3 + b223*offset_2*offset_2*offset_3 + b123*offset_1*offset_2*offset_3 + b122*offset_1*offset_2*offset_2;
-	return var;
-}
-
-double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB])[NDIM],
-	double b1_1, double b1_2, double b1_3, double b1_4, double b1_5, double b1_6, double b1_7, double b1_8,
-	double b2_1, double b2_2, double b2_3, double b2_4, double b2_5, double b2_6, double b2_7, double b2_8,
-	double b3_1, double b3_2, double b3_3, double b3_4, double b3_5, double b3_6, double b3_7, double b3_8
-	, int n_rec1, int n_rec2, int n_rec3, int n_rec4, int n_rec5, int n_rec6){
-	double c0, c1, c2, c3, c12, c13, c23, c33, a13, b23, a123, b123,c123, c233, c133;
-	double B3p, B3m, d1B3p, d1B3m, d2B3p, d2B3m, d3B1p, d3B1m, d3B2p, d3B2m;
-	double d23B1p, d23B1m, d13B2p, d13B2m, d12B3p, d12B3m;
-
-	d1B3p = b3_6 + b3_8 - b3_2 - b3_4; //2,4,6,8
-	d1B3m = b3_5 + b3_7 - b3_1 - b3_3; //1,3,5,7
-	if (n_rec6 < 0) d1B3p = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i + D1, j, z + D3)][3]);
-	if (n_rec5 < 0) d1B3m = 0.;// slope_lim(pb[n][index_3D(n, i - D1, j, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i + D1, j, z)][3]);
-
-	d2B3p = b3_4 + b3_8 - b3_2 - b3_6; //2,4,6,8
-	d2B3m = b3_3 + b3_7 - b3_1 - b3_5; //1,3,5,7
-	if (n_rec6 < 0) d2B3p = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z + D3)][3], pb[n][index_3D(n, i, j, z + D3)][3], pb[n][index_3D(n, i, j + D2, z + D3)][3]);
-	if (n_rec5 < 0) d2B3m = 0.;// slope_lim(pb[n][index_3D(n, i, j - D2, z)][3], pb[n][index_3D(n, i, j, z)][3], pb[n][index_3D(n, i, j + D2, z)][3]);
-
-	d3B1p = b1_6 + b1_8 - b1_5 - b1_7; //5,6,7,8
-	d3B1m = b1_2 + b1_4 - b1_1 - b1_3; //1,2,3,4
-	if (n_rec4 < 0) d3B1p = 0.;// slope_lim(pb[n][index_3D(n, i + D1, j, z - D3)][1], pb[n][index_3D(n, i + D1, j, z)][1], pb[n][index_3D(n, i + D1, j, z + D3)][1]);
-	if (n_rec2 < 0) d3B1m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][1], pb[n][index_3D(n, i, j, z)][1], pb[n][index_3D(n, i, j, z + D3)][1]);
-
-	d3B2p = b2_4 + b2_8 - b2_3 - b2_7; //3,7,4,8
-	d3B2m = b2_2 + b2_6 - b2_1 - b2_5; //2,6,1,5
-	if (n_rec1 < 0) d3B2p = 0.;// slope_lim(pb[n][index_3D(n, i, j + D2, z - D3)][2], pb[n][index_3D(n, i, j + D2, z)][2], pb[n][index_3D(n, i, j + D2, z + D3)][2]);
-	if (n_rec3 < 0) d3B2m = 0.;// slope_lim(pb[n][index_3D(n, i, j, z - D3)][2], pb[n][index_3D(n, i, j, z)][2], pb[n][index_3D(n, i, j, z + D3)][2]);
-
-	d23B1p = 4.*(b1_5 + b1_8 - b1_6 - b1_7); //5,6,7,8
-	d23B1m = 4.*(b1_1 + b1_4 - b1_2 - b1_3); //1,2,3,4
-	d13B2p = 4.*(b2_3 + b2_8 - b2_4 - b2_7); //3,4,7,8
-	d13B2m = 4.*(b2_1 + b2_6 - b2_2 - b2_5); //1,2,5,6
-	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
-	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
-
-	B3p = pb[n][index_3D(n, i, j, z + D3)][3];
-	B3m = pb[n][index_3D(n, i, j, z)][3];
-
-	a123 = d23B1p - d23B1m;
-	b123 = d13B2p - d13B2m;
-	c123 = d12B3p - d12B3m;
-	c233 = -a123 / 4. / (dx[n][1] * dx[n][2] * dx[n][3])*dx[n][2] * dx[n][3] * dx[n][3];;
-	c133 = -b123 / 4. / (dx[n][1] * dx[n][2] * dx[n][3])*dx[n][1] * dx[n][3] * dx[n][3];;
-	c1 = 0.5*(d1B3p + d1B3m) + b123 * dx[n][3] / (16.*dx[n][2]);
-	c2 = 0.5*(d2B3p + d2B3m) + a123 * dx[n][3] / (16.*dx[n][1]);
-	c3 = B3p - B3m;
-	c12 = 0.5*(d12B3p + d12B3m);
-	c13 = d1B3p - d1B3m;
-	c23 = d2B3p - d2B3m;
-	a13 = d3B1p - d3B1m;
-	b23 = d3B2p - d3B2m;
-	c33 = -0.5*(a13 / dx[n][1] + b23 / dx[n][2])*dx[n][3];
-	c0 = 0.5*(B3p + B3m) - c33 / 4.;
-
-	double var = c0 + c1*offset_1 + c2*offset_2 + c3*offset_3 + c13*offset_1*offset_3 + c23*offset_2*offset_3 + c33*offset_3*offset_3 +
-		c12*offset_1*offset_2 + c233*offset_2*offset_3*offset_3 + c133*offset_1*offset_3*offset_3 + c123*offset_1*offset_2*offset_3;
-	return var;
 }
 
 //Checks if neighbouring blocks are sufficiently refined so that no double jumps in refinement level are created
@@ -2495,7 +1577,7 @@ void check_nesting(int n){
 #define DENSITY_CUTOFF 16.0
 #endif
 
-//Refine on basis of some criteria
+//Refine on basis of some criteria rhomax (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
 	int n, task, i, l, level, number;
 	int node, n_send, n_blocks;
@@ -2768,7 +1850,7 @@ void check_refcrit(void){
 						#if STAGGERED
 						MPI_Wait(&boundreqs[n_send][597], &Statbound[n_send][1]);
 						#endif
-						#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+						#if(GPU_ENABLED || GPU_DEBUG )
 						GPU_finish(n_send);
 						#endif
 						free_arrays(n_send);
@@ -2791,7 +1873,7 @@ void check_refcrit(void){
 							MPI_Wait(&boundreqs[n_send][595], &Statbound[n_send][11]);
 							#endif
 						}
-						#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+						#if(GPU_ENABLED || GPU_DEBUG )
 						set_arrays_GPU(n_send, block[n_send][AMR_GPU]);
 						GPU_write(n_send);
 						#endif
@@ -2836,9 +1918,87 @@ void check_refcrit(void){
 	//}
 }
 
+//This function derefines in z near the pole
+int derefine_pole(void){
+	int i, j, z, l, ni, nj, nz;
+	if (REF_3 != 1 || REF_1 == 1 || REF_2 == 1){
+		if(rank==0)fprintf(stderr, "Error! Derefinement near the pole works only for REF_1=0, REF_2=0, REF_3=1 \n");
+		exit(20);
+		return -1;
+	}
+	if (NB_2 % 6 != 0){
+		if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24,48 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
+		exit(20);
+		return -1;
+	}
+	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS - 1)) > ((double)numtasks*(double)(N_GPU)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
+
+	for (l = 0; l < N_LEVELS - 1; l++){
+		pre_refine();
+		ni = NB_1*pow(1 + REF_1, l);
+		nj = NB_2*pow(1 + REF_2, l);
+		nz = NB_3*pow(1 + REF_3, l);
+		for (i = 0; i < ni; i++)for (j = pow(2, l); j < nj - (pow(2, l)); j++)for (z = 0; z < nz; z++){
+			if ((double)pow(2, l) < 0.25*NB_2){
+				refine(AMR_coord_linear(l, i, j, z));
+			}
+		}
+		MPI_Barrier(mpi_cartcomm);
+		post_refine();
+		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
+	}
+	balance_load();
+	#if(GPU_ENABLED)
+	balance_load_gpu();
+	#endif
+	
+	return 1;
+}
+
+//Set row major order in case of derfinement near pole
+int rm_order(void){
+	int l, i, j, z, ni, nj, nz;
+	int number = 0;
+	int number_node = 0;
+	ni = NB_1*pow(1 + REF_1, N_LEVELS - 1);
+	nj = NB_2*pow(1 + REF_2, N_LEVELS - 1);
+	nz = NB_3*pow(1 + REF_3, N_LEVELS - 1);
+	for (z = 0; z < nz; z++)for (j = 0; j < nj; j++)for (i = 0; i < ni; i++){
+		for (l = 0; l<N_LEVELS; l++){
+			if (i<NB_1*pow(1 + REF_1, l) && j<NB_2*pow(1 + REF_2, l) && z<NB_3*pow(1 + REF_3, l) && block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1){
+				n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
+				number++;
+				if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
+					n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
+					number_node++;
+				}
+				block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
+			}
+		}
+	}
+}
+
+int rm_order2(void){
+	int n, l, i, j, z, number;
+	int counter = 0;
+	int counter2 = 0;
+	for (n = 0; n <= n_max; n++){
+		AMR_coord_cart_RM(n, &l, &i, &j, &z); //transform to cartesian grid coordinates
+		number = AMR_coord_linear(l, i, j, z); //transform to normal lineair ordering
+		if (block[number][AMR_ACTIVE] == 1){
+			n_ord_total_RM[counter] = number;
+			counter++;
+		}
+		if (block[number][AMR_ACTIVE] == 1 && block[number][AMR_NODE] == rank){
+			n_ord_RM[counter2] = number;
+			counter2++;
+		}
+	}
+}
+
 double calc_rhomax(int n){
 	int i, j, z;
-	double rhomax=0.0;
+	double rhomax = 0.0;
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
 			if (p[n][index_3D(n, i, j, z)][RHO] > rhomax) rhomax = p[n][index_3D(n, i, j, z)][RHO];

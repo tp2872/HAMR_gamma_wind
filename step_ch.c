@@ -116,106 +116,6 @@ void step_ch()
 	/* done! */
 }
 
-/*Set the timelevel for a jet which is domain decomposed in the second dimension*/
-void set_timelevel_jet(void){
-	int i, j, z, l, ni, nj, nz;
-	int i2, j2, l2, z2;
-	ni = NB_1;
-	nj = NB_2;
-	nz = NB_3;
-	int min_j[NB_1];
-
-	//Calculate the minimum timestep for one slice in R assuming REF_1==REF_2==0 and REF_3==1
-	for (i = 0; i < ni; i++){
-		min_j[i] = 10000;
-		for (l = 0; l < N_LEVELS; l++){
-			for (j = 0; j < nj; j++)for (z = 0; z < nz*pow(1 + REF_3, l); z++){
-				if (block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1) min_j[i] = MY_MIN(block[AMR_coord_linear(l, i, j, z)][AMR_TIMELEVEL], min_j[i]);
-			}
-		}
-		for (l = 0; l < N_LEVELS; l++){
-			for (j = 0; j < nj; j++)for (z = 0; z < nz*pow(1 + REF_3, l); z++){
-				if (block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1)block[AMR_coord_linear(l, i, j, z)][AMR_TIMELEVEL] = min_j[i];
-			}
-		}
-	}
-}
-
-/*Calculate for every block the timestep. This function should be node independent*/
-void set_timelevel(void){
-	int n;
-	int i, j, z, l, ni, nj, nz;
-	int task;
-	int min_j[NB_1];
-
-	ni = NB_1;
-	nj = NB_2;
-	nz = NB_3;
-	const int i_max = log(AMR_MAXTIMELEVEL) / log(2)+1;
-	for (n = 0; n < n_active; n++){
-		for (i = 0; i < i_max; i++){
-			if (bdt[n_ord[n]][0] / dt > pow(2, i) && nstep > 0) block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
-		}
-	}
-
-	//First make sure all nodes have the same information regarding the timestep
-	//Send for every block (l,i,j,z) to block (l2,i,j2,z2) on other nodes using non-blocking send
-	for (n = 0; n < n_active_total;n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
-			for (task = 0; task < numtasks; task++){
-				if (task!=rank){
-					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[n_ord_total[n]]);
-					MPI_Request_free(&req[n_ord_total[n]]);
-				}
-			}
-		}
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			rc = MPI_Irecv(&(block[n_ord_total[n]][AMR_TIMELEVEL]), 1, MPI_INT, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
-		}
-	}
-
-	//Receive from other nodes using blocking receive
-	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[n_ord[0]][0]);
-		}
-	}
-
-	//Fixate the timestep around the pole
-	for (i = 0; i < ni; i++){
-		min_j[i] = 10000;
-		if (block[AMR_coord_linear(0, i, 0, 0)][AMR_POLE] == 1 || block[AMR_coord_linear(0, i, 0, 0)][AMR_POLE] == 2 || block[AMR_coord_linear(0, i, 0, 0)][AMR_POLE] == 3){
-			for (z = 0; z < NB_3; z++){
-				min_j[i] = MY_MIN(block[AMR_coord_linear(0, i, 0, z)][AMR_TIMELEVEL], min_j[i]);
-			}
-			for (z = 0; z < NB_3; z++){
-				block[AMR_coord_linear(0, i, 0, z)][AMR_TIMELEVEL] = min_j[i];
-			}
-		}
-		min_j[i] = 10000;
-		if (block[AMR_coord_linear(0, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear(0, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear(0, i, nj - 1, 0)][AMR_POLE] == 3){
-			for (z = 0; z < NB_3; z++){
-				min_j[i] = MY_MIN(block[AMR_coord_linear(0, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
-			}
-			for (z = 0; z < NB_3; z++){
-				block[AMR_coord_linear(0, i, nj - 1, z)][AMR_TIMELEVEL] = min_j[i];
-			}
-		}
-	}
-
-	//Create communicators for nodes which have a minimum (i) timelevel
-	int min_timelevel[8];
-	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
-		if(nstep > 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
-
-		min_timelevel[i] = rank + 1000;
-		for (n = 0; n < n_active; n++){
-			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2,i)) min_timelevel[i] = 1;
-		}
-		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
-	}
-	set_corners();
-}
 /***********************************************************************************************/
 /***********************************************************************************************
 advance():
@@ -509,8 +409,8 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 					primtoflux(p_l, &state_l, dir, &geom, F_l);
 					primtoflux(p_r, &state_r, dir, &geom, F_r);
 
-					primtoflux(p_l, &state_l, TT, &geom, U_l);
-					primtoflux(p_r, &state_r, TT, &geom, U_r);
+					primtoflux(p_l, &state_l, 0, &geom, U_l);
+					primtoflux(p_r, &state_r, 0, &geom, U_r);
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);
@@ -519,143 +419,14 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 					ctop = MY_MAX(cmax, cmin);
 
-					#if(HLLC)
-					if (dir == 1 && fabs(dot(state_r.bcon, state_r.bcov) / p_r[RHO]) > 0.0001 && fabs(dot(state_l.bcon, state_l.bcov) / p_r[RHO]) > 0.0001){
-						//Get wavespeed defined as maximum of left and right state
-						cmax_roe = MY_MAX(cmax_r, cmax_l);
-						cmin_roe = MY_MIN(cmin_r, cmin_l);
-
-						//Set U_HLL and F_HLL
-						for (k = 0; k < NPR; k++){
-							U_HLL[k] = (F_l[k] - F_r[k] + cmax_roe*U_r[k] - cmin_roe*U_l[k]) / (cmax_roe - cmin_roe + SMALL) / geom.g;
-							F_HLL[k] = (cmax_roe*F_l[k] - cmin_roe*F_r[k] + cmax_roe*cmin_roe*(U_r[k] - U_l[k])) / (cmax_roe - cmin_roe + SMALL) / geom.g;
-						}
-						//note that the definition of the second component of the fluxes and conserved variables is a bit different, see gammie(2003)
-						U_HLL[UU] -= U_HLL[RHO];
-						F_HLL[UU] -= F_HLL[RHO];
-
-						/*Set strength of magnetic field (free parameter in solution, will just take the average of the left and right
-						extrapolated state for the moment untill we know better)*/
-						//U_HLL[B1] = (p_l[B1] + p_r[B1]) / 2.;
-						if (U_HLL[B1] == 0.0){
-							fail_HLLC = 1;
-							printf("error");
-						}
-
-						//If |B1|<0.01*|B2| || |B1|<0.01*|B3| revert to HLL flux
-						if (fabs(U_HLL[B1] * sqrt(geom.gcov[1][1])) < 0.01*fabs(U_HLL[B2] * sqrt(geom.gcov[2][2])) || fabs(U_HLL[B1] * sqrt(geom.gcov[1][1])) < 0.01*fabs(U_HLL[B3] * sqrt(geom.gcov[3][3]))) fail_HLLC = 1;
-
-						//Set initial guess 3-velocities of contact wave, take Roe average for the moment
-						vcon[1] = 0.5*(sqrt(p_r[RHO])*state_r.ucon[1] / state_r.ucon[0] + sqrt(p_l[RHO])*state_l.ucon[1] / state_l.ucon[0]) / (sqrt(p_l[RHO]) + sqrt(p_r[RHO]));
-						vcon[2] = 0.5*(sqrt(p_r[RHO])*state_r.ucon[2] / state_r.ucon[0] + sqrt(p_l[RHO])*state_l.ucon[2] / state_l.ucon[0]) / (sqrt(p_l[RHO]) + sqrt(p_r[RHO]));
-						vcon[3] = 0.5*(sqrt(p_r[RHO])*state_r.ucon[3] / state_r.ucon[0] + sqrt(p_l[RHO])*state_l.ucon[3] / state_l.ucon[0]) / (sqrt(p_l[RHO]) + sqrt(p_r[RHO]));
-
-						vcon[1] = state_r.ucon[1] / state_r.ucon[0];
-						vcon[2] = state_r.ucon[2] / state_r.ucon[0];
-						vcon[3] = state_r.ucon[3] / state_r.ucon[0];
-
-						//Solve for velocities of intermediate state and calculate magnetic field b.
-						solve_HLLC(&qi, &geom, vcon, U_HLL, F_HLL, &fail_HLLC);
-						bsq = dot(qi.bcon, qi.bcov);
-						//printf("testgamma: %f\n", dot(qi.ucon, qi.ucov));
-
-						//if (vcon[1]<0.5*cmin_roe || vcon[1]>0.5*cmax_roe){
-						//fail_HLLC = 1;
-						//}
-						if (fail_HLLC == 0){
-							#pragma omp critical
-							counter0++;
-						}
-						else{
-							#pragma omp critical
-							counter1++;
-						}
-						//Calculate total pressure ptot=pgas+0.5*bsq
-						ptot = F_HLL[U1] + qi.bcon[1] * qi.bcov[1] - qi.ucov[1] / qi.ucov[0] * (F_HLL[UU] + qi.bcon[1] * qi.bcov[0]);
-						if (cmax_roe>0. && qi.ucon[1] <= 0. && fail_HLLC == 0){
-							PLOOP{
-								U_r[k] /= geom.g;
-								F_r[k] /= geom.g;
-								U_l[k] /= geom.g;
-								F_l[k] /= geom.g;
-							}
-							U_r[UU] -= U_r[RHO];
-							F_r[UU] -= F_r[RHO];
-							U_l[UU] -= U_l[RHO];
-							F_l[UU] -= F_l[RHO];
-
-							//Set Rankine-Hugoniot jump conditions
-							U_i[RHO] = (cmax_roe - state_r.ucon[1] / state_r.ucon[0]) / (cmax_roe - vcon[1] + SMALL)*U_r[RHO];
-							U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[1] - qi.bcon[1] * qi.bcov[0] - F_r[UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[1]+SMALL);
-							U_i[U1] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[1]/qi.ucov[0] - qi.bcon[0] * qi.bcov[1];
-							U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[1] - qi.bcon[1] * qi.bcov[2] - F_r[U2] + cmax_roe*U_r[U2]) / (cmax_roe - vcon[1] + SMALL);
-							U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[1] - qi.bcon[1] * qi.bcov[3] - F_r[U3] + cmax_roe*U_r[U3]) / (cmax_roe - vcon[1] + SMALL);
-							U_i[B1] = U_HLL[B1];
-							U_i[B2] = U_HLL[B2];
-							U_i[B3] = U_HLL[B3];
-							PLOOP{
-								//test = 1. / geom.g*F[n][ind0][k] / (HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL)));
-								//if (test > 1.25 || test<0.7){
-								//}
-								//printf("test %d: %f \n", k, fabs(cmin_roe / vcon[1]));
-
-								//printf("test %d: %f %f \n", k, cmax_roe / vcon[1], 1. / geom.g*F[n][ind0][k] / (HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))));
-							}
-							//Calculate HLLC flux
-							PLOOP F[n][ind0][k] = geom.g*(F_r[k] + cmax_roe*(U_i[k] - U_r[k]));
-
-							F[n][ind0][UU] += F[n][ind0][RHO];
-
-						}
-						else if (cmin_roe<0. && qi.ucon[1] >= 0. && fail_HLLC == 0){
-							PLOOP{
-								U_r[k] /= geom.g;
-								F_r[k] /= geom.g;
-								U_l[k] /= geom.g;
-								F_l[k] /= geom.g;
-							}
-							U_r[UU] -= U_r[RHO];
-							F_r[UU] -= F_r[RHO];
-							U_l[UU] -= U_l[RHO];
-							F_l[UU] -= F_l[RHO];
-
-							//Set Rankine-Hugoniot jump conditions
-							U_i[RHO] = (cmin_roe - state_l.ucon[1] / state_l.ucon[0]) / (cmin_roe - vcon[1] + SMALL)*U_l[RHO];
-							U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[1] - qi.bcon[1] * qi.bcov[0] - F_l[UU] + cmin_roe*U_l[UU]) / (cmin_roe - vcon[1] + SMALL);
-							U_i[U1] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[1];							
-							U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[1] - qi.bcon[1] * qi.bcov[2] - F_l[U2] + cmin_roe*U_l[U2]) / (cmin_roe - vcon[1] + SMALL);
-							U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[1] - qi.bcon[1] * qi.bcov[3] - F_l[U3] + cmin_roe*U_l[U3]) / (cmin_roe - vcon[1] + SMALL);
-							U_i[B1] = U_HLL[B1];
-							U_i[B2] = U_HLL[B2];
-							U_i[B3] = U_HLL[B3];
-
-							//Calculate HLLC flux
-							PLOOP F[n][ind0][k] = geom.g*(F_l[k] + cmin_roe*(U_i[k] - U_l[k]));
-							F[n][ind0][UU] += F[n][ind0][RHO];
-						}
-						else if (cmin_r >= 0. && fail_HLLC == 0){
-							PLOOP F[n][ind0][k] = F_l[k];
-						}
-						else if (cmax_r <= 0. && fail_HLLC == 0){
-							PLOOP F[n][ind0][k] = F_r[k];
-						}
-						else{ //revert to HLL flux
-							PLOOP F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-								+ LAXF*(0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k])));
-							fail_HLLC = 0;
-						}
-
-					}
-					else{
-						#pragma ivdep
-						PLOOP F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-							+ LAXF*(0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k])));
-					}
-					#else
 					#pragma ivdep
-					PLOOP F[n][ind0][k] = HLLF*((cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-						+ LAXF*(0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k])));
-					#endif
+					PLOOP{
+						#if(HLLF)
+						F[n][ind0][k] = (cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
+						#else
+						F[n][ind0][k] = 0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k]));
+						#endif
+					}
 
 					/* evaluate restriction on timestep */
 					cmax = MY_MAX(cmax, cmin);
@@ -689,658 +460,7 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 		}
 	return(ndt);
 }
-//Calculates function for which we try to find the root in solve_HLLC()
-double func_HLLC(struct of_state *qi, double U_HLL[NPR], double F_HLL[NPR]){
-	double result = (pow(qi->ucov[1] / qi->ucov[0], 2.)*(F_HLL[UU] + qi->bcon[1] * qi->bcov[0]) + qi->ucov[1] / qi->ucov[0] *
-		(qi->bcon[0] * qi->bcov[0] - qi->bcon[1] * qi->bcov[1] + U_HLL[UU] - F_HLL[U1]) - qi->bcon[0] * qi->bcov[1] - U_HLL[U1]);
-	return result;
-}
 
-void solve_HLLC(struct of_state *qi, struct of_geom *geom, double vcon[NDIM], double U_HLL[NPR], double F_HLL[NPR], int *fail_HLLC){
-	int max_steps = 8; //make this no limiting factor, we may play with this later to enhance speed of code
-	double rinit;
-	int step = 0;
-	double temp;
-	double delta_v1;
-	double eps = 0.00001; //The relative precision vcon[1] should be calculated to
-	double derivative, f1, f2, vcon_old;
-	double x1 = 0.9/sqrt(geom->gcov[1][1]);
-	double x2 = -0.9/sqrt(geom->gcov[1][1]);
-
-	//Solve for vcon[1] using secant method, which is more robust than Newton-Raphson
-	do{
-		//printf("test %d: %f %f %f \n",step, x1, f1,f2);
-
-		//Calculate ucon, ucov, bcon, bcov
-		if (step == 0){
-			vcon[1] = x2;
-			vcon[2] = (U_HLL[B2] * vcon[1] - F_HLL[B2]) / U_HLL[B1];
-			vcon[3] = (U_HLL[B3] * vcon[1] - F_HLL[B3]) / U_HLL[B1];
-			vcon_to_ucon(vcon, qi, geom);
-			lower(qi->ucon, geom, qi->ucov);
-			bcon_calc(U_HLL, qi->ucon, qi->ucov, qi->bcon);
-			lower(qi->bcon, geom, qi->bcov);
-			f2 = func_HLLC(qi, U_HLL, F_HLL);
-		}
-
-		vcon[1] = x1;
-		vcon[2] = (U_HLL[B2] * vcon[1] - F_HLL[B2]) / U_HLL[B1];
-		vcon[3] = (U_HLL[B3] * vcon[1] - F_HLL[B3]) / U_HLL[B1];
-		vcon_to_ucon(vcon, qi, geom);
-		lower(qi->ucon, geom, qi->ucov);
-		bcon_calc(U_HLL, qi->ucon, qi->ucov, qi->bcon);
-		lower(qi->bcon, geom, qi->bcov);
-		f1 = func_HLLC(qi, U_HLL, F_HLL);
-		
-		temp = x1;
-		x1 = (x2*f1 - x1*f2) / (f1 - f2);
-		x2 = temp;
-		f2 = f1;
-		step++;
-	} while (step<max_steps);
-	vcon[1] = x1;
-	vcon[2] = (U_HLL[B2] * vcon[1] - F_HLL[B2]) / U_HLL[B1];
-	vcon[3] = (U_HLL[B3] * vcon[1] - F_HLL[B3]) / U_HLL[B1];
-	vcon_to_ucon(vcon, qi, geom);
-	lower(qi->ucon, geom, qi->ucov);
-	bcon_calc(U_HLL, qi->ucon, qi->ucov, qi->bcon);
-	lower(qi->bcon, geom, qi->bcov);
-	if (x1 * sqrt(geom->gcov[1][1])>-0.05 && x1 * sqrt(geom->gcov[1][1]) < 0.05) fail_HLLC[0] = 0;
-	else fail_HLLC[0] = 1;
-	if (qi->ucon[1] * qi->ucov[1] + qi->ucon[2] * qi->ucov[2] + qi->ucon[3] * qi->ucov[3] >= 1. || fabs(f1)>0.001 || fabs(f2)>0.001){
-		fail_HLLC[0] = 1;
-	}
-	//if (fail_HLLC[0] == 0) printf("test %d: %f %f %f \n", step, x1 * sqrt(geom->gcov[1][1]), f1, f2);
-	//fail_HLLC[0] = 1;
-
-}
-
-/*Converts 3-velocity vcon[1-3] to 4-velocity ucon[0-3]*/
-void vcon_to_ucon(double vcon[NDIM], struct of_state *q, struct of_geom *geom){
-	double a;
-
-	a = geom->gcov[0][0] + 2.*vcon[1] * geom->gcov[0][1] + 2.*vcon[2] * geom->gcov[0][2] + 2.*vcon[3] * geom->gcov[0][3]
-		+ vcon[1] * vcon[1] * geom->gcov[1][1] + vcon[2] * vcon[2] * geom->gcov[2][2] + vcon[3] * vcon[3] * geom->gcov[3][3] + 
-		2.*vcon[1] * vcon[2] * geom->gcov[1][2] + 2. * vcon[1] * vcon[3] * geom->gcov[1][3] + 2.*vcon[2] * vcon[3] * geom->gcov[2][3];
-
-	q->ucon[0] = 1. / sqrt(fabs(a));
-	q->ucon[1] = vcon[1] * q->ucon[0];
-	q->ucon[2] = vcon[2] * q->ucon[0];
-	q->ucon[3] = vcon[3] * q->ucon[0];
-}
-#if(STAGGERED)
-void const_transport1(double(*restrict pb[NB])[NPR], int n){
-	int i, j, z, k, ind0;
-	double E_cent[NDIM];
-	struct of_state q;
-	struct of_geom geom;
-
-#pragma omp parallel shared(n,n_ord,n_active,E_corn, F1, F2, F3, dx,pb,N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0, E_cent, geom, q)
-	{
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n] * D1-D1, (N1_GPU_offset[n] + N1_GPU[n])*D1, N2_GPU_offset[n] * D2-D2, (N2_GPU_offset[n] + N2_GPU[n])*D2, N3_GPU_offset[n] * D3-D3, (N3_GPU_offset[n] + N3_GPU[n])*D3){
-			ind0 = index_3D(n, i, j, z);
-
-			//calculate the corner values of the electric field by averaging the Godunov fluxes, see formula 7 balsara&spicer
-			#if(N3G>0)
-			E_corn[n][ind0][1] = 0.25*(F3[n][ind0][B2] + F3[n][index_3D(n, i, j - D2, z)][B2] - F2[n][ind0][B3] - F2[n][index_3D(n, i, j, z - D3)][B3]);
-			E_corn[n][ind0][2] = 0.25*(F1[n][ind0][B3] + F1[n][index_3D(n, i, j, z - D3)][B3] - F3[n][ind0][B1] - F3[n][index_3D(n, i - D1, j, z)][B1]);
-			#endif
-			E_corn[n][ind0][3] = 0.25*(F2[n][ind0][B1] + F2[n][index_3D(n, i - D1, j, z)][B1] - F1[n][ind0][B2] - F1[n][index_3D(n, i, j - D2, z)][B2]);
-
-			get_geometry(n, i, j, z, CENT, &geom);
-			get_state(pb[n][ind0], &geom, &q);
-
-			//calculate the cell center values of the E-field
-			#if(N3G>0)
-			E_cent[1] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
-			E_cent[2] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
-			#endif
-			E_cent[3] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
-
-			//upwind the electric field based on transverse gradients conform gardiner&stone 2005/2015, not yet tested
-			#if(N3G>0)
-			dE[n][ind0][LEFT][1][2] = (E_cent[1] + F2[n][ind0][B3]);
-			dE[n][ind0][LEFT][1][3] = (E_cent[1] - F3[n][ind0][B2]);
-			dE[n][ind0][LEFT][2][1] = (E_cent[2] - F1[n][ind0][B3]);
-			dE[n][ind0][LEFT][2][3] = (E_cent[2] + F3[n][ind0][B1]);
-			#endif
-			dE[n][ind0][LEFT][3][1] = (E_cent[3] + F1[n][ind0][B2]);
-			dE[n][ind0][LEFT][3][2] = (E_cent[3] - F2[n][ind0][B1]);
-
-			#if(N3G>0)
-			dE[n][ind0][RIGHT][1][2] = (-F2[n][index_3D(n, i, j + D2, z)][B3] - E_cent[1]);
-			dE[n][ind0][RIGHT][1][3] = (F3[n][index_3D(n, i, j, z + D3)][B2] - E_cent[1]);
-			dE[n][ind0][RIGHT][2][1] = (F1[n][index_3D(n, i + D1, j, z)][B3] - E_cent[2]);
-			dE[n][ind0][RIGHT][2][3] = (-F3[n][index_3D(n, i, j, z + D3)][B1] - E_cent[2]);
-			#endif
-			dE[n][ind0][RIGHT][3][1] = (-F1[n][index_3D(n, i + D1, j, z)][B2] - E_cent[3]);
-			dE[n][ind0][RIGHT][3][2] = (F2[n][index_3D(n, i, j + D2, z)][B1] - E_cent[3]);
-		}
-
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n] * D1, (N1_GPU_offset[n] + N1_GPU[n])*D1, N2_GPU_offset[n] * D2, (N2_GPU_offset[n] + N2_GPU[n])*D2, N3_GPU_offset[n] * D3, (N3_GPU_offset[n] + N3_GPU[n])*D3){
-			ind0 = index_3D(n, i, j, z);
-			double v[NDIM];
-			get_geometry(n, i, j, z, CENT, &geom);
-			ucon_calc(pb[n][index_3D(n, i, j, z)], &geom, v);
-
-			E_corn[n][ind0][1] = 0.25*((-F2[n][ind0][B3] - (dE[n][ind0][LEFT][1][3] * (double)(v[2]<=0.0) + dE[n][index_3D(n, i, j - D2, z)][LEFT][1][3] * (double)(v[2]>0.0)))
-				+ (-F2[n][index_3D(n, i, j, z - D3)][B3] + (dE[n][index_3D(n, i, j, z - D3)][RIGHT][1][3] * (double)(v[2]<=0.0) + dE[n][index_3D(n, i, j - D2, z - D3)][RIGHT][1][3] * (double)(v[2]>0.0)))
-				+ (F3[n][ind0][B2] - (dE[n][ind0][LEFT][1][2] * (double)(v[3]<=0.0) + dE[n][index_3D(n, i, j, z - D3)][LEFT][1][2] * (double)(v[3]>0.0)))
-				+ (F3[n][index_3D(n, i, j - D2, z)][B2] + (dE[n][index_3D(n, i, j - D2, z)][RIGHT][1][2] * (double)(v[3]<=0.0) + dE[n][index_3D(n, i, j - D2, z - D3)][RIGHT][1][2] * (double)(v[3]>0.0))));
-			E_corn[n][ind0][2] = 0.25*((-F3[n][ind0][B1] - (dE[n][ind0][LEFT][2][1] * (double)(v[3] <= 0.0) + dE[n][index_3D(n, i, j, z - D3)][LEFT][2][1] * (double)(v[3] > 0.0)))
-				+ (-F3[n][index_3D(n, i - D1, j, z)][B1] + (dE[n][index_3D(n, i - D1, j, z)][RIGHT][2][1] * (double)(v[3] <= 0.0) + dE[n][index_3D(n, i - D1, j, z - D3)][RIGHT][2][1] * (double)(v[3] > 0.0)))
-				+ (F1[n][ind0][B3] - (dE[n][ind0][LEFT][2][3] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j, z)][LEFT][2][3] * (double)(v[1] > 0.0)))
-				+ (F1[n][index_3D(n, i, j, z - D3)][B3] + (dE[n][index_3D(n, i, j, z - D3)][RIGHT][2][3] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j, z - D3)][RIGHT][2][3] * (double)(v[1] > 0.0))));
-			E_corn[n][ind0][3] = 0.25*((F2[n][ind0][B1] - (dE[n][ind0][LEFT][3][1] * (double)(v[2] <= 0.0) + dE[n][index_3D(n, i, j - D2, z)][LEFT][3][1] * (double)(v[2] > 0.0)))
-				+ (F2[n][index_3D(n, i - D1, j, z)][B1] + (dE[n][index_3D(n, i - D1, j, z)][RIGHT][3][1] * (double)(v[2] <= 0.0) + dE[n][index_3D(n, i - D1, j - D2, z)][RIGHT][3][1] * (double)(v[2] > 0.0)))
-				+ (-F1[n][ind0][B2] - (dE[n][ind0][LEFT][3][2] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j, z)][LEFT][3][2] * (double)(v[1] > 0.0)))
-				+ (-F1[n][index_3D(n, i, j - D2, z)][B2] + (dE[n][index_3D(n, i, j - D2, z)][RIGHT][3][2] * (double)(v[1] <= 0.0) + dE[n][index_3D(n, i - D1, j - D2, z)][RIGHT][3][2] * (double)(v[1] > 0.0))));
-
-			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL]))) E_corn[n][ind0][1] = 0.5*(-F2[n][ind0][B3] - F2[n][index_3D(n, i, j, z - D3)][B3]);
-			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL]))) E_corn[n][ind0][3] = 0.5*(F2[n][ind0][B1] + F2[n][index_3D(n, i - D1, j, z)][B1]);
-		}
-	}
-}
-
-void const_transport_bound(void){
-	int n;
-	gpu = 0;
-	#if(!TIMESTEP_JET)
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_send_corn(E_corn, Bufferdq_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, Bufferdq_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, Bufferdq_1, n_ord[n], 2);
-	#endif
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send1(E_corn, Bufferdq_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, Bufferdq_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec1(E_corn, Bufferdq_1, n_ord[n], 2);
-
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send2(E_corn, Bufferdq_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, Bufferdq_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec2(E_corn, Bufferdq_1, n_ord[n], 2);
-
-	#if(N3G>0)
-	#if(!TIMESTEP_JET)
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_send3(E_corn, Bufferdq_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, Bufferdq_1, n_ord[n], 1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E_rec3(E_corn, Bufferdq_1, n_ord[n], 2);
-
-	for (n = 0; n < n_active; n++)if (nstep % (2 *block[n_ord[n]][AMR_TIMELEVEL]) ==2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_send_corn(E_corn, Bufferdq_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 *block[n_ord[n]][AMR_TIMELEVEL]) == 2 *block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_receive_corn(E_corn, Bufferdq_1, n_ord[n],1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E1_receive_corn(E_corn, Bufferdq_1, n_ord[n],2);
-
-	for (n = 0; n < n_active; n++)if (nstep % (2 *block[n_ord[n]][AMR_TIMELEVEL]) == 2 *block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_send_corn(E_corn, Bufferdq_1, n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (2 *block[n_ord[n]][AMR_TIMELEVEL]) == 2 *block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, Bufferdq_1, n_ord[n],1);
-	for (n = 0; n < n_active; n++)if (nstep % (2 *block[n_ord[n]][AMR_TIMELEVEL]) == 2 *block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, Bufferdq_1, n_ord[n],2);
-	#endif	
-	#endif
-
-	#if(TRANS_BOUND)
-	E_average();
-	#endif
-}
-
-void const_transport2(double(*restrict psi[NB])[NDIM], double(*restrict psf[NB])[NDIM], double Dt, int n){
-	int i, j, z, k, ind0;
-	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psi,psf, dx,Dt, p,N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
-	{
-		//update the staggered field components
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n], N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){
-			ind0 = index_3D(n, i, j, z);
-			psf[n][index_3D(n, i, j, z)][1] = psi[n][index_3D(n, i, j, z)][1] - Dt / dx[n][2] * (E_corn[n][index_3D(n, i, j + D2, z)][3] - E_corn[n][ind0][3]) / gdet[n][index_2D(n, i, j, z)][FACE1];
-			#if(N3G>0)
-			psf[n][index_3D(n, i, j, z)][1] += Dt / dx[n][3] * (E_corn[n][index_3D(n, i, j, z + D3)][2] - E_corn[n][ind0][2]) / gdet[n][index_2D(n, i, j, z)][FACE1];
-			#endif
-		}
-
-		//update the staggered field components
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n], N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){
-			ind0 = index_3D(n, i, j, z);
-			psf[n][index_3D(n, i, j, z)][2] = psi[n][index_3D(n, i, j, z)][2] + Dt / dx[n][1] * (E_corn[n][index_3D(n, i + D1, j, z)][3] - E_corn[n][ind0][3]) / gdet[n][index_2D(n, i, j, z)][FACE2];
-			#if(N3G>0)
-			psf[n][index_3D(n, i, j, z)][2] += -Dt / dx[n][3] * (E_corn[n][index_3D(n, i, j, z + D3)][1] - E_corn[n][ind0][1]) / gdet[n][index_2D(n, i, j, z)][FACE2];
-			#endif		
-		}
-
-		//update the staggered field components
-		#if(N3G>0)
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], (N3_GPU_offset[n] + N3_GPU[n])*D3){
-			ind0 = index_3D(n, i, j, z);
-			psf[n][index_3D(n, i, j, z)][3] = psi[n][index_3D(n, i, j, z)][3] - Dt / dx[n][1] * (E_corn[n][index_3D(n, i + D1, j, z)][2] - E_corn[n][ind0][2]) / gdet[n][index_2D(n, i, j, z)][FACE3]
-				+ Dt / dx[n][2] * (E_corn[n][index_3D(n, i, j + D2, z)][1] - E_corn[n][ind0][1]) / gdet[n][index_2D(n, i, j, z)][FACE3];
-		}
-		#endif
-
-	}
-}
-
-void E_average(void){
-	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB];
-
-	//Read in average value of E1 at pole for every block on node
-	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		read_E_avg(E_avg1, E_avg2, n_ord[n]);
-	}
-
-	//If block is not on node send the data to other node over MPI
-	for (i = 0; i < NB_1; i++){
-		//Which nodes have an active block around a slice in phi for a given i
-		if (nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1){
-			for (u = 0; u < numtasks; u++){
-				send_tag1[u] = 0;
-				for (z = 0; z < NB_3; z++){
-					number = AMR_coord_linear(0, i, 0, z);
-					if (block[number][AMR_NODE] == u) send_tag1[u] = 1;
-				}
-			}
-			for (z = 0; z < NB_3; z++){
-				number = AMR_coord_linear(0, i, 0, z);
-				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, block[number][AMR_NODE], (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][490]);
-				}
-				if (block[number][AMR_NODE] == rank){
-					for (u = 0; u < numtasks; u++){
-						if (send_tag1[u] == 1 && u!=rank){
-							rc = MPI_Isend(&E_avg1[i*NB_3+z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (100 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[i]);
-							MPI_Request_free(&req[i]);
-						}
-					}
-				}
-			}
-		}
-		if (nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1){
-			for (u = 0; u < numtasks; u++){
-				send_tag2[u] = 0;
-				for (z = 0; z < NB_3; z++){
-					number = AMR_coord_linear(0, i, NB_2 - 1, z);
-					if (block[number][AMR_NODE] == u) send_tag2[u] = 1;
-				}
-			}
-			for (z = 0; z < NB_3; z++){
-				number = AMR_coord_linear(0, i, NB_2 - 1, z);
-				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, block[number][AMR_NODE], (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][491]);
-				}
-				if (block[number][AMR_NODE] == rank){
-					for (u = 0; u < numtasks; u++){
-						if (send_tag2[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2*N1G), MPI_DOUBLE, u, (101 * NB + number) % MPI_TAG_MAX, mpi_cartcomm, &req[i]);
-							MPI_Request_free(&req[i]);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	for (i = 0; i < NB_1; i++){
-		//Which nodes have an active block around a slice in phi for a given i
-		if (nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1){
-			for (u = 0; u < numtasks; u++){
-				send_tag1[u] = 0;
-				for (z = 0; z < NB_3; z++){
-					number = AMR_coord_linear(0, i, 0, z);
-					if (block[number][AMR_NODE] == u) send_tag1[u] = 1;
-				}
-			}
-			for (z = 0; z < NB_3; z++){
-				number = AMR_coord_linear(0, i, 0, z);
-				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					MPI_Wait(&boundreqs[number][490], &Statbound[number][490]);
-				}
-			}
-		}
-
-		if (nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1){
-			for (u = 0; u < numtasks; u++){
-				send_tag2[u] = 0;
-				for (z = 0; z < NB_3; z++){
-					number = AMR_coord_linear(0, i, NB_2 - 1, z);
-					if (block[number][AMR_NODE] == u) send_tag2[u] = 1;
-				}
-			}
-			for (z = 0; z < NB_3; z++){
-				number = AMR_coord_linear(0, i, NB_2 - 1, z);
-				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					MPI_Wait(&boundreqs[number][491], &Statbound[number][491]);
-				}
-			}
-		}
-	}
-
-	//Average the first component of the E_field for both poles
-	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		if (block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
-			z_max = NB_3;
-			for (z = 0; z < z_max; z++){
-				number=AMR_coord_linear(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
-				for (i = 0; i < BS_1 + N1G; i++){
-					if (z == 0)E_avg1_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] = E_avg1[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
-					else E_avg1_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] += E_avg1[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
-				}
-			}
-		}
-		
-		if (block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
-			z_max = NB_3;
-			for (z = 0; z < z_max; z++){
-				number=AMR_coord_linear(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
-				for (i = 0; i < BS_1 + N1G; i++){
-					if (z == 0)E_avg2_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] = E_avg2[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
-					else E_avg2_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] += E_avg2[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
-				}
-			}
-		}
-	}
-
-
-	//Write average value of E1 at pole for every block on node
-	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		write_E_avg(E_avg1_new, E_avg2_new, n_ord[n]);
-	}
-}
-
-void read_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G], int n){
-	int i, i1, i2, z, z1, z2, isize, zsize;
-	//double ph;
-	i1 = 0;
-	i2 = N1_GPU[n] + N1G;
-	z1 = 0;
-	z2 = N3_GPU[n] + N3G;
-	isize = (N1_GPU[n] + N1G);
-	zsize = (N3_GPU[n] + N3G);
-	
-	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
-	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR1], i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[n]), &(Buffersend1fine[n]), &(boundevent[n][399]));
-		if (gpu == 1){
-			cudaStreamSynchronize(commandQueueGPU[n]);
-		}
-		for (i = i1; i < i2; i++){
-			E_avg1[block[n][AMR_COORD1]*NB_3+ block[n][AMR_COORD3]][i] = 0.;
-			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
-				E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += Buffersend1fine[n][(i - i1)*zsize + (z - z1)];
-			}
-			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += send1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
-			E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] /= (double)(N3_GPU[n] + D3);
-		}
-	}
-	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, block[n][AMR_NBR3], i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[n]), &(Buffersend3fine[n]), &(boundevent[n][398]));
-		if (gpu == 1){
-			cudaStreamSynchronize(commandQueueGPU[n]);
-		}
-		for (i = i1; i < i2; i++){
-			E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] = 0.;
-			if (gpu == 1) for (z = z1; z < N3_GPU[n] + D3; z++){
-				E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += Buffersend3fine[n][(i - i1)*zsize + (z - z1)];
-			}
-			else for (z = z1; z < N3_GPU[n] + D3; z++) E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] += send3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
-			E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i] /= (double)(N3_GPU[n] + D3);
-		}
-	}
-}
-
-void write_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G], int n){
-	int i, i1, i2, z, z1, z2, isize, zsize;
-	//double  ph1, ph2;
-	i1 = 0;
-	i2 = N1_GPU[n] + N1G;
-	z1 = 0;
-	z2 = N3_GPU[n] + N3G;
-	isize = (N1_GPU[n] + N1G);
-	zsize = (N3_GPU[n] + N3G);
-	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
-	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
-		for (i = i1; i < i2; i++){	
-			if (gpu == 1)for (z = z1; z < z2; z++){
-				Bufferrec1fine[n][(i - i1)*zsize + (z - z1)] = E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
-			}
-			else for (z = z1; z < z2; z++){
-				receive1_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
-			}
-		}
-		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec1fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
-	}
-	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
-		for (i = i1; i < i2; i++){
-			if (gpu == 1)for (z = z1; z < z2; z++){
-				Bufferrec3fine[n][(i - i1)*zsize + (z - z1)] = E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
-			}
-			else for (z = z1; z < z2; z++){
-				receive3_fine[n][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
-			}
-		}
-		unpack_receive2_E(n, n, n, i1, i2, N2_GPU[n], N2_GPU[n] + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[n]), &(Bufferrec3fine[n]), &(NULL_POINTER[n]), &(NULL_POINTER[n]), NULL, 4, 0, 0, 0, 0);
-	}
-}
-
-#endif
-
-/***********************************************************************************************/
-/***********************************************************************************************
-flux_ct():
----------
--- performs the flux-averaging used to preserve the del.B = 0 constraint (see Toth 2000);
-Note that we use in this new version of HARM dq instead of emf as temporary storage!
-
-***********************************************************************************************/
-void flux_ct(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n)
-{
-	int i, j, z;
-	int ind0;
-
-	/* calculate EMFs */
-	/* Toth approach: just average */
-	#pragma omp parallel shared(n,dq, F1, F2, F3) private(i,j,z, ind0)
-	{
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n]+D2)/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + D3){
-			ind0 = index_3D(n ,i, j, z);
-			#if (N2G>0 && N3G>0)
-			dq[n][ind0][1] = 0.25*(F2[n][ind0][B3] + F2[n][index_3D(n ,i, j, z - 1)][B3] - F3[n][ind0][B2] - F3[n][index_3D(n ,i, j - 1, z)][B2]);
-			#endif
-			#if (N1G>0 && N3G>0)
-			dq[n][ind0][2] = 0.25*(F3[n][ind0][B1] + F3[n][index_3D(n ,i - 1, j, z)][B1] - F1[n][ind0][B3] - F1[n][index_3D(n ,i, j, z - 1)][B3]);
-			#endif
-			#if (N1G>0 && N2G>0)
-			dq[n][ind0][3] = 0.25*(F1[n][ind0][B2] + F1[n][index_3D(n ,i, j - 1, z)][B2] - F2[n][ind0][B1] - F2[n][index_3D(n ,i - 1, j, z)][B1]);
-			#else
-			dq[n][ind0][3] = 0.25*(F1[n][ind0][B2] + F1[n][index_3D(n ,i, j - 1, z)][B2]);
-			#endif
-		}
-
-		/* rewrite EMFs as fluxes, after Toth */
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+D1)*(N2_GPU[n])/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) 	{
-			ind0 = index_3D(n ,i, j, z);
-			#if (N1G>0)
-			F1[n][ind0][B1] = 0.;
-			#endif
-			#if (N1G>0 && N2G>0)
-			F1[n][ind0][B2] = 0.5*(dq[n][ind0][3] + dq[n][index_3D(n ,i, j + 1, z)][3]);
-			#endif
-			#if (N1G>0 && N3G>0)
-			F1[n][ind0][B3] = -0.5*(dq[n][ind0][2] + dq[n][index_3D(n ,i, j, z + 1)][2]);
-			#endif
-		}
-
-		#pragma omp for collapse(2) schedule(dynamic)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) 	{
-			ind0 = index_3D(n ,i, j, z);
-			#if (N1G>0 && N2G>0)		
-			F2[n][ind0][B1] = -0.5*(dq[n][ind0][3] + dq[n][index_3D(n ,i + 1, j, z)][3]);
-			#endif
-			#if (N2G>0 && N3G>0)
-			F2[n][ind0][B3] = 0.5*(dq[n][ind0][1] + dq[n][index_3D(n ,i, j, z + 1)][1]);
-			#endif
-			#if(N2G>0)
-			F2[n][ind0][B2] = 0.;
-			#endif
-		}
-
-		#pragma omp for collapse(2) schedule(static,(N1_GPU[n])*(N2_GPU[n])/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + D3) 	{
-			ind0 = index_3D(n ,i, j, z);
-			#if (N1G>0 && N3G>0)
-			F3[n][ind0][B1] = 0.5*(dq[n][ind0][2] + dq[n][index_3D(n ,i + 1, j, z)][2]);
-			#endif
-			#if (N2G>0 && N3G>0)
-			F3[n][ind0][B2] = -0.5*(dq[n][ind0][1] + dq[n][index_3D(n ,i, j + 1, z)][1]);
-			#endif
-			#if(N3G>0)
-			F3[n][ind0][B3] = 0.;
-			#endif
-		}
-	}
-}
-
-
-/*Used for debugging. Compares output from CPU version to output from GPU version*/
-void step_ch_debug()
-{
-#if (OpenCL_enable==1)
-	double ndt, inmsg;
-	int i, j, z, k, n;
-	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
-	#endif
-	//ndt = advance_GPU(0.5*dt, 0);   /* time step primitive variables to the half step */
-	//GPU_fixup(0);
-	//GPU_boundprim(0,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-	//GPU_fixuputoprim(0);  /* Fix the failure points using interpolation and updated ghost zone values */
-	//GPU_boundprim(0,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-	fprintf(stderr, "\n h_dt(GPU%d): %f     ", rank, ndt);
-	
-	for (n = 0; n < n_active; n++){
-		//ndt = advance(p, p, 0.5*dt, ph, 0, n_ord[n]);
-		//fixup(ph, n_ord[n]);
-		//bound_prim( n_ord[n]);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-		//fixup_utoprim(ph,n_ord[n]);  /* Fix the failure points using interpolation and updated ghost zone values */
-		//bound_prim(ph,1,n_ord[n]);    /* Reset boundary conditions with fixed up points */
-	}
-	fprintf(stderr, "h_dt(CPU%d): %f \n ", rank, ndt);
-
-	/*Temporary store ph array from CPU to test array so ph array from GPU can be loaded*/
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
-			PLOOP{
-				F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-				F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-			}
-		}
-	}
-
-	/*Read ph array from GPU and compare to CPU version. Print when difference becomes too big. If this occurs, the OpenCL and CPU versions of the
-	code produce inconsistent output*/
-	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
-			PLOOP{
-				if (ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] > 1.001 || ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] < 0.999){
-					if (k != 8){
-						fprintf(stderr, " i1:%d, j:%d, z:%d, k: %d, rank:% d, value1: %f value2: %f  \n", i, j, z, k, rank,
-							log(ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.));
-					}
-				}
-			}
-		}
-	}
-
-	/*Restore CPU version of ph array*/
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
-			PLOOP{
-				ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-				p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-			}
-		}
-	}
-
-	/* Repeat and rinse for the full time (aka corrector) step:  */
-	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
-	#endif
-	//ndt = advance_GPU(dt,1);   /* time step primitive variables to the half step */
-	//GPU_fixup(1);
-	//GPU_boundprim(1,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-	//GPU_fixuputoprim(1);  /* Fix the failure points using interpolation and updated ghost zone values */
-	//GPU_boundprim(1,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-	fprintf(stderr, "f_dt(GPU%d): %f     ", rank, ndt);
-	
-	for (n = 0; n < n_active; n++){
-		//ndt = advance(p, ph, dt, p, 1, n_ord[n]);
-		//fixup(p, n_ord[n]);
-		//bound_prim(n_ord[n]);
-		//fixup_utoprim(p,n_ord[n]);
-		//bound_prim(p,1,n_ord[n]);
-	}
-	fprintf(stderr, "f_dt(CPU%d): %f\n ", rank, ndt);
-	
-	/*Temporary store p array from CPU to test array so ph array from GPU can be loaded*/
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
-			PLOOP{
-				F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-				F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-			}
-		}
-	}
-
-	/*Read p array from GPU and compare to CPU version. Print when difference becomes too big. If this occurs, the OpenCL and CPU versions of the
-	code produce inconsistent output*/
-	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
-			PLOOP{
-				if (p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]>1.001 || p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] < 0.999){
-					if (k != 8){
-						fprintf(stderr, " i2:%d, j:%d, z: %d, k: %d, rank: %d, value1: %f, value2: %f  \n", i, j, z, k, rank,
-							log(p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k]) / log(10.));
-					}
-				}
-			}
-		}
-	}
-
-	/*Restore CPU version of p array*/
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
-			PLOOP{
-				p[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-				ph[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n] ,i, j, z)][k];
-			}
-		}
-	}
-
-	/* Determine next time increment based on current characteristic speeds: */
-	if (dt < 1.e-9) {
-		fprintf(stderr, "timestep too small\n");
-		exit(11);
-	}
-
-	/* increment time */
-	t += dt;
-
-	/* set next timestep */
-	if (ndt > SAFE*dt) ndt = SAFE*dt;
-	dt = ndt;
-
-	/*Calculate smallest timestep for all MPI threads*/
-	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-	MPI_Barrier(mpi_cartcomm);
-	#endif
-	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
-	
-	/* done! */
-#endif
-}
 
 void GPU_step_ch()
 {
@@ -1395,55 +515,6 @@ void GPU_step_ch()
 	//#endif
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
-}
-
-void set_prestep(void){
-	int n;
-
-	#if(PRESTEP)
-	int timelevel_min = AMR_MAXTIMELEVEL;
-	int blocks_per_timestep = 0;
-	int blocks_this_timestep = 0;
-
-	for (n = 0; n < n_active; n++){
-		block[n_ord[n]][AMR_NSTEP] = nstep;
-	}
-	//Find the minimum timelevel on this node
-	for (n = 0; n < n_active; n++){
-		if (block[n_ord[n]][AMR_TIMELEVEL] < timelevel_min) timelevel_min = block[n_ord[n]][AMR_TIMELEVEL];
-	}
-
-	//Calculate the number of blocks you want to evolve simultaneously
-	blocks_per_timestep = (count_node[0] - count_node[0] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
-	for (n = 0; n < n_active; n++){
-		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
-	}
-
-	//If you don't have sufficient blocks this timestep preevolve some blocks if available
-	if ((nstep % timelevel_min) == timelevel_min - 1){
-		for (n = 0; n < n_active; n++){
-			if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
-				block[n_ord[n]][AMR_PRESTEP] = 1;
-				block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
-				blocks_this_timestep++;
-			}
-		}
-	}
-
-	
-	//If at end of switchtimelevel do not pre-evolve
-	for (n = 0; n < n_active; n++){
-		if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){
-			block[n_ord[n]][AMR_PRESTEP] = 0;
-			block[n_ord[n]][AMR_NSTEP] = nstep;
-		}
-	}
-	#else
-	for (n = 0; n < n_active; n++){
-		block[n_ord[n]][AMR_PRESTEP] = 0;
-		block[n_ord[n]][AMR_NSTEP] = nstep;
-	}
-	#endif
 }
 
 double advance_GPU(void)
@@ -1656,4 +727,146 @@ double advance_GPU(void)
 
 	//ndt = defcon * 1. / (1. / ndt1 + 1. / ndt2 + 1. / ndt3);
 	return defcon * ndt;
+}
+
+/*Used for debugging. Compares output from CPU version to output from GPU version*/
+void step_ch_debug()
+{
+	#if (GPU_ENABLED==1)
+	double ndt, inmsg;
+	int i, j, z, k, n;
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+	//ndt = advance_GPU(0.5*dt, 0);   /* time step primitive variables to the half step */
+	//GPU_fixup(0);
+	//GPU_boundprim(0,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+	//GPU_fixuputoprim(0);  /* Fix the failure points using interpolation and updated ghost zone values */
+	//GPU_boundprim(0,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+	fprintf(stderr, "\n h_dt(GPU%d): %f     ", rank, ndt);
+
+	for (n = 0; n < n_active; n++){
+		//ndt = advance(p, p, 0.5*dt, ph, 0, n_ord[n]);
+		//fixup(ph, n_ord[n]);
+		//bound_prim( n_ord[n]);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+		//fixup_utoprim(ph,n_ord[n]);  /* Fix the failure points using interpolation and updated ghost zone values */
+		//bound_prim(ph,1,n_ord[n]);    /* Reset boundary conditions with fixed up points */
+	}
+	fprintf(stderr, "h_dt(CPU%d): %f \n ", rank, ndt);
+
+	/*Temporary store ph array from CPU to test array so ph array from GPU can be loaded*/
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+			PLOOP{
+				F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+				F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+			}
+		}
+	}
+
+	/*Read ph array from GPU and compare to CPU version. Print when difference becomes too big. If this occurs, the OpenCL and CPU versions of the
+	code produce inconsistent output*/
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+			PLOOP{
+				if (ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] > 1.001 || ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] < 0.999){
+					if (k != 8){
+						fprintf(stderr, " i1:%d, j:%d, z:%d, k: %d, rank:% d, value1: %f value2: %f  \n", i, j, z, k, rank,
+							log(ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] * ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]) / log(10.));
+					}
+				}
+			}
+		}
+	}
+
+	/*Restore CPU version of ph array*/
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+			PLOOP{
+				ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+				p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+			}
+		}
+	}
+
+	/* Repeat and rinse for the full time (aka corrector) step:  */
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+	//ndt = advance_GPU(dt,1);   /* time step primitive variables to the half step */
+	//GPU_fixup(1);
+	//GPU_boundprim(1,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+	//GPU_fixuputoprim(1);  /* Fix the failure points using interpolation and updated ghost zone values */
+	//GPU_boundprim(1,1);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+	fprintf(stderr, "f_dt(GPU%d): %f     ", rank, ndt);
+
+	for (n = 0; n < n_active; n++){
+		//ndt = advance(p, ph, dt, p, 1, n_ord[n]);
+		//fixup(p, n_ord[n]);
+		//bound_prim(n_ord[n]);
+		//fixup_utoprim(p,n_ord[n]);
+		//bound_prim(p,1,n_ord[n]);
+	}
+	fprintf(stderr, "f_dt(CPU%d): %f\n ", rank, ndt);
+
+	/*Temporary store p array from CPU to test array so ph array from GPU can be loaded*/
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+			PLOOP{
+				F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+				F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+			}
+		}
+	}
+
+	/*Read p array from GPU and compare to CPU version. Print when difference becomes too big. If this occurs, the OpenCL and CPU versions of the
+	code produce inconsistent output*/
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+			PLOOP{
+				if (p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]>1.001 || p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] < 0.999){
+					if (k != 8){
+						fprintf(stderr, " i2:%d, j:%d, z: %d, k: %d, rank: %d, value1: %f, value2: %f  \n", i, j, z, k, rank,
+							log(p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] * p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]) / log(10.), log(F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] * F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]) / log(10.));
+					}
+				}
+			}
+		}
+	}
+
+	/*Restore CPU version of p array*/
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+			PLOOP{
+				p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+				ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
+			}
+		}
+	}
+
+	/* Determine next time increment based on current characteristic speeds: */
+	if (dt < 1.e-9) {
+		fprintf(stderr, "timestep too small\n");
+		exit(11);
+	}
+
+	/* increment time */
+	t += dt;
+
+	/* set next timestep */
+	if (ndt > SAFE*dt) ndt = SAFE*dt;
+	dt = ndt;
+
+	/*Calculate smallest timestep for all MPI threads*/
+	#if (MPI_enable)
+	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
+	#endif
+	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
+
+	/* done! */
+#endif
 }

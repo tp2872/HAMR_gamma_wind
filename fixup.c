@@ -210,9 +210,9 @@ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 
 	/* now solve for v-- we can use the same u^t because
 	* it didn't change under KS -> KS' */
-	alpha = 1. / sqrt(-geom->gcon[TT][TT]);
-	SLOOPA beta[j] = geom->gcon[TT][j] * alpha*alpha;
-	gamma = alpha*ucon[TT];
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
+	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
+	gamma = alpha*ucon[0];
 
 
 	utcon[0] = 0;
@@ -223,10 +223,10 @@ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 {
 	double AA, BB, CC, DD, one_over_alpha_sq;
 	//compute the Lorentz factor based on contravariant 3-velocity
-	AA = geom->gcov[TT][TT];
-	BB = 2.*(geom->gcov[TT][1] * vcon[1] +
-		geom->gcov[TT][2] * vcon[2] +
-		geom->gcov[TT][3] * vcon[3]);
+	AA = geom->gcov[0][0];
+	BB = 2.*(geom->gcov[0][1] * vcon[1] +
+		geom->gcov[0][2] * vcon[2] +
+		geom->gcov[0][3] * vcon[3]);
 	CC = geom->gcov[1][1] * vcon[1] * vcon[1] +
 		geom->gcov[2][2] * vcon[2] * vcon[2] +
 		geom->gcov[3][3] * vcon[3] * vcon[3] +
@@ -236,7 +236,7 @@ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 
 	DD = -1. / (AA + BB + CC);
 
-	one_over_alpha_sq = -geom->gcon[TT][TT];
+	one_over_alpha_sq = -geom->gcon[0][0];
 
 	if (DD<one_over_alpha_sq) {
 		DD = one_over_alpha_sq;
@@ -412,3 +412,123 @@ void set_Katm( void )
 
 
 #undef FLOOP 
+
+void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n)
+{
+	int i, j, z, k;
+	double test;
+	if (block[n][AMR_NBR1] == -1){
+		#pragma omp parallel shared(block, n,n_ord,F1, F2, F3) private(i,z,k)
+		{
+			#pragma omp for schedule(static,1)
+			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
+				#pragma ivdep
+				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+					F1[n][index_3D(n, i, -1, z)][B2] = -F1[n][index_3D(n, i, 0, z)][B2];
+					F3[n][index_3D(n, i, -1, z)][B2] = -F3[n][index_3D(n, i, 0, z)][B2];
+					#if INFLOW==0
+					PLOOP F2[n][index_3D(n, i, 0, z)][k] = 0.;
+					#endif	
+				}
+			}
+		}
+	}
+
+	if (block[n][AMR_NBR3] == -1){
+		#pragma omp parallel shared(block,n,n_ord,F1, F2, F3) private(i,z,k)
+		{
+			#pragma omp for schedule(static,1)
+			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
+				#pragma ivdep
+				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+					F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+					F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+				}
+				#if INFLOW==0
+				PLOOP F2[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = 0.;
+				#endif	
+			}
+		}
+	}
+		if (INFLOW == 0){
+		if (block[n][AMR_NBR4] == -1){
+			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
+			{
+				#pragma omp for schedule(static,1)
+				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
+					#pragma ivdep
+					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+						if (F1[n][index_3D(n, 0, j, z)][RHO] > 0.) F1[n][index_3D(n, 0, j, z)][RHO] = 0.;
+					}
+				}
+			}
+		}
+		if (block[n][AMR_NBR2] == -1){
+			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
+			{
+				#pragma omp for schedule(static,1)
+				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
+					#pragma ivdep
+					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
+						if (F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
+					}
+				}
+			}
+		}
+	}
+	return;
+}
+
+void rescale(double *pr, int which, int dir, int n, int ii, int jj, int zz, int face, struct of_geom *geom)
+{
+	double scale[NPR], r, th, phi, X[NDIM];
+	int k;
+
+	coord(n, ii, jj, zz, face, X);
+	bl_coord(X, &r, &th, &phi);
+
+	if (dir == 1) {
+		// optimized for pole
+		scale[RHO] = pow(r, 1.5);
+		scale[UU] = scale[RHO] * r;
+		scale[U1] = scale[RHO];
+		scale[U2] = 1.0;
+		scale[U3] = r * r;
+		scale[B1] = r * r;
+		scale[B2] = r * r;
+		scale[B3] = r * r;
+	}
+	else if (dir == 2) {
+		scale[RHO] = 1.0;
+		scale[UU] = 1.0;
+		scale[U1] = 1.0;
+		scale[U2] = 1.0;
+		scale[U3] = 1.0;
+		scale[B1] = 1.0;
+		scale[B2] = 1.0;
+		scale[B3] = 1.0;
+	}
+	else if (dir == 3) {
+		scale[RHO] = 1.0;
+		scale[UU] = 1.0;
+		scale[U1] = 1.0;
+		scale[U2] = 1.0;
+		scale[U3] = 1.0;
+		scale[B1] = 1.0;
+		scale[B2] = 1.0;
+		scale[B3] = 1.0;
+	}
+
+	if (which == FORWARD) {	// rescale before interpolation
+		PLOOP pr[k] *= scale[k];
+	}
+	else if (which == REVERSE) {	// unrescale after interpolation
+		PLOOP pr[k] /= scale[k];
+	}
+	else {
+		if (rank == 0){
+			fprintf(stderr, "no such rescale type!\n");
+		}
+		exit(100);
+	}
+}

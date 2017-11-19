@@ -56,83 +56,41 @@
 -*****************************************************************/
 int main(int argc, char *argv[])
 {
-	double tdump, timage, tlog;
+	double tdump, tlog;
 	int nfailed = 0;
 	int i, j, u, n;
 	double r, th, phi, X[NDIM];
-	int threadid;
 
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
-	#pragma omp parallel shared(nthreads) private(threadid)
-	{
-		threadid = omp_get_thread_num();
-		nthreads = omp_get_num_threads();
-		if (threadid == 0 && rank == 0) {
-			fprintf(stderr, "nthreads = %d\n", nthreads);
-		}
-	}
-	//omp_set_num_threads(1);
-
-	#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
+	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
-
 	set_AMR();
-	if (rank == 0){
-		system("mkdir dumps gdumps rdumps0 rdumps1");
-	}
 
 	nstep = 0;
 	defcon = 1.;
 
 	if (!restart_read()) {
 		init();
-		int refined = 0;
-		int derefined = 0;
 		#if(DEREFINE_POLE)
 		derefine_pole();
 		#endif
 	}
 
 	/* do initial diagnostics */
-	#if(NONSYMMETRIC)
-	for (n = 0; n < n_active; n++) set_grid(n_ord[n]);
-	#endif
-
-	activate_blocks();
-
-	balance_load();
-	#if(GPU_ENABLED)
-	balance_load_gpu();
-	#endif
-
-	/* do initial diagnostics */
-	#if (DIAG_ON)
 	first_dump = 0;
 	diag(INIT_OUT);
-	#endif
 
 	DTl = 20.0;
-	bound_prim(p, 1);
 	tdump = t + DTd;
-	timage = t + DTi;
 	tlog = t + DTl;
 	tref = t + 0.1*TREF;
-	defcon = 1. ;
 	time_spent3 = 0.0;
 	begin1 = clock();
 	//cuProfilerStart();
 
 	while(t < tf) {
-		/* step variables forward in time */
-		nstroke = 0 ;	
-
-		/*Used for performance analysis*/
-		#if(GPU_BENCHMARK)
-		GPU_benchmark();
-		#endif
-
 		/*Used for running OpenCL on either GPU or CPU*/
 		#if(GPU_ENABLED && !GPU_DEBUG)
 		GPU_step_ch();
@@ -146,9 +104,10 @@ int main(int argc, char *argv[])
 		step_ch_debug();
 		#endif
 
+		//Refine every TREF
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
-			#if (OpenCL_enable==1)
+			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
@@ -158,34 +117,33 @@ int main(int argc, char *argv[])
 			tref += TREF;
 		}
 
-		/* Handle output frequencies: */
+		/* Put out dump file*/
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if (OpenCL_enable==1)
+			#if (GPU_ENABLED==1)
 			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
-			if (dt>2.) break;
+			if (dt>0.5) break;
 			//diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
+		//Put out log file and rdump file
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if (OpenCL_enable==1)
+			#if (GPU_ENABLED==1)
 			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif			
-			if (dt>2.) break;
+			if (dt>0.5) break;
 			//restart_write(); //do restart dumb simultaneous with log
 			//tlog +=  DTl;
 		}			
 		
 		#if TIMER
 		if (nstep % (2*320) == 0){
-			#if (OpenCL_enable == 1)
-			#endif
 			end1 = clock();
-			#if (OpenCL_enable==1)
+			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
-			if (dt>2.) break;
+			if (dt>0.5) break;
 			bound_prim(p, 1);
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
@@ -205,86 +163,83 @@ int main(int argc, char *argv[])
 		}
 		#endif
 		//cuProfilerStop();
-		/* deal with failed timestep, though we usually exit upon failure */
-		if(failed) {
-			restart_read() ;
-			failed = 0 ;
-			nfailed = nstep ;
-			defcon = 0.3 ;
-		}
-		if(nstep > nfailed + DTr*4.*(1 + 1./defcon)) defcon = 1. ;
+		/* deal with failed timestep, exit upon failure */
+		if(failed) break;
 	}
-	fprintf(stderr,"ns,ts: %d %d\n",nstep,nstep*N1*N2) ;
 
 	/* do final diagnostics */
-	#if (DIAG_ON)
 	diag(FINAL_OUT) ;
-	#endif
 
 	/*Close GPU*/
 	for (n=0; n<n_active; n++) GPU_finish(n_ord[n]);
 	return(0) ;
 }
 
-//Set row major order in case of derfinement near pole
-int rm_order(void){
-	int l, i, j, z, ni, nj, nz;
-	int number = 0;
-	int number_node = 0;
-	ni = NB_1*pow(1 + REF_1, N_LEVELS - 1);
-	nj = NB_2*pow(1 + REF_2, N_LEVELS - 1);
-	nz = NB_3*pow(1 + REF_3, N_LEVELS - 1);
-	for (z = 0; z < nz; z++)for (j = 0; j < nj; j++)for (i = 0; i < ni; i++){
-		for (l = 0; l<N_LEVELS; l++){
-			if (i<NB_1*pow(1 + REF_1, l) && j<NB_2*pow(1 + REF_2, l) && z<NB_3*pow(1 + REF_3, l) && block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1){
-				n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
-				number++;
-				if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
-					n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
-					number_node++;
-				}
-				block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
-			}
+/*This function initialises the MPI structure. It divides the grid(N1, N2, N3) among the MPI processes.
+The host node is node 0 by default.*/
+void MPI_initialize(int argc, char *argv[])
+{
+#if (MPI_enable)
+	char hostname[MPI_MAX_PROCESSOR_NAME];
+	int i, j, z, len, dim, corn, rankloop;
+	int dims[3], periods[3], coords[3];
+	int rdma_direct = 0, local_rank = 0, threadid;
+
+	/*Get basic initialisation*/
+	rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
+	if (getenv("MV2_COMM_WORLD_LOCAL_RANK") != NULL){
+		local_rank = getenv("MV2_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
+	}
+	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
+		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
+	}
+	cudaSetDevice(local_rank%N_GPU);
+	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
+
+	if (rc != MPI_SUCCESS) {
+		fprintf(stderr, "Error starting MPI program. Terminating.\n");
+		MPI_Abort(MPI_COMM_WORLD, rc);
+	}
+
+	MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+	MPI_Get_processor_name(hostname, &len);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	mpi_cartcomm = MPI_COMM_WORLD;
+
+	/*Give basic diagnostics*/
+	if (rank == 0){
+		if (rdma_direct != 1 && GPU_DIRECT == 1){
+			printf("MPICH_RDMA_ENABLED_CUDA not enabled but GPU_DIRECT still turned on!\n");
+		}
+		fprintf(stderr, "Number of MPI tasks: %d \nRunning on: %s\n", numtasks, hostname);
+	}
+#endif
+
+#pragma omp parallel shared(nthreads) private(threadid)
+	{
+		threadid = omp_get_thread_num();
+		nthreads = omp_get_num_threads();
+		if (threadid == 0 && rank == 0) {
+			fprintf(stderr, "nthreads = %d\n", nthreads);
+		}
+	}
+	//omp_set_num_threads(1);
+
+	if (rank == 0){
+		system("mkdir dumps gdumps rdumps0 rdumps1");
+	}
+}
+
+void mpi_synch(void){
+	int i;
+	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			break;
 		}
 	}
 }
 
-//This function derefines in z near the pole
-int derefine_pole(void){
-	int i, j, z, l, ni, nj, nz;
-	if (REF_3 != 1 || REF_1 == 1 || REF_2 == 1){
-		fprintf(stderr,"Error! Derefinement near the pole works only for REF_1=0, REF_2=0, REF_3=1 \n");
-		return -1;
-	}
-	if (NB_2 % 6 != 0){
-		fprintf(stderr,"For derefinement near the pole chose NB_2 6, 12, 24,48 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
-		return -1;
-	}
-	if (calc_mem(NB_1*NB_2*NB_3*pow(2.,N_LEVELS-1))>((double)numtasks*(double)(N_GPU)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
-
-	for (l = 0; l<N_LEVELS-1; l++){
-		pre_refine();
-		ni = NB_1*pow(1 + REF_1, l);
-		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3*pow(1 + REF_3, l);
-		for (i = 0; i < ni; i++)for (j = pow(2, l); j < nj - (pow(2, l)); j++)for (z = 0; z < nz; z++){
-			if ((double)pow(2, l) < 0.25*NB_2){
-				refine(AMR_coord_linear(l, i, j, z));
-			}
-		}
-		MPI_Barrier(mpi_cartcomm);
-		post_refine();
-		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
-	}
-
-	//Set boundary conditions
-	if (rank == 0) fprintf(stderr, "Bounding AMR blocks, watch out for errors or divb increasing! \n");
-	//bound_prim(p, 1);
-	//#if(GPU_ENABLED || GPU_DEBUG || GPU_BENCHMARK)
-	//GPU_boundprim(1);
-	//#endif
-	return 1;
-}
 
 /*****************************************************************/
 /*****************************************************************
@@ -300,519 +255,6 @@ int derefine_pole(void){
 void set_arrays_image(void)
 {
 	
-}
-
-void free_arrays(int n)
-{
-	//free(pbound[n]);
-	free(p[n]);
-	free(ph[n]);
-	#if(LEER)
-	free(V[n]);
-	#endif
-	#if(STAGGERED)
-	free(ps[n]);
-	free(psh[n]); 
-	#endif
-	free(dq[n]);
-	free(F1[n]);
-	free(F2[n]);
-	free(F3[n]);
-	free(pflag[n]);
-	#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
-	#if(STAGGERED)
-	free(stor1[n]);
-	free(stor2[n]);
-	free(dE[n]);
-	#endif
-	free(E_corn[n]);
-	#endif
-	free(failimage[n]);
-	free(conn[n]); 
-	free(gcov[n]); 
-	free(gcon[n]); 
-	free(gdet[n]); 
-	#if(ZIRI_DUMP)
-	free(dump_buffer[n]);
-	free(dxdxp_z[n]); 
-	free(dxpdx_z[n]); 
-	#endif
-	#if (ELLIPTICAL2)
-	free(dU_s[n]); 
-	#endif
-	free(receive1[n]);
-	free(receive2[n]);
-	free(receive3[n]);
-	free(receive4[n]);
-	#if(N3G>0)
-	free(receive5[n]);
-	free(receive6[n]);
-	#endif
-	free(tempreceive1[n]);
-	free(tempreceive2[n]);
-	free(tempreceive3[n]);
-	free(tempreceive4[n]);
-	#if(N3G>0)
-	free(tempreceive5[n]);
-	free(tempreceive6[n]);
-	#endif
-	free(send1[n]);
-	free(send2[n]);
-	free(send3[n]);
-	free(send4[n]);
-	#if(N3G>0)
-	free(send5[n]);
-	free(send6[n]);
-	#endif
-	free(send1_3[n]);
-	free(send1_4[n]);
-	free(send1_7[n]);
-	free(send1_8[n]);
-	free(send2_1[n]);
-	free(send2_2[n]);
-	free(send2_3[n]);
-	free(send2_4[n]);
-	free(send3_1[n]);
-	free(send3_2[n]);
-	free(send3_5[n]);
-	free(send3_6[n]);
-	free(send4_5[n]);
-	free(send4_6[n]);
-	free(send4_7[n]);
-	free(send4_8[n]);
-	#if(N3G>0)
-	free(send5_1[n]);
-	free(send5_3[n]);
-	free(send5_5[n]);
-	free(send5_7[n]);
-	free(send6_2[n]);
-	free(send6_4[n]);
-	free(send6_6[n]);
-	free(send6_8[n]);
-	#endif
-	free(receive1_3[n]);
-	free(receive1_4[n]);
-	free(receive1_7[n]);
-	free(receive1_8[n]);
-	free(receive2_1[n]);
-	free(receive2_2[n]);
-	free(receive2_3[n]);
-	free(receive2_4[n]);
-	free(receive3_1[n]);
-	free(receive3_2[n]);
-	free(receive3_5[n]);
-	free(receive3_6[n]);
-	free(receive4_5[n]);
-	free(receive4_6[n]);
-	free(receive4_7[n]);
-	free(receive4_8[n]);
-	#if(N3G>0)
-	free(receive5_1[n]);
-	free(receive5_3[n]);
-	free(receive5_5[n]);
-	free(receive5_7[n]);
-	free(receive6_2[n]);
-	free(receive6_4[n]);
-	free(receive6_6[n]);
-	free(receive6_8[n]);
-	#endif
-	free(tempreceive1_3[n]);
-	free(tempreceive1_4[n]);
-	free(tempreceive1_7[n]);
-	free(tempreceive1_8[n]);
-	free(tempreceive2_1[n]);
-	free(tempreceive2_2[n]);
-	free(tempreceive2_3[n]);
-	free(tempreceive2_4[n]);
-	free(tempreceive3_1[n]);
-	free(tempreceive3_2[n]);
-	free(tempreceive3_5[n]);
-	free(tempreceive3_6[n]);
-	free(tempreceive4_5[n]);
-	free(tempreceive4_6[n]);
-	free(tempreceive4_7[n]);
-	free(tempreceive4_8[n]);
-	#if(N3G>0)
-	free(tempreceive5_1[n]);
-	free(tempreceive5_3[n]);
-	free(tempreceive5_5[n]);
-	free(tempreceive5_7[n]);
-	free(tempreceive6_2[n]);
-	free(tempreceive6_4[n]);
-	free(tempreceive6_6[n]);
-	free(tempreceive6_8[n]);
-	#endif
-	free(receive1_fine[n]);
-	free(receive2_fine[n]);
-	free(receive3_fine[n]);
-	free(receive4_fine[n]);
-	#if(N3G>0)
-	free(receive5_fine[n]);
-	free(receive6_fine[n]);
-	#endif
-	free(send1_fine[n]);
-	free(send2_fine[n]);
-	free(send3_fine[n]);
-	free(send4_fine[n]);
-	#if(N3G>0)
-	free(send5_fine[n]);
-	free(send6_fine[n]);
-	#endif
-	free(receive1_3fine[n]);
-	free(receive1_4fine[n]);
-	free(receive1_7fine[n]);
-	free(receive1_8fine[n]);
-	free(receive2_1fine[n]);
-	free(receive2_2fine[n]);
-	free(receive2_3fine[n]);
-	free(receive2_4fine[n]);
-	free(receive3_1fine[n]);
-	free(receive3_2fine[n]);
-	free(receive3_5fine[n]);
-	free(receive3_6fine[n]);
-	free(receive4_5fine[n]);
-	free(receive4_6fine[n]);
-	free(receive4_7fine[n]);
-	free(receive4_8fine[n]);
-	#if(N3G>0)
-	free(receive5_1fine[n]);
-	free(receive5_3fine[n]);
-	free(receive5_5fine[n]);
-	free(receive5_7fine[n]);
-	free(receive6_2fine[n]);
-	free(receive6_4fine[n]);
-	free(receive6_6fine[n]);
-	free(receive6_8fine[n]);
-	#endif
-	#if(CPU_OPENMP)
-	free(receive1_flux[n]);
-	free(receive2_flux[n]);
-	free(receive3_flux[n]);
-	free(receive4_flux[n]);
-	free(receive5_flux[n]);
-	free(receive6_flux[n]);
-	free(receive1_3flux[n]);
-	free(receive1_4flux[n]);
-	free(receive1_7flux[n]);
-	free(receive1_8flux[n]);
-	free(receive2_1flux[n]);
-	free(receive2_2flux[n]);
-	free(receive2_3flux[n]);
-	free(receive2_4flux[n]);
-	free(receive3_1flux[n]);
-	free(receive3_2flux[n]);
-	free(receive3_5flux[n]);
-	free(receive3_6flux[n]);
-	free(receive4_5flux[n]);
-	free(receive4_6flux[n]);
-	free(receive4_7flux[n]);
-	free(receive4_8flux[n]);
-	#if(N3G>0)
-	free(receive5_1flux[n]);
-	free(receive5_3flux[n]);
-	free(receive5_5flux[n]);
-	free(receive5_7flux[n]);
-	free(receive6_2flux[n]);
-	free(receive6_4flux[n]);
-	free(receive6_6flux[n]);
-	free(receive6_8flux[n]);
-	#endif
-	free(receive1_flux1[n]);
-	free(receive2_flux1[n]);
-	free(receive3_flux1[n]);
-	free(receive4_flux1[n]);
-	free(receive5_flux1[n]);
-	free(receive6_flux1[n]);
-	free(receive1_3flux1[n]);
-	free(receive1_4flux1[n]);
-	free(receive1_7flux1[n]);
-	free(receive1_8flux1[n]);
-	free(receive2_1flux1[n]);
-	free(receive2_2flux1[n]);
-	free(receive2_3flux1[n]);
-	free(receive2_4flux1[n]);
-	free(receive3_1flux1[n]);
-	free(receive3_2flux1[n]);
-	free(receive3_5flux1[n]);
-	free(receive3_6flux1[n]);
-	free(receive4_5flux1[n]);
-	free(receive4_6flux1[n]);
-	free(receive4_7flux1[n]);
-	free(receive4_8flux1[n]);
-	#if(N3G>0)
-	free(receive5_1flux1[n]);
-	free(receive5_3flux1[n]);
-	free(receive5_5flux1[n]);
-	free(receive5_7flux1[n]);
-	free(receive6_2flux1[n]);
-	free(receive6_4flux1[n]);
-	free(receive6_6flux1[n]);
-	free(receive6_8flux1[n]);
-	#endif
-	free(receive1_3flux2[n]);
-	free(receive1_4flux2[n]);
-	free(receive1_7flux2[n]);
-	free(receive1_8flux2[n]);
-	free(receive2_1flux2[n]);
-	free(receive2_2flux2[n]);
-	free(receive2_3flux2[n]);
-	free(receive2_4flux2[n]);
-	free(receive3_1flux2[n]);
-	free(receive3_2flux2[n]);
-	free(receive3_5flux2[n]);
-	free(receive3_6flux2[n]);
-	free(receive4_5flux2[n]);
-	free(receive4_6flux2[n]);
-	free(receive4_7flux2[n]);
-	free(receive4_8flux2[n]);
-	#if(N3G>0)
-	free(receive5_1flux2[n]);
-	free(receive5_3flux2[n]);
-	free(receive5_5flux2[n]);
-	free(receive5_7flux2[n]);
-	free(receive6_2flux2[n]);
-	free(receive6_4flux2[n]);
-	free(receive6_6flux2[n]);
-	free(receive6_8flux2[n]);
-	#endif
-	free(send1_flux[n]);
-	free(send2_flux[n]);
-	free(send3_flux[n]);
-	free(send4_flux[n]);
-	#if(N3G>0)
-	free(send5_flux[n]);
-	free(send6_flux[n]);
-	#endif
-	free(receive1_E[n]);
-	free(receive2_E[n]);
-	free(receive3_E[n]);
-	free(receive4_E[n]);
-	free(receive5_E[n]);
-	free(receive6_E[n]);
-	free(receive1_3E[n]);
-	free(receive1_4E[n]);
-	free(receive1_7E[n]);
-	free(receive1_8E[n]);
-	free(receive2_1E[n]);
-	free(receive2_2E[n]);
-	free(receive2_3E[n]);
-	free(receive2_4E[n]);
-	free(receive3_1E[n]);
-	free(receive3_2E[n]);
-	free(receive3_5E[n]);
-	free(receive3_6E[n]);
-	free(receive4_5E[n]);
-	free(receive4_6E[n]);
-	free(receive4_7E[n]);
-	free(receive4_8E[n]);
-	#if(N3G>0)
-	free(receive5_1E[n]);
-	free(receive5_3E[n]);
-	free(receive5_5E[n]);
-	free(receive5_7E[n]);
-	free(receive6_2E[n]);
-	free(receive6_4E[n]);
-	free(receive6_6E[n]);
-	free(receive6_8E[n]);
-	#endif
-	free(receive1_E1[n]);
-	free(receive2_E1[n]);
-	free(receive3_E1[n]);
-	free(receive4_E1[n]);
-	free(receive5_E1[n]);
-	free(receive6_E1[n]);
-	free(receive1_3E1[n]);
-	free(receive1_4E1[n]);
-	free(receive1_7E1[n]);
-	free(receive1_8E1[n]);
-	free(receive2_1E1[n]);
-	free(receive2_2E1[n]);
-	free(receive2_3E1[n]);
-	free(receive2_4E1[n]);
-	free(receive3_1E1[n]);
-	free(receive3_2E1[n]);
-	free(receive3_5E1[n]);
-	free(receive3_6E1[n]);
-	free(receive4_5E1[n]);
-	free(receive4_6E1[n]);
-	free(receive4_7E1[n]);
-	free(receive4_8E1[n]);
-	#if(N3G>0)
-	free(receive5_1E1[n]);
-	free(receive5_3E1[n]);
-	free(receive5_5E1[n]);
-	free(receive5_7E1[n]);
-	free(receive6_2E1[n]);
-	free(receive6_4E1[n]);
-	free(receive6_6E1[n]);
-	free(receive6_8E1[n]);
-	#endif
-	free(receive1_3E2[n]);
-	free(receive1_4E2[n]);
-	free(receive1_7E2[n]);
-	free(receive1_8E2[n]);
-	free(receive2_1E2[n]);
-	free(receive2_2E2[n]);
-	free(receive2_3E2[n]);
-	free(receive2_4E2[n]);
-	free(receive3_1E2[n]);
-	free(receive3_2E2[n]);
-	free(receive3_5E2[n]);
-	free(receive3_6E2[n]);
-	free(receive4_5E2[n]);
-	free(receive4_6E2[n]);
-	free(receive4_7E2[n]);
-	free(receive4_8E2[n]);
-	#if(N3G>0)
-	free(receive5_1E2[n]);
-	free(receive5_3E2[n]);
-	free(receive5_5E2[n]);
-	free(receive5_7E2[n]);
-	free(receive6_2E2[n]);
-	free(receive6_4E2[n]);
-	free(receive6_6E2[n]);
-	free(receive6_8E2[n]);
-	#endif
-	free(send1_E[n]);
-	free(send2_E[n]);
-	free(send3_E[n]);
-	free(send4_E[n]);
-	#if(N3G>0)
-	free(send5_E[n]);
-	free(send6_E[n]);
-	#endif
-	free(send_E3_corn1[n]);
-	free(send_E3_corn2[n]);
-	free(send_E3_corn3[n]);
-	free(send_E3_corn4[n]);
-	#if(N3G>0)
-	free(send_E2_corn5[n]);
-	free(send_E2_corn6[n]);
-	free(send_E2_corn7[n]);
-	free(send_E2_corn8[n]);
-	free(send_E1_corn9[n]);
-	free(send_E1_corn10[n]);
-	free(send_E1_corn11[n]);
-	free(send_E1_corn12[n]);
-	#endif
-	free(receive_E3_corn1[n]);
-	free(receive_E3_corn2[n]);
-	free(receive_E3_corn3[n]);
-	free(receive_E3_corn4[n]);
-	#if(N3G>0)
-	free(receive_E2_corn5[n]);
-	free(receive_E2_corn6[n]);
-	free(receive_E2_corn7[n]);
-	free(receive_E2_corn8[n]);
-	free(receive_E1_corn9[n]);
-	free(receive_E1_corn10[n]);
-	free(receive_E1_corn11[n]);
-	free(receive_E1_corn12[n]);
-	#endif
-	free(receive_E3_corn1_1[n]);
-	free(receive_E3_corn2_1[n]);
-	free(receive_E3_corn3_1[n]);
-	free(receive_E3_corn4_1[n]);
-	#if(N3G>0)
-	free(receive_E2_corn5_1[n]);
-	free(receive_E2_corn6_1[n]);
-	free(receive_E2_corn7_1[n]);
-	free(receive_E2_corn8_1[n]);
-	free(receive_E1_corn9_1[n]);
-	free(receive_E1_corn10_1[n]);
-	free(receive_E1_corn11_1[n]);
-	free(receive_E1_corn12_1[n]);
-	#endif
-	free(receive_E3_corn1_2[n]);
-	free(receive_E3_corn2_2[n]);
-	free(receive_E3_corn3_2[n]);
-	free(receive_E3_corn4_2[n]);
-	#if(N3G>0)
-	free(receive_E2_corn5_2[n]);
-	free(receive_E2_corn6_2[n]);
-	free(receive_E2_corn7_2[n]);
-	free(receive_E2_corn8_2[n]);
-	free(receive_E1_corn9_2[n]);
-	free(receive_E1_corn10_2[n]);
-	free(receive_E1_corn11_2[n]);
-	free(receive_E1_corn12_2[n]);
-	#endif
-	free(tempreceive_E3_corn1[n]);
-	free(tempreceive_E3_corn2[n]);
-	free(tempreceive_E3_corn3[n]);
-	free(tempreceive_E3_corn4[n]);
-	#if(N3G>0)
-	free(tempreceive_E2_corn5[n]);
-	free(tempreceive_E2_corn6[n]);
-	free(tempreceive_E2_corn7[n]);
-	free(tempreceive_E2_corn8[n]);
-	free(tempreceive_E1_corn9[n]);
-	free(tempreceive_E1_corn10[n]);
-	free(tempreceive_E1_corn11[n]);
-	free(tempreceive_E1_corn12[n]);
-	#endif
-	free(tempreceive_E3_corn1_1[n]);
-	free(tempreceive_E3_corn2_1[n]);
-	free(tempreceive_E3_corn3_1[n]);
-	free(tempreceive_E3_corn4_1[n]);
-	#if(N3G>0)
-	free(tempreceive_E2_corn5_1[n]);
-	free(tempreceive_E2_corn6_1[n]);
-	free(tempreceive_E2_corn7_1[n]);
-	free(tempreceive_E2_corn8_1[n]);
-	free(tempreceive_E1_corn9_1[n]);
-	free(tempreceive_E1_corn10_1[n]);
-	free(tempreceive_E1_corn11_1[n]);
-	free(tempreceive_E1_corn12_1[n]);
-	#endif
-	free(tempreceive_E3_corn1_2[n]);
-	free(tempreceive_E3_corn2_2[n]);
-	free(tempreceive_E3_corn3_2[n]);
-	free(tempreceive_E3_corn4_2[n]);
-	#if(N3G>0)
-	free(tempreceive_E2_corn5_2[n]);
-	free(tempreceive_E2_corn6_2[n]);
-	free(tempreceive_E2_corn7_2[n]);
-	free(tempreceive_E2_corn8_2[n]);
-	free(tempreceive_E1_corn9_2[n]);
-	free(tempreceive_E1_corn10_2[n]);
-	free(tempreceive_E1_corn11_2[n]);
-	free(tempreceive_E1_corn12_2[n]);
-	#endif
-	free(receive_E3_corn1_12[n]);
-	free(receive_E3_corn2_12[n]);
-	free(receive_E3_corn3_12[n]);
-	free(receive_E3_corn4_12[n]);
-	#if(N3G>0)
-	free(receive_E2_corn5_12[n]);
-	free(receive_E2_corn6_12[n]);
-	free(receive_E2_corn7_12[n]);
-	free(receive_E2_corn8_12[n]);
-	free(receive_E1_corn9_12[n]);
-	free(receive_E1_corn10_12[n]);
-	free(receive_E1_corn11_12[n]);
-	free(receive_E1_corn12_12[n]);
-	#endif
-	free(receive_E3_corn1_22[n]);
-	free(receive_E3_corn2_22[n]);
-	free(receive_E3_corn3_22[n]);
-	free(receive_E3_corn4_22[n]);
-	#if(N3G>0)
-	free(receive_E2_corn5_22[n]);
-	free(receive_E2_corn6_22[n]);
-	free(receive_E2_corn7_22[n]);
-	free(receive_E2_corn8_22[n]);
-	free(receive_E1_corn9_22[n]);
-	free(receive_E1_corn10_22[n]);
-	free(receive_E1_corn11_22[n]);
-	free(receive_E1_corn12_22[n]);
-	#endif
-	#endif
-	//#endif
-	free(Katm[n]);
-	free(array[n]);
-	free(array_rdump[n]);
-	free(array_diag[n]);
 }
 
 void set_arrays(int n)
@@ -1345,6 +787,519 @@ void set_arrays(int n)
 	//#endif
 }
 
+void free_arrays(int n)
+{
+	free(p[n]);
+	free(ph[n]);
+	#if(LEER)
+	free(V[n]);
+	#endif
+	#if(STAGGERED)
+	free(ps[n]);
+	free(psh[n]);
+	#endif
+	free(dq[n]);
+	free(F1[n]);
+	free(F2[n]);
+	free(F3[n]);
+	free(pflag[n]);
+	#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
+	#if(STAGGERED)
+	free(stor1[n]);
+	free(stor2[n]);
+	free(dE[n]);
+	#endif
+	free(E_corn[n]);
+	#endif
+	free(failimage[n]);
+	free(conn[n]);
+	free(gcov[n]);
+	free(gcon[n]);
+	free(gdet[n]);
+	#if(ZIRI_DUMP)
+	free(dump_buffer[n]);
+	free(dxdxp_z[n]);
+	free(dxpdx_z[n]);
+	#endif
+	#if (ELLIPTICAL2)
+	free(dU_s[n]);
+	#endif
+	free(receive1[n]);
+	free(receive2[n]);
+	free(receive3[n]);
+	free(receive4[n]);
+	#if(N3G>0)
+	free(receive5[n]);
+	free(receive6[n]);
+	#endif
+	free(tempreceive1[n]);
+	free(tempreceive2[n]);
+	free(tempreceive3[n]);
+	free(tempreceive4[n]);
+	#if(N3G>0)
+	free(tempreceive5[n]);
+	free(tempreceive6[n]);
+	#endif
+	free(send1[n]);
+	free(send2[n]);
+	free(send3[n]);
+	free(send4[n]);
+	#if(N3G>0)
+	free(send5[n]);
+	free(send6[n]);
+	#endif
+	free(send1_3[n]);
+	free(send1_4[n]);
+	free(send1_7[n]);
+	free(send1_8[n]);
+	free(send2_1[n]);
+	free(send2_2[n]);
+	free(send2_3[n]);
+	free(send2_4[n]);
+	free(send3_1[n]);
+	free(send3_2[n]);
+	free(send3_5[n]);
+	free(send3_6[n]);
+	free(send4_5[n]);
+	free(send4_6[n]);
+	free(send4_7[n]);
+	free(send4_8[n]);
+	#if(N3G>0)
+	free(send5_1[n]);
+	free(send5_3[n]);
+	free(send5_5[n]);
+	free(send5_7[n]);
+	free(send6_2[n]);
+	free(send6_4[n]);
+	free(send6_6[n]);
+	free(send6_8[n]);
+	#endif
+	free(receive1_3[n]);
+	free(receive1_4[n]);
+	free(receive1_7[n]);
+	free(receive1_8[n]);
+	free(receive2_1[n]);
+	free(receive2_2[n]);
+	free(receive2_3[n]);
+	free(receive2_4[n]);
+	free(receive3_1[n]);
+	free(receive3_2[n]);
+	free(receive3_5[n]);
+	free(receive3_6[n]);
+	free(receive4_5[n]);
+	free(receive4_6[n]);
+	free(receive4_7[n]);
+	free(receive4_8[n]);
+	#if(N3G>0)
+	free(receive5_1[n]);
+	free(receive5_3[n]);
+	free(receive5_5[n]);
+	free(receive5_7[n]);
+	free(receive6_2[n]);
+	free(receive6_4[n]);
+	free(receive6_6[n]);
+	free(receive6_8[n]);
+	#endif
+	free(tempreceive1_3[n]);
+	free(tempreceive1_4[n]);
+	free(tempreceive1_7[n]);
+	free(tempreceive1_8[n]);
+	free(tempreceive2_1[n]);
+	free(tempreceive2_2[n]);
+	free(tempreceive2_3[n]);
+	free(tempreceive2_4[n]);
+	free(tempreceive3_1[n]);
+	free(tempreceive3_2[n]);
+	free(tempreceive3_5[n]);
+	free(tempreceive3_6[n]);
+	free(tempreceive4_5[n]);
+	free(tempreceive4_6[n]);
+	free(tempreceive4_7[n]);
+	free(tempreceive4_8[n]);
+	#if(N3G>0)
+	free(tempreceive5_1[n]);
+	free(tempreceive5_3[n]);
+	free(tempreceive5_5[n]);
+	free(tempreceive5_7[n]);
+	free(tempreceive6_2[n]);
+	free(tempreceive6_4[n]);
+	free(tempreceive6_6[n]);
+	free(tempreceive6_8[n]);
+	#endif
+	free(receive1_fine[n]);
+	free(receive2_fine[n]);
+	free(receive3_fine[n]);
+	free(receive4_fine[n]);
+	#if(N3G>0)
+	free(receive5_fine[n]);
+	free(receive6_fine[n]);
+	#endif
+	free(send1_fine[n]);
+	free(send2_fine[n]);
+	free(send3_fine[n]);
+	free(send4_fine[n]);
+	#if(N3G>0)
+	free(send5_fine[n]);
+	free(send6_fine[n]);
+	#endif
+	free(receive1_3fine[n]);
+	free(receive1_4fine[n]);
+	free(receive1_7fine[n]);
+	free(receive1_8fine[n]);
+	free(receive2_1fine[n]);
+	free(receive2_2fine[n]);
+	free(receive2_3fine[n]);
+	free(receive2_4fine[n]);
+	free(receive3_1fine[n]);
+	free(receive3_2fine[n]);
+	free(receive3_5fine[n]);
+	free(receive3_6fine[n]);
+	free(receive4_5fine[n]);
+	free(receive4_6fine[n]);
+	free(receive4_7fine[n]);
+	free(receive4_8fine[n]);
+	#if(N3G>0)
+	free(receive5_1fine[n]);
+	free(receive5_3fine[n]);
+	free(receive5_5fine[n]);
+	free(receive5_7fine[n]);
+	free(receive6_2fine[n]);
+	free(receive6_4fine[n]);
+	free(receive6_6fine[n]);
+	free(receive6_8fine[n]);
+	#endif
+	#if(CPU_OPENMP)
+	free(receive1_flux[n]);
+	free(receive2_flux[n]);
+	free(receive3_flux[n]);
+	free(receive4_flux[n]);
+	free(receive5_flux[n]);
+	free(receive6_flux[n]);
+	free(receive1_3flux[n]);
+	free(receive1_4flux[n]);
+	free(receive1_7flux[n]);
+	free(receive1_8flux[n]);
+	free(receive2_1flux[n]);
+	free(receive2_2flux[n]);
+	free(receive2_3flux[n]);
+	free(receive2_4flux[n]);
+	free(receive3_1flux[n]);
+	free(receive3_2flux[n]);
+	free(receive3_5flux[n]);
+	free(receive3_6flux[n]);
+	free(receive4_5flux[n]);
+	free(receive4_6flux[n]);
+	free(receive4_7flux[n]);
+	free(receive4_8flux[n]);
+	#if(N3G>0)
+	free(receive5_1flux[n]);
+	free(receive5_3flux[n]);
+	free(receive5_5flux[n]);
+	free(receive5_7flux[n]);
+	free(receive6_2flux[n]);
+	free(receive6_4flux[n]);
+	free(receive6_6flux[n]);
+	free(receive6_8flux[n]);
+	#endif
+	free(receive1_flux1[n]);
+	free(receive2_flux1[n]);
+	free(receive3_flux1[n]);
+	free(receive4_flux1[n]);
+	free(receive5_flux1[n]);
+	free(receive6_flux1[n]);
+	free(receive1_3flux1[n]);
+	free(receive1_4flux1[n]);
+	free(receive1_7flux1[n]);
+	free(receive1_8flux1[n]);
+	free(receive2_1flux1[n]);
+	free(receive2_2flux1[n]);
+	free(receive2_3flux1[n]);
+	free(receive2_4flux1[n]);
+	free(receive3_1flux1[n]);
+	free(receive3_2flux1[n]);
+	free(receive3_5flux1[n]);
+	free(receive3_6flux1[n]);
+	free(receive4_5flux1[n]);
+	free(receive4_6flux1[n]);
+	free(receive4_7flux1[n]);
+	free(receive4_8flux1[n]);
+	#if(N3G>0)
+	free(receive5_1flux1[n]);
+	free(receive5_3flux1[n]);
+	free(receive5_5flux1[n]);
+	free(receive5_7flux1[n]);
+	free(receive6_2flux1[n]);
+	free(receive6_4flux1[n]);
+	free(receive6_6flux1[n]);
+	free(receive6_8flux1[n]);
+	#endif
+	free(receive1_3flux2[n]);
+	free(receive1_4flux2[n]);
+	free(receive1_7flux2[n]);
+	free(receive1_8flux2[n]);
+	free(receive2_1flux2[n]);
+	free(receive2_2flux2[n]);
+	free(receive2_3flux2[n]);
+	free(receive2_4flux2[n]);
+	free(receive3_1flux2[n]);
+	free(receive3_2flux2[n]);
+	free(receive3_5flux2[n]);
+	free(receive3_6flux2[n]);
+	free(receive4_5flux2[n]);
+	free(receive4_6flux2[n]);
+	free(receive4_7flux2[n]);
+	free(receive4_8flux2[n]);
+	#if(N3G>0)
+	free(receive5_1flux2[n]);
+	free(receive5_3flux2[n]);
+	free(receive5_5flux2[n]);
+	free(receive5_7flux2[n]);
+	free(receive6_2flux2[n]);
+	free(receive6_4flux2[n]);
+	free(receive6_6flux2[n]);
+	free(receive6_8flux2[n]);
+	#endif
+	free(send1_flux[n]);
+	free(send2_flux[n]);
+	free(send3_flux[n]);
+	free(send4_flux[n]);
+	#if(N3G>0)
+	free(send5_flux[n]);
+	free(send6_flux[n]);
+	#endif
+	free(receive1_E[n]);
+	free(receive2_E[n]);
+	free(receive3_E[n]);
+	free(receive4_E[n]);
+	free(receive5_E[n]);
+	free(receive6_E[n]);
+	free(receive1_3E[n]);
+	free(receive1_4E[n]);
+	free(receive1_7E[n]);
+	free(receive1_8E[n]);
+	free(receive2_1E[n]);
+	free(receive2_2E[n]);
+	free(receive2_3E[n]);
+	free(receive2_4E[n]);
+	free(receive3_1E[n]);
+	free(receive3_2E[n]);
+	free(receive3_5E[n]);
+	free(receive3_6E[n]);
+	free(receive4_5E[n]);
+	free(receive4_6E[n]);
+	free(receive4_7E[n]);
+	free(receive4_8E[n]);
+	#if(N3G>0)
+	free(receive5_1E[n]);
+	free(receive5_3E[n]);
+	free(receive5_5E[n]);
+	free(receive5_7E[n]);
+	free(receive6_2E[n]);
+	free(receive6_4E[n]);
+	free(receive6_6E[n]);
+	free(receive6_8E[n]);
+	#endif
+	free(receive1_E1[n]);
+	free(receive2_E1[n]);
+	free(receive3_E1[n]);
+	free(receive4_E1[n]);
+	free(receive5_E1[n]);
+	free(receive6_E1[n]);
+	free(receive1_3E1[n]);
+	free(receive1_4E1[n]);
+	free(receive1_7E1[n]);
+	free(receive1_8E1[n]);
+	free(receive2_1E1[n]);
+	free(receive2_2E1[n]);
+	free(receive2_3E1[n]);
+	free(receive2_4E1[n]);
+	free(receive3_1E1[n]);
+	free(receive3_2E1[n]);
+	free(receive3_5E1[n]);
+	free(receive3_6E1[n]);
+	free(receive4_5E1[n]);
+	free(receive4_6E1[n]);
+	free(receive4_7E1[n]);
+	free(receive4_8E1[n]);
+#if(N3G>0)
+	free(receive5_1E1[n]);
+	free(receive5_3E1[n]);
+	free(receive5_5E1[n]);
+	free(receive5_7E1[n]);
+	free(receive6_2E1[n]);
+	free(receive6_4E1[n]);
+	free(receive6_6E1[n]);
+	free(receive6_8E1[n]);
+#endif
+	free(receive1_3E2[n]);
+	free(receive1_4E2[n]);
+	free(receive1_7E2[n]);
+	free(receive1_8E2[n]);
+	free(receive2_1E2[n]);
+	free(receive2_2E2[n]);
+	free(receive2_3E2[n]);
+	free(receive2_4E2[n]);
+	free(receive3_1E2[n]);
+	free(receive3_2E2[n]);
+	free(receive3_5E2[n]);
+	free(receive3_6E2[n]);
+	free(receive4_5E2[n]);
+	free(receive4_6E2[n]);
+	free(receive4_7E2[n]);
+	free(receive4_8E2[n]);
+#if(N3G>0)
+	free(receive5_1E2[n]);
+	free(receive5_3E2[n]);
+	free(receive5_5E2[n]);
+	free(receive5_7E2[n]);
+	free(receive6_2E2[n]);
+	free(receive6_4E2[n]);
+	free(receive6_6E2[n]);
+	free(receive6_8E2[n]);
+#endif
+	free(send1_E[n]);
+	free(send2_E[n]);
+	free(send3_E[n]);
+	free(send4_E[n]);
+#if(N3G>0)
+	free(send5_E[n]);
+	free(send6_E[n]);
+#endif
+	free(send_E3_corn1[n]);
+	free(send_E3_corn2[n]);
+	free(send_E3_corn3[n]);
+	free(send_E3_corn4[n]);
+#if(N3G>0)
+	free(send_E2_corn5[n]);
+	free(send_E2_corn6[n]);
+	free(send_E2_corn7[n]);
+	free(send_E2_corn8[n]);
+	free(send_E1_corn9[n]);
+	free(send_E1_corn10[n]);
+	free(send_E1_corn11[n]);
+	free(send_E1_corn12[n]);
+#endif
+	free(receive_E3_corn1[n]);
+	free(receive_E3_corn2[n]);
+	free(receive_E3_corn3[n]);
+	free(receive_E3_corn4[n]);
+#if(N3G>0)
+	free(receive_E2_corn5[n]);
+	free(receive_E2_corn6[n]);
+	free(receive_E2_corn7[n]);
+	free(receive_E2_corn8[n]);
+	free(receive_E1_corn9[n]);
+	free(receive_E1_corn10[n]);
+	free(receive_E1_corn11[n]);
+	free(receive_E1_corn12[n]);
+#endif
+	free(receive_E3_corn1_1[n]);
+	free(receive_E3_corn2_1[n]);
+	free(receive_E3_corn3_1[n]);
+	free(receive_E3_corn4_1[n]);
+#if(N3G>0)
+	free(receive_E2_corn5_1[n]);
+	free(receive_E2_corn6_1[n]);
+	free(receive_E2_corn7_1[n]);
+	free(receive_E2_corn8_1[n]);
+	free(receive_E1_corn9_1[n]);
+	free(receive_E1_corn10_1[n]);
+	free(receive_E1_corn11_1[n]);
+	free(receive_E1_corn12_1[n]);
+#endif
+	free(receive_E3_corn1_2[n]);
+	free(receive_E3_corn2_2[n]);
+	free(receive_E3_corn3_2[n]);
+	free(receive_E3_corn4_2[n]);
+#if(N3G>0)
+	free(receive_E2_corn5_2[n]);
+	free(receive_E2_corn6_2[n]);
+	free(receive_E2_corn7_2[n]);
+	free(receive_E2_corn8_2[n]);
+	free(receive_E1_corn9_2[n]);
+	free(receive_E1_corn10_2[n]);
+	free(receive_E1_corn11_2[n]);
+	free(receive_E1_corn12_2[n]);
+#endif
+	free(tempreceive_E3_corn1[n]);
+	free(tempreceive_E3_corn2[n]);
+	free(tempreceive_E3_corn3[n]);
+	free(tempreceive_E3_corn4[n]);
+#if(N3G>0)
+	free(tempreceive_E2_corn5[n]);
+	free(tempreceive_E2_corn6[n]);
+	free(tempreceive_E2_corn7[n]);
+	free(tempreceive_E2_corn8[n]);
+	free(tempreceive_E1_corn9[n]);
+	free(tempreceive_E1_corn10[n]);
+	free(tempreceive_E1_corn11[n]);
+	free(tempreceive_E1_corn12[n]);
+#endif
+	free(tempreceive_E3_corn1_1[n]);
+	free(tempreceive_E3_corn2_1[n]);
+	free(tempreceive_E3_corn3_1[n]);
+	free(tempreceive_E3_corn4_1[n]);
+#if(N3G>0)
+	free(tempreceive_E2_corn5_1[n]);
+	free(tempreceive_E2_corn6_1[n]);
+	free(tempreceive_E2_corn7_1[n]);
+	free(tempreceive_E2_corn8_1[n]);
+	free(tempreceive_E1_corn9_1[n]);
+	free(tempreceive_E1_corn10_1[n]);
+	free(tempreceive_E1_corn11_1[n]);
+	free(tempreceive_E1_corn12_1[n]);
+#endif
+	free(tempreceive_E3_corn1_2[n]);
+	free(tempreceive_E3_corn2_2[n]);
+	free(tempreceive_E3_corn3_2[n]);
+	free(tempreceive_E3_corn4_2[n]);
+	#if(N3G>0)
+	free(tempreceive_E2_corn5_2[n]);
+	free(tempreceive_E2_corn6_2[n]);
+	free(tempreceive_E2_corn7_2[n]);
+	free(tempreceive_E2_corn8_2[n]);
+	free(tempreceive_E1_corn9_2[n]);
+	free(tempreceive_E1_corn10_2[n]);
+	free(tempreceive_E1_corn11_2[n]);
+	free(tempreceive_E1_corn12_2[n]);
+	#endif
+	free(receive_E3_corn1_12[n]);
+	free(receive_E3_corn2_12[n]);
+	free(receive_E3_corn3_12[n]);
+	free(receive_E3_corn4_12[n]);
+	#if(N3G>0)
+	free(receive_E2_corn5_12[n]);
+	free(receive_E2_corn6_12[n]);
+	free(receive_E2_corn7_12[n]);
+	free(receive_E2_corn8_12[n]);
+	free(receive_E1_corn9_12[n]);
+	free(receive_E1_corn10_12[n]);
+	free(receive_E1_corn11_12[n]);
+	free(receive_E1_corn12_12[n]);
+	#endif
+	free(receive_E3_corn1_22[n]);
+	free(receive_E3_corn2_22[n]);
+	free(receive_E3_corn3_22[n]);
+	free(receive_E3_corn4_22[n]);
+	#if(N3G>0)
+	free(receive_E2_corn5_22[n]);
+	free(receive_E2_corn6_22[n]);
+	free(receive_E2_corn7_22[n]);
+	free(receive_E2_corn8_22[n]);
+	free(receive_E1_corn9_22[n]);
+	free(receive_E1_corn10_22[n]);
+	free(receive_E1_corn11_22[n]);
+	free(receive_E1_corn12_22[n]);
+	#endif
+	#endif
+	//#endif
+	free(Katm[n]);
+	free(array[n]);
+	free(array_rdump[n]);
+	free(array_diag[n]);
+}
+
+
 int index_3D(int n, int i, int j, int z)
 {
 	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(N3_GPU[n] + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
@@ -1356,10 +1311,6 @@ int index_2D(int n, int i, int j, int z)
 	#else
 	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(N3_GPU[n] + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
 	#endif
-}
-int index3(int i, int j)
-{
-	return((i + N1G)*(N2 + 2 * N2G) + (j + N2G));
 }
 
 /*****************************************************************/
@@ -1528,57 +1479,4 @@ void set_grid(int n)
 	#endif
 
 	/* done! */
-}
-
-
-/*This function initialises the MPI structure. It divides the grid(N1, N2, N3) among the MPI processes.
-The host node is node 0 by default.*/
-void MPI_initialize(int argc, char *argv[])
-{
-	#if (MPI_enable)
-	char hostname[MPI_MAX_PROCESSOR_NAME];
-	int i, j, z, len, dim, corn, rankloop;
-	int dims[3], periods[3], coords[3];
-	int rdma_direct=0, local_rank=0;
-
-	/*Get basic initialisation*/
-	rdma_direct = getenv("MPICH_RDMA_ENABLED_CUDA") == NULL ? 0 : atoi(getenv("MPICH_RDMA_ENABLED_CUDA"));
-	if (getenv("MV2_COMM_WORLD_LOCAL_RANK") != NULL){
-		local_rank = getenv("MV2_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("MV2_COMM_WORLD_LOCAL_RANK"));
-	}
-	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
-		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
-	}
-	cudaSetDevice(local_rank%N_GPU);
-	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
-
-	if (rc != MPI_SUCCESS) {
-		fprintf(stderr, "Error starting MPI program. Terminating.\n");
-		MPI_Abort(MPI_COMM_WORLD, rc);
-	}
-
-	MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
-	MPI_Get_processor_name(hostname, &len);
-	mpi_cartcomm = MPI_COMM_WORLD;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_split(MPI_COMM_WORLD, rank, rank, &mpi_self);
-
-	/*Give basic diagnostics*/
-	if (rank == 0){
-		if (rdma_direct != 1 && GPU_DIRECT==1){
-			printf("MPICH_RDMA_ENABLED_CUDA not enabled but GPU_DIRECT still turned on!\n");
-		}
-		fprintf(stderr, "Number of MPI tasks: %d \nRunning on: %s\n", numtasks, hostname);
-	}
-	#endif
-}
-
-void mpi_synch(void){
-	int i;
-	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-		break;
-		}
-	}
 }

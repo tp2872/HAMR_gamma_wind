@@ -44,78 +44,231 @@
 ***********************************************************************************/
 
 #include "decs.h"
-
-/***************************************************************************/
-/***************************************************************************
-    coord():
-    -------
-       -- given the indices i,j and location in the cell, return with 
-          the values of X1,X2 there;  
-       -- the locations are defined by : 
-           -----------------------
-           |                     |
-           |                     |
-           |FACE1   CENT         |
-           |                     |
-           |CORN    FACE2        |
-           ----------------------
-***************************************************************************/
-void coord(int n, int i, int j, int z, int loc, double * restrict X)
+/* insert metric here */
+void gcov_func(double *X, double gcovp[][NDIM])
 {
-	X[0] = 0.0;
-	int j_local = j;
-	if (j < 0) j_local = -j-1;
-	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j;
-	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2) j_local = j;
-	if(loc == FACE1) {
-            X[1] = startx[1] + i*dx[n][1] ;
-			X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
-			X[3] = startx[3] + (z + 0.5)*dx[n][3];
-        }
-        else if(loc == FACE2) {
-			X[1] = startx[1] + (i + 0.5)*dx[n][1];
-			X[2] = startx[2] + j_local*dx[n][2];
-			X[3] = startx[3] + (z + 0.5)*dx[n][3];
-        }
-		else if (loc == FACE3) {
-			X[1] = startx[1] + (i + 0.5)*dx[n][1];
-			X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
-			X[3] = startx[3] + z*dx[n][3];
-		}
-        else if(loc == CENT) {
-			X[1] = startx[1] + (i + 0.5)*dx[n][1];
-			X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
-			X[3] = startx[3] + (z + 0.5)*dx[n][3];
-        }
-        else {
-			X[1] = startx[1] + i*dx[n][1];
-			X[2] = startx[2] + j_local*dx[n][2];
-			X[3] = startx[3] + z*dx[n][3];
-        }
+	int i, j, k, l;
+	double sth, cth, s2, rho2, sph, cph;
+	double r, th, phi;
+	double tfac, rfac, hfac, pfac;
+	double gcov[NDIM][NDIM];
+	double dxdxp[NDIM][NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxt[NDIM][NDIM], dxtdx[NDIM][NDIM];
+	double V[NDIM], Vp[NDIM];
+	double T1, T2, P1, P2, A;
+	double offset = 0.000000001;
+	double tilt = TILT_ANGLE / 180.*M_PI;
+	DLOOP gcov[j][k] = 0.;
+#if(NONSYMMETRIC)
+	bl_coord(X, &r, &th, &phi);
 
-		if (j < 0){
-			X[2] = X[2] + 1;
-			X[2] = -X[2];
-			X[2] = X[2] - 1;
-		}
-		if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2){
-		}
-		else if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])){
-			X[2] = X[2] + 1;
-			X[2] = 4. - X[2];
-			X[2] = X[2] - 1;
-		}
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(th)*cos(phi);
+	dxdr[1][2] = r*cos(th)*cos(phi);
+	dxdr[1][3] = -r*sin(th)*sin(phi);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(th)*sin(phi);
+	dxdr[2][2] = r*cos(th)*sin(phi);
+	dxdr[2][3] = r*sin(th)*cos(phi);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(th);
+	dxdr[3][2] = -r*sin(th);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
 
-        return ;
-}
+	//compute Jacobian nt->t (dt/dnt)
+	dxdxt[0][0] = 1.;
+	dxdxt[0][1] = 0.;
+	dxdxt[0][2] = 0.;
+	dxdxt[0][3] = 0.;
+	dxdxt[1][0] = 0.;
+	dxdxt[1][1] = cos(tilt);
+	dxdxt[1][2] = 0.;
+	dxdxt[1][3] = -sin(tilt);
+	dxdxt[2][0] = 0.;
+	dxdxt[2][1] = 0.;
+	dxdxt[2][2] = 1.;
+	dxdxt[2][3] = 0.;
+	dxdxt[3][0] = 0.;
+	dxdxt[3][1] = sin(tilt);
+	dxdxt[3][2] = 0.0;
+	dxdxt[3][3] = cos(tilt);
+	invert_matrix(dxdxt, dxtdx);
 
-void coord_double(int n, double i, double j, double z, double * restrict X)
-{
-	X[0] = 0.0;
-	X[1] = startx[1] + i*dx[n][1];
-	X[2] = startx[2] + j*dx[n][2];
-	X[3] = startx[3] + z*dx[n][3];
-	return;
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	dxdxp_func(X, dxdxp);
+
+
+	Vp[1] = r*sin(th)*cos(phi);
+	Vp[2] = r*sin(th)*sin(phi);
+	Vp[3] = r*cos(th);
+
+	V[1] = Vp[1] * cos(-tilt) - Vp[3] * sin(-tilt);
+	V[2] = Vp[2];
+	V[3] = sin(-tilt)*Vp[1] + cos(-tilt)*Vp[3];
+	Vp[1] = sqrt(V[1] * V[1] + V[2] * V[2] + V[3] * V[3]);
+	Vp[2] = acos(V[3] / Vp[1]);
+	Vp[3] = atan2(V[2], V[1]);
+	if (Vp[2] < 0.0) Vp[2] *= -1;
+	if (Vp[2] > M_PI) Vp[2] = M_PI - (Vp[2] - M_PI);
+
+#if(COORDSINGFIX)
+	if (fabs(Vp[2])<SINGSMALL){
+		if (Vp[2] >= 0.0) Vp[2] = SINGSMALL;
+		if (Vp[2]<0.0)  Vp[2] = -SINGSMALL;
+	}
+	if (fabs(M_PI - Vp[2]) <SINGSMALL){
+		if (Vp[2] >= M_PI) Vp[2] = M_PI + SINGSMALL;
+		if (Vp[2]<M_PI)  Vp[2] = M_PI - SINGSMALL;
+	}
+#endif
+	//printf("r: %f %f, th: %f %f, phi: %f %f \n", r,Vp[1], th,Vp[2], phi,Vp[3]);
+	r = Vp[1];
+	th = Vp[2];
+	phi = Vp[3];
+
+	cth = cos(th);
+	sth = sin(th);
+
+	s2 = sth*sth;
+	rho2 = r*r + a*a*cth*cth;
+
+	gcov[0][0] = (-1. + 2.*r / rho2);
+	gcov[0][1] = (2.*r / rho2);
+	gcov[0][3] = (-2.*a*r*s2 / rho2);
+
+	gcov[1][0] = gcov[0][1];
+	gcov[1][1] = (1. + 2.*r / rho2);
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
+
+	gcov[2][2] = rho2;
+
+	gcov[3][0] = gcov[0][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
+#else
+	bl_coord(X, &r, &th, &phi);
+
+	cth = cos(th);
+	sth = sin(th);
+
+	s2 = sth*sth;
+	rho2 = r*r + a*a*cth*cth;
+
+	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
+	dxdxp_func(X, dxdxp);
+
+	gcov[0][0] = (-1. + 2.*r / rho2);
+	gcov[0][1] = (2.*r / rho2);
+	gcov[0][3] = (-2.*a*r*s2 / rho2);
+
+	gcov[1][0] = gcov[0][1];
+	gcov[1][1] = (1. + 2.*r / rho2);
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
+
+	gcov[2][2] = rho2;
+
+	gcov[3][0] = gcov[0][3];
+	gcov[3][1] = gcov[1][3];
+	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
+#endif
+
+#if(NONSYMMETRIC)
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(Vp[2])*cos(Vp[3]);
+	dxdr[1][2] = r*cos(Vp[2])*cos(Vp[3]);
+	dxdr[1][3] = -r*sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(Vp[2])*sin(Vp[3]);
+	dxdr[2][2] = r*cos(Vp[2])*sin(Vp[3]);
+	dxdr[2][3] = r*sin(Vp[2])*cos(Vp[3]);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(Vp[2]);
+	dxdr[3][2] = -r*sin(Vp[2]);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
+
+	//convert from kerr schild to cartesian coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcovp[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * drdx[k][i] * drdx[l][j];
+				}
+			}
+		}
+	}
+	//convert from cartesian to tilted cartesian coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcov[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcov[i][j] += gcovp[k][l] * dxtdx[k][i] * dxtdx[l][j];
+				}
+			}
+		}
+	}
+
+	//compute Jacobian r,th,phi->x,y,z (dx/dr)
+	bl_coord(X, &r, &th, &phi);
+
+	dxdr[0][0] = 1.;
+	dxdr[0][1] = 0.;
+	dxdr[0][2] = 0.;
+	dxdr[0][3] = 0.;
+	dxdr[1][0] = 0.;
+	dxdr[1][1] = sin(th)*cos(phi);
+	dxdr[1][2] = r*cos(th)*cos(phi);
+	dxdr[1][3] = -r*sin(th)*sin(phi);
+	dxdr[2][0] = 0.;
+	dxdr[2][1] = sin(th)*sin(phi);
+	dxdr[2][2] = r*cos(th)*sin(phi);
+	dxdr[2][3] = r*sin(th)*cos(phi);
+	dxdr[3][0] = 0.;
+	dxdr[3][1] = cos(th);
+	dxdr[3][2] = -r*sin(th);
+	dxdr[3][3] = 0.;
+	invert_matrix(dxdr, drdx);
+
+	//convert back to tilted kerr-schild coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcovp[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * dxdr[k][i] * dxdr[l][j];
+				}
+			}
+		}
+	}
+	for (i = 0; i < NDIM; i++){
+		for (j = 0; j < NDIM; j++){
+			gcov[i][j] = gcovp[i][j];
+		}
+	}
+#endif
+	//convert to code coordinates
+	for (i = 0; i<NDIM; i++){
+		for (j = 0; j<NDIM; j++){
+			gcovp[i][j] = 0.;
+			for (k = 0; k<NDIM; k++) {
+				for (l = 0; l<NDIM; l++){
+					gcovp[i][j] += gcov[k][l] * dxdxp[k][i] * dxdxp[l][j];
+				}
+			}
+		}
+	}
 }
 
 /* assumes gcov has been set first; returns determinant */
@@ -227,6 +380,27 @@ void raise(double * restrict ucov, struct of_geom * restrict geom, double * rest
     return ;
 }
 
+/* NOTE: parameter hides global variable */
+void dxdxp_func(double *X, double dxdxp[][NDIM])
+{
+	int i, j, k, l;
+	double Xh[NDIM], Xl[NDIM];
+	double Vh[NDIM], Vl[NDIM];
+
+	for (k = 0; k<NDIM; k++) {
+		for (l = 0; l<NDIM; l++) Xh[l] = X[l];
+		for (l = 0; l<NDIM; l++) Xl[l] = X[l];
+		Xh[k] += 0.00001;
+		Xl[k] -= 0.00001;
+		Vh[0] = Xh[0];
+		Vl[0] = Xl[0];
+		bl_coord(Xh, &Vh[1], &Vh[2], &Vh[3]);
+		bl_coord(Xl, &Vl[1], &Vl[2], &Vl[3]);
+		for (j = 0; j<NDIM; j++)
+			dxdxp[j][k] = (Vh[j] - Vl[j]) / (Xh[k] - Xl[k]);
+	}
+}
+
 /* load local geometry into structure geom */
 void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restrict geom)
 {
@@ -315,17 +489,17 @@ void kerr_gcov_func(double r, double th, double gcov[][NDIM])
 	a2 = a*a;
 	rho2 = r*r + a*a*cth*cth;	
 
-	gcov[TT][TT] = (-1. + 2.*r / rho2);
-	gcov[TT][1] = (2.*r / rho2);
-	gcov[TT][3] = (-2.*a*r*s2 / rho2);
+	gcov[0][0] = (-1. + 2.*r / rho2);
+	gcov[0][1] = (2.*r / rho2);
+	gcov[0][3] = (-2.*a*r*s2 / rho2);
 
-	gcov[1][TT] = gcov[TT][1];
+	gcov[1][0] = gcov[0][1];
 	gcov[1][1] = (1. + 2.*r / rho2);
 	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
 
 	gcov[2][2] = rho2;
 
-	gcov[3][TT] = gcov[TT][3];
+	gcov[3][0] = gcov[0][3];
 	gcov[3][1] = gcov[1][3];
 	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
 }
@@ -345,9 +519,9 @@ void bl_gcov_func(double r, double th, double gcov[][NDIM])
 	DD = 1. - 2. / r + a2 / r2;
 	mu = 1. + a2*cth*cth / r2;
 
-	gcov[TT][TT] = -(1. - 2. / (r*mu));
-	gcov[TT][3] = -2.*a*s2 / (r*mu);
-	gcov[3][TT] = gcov[TT][3];
+	gcov[0][0] = -(1. - 2. / (r*mu));
+	gcov[0][3] = -2.*a*s2 / (r*mu);
+	gcov[3][0] = gcov[0][3];
 	gcov[1][1] = mu / DD;
 	gcov[2][2] = r2*mu;
 	gcov[3][3] = r2*sth*sth*(1. + a2 / r2 + 2.*a2*s2 / (r2*r*mu));
@@ -364,12 +538,12 @@ void bl_gcon_func(double r, double th, double gcon[][NDIM])
 	sth = sin(th);
 	cth = cos(th);
 
-#if(COORDSINGFIX)
+	#if(COORDSINGFIX)
 	if (fabs(sth) < SINGSMALL) {
 		if (sth >= 0) sth = SINGSMALL;
 		if (sth<0) sth = -SINGSMALL;
 	}
-#endif
+	#endif
 
 	a2 = a*a;
 	r2 = r*r;
@@ -377,12 +551,10 @@ void bl_gcon_func(double r, double th, double gcon[][NDIM])
 	DD = 1. - 2. / r + a2 / r2;
 	mu = 1. + a2*cth*cth / r2;
 
-	gcon[TT][TT] = -1. - 2.*(1. + a2 / r2) / (r*DD*mu);
-	gcon[TT][3] = -2.*a / (r3*DD*mu);
-	gcon[3][TT] = gcon[TT][3];
+	gcon[0][0] = -1. - 2.*(1. + a2 / r2) / (r*DD*mu);
+	gcon[0][3] = -2.*a / (r3*DD*mu);
+	gcon[3][0] = gcon[0][3];
 	gcon[1][1] = DD / mu;
 	gcon[2][2] = 1. / (r2*mu);
 	gcon[3][3] = (1. - 2. / (r*mu)) / (r2*sth*sth*DD);
-
-
 }

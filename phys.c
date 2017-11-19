@@ -96,10 +96,10 @@ void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict u
 {
 	int j ;
 
-	bcon[TT] = pr[B1]*ucov[1] + pr[B2]*ucov[2] + pr[B3]*ucov[3] ;
+	bcon[0] = pr[B1]*ucov[1] + pr[B2]*ucov[2] + pr[B3]*ucov[3] ;
 	/*#pragma ivdep*/
 	for(j=1;j<4;j++)
-		bcon[j] = (pr[B1-1+j] + bcon[TT]*ucon[j])/ucon[TT] ;
+		bcon[j] = (pr[B1-1+j] + bcon[0]*ucon[j])/ucon[0] ;
 
 	return ;
 }
@@ -188,9 +188,9 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	double beta[NDIM] ;
 	int j ;
 
-	alpha = 1./sqrt(-geom->gcon[TT][TT]) ;
+	alpha = 1./sqrt(-geom->gcon[0][0]) ;
 	 #pragma ivdep
-	SLOOPA beta[j] = geom->gcon[TT][j]*alpha*alpha ;
+	SLOOPA beta[j] = geom->gcon[0][j]*alpha*alpha ;
 
 	if( gamma_calc(pr,geom,&gamma) ) { 
 	  fflush(stderr);
@@ -199,7 +199,7 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	  fail(FAIL_GAMMA);
 	}
 
-	ucon[TT] = gamma/alpha ;
+	ucon[0] = gamma/alpha ;
 	 #pragma ivdep
 	SLOOPA ucon[j] = pr[U1+j-1] - gamma*beta[j]/alpha ;
 
@@ -257,7 +257,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	
 	 #pragma ivdep
 	DLOOPA Bcov[j] = 0. ;
-	Bcov[TT] = 1. ;
+	Bcov[0] = 1. ;
 	raise(Bcov,geom,Bcon) ;
 
 	/* find fast magnetosonic speed */

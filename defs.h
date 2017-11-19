@@ -44,25 +44,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <malloc.h>
 
 /*************************************************************************
-GLOBAL ARRAYS SECTION
+GLOBAL ARRAY SECTION
 *************************************************************************/
-int tag_HLLC;
-int tag_normal;
 /* for debug */
-double(*restrict psave)[NPR];
-double(*restrict fsave)[NFAIL];
 int(*restrict failimage[NB])[NFAIL];
-double(** fimage);
-double tilt_temp;
-int max_levels;
-double *connected;
+#if(DO_FONT_FIX)
+double *Katm[NB];
+#endif
 
-/* grid functions */
-double tbound[N_POINTS];
-double(*restrict  pbound[NB])[NPR][N_POINTS];
-double(*restrict  p[NB])[NPR];
-double(*restrict  ph[NB])[NPR];
+/*CPU arrays*/
 double(*restrict V[NB])[6];
+double(*restrict p[NB])[NPR];
 double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G];
 double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G];
 double E_avg1_new[NB_1*NB_3][BS_1 + 2 * N1G];
@@ -71,6 +63,7 @@ double(*restrict E_avg_x[NB][2]);
 double(*restrict E_avg_new_x[NB][2]);
 double(*restrict E_avg_y[NB][2]);
 double(*restrict E_avg_new_y[NB][2]);
+double(*restrict  ph[NB])[NPR];
 double(*restrict E_corn[NB])[NDIM];
 double(*restrict dE[NB])[2][NDIM][NDIM];
 double(*restrict ps[NB])[NDIM];
@@ -88,110 +81,32 @@ double(*restrict gcov[NB])[NPG][NDIM][NDIM];
 double(*restrict gdet[NB])[NPG];
 double(*restrict dU_s[NB])[NPR];
 
-/*GPU variables*/
-//#define FTYPE2 double
-FTYPE2 *F1_1[NB];
-FTYPE2 *F2_1[NB];
-FTYPE2 *F3_1[NB];
-FTYPE2 *dq_1[NB];
-FTYPE2 *p_1[NB];
-FTYPE2 *ph_1[NB];
-FTYPE2 *ps_1[NB];
-FTYPE2 *psh_1[NB];
-FTYPE2 *pbound_1[NB];
-FTYPE2 *gcov_GPU[NB];
-FTYPE2 *gcon_GPU[NB];
-FTYPE2 *conn_GPU[NB];
-FTYPE2 *gdet_GPU[NB];
-FTYPE2 *dtij_GPU[NB];
-FTYPE2 *dU_GPU[NB];
-FTYPE2 *Katm_GPU[NB];
+/*GPU arrays*/
+double *F1_1[NB];
+double *F2_1[NB];
+double *F3_1[NB];
+double *dq_1[NB];
+double *dU_GPU[NB];
+double *p_1[NB];
+double *ph_1[NB];
+double *ps_1[NB];
+double *psh_1[NB];
+double *gcov_GPU[NB];
+double *gcon_GPU[NB];
+double *conn_GPU[NB];
+double *gdet_GPU[NB];
+double *dtij_GPU[NB];
+double *Katm_GPU[NB];
 int *pflag_GPU[NB];
 int *failimage_GPU[NB];
 
-/*MPI variables*/
-int nthreads;
-int n_rows;
-int n_columns;
-int n_stacks;
-int n1_MPI;
-int n2_MPI;
-int n3_MPI;
-int N1_MPI;
-int N2_MPI;
-int N3_MPI;
-int N1_MPI_offset;
-int N2_MPI_offset;
-int N3_MPI_offset;
-int count_node[20000];
-int count_gpu[32];
-int n_rows_GPU;
-int n_columns_GPU;
-int n_stacks_GPU;
-int n1_MPI_GPU[NB];
-int n2_MPI_GPU[NB];
-int n3_MPI_GPU[NB];
-int N1_GPU[NB];
-int N2_GPU[NB];
-int N3_GPU[NB];
-int N1_GPU_offset[NB];
-int N2_GPU_offset[NB];
-int N3_GPU_offset[NB];
-int numtasks, rank, local_rank, rc;
-int max1D_MPI;
-#if (MPI_enable)
-MPI_Request req[NB], boundreqs[NB][600], cornreqs[NB][16];
-MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
-MPI_Comm  mpi_cartcomm, mpi_self;
-MPI_Comm row_comm[8];
-#endif
-int mpi_nbrs[4][2];
-int mpi_corns[3][5][2];
-double *send[NB], *receive[NB];
+/*MPI arrays*/
 double  *send1[NB], *send2[NB], *send3[NB], *send4[NB], *send5[NB], *send6[NB];
 double  *send1_fine[NB], *send2_fine[NB], *send3_fine[NB], *send4_fine[NB], *send5_fine[NB], *send6_fine[NB];
+
 double  *send1_flux[NB], *send2_flux[NB], *send3_flux[NB], *send4_flux[NB], *send5_flux[NB], *send6_flux[NB], *send7_flux[NB], *send8_flux[NB];
 double  *send1_E[NB], *send2_E[NB], *send3_E[NB], *send4_E[NB], *send5_E[NB], *send6_E[NB], *send7_E[NB], *send8_E[NB];
-double *receive1_fine[NB], *receive2_fine[NB], *receive3_fine[NB], *receive4_fine[NB], *receive5_fine[NB], *receive6_fine[NB];
-double  *receive1_3fine[NB], *receive1_4fine[NB], *receive1_7fine[NB], *receive1_8fine[NB];
-double  *receive2_1fine[NB], *receive2_2fine[NB], *receive2_3fine[NB], *receive2_4fine[NB];
-double  *receive3_1fine[NB], *receive3_2fine[NB], *receive3_5fine[NB], *receive3_6fine[NB];
-double  *receive4_5fine[NB], *receive4_6fine[NB], *receive4_7fine[NB], *receive4_8fine[NB];
-double  *receive5_1fine[NB], *receive5_3fine[NB], *receive5_5fine[NB], *receive5_7fine[NB];
-double  *receive6_2fine[NB], *receive6_4fine[NB], *receive6_6fine[NB], *receive6_8fine[NB];
 
-double *receive1_flux[NB], *receive2_flux[NB], *receive3_flux[NB], *receive4_flux[NB], *receive5_flux[NB], *receive6_flux[NB], *receive7_flux[NB], *receive8_flux[NB];
-double *receive1_flux1[NB], *receive2_flux1[NB], *receive3_flux1[NB], *receive4_flux1[NB], *receive5_flux1[NB], *receive6_flux1[NB], *receive7_flux1[NB], *receive8_flux1[NB];
-
-double  *receive1_3flux[NB], *receive1_4flux[NB], *receive1_7flux[NB], *receive1_8flux[NB];
-double  *receive2_1flux[NB], *receive2_2flux[NB], *receive2_3flux[NB], *receive2_4flux[NB];
-double  *receive3_1flux[NB], *receive3_2flux[NB], *receive3_5flux[NB], *receive3_6flux[NB];
-double  *receive4_5flux[NB], *receive4_6flux[NB], *receive4_7flux[NB], *receive4_8flux[NB];
-double  *receive5_1flux[NB], *receive5_3flux[NB], *receive5_5flux[NB], *receive5_7flux[NB];
-double  *receive6_2flux[NB], *receive6_4flux[NB], *receive6_6flux[NB], *receive6_8flux[NB];
-
-double  *receive1_3flux1[NB], *receive1_4flux1[NB], *receive1_7flux1[NB], *receive1_8flux1[NB];
-double  *receive2_1flux1[NB], *receive2_2flux1[NB], *receive2_3flux1[NB], *receive2_4flux1[NB];
-double  *receive3_1flux1[NB], *receive3_2flux1[NB], *receive3_5flux1[NB], *receive3_6flux1[NB];
-double  *receive4_5flux1[NB], *receive4_6flux1[NB], *receive4_7flux1[NB], *receive4_8flux1[NB];
-double  *receive5_1flux1[NB], *receive5_3flux1[NB], *receive5_5flux1[NB], *receive5_7flux1[NB];
-double  *receive6_2flux1[NB], *receive6_4flux1[NB], *receive6_6flux1[NB], *receive6_8flux1[NB];
-double  *receive1_3flux2[NB], *receive1_4flux2[NB], *receive1_7flux2[NB], *receive1_8flux2[NB];
-double  *receive2_1flux2[NB], *receive2_2flux2[NB], *receive2_3flux2[NB], *receive2_4flux2[NB];
-double  *receive3_1flux2[NB], *receive3_2flux2[NB], *receive3_5flux2[NB], *receive3_6flux2[NB];
-double  *receive4_5flux2[NB], *receive4_6flux2[NB], *receive4_7flux2[NB], *receive4_8flux2[NB];
-double  *receive5_1flux2[NB], *receive5_3flux2[NB], *receive5_5flux2[NB], *receive5_7flux2[NB];
-double  *receive6_2flux2[NB], *receive6_4flux2[NB], *receive6_6flux2[NB], *receive6_8flux2[NB];
-double *receive1_E[NB], *receive2_E[NB], *receive3_E[NB], *receive4_E[NB], *receive5_E[NB], *receive6_E[NB], *receive7_E[NB], *receive8_E[NB];
-double *receive1_E1[NB], *receive2_E1[NB], *receive3_E1[NB], *receive4_E1[NB], *receive5_E1[NB], *receive6_E1[NB], *receive7_E1[NB], *receive8_E1[NB];
-
-double  *receive1_3flux[NB], *receive1_4flux[NB], *receive1_7flux[NB], *receive1_8flux[NB];
-double  *receive1_3E[NB], *receive1_4E[NB], *receive1_7E[NB], *receive1_8E[NB];
-double  *receive2_1E[NB], *receive2_2E[NB], *receive2_3E[NB], *receive2_4E[NB];
-double  *receive3_1E[NB], *receive3_2E[NB], *receive3_5E[NB], *receive3_6E[NB];
-double  *receive4_5E[NB], *receive4_6E[NB], *receive4_7E[NB], *receive4_8E[NB];
-double  *receive5_1E[NB], *receive5_3E[NB], *receive5_5E[NB], *receive5_7E[NB];
-double  *receive6_2E[NB], *receive6_4E[NB], *receive6_6E[NB], *receive6_8E[NB];
 double  *send1_3[NB], *send1_4[NB], *send1_7[NB], *send1_8[NB];
 double  *receive1_3[NB], *receive1_4[NB], *receive1_7[NB], *receive1_8[NB];
 double  *tempreceive1_3[NB], *tempreceive1_4[NB], *tempreceive1_7[NB], *tempreceive1_8[NB];
@@ -219,6 +134,47 @@ double  *tempreceive6_2[NB], *tempreceive6_4[NB], *tempreceive6_6[NB], *temprece
 double *receive1[NB], *receive2[NB], *receive3[NB], *receive4[NB], *receive5[NB], *receive6[NB];
 double *tempreceive1[NB], *tempreceive2[NB], *tempreceive3[NB], *tempreceive4[NB], *tempreceive5[NB], *tempreceive6[NB];
 
+double *receive1_fine[NB], *receive2_fine[NB], *receive3_fine[NB], *receive4_fine[NB], *receive5_fine[NB], *receive6_fine[NB];
+double  *receive1_3fine[NB], *receive1_4fine[NB], *receive1_7fine[NB], *receive1_8fine[NB];
+double  *receive2_1fine[NB], *receive2_2fine[NB], *receive2_3fine[NB], *receive2_4fine[NB];
+double  *receive3_1fine[NB], *receive3_2fine[NB], *receive3_5fine[NB], *receive3_6fine[NB];
+double  *receive4_5fine[NB], *receive4_6fine[NB], *receive4_7fine[NB], *receive4_8fine[NB];
+double  *receive5_1fine[NB], *receive5_3fine[NB], *receive5_5fine[NB], *receive5_7fine[NB];
+double  *receive6_2fine[NB], *receive6_4fine[NB], *receive6_6fine[NB], *receive6_8fine[NB];
+double *receive1_flux[NB], *receive2_flux[NB], *receive3_flux[NB], *receive4_flux[NB], *receive5_flux[NB], *receive6_flux[NB], *receive7_flux[NB], *receive8_flux[NB];
+double *receive1_flux1[NB], *receive2_flux1[NB], *receive3_flux1[NB], *receive4_flux1[NB], *receive5_flux1[NB], *receive6_flux1[NB], *receive7_flux1[NB], *receive8_flux1[NB];
+
+double  *receive1_3flux[NB], *receive1_4flux[NB], *receive1_7flux[NB], *receive1_8flux[NB];
+double  *receive2_1flux[NB], *receive2_2flux[NB], *receive2_3flux[NB], *receive2_4flux[NB];
+double  *receive3_1flux[NB], *receive3_2flux[NB], *receive3_5flux[NB], *receive3_6flux[NB];
+double  *receive4_5flux[NB], *receive4_6flux[NB], *receive4_7flux[NB], *receive4_8flux[NB];
+double  *receive5_1flux[NB], *receive5_3flux[NB], *receive5_5flux[NB], *receive5_7flux[NB];
+double  *receive6_2flux[NB], *receive6_4flux[NB], *receive6_6flux[NB], *receive6_8flux[NB];
+
+double  *receive1_3flux1[NB], *receive1_4flux1[NB], *receive1_7flux1[NB], *receive1_8flux1[NB];
+double  *receive2_1flux1[NB], *receive2_2flux1[NB], *receive2_3flux1[NB], *receive2_4flux1[NB];
+double  *receive3_1flux1[NB], *receive3_2flux1[NB], *receive3_5flux1[NB], *receive3_6flux1[NB];
+double  *receive4_5flux1[NB], *receive4_6flux1[NB], *receive4_7flux1[NB], *receive4_8flux1[NB];
+double  *receive5_1flux1[NB], *receive5_3flux1[NB], *receive5_5flux1[NB], *receive5_7flux1[NB];
+double  *receive6_2flux1[NB], *receive6_4flux1[NB], *receive6_6flux1[NB], *receive6_8flux1[NB];
+
+double  *receive1_3flux2[NB], *receive1_4flux2[NB], *receive1_7flux2[NB], *receive1_8flux2[NB];
+double  *receive2_1flux2[NB], *receive2_2flux2[NB], *receive2_3flux2[NB], *receive2_4flux2[NB];
+double  *receive3_1flux2[NB], *receive3_2flux2[NB], *receive3_5flux2[NB], *receive3_6flux2[NB];
+double  *receive4_5flux2[NB], *receive4_6flux2[NB], *receive4_7flux2[NB], *receive4_8flux2[NB];
+double  *receive5_1flux2[NB], *receive5_3flux2[NB], *receive5_5flux2[NB], *receive5_7flux2[NB];
+double  *receive6_2flux2[NB], *receive6_4flux2[NB], *receive6_6flux2[NB], *receive6_8flux2[NB];
+
+double *receive1_E[NB], *receive2_E[NB], *receive3_E[NB], *receive4_E[NB], *receive5_E[NB], *receive6_E[NB], *receive7_E[NB], *receive8_E[NB];
+double *receive1_E1[NB], *receive2_E1[NB], *receive3_E1[NB], *receive4_E1[NB], *receive5_E1[NB], *receive6_E1[NB], *receive7_E1[NB], *receive8_E1[NB];
+
+double  *receive1_3E[NB], *receive1_4E[NB], *receive1_7E[NB], *receive1_8E[NB];
+double  *receive2_1E[NB], *receive2_2E[NB], *receive2_3E[NB], *receive2_4E[NB];
+double  *receive3_1E[NB], *receive3_2E[NB], *receive3_5E[NB], *receive3_6E[NB];
+double  *receive4_5E[NB], *receive4_6E[NB], *receive4_7E[NB], *receive4_8E[NB];
+double  *receive5_1E[NB], *receive5_3E[NB], *receive5_5E[NB], *receive5_7E[NB];
+double  *receive6_2E[NB], *receive6_4E[NB], *receive6_6E[NB], *receive6_8E[NB];
+
 double  *receive1_3E2[NB], *receive1_4E2[NB], *receive1_7E2[NB], *receive1_8E2[NB];
 double  *receive2_1E2[NB], *receive2_2E2[NB], *receive2_3E2[NB], *receive2_4E2[NB];
 double  *receive3_1E2[NB], *receive3_2E2[NB], *receive3_5E2[NB], *receive3_6E2[NB];
@@ -233,16 +189,21 @@ double  *receive4_5E1[NB], *receive4_6E1[NB], *receive4_7E1[NB], *receive4_8E1[N
 double  *receive5_1E1[NB], *receive5_3E1[NB], *receive5_5E1[NB], *receive5_7E1[NB];
 double  *receive6_2E1[NB], *receive6_4E1[NB], *receive6_6E1[NB], *receive6_8E1[NB];
 
+double  *cornsend1[NB], *cornsend2[NB], *cornsend3[NB], *cornsend4[NB], *cornsend5[NB], *cornsend7[NB], *cornsend7[NB], *cornsend8[NB];
+double *cornreceive1[NB], *cornreceive2[NB], *cornreceive3[NB], *cornreceive4[NB], *cornreceive5[NB], *cornreceive6[NB], *cornreceive7[NB], *cornreceive8[NB];
+
 double *send_E3_corn1[NB], *send_E3_corn2[NB], *send_E3_corn3[NB], *send_E3_corn4[NB], *send_E2_corn5[NB], *send_E2_corn6[NB],
 *send_E2_corn7[NB], *send_E2_corn8[NB], *send_E1_corn9[NB], *send_E1_corn10[NB], *send_E1_corn11[NB], *send_E1_corn12[NB];
 double *receive_E3_corn1_1[NB], *receive_E3_corn2_1[NB], *receive_E3_corn3_1[NB], *receive_E3_corn4_1[NB], *receive_E2_corn5_1[NB], *receive_E2_corn6_1[NB],
 *receive_E2_corn7_1[NB], *receive_E2_corn8_1[NB], *receive_E1_corn9_1[NB], *receive_E1_corn10_1[NB], *receive_E1_corn11_1[NB], *receive_E1_corn12_1[NB];
 double *receive_E3_corn1_2[NB], *receive_E3_corn2_2[NB], *receive_E3_corn3_2[NB], *receive_E3_corn4_2[NB], *receive_E2_corn5_2[NB], *receive_E2_corn6_2[NB],
 *receive_E2_corn7_2[NB], *receive_E2_corn8_2[NB], *receive_E1_corn9_2[NB], *receive_E1_corn10_2[NB], *receive_E1_corn11_2[NB], *receive_E1_corn12_2[NB];
+
 double *tempreceive_E3_corn1_1[NB], *tempreceive_E3_corn2_1[NB], *tempreceive_E3_corn3_1[NB], *tempreceive_E3_corn4_1[NB], *tempreceive_E2_corn5_1[NB], *tempreceive_E2_corn6_1[NB],
 *tempreceive_E2_corn7_1[NB], *tempreceive_E2_corn8_1[NB], *tempreceive_E1_corn9_1[NB], *tempreceive_E1_corn10_1[NB], *tempreceive_E1_corn11_1[NB], *tempreceive_E1_corn12_1[NB];
 double *tempreceive_E3_corn1_2[NB], *tempreceive_E3_corn2_2[NB], *tempreceive_E3_corn3_2[NB], *tempreceive_E3_corn4_2[NB], *tempreceive_E2_corn5_2[NB], *tempreceive_E2_corn6_2[NB],
 *tempreceive_E2_corn7_2[NB], *tempreceive_E2_corn8_2[NB], *tempreceive_E1_corn9_2[NB], *tempreceive_E1_corn10_2[NB], *tempreceive_E1_corn11_2[NB], *tempreceive_E1_corn12_2[NB];
+
 double *receive_E3_corn1_12[NB], *receive_E3_corn2_12[NB], *receive_E3_corn3_12[NB], *receive_E3_corn4_12[NB], *receive_E2_corn5_12[NB], *receive_E2_corn6_12[NB],
 *receive_E2_corn7_12[NB], *receive_E2_corn8_12[NB], *receive_E1_corn9_12[NB], *receive_E1_corn10_12[NB], *receive_E1_corn11_12[NB], *receive_E1_corn12_12[NB];
 double *receive_E3_corn1_22[NB], *receive_E3_corn2_22[NB], *receive_E3_corn3_22[NB], *receive_E3_corn4_22[NB], *receive_E2_corn5_22[NB], *receive_E2_corn6_22[NB],
@@ -251,80 +212,20 @@ double *receive_E3_corn1_22[NB], *receive_E3_corn2_22[NB], *receive_E3_corn3_22[
 double *receive_E3_corn1[NB], *receive_E3_corn2[NB], *receive_E3_corn3[NB], *receive_E3_corn4[NB];
 double *receive_E2_corn5[NB], *receive_E2_corn6[NB], *receive_E2_corn7[NB], *receive_E2_corn8[NB];
 double *receive_E1_corn9[NB], *receive_E1_corn10[NB], *receive_E1_corn11[NB], *receive_E1_corn12[NB];
+
 double *tempreceive_E3_corn1[NB], *tempreceive_E3_corn2[NB], *tempreceive_E3_corn3[NB], *tempreceive_E3_corn4[NB];
 double *tempreceive_E2_corn5[NB], *tempreceive_E2_corn6[NB], *tempreceive_E2_corn7[NB], *tempreceive_E2_corn8[NB];
 double *tempreceive_E1_corn9[NB], *tempreceive_E1_corn10[NB], *tempreceive_E1_corn11[NB], *tempreceive_E1_corn12[NB];
 
-
-double  *cornsend1[NB], *cornsend2[NB], *cornsend3[NB], *cornsend4[NB], *cornsend5[NB], *cornsend7[NB], *cornsend7[NB], *cornsend8[NB];
-double *cornreceive1[NB], *cornreceive2[NB], *cornreceive3[NB], *cornreceive4[NB], *cornreceive5[NB], *cornreceive6[NB], *cornreceive7[NB], *cornreceive8[NB];
-int *aN1_MPI_offset;
-int *aN2_MPI_offset;
-int *aN3_MPI_offset;
-int *aN1_MPI;
-int *aN2_MPI;
-int *aN3_MPI;
-#if(DO_FONT_FIX)
-double *Katm[NB];
-#endif
-
-/*************************************************************************
-GLOBAL VARIABLES SECTION
-*************************************************************************/
-/* physics parameters */
-double a;
-double gam;
-
-/* numerical parameters */
-double Rin, Rout, hslope, R0, fractheta;
-double cour;
-double dV, dx[NB][NPR], startx[NPR];
-double dt, bdt[NB][4];
-double t, tf;
-double rcurr, hcurr;
-int istart, istop, jstart, jstop, zstart, zstop;
-int icurr, jcurr, pcurr, ihere, jhere, phere;
-double dminarg1, dminarg2;
-int nstep, first_run;
-double fval1, fval2;
-double sourceflag, period_max;
-double rmax;
-int reduce_timestep;
-int prestep_half[NB], prestep_full[NB];
-
-/* output parameters */
-double DTd;
-double DTl;
-double DTi;
-int    DTr;
-double tref;
-int    dump_cnt;
-int    image_cnt;
-int    rdump_cnt;
-int    nstroke;
-
-/* global flags */
-int    failed;
-int    lim;
-double defcon;
-int flux_flag[NB];
-
-/* diagnostics */
-double mdot = 0.;
-double edot = 0.;
-double ldot = 0.;
-
-/*CUDA variables decleration*/
+/*CUDA arrays decleration*/
 double *NULL_POINTER[NB];
-int gpu;
-int status;
-int fix_mem[NB];
-int fix_mem2[NB];
-cudaStream_t commandQueue[NQ*N_GPU];
+cudaStream_t commandQueue[NB];
 cudaStream_t commandQueueGPU[NB];
 cudaEvent_t boundevent[NB][600];
 cudaEvent_t boundevent1[NB][100];
 cudaEvent_t boundevent2[NB][100];
+int fix_mem[NB];
+int fix_mem2[NB];
 int nr_workgroups[NB];
 int nr_workgroups1[NB];
 int nr_workgroups2[NB];
@@ -349,9 +250,6 @@ int global_work_size_special[NB][1];
 int global_work_size_special1[NB][1];
 int global_work_size_special2[NB][1];
 int global_work_size_special3[NB][1];
-int global_work_intransfer1[NB][1];
-int global_work_intransfer2[NB][1];
-int global_work_intransfer3[NB][1];
 int local_work_size[1];
 double * Bufferconn[NB];
 double * Buffergcov[NB];
@@ -374,9 +272,7 @@ double * Bufferp_1[NB];
 double * Bufferph_1[NB];
 double * Bufferps_1[NB];
 double * Bufferpsh_1[NB];
-double * Bufferpbound_1[NB];
 double * Bufferdtij[NB];
-double * Bufferdiagflux[NB];
 int * Bufferpflag[NB];
 int * Bufferfailimage[NB];
 double * BufferKatm[NB];
@@ -810,7 +706,6 @@ double * BufferrecE3corn3_62[NB];
 double * BufferrecE3corn4_72[NB];
 double * BufferrecE3corn4_82[NB];
 
-
 double * Bufferboundrec1_MPI[NB];
 double * Bufferboundrec2_MPI[NB];
 double * Bufferboundrec3_MPI[NB];
@@ -827,9 +722,51 @@ double * Bufferboundsend5_MPI[NB];
 double * Bufferboundsend6_MPI[NB];
 double * Bufferboundsend7_MPI[NB];
 double * Bufferboundsend8_MPI[NB];
-int receive_tag;
 
-/*Timers*/
+/*************************************************************************
+GLOBAL VARIABLES SECTION
+*************************************************************************/
+/* physics parameters */
+double a;
+double gam;
+
+/* numerical parameters */
+double Rin, Rout, hslope, R0, fractheta;
+double cour;
+double dV, dx[NB][NPR], startx[NPR];
+double dt, bdt[NB][4];
+double t, tf;
+int nstep;
+double sourceflag, period_max;
+double rmax;
+double ndt, ndt1, ndt2, ndt3;
+int numtasks, rank, local_rank, rc;
+int prestep_half[NB], prestep_full[NB];
+int max_levels;
+int reduce_timestep;
+int nthreads;
+int gpu;
+int status;
+
+/* output parameters */
+double DTd;
+double DTl;
+double DTi;
+int    DTr;
+double tref;
+int    dump_cnt;
+int    image_cnt;
+int    rdump_cnt;
+
+/* global flags */
+int failed;
+int lim;
+double defcon;
+
+/* set global variables that indicate current local metric, etc. */
+int icurr, jcurr, pcurr;
+
+/*Timing/benchmarking decleration*/
 clock_t begin1, end1, begin2, end2;
 double time_spent3;
 
@@ -837,19 +774,31 @@ double time_spent3;
 double *dump_buffer;
 double(*restrict dxdxp_z[NB])[NDIM][NDIM];
 double(*restrict dxpdx_z[NB])[NDIM][NDIM];
-double ndt, ndt1, ndt2, ndt3;
+float *array[NB], *array_diag[NB];
+double *array_rdump[NB];
+int first_dump, first_rdump;
 
-//AMR stuff
+/*AMR parameters*/
 int(*block)[NV];
 int n_ord[NB], n_ord_gpu[N_GPU][NB], n_ord_total[NB], n_ord_RM[NB], n_ord_total_RM[NB];
 int n_active, n_active_gpu[N_GPU], n_active_total, n_max;
-MPI_Request request_timelevel[NB];
+int N1_GPU[NB];
+int N2_GPU[NB];
+int N3_GPU[NB];
+int count_node[20000];
+int count_gpu[32];
+int N1_GPU_offset[NB];
+int N2_GPU_offset[NB];
+int N3_GPU_offset[NB];
 
-//I/O stuff
+//MPI Variables
+MPI_Request req[NB], boundreqs[NB][600], cornreqs[NB][16];
+MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
+MPI_Comm  mpi_cartcomm, mpi_self;
+MPI_Comm row_comm[8];
 MPI_File fdump[100], fdumpdiag[100], rdump[NB];
 MPI_Request req_block[NB][1];
 MPI_Request req_block_rdump[NB][1];
 MPI_Request req_blockdiag[NB][1];
-float *array[NB], *array_diag[NB];
-double *array_rdump[NB];
-int first_dump, first_rdump;
+MPI_Request request_timelevel[NB];
+

@@ -397,42 +397,6 @@ void bound_prim2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 	}
 }
 
-void pack_send1_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM]){
-	int i, j, z, k;
-	for (i = i1; i < i2; i++){
-		for (j = j1; j < j2; j++){
-			for (z = z1; z < z2; z++){
-				k = 1;
-				send[n][NDIM*(i - i1)*zsize*jsize + NDIM*(j - j1)*zsize + NDIM*(z - z1) + k] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
-			}
-		}
-	}
-}
-
-void pack_send2_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM]){
-	int i, j, z, k;
-	for (j = j1; j < j2; j++){
-		for (i = i1; i < i2; i++){
-			for (z = z1; z < z2; z++){
-				k = 2;
-				send[n][NDIM*(j - j1)*zsize*isize + NDIM*(i - i1)*zsize + NDIM*(z - z1) + k] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
-			}
-		}
-	}
-}
-
-void pack_send3_B(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict prim[NB])[NDIM]){
-	int i, j, z, k;
-	for (z = z1; z < z2; j++){
-		for (i = i1; i < i2; i++){
-			for (j = j1; z < j2; z++){
-				k = 3;
-				send[n][NDIM*(z - z1)*jsize*isize + NDIM*(i - i1)*jsize + NDIM*(j - j1) + k] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k];
-			}
-		}
-	}
-}
-
 void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type){
     struct of_geom geom ;
     double ucon[NDIM] ;

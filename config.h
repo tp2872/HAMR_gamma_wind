@@ -1,0 +1,483 @@
+/*************************************************************************
+Physical Parameters section
+*************************************************************************/
+/*Select Desired problem, see init.c for implementation*/
+#define MONOPOLE_PROBLEM_1D 1
+#define MONOPOLE_PROBLEM_2D 2
+#define BZ_MONOPOLE_2D 3
+#define TORUS_PROBLEM 4
+#define DISRUPTION_PROBLEM 5
+#define BONDI_PROBLEM_1D 6
+#define BONDI_PROBLEM_2D 7
+#define TORUS_PROBLEM_GRB 8
+#define WHICHPROBLEM TORUS_PROBLEM
+
+/*Select adiabatic index and BH spin*/
+#define GAMMA	(5./3.)
+#define BH_SPIN (0.9375)
+
+/*Wheter or not to tilt the disk*/
+#define TILTED (0)
+#define TILT_ANGLE (45.)
+
+/*Wheter to activate an untilted elliptical disk*/
+#define ELLIPTICAL (0)
+#define ELLIPTICAL2 (0)
+
+/*Wheter to cool the disk to predifined thickness H_OVER_R*/
+#define COOL_DISK (1)
+#define H_OVER_R (0.03)
+
+/*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
+#define FULL_DISP (0)
+
+/** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
+#define RHOMIN	(1.e-6)
+#define UUMIN	(1.e-7)
+#define RHOMINLIMIT (1.e-20)
+#define UUMINLIMIT  (1.e-20)
+#define POWRHO (2.0)
+#define FLOORFACTOR (1.0)
+#define BSQORHOMAX (20.*FLOORFACTOR)
+#define BSQOUMAX (750.*FLOORFACTOR)
+#define UORHOMAX (150.*FLOORFACTOR)
+
+/* Max. value of gamma, the lorentz factor */
+#define GAMMAMAX (80.)
+
+/*************************************************************************
+Numerical Parameters section
+*************************************************************************/
+/*Whether or not to use the 3D version of the code*/
+#define ThreeD (1)
+
+/*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
+#define GPU_ENABLED 1
+#define GPU_DEBUG 0
+#define CPU_OPENMP 0
+#define TIMER 1
+
+/*Set maximum number of GPUs PER node*/
+#define N_GPU 1
+
+/*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
+#define AMD (1)
+
+/*Enable if running on the new VOLTA GPUs*/
+#define V100 (0)
+
+/*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
+#define GPU_DIRECT 1
+
+/*Maximum tag number for MPI messages so not to overflow*/
+#define MPI_TAG_MAX 1264576
+
+/*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
+#define COPY_BFIELD 1
+
+/*Define number of blocks for the first AMR level in all three dimensions*/
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
+
+/*Set block size in each dimension*/
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
+
+/*Set the maximum number of refinement levels*/
+#define N_LEVELS 3
+
+/*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
+#define REF_1 1
+#define REF_2 1
+#define REF_3 1
+
+/*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
+#define DEREFINE_POLE (0)
+
+/*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
+#define TIMESTEP_JET 0
+
+/*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
+If a very high value is needed, lowerin Courant factor may increase stability*/
+#define AMR_MAXTIMELEVEL 1
+
+/*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
+#define AMR_SWITCHTIMELEVEL 32
+
+/*Use prestepping for load balancing with HTS*/
+#define PRESTEP 0
+
+/*Used for loading in old data files. Do not touch!*/
+#define REVERSE_ORDERING 0
+
+//The time between refinement (AMR) steps
+#define TREF 10.
+
+/*Select the courant factor for the timestep*/
+#define COUR (0.9)
+
+/*Evolve entropy for more stability*/
+#define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
+#define DOKTOT 1  //Evolve entropy to do the above even more accurately
+
+/*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
+#define PPM (0)
+#define LEER (0)
+
+/*Wheter to set floors in ZAMO frame*/
+#define ZAMO_FLOOR (0)
+
+/*Wheter to set floors in drift frame*/
+#define DRIFT_FLOOR (1)
+
+/*Whether or not to allow inflow for fluxes (see fix_flux())*/
+#define INFLOW 0
+
+/*Enable or disable the HLLC solver. Does not work yet!*/
+#define HLLC (0)
+
+/*Whether or not to use a staggered grid*/
+#define STAGGERED (1)
+
+/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
+#define HLLF  (1)
+#define LAXF  (0)
+
+/*Wheter or not to use a non symmetric metric for tilted disk*/
+#define NONSYMMETRIC (0)
+
+/*Use transmissive boundary condition at pole*/
+#define TRANS_BOUND (0)
+
+/* how many cells near the poles to stabilize, choose 0 for no stabilization */
+#define POLEFIX 2
+
+/*Set periodic boundary conditions only in the third dimension is supported*/
+#define PERIODIC1 0
+#define PERIODIC2 0
+#if (BS_3*NB3==1)
+#define PERIODIC3 0
+#else
+#define PERIODIC3 1
+#endif
+
+/* A numerical convenience to represent a small non-zero quantity compared to unity:*/
+#define SMALL	(1.e-20)
+
+/* maximum fractional increase in timestep per timestep */
+#define SAFE	(1.3)
+
+#define COORDSINGFIX 1
+// whether to move polar axis to a bit larger theta
+// theta value where singularity is displaced to
+#define SINGSMALL (1.E-20)
+
+/*Define local work size for GPU, for NVIDIA Kepler,Pascal, Volta and AMD GCN chose 64*/
+#define LOCAL_WORK_SIZE 64
+
+/*Set grid parameters X1*/
+#define RADEXP 1.0
+#define RTRANS 5000000.
+#define RB  0.
+
+/*Set grid parameters X2*/
+//Big torus, very strongly collimating
+//#define BRAVO (0.6)
+//#define TANGO (1.0)
+//#define CHARLIE (0.8)
+//#define DELTA (3.0)
+
+//Uniform Grid
+#define BRAVO (0.0)
+#define TANGO (1.0)
+#define CHARLIE (0.0)
+#define DELTA (3.0)
+
+/*Wheter to cylindrify coordinates to increase GLOBAL timestep*/
+#define DOCYLINDRIFYCOORDS 1
+
+/*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
+#define ZIRI_DUMP 0
+
+/* whether or not to rescale primitive variables before interpolating them for flux/BC's. Is not implemented on GPU */
+#define RESCALE     (0)
+
+/*Enable MPI; Old remnant do not touch!*/
+#define MPI_enable 1
+
+/*************************************************************************
+MNEMONICS SECTION
+*************************************************************************/
+/* mnemonics for primitive vars; conserved vars */
+#define RHO	(0)	
+#define UU	(1)
+#define U1	(2)
+#define U2	(3)
+#define U3	(4)
+#define B1	(5)
+#define B2	(6)
+#define B3	(7)
+#define KTOT (8)
+
+/* mnemonics for centering of grid functions */
+#define LEFT (0)
+#define RIGHT (1)
+#define FACE1	(0)	
+#define FACE2	(1)
+#define CORN	(2)
+#define CENT	(3)
+#define FACE3	(4)
+
+//For variable inversions
+#define UTCON1 	2
+#define UTCON2 	3
+#define UTCON3 	4
+#define BCON1	5
+#define BCON2	6
+#define BCON3	7
+
+//For variable inversions
+#define QCOV0	1
+#define QCOV1	2
+#define QCOV2	3
+#define QCOV3	4
+
+/* mnemonics for slope limiter */
+#define MC	(0)
+#define VANL	(1)
+#define MINM	(2)
+
+/* mnemonics for diagnostic calls */
+#define INIT_OUT	(0)
+#define DUMP_OUT	(1)
+#define IMAGE_OUT	(2)
+#define LOG_OUT		(3)
+#define FINAL_OUT	(4)
+
+/* failure modes */
+#define FAIL_UTOPRIM        (1)
+#define FAIL_VCHAR_DISCR    (2)
+#define FAIL_COEFF_NEG	    (3)
+#define FAIL_COEFF_SUP	    (4)
+#define FAIL_GAMMA          (5)
+#define FAIL_METRIC         (6)
+
+/* For rescale() operations: */
+#define FORWARD 1
+#define REVERSE 2
+
+/*For Windows users*/
+#ifndef M_PI 
+#define M_PI 3.14159265358979323846264338327950288 
+#endif 
+
+/*Mnemonics for AMR parameters*/
+#define NV 79
+#define AMR_ACTIVE 0
+#define AMR_LEVEL 1
+#define AMR_REFINED 2
+#define AMR_COORD1 3
+#define AMR_COORD2 4
+#define AMR_COORD3 5
+#define AMR_PARENT 6
+#define AMR_CHILD1 7
+#define AMR_CHILD2 8
+#define AMR_CHILD3 9
+#define AMR_CHILD4 10
+#define AMR_CHILD5 11
+#define AMR_CHILD6 12
+#define AMR_CHILD7 13
+#define AMR_CHILD8 14
+#define AMR_NBR1 15
+#define AMR_NBR2 16
+#define AMR_NBR3 17
+#define AMR_NBR4 18
+#define AMR_NBR5 19
+#define AMR_NBR6 20
+#define AMR_CORN1 21
+#define AMR_CORN2 22
+#define AMR_CORN3 23
+#define AMR_CORN4 24
+#define AMR_CORN5 25
+#define AMR_CORN6 26
+#define AMR_CORN7 27
+#define AMR_CORN8 28
+#define AMR_CORN9 29
+#define AMR_CORN10 30
+#define AMR_CORN11 31
+#define AMR_CORN12 32
+#define AMR_NODE 33
+#define AMR_POLE 34
+#define AMR_GROUP 35
+#define AMR_TIMELEVEL 36
+#define AMR_TAG 37
+#define AMR_CORN1D 38
+#define AMR_CORN2D 39
+#define AMR_CORN3D 40
+#define AMR_CORN4D 41
+#define AMR_CORN5D 42
+#define AMR_CORN6D 43
+#define AMR_CORN7D 44
+#define AMR_CORN8D 45
+#define AMR_CORN9D 46
+#define AMR_CORN10D 47
+#define AMR_CORN11D 48
+#define AMR_CORN12D 49
+#define AMR_CORN1D_1 50
+#define AMR_CORN2D_1 51
+#define AMR_CORN3D_1 52
+#define AMR_CORN4D_1 53
+#define AMR_CORN5D_1 54
+#define AMR_CORN6D_1 55
+#define AMR_CORN7D_1 56
+#define AMR_CORN8D_1 57
+#define AMR_CORN9D_1 58
+#define AMR_CORN10D_1 59
+#define AMR_CORN11D_1 60
+#define AMR_CORN12D_1 61
+#define AMR_CORN1D_2 62
+#define AMR_CORN2D_2 63
+#define AMR_CORN3D_2 64
+#define AMR_CORN4D_2 65
+#define AMR_CORN5D_2 66
+#define AMR_CORN6D_2 67
+#define AMR_CORN7D_2 68
+#define AMR_CORN8D_2 69
+#define AMR_CORN9D_2 70
+#define AMR_CORN10D_2 71
+#define AMR_CORN11D_2 72
+#define AMR_CORN12D_2 73
+#define RM_ORDER 74
+#define GDUMP_WRI0EN 75
+#define AMR_PRESTEP 76
+#define AMR_GPU 77
+#define AMR_NSTEP 78
+
+/*************************************************************************
+Variable Inversion Section
+*************************************************************************/
+#define G_ISOTHERMAL (1.)
+
+/* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
+#define USE_ISENTROPIC 1
+
+#if( USE_ISENTROPIC ) 
+#define G_ATM GAMMA
+#else
+#define G_ATM G_ISOTHERMAL
+#endif
+
+#define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
+#define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */
+#define MIN_NEWT_TOL  1.0e-10    /* Max. of tolerance allowed for Newton-Raphson iterations */
+#define EXTRA_NEWT_ITER 2
+#define NEWT_TOL2     1.0e-15      /* TOL of new 1D^*_{v^2} gnr2 method */
+#define MIN_NEWT_TOL2 1.0e-10  /* TOL of new 1D^*_{v^2} gnr2 method */
+#define W_TOO_BIG	1.e20	/* \gamma^2 (\rho_0 + u + p) is assumedto always be smaller than this.  Thisis used to detect solver failures */
+#define UTSQ_TOO_BIG	1.e20    /* \tilde{u}^2 is assumed to be smallerthan this.  Used to detect solverfailures */
+
+#define FAIL_VAL  1.e30    /* Generic value to which we set variables when a problem arises */
+#define NUMEPSILON (2.2204460492503131e-16)
+
+/*Set dimensions for Utoprim routines*/
+#define NEWT_DIM_2 2
+#define NEWT_DIM_1 1
+
+/*************************************************************************
+Section with derived quantities
+*************************************************************************/
+/** Grid size without AMR **/
+#define N1  (NB_1*BS_1)
+#define N2  (NB_2*BS_2)
+#define N3  (NB_3*BS_3)
+
+/*Set number of boundary cells in grid depending on order of spatial reconstruction*/
+#define NG (2+PPM)
+#define N1M ((N1>1)?(N1+2*NG):(1))
+#define N2M ((N2>1)?(N2+2*NG):(1))
+#define N3M ((N3>1)?(N3+2*NG):(1))
+
+#define N1G ((N1>1)?(NG):(0))
+#define N2G ((N2>1)?(NG):(0))
+#define N3G ((N3>1)?(NG):(0))
+
+#define D1 (N1>1)
+#define D2 (N2>1)
+#define D3 (N3>1)
+
+/*Set variable numbers*/
+#define NPR        (8+DOKTOT)        /* number of primitive variables */
+#define NDIM       (4)        /* number of total dimensions.  Never changes */
+#define NPG        (5)        /* number of positions on grid for grid functions */
+#define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
+#define NIMG       (4)        /* Number of types of images to make, kind of */
+#define NFAIL	   (5)        /* Number of types of failure images to make*/
+
+/*Calculate number of AMR blocks for different refinement levels and configurations*/
+#if(REF_3+REF_2+REF_1==2)
+#if (N_LEVELS==1)
+#define NB (NB_1*NB_2*NB_3)
+#elif(N_LEVELS==2)
+#define NB (NB_1*NB_2*NB_3*(4+1))
+#elif(N_LEVELS==3)
+#define NB (NB_1*NB_2*NB_3*(4*(4+1)+1))
+#elif(N_LEVELS==4)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4+1)+1)+1))
+#elif(N_LEVELS==5)
+#define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4+1)+1)+1)+1))
+#endif
+#elif(REF_3+REF_2+REF_1==3)
+#if (N_LEVELS==1)
+#define NB (NB_1*NB_2*NB_3)
+#elif(N_LEVELS==2)
+#define NB (NB_1*NB_2*NB_3*(8+1))
+#elif(N_LEVELS==3)
+#define NB (NB_1*NB_2*NB_3*(8*(8+1)+1))
+#elif(N_LEVELS==4)
+#define NB (NB_1*NB_2*NB_3*(8*(8*(8+1)+1)+1))
+#elif(N_LEVELS==5)
+#define NB (NB_1*NB_2*NB_3*(8*(8*(8*(8+1)+1)+1)+1))
+#endif
+#elif(REF_3+REF_2+REF_1==1)
+#if (N_LEVELS==1)
+#define NB (NB_1*NB_2*NB_3)
+#elif(N_LEVELS==2)
+#define NB (NB_1*NB_2*NB_3*(2+1))
+#elif(N_LEVELS==3)
+#define NB (NB_1*NB_2*NB_3*(2*(2+1)+1))
+#elif(N_LEVELS==4)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2+1)+1)+1))
+#elif(N_LEVELS==5)
+#define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2+1)+1)+1)+1))
+#endif
+#endif
+
+/*Macro declerations*/
+#define PLOOP  for(k=0;k<NPR;k++) //loop over all Dimensions; second rank loop */
+#define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)//loop over all Dimensions; first rank loop */
+#define DLOOPA for(j=0;j<NDIM;j++) //loop over all Space dimensions; second rank loop */
+#define SLOOP  for(j=1;j<NDIM;j++) for(k=1;k<NDIM;k++) //loop over all Space dimensions; first rank loop */
+#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables 
+#define MY_MIN(fval1,fval2) ( ((fval1) < (fval2)) ? (fval1) : (fval2))
+#define MY_MAX(fval1,fval2) ( ((fval1) > (fval2)) ? (fval1) : (fval2))
+#define delta(i,j) ( (i == j) ? 1. : 0.)
+#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]) 
+#define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
+#define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]];i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] ;j++)
+#if (N3>1)
+#define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
+#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]];i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] ;z++)
+#else
+#define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
+#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]];i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] ;z++)
+#endif
+#define ZSLOOP(istart,istop,jstart,jstop) for(i=istart;i<=istop;i++) for(j=jstart;j<=jstop;j++)
+#if (N3>1)
+#define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
+#define ZSLOOPZIRI(istart, istop, jstart, jstop, zstart, zstop) for(z=zstart;z<=zstop;z++) for (j = jstart; j <= jstop; j++) for (i = istart; i <= istop; i++)
+#else
+#define ZSLOOP3D(istart, istop, jstart, jstop, zstart, zstop) for (i = istart; i <= istop; i++) for (j = jstart; j <= jstop; j++) for(z=zstart;z<=zstop;z++)
+#define ZSLOOPZIRI(istart, istop, jstart, jstop, zstart, zstop) for(z=zstart;z<=zstop;z++) for (j = jstart; j <= jstop; j++) for (i = istart; i <= istop; i++)
+#endif
