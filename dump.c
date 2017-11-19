@@ -221,6 +221,7 @@ void dump_block(MPI_File *fp, int n)
 	float p_float[NPR + NDIM], ucon_float[NDIM];
 	int NB_print = NB;
 
+	#pragma omp parallel for schedule(dynamic,1) private(n,i,j,z,k)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
 		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[n][index_3D(n, i, j, z)][0];
 		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[n][index_3D(n, i, j, z)][1];
@@ -247,7 +248,7 @@ void dump_blockdiag(MPI_File *fp, int n)
 	int di = (N1>1);
 	int dj = (N2>1);
 	int dz = (N3>1);
-
+	#pragma omp parallel for schedule(dynamic,1) private(n,i,j,z)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
 		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 0] = (float)divb_calc(n, i, j, z);
 		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[n][index_3D(n, i, j, z)][0];

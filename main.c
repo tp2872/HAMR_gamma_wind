@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
 	int nfailed = 0;
 	int i, j, u, n;
 	double r, th, phi, X[NDIM];
+	nstep = 0;
+	defcon = 1.;
 
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
@@ -67,9 +69,6 @@ int main(int argc, char *argv[])
 	GPU_init();
 	#endif
 	set_AMR();
-
-	nstep = 0;
-	defcon = 1.;
 
 	if (!restart_read()) {
 		init();
@@ -88,8 +87,8 @@ int main(int argc, char *argv[])
 	tref = t + 0.1*TREF;
 	time_spent3 = 0.0;
 	begin1 = clock();
+	
 	//cuProfilerStart();
-
 	while(t < tf) {
 		/*Used for running OpenCL on either GPU or CPU*/
 		#if(GPU_ENABLED && !GPU_DEBUG)
@@ -104,13 +103,22 @@ int main(int argc, char *argv[])
 		step_ch_debug();
 		#endif
 
-		//Refine every TREF
-		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if(!DEREFINE_POLE)
+		/* deal with failed timestep, exit upon failure */
+		//if (failed) break;
+
+		//Every swithchtime read out data from GPU and set boundary
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
+			end1 = clock();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
+			if (dt > 0.5) break;
+		}
+
+		//Refine every TREF
+		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+			#if(!DEREFINE_POLE)
 			check_refcrit();
 			if (rank == 0) printf("Refinement succesfull! \n");
 			#endif
@@ -119,53 +127,33 @@ int main(int argc, char *argv[])
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if (GPU_ENABLED==1)
-			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-			#endif
-			if (dt>0.5) break;
 			//diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if (GPU_ENABLED==1)
-			//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-			#endif			
-			if (dt>0.5) break;
 			//restart_write(); //do restart dumb simultaneous with log
 			//tlog +=  DTl;
 		}			
 		
 		#if TIMER
-		if (nstep % (2*320) == 0){
-			end1 = clock();
-			#if (GPU_ENABLED==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-			#endif
-			if (dt>0.5) break;
-			bound_prim(p, 1);
+		if (nstep % (2*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC);
-				fprintf(stderr, "MPI-time: %f ", time_spent3);
-				fprintf(stderr, "dt1: %f ", ndt1);
-				fprintf(stderr, "dt2: %f ", ndt2);
-				fprintf(stderr, "dt3: %f \n", ndt3);
-				fprintf(stderr, "nstep: %d \n", nstep);
+				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1) / CLOCKS_PER_SEC, time_spent3);
+				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1,ndt2,ndt3,nstep);
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;			
 			begin1 = clock();			
 		}
 		#endif
-		//cuProfilerStop();
-		/* deal with failed timestep, exit upon failure */
-		if(failed) break;
 	}
+	//cuProfilerStop();
 
 	/* do final diagnostics */
 	diag(FINAL_OUT) ;

@@ -430,14 +430,13 @@ void set_AMR(void){
 
 	MPI_Barrier(mpi_cartcomm);
 
-	//First calculate non-reduced timestep
-	set_timelevel();
-
-
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();
 	#endif
+
+	//First calculate non-reduced timestep
+	set_timelevel();
 }
 
 #define MAX_BLOCKS (36*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
@@ -1357,9 +1356,10 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 
 void pre_refine(void){
 	int n1, i, j, z;
+
 	for (n1 = 0; n1 < n_active; n1++){
 		#if(GPU_ENABLED || GPU_DEBUG )
-		GPU_read(n_ord[n1]);
+		//GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
 		{
@@ -1371,6 +1371,7 @@ void pre_refine(void){
 			}
 		}
 	}
+
 	reduce_timestep = 0;
 	gpu = 0;
 	rc = 0;
@@ -1546,7 +1547,6 @@ void post_refine(void){
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
 	#endif
-
 }
 
 //Checks if neighbouring blocks are sufficiently refined so that no double jumps in refinement level are created
@@ -1557,24 +1557,12 @@ void check_nesting(int n){
 			refine(block[block[n][i]][AMR_PARENT]);
 		}
 	}
-
-	//Make sure that the transmissive boundary works ok at the pole
-	/*#if(TRANS_BOUND)
-	if (block[n][AMR_POLE] > 0){
-		for (z = 0; z < pow(1 + REF_3, block[n][AMR_LEVEL]); z++){
-			if (block[][AMR_LEVEL] != block[n][AMR_LEVEL] + 1){
-				refine(block[]);
-			}
-		}
-
-	}
-	#endif*/
 }
 
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 16.0
+#define DENSITY_CUTOFF 0.5
 #endif
 
 //Refine on basis of some criteria rhomax (not necessary to use rho though, can also be something different)
