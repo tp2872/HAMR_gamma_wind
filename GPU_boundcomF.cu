@@ -14,7 +14,7 @@ void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (status != cudaSuccess) printf("Error fluxsend1: %d \n", status);
+		if (status != cudaSuccess) fprintf(stderr, "Error fluxsend1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -43,7 +43,7 @@ void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (status != cudaSuccess) printf("Error fluxsend2: %d \n", status);
+		if (status != cudaSuccess) fprintf(stderr, "Error fluxsend2: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -72,7 +72,7 @@ void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsend3: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) fprintf(stderr, "Error fluxsend3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -101,7 +101,7 @@ void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (status != cudaSuccess) printf("Error fluxsendaverage1: %d \n", status);
+		if (status != cudaSuccess) fprintf(stderr, "Error fluxsendaverage1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -139,7 +139,7 @@ void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsendaverage2: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) fprintf(stderr, "Error fluxsendaverage2: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -177,7 +177,7 @@ void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (cudaGetLastError() != cudaSuccess) printf("Error fluxsendaverage3: %d \n", status);
+		if (cudaGetLastError() != cudaSuccess) fprintf(stderr, "Error fluxsendaverage3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -217,7 +217,7 @@ void unpack_receive1_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		 //cudaDeviceSynchronize();
 		 status = cudaGetLastError();
-		if (status != cudaSuccess) printf("Error fluxrec1: %d \n", status);
+		if (status != cudaSuccess) fprintf(stderr, "Error fluxrec1: %d \n", status);
 	}
 	else{
 		int i, j, z, k;
@@ -304,7 +304,7 @@ void unpack_receive2_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		 //cudaDeviceSynchronize();
 		 status = cudaGetLastError();
-		if (status != cudaSuccess) printf("Error fluxrec2: %d \n", status);
+		if (status != cudaSuccess) fprintf(stderr, "Error fluxrec2: %d \n", status);
 
 	}
 	else{
@@ -392,7 +392,7 @@ void unpack_receive3_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 			calc_corr, nstep, block[n][AMR_NSTEP], timelevel, timelevel_rec, factor, work_size);
 		 //cudaDeviceSynchronize();
 		 status = cudaGetLastError();
-		if (status != cudaSuccess) printf("Error fluxrec3: %d \n", status);
+		if (status != cudaSuccess) fprintf(stderr, "Error fluxrec3: %d \n", status);
 	}
 	else{
 		int i, j, z, k;

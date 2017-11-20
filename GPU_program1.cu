@@ -37,7 +37,7 @@ __device__ void  primtoflux(double *  pr, struct of_state *  q, int dir, struct 
 __device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam);
 __device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom, int js, double *  vmax, double *  vmin, double gam);
 __device__ void mhd_calc(double *  pr, int dir, struct of_state *  q, double *  mhd, double gam);
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ Imageconn,
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,
 struct of_state *  q, double a, double r);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,
 	double a, double gam, double r, double Dt);
@@ -893,11 +893,13 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[NDIM][NDIM], double g
 
 	/* calculate W from last timestep and use for guess */
 	utsq = 0.;
-#pragma unroll 3
-	for (i = 1; i<4; i++)
-#pragma unroll 4
-		for (j = 1; j<4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
-	utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+	#pragma unroll 3
+	for (i = 1; i < 4; i++){
+		#pragma unroll 3
+		for (j = 1; j < 4; j++){
+			utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+		}
+	}
 
 	if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) {
 		utsq = fabs(utsq);

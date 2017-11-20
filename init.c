@@ -596,7 +596,7 @@ int interpolate_prims( double r, double th, double ph, extent ext, double *data,
   p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
   p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
   p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
-  p[UU] = 0.01*p[RHO];
+  p[UU] = p[UU]*p[RHO];
 
 //  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
  // p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
@@ -606,7 +606,7 @@ int interpolate_prims( double r, double th, double ph, extent ext, double *data,
   p[B1] = 0.;
   p[B2] = 0.;
   p[B3] = 0.;
-  if(vx*vx+vy*vy+vz*vz>1.0)printf("test:%f %f %f %f %f %f %f %f %f \n", x1,y1,z1, p[RHO], p[UU],vx,vy,vz, poten);
+  if(vx*vx+vy*vy+vz*vz>1.0)fprintf(stderr, "test:%f %f %f %f %f %f %f %f %f \n", x1,y1,z1, p[RHO], p[UU],vx,vy,vz, poten);
 
   return(0);
 }
@@ -900,7 +900,7 @@ void set_mag(void){
 
 void init_monopole(double Rout_val)
 {
-	printf("Error. Monopole not implemented in this version\n");
+	fprintf(stderr, "Error. Monopole not implemented in this version\n");
 }
 
 double lfish_calc(double r)
@@ -989,7 +989,7 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 	pr[U1] = utconp[1];
 	pr[U2] = utconp[2];
 	pr[U3] = utconp[3];
-	//printf("(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
+	//fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
 	/* done! */
 }
 
@@ -1231,3 +1231,4 @@ void calc_source(){
 	}
 	bound_prim(p, 1);
 }
+

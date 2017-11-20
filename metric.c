@@ -126,7 +126,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 		if (Vp[2]<M_PI)  Vp[2] = M_PI - SINGSMALL;
 	}
 #endif
-	//printf("r: %f %f, th: %f %f, phi: %f %f \n", r,Vp[1], th,Vp[2], phi,Vp[3]);
+	//fprintf(stderr, "r: %f %f, th: %f %f, phi: %f %f \n", r,Vp[1], th,Vp[2], phi,Vp[3]);
 	r = Vp[1];
 	th = Vp[2];
 	phi = Vp[3];

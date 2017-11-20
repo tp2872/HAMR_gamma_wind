@@ -21,7 +21,7 @@ void GPU_init(void)
 	//cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error in setting cache: %d \n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting cache: %d \n", status);
 }
 
 void set_arrays_GPU(int n, int device){
@@ -67,7 +67,7 @@ void set_arrays_GPU(int n, int device){
 	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent2[n][i]);
 
 	status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error in creating events: %d \n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error in creating events: %d \n", status);
 
 	/*Allocate memory to 1D arrays*/
 	p_1[n] = (double(*))calloc(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]), sizeof(double));
@@ -117,7 +117,7 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&Bufferfailimage[n], ((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]) * NFAIL * sizeof(int));
 	cudaMalloc(&BufferKatm[n], (N1_GPU[n] + 2 * N1G)*sizeof(double));
 	//cudaMalloc(&BufferdU[n], NPR*((N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G))*sizeof(double));
-	if (cudaSuccess != cudaGetLastError() ) printf("Error in setting kernel arguments 3: %d \n", cudaGetLastError());
+	if (cudaSuccess != cudaGetLastError() ) fprintf(stderr, "Error in setting kernel arguments 3: %d \n", cudaGetLastError());
 	cudaHostAlloc(&dtij_GPU[n], (nr_workgroups[n] + 1)*sizeof(double), 0);
 	//cudaMalloc(&Bufferdtij[n], (nr_workgroups[n] + 1)*sizeof(double));
 	#if(GPU_DIRECT)
@@ -1154,7 +1154,7 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	#endif
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error in setting kernel arguments 4.6: %d \n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting kernel arguments 4.6: %d \n", status);
 
 	/*Set arguments of kernel*/
 	int pg, d1, d2;
@@ -1214,7 +1214,7 @@ void set_arrays_GPU(int n, int device){
 	#endif
 
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error in setting kernel arguments 5: %d \n", cudaGetLastError());
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting kernel arguments 5: %d \n", cudaGetLastError());
 	free(gcov_GPU[n]);
 	free(gcon_GPU[n]);
 	free(conn_GPU[n]);
@@ -1284,7 +1284,7 @@ void GPU_write(int n)
 
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error in GPU_write: %d \n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error in GPU_write: %d \n", status);
 }
 
 void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
@@ -1316,7 +1316,7 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error Fluxcalcprep %d \n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error Fluxcalcprep %d \n", status);
 }
 
 void GPU_fluxcalc2D(int dir, int flag, int n)
@@ -1361,12 +1361,12 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error Fluxcalc2D2 %d\n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error Fluxcalc2D2 %d\n", status);
 
 	/*Calculate reconstructed right state*/
 	#if(PPM || LEER)
 	GPU_fluxcalcprep(dir, flag, 2, n);
-	printf("PPM and Leer not yet fully implemented this way... \n");
+	fprintf(stderr, "PPM and Leer not yet fully implemented this way... \n");
 	#endif
 }
 
@@ -1392,7 +1392,7 @@ double fluxcalc_GPU(int n, int dir)
 	else if (dir == 3) nr = nr_workgroups2_3[n];
 	cudaStreamSynchronize(commandQueueGPU[n]);
 	status = cudaGetLastError();
-	if (status != 0) printf("Error fluxcalc_GPU %d\n", status);
+	if (status != 0) fprintf(stderr, "Error fluxcalc_GPU %d\n", status);
 	for (y = 0; y < nr; y++){
 		if (dtij_GPU[n][y] < ndt && dtij_GPU[n][y] < 1.e9 && dtij_GPU[n][y] > 1.e-6){
 			ndt = dtij_GPU[n][y];
@@ -1408,7 +1408,7 @@ void GPU_fix_flux(int n)
 	 fix_flux << < nr_workgroups_special[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], block[n][AMR_NBR1], block[n][AMR_NBR2], block[n][AMR_NBR3], block[n][AMR_NBR4]);
 	// cudaDeviceSynchronize();
 	 status = cudaGetLastError();
-	if (cudaSuccess != status)printf("Error fixflux %d \n", status);
+	if (cudaSuccess != status)fprintf(stderr, "Error fixflux %d \n", status);
 }
 
 void GPU_consttransport_bound(void){
@@ -1585,7 +1585,7 @@ void GPU_consttransport1(int flag, double Dt, int n){
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status)printf("Error consttransport1 %d \n", status);
+	if (cudaSuccess != status)fprintf(stderr, "Error consttransport1 %d \n", status);
 }
 
 void GPU_consttransport2(int flag, double Dt, int n){
@@ -1604,7 +1604,7 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status)printf("Error constransport2 %d \n", status);
+	if (cudaSuccess != status)fprintf(stderr, "Error constransport2 %d \n", status);
 }
 
 void GPU_consttransport3(int flag, double Dt, int n){
@@ -1621,7 +1621,7 @@ void GPU_consttransport3(int flag, double Dt, int n){
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status )printf("Error constransport3 %d \n", status);
+	if (cudaSuccess != status )fprintf(stderr, "Error constransport3 %d \n", status);
 }
 
 void GPU_flux_ct1(int n)
@@ -1631,7 +1631,7 @@ void GPU_flux_ct1(int n)
 	 flux_ct1 << < nr_workgroups3[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n]);
 	// cudaDeviceSynchronize();
 	 status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error fluxct1 %d\n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error fluxct1 %d\n", status);
 }
 
 void GPU_flux_ct2(int n)
@@ -1641,7 +1641,7 @@ void GPU_flux_ct2(int n)
 	 flux_ct2 << < nr_workgroups3[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n]);
 	 //cudaDeviceSynchronize();
 	 status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error fluxct2 %d\n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error fluxct2 %d\n", status);
 }
 
 void GPU_Utoprim(int flag, int n, double Dt)
@@ -1657,14 +1657,14 @@ void GPU_Utoprim(int flag, int n, double Dt)
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
 	}
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error Utoprim0 %d\n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error Utoprim0 %d\n", status);
 
 	if (flag == 0){
 		Utoprim1 << < nr_workgroups1[n], local_work_size[0], 0, commandQueueGPU[n] >> > (Bufferp_1[n], Bufferp_1[n], Bufferph_1[n], Bufferpsh_1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n],
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
 	}
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error Utoprim1 %d\n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error Utoprim1 %d\n", status);
 	if (flag == 0){
 		Utoprim2 << < nr_workgroups1[n], local_work_size[0], 0, commandQueueGPU[n] >> > (Bufferp_1[n], Bufferph_1[n], Bufferph_1[n], Bufferpsh_1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n],
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
@@ -1674,7 +1674,7 @@ void GPU_Utoprim(int flag, int n, double Dt)
 			Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, flag);
 	}
 	status = cudaGetLastError();
-	if (cudaSuccess != status) printf("Error Utoprim1 %d\n", status);
+	if (cudaSuccess != status) fprintf(stderr, "Error Utoprim1 %d\n", status);
 	#endif
 }
 
@@ -1691,7 +1691,7 @@ void GPU_fixuputoprim(int flag, int n)
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error fixuputoprim %d\n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error fixuputoprim %d\n", status);
 }
 
 void GPU_fixup(int flag, int n, double Dt)
@@ -1707,7 +1707,7 @@ void GPU_fixup(int flag, int n, double Dt)
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error fixup %d\n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error fixup %d\n", status);
 }
 
 void GPU_boundprim(int bound_force)
@@ -1853,7 +1853,7 @@ void GPU_boundprim1(int flag, int n)
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (cudaSuccess != status ) printf("Error boundprim1 %d\n", status);
+		if (cudaSuccess != status ) fprintf(stderr, "Error boundprim1 %d\n", status);
 	}
 }
 
@@ -1868,7 +1868,7 @@ void GPU_boundprim2(int flag, int n)
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
-		if (cudaSuccess != status) printf("Error boundprim2.1 %d\n", status);
+		if (cudaSuccess != status) fprintf(stderr, "Error boundprim2.1 %d\n", status);
 	}
 }
 
@@ -1906,7 +1906,7 @@ void GPU_read(int n)
 	}
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status )printf("Error in GPU_read: %d \n", status);
+	if (cudaSuccess != status )fprintf(stderr, "Error in GPU_read: %d \n", status);
 }
 
 void GPU_finish(int n)
@@ -2901,5 +2901,5 @@ void GPU_finish(int n)
 	
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();
-	if (cudaSuccess != status ) printf("Error in GPU_finish_1: %d \n", status);
+	if (cudaSuccess != status ) fprintf(stderr, "Error in GPU_finish_1: %d \n", status);
 }

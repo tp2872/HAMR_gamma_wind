@@ -339,7 +339,7 @@ double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR]
 							state_r_FT.bcov[i1] += state_r.bcov[j1] * trans.Mud[j1][i1];
 						}
 					}
-					if ((dot(state_l_FT.bcon, state_l_FT.bcov) - dot(state_l.bcon, state_l.bcov)) / dot(state_l.bcon, state_l.bcov)>0.00001) printf("test: %f %f \n", log(dot(state_l_FT.bcon, state_l_FT.bcov)), log(dot(state_l.bcon, state_l.bcov)));
+					if ((dot(state_l_FT.bcon, state_l_FT.bcov) - dot(state_l.bcon, state_l.bcov)) / dot(state_l.bcon, state_l.bcov)>0.00001) fprintf(stderr, "test: %f %f \n", log(dot(state_l_FT.bcon, state_l_FT.bcov)), log(dot(state_l.bcon, state_l.bcov)));
 
 					primtoflux_FT(p_l, &state_l_FT, dir, &geom, F_l);
 					primtoflux_FT(p_r, &state_r_FT, dir, &geom, F_r);

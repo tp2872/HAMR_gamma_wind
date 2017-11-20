@@ -991,7 +991,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 			}
 		}
-		//else printf("Error in indexing!\n");
+		//else fprintf(stderr, "Error in indexing!\n");
 	}
 
 	//Negative X1
@@ -1134,7 +1134,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 			}
 		}
-		//else printf("Error in indexing!\n");
+		//else fprintf(stderr, "Error in indexing!\n");
 	}
 #endif
 }
@@ -1594,7 +1594,7 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 			}
 		}
-		//else printf("Error in indexing!\n");
+		//else fprintf(stderr, "Error in indexing!\n");
 	}
 
 	//Negative X3

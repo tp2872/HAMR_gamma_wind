@@ -309,7 +309,7 @@ void fixup_utoprim(double((* restrict pv[NB])[NPR]), int n)
 		#pragma omp for schedule(static,1)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) 	{
 			if (pflag[n][index_3D(n ,i, j, z)] != 0) {
-				//printf("i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);
+				//fprintf(stderr, "i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);
 				pf[1] = !pflag[n][index_3D(n ,i - 1, j + 1, z)];   pf[2] = !pflag[n][index_3D(n ,i, j + 1, z)];  pf[3] = !pflag[n][index_3D(n ,i + 1, j + 1, z)];
 				pf[8] = !pflag[n][index_3D(n ,i - 1, j, z)];                           pf[4] = !pflag[n][index_3D(n ,i + 1, j, z)];
 				pf[7] = !pflag[n][index_3D(n ,i - 1, j - 1, z)];   pf[6] = !pflag[n][index_3D(n ,i, j - 1, z)];  pf[5] = !pflag[n][index_3D(n ,i + 1, j - 1, z)];

@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
 			check_refcrit();
-			if (rank == 0) printf("Refinement succesfull! \n");
+			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
 			#endif
 			tref += TREF;
 		}
@@ -201,7 +201,7 @@ void MPI_initialize(int argc, char *argv[])
 	/*Give basic diagnostics*/
 	if (rank == 0){
 		if (rdma_direct != 1 && GPU_DIRECT == 1){
-			printf("MPICH_RDMA_ENABLED_CUDA not enabled but GPU_DIRECT still turned on!\n");
+			fprintf(stderr, "MPICH_RDMA_ENABLED_CUDA not enabled but GPU_DIRECT still turned on!\n");
 		}
 		fprintf(stderr, "Number of MPI tasks: %d \nRunning on: %s\n", numtasks, hostname);
 	}

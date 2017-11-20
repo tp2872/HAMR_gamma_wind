@@ -104,7 +104,7 @@ void AMR_coord_cart(int n, int *level, int *i, int *j, int *z){
 			number[y] = number[y] % factor[u];
 		}
 	}
-	//printf("Factor: %d \n", factor[0]);
+	//fprintf(stderr, "Factor: %d \n", factor[0]);
 	*i = 0;
 	*j = 0;
 	*z = 0;
@@ -168,7 +168,7 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 			number[y] = number[y] % factor[u];
 		}
 	}
-	//printf("Factor: %d \n", factor[0]);
+	//fprintf(stderr, "Factor: %d \n", factor[0]);
 	*i = 0;
 	*j = 0;
 	*z = 0;
@@ -489,7 +489,7 @@ void balance_load(void){
 		}
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
-		if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
+		if (n_active_local_max > MAX_BLOCKS / ((double)AMR_MAXTIMELEVEL) || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
 		n_active_local_min = 0;
@@ -558,7 +558,7 @@ void balance_load(void){
 		n_active_local_min = n_active_local_max;
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
-	} while ((n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
+	} while ((n_active_local_max/((double)AMR_MAXTIMELEVEL) > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
 	if (rank == 0 && timelevel_cutoff != AMR_MAXTIMELEVEL) fprintf(stderr, "Error in balance_load. Due to too little/many blocks the maximum timelevel can't be honoured and the hierarchical timestepping is downgraded! \n");
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
 	if (rank == 0) fprintf(stderr, "Load balance started, timelevel_cutoff %d %d %d! \n", timelevel_cutoff, n_active_local_min, n_active_local_max);
