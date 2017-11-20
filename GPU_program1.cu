@@ -7,8 +7,6 @@ __device__ int general_newton_raphson(double x[], int n, double Bsq, double Qtsq
 __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
 __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm);
-__device__ double u_of_p2(double p);
-__device__ double pressure_of_rho2(double rho0, double K_atm);
 __device__ double dWdvsq_calc2(double vsq, double rho, double p);
 __device__ int Utoprim_new_body2(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double K_atm);
 __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
@@ -16,20 +14,42 @@ __device__ void validate_x2(double x[1], double x0[1]);
 __device__ int general_newton_raphson2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
 __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double K);
 __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double D, double K_atm, double W_for_gnr2);
-__device__ void raise_g(double vcov[], double gcon[][NDIM], double ucon[]);
-__device__ void lower_g(double vcon[], double gcov[][NDIM], double ucov[]);
 __device__ void ncov_calc(double gcon[][NDIM], double ncov[]);
 __device__ void bcon_calc_g(double prim[], double ucon[], double ucov[], double ncov[], double bcon[]);
-__device__ double pressure_rho0_u(double rho0, double u);
-__device__ double pressure_rho0_w(double rho0, double w);
 __device__ int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double K);
 __device__ int Utoprim_new_body3(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double K_atm);
-__device__ double pressure_of_rho3(double rho0, double K_atm);
 __device__ double vsq_calc3(double W, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
 __device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
 __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 	double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
 __device__ int gnr2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
+
+/*Declare other functions*/
+__device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q);
+__device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
+__device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
+__device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
+__device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
+__device__ double slope_lim(double y1, double y2, double y3, int lim);
+__device__ void raise(double ucov[NDIM], double gcon[NDIM][NDIM], double ucon[NDIM]);
+__device__ void lower(double ucon[NDIM], double gcov[NDIM][NDIM], double ucov[NDIM]);
+__device__ void  primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double gam);
+__device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam);
+__device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom, int js, double *  vmax, double *  vmin, double gam);
+__device__ void mhd_calc(double *  pr, int dir, struct of_state *  q, double *  mhd, double gam);
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ Imageconn,
+struct of_state *  q, double a, double r);
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,
+	double a, double gam, double r, double Dt);
+__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
+__device__ double bsq_calc(double *  pr, struct of_geom *  geom);
+__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
+__device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
+__device__ double readImageDouble(int4 a);
+__device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
+__device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
+__device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
+
 
 __device__ int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double K)
 {
@@ -89,10 +109,10 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[NDIM][NDIM],
 	Bcon[0] = 0.;
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
 
-	lower_g(Bcon, gcov, Bcov);
+	lower(Bcon, gcov, Bcov);
 
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
-	raise_g(Qcov, gcon, Qcon);
+	raise(Qcov, gcon, Qcon);
 
 
 	Bsq = 0.;
@@ -103,7 +123,7 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[NDIM][NDIM],
 	QdotBsq = QdotB*QdotB;
 
 	ncov_calc(gcon, ncov);
-	raise_g(ncov, gcon, ncon);
+	raise(ncov, gcon, ncon);
 
 	Qdotn = Qcon[0] * ncov[0];
 
@@ -131,8 +151,8 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[NDIM][NDIM],
 	gamma = sqrt(gammasq);
 
 	rho0 = D / gamma;
-	p = pressure_of_rho3(rho0, K_atm);
-	u = u_of_p2(p);
+	p = K_atm * pow(rho0, G_ATM);
+	u = p / (GAMMA - 1.);
 	w = rho0 + u + p;
 
 	W_last = w*gammasq;
@@ -177,8 +197,8 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[NDIM][NDIM],
 
 	w = W * (1. - vsq);
 
-	p = pressure_of_rho3(rho0, K_atm);
-	u = u_of_p2(p);
+	p = K_atm * pow(rho0, G_ATM);
+	u = p / (GAMMA - 1.);
 
 	if ((rho0 <= 0.) || (u <= 0.)) {
 		retval = 5;
@@ -195,10 +215,6 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[NDIM][NDIM],
 	return(retval);
 }
 
-__device__ double pressure_of_rho3(double rho0, double K_atm)
-{
-	return(K_atm * pow(rho0, G_ATM));
-}
 
 __device__ double vsq_calc3(double W, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm)
 {
@@ -393,87 +409,6 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 	return;
 }
 
-
-__device__ void raise_g(double ucov[NDIM], double gcon[NDIM][NDIM], double ucon[NDIM])
-{
-#if AMD
-	ucon[0] = fma(gcon[0][0], ucov[0], fma(
-		gcon[0][1], ucov[1], fma(
-		gcon[0][2], ucov[2]
-		, gcon[0][3] * ucov[3])));
-	ucon[1] = fma(gcon[1][0], ucov[0], fma(
-		gcon[1][1], ucov[1], fma(
-		gcon[1][2], ucov[2]
-		, gcon[1][3] * ucov[3])));
-	ucon[2] = fma(gcon[2][0], ucov[0], fma(
-		gcon[2][1], ucov[1], fma(
-		gcon[2][2], ucov[2]
-		, gcon[2][3] * ucov[3])));
-	ucon[3] = fma(gcon[3][0], ucov[0], fma(
-		gcon[3][1], ucov[1], fma(
-		gcon[3][2], ucov[2]
-		, gcon[3][3] * ucov[3])));
-#else
-	ucon[0] = gcon[0][0] * ucov[0]
-		+ gcon[0][1] * ucov[1]
-		+ gcon[0][2] * ucov[2]
-		+ gcon[0][3] * ucov[3];
-	ucon[1] = gcon[1][0] * ucov[0]
-		+ gcon[1][1] * ucov[1]
-		+ gcon[1][2] * ucov[2]
-		+ gcon[1][3] * ucov[3];
-	ucon[2] = gcon[2][0] * ucov[0]
-		+ gcon[2][1] * ucov[1]
-		+ gcon[2][2] * ucov[2]
-		+ gcon[2][3] * ucov[3];
-	ucon[3] = gcon[3][0] * ucov[0]
-		+ gcon[3][1] * ucov[1]
-		+ gcon[3][2] * ucov[2]
-		+ gcon[3][3] * ucov[3];
-#endif
-	return;
-}
-
-__device__ void lower_g(double ucon[NDIM], double gcov[NDIM][NDIM], double ucov[NDIM])
-{
-#if AMD
-	ucov[0] = fma(gcov[0][0], ucon[0], fma(
-		gcov[0][1], ucon[1], fma(
-		gcov[0][2], ucon[2],
-		gcov[0][3] * ucon[3])));
-	ucov[1] = fma(gcov[1][0], ucon[0], fma(
-		gcov[1][1], ucon[1], fma(
-		gcov[1][2], ucon[2],
-		gcov[1][3] * ucon[3])));
-	ucov[2] = fma(gcov[2][0], ucon[0], fma(
-		gcov[2][1], ucon[1], fma(
-		gcov[2][2], ucon[2],
-		gcov[2][3] * ucon[3])));
-	ucov[3] = fma(gcov[3][0], ucon[0], fma(
-		gcov[3][1], ucon[1], fma(
-		gcov[3][2], ucon[2],
-		gcov[3][3] * ucon[3])));
-#else
-	ucov[0] = gcov[0][0] * ucon[0]
-		+ gcov[0][1] * ucon[1]
-		+ gcov[0][2] * ucon[2]
-		+ gcov[0][3] * ucon[3];
-	ucov[1] = gcov[1][0] * ucon[0]
-		+ gcov[1][1] * ucon[1]
-		+ gcov[1][2] * ucon[2]
-		+ gcov[1][3] * ucon[3];
-	ucov[2] = gcov[2][0] * ucon[0]
-		+ gcov[2][1] * ucon[1]
-		+ gcov[2][2] * ucon[2]
-		+ gcov[2][3] * ucon[3];
-	ucov[3] = gcov[3][0] * ucon[0]
-		+ gcov[3][1] * ucon[1]
-		+ gcov[3][2] * ucon[2]
-		+ gcov[3][3] * ucon[3];
-#endif
-	return;
-}
-
 __device__ void ncov_calc(double gcon[NDIM][NDIM], double ncov[NDIM])
 {
 	double lapse;
@@ -529,17 +464,6 @@ __device__ int gamma_calc_g(double *pr, double gcov[NDIM][NDIM], double *gamma)
 
 	*gamma = sqrt(1. + utsq);
 	return(0);
-}
-
-
-__device__ double pressure_rho0_u(double rho0, double u)
-{
-	return((GAMMA - 1.)*u);
-}
-
-__device__ double pressure_rho0_w(double rho0, double w)
-{
-	return((GAMMA - 1.)*(w - rho0) / GAMMA);
 }
 
 // for the isentropic version:   eq.  (27)
@@ -632,10 +556,10 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[NDIM][NDIM],
 #pragma unroll 3
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
 
-	lower_g(Bcon, gcov, Bcov);
+	lower(Bcon, gcov, Bcov);
 #pragma unroll 4
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
-	raise_g(Qcov, gcon, Qcon);
+	raise(Qcov, gcon, Qcon);
 
 	Bsq = 0.;
 #pragma unroll 3
@@ -647,7 +571,7 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[NDIM][NDIM],
 	QdotBsq = QdotB*QdotB;
 
 	ncov_calc(gcon, ncov);
-	raise_g(ncov, gcon, ncon);
+	raise(ncov, gcon, ncon);
 
 	Qdotn = Qcon[0] * ncov[0];
 
@@ -681,7 +605,7 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[NDIM][NDIM],
 	//   i.e. you don't get positive values for dP/d(vsq) . 
 	rho0 = D / gamma;
 	u = prim[UU];
-	p = pressure_rho0_u(rho0, u);
+	p = (GAMMA - 1.)*u;
 
 	// Initialize independent variables for Newton-Raphson:
 	x_1d[0] = 1. - 1. / gammasq;
@@ -845,23 +769,13 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	*df = -2. * (*f);
 }
 
-__device__ double pressure_of_rho2(double rho0, double K_atm)
-{
-	return(K_atm * pow(rho0, G_ATM));
-}
-
-__device__ double u_of_p2(double p)
-{
-	return(p / (GAMMA - 1.));
-}
-
 __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm)
 {
 	double gtmp;
 	gtmp = (1. - vsq);
 	*rho = D * sqrt(gtmp);
-	*p = pressure_of_rho2(*rho, K_atm);
-	*u = u_of_p2(*p);
+	*p = K_atm * pow(*rho, G_ATM);
+	*u = *p / (GAMMA - 1.);
 	return((*rho + *u + *p) / gtmp);
 }
 
@@ -948,10 +862,10 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[NDIM][NDIM], double g
 #pragma unroll 3
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
 
-	lower_g(Bcon, gcov, Bcov);
+	lower(Bcon, gcov, Bcov);
 #pragma unroll 4
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
-	raise_g(Qcov, gcon, Qcon);
+	raise(Qcov, gcon, Qcon);
 
 	Bsq = 0.;
 #pragma unroll 3
@@ -963,7 +877,7 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[NDIM][NDIM], double g
 	QdotBsq = QdotB*QdotB;
 
 	ncov_calc(gcon, ncov);
-	raise_g(ncov, gcon, ncon);
+	raise(ncov, gcon, ncon);
 
 	Qdotn = Qcon[0] * ncov[0];
 
@@ -1000,7 +914,7 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[NDIM][NDIM], double g
 	//   i.e. you don't get positive values for dP/d(vsq) . 
 	rho0 = D / gamma;
 	u = prim[UU];
-	p = pressure_rho0_u(rho0, u);
+	p = (GAMMA - 1.)*u;
 	w = rho0 + u + p;
 
 	W_last = w*gammasq;
@@ -1046,7 +960,7 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[NDIM][NDIM], double g
 	rho0 = D * gtmp;
 
 	w = W * (1. - vsq);
-	p = pressure_rho0_w(rho0, w);
+	p = (GAMMA - 1.)*(w - rho0) / GAMMA;
 	u = w - (rho0 + p);
 
 	// User may want to handle this case differently, e.g. do NOT return upon 
@@ -1279,33 +1193,6 @@ struct of_state {
 	double bcov[NDIM];
 };
 
-
-/*Declare other functions*/
-__device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q);
-__device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
-__device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
-__device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
-__device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
-__device__ double slope_lim(double y1, double y2, double y3, int lim);
-__device__ void raise(double *  ucov, struct of_geom *  geom, double *  ucon);
-__device__ void lower(double *  ucon, struct of_geom *  geom, double *  ucov);
-__device__ void  primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double gam);
-__device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam);
-__device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom, int js, double *  vmax, double *  vmin, double gam);
-__device__ void mhd_calc(double *  pr, int dir, struct of_state *  q, double *  mhd, double gam);
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ Imageconn,
-struct of_state *  q, double a, double r);
-__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,
-	double a, double gam, double r, double Dt);
-__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
-__device__ double bsq_calc(double *  pr, struct of_geom *  geom);
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
-__device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
-__device__ double readImageDouble(int4 a);
-__device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
-__device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
-__device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
-
 /* find relative 4-velocity from 4-velocity (both in code coords) */
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 {
@@ -1486,12 +1373,12 @@ __device__ void vchar(double *  pr, struct of_state *  q, struct of_geom *  geom
 	#pragma unroll 4
 	DLOOPA Acov[j] = 0.;
 	Acov[js] = 1.;
-	raise(Acov, geom, Acon);
+	raise(Acov, geom->gcon, Acon);
 
 	#pragma unroll 4
 	DLOOPA Bcov[j] = 0.;
 	Bcov[0] = 1.;
-	raise(Bcov, geom, Bcon);
+	raise(Bcov, geom->gcon, Bcon);
 
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon, q->bcov);
@@ -1618,7 +1505,7 @@ __device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double
 	else if (dir == 3){
 		kcov[3] = 1.0;
 	}
-	raise(kcov, geom, kcon);
+	raise(kcov, geom->gcon, kcon);
 	om = dot(ucon, kcov);
 	omsq = pow(om, 2.0);
 	#pragma unroll 4
@@ -1665,93 +1552,92 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 {
 	/* get ucon */
 	ucon_calc(pr, geom, q->ucon);
-	lower(q->ucon, geom, q->ucov);
+	lower(q->ucon, geom->gcov, q->ucov);
 	bcon_calc(pr, q->ucon, q->ucov, q->bcon);
-	lower(q->bcon, geom, q->bcov);
+	lower(q->bcon, geom->gcov, q->bcov);
 
 	return;
 }
 
 /* Raises a covariant rank-1 tensor to a contravariant one */
-__device__ void raise(double *  ucov, struct of_geom *  geom, double *  ucon)
+__device__ void raise(double ucov[NDIM], double gcon[NDIM][NDIM], double ucon[NDIM])
 {
 	#if AMD
-	ucon[0] = fma(geom->gcon[0][0], ucov[0], fma(
-		geom->gcon[0][1], ucov[1], fma(
-		geom->gcon[0][2], ucov[2]
-		, geom->gcon[0][3] * ucov[3])));
-	ucon[1] = fma(geom->gcon[1][0], ucov[0], fma(
-		geom->gcon[1][1], ucov[1], fma(
-		geom->gcon[1][2], ucov[2]
-		, geom->gcon[1][3] * ucov[3])));
-	ucon[2] = fma(geom->gcon[2][0], ucov[0], fma(
-		geom->gcon[2][1], ucov[1], fma(
-		geom->gcon[2][2], ucov[2]
-		, geom->gcon[2][3] * ucov[3])));
-	ucon[3] = fma(geom->gcon[3][0], ucov[0], fma(
-		geom->gcon[3][1], ucov[1], fma(
-		geom->gcon[3][2], ucov[2]
-		, geom->gcon[3][3] * ucov[3])));
+	ucon[0] = fma(gcon[0][0], ucov[0], fma(
+		gcon[0][1], ucov[1], fma(
+		gcon[0][2], ucov[2]
+		, gcon[0][3] * ucov[3])));
+	ucon[1] = fma(gcon[1][0], ucov[0], fma(
+		gcon[1][1], ucov[1], fma(
+		gcon[1][2], ucov[2]
+		, gcon[1][3] * ucov[3])));
+	ucon[2] = fma(gcon[2][0], ucov[0], fma(
+		gcon[2][1], ucov[1], fma(
+		gcon[2][2], ucov[2]
+		, gcon[2][3] * ucov[3])));
+	ucon[3] = fma(gcon[3][0], ucov[0], fma(
+		gcon[3][1], ucov[1], fma(
+		gcon[3][2], ucov[2]
+		, gcon[3][3] * ucov[3])));
 	#else
-	ucon[0] = geom->gcon[0][0] * ucov[0]
-		+ geom->gcon[0][1] * ucov[1]
-		+ geom->gcon[0][2] * ucov[2]
-		+ geom->gcon[0][3] * ucov[3];
-	ucon[1] = geom->gcon[1][0] * ucov[0]
-		+ geom->gcon[1][1] * ucov[1]
-		+ geom->gcon[1][2] * ucov[2]
-		+ geom->gcon[1][3] * ucov[3];
-	ucon[2] = geom->gcon[2][0] * ucov[0]
-		+ geom->gcon[2][1] * ucov[1]
-		+ geom->gcon[2][2] * ucov[2]
-		+ geom->gcon[2][3] * ucov[3];
-	ucon[3] = geom->gcon[3][0] * ucov[0]
-		+ geom->gcon[3][1] * ucov[1]
-		+ geom->gcon[3][2] * ucov[2]
-		+ geom->gcon[3][3] * ucov[3];
+	ucon[0] = gcon[0][0] * ucov[0]
+		+ gcon[0][1] * ucov[1]
+		+ gcon[0][2] * ucov[2]
+		+ gcon[0][3] * ucov[3];
+	ucon[1] = gcon[1][0] * ucov[0]
+		+ gcon[1][1] * ucov[1]
+		+ gcon[1][2] * ucov[2]
+		+ gcon[1][3] * ucov[3];
+	ucon[2] = gcon[2][0] * ucov[0]
+		+ gcon[2][1] * ucov[1]
+		+ gcon[2][2] * ucov[2]
+		+ gcon[2][3] * ucov[3];
+	ucon[3] = gcon[3][0] * ucov[0]
+		+ gcon[3][1] * ucov[1]
+		+ gcon[3][2] * ucov[2]
+		+ gcon[3][3] * ucov[3];
 	#endif
-	return;
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
-__device__ void lower(double *  ucon, struct of_geom *  geom, double *  ucov)
+__device__ void lower(double ucon[NDIM], double gcov[NDIM][NDIM], double ucov[NDIM])
 {
-	#if AMD
-	ucov[0] = fma(geom->gcov[0][0], ucon[0], fma(
-		geom->gcov[0][1], ucon[1], fma(
-		geom->gcov[0][2], ucon[2],
-		geom->gcov[0][3] * ucon[3])));
-	ucov[1] = fma(geom->gcov[1][0], ucon[0], fma(
-		geom->gcov[1][1], ucon[1], fma(
-		geom->gcov[1][2], ucon[2],
-		geom->gcov[1][3] * ucon[3])));
-	ucov[2] = fma(geom->gcov[2][0], ucon[0], fma(
-		geom->gcov[2][1], ucon[1], fma(
-		geom->gcov[2][2], ucon[2],
-		geom->gcov[2][3] * ucon[3])));
-	ucov[3] = fma(geom->gcov[3][0], ucon[0], fma(
-		geom->gcov[3][1], ucon[1], fma(
-		geom->gcov[3][2], ucon[2],
-		geom->gcov[3][3] * ucon[3])));
+#if AMD
+	ucov[0] = fma(gcov[0][0], ucon[0], fma(
+		gcov[0][1], ucon[1], fma(
+		gcov[0][2], ucon[2],
+		gcov[0][3] * ucon[3])));
+	ucov[1] = fma(gcov[1][0], ucon[0], fma(
+		gcov[1][1], ucon[1], fma(
+		gcov[1][2], ucon[2],
+		gcov[1][3] * ucon[3])));
+	ucov[2] = fma(gcov[2][0], ucon[0], fma(
+		gcov[2][1], ucon[1], fma(
+		gcov[2][2], ucon[2],
+		gcov[2][3] * ucon[3])));
+	ucov[3] = fma(gcov[3][0], ucon[0], fma(
+		gcov[3][1], ucon[1], fma(
+		gcov[3][2], ucon[2],
+		gcov[3][3] * ucon[3])));
 	return;
-	#else
-	ucov[0] = geom->gcov[0][0] * ucon[0]
-		+ geom->gcov[0][1] * ucon[1]
-		+ geom->gcov[0][2] * ucon[2]
-		+ geom->gcov[0][3] * ucon[3];
-	ucov[1] = geom->gcov[1][0] * ucon[0]
-		+ geom->gcov[1][1] * ucon[1]
-		+ geom->gcov[1][2] * ucon[2]
-		+ geom->gcov[1][3] * ucon[3];
-	ucov[2] = geom->gcov[2][0] * ucon[0]
-		+ geom->gcov[2][1] * ucon[1]
-		+ geom->gcov[2][2] * ucon[2]
-		+ geom->gcov[2][3] * ucon[3];
-	ucov[3] = geom->gcov[3][0] * ucon[0]
-		+ geom->gcov[3][1] * ucon[1]
-		+ geom->gcov[3][2] * ucon[2]
-		+ geom->gcov[3][3] * ucon[3];
-	#endif
+#else
+	ucov[0] = gcov[0][0]*ucon[0] 
+		+ gcov[0][1]*ucon[1] 
+		+ gcov[0][2]*ucon[2] 
+		+ gcov[0][3]*ucon[3] ;
+	ucov[1] = gcov[1][0]*ucon[0] 
+		+ gcov[1][1]*ucon[1] 
+		+ gcov[1][2]*ucon[2] 
+		+ gcov[1][3]*ucon[3] ;
+	ucov[2] = gcov[2][0]*ucon[0] 
+		+ gcov[2][1]*ucon[1] 
+		+ gcov[2][2]*ucon[2] 
+		+ gcov[2][3]*ucon[3] ;
+	ucov[3] = gcov[3][0]*ucon[0] 
+		+ gcov[3][1]*ucon[1] 
+		+ gcov[3][2]*ucon[2] 
+		+ gcov[3][3]*ucon[3] ;
+#endif
 }
 
 /* find contravariant four-velocity */
@@ -2171,8 +2057,8 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq, const 
 		primtoflux(p, &state, 0, &geom, temp2, gam);
 		vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
 
-			#if(PPM || LEER)
-			#pragma unroll 9
+		#if(PPM || LEER)
+		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
 			p[k] = dq[k*(ksize)+global_id];
 		}
@@ -2657,7 +2543,7 @@ __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, 
 }
 
 #if(!V100)
-__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
+__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__ F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
@@ -2718,9 +2604,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 		uuflr = UUMIN*uuscal;
 
 		ucon_calc(pf, &geom, q.ucon);
-		lower(q.ucon, &geom, q.ucov);
+		lower(q.ucon, geom.gcov, q.ucov);
 		bcon_calc(pf, q.ucon, q.ucov, q.bcon);
-		lower(q.bcon, &geom, q.bcov);
+		lower(q.bcon, geom.gcov, q.bcov);
 		bsq = dot(q.bcon, q.bcov);
 
 		//tie floors to the local values of magnetic field and internal energy density
@@ -2751,7 +2637,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 			double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
 
 			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
-			//lower(q.ucon, &geom, q.ucov) ;
+			//lower(q.ucon, geom.gcov, q.ucov) ;
 			if (trans > 1.) {
 				trans = 1.;
 			}
@@ -2776,7 +2662,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 				Bcon[m] = pf[B1 - 1 + m];
 			}
 
-			lower(Bcon, &geom, Bcov);
+			lower(Bcon, geom.gcov, Bcov);
 			udotB = dot(q.ucon, Bcov);
 			Bsq = dot(Bcon, Bcov);
 			B = sqrt(Bsq);
@@ -3008,9 +2894,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* _
 		uuflr = UUMIN*uuscal;
 
 		ucon_calc(pf, &geom, q.ucon);
-		lower(q.ucon, &geom, q.ucov);
+		lower(q.ucon, geom.gcov, q.ucov);
 		bcon_calc(pf, q.ucon, q.ucov, q.bcon);
-		lower(q.bcon, &geom, q.bcov);
+		lower(q.bcon, geom.gcov, q.bcov);
 		bsq = dot(q.bcon, q.bcov);
 
 		//tie floors to the local values of magnetic field and internal energy density
@@ -3036,7 +2922,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* _
 		#if( DRIFT_FLOOR )
 		if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
 			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
-			//lower(q.ucon, &geom, q.ucov) ;
+			//lower(q.ucon, geom.gcov, q.ucov) ;
 			if (trans > 1.) {
 				trans = 1.;
 			}
@@ -3060,7 +2946,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* _
 				Bcon[m] = pf[B1 - 1 + m];
 			}
 
-			lower(Bcon, &geom, Bcov);
+			lower(Bcon, geom.gcov, Bcov);
 			udotB = dot(q.ucon, Bcov);
 			Bsq = dot(Bcon, Bcov);
 			B = sqrt(Bsq);
