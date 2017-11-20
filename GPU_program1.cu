@@ -3033,7 +3033,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 			dofloor = 1;
 		}
 
-		#if( ZAMO_FLOOR )
+		#if( DRIFT_FLOOR )
 		if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
 			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
 			//lower(q.ucon, &geom, q.ucov) ;
@@ -3107,7 +3107,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 				pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
 			}
 		}
-		#else
+		#elif(ZAMO_FLOOR)
 		if (dofloor == 1) {
 			double dpf[NPR], U_prefloor[NPR],Xtransone_over_ucondr;
 			#pragma unroll 9
