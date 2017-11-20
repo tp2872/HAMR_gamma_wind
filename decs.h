@@ -752,7 +752,7 @@ extern int numtasks, rank, local_rank, rc;
 extern int prestep_half[NB], prestep_full[NB];
 extern int max_levels;
 extern int reduce_timestep;
-extern int nthreads;
+extern int nthreads,numdevices;
 extern int gpu;
 extern int status;
 
@@ -801,8 +801,8 @@ extern int first_dump, first_rdump;
 
 /*AMR parameters*/
 extern int(*block)[NV];
-extern int n_ord[NB], n_ord_gpu[N_GPU][NB], n_ord_total[NB], n_ord_RM[NB], n_ord_total_RM[NB];
-extern int n_active, n_active_gpu[N_GPU], n_active_total, n_max;
+extern int n_ord[NB],  n_ord_total[NB], n_ord_RM[NB], n_ord_total_RM[NB];
+extern int n_active,  n_active_total, n_max;
 extern int N1_GPU[NB];
 extern int N2_GPU[NB];
 extern int N3_GPU[NB];

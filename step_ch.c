@@ -509,10 +509,10 @@ void GPU_step_ch()
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
-	//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
-	//#if(TIMESTEP_JET)
-	//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
-	//#endif
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+	#if(TIMESTEP_JET)
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0)set_timelevel_jet();
+	#endif
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 }
@@ -550,12 +550,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt1 = 1e9;
 		for (n = 0; n < n_active; n++){
-			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			//	ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
-			//}
-			//else{
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+			}
+			else{
 				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-			//}
+			}
 		}
 	}
 	#else
@@ -574,12 +574,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt2 = 1e9;
 		for (n = 0; n < n_active; n++){
-			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			//	ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
-			//}
-			//else{
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+			}
+			else{
 				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-		  //  }
+		    }
 	}
 }
 	#else
@@ -598,12 +598,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
-			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			//	ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
-			//}
-			//else{
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+			}
+			else{
 				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-			//}
+			}
 		}
 	}
 	#else
@@ -716,12 +716,12 @@ double advance_GPU(void)
 		ndt = 1e9;
 		for (n = 0; n < n_active; n++){
 			bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-			//if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
-			//	ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
-			//}
-			//else{
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+				ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+			}
+			else{
 				ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
-			//}
+			}
 		}
 	}
 

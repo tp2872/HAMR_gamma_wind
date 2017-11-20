@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 		#endif
 
 		/* deal with failed timestep, exit upon failure */
-		//if (failed) break;
+		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
 		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			//restart_write(); //do restart dumb simultaneous with log
-			//tlog +=  DTl;
+			tlog +=  DTl;
 		}			
 		
 		#if TIMER
@@ -181,7 +181,10 @@ void MPI_initialize(int argc, char *argv[])
 	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
 		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	}
-	cudaSetDevice(local_rank%N_GPU);
+	#if(GPU_ENABLED)
+	cudaGetDeviceCount(&numdevices);
+	cudaSetDevice(local_rank%numdevices);
+	#endif
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 
 	if (rc != MPI_SUCCESS) {
@@ -193,6 +196,7 @@ void MPI_initialize(int argc, char *argv[])
 	MPI_Get_processor_name(hostname, &len);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	mpi_cartcomm = MPI_COMM_WORLD;
+	MPI_Comm_split(mpi_cartcomm, rank, rank, &mpi_self);
 
 	/*Give basic diagnostics*/
 	if (rank == 0){
@@ -203,7 +207,7 @@ void MPI_initialize(int argc, char *argv[])
 	}
 #endif
 
-#pragma omp parallel shared(nthreads) private(threadid)
+	#pragma omp parallel shared(nthreads) private(threadid)
 	{
 		threadid = omp_get_thread_num();
 		nthreads = omp_get_num_threads();

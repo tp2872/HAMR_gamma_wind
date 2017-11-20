@@ -11,8 +11,8 @@ void GPU_init(void)
 	////cudaSetDevice(local_rank%N_GPU);
 	//for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[j]);
 
-	for (j = 0; j < N_GPU; j++){
-		cudaDeviceCanAccessPeer(&pos, local_rank%N_GPU, j);
+	for (j = 0; j < numdevices; j++){
+		cudaDeviceCanAccessPeer(&pos, local_rank%numdevices, j);
 		if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
 	}
 
@@ -1734,7 +1734,7 @@ void GPU_boundprim(int bound_force)
 	#if(PRESTEP)
 	rc = 0;
 	//MPI communication
-	mpi_synch();
+	//mpi_synch();
 	if (rank == 0){
 		begin2 =clock();
 	}
@@ -1830,6 +1830,7 @@ void GPU_boundprim(int bound_force)
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
+	
 	//MPI communication
 	mpi_synch();
 

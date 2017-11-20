@@ -410,7 +410,7 @@ void set_AMR(void){
 		block[n][AMR_NODE] = -1;
 
 		//No special GPU assigned yet
-		block[n][AMR_GPU] = local_rank%N_GPU;
+		block[n][AMR_GPU] = local_rank%numdevices;
 
 		//For the moment only activate the 0 level blocks
 		if (block[n][AMR_LEVEL] == 0){
@@ -719,16 +719,6 @@ void activate_blocks(void){
 		}
 	}
 
-	//Set the same array for each GPU on a single node
-	/*for (i = 0; i < N_GPU; i++){
-		n_active_gpu[i] = 0;
-		for (n = 0; n < n_active; n++){
-			if (block[n_ord[n]][AMR_GPU] == i){
-				n_ord_gpu[i][n_active_gpu[i]] = n;
-				n_active_gpu[i]++;
-			}
-		}
-	}*/
 }
 
 void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, int z2){
@@ -1614,7 +1604,7 @@ void check_refcrit(void){
 	begin1 = time(NULL);
 	
 	//First calculate non-reduced timestep
-	ndt = 1e9;
+	/*ndt = 1e9;
 	for (n = 0; n < n_active; n++){
 		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
 		ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
@@ -1624,10 +1614,13 @@ void check_refcrit(void){
 	#endif
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
+
+	//Set timelevel
 	set_timelevel();
 	#if(TIMESTEP_JET)
 	set_timelevel_jet();
-	#endif
+	#endif*/
+
 	do{
 		tag = 0;
 		count = 0;
@@ -1894,6 +1887,9 @@ void check_refcrit(void){
 	#if(GPU_ENABLED)
 	balance_load_gpu();
 	#endif
+	
+	//Set timelevel communicator. Function is just dummy!
+	set_timelevel();
 
 	MPI_Barrier(mpi_cartcomm);
 	end1 = time(NULL);
@@ -1919,7 +1915,7 @@ int derefine_pole(void){
 		exit(20);
 		return -1;
 	}
-	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS - 1)) > ((double)numtasks*(double)(N_GPU)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
+	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
 
 	for (l = 0; l < N_LEVELS - 1; l++){
 		pre_refine();

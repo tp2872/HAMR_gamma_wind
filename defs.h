@@ -742,7 +742,7 @@ double rmax;
 double ndt, ndt1, ndt2, ndt3;
 int numtasks, rank, local_rank, rc;
 int prestep_half[NB], prestep_full[NB];
-int max_levels;
+int max_levels, numdevices;
 int reduce_timestep;
 int nthreads;
 int gpu;
@@ -780,8 +780,8 @@ int first_dump, first_rdump;
 
 /*AMR parameters*/
 int(*block)[NV];
-int n_ord[NB], n_ord_gpu[N_GPU][NB], n_ord_total[NB], n_ord_RM[NB], n_ord_total_RM[NB];
-int n_active, n_active_gpu[N_GPU], n_active_total, n_max;
+int n_ord[NB], n_ord_total[NB], n_ord_RM[NB], n_ord_total_RM[NB];
+int n_active, n_active_total, n_max;
 int N1_GPU[NB];
 int N2_GPU[NB];
 int N3_GPU[NB];
