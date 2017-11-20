@@ -70,7 +70,7 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 1
+#define COPY_BFIELD 0
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -142,7 +142,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define HLLF  (1)
 #define LAXF  (0)
 
-/*Wheter or not to use a non symmetric metric for tilted disk*/
+/*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NONSYMMETRIC (0)
 
 /*Use transmissive boundary condition at pole*/

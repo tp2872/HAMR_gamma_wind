@@ -1889,7 +1889,16 @@ void check_refcrit(void){
 	#endif
 	
 	//Set timelevel communicator. Function is just dummy!
-	set_timelevel();
+	int min_timelevel[8];
+	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
+		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
+
+		min_timelevel[i] = rank + 1000;
+		for (n = 0; n < n_active; n++){
+			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2, i)) min_timelevel[i] = 1;
+		}
+		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
+	}
 
 	MPI_Barrier(mpi_cartcomm);
 	end1 = time(NULL);

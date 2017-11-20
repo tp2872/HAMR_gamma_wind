@@ -100,7 +100,7 @@ void set_timelevel(void){
 	//Create communicators for nodes which have a minimum (i) timelevel
 	int min_timelevel[8];
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
-		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
+		if (nstep >= 1) MPI_Comm_free(&row_comm[i]);
 
 		min_timelevel[i] = rank + 1000;
 		for (n = 0; n < n_active; n++){

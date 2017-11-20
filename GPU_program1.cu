@@ -1998,7 +1998,7 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 	return(dot(q.bcon, q.bcov));
 }
 
-__global__ void fluxcalcprep(double *   F, double *  dq, double *  p, int dir, int lim, int number, double *  V)
+__global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + 2 * D3)*(BS_2 + 2 * D2);
@@ -2095,7 +2095,7 @@ __global__ void fluxcalcprep(double *   F, double *  dq, double *  p, int dir, i
 	}
 }
 
-__global__ void fluxcalc2D2(double *  F, double *  dq, double *  pv, double *  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
+__global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
 	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double* storage1, double* storage2, double* storage3, double* storage4, double dx_1, double dx_2, double dx_3)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -2291,7 +2291,7 @@ __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, in
 	#endif
 }
 
-__global__ void consttransport1(double *  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
+__global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + N3G)*(BS_2 + N2G);
@@ -2324,8 +2324,8 @@ __global__ void consttransport1(double *  pb_i, double *  E_cent, const  double*
 	}
 }
 
-__global__ void consttransport2(double *  emf, double *  E_cent, double *  F1, double *  F2, double *  F3,
-	double *  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
+__global__ void consttransport2(double *  emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
+	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
@@ -2397,7 +2397,7 @@ __global__ void consttransport2(double *  emf, double *  E_cent, double *  F1, d
 }
 
 __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
-	double *  E_corn, double Dt)
+	const  double* __restrict__  E_corn, double Dt)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
@@ -2433,7 +2433,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	}
 }
 
-__global__ void flux_ct1(double *  F1, double *  F2, double *  F3, double *  emf)
+__global__ void flux_ct1(const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double *  emf)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
@@ -2465,7 +2465,7 @@ __global__ void flux_ct1(double *  F1, double *  F2, double *  F3, double *  emf
 	}
 }
 
-__global__ void flux_ct2(double *  F1, double *  F2, double *  F3, double *  emf)
+__global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double* __restrict__  emf)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
@@ -2517,8 +2517,8 @@ __global__ void flux_ct2(double *  F1, double *  F2, double *  F3, double *  emf
 	}
 }
 
-__global__ void Utoprim0(double* pi_i, double* pb_i, double* pf_i, double *  psf,
-	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
+__global__ void Utoprim0(const  double* __restrict__ pi_i, const  double* __restrict__ pb_i, double* pf_i, double *  psf,
+	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -2605,8 +2605,8 @@ __global__ void Utoprim1(double* pi_i, double* pb_i, double* pf_i, double *  psf
 	}
 }
 
-__global__ void Utoprim2(double* pi_i, double* pb_i, double* pf_i, double *  psf,
-	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
+__global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
+	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -2658,7 +2658,7 @@ __global__ void Utoprim2(double* pi_i, double* pb_i, double* pf_i, double *  psf
 
 #if(!V100)
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
-	double *  F1, double *  F2, double *  F3, double* U_i, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ F1, const  double* __restrict__ F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -2894,8 +2894,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 }
 #else
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
-__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double *  psf,
-	double *  F1, double *  F2, double *  F3, double* U_i,double* radius, int* pflag, int* failimage,
+__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
+	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
