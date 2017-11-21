@@ -17,7 +17,7 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
+#define TILTED (0)
 #define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
@@ -25,7 +25,7 @@ Physical Parameters section
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.03)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
@@ -61,7 +61,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (0)
+#define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
@@ -73,17 +73,17 @@ Numerical Parameters section
 #define COPY_BFIELD 0
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 12
-#define NB_3 10
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 3
+#define N_LEVELS 1
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -98,13 +98,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 64
+#define AMR_SWITCHTIMELEVEL 320
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 1
+#define PRESTEP 0
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
@@ -146,7 +146,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NONSYMMETRIC (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1)
+#define TRANS_BOUND (0)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
