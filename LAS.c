@@ -37,18 +37,9 @@ void set_timelevel(void){
 	nz = NB_3;
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
-	if (nstep > 0){
-		for (n = 0; n < n_active; n++){
-			for (i = i_max; i >= 0; i--){
-				if (bdt[n_ord[n]][0] / dt > 1.00*pow(2, i + 1) && bdt[n_ord[n]][0] / dt <= 1.1*pow(2, i + 1) && block[n_ord[n]][AMR_TIMELEVEL] == pow(2, i + 1) && i != i_max){
-					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i + 1);
-					break;
-				}
-				else if (bdt[n_ord[n]][0] / dt >= 1.1*pow(2, i)){
-					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
-					break;
-				}
-			}
+	for (n = 0; n < n_active; n++){
+		for (i = 0; i <= i_max; i++){
+			if (bdt[n_ord[n]][0] / dt > pow(2, i) && nstep > 0) block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
 		}
 	}
 
@@ -100,7 +91,7 @@ void set_timelevel(void){
 	//Create communicators for nodes which have a minimum (i) timelevel
 	int min_timelevel[8];
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
-		if (nstep >= 1) MPI_Comm_free(&row_comm[i]);
+		if (nstep > 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
 
 		min_timelevel[i] = rank + 1000;
 		for (n = 0; n < n_active; n++){
@@ -208,7 +199,7 @@ void set_corners(void){
 		block[n_ord_total[n]][AMR_CORN12D_2] = -100;
 	}
 #else
-	#pragma omp parallel for schedule(dynamic,1) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2)
 	for (n = 0; n < n_active_total; n++){
 		//Corn 1
 		block[n_ord_total[n]][AMR_CORN1D] = -10;

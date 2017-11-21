@@ -606,7 +606,6 @@ int interpolate_prims( double r, double th, double ph, extent ext, double *data,
   p[B1] = 0.;
   p[B2] = 0.;
   p[B3] = 0.;
-  if(vx*vx+vy*vy+vz*vz>1.0)fprintf(stderr, "test:%f %f %f %f %f %f %f %f %f \n", x1,y1,z1, p[RHO], p[UU],vx,vy,vz, poten);
 
   return(0);
 }
@@ -636,9 +635,9 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
   i0 = floor(i);
   j0 = floor(j);
   k0 = floor(k);
-  i1 = ceil(i);
-  j1 = ceil(j);
-  k1 = ceil(k);
+  i1 = (int)ceil(i);
+  j1 = (int)ceil(j);
+  k1 = (int)ceil(k);
   if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
     return(1);
   }

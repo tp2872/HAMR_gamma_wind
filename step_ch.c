@@ -733,7 +733,7 @@ double advance_GPU(void)
 void step_ch_debug()
 {
 	#if (GPU_ENABLED==1)
-	double ndt, inmsg;
+	double ndt=0., inmsg;
 	int i, j, z, k, n;
 	#if (MPI_enable)
 	MPI_Barrier(mpi_cartcomm);

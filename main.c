@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	DTl = 20.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
-	tref = t + 0.1*TREF;
+	tref = t + TREF;
 	time_spent3 = 0.0;
 	begin1 = clock();
 	
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
 			end1 = clock();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -117,16 +117,16 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
-			#endif
+			#endif;
 			tref += TREF;
 		}
 
 		/* Put out dump file*/
-		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			//diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 		}			
 		
 		#if TIMER
-		if (nstep % (2*AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (20*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);

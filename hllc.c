@@ -528,6 +528,7 @@ double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR]
 		}
 		return(ndt);
 	#endif
+		return 1;
 }
 
 void ctop_to_utop(double ctop[NDIM], double cmax[NDIM]){

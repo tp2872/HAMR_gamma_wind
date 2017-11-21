@@ -956,7 +956,7 @@ void set_timelevel_jet(void);
 void set_prestep(void);
 void mpi_synch(void);
 void set_timelevel(void);
-int rm_order(void);
+void rm_order(void);
 void balance_load(void);
 void balance_load_gpu(void);
 void set_arrays_image(void);

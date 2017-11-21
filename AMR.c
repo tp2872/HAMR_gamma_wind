@@ -2,7 +2,7 @@
 
 int AMR_coord_linear_RM(int level, int i, int j, int z);
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
-int rm_order2(void);
+void rm_order2(void);
 
 void test_AMR(void){
 }
@@ -428,15 +428,10 @@ void set_AMR(void){
 	activate_blocks();
 	set_corners();
 
-	MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	balance_load();
-	#if(GPU_ENABLED)
-	balance_load_gpu();
-	#endif
 
-	//First calculate non-reduced timestep
-	set_timelevel();
 }
 
 #define MAX_BLOCKS (36*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
@@ -652,8 +647,9 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
 
 	bound_prim(p, 1);
+	#if(GPU_ENABLED)
 	GPU_boundprim(1);
-
+	#endif
 	if (rank == 0) fprintf(stderr, "Load balance finished! \n");
 }
 
@@ -1349,7 +1345,7 @@ void pre_refine(void){
 
 	for (n1 = 0; n1 < n_active; n1++){
 		#if(GPU_ENABLED || GPU_DEBUG )
-		//GPU_read(n_ord[n1]);
+		GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
 		{
@@ -1889,7 +1885,7 @@ void check_refcrit(void){
 	#endif
 	
 	//Set timelevel communicator. Function is just dummy!
-	int min_timelevel[8];
+	/*int min_timelevel[8];
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
 		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
 
@@ -1898,7 +1894,7 @@ void check_refcrit(void){
 			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2, i)) min_timelevel[i] = 1;
 		}
 		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
-	}
+	}*/
 
 	MPI_Barrier(mpi_cartcomm);
 	end1 = time(NULL);
@@ -1906,9 +1902,9 @@ void check_refcrit(void){
 
 	//Start very conservatively
 	dt /= 2.;
-	//for (n = 0; n < n_active_total; n ++){
-		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
-	//}
+	for (n = 0; n < n_active_total; n ++){
+		block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+	}
 }
 
 //This function derefines in z near the pole
@@ -1949,7 +1945,7 @@ int derefine_pole(void){
 }
 
 //Set row major order in case of derfinement near pole
-int rm_order(void){
+void rm_order(void){
 	int l, i, j, z, ni, nj, nz;
 	int number = 0;
 	int number_node = 0;
@@ -1971,7 +1967,7 @@ int rm_order(void){
 	}
 }
 
-int rm_order2(void){
+void rm_order2(void){
 	int n, l, i, j, z, number;
 	int counter = 0;
 	int counter2 = 0;
