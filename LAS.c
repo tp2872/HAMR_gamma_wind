@@ -199,7 +199,7 @@ void set_corners(void){
 		block[n_ord_total[n]][AMR_CORN12D_2] = -100;
 	}
 #else
-	//#pragma omp parallel for schedule(dynamic,1) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2)
+	#pragma omp parallel for schedule(dynamic,1) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2)
 	for (n = 0; n < n_active_total; n++){
 		//Corn 1
 		block[n_ord_total[n]][AMR_CORN1D] = -10;

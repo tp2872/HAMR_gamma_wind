@@ -101,7 +101,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_MAXTIMELEVEL 8
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 64
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 1

@@ -1345,7 +1345,7 @@ void pre_refine(void){
 
 	for (n1 = 0; n1 < n_active; n1++){
 		#if(GPU_ENABLED || GPU_DEBUG )
-		GPU_read(n_ord[n1]);
+		//GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
 		{
@@ -1903,7 +1903,7 @@ void check_refcrit(void){
 	//Start very conservatively
 	dt /= 2.;
 	for (n = 0; n < n_active_total; n ++){
-		block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
 	}
 }
 
