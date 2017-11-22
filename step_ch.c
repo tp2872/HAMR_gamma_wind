@@ -112,9 +112,9 @@ void step_ch()
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
 
-	if ((t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (nstep == 2 * AMR_SWITCHTIMELEVEL)) set_timelevel();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
 	#if(TIMESTEP_JET)
-	if ((t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (nstep == 2 * AMR_SWITCHTIMELEVEL)) set_timelevel_jet();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel_jet();
 	#endif
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 	/* done! */
@@ -159,7 +159,7 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][1] = fluxcalc(ph, F1, 1, 1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][1] = fluxcalc(p, F1, 1, 0, n_ord[n]);
-		if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
 		}
 		else{
@@ -175,7 +175,7 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[n_ord[n]][2] = fluxcalc(ph, F2, 2, 1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][2] = fluxcalc(p, F2, 2, 0, n_ord[n]);
-		if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 			ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
 		}
 		else{
@@ -191,7 +191,7 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[n_ord[n]][3] = fluxcalc(ph, F3, 3, 1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][3] = fluxcalc(p, F3, 3, 0, n_ord[n]);
-		if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 			ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
 		}
 		else{
@@ -225,7 +225,7 @@ double advance(int flag)
 
 	for (n = 0; n < n_active; n++){
 		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-		if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 			ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
 		}
 		else{
@@ -513,9 +513,9 @@ void GPU_step_ch()
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
-	if ((t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (nstep == 2 * AMR_SWITCHTIMELEVEL)) set_timelevel();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
 	#if(TIMESTEP_JET)
-	if ((t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (nstep == 2 * AMR_SWITCHTIMELEVEL)) set_timelevel_jet();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel_jet();
 	#endif
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
@@ -554,7 +554,7 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt1 = 1e9;
 		for (n = 0; n < n_active; n++){
-			if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
 			}
 			else{
@@ -578,7 +578,7 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt2 = 1e9;
 		for (n = 0; n < n_active; n++){
-			if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
 			}
 			else{
@@ -602,7 +602,7 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
-			if (((t + (double)(AMR_MAXTIMELEVEL)*dt )>= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
 			}
 			else{
@@ -720,7 +720,7 @@ double advance_GPU(void)
 		ndt = 1e9;
 		for (n = 0; n < n_active; n++){
 			bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-			if (((t + (double)(AMR_MAXTIMELEVEL)*dt) >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) || (nstep == 2 * AMR_SWITCHTIMELEVEL - 1)) {
+			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
 				ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
 			}
 			else{

@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
 			end1 = time(NULL);
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -117,28 +117,28 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
-			#endif;
+			#endif
 			tref += TREF;
 		}
 
 		/* Put out dump file*/
-		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			//restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 		
 		#if TIMER
-		if (nstep % (2*AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (20*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
@@ -252,6 +252,8 @@ void set_arrays_image(void)
 void set_arrays(int n)
 {
 	array[n] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
+	array_gdump1[n] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
+	array_gdump2[n] = (double *)calloc(49 * BS_1*BS_2, sizeof(double));
 	array_rdump[n] = (double *)calloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
 	array_diag[n] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
 	Katm[n] = (double(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
@@ -1288,6 +1290,8 @@ void free_arrays(int n)
 	free(Katm[n]);
 	free(array[n]);
 	free(array_rdump[n]);
+	free(array_gdump1[n]);
+	free(array_gdump2[n]);
 	free(array_diag[n]);
 }
 
@@ -1357,14 +1361,14 @@ void set_grid(int n)
 			}
 
 			/* corner-centered */
-			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
+			/*if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
 			else if (j == 0 && TRANS_BOUND==-1) coord(n, i, 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n, i, j, z, FACE1, X);
 			gcov_func(X, gcov[n][index_2D(n, i, j, z)][CORN]);
 			gdet[n][index_2D(n, i, j, z)][CORN] = gdet_func(gcov[n][index_2D(n, i, j, z)][CORN]);
-			gcon_func(gcov[n][index_2D(n, i, j, z)][CORN], gcon[n][index_2D(n, i, j, z)][CORN]);
+			gcon_func(gcov[n][index_2D(n, i, j, z)][CORN], gcon[n][index_2D(n, i, j, z)][CORN]);*/
 
 			/* r-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, CORN, X);

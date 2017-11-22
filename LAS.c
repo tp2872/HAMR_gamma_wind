@@ -48,6 +48,9 @@ void set_timelevel(void){
 					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
 					break;
 				}
+				else if (i==0){
+					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
+				}
 			}
 		}
 	}

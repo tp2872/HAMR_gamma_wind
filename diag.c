@@ -88,14 +88,9 @@ void diag(int call_code)
 
 	/* gdump only at code start */
 	if (call_code == INIT_OUT) {
-		// make regular dump and gdump file
-		#if (MPI_enable)
-		MPI_Barrier(mpi_cartcomm);
-		#endif
 		if (rank == 0){
 			fprintf(stderr, "GDUMP started \n");
 		}
-		gdump_new();
 	}
 
 	// dump at regular intervals 

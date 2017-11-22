@@ -53,7 +53,7 @@ endif
 EXTRALIBS = -lm -L/opt/apps/cuda/7.5/lib64 -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 --ptxas-options=-dlcm=ca --ptxas-options=-v -Xcompiler \-fopenmp -lgomp -c 
+CUDA_COMPILE  = nvcc -arch=compute_35 -code=sm_35 --ptxas-options=-dlcm=ca -Xcompiler \-fopenmp -lgomp -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
 CUDA_LOAD  = nvcc -arch=compute_35 -code=sm_35 --ptxas-options=-dlcm=ca -Xcompiler \-fopenmp -lgomp -dlink
 

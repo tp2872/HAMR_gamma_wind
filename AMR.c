@@ -406,6 +406,8 @@ void set_AMR(void){
 		//For the moment don't refine any block
 		block[n][AMR_REFINED] = 0;
 
+		block[n][GDUMP_WRI0EN] = 0;
+
 		//No node assigned yet
 		block[n][AMR_NODE] = -1;
 
@@ -1548,7 +1550,7 @@ void check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 16.0
+#define DENSITY_CUTOFF 0.5
 #endif
 
 //Refine on basis of some criteria rhomax (not necessary to use rho though, can also be something different)
@@ -1595,27 +1597,19 @@ void check_refcrit(void){
 		}
 	}
 	first_rdump = 0;
+	for (n = 0; n < n_active_total; n++){
+		if (block[n_ord_total[n]][GDUMP_WRI0EN] == 2){
+			if (block[n_ord_total[n]][AMR_NODE] == rank){
+				MPI_Wait(&req_gdump1[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
+				MPI_Wait(&req_gdump2[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
+				MPI_File_close(&gdump[n_ord_total[n]]);
+			}
+			block[n_ord_total[n]][GDUMP_WRI0EN] = 1;
+		}
+	}
 
 	MPI_Barrier(mpi_cartcomm);
 	begin1 = time(NULL);
-	
-	//First calculate non-reduced timestep
-	/*ndt = 1e9;
-	for (n = 0; n < n_active; n++){
-		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
-		ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
-	}
-	#if (MPI_enable)
-	MPI_Allreduce(MPI_IN_PLACE, &ndt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
-	#endif
-	if (ndt > SAFE*dt) ndt = SAFE*dt;
-	dt = ndt;
-
-	//Set timelevel
-	set_timelevel();
-	#if(TIMESTEP_JET)
-	set_timelevel_jet();
-	#endif*/
 
 	do{
 		tag = 0;
