@@ -181,10 +181,10 @@ void MPI_initialize(int argc, char *argv[])
 	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
 		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	}
-	#if(GPU_ENABLED)
+	//#if(GPU_ENABLED)
 	cudaGetDeviceCount(&numdevices);
 	cudaSetDevice(local_rank%numdevices);
-	#endif
+	//#endif
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 
 	if (rc != MPI_SUCCESS) {

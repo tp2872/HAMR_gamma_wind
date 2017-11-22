@@ -1705,6 +1705,7 @@ void check_refcrit(void){
 		//MPI_Barrier(mpi_cartcomm);
 		if(one_block_refined==1) post_refine();
 		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0){
+			one_block_refined = 1;
 			balance_load();
 			#if(GPU_ENABLED)
 			balance_load_gpu();
@@ -1714,31 +1715,32 @@ void check_refcrit(void){
 
 	if (tag==1 && count==0 && rank==0) fprintf(stderr, "Maximum number of blocks exceeded, refinement capped so refinement criterion can not anymore be honoured by H-AMR. Please select more nodes or adjust refinement criterion! \n");
 
-	//pre_refine();
-	int one_block_derefined = 0;
 	count = 0;
 	
 	//First make sure all nodes have the same rhomax
-	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
-			rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
-			for (task = 0; task<numtasks; task++){
-				if (rank != task){
-					rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Request_free(&req[0]);
+	if (one_block_refined == 1){
+		for (n = 0; n < n_active_total; n++){
+			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
+				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
+				for (task = 0; task < numtasks; task++){
+					if (rank != task){
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						MPI_Request_free(&req[0]);
+					}
 				}
 			}
+			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
+				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+			}
 		}
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n]%MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
-		}
-	}
-	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[n_ord[0]][0]);
+		for (n = 0; n < n_active_total; n++){
+			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
+				MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[n_ord[0]][0]);
+			}
 		}
 	}
 
+	int one_block_derefined = 0;
 	for (n = 0; n < n_active_total; n++){
 		//derefine
 		if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][AMR_LEVEL]>0){
