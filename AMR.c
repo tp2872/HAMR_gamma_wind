@@ -1563,7 +1563,7 @@ void check_refcrit(void){
 	int tag;
 	int count;
 	int begin1, end1;
-
+	int one_block_refined = 0;
 	if(rank==0) fprintf(stderr,"Starting refinement! \n");
 
 	//First close dump files in progress
@@ -1614,7 +1614,6 @@ void check_refcrit(void){
 	do{
 		tag = 0;
 		count = 0;
-		pre_refine();
 		n_blocks = n_active_total;
 
 		/*Only allow refinement for one block per node per step*/
@@ -1679,6 +1678,8 @@ void check_refcrit(void){
 				}
 
 				if (block[n_ord_total[n]][AMR_TAG] == 1){
+					if (one_block_refined == 0) pre_refine();
+					one_block_refined = 1;
 					//First satisfy nesting criteria
 					for (i = AMR_NBR1; i <= AMR_CORN12; i++){
 						if (block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][i]][AMR_PARENT]][AMR_ACTIVE] == 1){
@@ -1693,6 +1694,7 @@ void check_refcrit(void){
 					}
 					//Only refine if nesting criteria satisfied
 					if (i == AMR_CORN12 + 1 && NODE[block[n_ord_total[n]][AMR_NODE]] < MAX_BLOCKS){
+						one_block_refined = 1;
 						refine(n_ord_total[n]);
 						count++;
 						NODE[block[n_ord_total[n]][AMR_NODE]] += 7;
@@ -1701,8 +1703,7 @@ void check_refcrit(void){
 			}
 		}
 		//MPI_Barrier(mpi_cartcomm);
-
-		post_refine();
+		if(one_block_refined==1) post_refine();
 		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0){
 			balance_load();
 			#if(GPU_ENABLED)
@@ -1713,7 +1714,8 @@ void check_refcrit(void){
 
 	if (tag==1 && count==0 && rank==0) fprintf(stderr, "Maximum number of blocks exceeded, refinement capped so refinement criterion can not anymore be honoured by H-AMR. Please select more nodes or adjust refinement criterion! \n");
 
-	pre_refine();
+	//pre_refine();
+	int one_block_derefined = 0;
 	count = 0;
 	
 	//First make sure all nodes have the same rhomax
@@ -1846,7 +1848,7 @@ void check_refcrit(void){
 						}
 						#if(GPU_ENABLED || GPU_DEBUG )
 						set_arrays_GPU(n_send, block[n_send][AMR_GPU]);
-						GPU_write(n_send);
+						//GPU_write(n_send);
 						#endif
 					}
 				}
@@ -1864,6 +1866,7 @@ void check_refcrit(void){
 			block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
 
 			//Then derefine and set corresponding tag and timelevel
+			one_block_derefined = 1;
 			derefine(block[n_ord_total[n]][AMR_PARENT]);
 			count++;
 			block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
@@ -1871,14 +1874,14 @@ void check_refcrit(void){
 		}
 	}
 
-	post_refine();
+	if (one_block_derefined == 1)post_refine();
 
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();
 	#endif
 	
-	//Set timelevel communicator. Function is just dummy!
+	//Set timelevel communicator
 	int min_timelevel[8];
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
 		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);

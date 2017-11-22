@@ -14,6 +14,7 @@ void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -46,6 +47,7 @@ void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i++){
 				for (z = z1; z < z2; z++){
@@ -79,6 +81,7 @@ void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
@@ -111,6 +114,7 @@ void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (i = i1; i < i2; i += 1 + REF_1){
 			for (j = j1; j < j2; j += 1 + REF_2){
 				for (z = z1; z < z2; z += (1 + REF_3)){
@@ -162,6 +166,7 @@ void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (j = j1; j < j2; j += 1 + REF_2){
 			for (i = i1; i < i2; i += 1 + REF_1){
 				for (z = z1; z < z2; z += 1 + REF_3){
@@ -213,6 +218,7 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (z = z1; z < z2; z += 1 + REF_3){
 			for (i = i1; i < i2; i += 1 + REF_1){
 				for (j = j1; j < j2; j += 1 + REF_2){
@@ -269,6 +275,7 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -321,6 +328,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	else{
 		int i, j, z, k;
 		if (reverse == 0){
+			#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 			for (j = j1; j < j2; j++){
 				for (i = i1; i < i2; i++){
 					for (z = z1; z < z2; z++){
@@ -351,6 +359,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 			}
 		}
 		else{
+			#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 			for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1; z < z2; z++){
 				for (k = 0; k < NPR; k++){
 					if (k == U3 || k == U2 || k == B2 || k == B3) factor = -1.;
@@ -415,6 +424,7 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	}
 	else{
 		int i, j, z, k;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
@@ -467,6 +477,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int ii, ij, iz;
 		int is, js, zs;
 		double dq1, dq2, dq3, avg;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1; z < z2; z++){
 			//Use slope limited interpolation in direction fluxes, copy  boundary cells in other directions
 			if (i1 < 0 && REF_1 == 1) ii = REF_1;
@@ -492,7 +503,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				ph[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = receive[n_rec2][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + k] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
 				p[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = receive[n_rec2][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + k] + 0.25*(double)(is)*dq1 + 0.25*(double)(js)*dq2 + 0.25*(double)(zs)*dq3;
 			}
-#if(STAGGERED)
+			#if(STAGGERED)
 			if (js == 1){
 				ps[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] = 0.5*(receive[n_rec2][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (1 + NPR)] + receive[n_rec2][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*(ij + REF_2)*zsize + (NPR + 3)*iz + (1 + NPR)]) /
 					gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2];
@@ -543,6 +554,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int ii, ij, iz;
 		int is, js, zs;
 		double dq1, dq2, dq3, avg;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1; z < z2; z++){
 			//now use zero order interpolation, must be done better in the future
 			if (j1 < 0 && REF_2 == 1) ij = REF_2;
@@ -619,6 +631,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int ii, ij, iz;
 		int is, js, zs;
 		double dq1, dq2, dq3, avg;
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1; j < j2; j++){
 			//now use zero order interpolation, must be done better in the future
 			if (z1 < 0 && REF_3 == 1) iz = REF_3;

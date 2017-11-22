@@ -798,6 +798,7 @@ __device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10],
 
 	return(ret);
 }
+#include <stdio.h>
 
 __device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
 {
@@ -1855,7 +1856,6 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq, cons
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
 	if (k == 1){
 		#if(PPM)
-		int jsize = BS_3 + 2 * N3G;
 		double x1, x2, x3, x4, x5, temp[1], result[1];
 		if (number == 1){
 			#pragma unroll 9	
@@ -1970,9 +1970,16 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq, const 
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
 		#if(PPM || LEER)
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
-			p[k] = dq[k*(ksize)+global_id];
+		double x1, x2, x3, x4, x5, temp[1], result[1];
+		#pragma unroll 9	
+		for (k = 0; k<NPR; k++){
+			x1 = pv[k*(ksize)+global_id - 3 * zdel - 3 * (BS_3 + 2 * N3G)*jdel - 3 * isize*idel];
+			x2 = pv[k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel];
+			x3 = pv[k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel];
+			x4 = pv[k*(ksize)+global_id];
+			x5 = pv[k*(ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel];
+			para(x1, x2, x3, x4, x5, temp, result);
+			p[k] = result[0];
 		}
 		#else
 		#pragma unroll 9
@@ -2006,9 +2013,15 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq, const 
 		//vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
 
 		#if(PPM || LEER)
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
-			p[k] = dq[k*(ksize)+global_id];
+		#pragma unroll 9	
+		for (k = 0; k<NPR; k++){
+			x1 = pv[k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel];
+			x2 = pv[k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel];
+			x3 = pv[k*(ksize)+global_id];
+			x4 = pv[k*(ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel];
+			x5 = pv[k*(ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel];
+			para(x1, x2, x3, x4, x5, result, temp);
+			p[k] = result[0];
 		}
 		#else
 		#pragma unroll 9

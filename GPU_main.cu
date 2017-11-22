@@ -1314,9 +1314,10 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 {
 	////cudaSetDevice(block[n][AMR_GPU]);
 	/*Calculate reconstructed left state*/
+	#if(!PPM)
 	GPU_fluxcalcprep(dir, flag, 1, n);
+	#endif
 	if (flag == 1){
-
 		if (dir == 1){
 			 fluxcalc2D2 << < nr_workgroups2_1[n], local_work_size[0], 0, commandQueueGPU[n] >> > (BufferF1_1[n], Bufferdq_1[n], Bufferph_1[n], Bufferpsh_1[n], Buffergcov[n], Buffergcon[n], Buffergdet[n],
 				lim, dir, gam, cour, dtij_GPU[n], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), Bufferstorage1[n], 
@@ -1355,9 +1356,9 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	if (cudaSuccess != status) fprintf(stderr, "Error Fluxcalc2D2 %d\n", status);
 
 	/*Calculate reconstructed right state*/
-	#if(PPM || LEER)
-	GPU_fluxcalcprep(dir, flag, 2, n);
-	fprintf(stderr, "PPM and Leer not yet fully implemented this way... \n");
+	#if(PPM)
+	//GPU_fluxcalcprep(dir, flag, 2, n);
+	//fprintf(stderr, "PPM and Leer not yet fully implemented this way... \n");
 	#endif
 }
 
