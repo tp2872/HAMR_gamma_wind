@@ -6,7 +6,7 @@ void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -23,7 +23,7 @@ void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i++){
 				for (z = z1; z < z2; z++){
@@ -40,7 +40,7 @@ void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
@@ -57,7 +57,7 @@ void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j += 1 + REF_2){
 				for (z = z1; z < z2; z += (1 + REF_3)){
@@ -78,7 +78,7 @@ void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i += 1 + REF_1){
 				for (z = z1; z < z2; z += 1 + REF_3){
@@ -99,7 +99,7 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i += 1 + REF_1){
 				for (j = j1; j < j2; j += 1 + REF_2){
@@ -122,7 +122,7 @@ void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	else{
 		int i, j, z;
 		double factor;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,factor)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,factor)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -143,7 +143,7 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	else{
 		int i, j, z;
 		double factor;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,factor)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,factor)
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i++){
 				for (z = z1; z < z2; z++){
@@ -166,7 +166,7 @@ void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	else{
 		int i, j, z;
 		double factor;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,factor)
+		//#pragma omp parallel for schedule(dynamic,1) private(i,j,z,factor)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
