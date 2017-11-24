@@ -1630,7 +1630,7 @@ void check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 0.5
+#define DENSITY_CUTOFF 16.0
 #endif
 
 //Refine on basis of some criteria rhomax (not necessary to use rho though, can also be something different)
@@ -1930,7 +1930,7 @@ void check_refcrit(void){
 						}
 						#if(GPU_ENABLED || GPU_DEBUG )
 						set_arrays_GPU(n_send, block[n_send][AMR_GPU]);
-						GPU_write(n_send);
+						//GPU_write(n_send);
 						#endif
 					}
 				}

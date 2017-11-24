@@ -669,7 +669,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 				}
 			}
 			for (k = 0; k < NPR; k++){
-				avg = 0.5*(prim[k*(ksize)+(N1G + (1 + PPM - ii) / (1 + PPM))*(BS_1 - 1)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + prim[k*(ksize)+(ii / (1 + PPM) + N1G + (1 + PPM - ii) / (1 + PPM)*(BS_1 - 2))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
+				avg = 0.5*(prim[k*(ksize)+(N1G + (1 + PPM - ii) / (1 + PPM)*(BS_1 - 1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] + prim[k*(ksize)+(ii / (1 + PPM) + N1G + (1 + PPM - ii) / (1 + PPM)*(BS_1 - 2))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]);
 				if (ii == 0){
 					dq1 = slope_lim(avg, receive[k*jsize2*zsize2*(i2 - i1) + 0 * jsize2*zsize2 + ij*zsize2 + iz], receive[k*jsize2*zsize2*(i2 - i1) + REF_1*jsize2*zsize2 + ij*zsize2 + iz]);
 				}
@@ -766,7 +766,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				}
 			}
 			for (k = 0; k < NPR; k++){
-				avg = 0.5*(prim[k*(ksize)+icurr*isize + (N2G + (1 + PPM - ij) / (1 + PPM))*(BS_3 + 2 * N3G) + zcurr] + prim[k*(ksize)+icurr*isize + (ij / (1 + PPM) + N2G + (1 + PPM - ij) / (1 + PPM))*(BS_3 + 2 * N3G) + zcurr]);
+				avg = 0.5*(prim[k*(ksize)+icurr*isize + (N2G + (1 + PPM - ij) / (1 + PPM)*(BS_2 - 1))*(BS_3 + 2 * N3G) + zcurr] + prim[k*(ksize)+icurr*isize + (ij / (1 + PPM) + N2G + (1 + PPM - ij) / (1 + PPM)*(BS_2-2))*(BS_3 + 2 * N3G) + zcurr]);
 				if (ij == 0){
 					dq2 = slope_lim(avg, receive[k*isize2*zsize2*(j2 - j1) + 0 * isize2*zsize2 + ii*zsize2 + iz], receive[k*isize2*zsize2*(j2 - j1) + REF_2*isize2*zsize2 + ii*zsize2 + iz]);
 				}
