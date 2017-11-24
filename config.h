@@ -104,7 +104,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 64
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
