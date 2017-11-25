@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 	tlog = t + DTl;
 	tref = t + TREF;
 	time_spent3 = 0.0;
-	begin1 = time(NULL);
+	begin1 = clock();
 	
 	//cuProfilerStart();
 	while(t < tf) {
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
 		//Every swithchtime read out data from GPU and set boundary
 		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
-			end1 = time(NULL);
+			end1 = clock();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -121,18 +121,18 @@ int main(int argc, char *argv[])
 			#if(!DEREFINE_POLE)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
-			#endif
+			#endif;
 			tref += TREF;
 		}
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			diag(DUMP_OUT) ;
+			//diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			//restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
@@ -144,12 +144,12 @@ int main(int argc, char *argv[])
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1), time_spent3);
+				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC, time_spent3);
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1,ndt2,ndt3,nstep);
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;			
-			begin1 = time(NULL);			
+			begin1 = clock();			
 		}
 		#endif
 	}
@@ -181,10 +181,10 @@ void MPI_initialize(int argc, char *argv[])
 	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
 		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	}
-	//#if(GPU_ENABLED)
+	#if(GPU_ENABLED)
 	cudaGetDeviceCount(&numdevices);
 	cudaSetDevice(local_rank%numdevices);
-	//#endif
+	#endif
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 
 	if (rc != MPI_SUCCESS) {
@@ -252,8 +252,6 @@ void set_arrays_image(void)
 void set_arrays(int n)
 {
 	array[n] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
-	array_gdump1[n] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
-	array_gdump2[n] = (double *)calloc(49 * BS_1*BS_2, sizeof(double));
 	array_rdump[n] = (double *)calloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
 	array_diag[n] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
 	Katm[n] = (double(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
@@ -1290,8 +1288,6 @@ void free_arrays(int n)
 	free(Katm[n]);
 	free(array[n]);
 	free(array_rdump[n]);
-	free(array_gdump1[n]);
-	free(array_gdump2[n]);
 	free(array_diag[n]);
 }
 
@@ -1361,14 +1357,14 @@ void set_grid(int n)
 			}
 
 			/* corner-centered */
-			/*if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
+			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
 			else if (j == 0 && TRANS_BOUND==-1) coord(n, i, 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n, i, j, z, FACE1, X);
 			gcov_func(X, gcov[n][index_2D(n, i, j, z)][CORN]);
 			gdet[n][index_2D(n, i, j, z)][CORN] = gdet_func(gcov[n][index_2D(n, i, j, z)][CORN]);
-			gcon_func(gcov[n][index_2D(n, i, j, z)][CORN], gcon[n][index_2D(n, i, j, z)][CORN]);*/
+			gcon_func(gcov[n][index_2D(n, i, j, z)][CORN], gcon[n][index_2D(n, i, j, z)][CORN]);
 
 			/* r-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, CORN, X);

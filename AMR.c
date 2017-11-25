@@ -406,8 +406,6 @@ void set_AMR(void){
 		//For the moment don't refine any block
 		block[n][AMR_REFINED] = 0;
 
-		block[n][GDUMP_WRI0EN] = 0;
-
 		//No node assigned yet
 		block[n][AMR_NODE] = -1;
 
@@ -439,11 +437,10 @@ void set_AMR(void){
 #define MAX_BLOCKS (36*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 void balance_load(void){
 	int i, node, tt, fp, ip, y, rem, nr_timesteps, n_active_localsteps[NB], max_timelevel;
-	int i1, j1, z1, k, n,u,b,g,stride;
-	int n_active_total_steps = 0, n_active_total_steps_t[10];
+	int i1, j1, z1, k, n,u,b;
+	int n_active_total_steps = 0;
 	int steps_total_RM[NB];
 	int NODE[NB];
-	int n_active_total_t[10], n_ord_total_RM_t[10][NB];
 	int timelevel_cutoff = AMR_MAXTIMELEVEL;
 	#if(DEREFINE_POLE)
 	rm_order();
@@ -455,8 +452,7 @@ void balance_load(void){
 	int n_active_local_min = 1;
 
 	do{
-		/*if ((n_active_local_max / ((double)AMR_MAXTIMELEVEL) > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2)timelevel_cutoff /= 2;
-		if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
+		/*if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
 		n_active_local_min = 0;
@@ -471,31 +467,31 @@ void balance_load(void){
 
 		//First use non blocking sends and receives to send and receive data around cluster
 		for (i = 0; i < n_active_total; i++){
-			NODE[n_ord_total_RM[i]] = (steps_total_RM[i] - steps_total_RM[i] % (y + 1)) / (y + 1);
-			if (NODE[n_ord_total_RM[i]] >= rem){
+			NODE[i] = (steps_total_RM[i] - steps_total_RM[i] % (y + 1)) / (y + 1);
+			if (NODE[i] >= rem){
 				if (tt == -1){
-					fp = NODE[n_ord_total[i]];
+					fp = NODE[i];
 					ip = steps_total_RM[i] - steps_total_RM[i] % (y + 1);
 					tt = 0;
 				}
-				NODE[n_ord_total_RM[i]] = fp + ((steps_total_RM[i] - ip) - (steps_total_RM[i] - ip) % y) / y;
+				NODE[i] = fp + ((steps_total_RM[i] - ip) - (steps_total_RM[i] - ip) % y) / y;
 			}
-			if (NODE[n_ord_total_RM[i]] >= numtasks) fprintf(stderr, "Error balance_load() \n");
-			if (NODE[n_ord_total_RM[i]] == rank){
+			if (NODE[i] >= numtasks) fprintf(stderr, "Error balance_load() \n");
+			if (NODE[i] == rank){
 				n_active_local_max++;
 				n_active_local_min = n_active_local_max;
 			}
 		}
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
-		/*if (n_active_local_max > MAX_BLOCKS / ((double)AMR_MAXTIMELEVEL) || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
+		if (n_active_local_max > MAX_BLOCKS / ((double)AMR_MAXTIMELEVEL) || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
 		n_active_local_min = 0;
 		max_timelevel = 0;
 		for (n = 0; n < n_active_total; n++){
 			n_active_total_steps += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
-			NODE[n_ord_total_RM[n]] = -1;
+			NODE[n] = -1;
 			max_timelevel = MY_MAX(max_timelevel, MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff));
 		}	
 		for (u = 0; u < numtasks; u++) n_active_localsteps[u]=0;
@@ -506,14 +502,14 @@ void balance_load(void){
 				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
 				if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
 					n_active_localsteps[u] += nr_timesteps;
-					NODE[n_ord_total_RM[i]] = u;
+					NODE[i] = u;
 				}
 				else if (u<numtasks - 1){
 					while (u<numtasks - 1){
 						u++;
 						if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
 							n_active_localsteps[u] += nr_timesteps;
-							NODE[n_ord_total_RM[i]] = u;
+							NODE[i] = u;
 							break;
 						}
 					}
@@ -524,18 +520,18 @@ void balance_load(void){
 
 		for (b = 0; b <= log(AMR_MAXTIMELEVEL)/log(2); b++){
 			for (i = 0; i < n_active_total; i++){ //Allocate a node to the higher timelevels as long node is not full
-				if (block[n_ord_total_RM[i]][AMR_TIMELEVEL] == pow(2,b) && NODE[n_ord_total_RM[i]]==-1){
+				if (block[n_ord_total_RM[i]][AMR_TIMELEVEL] == pow(2,b) && NODE[i]==-1){
 					nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
 					if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
 						n_active_localsteps[u] += nr_timesteps;
-						NODE[n_ord_total_RM[i]] = u;
+						NODE[i] = u;
 					}
 					else if (u < numtasks - 1){
 						while (u < numtasks - 1){
 							u++;
 							if (n_active_localsteps[u] + nr_timesteps <= n_active_total_steps / numtasks){
 								n_active_localsteps[u] += nr_timesteps;
-								NODE[n_ord_total_RM[i]] = u;
+								NODE[i] = u;
 								break;
 							}
 						}
@@ -545,10 +541,10 @@ void balance_load(void){
 		}
 		u = 0;
 		for (i = 0; i < n_active_total; i++){ //Allocate a node to the remaining tiles
-			if (NODE[n_ord_total_RM[i]] == -1){
+			if (NODE[i] == -1){
 				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[i]][AMR_TIMELEVEL], timelevel_cutoff);
 				n_active_localsteps[u] += nr_timesteps;
-				NODE[n_ord_total_RM[i]] = u%numtasks;
+				NODE[i] = u%numtasks;
 				u++;
 			}
 		}
@@ -556,92 +552,17 @@ void balance_load(void){
 		n_active_local_max = n_active_localsteps[rank];
 		n_active_local_min = n_active_local_max;
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
-		
-		/*First make a z-order curve for each timelevel seperately*/
-		if ((n_active_local_max / ((double)AMR_MAXTIMELEVEL) > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2)timelevel_cutoff /= 2;
-		for (i = 0; i <= round(log(AMR_MAXTIMELEVEL) / log(2)); i++){
-			n_active_total_t[i] = 0;
-			n_active_total_steps_t[i] = 0;
-		}
-		int tl;
-		//Order active blocks in an ordered array and keep track of the number osf blocks and timesteps at each timelevel
-		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total_RM[n]][AMR_ACTIVE] == 1){
-				tl = MY_MIN(round(log(block[n_ord_total_RM[n]][AMR_TIMELEVEL]) / log(2)), log(timelevel_cutoff) / log(2));
-				n_ord_total_RM_t[tl][n_active_total_t[tl]] = n_ord_total_RM[n];
-				n_active_total_steps_t[tl] += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
-				n_active_total_t[tl]++;
-			}
-		}
-
-		//Reset variables
-		n_active_local_max = 0;
-		n_active_local_min = 0;
-		for (u = 0; u < numtasks; u++) n_active_localsteps[u] = 0;
-
-		int increment=0, j, n0, fillup_mode=0;
-		u = 0; //Initial node number
-		int sw = 0;
-
-		//Try to give each node the same number of lower timelevel blocks
-		for (i = 0; i <= round(log(timelevel_cutoff) / log(2)); i++){
-
-			//If there is not an even load from the previous timelevel, first correct for that
-			if (n_active_localsteps[(u - 1 + numtasks) % numtasks] > n_active_localsteps[u % numtasks]){
-				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM_t[i][0]][AMR_TIMELEVEL], timelevel_cutoff);
-				increment = (n_active_localsteps[(u - 1 + numtasks) % numtasks] - n_active_localsteps[u % numtasks]) / nr_timesteps;
-				fillup_mode = 1;
-			}
-			if (n_active_localsteps[(u - 1 + numtasks) % numtasks] == n_active_localsteps[u % numtasks]){ //Otherwise just do nornmal load balancing
-				rem = n_active_total_t[i] % (numtasks); //remainder number of blocks at given timelevel
-				increment = (n_active_total_t[i] - rem) / (numtasks); //number of blocks/node at given timelevel
-				fillup_mode = 0;
-				sw = 1;
-			}
-			n = 0;
-			while(n < n_active_total_t[i]){
-				
-				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM_t[i][n]][AMR_TIMELEVEL], timelevel_cutoff);
-				if (fillup_mode == 1) increment = (n_active_localsteps[(u - 1 + numtasks) % numtasks] - n_active_localsteps[u % numtasks]) / nr_timesteps;
-				if (n_active_localsteps[(u - 1 + numtasks) % numtasks] == n_active_localsteps[u % numtasks]){
-					rem = (n_active_total_t[i] - n) % (numtasks); //remainder number of blocks at given timelevel
-					increment = (n_active_total_t[i] - n - rem) / (numtasks); //number of blocks/node at given timelevel
-					fillup_mode = 0;
-					sw = 1;
-				}
-
-				if (fillup_mode == 0 && ((n_active_total_t[i] - n) / (increment + 1)) == rem && (n_active_total_t[i] - n) % (increment +1 ) == 0 && rem>0){
-					increment += 1;
-					sw = 1;
-				}
-				increment = MY_MIN(increment, n_active_total_t[i] - n);
-				for (j = 0; j < increment; j++){
-					NODE[n_ord_total_RM_t[i][n + j]] = u%numtasks;
-					n_active_localsteps[u%numtasks] += nr_timesteps;
-					if (rank == u%numtasks)n_active_local_max++;
-				}
-				n += increment;
-				if (n_active_localsteps[u%numtasks] == n_active_localsteps[(u - 1 + numtasks) % numtasks] || sw == 1){
-					sw = 0;
-					u = (u + 1) % numtasks;//Increase node number
-				}
-				if (increment == 0) printf("error");
-			}
-		}
-		n_active_local_min = n_active_local_max;
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm); 
-	} while ((n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
+		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
+	} while ((n_active_local_max/((double)AMR_MAXTIMELEVEL) > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
 	if (rank == 0 && timelevel_cutoff != AMR_MAXTIMELEVEL) fprintf(stderr, "Error in balance_load. Due to too little/many blocks the maximum timelevel can't be honoured and the hierarchical timestepping is downgraded! \n");
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
 	if (rank == 0) fprintf(stderr, "Load balance started, timelevel_cutoff %d %d %d! \n", timelevel_cutoff, n_active_local_min, n_active_local_max);
 	for (i = 0; i < n_active_total; i++){
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
+		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
-				rc = MPI_Isend(&p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][0]);
+				rc = MPI_Isend(&p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[i], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][0]);
 				#if STAGGERED
-				rc += MPI_Isend(&ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][1]);
+				rc += MPI_Isend(&ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[i], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_ord_total_RM[i]][1]);
 				#endif
 				if (rc != 0)fprintf(stderr, "Error balance_load send %d", rc);
 			}
@@ -649,8 +570,8 @@ void balance_load(void){
 	}
 
 	for (i = 0; i < n_active_total; i++){
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
-			if (NODE[n_ord_total_RM[i]] == rank){
+		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
+			if (NODE[i] == rank){
 				//Allocate memory for active blocks on node
 				set_arrays(n_ord_total_RM[i]);
 				set_grid(n_ord_total_RM[i]);
@@ -668,7 +589,7 @@ void balance_load(void){
 	for (i = 0; i < n_active_total; i++){
 
 		//Then use MPI_wait to clean up data that has been sent
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
+		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
 				MPI_Wait(&boundreqs[n_ord_total_RM[i]][0], &Statbound[n_ord_total_RM[i]][0]);
 				#if STAGGERED
@@ -685,8 +606,8 @@ void balance_load(void){
 
 	//Then use MPI_wait to receive data 
 	for (i = 0; i < n_active_total; i++){
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
-			if (NODE[n_ord_total_RM[i]] == rank){
+		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[i]){
+			if (NODE[i] == rank){
 				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
 					MPI_Wait(&boundreqs[n_ord_total_RM[i]][10], &Statbound[n_ord_total_RM[i]][10]);
 					#if STAGGERED
@@ -702,7 +623,7 @@ void balance_load(void){
 	}
 
 	for (i = 0; i < n_active_total; i++){
-		block[n_ord_total_RM[i]][AMR_NODE] = NODE[n_ord_total_RM[i]];
+		block[n_ord_total_RM[i]][AMR_NODE] = NODE[i];
 	}
 
 	activate_blocks();
@@ -726,9 +647,6 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
 
 	bound_prim(p, 1);
-	MPI_Allreduce(MPI_IN_PLACE, &total_steps, 1, MPI_INT, MPI_SUM, mpi_cartcomm);
-
-	if (rank == 0) fprintf(stderr, "Number of active blocks (total, min,max): %d %d %d \n", n_active_total, min1, max1);
 	#if(GPU_ENABLED)
 	GPU_boundprim(1);
 	#endif
@@ -1427,7 +1345,7 @@ void pre_refine(void){
 
 	for (n1 = 0; n1 < n_active; n1++){
 		#if(GPU_ENABLED || GPU_DEBUG )
-		//GPU_read(n_ord[n1]);
+		GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
 		{
@@ -1643,7 +1561,7 @@ void check_refcrit(void){
 	int tag;
 	int count;
 	int begin1, end1;
-	int one_block_refined = 0;
+
 	if(rank==0) fprintf(stderr,"Starting refinement! \n");
 
 	//First close dump files in progress
@@ -1677,23 +1595,32 @@ void check_refcrit(void){
 		}
 	}
 	first_rdump = 0;
-	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][GDUMP_WRI0EN] == 2){
-			if (block[n_ord_total[n]][AMR_NODE] == rank){
-				MPI_Wait(&req_gdump1[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
-				MPI_Wait(&req_gdump2[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
-				MPI_File_close(&gdump[n_ord_total[n]]);
-			}
-			block[n_ord_total[n]][GDUMP_WRI0EN] = 1;
-		}
-	}
 
 	MPI_Barrier(mpi_cartcomm);
 	begin1 = time(NULL);
+	
+	//First calculate non-reduced timestep
+	/*ndt = 1e9;
+	for (n = 0; n < n_active; n++){
+		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+		ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+	}
+	#if (MPI_enable)
+	MPI_Allreduce(MPI_IN_PLACE, &ndt, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
+	#endif
+	if (ndt > SAFE*dt) ndt = SAFE*dt;
+	dt = ndt;
+
+	//Set timelevel
+	set_timelevel();
+	#if(TIMESTEP_JET)
+	set_timelevel_jet();
+	#endif*/
 
 	do{
 		tag = 0;
 		count = 0;
+		pre_refine();
 		n_blocks = n_active_total;
 
 		/*Only allow refinement for one block per node per step*/
@@ -1758,8 +1685,6 @@ void check_refcrit(void){
 				}
 
 				if (block[n_ord_total[n]][AMR_TAG] == 1){
-					if (one_block_refined == 0) pre_refine();
-					one_block_refined = 1;
 					//First satisfy nesting criteria
 					for (i = AMR_NBR1; i <= AMR_CORN12; i++){
 						if (block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_PARENT] >= 0 && block[block[block[n_ord_total[n]][i]][AMR_PARENT]][AMR_ACTIVE] == 1){
@@ -1774,7 +1699,6 @@ void check_refcrit(void){
 					}
 					//Only refine if nesting criteria satisfied
 					if (i == AMR_CORN12 + 1 && NODE[block[n_ord_total[n]][AMR_NODE]] < MAX_BLOCKS){
-						one_block_refined = 1;
 						refine(n_ord_total[n]);
 						count++;
 						NODE[block[n_ord_total[n]][AMR_NODE]] += 7;
@@ -1783,9 +1707,9 @@ void check_refcrit(void){
 			}
 		}
 		//MPI_Barrier(mpi_cartcomm);
-		if(one_block_refined==1) post_refine();
+
+		post_refine();
 		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0){
-			one_block_refined = 1;
 			balance_load();
 			#if(GPU_ENABLED)
 			balance_load_gpu();
@@ -1795,32 +1719,30 @@ void check_refcrit(void){
 
 	if (tag==1 && count==0 && rank==0) fprintf(stderr, "Maximum number of blocks exceeded, refinement capped so refinement criterion can not anymore be honoured by H-AMR. Please select more nodes or adjust refinement criterion! \n");
 
+	pre_refine();
 	count = 0;
 	
 	//First make sure all nodes have the same rhomax
-	if (one_block_refined == 1){
-		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
-				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
-				for (task = 0; task < numtasks; task++){
-					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-						MPI_Request_free(&req[0]);
-					}
+	for (n = 0; n < n_active_total; n++){
+		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
+			rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
+			for (task = 0; task<numtasks; task++){
+				if (rank != task){
+					rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+					MPI_Request_free(&req[0]);
 				}
 			}
-			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
-			}
 		}
-		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[n_ord[0]][0]);
-			}
+		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
+			rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n]%MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+		}
+	}
+	for (n = 0; n < n_active_total; n++){
+		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
+			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[n_ord[0]][0]);
 		}
 	}
 
-	int one_block_derefined = 0;
 	for (n = 0; n < n_active_total; n++){
 		//derefine
 		if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][AMR_LEVEL]>0){
@@ -1930,7 +1852,7 @@ void check_refcrit(void){
 						}
 						#if(GPU_ENABLED || GPU_DEBUG )
 						set_arrays_GPU(n_send, block[n_send][AMR_GPU]);
-						//GPU_write(n_send);
+						GPU_write(n_send);
 						#endif
 					}
 				}
@@ -1948,7 +1870,6 @@ void check_refcrit(void){
 			block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
 
 			//Then derefine and set corresponding tag and timelevel
-			one_block_derefined = 1;
 			derefine(block[n_ord_total[n]][AMR_PARENT]);
 			count++;
 			block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
@@ -1956,15 +1877,15 @@ void check_refcrit(void){
 		}
 	}
 
-	if (one_block_derefined == 1)post_refine();
+	post_refine();
 
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();
 	#endif
 	
-	//Set timelevel communicator
-	int min_timelevel[8];
+	//Set timelevel communicator. Function is just dummy!
+	/*int min_timelevel[8];
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
 		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
 
@@ -1973,7 +1894,7 @@ void check_refcrit(void){
 			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2, i)) min_timelevel[i] = 1;
 		}
 		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
-	}
+	}*/
 
 	MPI_Barrier(mpi_cartcomm);
 	end1 = time(NULL);
@@ -1982,7 +1903,7 @@ void check_refcrit(void){
 	//Start very conservatively
 	dt /= 2.;
 	for (n = 0; n < n_active_total; n ++){
-		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+		block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
 	}
 }
 

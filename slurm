@@ -3,9 +3,9 @@
 ### set the number of PEs per node
 ### set the XE/XK feature
 #PBS -q high
-#PBS -l nodes=200:ppn=16:xk
+#PBS -l nodes=300:ppn=16:xk
 ### set the wallclock time
-#PBS -l walltime=00:20:00
+#PBS -l walltime=00:45:00
 ### set the job name
 #PBS -N TDISKS25A93T45S2_CUDA
 ### set the job stdout and stderr
@@ -24,5 +24,5 @@ export MPICH_RDMA_ENABLED_CUDA=1
 cd /scratch/sciteam/liska/TDISKS25A93T45S2
 make clean
 make -j
-aprun -n 200 -N 1 -d 16 -cc none ./harm
-aprun -n 199 -N 1 -d 16 -cc none ./harm
+aprun -n 300 -N 1 -d 16 -cc none ./harm
+aprun -n 299 -N 1 -d 16 -cc none ./harm

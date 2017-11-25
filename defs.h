@@ -59,6 +59,10 @@ double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G];
 double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G];
 double E_avg1_new[NB_1*NB_3][BS_1 + 2 * N1G];
 double E_avg2_new[NB_1*NB_3][BS_1 + 2 * N1G];
+double(*restrict E_avg_x[NB][2]);
+double(*restrict E_avg_new_x[NB][2]);
+double(*restrict E_avg_y[NB][2]);
+double(*restrict E_avg_new_y[NB][2]);
 double(*restrict  ph[NB])[NPR];
 double(*restrict E_corn[NB])[NDIM];
 double(*restrict dE[NB])[2][NDIM][NDIM];
@@ -771,8 +775,8 @@ double *dump_buffer;
 double(*restrict dxdxp_z[NB])[NDIM][NDIM];
 double(*restrict dxpdx_z[NB])[NDIM][NDIM];
 float *array[NB], *array_diag[NB];
-double *array_rdump[NB], *array_gdump1[NB], *array_gdump2[NB];
-int first_dump, first_rdump, first_gdump;
+double *array_rdump[NB];
+int first_dump, first_rdump;
 
 /*AMR parameters*/
 int(*block)[NV];
@@ -792,6 +796,9 @@ MPI_Request req[NB], boundreqs[NB][600], cornreqs[NB][16];
 MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
 MPI_Comm  mpi_cartcomm, mpi_self;
 MPI_Comm row_comm[8];
-MPI_File fdump[100], fdumpdiag[100], rdump[NB], gdump[NB];
-MPI_Request req_block[NB][1], req_block_rdump[NB][1], req_blockdiag[NB][1], req_gdump1[NB][1], req_gdump2[NB][1];
+MPI_File fdump[100], fdumpdiag[100], rdump[NB];
+MPI_Request req_block[NB][1];
+MPI_Request req_block_rdump[NB][1];
+MPI_Request req_blockdiag[NB][1];
 MPI_Request request_timelevel[NB];
+

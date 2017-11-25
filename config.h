@@ -61,7 +61,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (1)
+#define V100 (0)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
