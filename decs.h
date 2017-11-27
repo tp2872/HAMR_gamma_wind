@@ -67,10 +67,6 @@ extern double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G];
 extern double E_avg2[NB_1*NB_3][BS_1 + 2 * N1G];
 extern double E_avg1_new[NB_1*NB_3][BS_1 + 2 * N1G];
 extern double E_avg2_new[NB_1*NB_3][BS_1 + 2 * N1G];
-extern double(*restrict E_avg_x[NB][2]);
-extern double(*restrict E_avg_new_x[NB][2]);
-extern double(*restrict E_avg_y[NB][2]);
-extern double(*restrict E_avg_new_y[NB][2]);
 extern double(*restrict  ph[NB])[NPR];
 extern double(*restrict E_corn[NB])[NDIM];
 extern double(*restrict dE[NB])[2][NDIM][NDIM];
@@ -796,8 +792,8 @@ extern double *dump_buffer;
 extern double(*restrict dxdxp_z[NB])[NDIM][NDIM];
 extern double(*restrict dxpdx_z[NB])[NDIM][NDIM];
 extern float *array[NB], *array_diag[NB];
-extern double *array_rdump[NB];
-extern int first_dump, first_rdump;
+extern double *array_rdump[NB], *array_gdump1[NB], *array_gdump2[NB];
+extern int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
 extern int(*block)[NV];
@@ -819,7 +815,6 @@ FUNCTION DECLARATIONS
 void dump_new(void);
 void gdump_new(void);
 void dump_params(FILE *fp);
-void gdump_block(FILE *fp, int n);
 double divb_calc(int n, int i, int j, int z);
 void dump_params(FILE *fp);
 void param_read(FILE *fp);

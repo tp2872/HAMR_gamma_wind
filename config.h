@@ -61,7 +61,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (0)
+#define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
@@ -70,7 +70,7 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 0
+#define COPY_BFIELD 1
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -78,12 +78,12 @@ Numerical Parameters section
 #define NB_3 10
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 3
+#define N_LEVELS 2
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
