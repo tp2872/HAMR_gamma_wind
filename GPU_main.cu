@@ -1448,6 +1448,23 @@ void GPU_consttransport_bound(void){
 		#endif
 		#endif
 	}
+	#elif(PRESTEP2)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#if(!TIMESTEP_JET)
+		E3_send_corn(E_corn, BufferE_1, n_ord[n]);
+		#endif
+		E_send1(E_corn, BufferE_1, n_ord[n]);
+		E_send2(E_corn, BufferE_1, n_ord[n]);
+		#if(N3G>0)
+		#if(!TIMESTEP_JET)
+		E_send3(E_corn, BufferE_1, n_ord[n]);
+		E1_send_corn(E_corn, BufferE_1, n_ord[n]);
+		E2_send_corn(E_corn, BufferE_1, n_ord[n]);
+		#endif
+		#endif
+	}
 	#else
 	#if(!TIMESTEP_JET)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
@@ -1604,6 +1621,18 @@ void GPU_consttransport3(int flag, double Dt, int n){
 	if (cudaSuccess != status )fprintf(stderr, "Error constransport3 %d \n", status);
 }
 
+void GPU_consttransport3_post(double Dt, int n){
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - (2 * (BS_2 + D2)*(BS_3 + D3) + 2 * (BS_1 + D1)*(BS_3 + D3) + 2 * (BS_1 + D1)*(BS_2 + D2)) % LOCAL_WORK_SIZE) + 2 * (BS_2 + D2)*(BS_3 + D3) + 2 * (BS_1 + D1)*(BS_3 + D3) + 2 * (BS_1 + D1)*(BS_2 + D2)) / LOCAL_WORK_SIZE;
+	
+	//cudaSetDevice(block[n][AMR_GPU]);
+	/*Run kernel*/
+	consttransport3_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (dx[n][1], dx[n][2], dx[n][3], Buffergdet[n], Bufferps_1[n], Bufferps_1[n], BufferE_1[n], Dt);
+	
+	status = cudaGetLastError();
+	if (cudaSuccess != status)fprintf(stderr, "Error constransport3_post %d \n", status);
+}
+
 void GPU_flux_ct1(int n)
 {
 	//cudaSetDevice(block[n][AMR_GPU]);
@@ -1688,6 +1717,29 @@ void GPU_fixup(int flag, int n, double Dt)
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error fixup %d\n", status);
+}
+
+void GPU_cleanup_post(int n)
+{
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - (2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)) % LOCAL_WORK_SIZE) + 2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)) / LOCAL_WORK_SIZE;
+	//cudaSetDevice(block[n][AMR_GPU]);
+	cleanup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], BufferE_1[n]);
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error cleanup_post %d\n", status);
+}
+
+void GPU_fixup_post(int n, double Dt)
+{
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - (2 * BS_2*BS_3+2 * BS_1*BS_3+2 * BS_1*BS_2) % LOCAL_WORK_SIZE) + 2 * (BS_2)*(BS_3) + (2 * BS_2*BS_3+2 * BS_1*BS_3+2 * BS_1*BS_2)) / LOCAL_WORK_SIZE;
+	//cudaSetDevice(block[n][AMR_GPU]);
+	fixup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (Bufferp_1[n], Bufferp_1[n], Bufferp_1[n], Bufferpsh_1[n], BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], Bufferdq_1[n],
+		Bufferradius[n], Bufferpflag[n], Bufferfailimage[n], Buffergcov[n], Buffergcon[n], Buffergdet[n], Bufferconn[n], BufferKatm[n], gam, dx[n][1], dx[n][2], dx[n][3], a, Dt, 1);
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error fixup_post %d\n", status);
 }
 
 void GPU_boundprim(int bound_force)

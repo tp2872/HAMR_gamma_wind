@@ -471,19 +471,85 @@ void GPU_step_ch()
 	double ndt, inmsg;
 	int i, j, z, k, n, uu;
 
-	//if (rank == 0){
-	//	fprintf(stderr, "h");
-	//}
+	if (rank == 0){
+		fprintf(stderr, "h");
+	}
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
 	}
 	for (uu = 0; uu < 2 * AMR_MAXTIMELEVEL; uu++){
 		set_prestep();
 		ndt = advance_GPU();   /* time step primitive variables to the half step */
-		GPU_boundprim(0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+
+		//Post-stepping when having 2nd order time accuracy at boundary
+		//First store difference between evolved and required flux/electric field in temporary array
+		#if(PRESTEP2)
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+			#if(N3G>0)
+			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+			#endif
+		}
+		#if(!TIMESTEP_JET)
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+		}
+		#endif
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E_rec1(E_corn, BufferE_1, n_ord[n], 1);
+			E_rec2(E_corn, BufferE_1, n_ord[n], 1);
+		}
+		#if(N3G>0)
+		#if(!TIMESTEP_JET)
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E_rec3(E_corn, BufferE_1, n_ord[n], 1);
+			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
+		}
+		#endif
+		#endif
+		//Then reset flux and electric fields to zero
+		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_cleanup_post(n_ord[n]);
+		
+		//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
+		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
+			flux_rec1(F1, BufferF1_1, n_ord[n], 6);
+			flux_rec2(F2, BufferF2_1, n_ord[n], 6);
+			#if(N3G>0)
+			flux_rec3(F3, BufferF3_1, n_ord[n], 6);
+			#endif
+		}
+		#if(!TIMESTEP_JET)
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
+		}
+		#endif
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E_rec1(E_corn, BufferE_1, n_ord[n], 6);
+			E_rec2(E_corn, BufferE_1, n_ord[n], 6);
+		}
+		#if(N3G>0)
+		#if(!TIMESTEP_JET)
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E_rec3(E_corn, BufferE_1, n_ord[n], 6);
+			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
+			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
+		}
+		#endif
+		#endif
+
+		//Evolve magnetic fields at boundary
+		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_consttransport3_post(dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		//Evolve conserved quantities at boundary using update fluxes and invert to primitive
+		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
+		#endif
+
+		//Set boundary conditions at end of timestep after correction step to fluxes and electric fields
+		GPU_boundprim(0);    
 
 		nstep++;
-		#if(PRESTEP)
+		#if(PRESTEP || PRESTEP2)
 		for (n = 0; n < n_active; n++){
 			if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && (block[n_ord[n]][AMR_PRESTEP] != 0))block[n_ord[n]][AMR_PRESTEP] = 0;
 			else if (block[n_ord[n]][AMR_PRESTEP] == 1)block[n_ord[n]][AMR_PRESTEP] = 2;
@@ -492,9 +558,9 @@ void GPU_step_ch()
 	}
 
 	/* Repeat and rinse for the full time (aka corrector) step:  */
-	//if (rank == 0){
-	//	fprintf(stderr, "f");
-	//}
+	if (rank == 0){
+		fprintf(stderr, "f");
+	}
 
 	/* Determine next time increment based on current characteristic speeds: */
 	if (dt < 1.e-9) {
@@ -653,7 +719,7 @@ double advance_GPU(void)
 		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
 		#endif
 	}
-	#else
+	#elif(!PRESTEP2)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
