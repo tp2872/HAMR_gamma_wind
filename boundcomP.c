@@ -850,14 +850,13 @@ void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 /*Receive boundaries for compute nodes through MPI*/
 void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n){
 #if (MPI_enable)
-	int flag;
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_ACTIVE] == 1){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[n][AMR_NBR4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][20], &flag, &Statbound[n][20]);
+				if (nstep%block[block[n][AMR_NBR4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][20], &Statbound[n][20]);
 				}
 				unpack_receive1(n, block[n][AMR_NBR4], 0, -N1G, 0, 0, -N2G, N2_GPU[n] + N2G, 0, -N3G, N3_GPU[n] + N3G, (N2_GPU[n] + 2 * N2G), (N3_GPU[n] + 2 * N3G), receive2, tempreceive2, prim,
 					&(Bufferp[n]), &(Bufferrec2[n]), &(tempBufferrec2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4]][AMR_TIMELEVEL]);
@@ -871,8 +870,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][21], &flag, &Statbound[n][21]);
+				if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][21], &Statbound[n][21]);
 				}
 				unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD5], 0, -N1G, 0, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 					(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_1, tempreceive2_1, prim,
@@ -885,8 +884,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][22], &flag, &Statbound[n][22]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][22], &Statbound[n][22]);
 					}
 					unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD6], 0, -N1G, 0, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + REF_3*D3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_2, tempreceive2_2, prim,
@@ -900,8 +899,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][23], &flag, &Statbound[n][23]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][23], &Statbound[n][23]);
 					}
 					unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD7], 0, -N1G, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + REF_2*D2, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_3, tempreceive2_3, prim,
@@ -915,8 +914,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][24], &flag, &Statbound[n][24]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][24], &Statbound[n][24]);
 					}
 					unpack_receive1(n, block[block[n][AMR_NBR4]][AMR_CHILD8], 0, -N1G, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + REF_2*D2, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + REF_3*D3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive2_4, tempreceive2_4, prim,
@@ -933,8 +932,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			//receive from coarser grid
 			if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][21], &flag, &Statbound[n][21]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][21], &Statbound[n][21]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_1, send4_5, tempreceive2_1, prim,
@@ -948,8 +947,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][22], &flag, &Statbound[n][22]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][22], &Statbound[n][22]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_2, send4_6, tempreceive2_2, prim,
@@ -963,8 +962,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][23], &flag, &Statbound[n][23]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][23], &Statbound[n][23]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_3, send4_7, tempreceive2_3, prim,
@@ -978,8 +977,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][24], &flag, &Statbound[n][24]);
+					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][24], &Statbound[n][24]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_4, send4_8, tempreceive2_4, prim,
@@ -1000,8 +999,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 		if (block[block[n][AMR_NBR2]][AMR_ACTIVE] == 1){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[n][AMR_NBR2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][40], &flag, &Statbound[n][40]);
+				if (nstep%block[block[n][AMR_NBR2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][40], &Statbound[n][40]);
 				}
 				unpack_receive1(n, block[n][AMR_NBR2], 0, N1_GPU[n], N1_GPU[n] + N1G, 0, -N2G, N2_GPU[n] + N2G, 0, -N3G, N3_GPU[n] + N3G, (N2_GPU[n] + 2 * N2G), (N3_GPU[n] + 2 * N3G), receive4, tempreceive4, prim,
 					&(Bufferp[n]), &(Bufferrec4[n]), &(tempBufferrec4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2]][AMR_TIMELEVEL]);
@@ -1014,8 +1013,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][45], &flag, &Statbound[n][45]);
+				if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][45], &Statbound[n][45]);
 				}
 				unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD1], 0, N1_GPU[n], N1_GPU[n] + N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 					(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_5, tempreceive4_5, prim,
@@ -1028,8 +1027,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][46], &flag, &Statbound[n][46]);
+					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][46], &Statbound[n][46]);
 					}
 					unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD2], 0, N1_GPU[n], N1_GPU[n] + N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + REF_3*D3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_6, tempreceive4_6, prim,
@@ -1043,8 +1042,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][47], &flag, &Statbound[n][47]);
+					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][47], &Statbound[n][47]);
 					}
 					unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD3], 0, N1_GPU[n], N1_GPU[n] + N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_7, tempreceive4_7, prim,
@@ -1058,8 +1057,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][48], &flag, &Statbound[n][48]);
+					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][48], &Statbound[n][48]);
 					}
 					unpack_receive1(n, block[block[n][AMR_NBR2]][AMR_CHILD4], 0, N1_GPU[n], N1_GPU[n] + N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 						(N2_GPU[n] + 2 * N2G) / (1 + REF_2), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive4_8, tempreceive4_8, prim,
@@ -1076,8 +1075,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			//receive from coarser grid
 			if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((nstep % block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][45], &flag, &Statbound[n][45]);
+					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+						MPI_Wait(&boundreqs[n][45], &Statbound[n][45]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_5, send2_1, tempreceive4_5, prim,
@@ -1091,8 +1090,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((nstep % block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][46], &flag, &Statbound[n][46]);
+					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+						MPI_Wait(&boundreqs[n][46], &Statbound[n][46]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_6, send2_2, tempreceive4_6, prim,
@@ -1106,8 +1105,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((nstep % block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][47], &flag, &Statbound[n][47]);
+					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+						MPI_Wait(&boundreqs[n][47], &Statbound[n][47]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_7, send2_3, tempreceive4_7, prim,
@@ -1121,8 +1120,8 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((nstep % block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][48], &flag, &Statbound[n][48]);
+					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+						MPI_Wait(&boundreqs[n][48], &Statbound[n][48]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_8, send2_4, tempreceive4_8, prim,
@@ -1142,13 +1141,12 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 
 void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n){
 #if (MPI_enable)
-	int flag;
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0){
 		if (block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[n][AMR_NBR1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][30], &flag, &Statbound[n][30]);
+				if (nstep%block[block[n][AMR_NBR1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][30], &Statbound[n][30]);
 				}
 				if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 					unpack_receive2(n, block[n][AMR_NBR1], 0, -N1G, N1_GPU[n] + N1G, 0, -N2G, 0, 0, -N3G, N3_GPU[n] + N3G, (N1_GPU[n] + 2 * N1G), (N3_GPU[n] + 2 * N3G), receive3, tempreceive3, prim,
@@ -1174,8 +1172,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1){
 				//receive from finer grid
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][31], &flag, &Statbound[n][31]);
+					if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][31], &Statbound[n][31]);
 					}
 					unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD3], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G, 0, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_1, tempreceive3_1, prim,
@@ -1188,8 +1186,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][32], &flag, &Statbound[n][32]);
+						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][32], &Statbound[n][32]);
 						}
 						unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD4], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G, 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_2, tempreceive3_2, prim,
@@ -1203,8 +1201,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (REF_1 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][35], &flag, &Statbound[n][35]);
+						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][35], &Statbound[n][35]);
 						}
 						unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD7], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G, 0, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_5, tempreceive3_5, prim,
@@ -1218,8 +1216,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][36], &flag, &Statbound[n][36]);
+						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][36], &Statbound[n][36]);
 						}
 						unpack_receive2(n, block[block[n][AMR_NBR1]][AMR_CHILD8], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G, 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive3_6, tempreceive3_6, prim,
@@ -1236,8 +1234,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				//receive from coarser grid
 				if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if ((nstep % block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][31], &flag, &Statbound[n][31]);
+						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+							MPI_Wait(&boundreqs[n][31], &Statbound[n][31]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_1, send1_3, tempreceive3_1, prim,
@@ -1251,8 +1249,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if ((nstep % block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][32], &flag, &Statbound[n][32]);
+						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+							MPI_Wait(&boundreqs[n][32], &Statbound[n][32]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_2, send1_4, tempreceive3_2, prim,
@@ -1266,8 +1264,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n && REF_1 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if ((nstep % block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][35], &flag, &Statbound[n][35]);
+						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+							MPI_Wait(&boundreqs[n][35], &Statbound[n][35]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_5, send1_7, tempreceive3_5, prim,
@@ -1281,8 +1279,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if ((nstep % block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][36], &flag, &Statbound[n][36]);
+						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1)){
+							MPI_Wait(&boundreqs[n][36], &Statbound[n][36]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_6, send1_8, tempreceive3_6, prim,
@@ -1302,8 +1300,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 	if (block[n][AMR_NBR3] >= 0){
 		if (block[block[n][AMR_NBR3]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[n][AMR_NBR3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][10], &flag, &Statbound[n][10]);
+				if (nstep%block[block[n][AMR_NBR3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][10], &Statbound[n][10]);
 				}
 				if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 					unpack_receive2(n, block[n][AMR_NBR3], 0, -N1G, N1_GPU[n] + N1G, 0, N2_GPU[n], N2_GPU[n] + N2G, 0, -N3G, N3_GPU[n] + N3G, (N1_GPU[n] + 2 * N1G), (N3_GPU[n] + 2 * N3G), receive1, tempreceive1, prim,
@@ -1329,8 +1327,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1){
 				//receive from finer grid
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][13], &flag, &Statbound[n][13]);
+					if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][13], &Statbound[n][13]);
 					}
 					unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD1], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, N2_GPU[n], N2_GPU[n] + N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_3, tempreceive1_3, prim,
@@ -1343,8 +1341,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][14], &flag, &Statbound[n][14]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][14], &Statbound[n][14]);
 						}
 						unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD2], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, N2_GPU[n], N2_GPU[n] + N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_4, tempreceive1_4, prim,
@@ -1358,8 +1356,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (REF_1 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][17], &flag, &Statbound[n][17]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][17], &Statbound[n][17]);
 						}
 						unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD5], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, N2_GPU[n], N2_GPU[n] + N2G, 0, -N3G / (1 + REF_3), N3_GPU[n] / (1 + REF_3) + (1 - REF_3)*N3G,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_7, tempreceive1_7, prim,
@@ -1373,8 +1371,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][18], &flag, &Statbound[n][18]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][18], &Statbound[n][18]);
 						}
 						unpack_receive2(n, block[block[n][AMR_NBR3]][AMR_CHILD6], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, N2_GPU[n], N2_GPU[n] + N2G, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n] + D3*REF_3,
 							(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N3_GPU[n] + 2 * N3G) / (1 + REF_3), receive1_8, tempreceive1_8, prim,
@@ -1391,8 +1389,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				//receive from coarser grid
 				if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][13], &flag, &Statbound[n][13]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][13], &Statbound[n][13]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_3, send3_1, tempreceive1_3, prim,
@@ -1406,8 +1404,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][14], &flag, &Statbound[n][14]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][14], &Statbound[n][14]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_4, send3_2, tempreceive1_4, prim,
@@ -1421,8 +1419,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_1 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][17], &flag, &Statbound[n][17]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][17], &Statbound[n][17]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_7, send3_5, tempreceive1_7, prim,
@@ -1436,8 +1434,8 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-						if (nstep % block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-							flag=1; while(flag==1) MPI_Test(&boundreqs[n][18], &flag, &Statbound[n][18]);
+						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+							MPI_Wait(&boundreqs[n][18], &Statbound[n][18]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
 							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_8, send3_6, tempreceive1_8, prim,
@@ -1457,13 +1455,12 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 
 void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n){
 #if (MPI_enable)
-	int flag;
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[n][AMR_NBR6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][50], &flag, &Statbound[n][50]);
+				if (nstep%block[block[n][AMR_NBR6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][50], &Statbound[n][50]);
 				}
 				unpack_receive3(n, block[n][AMR_NBR6], 0, -N1G, N1_GPU[n] + N1G, 0, -N2G, N2_GPU[n] + N2G, 0, -N3G, 0, (N1_GPU[n] + 2 * N1G), (N2_GPU[n] + 2 * N2G), receive5, tempreceive5, prim,
 					&(Bufferp[n]), &(Bufferrec5[n]), &(tempBufferrec5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6]][AMR_TIMELEVEL]);
@@ -1476,8 +1473,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][51], &flag, &Statbound[n][51]);
+				if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][51], &Statbound[n][51]);
 				}
 				unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD2], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G, 0,
 					(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_1, tempreceive5_1, prim,
@@ -1490,8 +1487,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][53], &flag, &Statbound[n][53]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][53], &Statbound[n][53]);
 					}
 					unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD4], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, -N3G, 0,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_3, tempreceive5_3, prim,
@@ -1505,8 +1502,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][55], &flag, &Statbound[n][55]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][55], &Statbound[n][55]);
 					}
 					unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD6], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, -N3G, 0,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_5, tempreceive5_5, prim,
@@ -1520,8 +1517,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][57], &flag, &Statbound[n][57]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][57], &Statbound[n][57]);
 					}
 					unpack_receive3(n, block[block[n][AMR_NBR6]][AMR_CHILD8], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, -N3G, 0,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive5_7, tempreceive5_7, prim,
@@ -1538,8 +1535,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			//receive from coarser grid
 			if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][51], &flag, &Statbound[n][51]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][51], &Statbound[n][51]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_1, send6_2, tempreceive5_1, prim,
@@ -1553,8 +1550,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][53], &flag, &Statbound[n][53]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][53], &Statbound[n][53]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_3, send6_4, tempreceive5_3, prim,
@@ -1568,8 +1565,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n && REF_1 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][55], &flag, &Statbound[n][55]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][55], &Statbound[n][55]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_5, send6_6, tempreceive5_5, prim,
@@ -1583,8 +1580,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][57], &flag, &Statbound[n][57]);
+					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][57], &Statbound[n][57]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_7, send6_8, tempreceive5_7, prim,
@@ -1604,8 +1601,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 	if (block[n][AMR_NBR5] >= 0){
 		if (block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[n][AMR_NBR5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][60], &flag, &Statbound[n][60]);
+				if (nstep%block[block[n][AMR_NBR5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][60], &Statbound[n][60]);
 				}
 				unpack_receive3(n, block[n][AMR_NBR5], 0, -N1G, N1_GPU[n] + N1G, 0, -N2G, N2_GPU[n] + N2G, 0, N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] + 2 * N1G), (N2_GPU[n] + 2 * N2G), receive6, tempreceive6, prim,
 					&(Bufferp[n]), &(Bufferrec6[n]), &(tempBufferrec6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5]][AMR_TIMELEVEL]);
@@ -1618,8 +1615,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-				if (nstep % block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
-					flag=1; while(flag==1) MPI_Test(&boundreqs[n][62], &flag, &Statbound[n][62]);
+				if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1){
+					MPI_Wait(&boundreqs[n][62], &Statbound[n][62]);
 				}
 				unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD1], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, N3_GPU[n], N3_GPU[n] + N3G,
 					(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_2, tempreceive6_2, prim,
@@ -1632,8 +1629,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][64], &flag, &Statbound[n][64]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][64], &Statbound[n][64]);
 					}
 					unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD3], 0, -N1G / (1 + REF_1), N1_GPU[n] / (1 + REF_1) + (1 - REF_1)*N1G, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, N3_GPU[n], N3_GPU[n] + N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_4, tempreceive6_4, prim,
@@ -1647,8 +1644,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][66], &flag, &Statbound[n][66]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][66], &Statbound[n][66]);
 					}
 					unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD5], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 0, -N2G / (1 + REF_2), N2_GPU[n] / (1 + REF_2) + (1 - REF_2)*N2G, 0, N3_GPU[n], N3_GPU[n] + N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_6, tempreceive6_6, prim,
@@ -1662,8 +1659,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][68], &flag, &Statbound[n][68]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][68], &Statbound[n][68]);
 					}
 					unpack_receive3(n, block[block[n][AMR_NBR5]][AMR_CHILD7], 1, N1_GPU[n] / (1 + REF_1), N1_GPU[n] + D1*REF_1, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n] + D2*REF_2, 0, N3_GPU[n], N3_GPU[n] + N3G,
 						(N1_GPU[n] + 2 * N1G) / (1 + REF_1), (N2_GPU[n] + 2 * N2G) / (1 + REF_2), receive6_8, tempreceive6_8, prim,
@@ -1680,8 +1677,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			//receive from coarser grid
 			if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][62], &flag, &Statbound[n][62]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][62], &Statbound[n][62]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_2, send5_1, tempreceive6_2, prim,
@@ -1695,8 +1692,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][64], &flag, &Statbound[n][64]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][64], &Statbound[n][64]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_4, send5_3, tempreceive6_4, prim,
@@ -1710,8 +1707,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_1 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][66], &flag, &Statbound[n][66]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][66], &Statbound[n][66]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_6, send5_5, tempreceive6_6, prim,
@@ -1725,8 +1722,8 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					if (nstep % block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
-						flag=1; while(flag==1) MPI_Test(&boundreqs[n][68], &flag, &Statbound[n][68]);
+					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1){
+						MPI_Wait(&boundreqs[n][68], &Statbound[n][68]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
 						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_8, send5_7, tempreceive6_8, prim,

@@ -514,34 +514,34 @@ void GPU_step_ch()
 		
 		//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
 		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
-			flux_rec1(F1, BufferF1_1, n_ord[n], 6);
-			flux_rec2(F2, BufferF2_1, n_ord[n], 6);
+			//flux_rec1(F1, BufferF1_1, n_ord[n], 6);
+			//flux_rec2(F2, BufferF2_1, n_ord[n], 6);
 			#if(N3G>0)
-			flux_rec3(F3, BufferF3_1, n_ord[n], 6);
+			//flux_rec3(F3, BufferF3_1, n_ord[n], 6);
 			#endif
 		}
 		#if(!TIMESTEP_JET)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-			E3_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
+			//E3_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
 		}
 		#endif
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-			E_rec1(E_corn, BufferE_1, n_ord[n], 6);
-			E_rec2(E_corn, BufferE_1, n_ord[n], 6);
+			//E_rec1(E_corn, BufferE_1, n_ord[n], 6);
+			//E_rec2(E_corn, BufferE_1, n_ord[n], 6);
 		}
 		#if(N3G>0)
 		#if(!TIMESTEP_JET)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-			E_rec3(E_corn, BufferE_1, n_ord[n], 6);
-			E1_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
-			E2_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
+			//E_rec3(E_corn, BufferE_1, n_ord[n], 6);
+			//E1_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
+			//E2_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
 		}
 		#endif
 		#endif
 
 		//Evolve magnetic fields at boundary
 		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_consttransport3_post(dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		//Evolve conserved quantities at boundary using update fluxes and invert to primitive
+		//Evolve conserved quantities at boundary using update fluxes and invert to primitive variables plus floor
 		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
 		#endif
 

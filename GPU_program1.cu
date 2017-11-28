@@ -2584,7 +2584,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* _
 		for (k = 0; k<NPR; k++){
 			pf[k] = pf_i[k*(ksize)+global_id];
 		}
-		for (k = 0; k < NDIM; k++) E_corn[k*ksize + global_id] = 0.;
 
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);

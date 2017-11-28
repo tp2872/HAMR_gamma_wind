@@ -263,7 +263,7 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	int update_staggered = ((nstep % (2 * block[n][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1) || nstep == -1);
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
-		if (block[n_rec][AMR_NSTEP] % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE]) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		int work_size = (j2 - j1)*(z2 - z1);
@@ -315,7 +315,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	int update_staggered = ((nstep % (2 * block[n][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1) || nstep == -1);
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
-		if (block[n_rec][AMR_NSTEP] % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE]) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		int work_size = (i2 - i1)*(z2 - z1);
@@ -414,7 +414,7 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1)*(j2 - j1);
-		if (block[n_rec][AMR_NSTEP] % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE]) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		 unpackreceive3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, isize, jsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferboundreceive[0], tempBufferboundreceive[0],
@@ -463,7 +463,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
-		if (block[n_rec][AMR_NSTEP] % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE])cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		int work_size = (j2 - j1)*(z2 - z1);
@@ -540,7 +540,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(z2 - z1)) / ((double)(LOCAL_WORK_SIZE)));
-		if (block[n_rec][AMR_NSTEP] % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE]) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		int work_size = (i2 - i1)*(z2 - z1);
@@ -617,7 +617,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1)*(j2 - j1)) / ((double)(LOCAL_WORK_SIZE)));
-		if (block[n_rec][AMR_NSTEP] % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
+		if (nstep % (block[n_rec][AMR_TIMELEVEL]) == block[n_rec][AMR_TIMELEVEL] - 1 || nstep == -1){
 			if (block[n][AMR_NODE]==block[n_rec][AMR_NODE])cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		}
 		int work_size = (i2 - i1)*(j2 - j1);
