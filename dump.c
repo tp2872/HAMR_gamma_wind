@@ -79,15 +79,14 @@ void dump_new(void){
 		fclose(fparam);
 	}
 
-	/*if (rank == (1%numtasks)){
+	if (rank == (2%numtasks)){
 		FILE *grid;
 		sprintf(filename, "dumps%d/grid", dump_cnt);
 		grid = fopen(filename, "wb");
 		gdump_grid(grid);
 		fclose(grid);
-	}*/
+	}
 
-	
 	first_dump = 1;
 	
 	for(u=0; u<u_max; u++){
