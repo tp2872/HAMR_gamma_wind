@@ -3150,16 +3150,16 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			#if( N1G > 0 )
-			if (k == 1) U[k] -= Dt*F1[k*(ksize)+global_id + isize] / dx_1;
-			if (k == 2) U[k] += Dt*F1[k*(ksize)+global_id] / dx_1;	
+			if (k == 2) U[k] -= Dt*F1[k*(ksize)+global_id + isize] / dx_1;
+			if (k == 1) U[k] += Dt*F1[k*(ksize)+global_id] / dx_1;	
 			#endif
 			#if( N2G > 0 )
-			if (k == 3)U[k] -= Dt*F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] / dx_2;
-			if (k == 4)U[k] += Dt*F2[k*(ksize)+global_id] / dx_2;
+			if (k == 4)U[k] -= Dt*F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] / dx_2;
+			if (k == 3)U[k] += Dt*F2[k*(ksize)+global_id] / dx_2;
 			#endif
 			#if( N3G > 0 )
-			if (k == 5)U[k] -= Dt*F3[k*(ksize)+global_id + 1] / dx_3;
-			if (k == 6)U[k] += Dt*F3[k*(ksize)+global_id] / dx_3;
+			if (k == 6)U[k] -= Dt*F3[k*(ksize)+global_id + 1] / dx_3;
+			if (k == 5)U[k] += Dt*F3[k*(ksize)+global_id] / dx_3;
 			#endif
 		}
 

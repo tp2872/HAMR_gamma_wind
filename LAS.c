@@ -110,7 +110,7 @@ void set_timelevel(void){
 void set_prestep(void){
 	int n;
 
-	#if(PRESTEP)
+	#if(PRESTEP || PRESTEP2)
 	int timelevel_min = AMR_MAXTIMELEVEL;
 	int blocks_per_timestep = 0;
 	int blocks_this_timestep = 0;
@@ -129,6 +129,22 @@ void set_prestep(void){
 		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
 	}
 
+	//First make sure that the block required for prestepping in case of 2nd order time accuracy are preevolved
+	#if(PRESTEP2)
+	for (n = 0; n < n_active; n++){
+		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && block[n_ord[n]][AMR_PRESTEP] == 0){
+			if (block[n_ord[n]][AMR_NBR1] >= 0 && block[block[n_ord[n]][AMR_NBR1]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			if (block[n_ord[n]][AMR_NBR2] >= 0 && block[block[n_ord[n]][AMR_NBR2]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			if (block[n_ord[n]][AMR_NBR3] >= 0 && block[block[n_ord[n]][AMR_NBR3]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			if (block[n_ord[n]][AMR_NBR4] >= 0 && block[block[n_ord[n]][AMR_NBR4]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			if (block[n_ord[n]][AMR_NBR5] >= 0 && block[block[n_ord[n]][AMR_NBR5]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			if (block[n_ord[n]][AMR_NBR6] >= 0 && block[block[n_ord[n]][AMR_NBR6]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			if (block[n_ord[n]][AMR_PRESTEP] == 1) block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
+			blocks_this_timestep++;
+		}
+	}
+	#endif
+
 	//If you don't have sufficient blocks this timestep preevolve some blocks if available
 	if ((nstep % timelevel_min) == timelevel_min - 1){
 		for (n = 0; n < n_active; n++){
@@ -140,7 +156,7 @@ void set_prestep(void){
 		}
 	}
 
-
+	#if(!PRESTEP2)
 	//If at end of switchtimelevel do not pre-evolve
 	for (n = 0; n < n_active; n++){
 		if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){
@@ -148,21 +164,7 @@ void set_prestep(void){
 			block[n_ord[n]][AMR_NSTEP] = nstep;
 		}
 	}
-	#elif(PRESTEP2)
-	//If you don't have sufficient blocks this timestep preevolve some blocks if available
-	for (n = 0; n < n_active; n++){
-		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && block[n_ord[n]][AMR_PRESTEP] == 0){
-			block[n_ord[n]][AMR_PRESTEP] = 1;
-			block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
-		}
-		//If at end of switchtimelevel do not pre-evolve
-		for (n = 0; n < n_active; n++){
-			if (block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) >= 2 * AMR_SWITCHTIMELEVEL - 2 * AMR_MAXTIMELEVEL){
-				block[n_ord[n]][AMR_PRESTEP] = 0;
-				block[n_ord[n]][AMR_NSTEP] = nstep;
-			}
-		}
-	}
+	#endif
 	#else
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;

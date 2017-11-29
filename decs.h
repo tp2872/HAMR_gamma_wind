@@ -979,12 +979,12 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	, int n_rec1, int n_rec2, int n_rec3, int n_rec4, int n_rec5, int n_rec6);
 
 //Boundary transfer related
-void bound_send1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n);
-void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n);
-void bound_send2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n);
-void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n);
-void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n);
-void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n);
+void bound_send1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n, int prestep);
+void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n, int prestep);
+void bound_send2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n, int prestep);
+void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n, int prestep);
+void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n, int prestep);
+void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n, int prestep);
 void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
 void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
 void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
