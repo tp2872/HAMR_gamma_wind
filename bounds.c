@@ -71,8 +71,8 @@ void bound_prim(double(*restrict prim[NB])[NPR], int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec1(p, Bufferp_1, bound_force, n_ord[n], 0);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, bound_force, n_ord[n], 0);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec1(p, Bufferp_1, bound_force, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, Bufferph_1, bound_force, n_ord[n]);
 	}
 
 	for (n = 0; n < n_active; n++){
@@ -80,8 +80,8 @@ void bound_prim(double(*restrict prim[NB])[NPR], int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec2(p, Bufferp_1, bound_force, n_ord[n], 0);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, Bufferph_1, bound_force, n_ord[n], 0);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec2(p, Bufferp_1, bound_force, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, Bufferph_1, bound_force, n_ord[n]);
 	}
 
 	if (N3 > 1){
@@ -90,8 +90,8 @@ void bound_prim(double(*restrict prim[NB])[NPR], int bound_force)
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 		}
 		for (n = 0; n < n_active; n++){
-			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec3(p, Bufferp_1, bound_force, n_ord[n], 0);
-			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, Bufferph_1, bound_force, n_ord[n], 0);
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec3(p, Bufferp_1, bound_force, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, Bufferph_1, bound_force, n_ord[n]);
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
