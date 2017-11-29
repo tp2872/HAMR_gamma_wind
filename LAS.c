@@ -131,16 +131,29 @@ void set_prestep(void){
 
 	//First make sure that the block required for prestepping in case of 2nd order time accuracy are preevolved
 	#if(PRESTEP2)
+	int i, j;
 	for (n = 0; n < n_active; n++){
 		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && block[n_ord[n]][AMR_PRESTEP] == 0){
-			if (block[n_ord[n]][AMR_NBR1] >= 0 && block[block[n_ord[n]][AMR_NBR1]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
-			if (block[n_ord[n]][AMR_NBR2] >= 0 && block[block[n_ord[n]][AMR_NBR2]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
-			if (block[n_ord[n]][AMR_NBR3] >= 0 && block[block[n_ord[n]][AMR_NBR3]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
-			if (block[n_ord[n]][AMR_NBR4] >= 0 && block[block[n_ord[n]][AMR_NBR4]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
-			if (block[n_ord[n]][AMR_NBR5] >= 0 && block[block[n_ord[n]][AMR_NBR5]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
-			if (block[n_ord[n]][AMR_NBR6] >= 0 && block[block[n_ord[n]][AMR_NBR6]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]) block[n_ord[n]][AMR_PRESTEP] = 1;
+			for (i = AMR_NBR1; i <= AMR_NBR6; i++){
+				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
+					block[n_ord[n]][AMR_PRESTEP] = 1;
+					blocks_this_timestep++;
+					break;
+				}
+				if (block[block[n_ord[n]][i]][AMR_PARENT] >= 0 && block[block[block[n_ord[n]][i]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[block[n_ord[n]][i]][AMR_PARENT]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
+					block[n_ord[n]][AMR_PRESTEP] = 1;
+					blocks_this_timestep++;
+					break;
+				}
+				for (j = AMR_CHILD1; j <= AMR_CHILD8; j++){
+					if (block[block[n_ord[n]][i]][j] >= 0 && block[block[block[n_ord[n]][i]][j]][AMR_ACTIVE] == 1 && block[block[block[n_ord[n]][i]][j]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
+						block[n_ord[n]][AMR_PRESTEP] = 1;
+						blocks_this_timestep++;
+						break;
+					}
+				}
+			}
 			if (block[n_ord[n]][AMR_PRESTEP] == 1) block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
-			blocks_this_timestep++;
 		}
 	}
 	#endif
