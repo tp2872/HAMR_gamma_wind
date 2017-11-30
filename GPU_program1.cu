@@ -2322,7 +2322,7 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 			psf[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] += -Dt / dx_3*(E_corn[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G) + D3] - E_corn[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4))];
 			#endif
 		}
-		if (icurr >= N1G && jcurr >= N2G  && zcurr >= N3G && icurr < BS_1 + N1G + (k != 5) && jcurr < BS_2 + N2G && zcurr < BS_3 + N3G + D3 - (k != 6)){
+		if (icurr >= N1G && jcurr >= N2G  && zcurr >= N3G + (k != 5) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G && zcurr < BS_3 + N3G + D3 - (k != 6)){
 			#if(N3G>0)
 			psf[2 * ksize + global_id + (k == 6)] = psi[2 * ksize + global_id + (k == 6)] - Dt / dx_1*(E_corn[2 * ksize + global_id + (k == 6) + isize] - E_corn[2 * ksize + global_id + (k == 6)]) / gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];
 			psf[2 * ksize + global_id + (k == 6)] += Dt / dx_2*(E_corn[1 * ksize + global_id + (k == 6) + (BS_3 + 2 * N3G)] - E_corn[1 * ksize + global_id + (k == 6)]) / gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];
@@ -3077,48 +3077,54 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
-	int k = 0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
+	int ki = 0,k=0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
 	if (global_id < BS_2*BS_3){
-		k = 1;
+		ki = 1;
 		global_id -= 0;
 		icurr = 0;
 		zcurr = global_id%BS_3;
-		jcurr = (global_id - zcurr) / BS_3;
+		jcurr = (global_id - zcurr) / BS_3; 
+		k = 1;
 	}
 	else if (global_id >= BS_2*BS_3 && global_id < 2 * BS_2*BS_3){
-		k = 2;
+		ki = 2;
 		global_id -= BS_2*BS_3;
 		icurr = BS_1-1;
 		zcurr = global_id%BS_3;
 		jcurr = (global_id - zcurr) / BS_3;
+		k = 1;
 	}
 	else if (global_id >= 2*BS_2*BS_3 && global_id < 2 * BS_2*BS_3+BS_1*BS_3){
-		k = 3;
+		ki = 3;
 		global_id -= 2*BS_2*BS_3;
 		jcurr = 0;
 		zcurr = global_id%BS_3;
 		icurr = (global_id - zcurr) / BS_3;
+		k = 1;
 	}
 	else if (global_id >= 2 * BS_2*BS_3 + BS_1*BS_3 && global_id < 2 * BS_2*BS_3 + 2*BS_1*BS_3){
-		k = 4;
+		ki = 4;
 		global_id -= 2 * BS_2*BS_3 + BS_1*BS_3;
 		jcurr = BS_2-1;
 		zcurr = global_id%BS_3;
 		icurr = (global_id - zcurr) / BS_3;
+		k = 1;
 	}
 	else if (global_id >= 2 * BS_2*BS_3 + 2 * BS_1*BS_3 && global_id < 2 * BS_2*BS_3 + 2 * BS_1*BS_3 + BS_1*BS_2){
-		k = 5;
+		ki = 5;
 		global_id -= 2 * BS_2*BS_3 + 2 * BS_1*BS_3;
 		zcurr = 0;
 		jcurr = global_id%BS_2;
 		icurr = (global_id - jcurr) / BS_2;
+		k = 1;
 	}
 	else if (global_id >= 2 * BS_2*BS_3 + 2 * BS_1*BS_3 + BS_1*BS_2 && global_id < 2 * BS_2*BS_3 + 2 * BS_1*BS_3 + 2 * BS_1*BS_2){
-		k = 6;
+		ki = 6;
 		global_id -= 2 * BS_2*BS_3 + 2 * BS_1*BS_3 + BS_1*BS_2;
 		zcurr = BS_3 - 1;
 		jcurr = global_id%BS_2;
 		icurr = (global_id - jcurr) / BS_2;
+		k = 1;
 	}
 	zcurr += N3G;
 	jcurr += N2G;
@@ -3150,16 +3156,16 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			#if( N1G > 0 )
-			if (k == 2) U[k] -= Dt*F1[k*(ksize)+global_id + isize] / dx_1;
-			if (k == 1) U[k] += Dt*F1[k*(ksize)+global_id] / dx_1;	
+			if (ki == 2) U[k] -= Dt*F1[k*(ksize)+global_id + isize] / dx_1;
+			if (ki == 1) U[k] += Dt*F1[k*(ksize)+global_id] / dx_1;	
 			#endif
 			#if( N2G > 0 )
-			if (k == 4)U[k] -= Dt*F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] / dx_2;
-			if (k == 3)U[k] += Dt*F2[k*(ksize)+global_id] / dx_2;
+			if (ki == 4)U[k] -= Dt*F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] / dx_2;
+			if (ki == 3)U[k] += Dt*F2[k*(ksize)+global_id] / dx_2;
 			#endif
 			#if( N3G > 0 )
-			if (k == 6)U[k] -= Dt*F3[k*(ksize)+global_id + 1] / dx_3;
-			if (k == 5)U[k] += Dt*F3[k*(ksize)+global_id] / dx_3;
+			if (ki == 6)U[k] -= Dt*F3[k*(ksize)+global_id + 1] / dx_3;
+			if (ki == 5)U[k] += Dt*F3[k*(ksize)+global_id] / dx_3;
 			#endif
 		}
 
