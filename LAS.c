@@ -133,7 +133,7 @@ void set_prestep(void){
 	#if(PRESTEP2)
 	int i, j;
 	for (n = 0; n < n_active; n++){
-		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && block[n_ord[n]][AMR_PRESTEP] == 0){
+		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == 0 && block[n_ord[n]][AMR_PRESTEP] == 0 && block[n_ord[n]][AMR_TIMELEVEL]>1){
 			for (i = AMR_NBR1; i <= AMR_NBR6; i++){
 				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
 					block[n_ord[n]][AMR_PRESTEP] = 1;

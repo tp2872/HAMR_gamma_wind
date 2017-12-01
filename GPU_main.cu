@@ -1722,7 +1722,7 @@ void GPU_fixup(int flag, int n, double Dt)
 void GPU_cleanup_post(int n)
 {
 	int nr_workgroups_local[1];
-	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - (2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)) % LOCAL_WORK_SIZE) + 2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N2G)*(BS_3 + 2 * N3G) + 2 * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)) / LOCAL_WORK_SIZE;
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)) / LOCAL_WORK_SIZE;
 	//cudaSetDevice(block[n][AMR_GPU]);
 	cleanup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[n] >> > (BufferF1_1[n], BufferF2_1[n], BufferF3_1[n], BufferE_1[n]);
 	//cudaDeviceSynchronize();
