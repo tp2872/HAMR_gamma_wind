@@ -561,7 +561,6 @@ void GPU_step_ch()
 		}
 		#endif
 		#endif
-		//for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_cleanup_post(n_ord[n]);
 
 		//Evolve magnetic fields at boundary
 		for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_consttransport3(1,dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
