@@ -722,7 +722,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				dq1[k] = slope_lim(receive_local[k*(1 + REF_1)*(1 + REF_3)*(j2 - j1) + ij*(1 + REF_1)*(1 + REF_3) + (ii - REF_1)*(1 + REF_3) + (iz)], receive_local[k*(1 + REF_1)*(1 + REF_3)*(j2 - j1) + ij*(1 + REF_1)*(1 + REF_3) + (ii)*(1 + REF_3) + iz], receive_local[k*(1 + REF_1)*(1 + REF_3)*(j2 - j1) + ij*(1 + REF_1)*(1 + REF_3) + (ii + REF_1)*(1 + REF_3) + (iz)]);
 				dq3[k] = slope_lim(receive_local[k*(1 + REF_1)*(1 + REF_3)*(j2 - j1) + ij*(1 + REF_1)*(1 + REF_3) + (ii)*(1 + REF_3) + (iz - REF_3)], receive_local[k*(1 + REF_1)*(1 + REF_3)*(j2 - j1) + ij*(1 + REF_1)*(1 + REF_3) + (ii)*(1 + REF_3) + iz], receive_local[k*(1 + REF_1)*(1 + REF_3)*(j2 - j1) + ij*(1 + REF_1)*(1 + REF_3) + (ii)*(1 + REF_3) + (iz + REF_3)]);
 			}
-			for (k == 0; k < 3; k++){
+			for (k = 0; k < 3; k++){
 				avg[NPR + k] = 0.5*(ps[k * (ksize)+(icurr - icurr % (1 + REF_1))*isize + (N2G + (1 + PPM - ij) / (1 + PPM)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] + 
 					ps[k * (ksize)+(icurr - icurr % (1 + REF_1))*isize + (ij / (1 + PPM) + N2G + (1 + PPM - ij) / (1 + PPM)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))])*gdet_GPU[k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G];
 				if (ij == 0){

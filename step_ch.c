@@ -484,7 +484,7 @@ void GPU_step_ch()
 		//Post-stepping when having 2nd order time accuracy at boundary
 		#if(PRESTEP2)
 		//If block is prestepped send non-corrected boundary cells to blocks with finer timelevels for interpolation in time
-		/*for (n = 0; n < n_active; n++){
+		for (n = 0; n < n_active; n++){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (prestep_full[n_ord[n]]==1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
 			else if (prestep_half[n_ord[n]] == 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
@@ -504,7 +504,7 @@ void GPU_step_ch()
 				if (prestep_full[n_ord[n]] == 1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
 				else if (prestep_half[n_ord[n]] == 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 			}
-		}*/
+		}
 
 		//Store difference between evolved and required flux/electric field in temporary array
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){

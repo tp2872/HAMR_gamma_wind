@@ -153,6 +153,10 @@ void set_prestep(void){
 					}
 				}
 			}
+			if (block[n_ord[n]][AMR_POLE] > 0 && block[n_ord[n]][AMR_PRESTEP] == 0){
+				block[n_ord[n]][AMR_PRESTEP] = 1;
+				blocks_this_timestep++;
+			}
 			if (block[n_ord[n]][AMR_PRESTEP] == 1) block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
 		}
 	}

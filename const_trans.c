@@ -117,14 +117,14 @@ void E_average(void){
 	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB];
 
 	//Read in average value of E1 at pole for every block on node
-	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1 || prestep_half[n_ord[n]] == 1){
 		read_E_avg(E_avg1, E_avg2, n_ord[n]);
 	}
 
 	//If block is not on node send the data to other node over MPI
 	for (i = 0; i < NB_1; i++){
 		//Which nodes have an active block around a slice in phi for a given i
-		if (nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1){
+		if ((nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
 			for (u = 0; u < numtasks; u++){
 				send_tag1[u] = 0;
 				for (z = 0; z < NB_3; z++){
@@ -147,7 +147,7 @@ void E_average(void){
 				}
 			}
 		}
-		if (nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1){
+		if ((nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == 0)){
 			for (u = 0; u < numtasks; u++){
 				send_tag2[u] = 0;
 				for (z = 0; z < NB_3; z++){
@@ -174,7 +174,7 @@ void E_average(void){
 
 	for (i = 0; i < NB_1; i++){
 		//Which nodes have an active block around a slice in phi for a given i
-		if (nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1){
+		if ((nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
 			for (u = 0; u < numtasks; u++){
 				send_tag1[u] = 0;
 				for (z = 0; z < NB_3; z++){
@@ -190,7 +190,7 @@ void E_average(void){
 			}
 		}
 
-		if (nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1){
+		if ((nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == 0)){
 			for (u = 0; u < numtasks; u++){
 				send_tag2[u] = 0;
 				for (z = 0; z < NB_3; z++){
@@ -208,7 +208,7 @@ void E_average(void){
 	}
 
 	//Average the first component of the E_field for both poles
-	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
+	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 || prestep_half[n_ord[n]] == 1){
 		if (block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
 			z_max = NB_3;
 			for (z = 0; z < z_max; z++){
@@ -233,7 +233,7 @@ void E_average(void){
 	}
 
 	//Write average value of E1 at pole for every block on node
-	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
+	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]]==1 || prestep_half[n_ord[n]]==1){
 		write_E_avg(E_avg1_new, E_avg2_new, n_ord[n]);
 	}
 }

@@ -149,7 +149,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NONSYMMETRIC (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (0)
+#define TRANS_BOUND (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
