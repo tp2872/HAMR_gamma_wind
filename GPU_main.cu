@@ -1395,6 +1395,9 @@ void GPU_consttransport_bound(void){
 	int n;
 
 	gpu = 1;
+#if(TRANS_BOUND)
+	E_average();
+#endif
 	#if(PRESTEP)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
@@ -1563,9 +1566,7 @@ void GPU_consttransport_bound(void){
 	#endif
 	#endif
 	#endif
-	#if(TRANS_BOUND)
-	E_average();
-	#endif
+
 }
 
 void GPU_consttransport1(int flag, double Dt, int n){

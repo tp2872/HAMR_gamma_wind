@@ -153,7 +153,7 @@ void set_prestep(void){
 					}
 				}
 			}
-			if (block[n_ord[n]][AMR_POLE] > 0 && block[n_ord[n]][AMR_PRESTEP] == 0){
+			if (block[n_ord[n]][AMR_POLE] > 0){
 				block[n_ord[n]][AMR_PRESTEP] = 1;
 				blocks_this_timestep++;
 			}
