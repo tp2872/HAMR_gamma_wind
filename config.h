@@ -78,12 +78,12 @@ Numerical Parameters section
 #define NB_3 10
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS 3
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1

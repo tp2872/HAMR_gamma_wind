@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			restart_write(); //do restart dumb simultaneous with log
+			//restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 		

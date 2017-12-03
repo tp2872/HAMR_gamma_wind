@@ -3158,19 +3158,15 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
 				#if( N1G > 0 )
-				if (ki == 2) U[k] -= Dt*F1[k*(ksize)+global_id + isize] / dx_1;
-				if (ki == 1) U[k] += Dt*F1[k*(ksize)+global_id] / dx_1;
+				U[k] -= Dt*(F1[k*(ksize)+global_id + isize] - F1[k*(ksize)+global_id]) / dx_1;
 				#endif
 				#if( N2G > 0 )
-				if (ki == 4)U[k] -= Dt*F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] / dx_2;
-				if (ki == 3)U[k] += Dt*F2[k*(ksize)+global_id] / dx_2;
+				U[k] -= Dt*(F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] - F2[k*(ksize)+global_id]) / dx_2;
 				#endif
 				#if( N3G > 0 )
-				if (ki == 6)U[k] -= Dt*F3[k*(ksize)+global_id + 1] / dx_3;
-				if (ki == 5)U[k] += Dt*F3[k*(ksize)+global_id] / dx_3;
+				U[k] -= Dt*(F3[k*(ksize)+global_id + 1] - F3[k*(ksize)+global_id]) / dx_3;
 				#endif
 			}
-
 
 			#if(STAGGERED)
 			U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;

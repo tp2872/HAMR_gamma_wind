@@ -5,16 +5,16 @@ extern "C" {
 
 void GPU_init(void)
 {
-	int j, pos;
+	//int j, pos;
 	
 	//Create concurrent commandqueues
 	////cudaSetDevice(local_rank%N_GPU);
 	//for (j = 0; j < NQ; j++) cudaStreamCreate(&commandQueue[j]);
 
-	for (j = 0; j < numdevices; j++){
+	//for (j = 0; j < numdevices; j++){
 		//cudaDeviceCanAccessPeer(&pos, local_rank%numdevices, j);
 		//if (pos==1) cudaDeviceEnablePeerAccess(j, 0);
-	}
+	//}
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
@@ -1395,9 +1395,10 @@ void GPU_consttransport_bound(void){
 	int n;
 
 	gpu = 1;
-#if(TRANS_BOUND)
+	#if(TRANS_BOUND)
 	E_average();
-#endif
+	#endif
+
 	#if(PRESTEP)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
@@ -1764,13 +1765,13 @@ void GPU_boundprim(int bound_force)
 	#endif
 
 	//For last timestep do not receive synchronized electrice fields 
+	if (rank == 0){
+		begin2 =clock();
+	}
 	#if(PRESTEP)
 	rc = 0;
 	//MPI communication
 	//mpi_synch();
-	if (rank == 0){
-		begin2 =clock();
-	}
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){

@@ -79,6 +79,11 @@ void const_transport1(double(*restrict pb[NB])[NPR], int n){
 void const_transport_bound(void){
 	int n;
 	gpu = 0;
+
+	#if(TRANS_BOUND)
+	E_average();
+	#endif
+
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_send_corn(E_corn, Bufferdq_1, n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E3_receive_corn(E_corn, Bufferdq_1, n_ord[n], 1);
@@ -106,10 +111,6 @@ void const_transport_bound(void){
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, Bufferdq_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)E2_receive_corn(E_corn, Bufferdq_1, n_ord[n], 2);
 	#endif	
-	#endif
-
-	#if(TRANS_BOUND)
-	E_average();
 	#endif
 }
 

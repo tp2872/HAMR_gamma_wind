@@ -952,6 +952,7 @@ void check_refcrit(void);
 void free_arrays(int n);
 void set_timelevel_jet(void);
 void set_prestep(void);
+void prestep_bound(void);
 void mpi_synch(void);
 void set_timelevel(void);
 void rm_order(void);

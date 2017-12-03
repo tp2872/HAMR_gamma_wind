@@ -436,7 +436,7 @@ void set_AMR(void){
 
 }
 
-#define MAX_BLOCKS (36*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define MAX_BLOCKS (100*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 void balance_load(void){
 	int i, node, tt, fp, ip, y, rem, nr_timesteps, n_active_localsteps[NB], max_timelevel;
 	int i1, j1, z1, k, n,u,b,g,stride;
@@ -455,6 +455,7 @@ void balance_load(void){
 	int n_active_local_min = 1;
 
 	do{
+		//Strictly adhere to z-order
 		/*if ((n_active_local_max / ((double)AMR_MAXTIMELEVEL) > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2)timelevel_cutoff /= 2;
 		if (n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
@@ -488,6 +489,8 @@ void balance_load(void){
 		}
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
+
+		//Load balance for uniform load over timesteps
 		/*if (n_active_local_max > MAX_BLOCKS / ((double)AMR_MAXTIMELEVEL) || (n_active_local_min == 0 && n_active_total > numtasks)) timelevel_cutoff /= 2;
 		n_active_total_steps = 0;
 		n_active_local_max = 0;
@@ -558,7 +561,7 @@ void balance_load(void){
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);*/
 		
-		/*First make a z-order curve for each timelevel seperately*/
+		/*First make a z-order curve for each timelevel seperately, then load balance for timesteps. This is the best and most advanced method*/
 		if ((n_active_local_max / ((double)AMR_MAXTIMELEVEL) > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2)timelevel_cutoff /= 2;
 		for (i = 0; i <= round(log(AMR_MAXTIMELEVEL) / log(2)); i++){
 			n_active_total_t[i] = 0;
@@ -635,7 +638,7 @@ void balance_load(void){
 	} while ((n_active_local_max > MAX_BLOCKS || (n_active_local_min == 0 && n_active_total > numtasks)) && timelevel_cutoff >= 2);
 	if (rank == 0 && timelevel_cutoff != AMR_MAXTIMELEVEL) fprintf(stderr, "Error in balance_load. Due to too little/many blocks the maximum timelevel can't be honoured and the hierarchical timestepping is downgraded! \n");
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
-	if (rank == 0) fprintf(stderr, "Load balance started, timelevel_cutoff %d %d %d! \n", timelevel_cutoff, n_active_local_min, n_active_local_max);
+	if (rank == 0) fprintf(stderr, "Load balance started, timelevel_cutoff %d! \n", timelevel_cutoff);
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
@@ -726,9 +729,6 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
 
 	bound_prim(p, 1);
-	MPI_Allreduce(MPI_IN_PLACE, &total_steps, 1, MPI_INT, MPI_SUM, mpi_cartcomm);
-
-	if (rank == 0) fprintf(stderr, "Number of active blocks (total, min,max): %d %d %d \n", n_active_total, min1, max1);
 	#if(GPU_ENABLED)
 	GPU_boundprim(1);
 	#endif
@@ -1630,7 +1630,7 @@ void check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define DENSITY_CUTOFF 0.0000001
 #else
-#define DENSITY_CUTOFF 0.5
+#define DENSITY_CUTOFF 16.0
 #endif
 
 //Refine on basis of some criteria rhomax (not necessary to use rho though, can also be something different)
@@ -1790,6 +1790,7 @@ void check_refcrit(void){
 			#if(GPU_ENABLED)
 			balance_load_gpu();
 			#endif
+			pre_refine();
 		}
 	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count>0);
 
