@@ -981,11 +981,11 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 
 //Boundary transfer related
 void bound_send1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n, int prestep);
-void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n);
+void bound_rec1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int bound_force, int n);
 void bound_send2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n, int prestep);
-void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n);
+void bound_rec2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int bound_force, int n);
 void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int n, int prestep);
-void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n);
+void bound_rec3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int bound_force, int n);
 void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
 void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
 void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2);
@@ -998,12 +998,12 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int reverse);
 void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offset, int j1, int j2, int z_offset, int z1, int z2, int jsize, int zsize, double *receive[NB], double *tempreceive[NB], double(*restrict prim[NB])[NPR],
 	double **Bufferp, double **Bufferboundreceive, double **tempBufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
-void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
-void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
-void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR], double(*restrict psim[NB])[NDIM],
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR], double(*restrict psim[NB])[NDIM],
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
+void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR], double(*restrict psim[NB])[NDIM],
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent1, cudaEvent_t *boundevent2, int mpi);
 
 void flux_send1(double(*restrict F1[NB])[NPR], double * Bufferp[NB], int n);
 void flux_rec1(double(*restrict F1[NB])[NPR], double * Bufferp[NB], int n, int calc_corr);

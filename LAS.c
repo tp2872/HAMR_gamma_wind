@@ -140,13 +140,13 @@ void set_prestep(void){
 					blocks_this_timestep++;
 					break;
 				}
-				if (block[block[n_ord[n]][i]][AMR_PARENT] >= 0 && block[block[block[n_ord[n]][i]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[block[n_ord[n]][i]][AMR_PARENT]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
+				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_PARENT] >= 0 && block[block[block[n_ord[n]][i]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[block[n_ord[n]][i]][AMR_PARENT]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
 					block[n_ord[n]][AMR_PRESTEP] = 1;
 					blocks_this_timestep++;
 					break;
 				}
 				for (j = AMR_CHILD1; j <= AMR_CHILD8; j++){
-					if (block[block[n_ord[n]][i]][j] >= 0 && block[block[block[n_ord[n]][i]][j]][AMR_ACTIVE] == 1 && block[block[block[n_ord[n]][i]][j]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
+					if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][j] >= 0 && block[block[block[n_ord[n]][i]][j]][AMR_ACTIVE] == 1 && block[block[block[n_ord[n]][i]][j]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
 						block[n_ord[n]][AMR_PRESTEP] = 1;
 						blocks_this_timestep++;
 						break;

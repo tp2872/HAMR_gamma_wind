@@ -2160,17 +2160,8 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int jsize = BS_3 + 2 * N3G;
-	double v[NDIM], pb[NPR];
-	int k;
-	struct of_geom geom;
 
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G + D1 && jcurr<BS_2 + N2G + D2  && zcurr<BS_3 + N3G + D3){
-		for (k = 0; k<NPR; k++){
-			pb[k] = pb_i[k*(ksize)+global_id];
-		}
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
-		ucon_calc(pb, &geom, v);
-
 		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2*(ksize)+global_id];
 		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize*D2] - F3[B2*(ksize)+global_id - jsize*D2];
 		double dE_RIGHT_13_1 = F3[B2*(ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
@@ -2196,18 +2187,18 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		double dE_RIGHT_32_1 = F2[B1*(ksize)+global_id + D2*jsize - D2*jsize] - E_cent[3 * (ksize)+global_id - D2*jsize];
 		double dE_RIGHT_32_2 = F2[B1*(ksize)+global_id + D2*jsize - D1*isize - D2*jsize] - E_cent[3 * (ksize)+global_id - D1*isize - D2*jsize];
 
-		emf[1 * (ksize)+global_id] = 0.25*((-F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(v[2] <= 0.0) + dE_LEFT_13_2* (double)(v[2]>0.0)))
-			+ (-F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(v[2] <= 0.0) + dE_RIGHT_13_2* (double)(v[2]>0.0))) +
-			+(F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(v[3] <= 0.0) + dE_LEFT_12_2* (double)(v[3]>0.0)))
-			+ (F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(v[3] <= 0.0) + dE_RIGHT_12_2* (double)(v[3]>0.0))));
-		emf[2 * (ksize)+global_id] = 0.25*((-F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(v[3] <= 0.0) + dE_LEFT_21_2* (double)(v[3]>0.0)))
-			+ (-F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(v[3] <= 0.0) + dE_RIGHT_21_2* (double)(v[3]>0.0)))
-			+ (F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(v[1] <= 0.0) + dE_LEFT_23_2* (double)(v[1]>0.0)))
-			+ (F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(v[1] <= 0.0) + dE_RIGHT_23_2* (double)(v[1]>0.0))));
-		emf[3 * (ksize)+global_id] = 0.25*((F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(v[2] <= 0.0) + dE_LEFT_31_2* (double)(v[2]>0.0)))
-			+ (F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(v[2] <= 0.0) + dE_RIGHT_31_2* (double)(v[2]>0.0)))
-			+ (-F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(v[1] <= 0.0) + dE_LEFT_32_2* (double)(v[1]>0.0)))
-			+ (-F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(v[1] <= 0.0) + dE_RIGHT_32_2* (double)(v[1]>0.0))));
+		emf[1 * (ksize)+global_id] = 0.25*((-F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
+			+ (-F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*(ksize)+global_id - D3]>0.0))) +
+			+(F3[B2*(ksize)+global_id] - (dE_LEFT_12_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
+			+ (F3[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO*(ksize)+global_id - D2*jsize]>0.0))));
+		emf[2 * (ksize)+global_id] = 0.25*((-F3[B1*(ksize)+global_id] - (dE_LEFT_21_1* (double)(F3[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO*(ksize)+global_id]>0.0)))
+			+ (-F3[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO*(ksize)+global_id - D1*isize]>0.0)))
+			+ (F1[B3*(ksize)+global_id] - (dE_LEFT_23_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
+			+ (F1[B3*(ksize)+global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO*(ksize)+global_id - D3]>0.0))));
+		emf[3 * (ksize)+global_id] = 0.25*((F2[B1*(ksize)+global_id] - (dE_LEFT_31_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
+			+ (F2[B1*(ksize)+global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO*(ksize)+global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO*(ksize)+global_id - D1*isize]>0.0)))
+			+ (-F1[B2*(ksize)+global_id] - (dE_LEFT_32_1* (double)(F1[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO*(ksize)+global_id]>0.0)))
+			+ (-F1[B2*(ksize)+global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO*(ksize)+global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO*(ksize)+global_id - D2*jsize] >0.0))));
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;

@@ -457,8 +457,8 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	}
 }
 
-void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int mpi){
+void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR], double(*restrict psim[NB])[NDIM],
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int mpi){
 	int n_rec2 = n;
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	if (gpu == 1){
@@ -467,7 +467,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		if (block[n][AMR_NODE]==block[n_rec][AMR_NODE])cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		//}
 		int work_size = (j2 - j1)*(z2 - z1);
-		 unpackreceivecoarse1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferboundreceive[0],
+		unpackreceivecoarse1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
 		 ////cudaDeviceSynchronize();
 		 status = cudaGetLastError();
@@ -534,8 +534,8 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 	}
 }
 
-void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int mpi){
+void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR], double(*restrict psim[NB])[NDIM],
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int mpi){
 	int n_rec2 = n;
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	if (gpu == 1){
@@ -544,7 +544,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		if (block[n][AMR_NODE]==block[n_rec][AMR_NODE]) cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		//}
 		int work_size = (i2 - i1)*(z2 - z1);
-		 unpackreceivecoarse2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferboundreceive[0],
+		unpackreceivecoarse2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
 		 //cudaDeviceSynchronize();
 		 status = cudaGetLastError();
@@ -611,8 +611,8 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 	}
 }
 
-void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR],
-	double **Bufferp, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int mpi){
+void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB], double *temp1receive[NB], double *temp2receive[NB], double(*restrict prim[NB])[NPR], double(*restrict psim[NB])[NDIM],
+	double **Bufferp, double **Bufferps, double **Bufferboundreceive, double **temp1Bufferboundreceive, double **temp2Bufferboundreceive, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int mpi){
 	int n_rec2 = n;
 	if (block[n_rec][AMR_NODE] == rank) n_rec2 = n_rec;
 	if (gpu == 1){
@@ -621,7 +621,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		if (block[n][AMR_NODE]==block[n_rec][AMR_NODE])cudaStreamWaitEvent(commandQueueGPU[n], boundevent[0], 0);
 		//}
 		int work_size = (i2 - i1)*(j2 - j1);
-		 unpackreceivecoarse3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferboundreceive[0],
+		unpackreceivecoarse3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp_1[n], Bufferph_1[n], Bufferps_1[n], Bufferpsh_1[n], Bufferp[0], Bufferps[0], Bufferboundreceive[0],
 			temp1Bufferboundreceive[0], temp2Bufferboundreceive[0], Buffergdet[n], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size);
 		 //cudaDeviceSynchronize();
 		 status = cudaGetLastError();

@@ -921,7 +921,7 @@ void bound_send3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM]
 }
 
 /*Receive boundaries for compute nodes through MPI*/
-void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n){
+void bound_rec1(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int bound_force, int n){
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
@@ -1009,13 +1009,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][21], &Statbound[n][21]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_1, send4_5, tempreceive2_1, prim,
-						&(Bufferp[n]), &(Bufferrec2_1[n]), &(Buffersend4_5[n]), &(tempBufferrec2_1[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_1, send4_5, tempreceive2_1, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec2_1[n]), &(Buffersend4_5[n]), &(tempBufferrec2_1[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_1, receive2_1, tempreceive2_1, prim,
-						&(Bufferp[n]), &(Buffersend2_1[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_1[n]), &(tempBufferrec2_1[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][21]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][21]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_1, receive2_1, tempreceive2_1, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend2_1[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_1[n]), &(tempBufferrec2_1[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][21]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][21]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n && REF_3 == 1){
@@ -1024,13 +1024,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][22], &Statbound[n][22]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_2, send4_6, tempreceive2_2, prim,
-						&(Bufferp[n]), &(Bufferrec2_2[n]), &(Buffersend4_6[n]), &(tempBufferrec2_2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_2, send4_6, tempreceive2_2, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec2_2[n]), &(Buffersend4_6[n]), &(tempBufferrec2_2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_2, receive2_2, tempreceive2_2, prim,
-						&(Bufferp[n]), &(Buffersend2_2[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_2[n]), &(tempBufferrec2_2[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][22]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][22]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_2, receive2_2, tempreceive2_2, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend2_2[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_2[n]), &(tempBufferrec2_2[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][22]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][22]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n && REF_2 == 1){
@@ -1039,13 +1039,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][23], &Statbound[n][23]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_3, send4_7, tempreceive2_3, prim,
-						&(Bufferp[n]), &(Bufferrec2_3[n]), &(Buffersend4_7[n]), &(tempBufferrec2_3[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_3, send4_7, tempreceive2_3, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec2_3[n]), &(Buffersend4_7[n]), &(tempBufferrec2_3[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_3, receive2_3, tempreceive2_3, prim,
-						&(Bufferp[n]), &(Buffersend2_3[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_3[n]), &(tempBufferrec2_3[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][23]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][23]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_3, receive2_3, tempreceive2_3, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend2_3[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_3[n]), &(tempBufferrec2_3[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][23]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][23]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_2 == 1 && REF_3 == 1){
@@ -1054,13 +1054,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][24], &Statbound[n][24]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_4, send4_8, tempreceive2_4, prim,
-						&(Bufferp[n]), &(Bufferrec2_4[n]), &(Buffersend4_8[n]), &(tempBufferrec2_4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive2_4, send4_8, tempreceive2_4, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec2_4[n]), &(Buffersend4_8[n]), &(tempBufferrec2_4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR4]][AMR_PARENT], -N1G, 0, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_4, receive2_4, tempreceive2_4, prim,
-						&(Bufferp[n]), &(Buffersend2_4[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_4[n]), &(tempBufferrec2_4[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][24]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][24]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, (N2_GPU[n] / (1 + REF_2) + 2 * N2G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send2_4, receive2_4, tempreceive2_4, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend2_4[block[block[n][AMR_NBR4]][AMR_PARENT]]), &(Bufferrec2_4[n]), &(tempBufferrec2_4[n]), &(boundevent1[block[block[n][AMR_NBR4]][AMR_PARENT]][24]), &(boundevent2[block[block[n][AMR_NBR4]][AMR_PARENT]][24]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 		}
@@ -1152,13 +1152,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][45], &Statbound[n][45]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_5, send2_1, tempreceive4_5, prim,
-						&(Bufferp[n]), &(Bufferrec4_5[n]), &(Buffersend2_1[n]), &(tempBufferrec4_5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_5, send2_1, tempreceive4_5, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec4_5[n]), &(Buffersend2_1[n]), &(tempBufferrec4_5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_5, receive4_5, tempreceive4_5, prim,
-						&(Bufferp[n]), &(Buffersend4_5[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_5[n]), &(tempBufferrec4_5[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][45]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][45]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_5, receive4_5, tempreceive4_5, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend4_5[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_5[n]), &(tempBufferrec4_5[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][45]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][45]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_3 == 1){
@@ -1167,13 +1167,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][46], &Statbound[n][46]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_6, send2_2, tempreceive4_6, prim,
-						&(Bufferp[n]), &(Bufferrec4_6[n]), &(Buffersend2_2[n]), &(tempBufferrec4_6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_6, send2_2, tempreceive4_6, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec4_6[n]), &(Buffersend2_2[n]), &(tempBufferrec4_6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_6, receive4_6, tempreceive4_6, prim,
-						&(Bufferp[n]), &(Buffersend4_6[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_6[n]), &(tempBufferrec4_6[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][46]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][46]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_6, receive4_6, tempreceive4_6, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend4_6[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_6[n]), &(tempBufferrec4_6[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][46]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][46]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_2 == 1){
@@ -1182,13 +1182,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][47], &Statbound[n][47]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_7, send2_3, tempreceive4_7, prim,
-						&(Bufferp[n]), &(Bufferrec4_7[n]), &(Buffersend2_3[n]), &(tempBufferrec4_7[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_7, send2_3, tempreceive4_7, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec4_7[n]), &(Buffersend2_3[n]), &(tempBufferrec4_7[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_7, receive4_7, tempreceive4_7, prim,
-						&(Bufferp[n]), &(Buffersend4_7[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_7[n]), &(tempBufferrec4_7[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][47]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][47]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_7, receive4_7, tempreceive4_7, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend4_7[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_7[n]), &(tempBufferrec4_7[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][47]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][47]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_2 == 1 && REF_3 == 1){
@@ -1197,13 +1197,13 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][48], &Statbound[n][48]);
 					}
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_8, send2_4, tempreceive4_8, prim,
-						&(Bufferp[n]), &(Bufferrec4_8[n]), &(Buffersend2_4[n]), &(tempBufferrec4_8[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive4_8, send2_4, tempreceive4_8, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec4_8[n]), &(Buffersend2_4[n]), &(tempBufferrec4_8[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse1(n, block[block[n][AMR_NBR2]][AMR_PARENT], N1_GPU[n], N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_8, receive4_8, tempreceive4_8, prim,
-						&(Bufferp[n]), &(Buffersend4_8[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_8[n]), &(tempBufferrec4_8[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][48]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][48]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, N3_GPU[n] + N3G, N2_GPU[n] / (1 + REF_2) + 2 * N2G, (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send4_8, receive4_8, tempreceive4_8, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend4_8[block[block[n][AMR_NBR2]][AMR_PARENT]]), &(Bufferrec4_8[n]), &(tempBufferrec4_8[n]), &(boundevent1[block[block[n][AMR_NBR2]][AMR_PARENT]][48]), &(boundevent2[block[block[n][AMR_NBR2]][AMR_PARENT]][48]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 		}
@@ -1212,7 +1212,7 @@ void bound_rec1(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 #endif
 }
 
-void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n){
+void bound_rec2(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int bound_force, int n){
 #if (MPI_enable)
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0){
@@ -1311,13 +1311,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][31], &Statbound[n][31]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_1, send1_3, tempreceive3_1, prim,
-							&(Bufferp[n]), &(Bufferrec3_1[n]), &(Buffersend1_3[n]), &(tempBufferrec3_1[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_1, send1_3, tempreceive3_1, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec3_1[n]), &(Buffersend1_3[n]), &(tempBufferrec3_1[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_1, receive3_1, tempreceive3_1, prim,
-							&(Bufferp[n]), &(Buffersend3_1[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_1[n]), &(tempBufferrec3_1[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][31]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][31]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_1, receive3_1, tempreceive3_1, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend3_1[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_1[n]), &(tempBufferrec3_1[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][31]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][31]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n && REF_3 == 1){
@@ -1326,13 +1326,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][32], &Statbound[n][32]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_2, send1_4, tempreceive3_2, prim,
-							&(Bufferp[n]), &(Bufferrec3_2[n]), &(Buffersend1_4[n]), &(tempBufferrec3_2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_2, send1_4, tempreceive3_2, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec3_2[n]), &(Buffersend1_4[n]), &(tempBufferrec3_2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_2, receive3_2,tempreceive3_2, prim,
-							&(Bufferp[n]), &(Buffersend3_2[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_2[n]), &(tempBufferrec3_2[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][32]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][32]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_2, receive3_2, tempreceive3_2, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend3_2[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_2[n]), &(tempBufferrec3_2[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][32]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][32]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n && REF_1 == 1){
@@ -1341,13 +1341,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][35], &Statbound[n][35]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_5, send1_7, tempreceive3_5, prim,
-							&(Bufferp[n]), &(Bufferrec3_5[n]), &(Buffersend1_7[n]), &(tempBufferrec3_5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_5, send1_7, tempreceive3_5, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec3_5[n]), &(Buffersend1_7[n]), &(tempBufferrec3_5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_5, receive3_5, tempreceive3_5, prim,
-							&(Bufferp[n]), &(Buffersend3_5[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_5[n]), &(tempBufferrec3_5[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][35]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][35]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_5, receive3_5, tempreceive3_5, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend3_5[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_5[n]), &(tempBufferrec3_5[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][35]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][35]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_1 == 1 && REF_3 == 1){
@@ -1356,13 +1356,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][36], &Statbound[n][36]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_6, send1_8, tempreceive3_6, prim,
-							&(Bufferp[n]), &(Bufferrec3_6[n]), &(Buffersend1_8[n]), &(tempBufferrec3_6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive3_6, send1_8, tempreceive3_6, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec3_6[n]), &(Buffersend1_8[n]), &(tempBufferrec3_6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR1]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, 0,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_6, receive3_6, tempreceive3_6, prim,
-							&(Bufferp[n]), &(Buffersend3_6[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_6[n]), &(tempBufferrec3_6[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][36]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][36]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send3_6, receive3_6, tempreceive3_6, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend3_6[block[block[n][AMR_NBR1]][AMR_PARENT]]), &(Bufferrec3_6[n]), &(tempBufferrec3_6[n]), &(boundevent1[block[block[n][AMR_NBR1]][AMR_PARENT]][36]), &(boundevent2[block[block[n][AMR_NBR1]][AMR_PARENT]][36]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 			}
@@ -1466,13 +1466,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][13], &Statbound[n][13]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_3, send3_1, tempreceive1_3, prim,
-							&(Bufferp[n]), &(Bufferrec1_3[n]), &(Buffersend3_1[n]), &(tempBufferrec1_3[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_3, send3_1, tempreceive1_3, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec1_3[n]), &(Buffersend3_1[n]), &(tempBufferrec1_3[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_3, receive1_3, tempreceive1_3, prim,
-							&(Bufferp[n]), &(Buffersend1_3[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_3[n]), &(tempBufferrec1_3[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][13]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][13]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_3, receive1_3, tempreceive1_3, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend1_3[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_3[n]), &(tempBufferrec1_3[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][13]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][13]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_3 == 1){
@@ -1481,13 +1481,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][14], &Statbound[n][14]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_4, send3_2, tempreceive1_4, prim,
-							&(Bufferp[n]), &(Bufferrec1_4[n]), &(Buffersend3_2[n]), &(tempBufferrec1_4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_4, send3_2, tempreceive1_4, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec1_4[n]), &(Buffersend3_2[n]), &(tempBufferrec1_4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_4, receive1_4, tempreceive1_4, prim,
-							&(Bufferp[n]), &(Buffersend1_4[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_4[n]), &(tempBufferrec1_4[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][14]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][14]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_4, receive1_4, tempreceive1_4, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend1_4[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_4[n]), &(tempBufferrec1_4[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][14]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][14]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_1 == 1){
@@ -1496,13 +1496,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][17], &Statbound[n][17]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_7, send3_5, tempreceive1_7, prim,
-							&(Bufferp[n]), &(Bufferrec1_7[n]), &(Buffersend3_5[n]), &(tempBufferrec1_7[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_7, send3_5, tempreceive1_7, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec1_7[n]), &(Buffersend3_5[n]), &(tempBufferrec1_7[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_7, receive1_7, tempreceive1_7, prim,
-							&(Bufferp[n]), &(Buffersend1_7[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_7[n]), &(tempBufferrec1_7[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][17]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][17]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_7, receive1_7, tempreceive1_7, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend1_7[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_7[n]), &(tempBufferrec1_7[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][17]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][17]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_1 == 1 && REF_3 == 1){
@@ -1511,13 +1511,13 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 							MPI_Wait(&boundreqs[n][18], &Statbound[n][18]);
 						}
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_8, send3_6, tempreceive1_8, prim,
-							&(Bufferp[n]), &(Bufferrec1_8[n]), &(Buffersend3_6[n]), &(tempBufferrec1_8[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), receive1_8, send3_6, tempreceive1_8, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec1_8[n]), &(Buffersend3_6[n]), &(tempBufferrec1_8[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 					else{
 						unpack_receive_coarse2(n, block[block[n][AMR_NBR3]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, N2_GPU[n], N2_GPU[n] + N2G,
-							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_8, receive1_8, tempreceive1_8, prim,
-							&(Bufferp[n]), &(Buffersend1_8[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_8[n]), &(tempBufferrec1_8[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][18]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][18]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
+							-N3G, N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N3_GPU[n] / (1 + REF_3) + 2 * N3G), send1_8, receive1_8, tempreceive1_8, prim, ps,
+							&(Bufferp[n]), &(Bufferps[n]), &(Buffersend1_8[block[block[n][AMR_NBR3]][AMR_PARENT]]), &(Bufferrec1_8[n]), &(tempBufferrec1_8[n]), &(boundevent1[block[block[n][AMR_NBR3]][AMR_PARENT]][18]), &(boundevent2[block[block[n][AMR_NBR3]][AMR_PARENT]][18]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL]);
 					}
 				}
 			}
@@ -1526,7 +1526,7 @@ void bound_rec2(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 #endif
 }
 
-void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound_force, int n){
+void bound_rec3(double(*restrict prim[NB])[NPR], double(*restrict ps[NB])[NDIM], double * Bufferp[NB], double * Bufferps[NB], int bound_force, int n){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){
@@ -1612,13 +1612,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][51], &Statbound[n][51]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_1, send6_2, tempreceive5_1, prim,
-						&(Bufferp[n]), &(Bufferrec5_1[n]), &(Buffersend6_2[n]), &(tempBufferrec5_1[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_1, send6_2, tempreceive5_1, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec5_1[n]), &(Buffersend6_2[n]), &(tempBufferrec5_1[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_1, receive5_1, tempreceive5_1, prim,
-						&(Bufferp[n]), &(Buffersend5_1[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_1[n]), &(tempBufferrec5_1[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][51]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][51]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_1, receive5_1, tempreceive5_1, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend5_1[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_1[n]), &(tempBufferrec5_1[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][51]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][51]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n && REF_2 == 1){
@@ -1627,13 +1627,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][53], &Statbound[n][53]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_3, send6_4, tempreceive5_3, prim,
-						&(Bufferp[n]), &(Bufferrec5_3[n]), &(Buffersend6_4[n]), &(tempBufferrec5_3[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_3, send6_4, tempreceive5_3, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec5_3[n]), &(Buffersend6_4[n]), &(tempBufferrec5_3[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_3, receive5_3, tempreceive5_3, prim,
-						&(Bufferp[n]), &(Buffersend5_3[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_3[n]), &(tempBufferrec5_3[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][53]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][53]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_3, receive5_3, tempreceive5_3, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend5_3[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_3[n]), &(tempBufferrec5_3[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][53]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][53]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n && REF_1 == 1){
@@ -1642,13 +1642,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][55], &Statbound[n][55]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_5, send6_6, tempreceive5_5, prim,
-						&(Bufferp[n]), &(Bufferrec5_5[n]), &(Buffersend6_6[n]), &(tempBufferrec5_5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_5, send6_6, tempreceive5_5, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec5_5[n]), &(Buffersend6_6[n]), &(tempBufferrec5_5[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_5, receive5_5, tempreceive5_5, prim,
-						&(Bufferp[n]), &(Buffersend5_5[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_5[n]), &(tempBufferrec5_5[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][55]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][55]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_5, receive5_5, tempreceive5_5, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend5_5[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_5[n]), &(tempBufferrec5_5[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][55]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][55]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_1 == 1 && REF_2 == 1){
@@ -1657,13 +1657,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][57], &Statbound[n][57]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_7, send6_8, tempreceive5_7, prim,
-						&(Bufferp[n]), &(Bufferrec5_7[n]), &(Buffersend6_8[n]), &(tempBufferrec5_7[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive5_7, send6_8, tempreceive5_7, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec5_7[n]), &(Buffersend6_8[n]), &(tempBufferrec5_7[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR6]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_7, receive5_7, tempreceive5_7, prim,
-						&(Bufferp[n]), &(Buffersend5_7[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_7[n]), &(tempBufferrec5_7[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][57]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][57]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
+						-N3G, 0, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send5_7, receive5_7, tempreceive5_7, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend5_7[block[block[n][AMR_NBR6]][AMR_PARENT]]), &(Bufferrec5_7[n]), &(tempBufferrec5_7[n]), &(boundevent1[block[block[n][AMR_NBR6]][AMR_PARENT]][57]), &(boundevent2[block[block[n][AMR_NBR6]][AMR_PARENT]][57]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 		}
@@ -1754,13 +1754,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][62], &Statbound[n][62]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_2, send5_1, tempreceive6_2, prim,
-						&(Bufferp[n]), &(Bufferrec6_2[n]), &(Buffersend5_1[n]), &(tempBufferrec6_2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_2, send5_1, tempreceive6_2, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec6_2[n]), &(Buffersend5_1[n]), &(tempBufferrec6_2[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_2, receive6_2, tempreceive6_2, prim,
-						&(Bufferp[n]), &(Buffersend6_2[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_2[n]), &(tempBufferrec6_2[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][62]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][62]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_2, receive6_2, tempreceive6_2, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend6_2[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_2[n]), &(tempBufferrec6_2[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][62]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][62]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_2 == 1){
@@ -1769,13 +1769,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][64], &Statbound[n][64]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_4, send5_3, tempreceive6_4, prim,
-						&(Bufferp[n]), &(Bufferrec6_4[n]), &(Buffersend5_3[n]), &(tempBufferrec6_4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_4, send5_3, tempreceive6_4, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec6_4[n]), &(Buffersend5_3[n]), &(tempBufferrec6_4[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_4, receive6_4, tempreceive6_4, prim,
-						&(Bufferp[n]), &(Buffersend6_4[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_4[n]), &(tempBufferrec6_4[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][64]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][64]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_4, receive6_4, tempreceive6_4, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend6_4[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_4[n]), &(tempBufferrec6_4[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][64]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][64]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_1 == 1){
@@ -1784,13 +1784,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][66], &Statbound[n][66]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_6, send5_5, tempreceive6_6, prim,
-						&(Bufferp[n]), &(Bufferrec6_6[n]), &(Buffersend5_5[n]), &(tempBufferrec6_6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_6, send5_5, tempreceive6_6, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec6_6[n]), &(Buffersend5_5[n]), &(tempBufferrec6_6[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_6, receive6_6, tempreceive6_6, prim,
-						&(Bufferp[n]), &(Buffersend6_6[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_6[n]), &(tempBufferrec6_6[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][66]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][66]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_6, receive6_6, tempreceive6_6, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend6_6[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_6[n]), &(tempBufferrec6_6[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][66]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][66]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_1 == 1 && REF_2 == 1){
@@ -1799,13 +1799,13 @@ void bound_rec3(double(*restrict prim[NB])[NPR], double * Bufferp[NB], int bound
 						MPI_Wait(&boundreqs[n][68], &Statbound[n][68]);
 					}
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_8, send5_7, tempreceive6_8, prim,
-						&(Bufferp[n]), &(Bufferrec6_8[n]), &(Buffersend5_7[n]), &(tempBufferrec6_8[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), receive6_8, send5_7, tempreceive6_8, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Bufferrec6_8[n]), &(Buffersend5_7[n]), &(tempBufferrec6_8[n]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 				else{
 					unpack_receive_coarse3(n, block[block[n][AMR_NBR5]][AMR_PARENT], -N1G, N1_GPU[n] + N1G, -N2G, N2_GPU[n] + N2G,
-						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_8, receive6_8, tempreceive6_8, prim,
-						&(Bufferp[n]), &(Buffersend6_8[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_8[n]), &(tempBufferrec6_8[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][68]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][68]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
+						N3_GPU[n], N3_GPU[n] + N3G, (N1_GPU[n] / (1 + REF_1) + 2 * N1G), (N2_GPU[n] / (1 + REF_2) + 2 * N2G), send6_8, receive6_8, tempreceive6_8, prim, ps,
+						&(Bufferp[n]), &(Bufferps[n]), &(Buffersend6_8[block[block[n][AMR_NBR5]][AMR_PARENT]]), &(Bufferrec6_8[n]), &(tempBufferrec6_8[n]), &(boundevent1[block[block[n][AMR_NBR5]][AMR_PARENT]][68]), &(boundevent2[block[block[n][AMR_NBR5]][AMR_PARENT]][68]), block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL]);
 				}
 			}
 		}
