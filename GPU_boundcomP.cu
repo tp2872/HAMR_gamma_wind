@@ -248,7 +248,7 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 						0.25*(ps[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + (z1>N3G) + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3]
 						+ ps[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + (z1>N3G) + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][FACE3]
 						+ ps[n][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + (z1>N3G) + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3]
-						+ ps[n][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + (i1>N3G) + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][FACE3]);
+						+ ps[n][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + (z1>N3G) + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][FACE3]);
 #endif
 				}
 			}
