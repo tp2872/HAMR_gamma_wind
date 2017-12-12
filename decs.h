@@ -76,8 +76,6 @@ extern double(*restrict dq[NB])[NPR];
 extern double(*restrict F1[NB])[NPR];
 extern double(*restrict F2[NB])[NPR];
 extern double(*restrict F3[NB])[NPR];
-extern double(*restrict stor1[NB])[NPR];
-extern double(*restrict stor2[NB])[NPR];
 extern int(*restrict pflag[NB]);
 extern double(*restrict conn[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict gcon[NB])[NPG][NDIM][NDIM];

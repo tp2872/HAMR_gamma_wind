@@ -310,7 +310,7 @@ MNEMONICS SECTION
 #define AMR_CORN12 32
 #define AMR_NODE 33
 #define AMR_POLE 34
-#define AMR_GROUP 35
+#define AMR_NUMBER 35
 #define AMR_TIMELEVEL 36
 #define AMR_TAG 37
 #define AMR_CORN1D 38

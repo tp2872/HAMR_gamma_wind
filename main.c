@@ -281,8 +281,6 @@ void set_arrays(int n)
 	pflag[n] = (int(*))calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(int));
 	#if(CPU_OPENMP)
 	#if(STAGGERED)
-	stor1[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
-	stor2[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
 	dE[n] = (double(*)[2][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[2][NDIM][NDIM]));
 	#endif
 	E_corn[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NDIM]));
@@ -805,10 +803,8 @@ void free_arrays(int n)
 	free(F2[n]);
 	free(F3[n]);
 	free(pflag[n]);
-	#if(GPU_BENCHMARK || GPU_DEBUG || CPU_OPENMP)
+	#if(GPU_DEBUG || CPU_OPENMP)
 	#if(STAGGERED)
-	free(stor1[n]);
-	free(stor2[n]);
 	free(dE[n]);
 	#endif
 	free(E_corn[n]);

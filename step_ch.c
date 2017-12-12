@@ -246,7 +246,7 @@ void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], doubl
 	struct of_state q;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel default(none) shared(n,gdet, pi,pb, pf, psf,stor1, stor2, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx, N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel default(none) shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx, N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(2) schedule(static,N1_GPU[n]*N2_GPU[n]/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){

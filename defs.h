@@ -68,8 +68,6 @@ double(*restrict dq[NB])[NPR];
 double(*restrict F1[NB])[NPR];
 double(*restrict F2[NB])[NPR];
 double(*restrict F3[NB])[NPR];
-double(*restrict stor1[NB])[NPR];
-double(*restrict stor2[NB])[NPR];
 int(*restrict pflag[NB]);
 double(*restrict conn[NB])[NDIM][NDIM][NDIM];
 double(*restrict gcon[NB])[NPG][NDIM][NDIM];

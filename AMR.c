@@ -791,6 +791,7 @@ void activate_blocks(void){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active_total
 			n_ord_total[n_active_total] = n;
 			n_ord_total_RM[n_active_total] = n;
+			block[n][AMR_NUMBER] = n_active_total;
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;
 			block[n][AMR_REFINED] = 0;
@@ -1983,7 +1984,7 @@ void check_refcrit(void){
 	//Start very conservatively
 	dt /= 2.;
 	for (n = 0; n < n_active_total; n ++){
-		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+		block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
 	}
 }
 
