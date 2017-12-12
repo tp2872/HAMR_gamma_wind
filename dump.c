@@ -79,7 +79,7 @@ void dump_new(void){
 		fclose(fparam);
 	}
 
-	if (rank == (2%numtasks)){
+	if (rank == (0%numtasks)){
 		FILE *grid;
 		sprintf(filename, "dumps%d/grid", dump_cnt);
 		grid = fopen(filename, "wb");
