@@ -1739,7 +1739,7 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 		vsq += 2.*gcov[5] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 1 - 1]; //1,2
 		vsq += 2.*gcov[6] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //1,3
 		vsq += gcov[7] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 2 - 1]; //2,2
-		vsq += 2 * gcov[8] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //2,3
+		vsq += 2 * gcov[8] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 2 - 1]; //2,3
 		vsq += gcov[9] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 3 - 1]; //1,2
 		
 		vsq = MY_MAX(1.e-13,vsq);
