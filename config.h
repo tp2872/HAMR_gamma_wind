@@ -67,7 +67,7 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Maximum tag number for MPI messages so not to overflow*/
-#define MPI_TAG_MAX 1264576
+#define MPI_TAG_MAX 2264576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
@@ -98,16 +98,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 4
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 64
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
-#define PRESTEP2 1
+#define PRESTEP2 0
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0

@@ -1714,13 +1714,13 @@ void check_refcrit(void){
 				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 				for (task = 0; task < numtasks; task++){
 					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[n_ord_total[n]]);
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task,n_active_total+ n % MPI_TAG_MAX, mpi_cartcomm, &req[n_ord_total[n]]);
 						MPI_Request_free(&req[n_ord_total[n]]);
 					}
 				}
 			}
 			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_active_total + n % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 			}
 		}
 		for (n = 0; n < n_active_total; n++){
@@ -1806,13 +1806,13 @@ void check_refcrit(void){
 				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 				for (task = 0; task < numtasks; task++){
 					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_active_total + n % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 						MPI_Request_free(&req[0]);
 					}
 				}
 			}
 			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_ord_total[n] % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_active_total + n % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 			}
 		}
 		for (n = 0; n < n_active_total; n++){
@@ -1859,9 +1859,9 @@ void check_refcrit(void){
 					//if (rank==0)fprintf(stderr,"check_refcrit %d %d %d \n ", block[n_send][AMR_NODE],node, rank);
 					rc = 0;
 					if (block[n_send][AMR_NODE] == rank){
-						rc += MPI_Isend(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (50 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][598]);
+						rc += MPI_Isend(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (50 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][598]);
 						#if STAGGERED
-						rc += MPI_Isend(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (51 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][597]);
+						rc += MPI_Isend(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (51 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][597]);
 						#endif
 					}
 					if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
@@ -1884,9 +1884,9 @@ void check_refcrit(void){
 						set_arrays(n_send);
 						set_grid(n_send);
 						if (block[n_send][AMR_NODE] >= 0){
-							rc += MPI_Irecv(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][596]);
+							rc += MPI_Irecv(&p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][596]);
 							#if STAGGERED
-							rc += MPI_Irecv(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * NB + n_send) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][595]);
+							rc += MPI_Irecv(&ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n_send][595]);
 							#endif
 						}
 					}
