@@ -77,7 +77,12 @@ int main(int argc, char *argv[])
 		derefine_pole();
 		#endif
 	}
-
+	
+	bound_prim(p, 1);
+	#if(GPU_ENABLED || GPU_DEBUG )
+	GPU_boundprim(1);
+	#endif
+	
 	/* do initial diagnostics */
 	first_dump = 0;
 	diag(INIT_OUT);
@@ -154,8 +159,9 @@ int main(int argc, char *argv[])
 
 			//Safe and exit at end of 24 hour runtime
 			if ((double)(begin2 - end1) > 24.*3600.){
+				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
 				restart_write();
-				//break;
+				break;
 			}
 			begin1 = time(NULL);			
 		}

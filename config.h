@@ -45,6 +45,9 @@ Physical Parameters section
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
 
+/*Runtime in hours*/
+#define RUNTIME (24.0)
+
 /*************************************************************************
 Numerical Parameters section
 *************************************************************************/
@@ -61,13 +64,13 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (1)
+#define V100 (0)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
 
 /*Maximum tag number for MPI messages so not to overflow*/
-#define MPI_TAG_MAX 2264576
+#define MPI_TAG_MAX 22064576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
