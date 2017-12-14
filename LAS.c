@@ -39,8 +39,9 @@ void set_timelevel(void){
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
 	if (nstep > 0){
 		for (n = 0; n < n_active; n++){
+			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
-				if (bdt[n_ord[n]][0] / dt > pow(2, i)){
+				if (bdt[n_ord[n]][0] / dt >=1.0 * pow(2, i)){
 					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
 					break;
 				}

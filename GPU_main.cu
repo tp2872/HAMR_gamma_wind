@@ -1269,7 +1269,7 @@ void GPU_write(int n)
 	cudaMemcpyAsync(BufferKatm[n], Katm_GPU[n], (N1_GPU[n] + 2 * N1G)*sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 	cudaMemcpyAsync(Bufferradius[n], radius_GPU, (N1_GPU[n] + 2 * N1G)*sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[n]);
 
-	//cudaDeviceSynchronize();
+	cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error in GPU_write: %d \n", status);
 }
