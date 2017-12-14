@@ -10,8 +10,8 @@ void pack_send1_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		int work_size = (j2 - j1)*(z2 - z1);
 		 packsend1flux << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
-			cudaEventRecord(boundevent[0]);
-		}
+			 cudaEventRecord(boundevent[0], commandQueueGPU[n]);
+		 }
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "Error fluxsend1: %d \n", status);
@@ -39,8 +39,8 @@ void pack_send2_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		int work_size = (i2 - i1)*(z2 - z1);
 		 packsend2flux << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
-			cudaEventRecord(boundevent[0]);
-		}
+			 cudaEventRecord(boundevent[0], commandQueueGPU[n]);
+		 }
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "Error fluxsend2: %d \n", status);
@@ -68,8 +68,8 @@ void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 		int work_size = (i2 - i1)*(j2 - j1);
 		 packsend3flux << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
-			cudaEventRecord(boundevent[0]);
-		}
+			 cudaEventRecord(boundevent[0], commandQueueGPU[n]);
+		 }
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (cudaGetLastError() != cudaSuccess) fprintf(stderr, "Error fluxsend3: %d \n", status);
@@ -97,8 +97,8 @@ void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		int work_size = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
 		 packsendfluxaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
-			cudaEventRecord(boundevent[0]);
-		}
+			 cudaEventRecord(boundevent[0], commandQueueGPU[n]);
+		 }
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "Error fluxsendaverage1: %d \n", status);
@@ -135,8 +135,8 @@ void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		int work_size = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
 		 packsendfluxaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
-			cudaEventRecord(boundevent[0]);
-		}
+			 cudaEventRecord(boundevent[0], commandQueueGPU[n]);
+		 }
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (cudaGetLastError() != cudaSuccess) fprintf(stderr, "Error fluxsendaverage2: %d \n", status);
@@ -173,8 +173,8 @@ void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, i
 		int work_size = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
 		 packsendfluxaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[n] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
-			cudaEventRecord(boundevent[0]);
-		}
+			 cudaEventRecord(boundevent[0], commandQueueGPU[n]);
+		 }
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
 		if (cudaGetLastError() != cudaSuccess) fprintf(stderr, "Error fluxsendaverage3: %d \n", status);

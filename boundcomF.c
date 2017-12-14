@@ -597,9 +597,10 @@ void flux_rec1(double(*restrict F1[NB])[NPR], double * Bufferp[NB], int n, int c
 					N2_GPU[n], N3_GPU[n], receive4_flux, receive4_flux1, NULL, F1, &(Bufferp[n]), &(Bufferrec4flux[n]), &(Bufferrec4flux1[n]), &(NULL_POINTER[n]), NULL, calc_corr);
 			}
 			else{
+				fprintf(stderr, "test");
 				unpack_receive1_flux(n, block[n][AMR_NBR2], block[n][AMR_NBR2], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
 					N2_GPU[n], N3_GPU[n], send4_flux, receive4_flux1, NULL, F1,
-					&(Bufferp[n]), &(Buffersend2flux[block[n][AMR_NBR2]]), &(Bufferrec4flux1[n]), &(NULL_POINTER[n]), &(boundevent[block[n][AMR_NBR2]][140]), calc_corr);
+					&(Bufferp[n]), &(Buffersend4flux[block[n][AMR_NBR2]]), &(Bufferrec4flux1[n]), &(NULL_POINTER[n]), &(boundevent[block[n][AMR_NBR2]][140]), calc_corr);
 			}
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
