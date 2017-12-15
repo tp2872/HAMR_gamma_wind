@@ -1909,7 +1909,7 @@ void GPU_boundprim2(int flag, int n)
 void GPU_read(int n)
 {
 	int i, j, z, k;
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	//cudaSetDevice(block[n][AMR_GPU]);
 	cudaMemcpyAsync(p_1[n], Bufferp_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[n]);
 	cudaMemcpyAsync(ph_1[n], Bufferph_1[n], (int)(NPR*((N3_GPU[n] + 2 * N3G)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) + fix_mem[n]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[n]);

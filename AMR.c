@@ -1428,7 +1428,7 @@ void pre_refine(void){
 
 	for (n1 = 0; n1 < n_active; n1++){
 		#if(GPU_ENABLED || GPU_DEBUG )
-		GPU_read(n_ord[n1]);
+		//GPU_read(n_ord[n1]);
 		#endif
 		#pragma omp parallel private(i, j, z)
 		{

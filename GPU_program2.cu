@@ -267,7 +267,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 
 		//When at first timestep for interpolation calculate the gradient in time
-		if (nstep%timelevel_rec == timelevel - 1   || nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+		if (nstep%timelevel_rec == timelevel - 1   || nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
 				for (i = i1; i < i2; i++){
 					tempreceive[(k+NPR+3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * N1G / (1 + REF_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
@@ -292,7 +292,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 		#endif
 		//When at subsequent timesteps for interpolation
-		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
+		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && jcurr>N2G && jcurr<BS_2 + N2G && zcurr>N3G && zcurr < BS_3 + N3G){
 			#if(PRESTEP==-100 || PRESTEP2)
 			for (k = 0; k < NPR; k++){
 				for (i = i1; i < i2; i++){
@@ -374,7 +374,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 
 			//When at first timestep for interpolation calculate the gradient in time
-			if (nstep%timelevel_rec == timelevel - 1  || nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+			if (nstep%timelevel_rec == timelevel - 1  || nstep == -1){
 				for (k = 0; k < NPR + 3; k++){
 					for (j = j1; j < j2; j++){
 						tempreceive[(k+NPR+3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * N2G / (1 + REF_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*zsize2 + (zcurr - z1 - N3G + z_offset * N3G / (1 + REF_3))]
@@ -399,7 +399,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 			#endif
 			//When at subsequent timesteps for interpolation
-			if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
+			if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && icurr>N1G && icurr<BS_1 + N1G && zcurr>N3G && zcurr < BS_3 + N3G){
 				#if(PRESTEP==-100 || PRESTEP2)
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
@@ -511,7 +511,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 
 		//When at first timestep for interpolation calculate the gradient in time
-		if (nstep%timelevel_rec == timelevel - 1  || nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
+		if (nstep%timelevel_rec == timelevel - 1  || nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
 				for (z = z1; z < z2; z++){
 					tempreceive[(k+NPR+3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * N3G / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * N1G / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * N2G / (1 + REF_2))]
@@ -536,7 +536,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 		#endif
 		//When at subsequent timesteps for interpolation
-		if (nstep%timelevel_rec != timelevel_rec - 1  && nstep != -1 && timelevel_rec > timelevel){
+		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && icurr>N1G && icurr<BS_1 + N1G && jcurr>N2G && jcurr < BS_2 + N2G){
 			#if(PRESTEP==-100 || PRESTEP2)
 			for (k = 0; k < NPR; k++){
 				for (z = z1; z < z2; z++){
