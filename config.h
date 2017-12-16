@@ -101,16 +101,16 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 4
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 1
+#define PRESTEP 0
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
-#define PRESTEP2 0
+#define PRESTEP2 1
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0

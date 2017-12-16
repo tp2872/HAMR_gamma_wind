@@ -45,6 +45,8 @@
 /* restart functions; restart_init and restart_dump */
 #include "decs_MPI.h"
 
+void restart_read_grid(void);
+
 /*Write restart file*/
 void restart_write(void)
 {
@@ -70,6 +72,16 @@ void restart_write(void)
 		if (rank == 0) dump_params(param);
 		fclose(param);
 	}
+
+	if (rank == (0 % numtasks)){
+		FILE *grid;
+		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/grid");
+		else sprintf(filename, "rdumps1/grid");
+		grid = fopen(filename, "wb");
+		gdump_grid(grid);
+		fclose(grid);
+	}
+
 	for (n = 0; n < n_active; n++){
 		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
 		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
@@ -117,6 +129,8 @@ int restart_read(void)
 	char filename[100], dirpath[100];
 	FILE *rdump;
 
+	//restart_read_grid();
+
 	for (n = 0; n < n_active; n++){
 		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
 		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
@@ -157,6 +171,34 @@ int restart_read(void)
 	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 	return 1;
+}
+
+void restart_read_grid(void)
+{
+	int n, k;
+	int int_size = sizeof(int);
+	int block_read[36];
+
+	char filename[100], dirpath[100];
+	FILE *param;
+
+	sprintf(filename, "rdumps1/grid");
+	param = fopen(filename, "rb");
+
+	if (param == NULL) {
+		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
+		return 0;
+	}
+
+	fread(&k, int_size, 1, param);
+	for (n = 0; n < (NB_1*NB_2*NB_3*(8 * (8 + 1) + 1)); n++){
+		for (k = 0; k < 36; k++){ //SASMARK: why is 36 hard-coded?
+			fread(&(block_read[k]), int_size, 1, param);
+		}
+		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_ACTIVE] = block_read[AMR_ACTIVE];
+		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_REFINED] = block_read[AMR_REFINED];
+	}
+	fclose(param);
 }
 
 int restart_read_param(void)

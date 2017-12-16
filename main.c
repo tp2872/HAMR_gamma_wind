@@ -140,10 +140,10 @@ int main(int argc, char *argv[])
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			//restart_write(); //do restart dumb simultaneous with log
+			restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
-		
+
 		#if TIMER
 		if (nstep % (20*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 			time_spent3 = 0.0;	
 
 			//Safe and exit at end of 24 hour runtime
-			if ((double)(begin2 - end1) > 24.*3600.){
+			if ((double)(begin2 - end1) > RUNTIME*3600.){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
 				restart_write();
 				break;
