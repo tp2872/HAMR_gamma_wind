@@ -484,6 +484,8 @@ void GPU_step_ch()
 		//Post-stepping when having 2nd order time accuracy at boundary
 		#if(PRESTEP2)
 		prestep_bound();
+		mpi_synch();
+		cudaDeviceSynchronize();
 		#endif
 
 		//Set boundary conditions at end of timestep after correction step to fluxes and electric fields
