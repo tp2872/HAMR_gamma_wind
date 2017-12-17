@@ -408,8 +408,8 @@ void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restri
 	for (i = 0; i < NDIM; i++){
 		 #pragma ivdep
 		for (j = 0; j < NDIM; j++){
-			geom->gcon[i][j] = gcon[n][index_2D(n,ii, jj, zz)][ff][i][j];
-			geom->gcov[i][j] = gcov[n][index_2D(n,ii, jj, zz)][ff][i][j];
+			geom->gcon[i][j] = gcon[nl[n]][index_2D(n,ii, jj, zz)][ff][i][j];
+			geom->gcov[i][j] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
 		}
 	}
 	#if(GPU_DEBUG)
@@ -426,7 +426,7 @@ void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restri
 	geom->gcon[3][2] = geom->gcon[2][3];
 	geom->gcov[3][2] = geom->gcov[2][3];
 	#endif
-	geom->g = gdet[n][index_2D(n,ii, jj,zz)][ff];
+	geom->g = gdet[nl[n]][index_2D(n, ii, jj, zz)][ff];
 }
 
 /*Load local geometry into structure geom for cases where the values are not stored in the memory 

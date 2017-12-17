@@ -265,528 +265,543 @@ void set_arrays_image(void)
 
 void set_arrays(int n)
 {
-	array[n] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
-	array_gdump1[n] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
-	array_gdump2[n] = (double *)calloc(49 * BS_1*BS_2, sizeof(double));
-	array_rdump[n] = (double *)calloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	array_diag[n] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
-	Katm[n] = (double(*))calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	p[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
-	ph[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
+	int i=0;
+	while (i < NB_LOCAL){
+		if (mem_spot[i] != 1) break;
+		i++;
+	}
+	if (i == NB_LOCAL){
+		fprintf(stderr, "Node %d ran out of local node memory! Stopping \n", rank);
+		exit(0);
+	}
+	nl[n] = i;
+	if (mem_spot[i] == 0){
+		mem_spot[i] = 1;
+		return;
+	}
+
+	array[nl[n]] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
+	array_gdump1[nl[n]] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
+	array_gdump2[nl[n]] = (double *)calloc(49 * BS_1*BS_2, sizeof(double));
+	array_rdump[nl[n]] = (double *)calloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	array_diag[nl[n]] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
+	Katm[nl[n]] = (double(*))calloc((BS_1 + 2 * N1G), sizeof(double));
+	p[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+	ph[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 	#if(STAGGERED)
-	ps[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NDIM]));
-	psh[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NDIM]));
+	ps[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
+	psh[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 	#endif
 	#if(LEER)
-	V[n] = (double(*)[6])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G)*sizeof(double[6]));
+	V[nl[n]] = (double(*)[6])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double[6]));
 	#endif
-	dq[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPR]));
-	F1[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
-	F2[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
-	F3[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NPR]));
-	pflag[n] = (int(*))calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(int));
+	dq[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPR]));
+	F1[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+	F2[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+	F3[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+	pflag[nl[n]] = (int(*))calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(int));
 	#if(CPU_OPENMP)
 	#if(STAGGERED)
-	dE[n] = (double(*)[2][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[2][NDIM][NDIM]));
+	dE[nl[n]] = (double(*)[2][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[2][NDIM][NDIM]));
 	#endif
-	E_corn[n] = (double(*)[NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double[NDIM]));
+	E_corn[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 	#endif
-	failimage[n] = (int(*)[NFAIL])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(int[NFAIL]));
+	failimage[nl[n]] = (int(*)[NFAIL])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(int[NFAIL]));
 	#if(!NONSYMMETRIC)
-	conn[n] = (double(*)[NDIM][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G), sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
-	gcon[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
-	gdet[n] = (double(*)[NPG])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G), sizeof(double[NPG]));
+	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
+	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
+	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG]));
 	#else
-	conn[n] = (double(*)[NDIM][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NPG][NDIM][NDIM]));
-	gcon[n] = (double(*)[NPG][NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPG][NDIM][NDIM]));
-	gdet[n] = (double(*)[NPG])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G),sizeof(double[NPG]));
+	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NPG][NDIM][NDIM]));
+	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPG][NDIM][NDIM]));
+	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPG]));
 	#endif
 	#if(ZIRI_DUMP)
-	dump_buffer[n] = (double(*))calloc(N1_GPU[n] * N2_GPU[n] * N3_GPU[n] * 13 *sizeof(double));
-	dxdxp_z[n] = (double(*)[NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
-	dxpdx_z[n] = (double(*)[NDIM][NDIM])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
+	dump_buffer[nl[n]] = (double(*))calloc(BS_1 * BS_2 * BS_3 * 13 *sizeof(double));
+	dxdxp_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
+	dxpdx_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
 	#endif
 	#if (ELLIPTICAL2)
-	dU_s[n] = (double(*)[NPR])calloc((N1_GPU[n] + 2 * N1G)*(N2_GPU[n] + 2 * N2G),sizeof(double[NPR]));
+	dU_s[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G),sizeof(double[NPR]));
 	#endif
-	receive1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	receive1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	receive6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	receive5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	tempreceive1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	tempreceive2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	tempreceive3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	tempreceive4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	tempreceive1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	tempreceive2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	tempreceive3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	tempreceive4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	tempreceive5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	tempreceive6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	tempreceive5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	tempreceive6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	send1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	send1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	send2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
+	send3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
+	send4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	send5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) * (N1_GPU[n] + 2 * N1G), sizeof(double));
-	send6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) * (N1_GPU[n] + 2 * N1G) , sizeof(double));
+	send5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), sizeof(double));
+	send6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) , sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	send1_3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send1_4[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send1_7[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send1_8[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive1_4[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive1_7[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive1_8[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_3[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_4[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_7[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive1_8[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send2_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send2_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send2_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send2_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive2_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive2_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive2_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive2_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send3_1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send3_2[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send3_5[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send3_6[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive3_2[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive3_5[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive3_6[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_1[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_2[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_5[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive3_6[n] = (double *)calloc(NG * (NPR + 3)*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send4_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send4_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send4_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	send4_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive4_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive4_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive4_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive4_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
+	send1_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive1_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	send2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	send3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	send4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	send4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	receive4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	tempreceive4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	send5_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send5_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send5_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send5_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive5_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive5_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive5_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_1[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_3[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_5[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive5_7[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	send6_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send6_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send6_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	send6_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive6_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive6_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive6_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_2[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_4[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_6[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive6_8[n] = (double *)calloc(NG * (NPR + 3)*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
+	send5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	send5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	send5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	send5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	receive5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	receive5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	receive5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	send6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	send6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	send6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	send6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	receive6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	receive6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	receive6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
 	#endif
 	#endif
-	receive1_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive2_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive3_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive4_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	receive1_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive2_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive3_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive4_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	receive6_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	receive5_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive6_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	send1_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send2_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send3_fine[n] = (double *)calloc(NG * NPR*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send4_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	send1_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	send2_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
+	send3_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
+	send4_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	send5_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	send6_fine[n] = (double *)calloc(NG * NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	send5_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	send6_fine[nl[n]] = (double *)calloc(NG * NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	receive1_3fine[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_4fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_7fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_8fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_1fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_2fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_3fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_4fine[n] = (double *)calloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_1fine[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_2fine[n] = (double *)calloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_5fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_6fine[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_5fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_6fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_7fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_8fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_3fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_4fine[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_7fine[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_8fine[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2_1fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2_2fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2_3fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2_4fine[nl[n]] = (double *)calloc(NPR * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3_1fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3_2fine[nl[n]] = (double *)calloc(NPR * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3_5fine[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3_6fine[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4_5fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4_6fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4_7fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4_8fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive5_1fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6fine[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8fine[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6fine[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
 	#if(CPU_OPENMP)
-	receive1_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive2_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive3_flux[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive4_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	receive1_flux[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive2_flux[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive3_flux[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive4_flux[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_flux[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	receive6_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	receive5_flux[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive6_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	receive1_flux1[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive2_flux1[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive3_flux1[n] = (double *)calloc(NPR* (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive4_flux1[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	receive1_flux1[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive2_flux1[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive3_flux1[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive4_flux1[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_flux1[n] = (double *)calloc(NPR* (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	receive6_flux1[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	receive5_flux1[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive6_flux1[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive1_3flux[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_4flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_7flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_8flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_2flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_3flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_4flux[n] = (double *)calloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1flux[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_2flux[n] = (double *)calloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_5flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_6flux[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_6flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_7flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_8flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_3flux[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_4flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_7flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_8flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_1flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_2flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_3flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_4flux[nl[n]] = (double *)calloc(NPR * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_1flux[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_2flux[nl[n]] = (double *)calloc(NPR * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_5flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_6flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_5flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_6flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_7flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_8flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_1flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6flux[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8flux[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	receive1_3flux1[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_4flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_7flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_8flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_2flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_3flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_4flux1[n] = (double *)calloc(NPR * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1flux1[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_2flux1[n] = (double *)calloc(NPR * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_5flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_6flux1[n] = (double *)calloc(NPR* (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_6flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_7flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_8flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_3flux1[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_4flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_7flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_8flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_1flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_2flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_3flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_4flux1[nl[n]] = (double *)calloc(NPR * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_1flux1[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_2flux1[nl[n]] = (double *)calloc(NPR * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_5flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_6flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_5flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_6flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_7flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_8flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_1flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6flux1[n] = (double *)calloc(NPR* (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8flux1[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	receive1_3flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_4flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_7flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_8flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_2flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_3flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_4flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_2flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_5flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_6flux2[n] = (double *)calloc(NPR*(N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_6flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_7flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_8flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_3flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_4flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_7flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_8flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_1flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_2flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_5flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_6flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_1flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8flux2[n] = (double *)calloc(NPR*(N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	receive1_3E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_4E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_7E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_8E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_2E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_3E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_4E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_2E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_5E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_6E[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_6E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_7E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_8E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_3E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_4E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_7E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_8E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_1E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_2E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_3E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_4E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_1E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_2E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_5E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_6E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_5E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_6E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_7E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_8E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_1E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8E[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	receive1_3E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_4E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_7E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_8E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_2E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_3E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_4E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_2E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_5E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_6E1[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_6E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_7E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_8E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_3E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_4E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_7E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_8E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_1E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_2E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_3E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_4E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_1E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_2E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_5E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_6E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_5E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_6E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_7E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_8E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_1E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8E1[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	receive1_3E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_4E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_7E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive1_8E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_2E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_3E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_4E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_2E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_5E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_6E2[n] = (double *)calloc(2 * (N1_GPU[n] / (1 + REF_1) + 2 * N1G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_6E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_7E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_8E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G)*(N3_GPU[n] / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_3E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_4E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_7E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive1_8E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive2_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_1E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_2E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_5E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive3_6E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
+	receive4_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_1E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_3E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_5E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_7E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_4E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_6E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_8E2[n] = (double *)calloc(2 * (N2_GPU[n] / (1 + REF_2) + 2 * N2G) *(N1_GPU[n] / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
 	#endif
-	send1_flux[n] = (double *)calloc(NPR*(N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send2_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send3_flux[n] = (double *)calloc(NPR*(N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send4_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	send1_flux[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	send2_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
+	send3_flux[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
+	send4_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	send5_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	send6_flux[n] = (double *)calloc(NPR*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	send5_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	send6_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	receive1_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive2_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive3_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive4_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	receive1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive4_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	receive6_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	receive5_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive6_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	receive1_E1[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive2_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive3_E1[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
-	receive4_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	receive1_E1[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive2_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive3_E1[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive4_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	receive5_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
-	receive6_E1[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	receive5_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive6_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
-	send1_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G)*(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send2_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send3_E[n] = (double *)calloc(2 * (N1_GPU[n] + 2 * N1G) *(N3_GPU[n] + 2 * N3G), sizeof(double));
-	send4_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) , sizeof(double));
+	send1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
+	send2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
+	send3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
+	send4_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
 	#if(N3G>0)
-	send5_E[n] = (double *)calloc(2 * (N2_GPU[n] + 2 * N2G) *(N1_GPU[n] + 2 * N1G), sizeof(double));
-	send6_E[n] = (double *)calloc(2*(N2_GPU[n] + 2 * N2G)*(N1_GPU[n] + 2 * N1G) , sizeof(double));
+	send5_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
+	send6_E[nl[n]] = (double *)calloc(2*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
 	#endif
 	
-	send_E3_corn1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	send_E3_corn2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	send_E3_corn3[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	send_E3_corn4[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	send_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	send_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	send_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	send_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	send_E2_corn5[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	send_E2_corn6[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	send_E2_corn7[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	send_E2_corn8[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	send_E1_corn9[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	send_E1_corn10[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	send_E1_corn11[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	send_E1_corn12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	send_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	send_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	send_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	send_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	send_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	send_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	send_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	send_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	receive_E3_corn1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn3[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn4[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	receive_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn6[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn7[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn8[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E1_corn9[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn10[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn11[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	receive_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	tempreceive_E3_corn1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn3[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn4[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn6[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn7[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn8[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E1_corn9[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn10[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn11[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	tempreceive_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive_E3_corn1_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn2_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn3_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn4_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	receive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn6_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn7_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn8_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E1_corn9_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn10_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn11_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn12_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	receive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	receive_E3_corn1_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn2_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn3_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn4_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	receive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn6_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn7_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn8_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E1_corn9_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn10_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn11_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn12_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	receive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	tempreceive_E3_corn1_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn2_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn3_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn4_1[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn6_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn7_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn8_1[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E1_corn9_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn10_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn11_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn12_1[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	tempreceive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	tempreceive_E3_corn1_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn2_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn3_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn4_2[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	tempreceive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn6_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn7_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn8_2[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	tempreceive_E1_corn9_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn10_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn11_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn12_2[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	tempreceive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	tempreceive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	tempreceive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	receive_E3_corn1_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn2_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn3_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn4_12[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	receive_E3_corn1_12[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn2_12[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn3_12[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn4_12[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn6_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn7_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn8_12[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E1_corn9_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn10_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn11_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn12_12[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	receive_E2_corn5_12[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn6_12[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn7_12[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn8_12[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E1_corn9_12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn10_12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn11_12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn12_12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	receive_E3_corn1_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn2_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn3_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
-	receive_E3_corn4_22[n] = (double *)calloc((N3_GPU[n] + 2 * N3G), sizeof(double));
+	receive_E3_corn1_22[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn2_22[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn3_22[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive_E3_corn4_22[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn6_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn7_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E2_corn8_22[n] = (double *)calloc((N2_GPU[n] + 2 * N2G), sizeof(double));
-	receive_E1_corn9_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn10_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn11_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
-	receive_E1_corn12_22[n] = (double *)calloc((N1_GPU[n] + 2 * N1G), sizeof(double));
+	receive_E2_corn5_22[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn6_22[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn7_22[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E2_corn8_22[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
+	receive_E1_corn9_22[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn10_22[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn11_22[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive_E1_corn12_22[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
 	#endif
 	#endif
 	#endif
@@ -795,527 +810,531 @@ void set_arrays(int n)
 
 void free_arrays(int n)
 {
-	free(p[n]);
-	free(ph[n]);
+	if (nl[n]<MAX_BLOCKS*1.5) return;
+
+	free(p[nl[n]]);
+	free(ph[nl[n]]);
 	#if(LEER)
-	free(V[n]);
+	free(V[nl[n]]);
 	#endif
 	#if(STAGGERED)
-	free(ps[n]);
-	free(psh[n]);
+	free(ps[nl[n]]);
+	free(psh[nl[n]]);
 	#endif
-	free(dq[n]);
-	free(F1[n]);
-	free(F2[n]);
-	free(F3[n]);
-	free(pflag[n]);
+	free(dq[nl[n]]);
+	free(F1[nl[n]]);
+	free(F2[nl[n]]);
+	free(F3[nl[n]]);
+	free(pflag[nl[n]]);
 	#if(GPU_DEBUG || CPU_OPENMP)
 	#if(STAGGERED)
-	free(dE[n]);
+	free(dE[nl[n]]);
 	#endif
-	free(E_corn[n]);
+	free(E_corn[nl[n]]);
 	#endif
-	free(failimage[n]);
-	free(conn[n]);
-	free(gcov[n]);
-	free(gcon[n]);
-	free(gdet[n]);
+	free(failimage[nl[n]]);
+	free(conn[nl[n]]);
+	free(gcov[nl[n]]);
+	free(gcon[nl[n]]);
+	free(gdet[nl[n]]);
 	#if(ZIRI_DUMP)
-	free(dump_buffer[n]);
-	free(dxdxp_z[n]);
-	free(dxpdx_z[n]);
+	free(dump_buffer[nl[n]]);
+	free(dxdxp_z[nl[n]]);
+	free(dxpdx_z[nl[n]]);
 	#endif
 	#if (ELLIPTICAL2)
-	free(dU_s[n]);
+	free(dU_s[nl[n]]);
 	#endif
-	free(receive1[n]);
-	free(receive2[n]);
-	free(receive3[n]);
-	free(receive4[n]);
+	free(receive1[nl[n]]);
+	free(receive2[nl[n]]);
+	free(receive3[nl[n]]);
+	free(receive4[nl[n]]);
 	#if(N3G>0)
-	free(receive5[n]);
-	free(receive6[n]);
+	free(receive5[nl[n]]);
+	free(receive6[nl[n]]);
 	#endif
-	free(tempreceive1[n]);
-	free(tempreceive2[n]);
-	free(tempreceive3[n]);
-	free(tempreceive4[n]);
+	free(tempreceive1[nl[n]]);
+	free(tempreceive2[nl[n]]);
+	free(tempreceive3[nl[n]]);
+	free(tempreceive4[nl[n]]);
 	#if(N3G>0)
-	free(tempreceive5[n]);
-	free(tempreceive6[n]);
+	free(tempreceive5[nl[n]]);
+	free(tempreceive6[nl[n]]);
 	#endif
-	free(send1[n]);
-	free(send2[n]);
-	free(send3[n]);
-	free(send4[n]);
+	free(send1[nl[n]]);
+	free(send2[nl[n]]);
+	free(send3[nl[n]]);
+	free(send4[nl[n]]);
 	#if(N3G>0)
-	free(send5[n]);
-	free(send6[n]);
+	free(send5[nl[n]]);
+	free(send6[nl[n]]);
 	#endif
-	free(send1_3[n]);
-	free(send1_4[n]);
-	free(send1_7[n]);
-	free(send1_8[n]);
-	free(send2_1[n]);
-	free(send2_2[n]);
-	free(send2_3[n]);
-	free(send2_4[n]);
-	free(send3_1[n]);
-	free(send3_2[n]);
-	free(send3_5[n]);
-	free(send3_6[n]);
-	free(send4_5[n]);
-	free(send4_6[n]);
-	free(send4_7[n]);
-	free(send4_8[n]);
+	free(send1_3[nl[n]]);
+	free(send1_4[nl[n]]);
+	free(send1_7[nl[n]]);
+	free(send1_8[nl[n]]);
+	free(send2_1[nl[n]]);
+	free(send2_2[nl[n]]);
+	free(send2_3[nl[n]]);
+	free(send2_4[nl[n]]);
+	free(send3_1[nl[n]]);
+	free(send3_2[nl[n]]);
+	free(send3_5[nl[n]]);
+	free(send3_6[nl[n]]);
+	free(send4_5[nl[n]]);
+	free(send4_6[nl[n]]);
+	free(send4_7[nl[n]]);
+	free(send4_8[nl[n]]);
 	#if(N3G>0)
-	free(send5_1[n]);
-	free(send5_3[n]);
-	free(send5_5[n]);
-	free(send5_7[n]);
-	free(send6_2[n]);
-	free(send6_4[n]);
-	free(send6_6[n]);
-	free(send6_8[n]);
+	free(send5_1[nl[n]]);
+	free(send5_3[nl[n]]);
+	free(send5_5[nl[n]]);
+	free(send5_7[nl[n]]);
+	free(send6_2[nl[n]]);
+	free(send6_4[nl[n]]);
+	free(send6_6[nl[n]]);
+	free(send6_8[nl[n]]);
 	#endif
-	free(receive1_3[n]);
-	free(receive1_4[n]);
-	free(receive1_7[n]);
-	free(receive1_8[n]);
-	free(receive2_1[n]);
-	free(receive2_2[n]);
-	free(receive2_3[n]);
-	free(receive2_4[n]);
-	free(receive3_1[n]);
-	free(receive3_2[n]);
-	free(receive3_5[n]);
-	free(receive3_6[n]);
-	free(receive4_5[n]);
-	free(receive4_6[n]);
-	free(receive4_7[n]);
-	free(receive4_8[n]);
+	free(receive1_3[nl[n]]);
+	free(receive1_4[nl[n]]);
+	free(receive1_7[nl[n]]);
+	free(receive1_8[nl[n]]);
+	free(receive2_1[nl[n]]);
+	free(receive2_2[nl[n]]);
+	free(receive2_3[nl[n]]);
+	free(receive2_4[nl[n]]);
+	free(receive3_1[nl[n]]);
+	free(receive3_2[nl[n]]);
+	free(receive3_5[nl[n]]);
+	free(receive3_6[nl[n]]);
+	free(receive4_5[nl[n]]);
+	free(receive4_6[nl[n]]);
+	free(receive4_7[nl[n]]);
+	free(receive4_8[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1[n]);
-	free(receive5_3[n]);
-	free(receive5_5[n]);
-	free(receive5_7[n]);
-	free(receive6_2[n]);
-	free(receive6_4[n]);
-	free(receive6_6[n]);
-	free(receive6_8[n]);
+	free(receive5_1[nl[n]]);
+	free(receive5_3[nl[n]]);
+	free(receive5_5[nl[n]]);
+	free(receive5_7[nl[n]]);
+	free(receive6_2[nl[n]]);
+	free(receive6_4[nl[n]]);
+	free(receive6_6[nl[n]]);
+	free(receive6_8[nl[n]]);
 	#endif
-	free(tempreceive1_3[n]);
-	free(tempreceive1_4[n]);
-	free(tempreceive1_7[n]);
-	free(tempreceive1_8[n]);
-	free(tempreceive2_1[n]);
-	free(tempreceive2_2[n]);
-	free(tempreceive2_3[n]);
-	free(tempreceive2_4[n]);
-	free(tempreceive3_1[n]);
-	free(tempreceive3_2[n]);
-	free(tempreceive3_5[n]);
-	free(tempreceive3_6[n]);
-	free(tempreceive4_5[n]);
-	free(tempreceive4_6[n]);
-	free(tempreceive4_7[n]);
-	free(tempreceive4_8[n]);
+	free(tempreceive1_3[nl[n]]);
+	free(tempreceive1_4[nl[n]]);
+	free(tempreceive1_7[nl[n]]);
+	free(tempreceive1_8[nl[n]]);
+	free(tempreceive2_1[nl[n]]);
+	free(tempreceive2_2[nl[n]]);
+	free(tempreceive2_3[nl[n]]);
+	free(tempreceive2_4[nl[n]]);
+	free(tempreceive3_1[nl[n]]);
+	free(tempreceive3_2[nl[n]]);
+	free(tempreceive3_5[nl[n]]);
+	free(tempreceive3_6[nl[n]]);
+	free(tempreceive4_5[nl[n]]);
+	free(tempreceive4_6[nl[n]]);
+	free(tempreceive4_7[nl[n]]);
+	free(tempreceive4_8[nl[n]]);
 	#if(N3G>0)
-	free(tempreceive5_1[n]);
-	free(tempreceive5_3[n]);
-	free(tempreceive5_5[n]);
-	free(tempreceive5_7[n]);
-	free(tempreceive6_2[n]);
-	free(tempreceive6_4[n]);
-	free(tempreceive6_6[n]);
-	free(tempreceive6_8[n]);
+	free(tempreceive5_1[nl[n]]);
+	free(tempreceive5_3[nl[n]]);
+	free(tempreceive5_5[nl[n]]);
+	free(tempreceive5_7[nl[n]]);
+	free(tempreceive6_2[nl[n]]);
+	free(tempreceive6_4[nl[n]]);
+	free(tempreceive6_6[nl[n]]);
+	free(tempreceive6_8[nl[n]]);
 	#endif
-	free(receive1_fine[n]);
-	free(receive2_fine[n]);
-	free(receive3_fine[n]);
-	free(receive4_fine[n]);
+	free(receive1_fine[nl[n]]);
+	free(receive2_fine[nl[n]]);
+	free(receive3_fine[nl[n]]);
+	free(receive4_fine[nl[n]]);
 	#if(N3G>0)
-	free(receive5_fine[n]);
-	free(receive6_fine[n]);
+	free(receive5_fine[nl[n]]);
+	free(receive6_fine[nl[n]]);
 	#endif
-	free(send1_fine[n]);
-	free(send2_fine[n]);
-	free(send3_fine[n]);
-	free(send4_fine[n]);
+	free(send1_fine[nl[n]]);
+	free(send2_fine[nl[n]]);
+	free(send3_fine[nl[n]]);
+	free(send4_fine[nl[n]]);
 	#if(N3G>0)
-	free(send5_fine[n]);
-	free(send6_fine[n]);
+	free(send5_fine[nl[n]]);
+	free(send6_fine[nl[n]]);
 	#endif
-	free(receive1_3fine[n]);
-	free(receive1_4fine[n]);
-	free(receive1_7fine[n]);
-	free(receive1_8fine[n]);
-	free(receive2_1fine[n]);
-	free(receive2_2fine[n]);
-	free(receive2_3fine[n]);
-	free(receive2_4fine[n]);
-	free(receive3_1fine[n]);
-	free(receive3_2fine[n]);
-	free(receive3_5fine[n]);
-	free(receive3_6fine[n]);
-	free(receive4_5fine[n]);
-	free(receive4_6fine[n]);
-	free(receive4_7fine[n]);
-	free(receive4_8fine[n]);
+	free(receive1_3fine[nl[n]]);
+	free(receive1_4fine[nl[n]]);
+	free(receive1_7fine[nl[n]]);
+	free(receive1_8fine[nl[n]]);
+	free(receive2_1fine[nl[n]]);
+	free(receive2_2fine[nl[n]]);
+	free(receive2_3fine[nl[n]]);
+	free(receive2_4fine[nl[n]]);
+	free(receive3_1fine[nl[n]]);
+	free(receive3_2fine[nl[n]]);
+	free(receive3_5fine[nl[n]]);
+	free(receive3_6fine[nl[n]]);
+	free(receive4_5fine[nl[n]]);
+	free(receive4_6fine[nl[n]]);
+	free(receive4_7fine[nl[n]]);
+	free(receive4_8fine[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1fine[n]);
-	free(receive5_3fine[n]);
-	free(receive5_5fine[n]);
-	free(receive5_7fine[n]);
-	free(receive6_2fine[n]);
-	free(receive6_4fine[n]);
-	free(receive6_6fine[n]);
-	free(receive6_8fine[n]);
+	free(receive5_1fine[nl[n]]);
+	free(receive5_3fine[nl[n]]);
+	free(receive5_5fine[nl[n]]);
+	free(receive5_7fine[nl[n]]);
+	free(receive6_2fine[nl[n]]);
+	free(receive6_4fine[nl[n]]);
+	free(receive6_6fine[nl[n]]);
+	free(receive6_8fine[nl[n]]);
 	#endif
 	#if(CPU_OPENMP)
-	free(receive1_flux[n]);
-	free(receive2_flux[n]);
-	free(receive3_flux[n]);
-	free(receive4_flux[n]);
-	free(receive5_flux[n]);
-	free(receive6_flux[n]);
-	free(receive1_3flux[n]);
-	free(receive1_4flux[n]);
-	free(receive1_7flux[n]);
-	free(receive1_8flux[n]);
-	free(receive2_1flux[n]);
-	free(receive2_2flux[n]);
-	free(receive2_3flux[n]);
-	free(receive2_4flux[n]);
-	free(receive3_1flux[n]);
-	free(receive3_2flux[n]);
-	free(receive3_5flux[n]);
-	free(receive3_6flux[n]);
-	free(receive4_5flux[n]);
-	free(receive4_6flux[n]);
-	free(receive4_7flux[n]);
-	free(receive4_8flux[n]);
+	free(receive1_flux[nl[n]]);
+	free(receive2_flux[nl[n]]);
+	free(receive3_flux[nl[n]]);
+	free(receive4_flux[nl[n]]);
+	free(receive5_flux[nl[n]]);
+	free(receive6_flux[nl[n]]);
+	free(receive1_3flux[nl[n]]);
+	free(receive1_4flux[nl[n]]);
+	free(receive1_7flux[nl[n]]);
+	free(receive1_8flux[nl[n]]);
+	free(receive2_1flux[nl[n]]);
+	free(receive2_2flux[nl[n]]);
+	free(receive2_3flux[nl[n]]);
+	free(receive2_4flux[nl[n]]);
+	free(receive3_1flux[nl[n]]);
+	free(receive3_2flux[nl[n]]);
+	free(receive3_5flux[nl[n]]);
+	free(receive3_6flux[nl[n]]);
+	free(receive4_5flux[nl[n]]);
+	free(receive4_6flux[nl[n]]);
+	free(receive4_7flux[nl[n]]);
+	free(receive4_8flux[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1flux[n]);
-	free(receive5_3flux[n]);
-	free(receive5_5flux[n]);
-	free(receive5_7flux[n]);
-	free(receive6_2flux[n]);
-	free(receive6_4flux[n]);
-	free(receive6_6flux[n]);
-	free(receive6_8flux[n]);
+	free(receive5_1flux[nl[n]]);
+	free(receive5_3flux[nl[n]]);
+	free(receive5_5flux[nl[n]]);
+	free(receive5_7flux[nl[n]]);
+	free(receive6_2flux[nl[n]]);
+	free(receive6_4flux[nl[n]]);
+	free(receive6_6flux[nl[n]]);
+	free(receive6_8flux[nl[n]]);
 	#endif
-	free(receive1_flux1[n]);
-	free(receive2_flux1[n]);
-	free(receive3_flux1[n]);
-	free(receive4_flux1[n]);
-	free(receive5_flux1[n]);
-	free(receive6_flux1[n]);
-	free(receive1_3flux1[n]);
-	free(receive1_4flux1[n]);
-	free(receive1_7flux1[n]);
-	free(receive1_8flux1[n]);
-	free(receive2_1flux1[n]);
-	free(receive2_2flux1[n]);
-	free(receive2_3flux1[n]);
-	free(receive2_4flux1[n]);
-	free(receive3_1flux1[n]);
-	free(receive3_2flux1[n]);
-	free(receive3_5flux1[n]);
-	free(receive3_6flux1[n]);
-	free(receive4_5flux1[n]);
-	free(receive4_6flux1[n]);
-	free(receive4_7flux1[n]);
-	free(receive4_8flux1[n]);
+	free(receive1_flux1[nl[n]]);
+	free(receive2_flux1[nl[n]]);
+	free(receive3_flux1[nl[n]]);
+	free(receive4_flux1[nl[n]]);
+	free(receive5_flux1[nl[n]]);
+	free(receive6_flux1[nl[n]]);
+	free(receive1_3flux1[nl[n]]);
+	free(receive1_4flux1[nl[n]]);
+	free(receive1_7flux1[nl[n]]);
+	free(receive1_8flux1[nl[n]]);
+	free(receive2_1flux1[nl[n]]);
+	free(receive2_2flux1[nl[n]]);
+	free(receive2_3flux1[nl[n]]);
+	free(receive2_4flux1[nl[n]]);
+	free(receive3_1flux1[nl[n]]);
+	free(receive3_2flux1[nl[n]]);
+	free(receive3_5flux1[nl[n]]);
+	free(receive3_6flux1[nl[n]]);
+	free(receive4_5flux1[nl[n]]);
+	free(receive4_6flux1[nl[n]]);
+	free(receive4_7flux1[nl[n]]);
+	free(receive4_8flux1[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1flux1[n]);
-	free(receive5_3flux1[n]);
-	free(receive5_5flux1[n]);
-	free(receive5_7flux1[n]);
-	free(receive6_2flux1[n]);
-	free(receive6_4flux1[n]);
-	free(receive6_6flux1[n]);
-	free(receive6_8flux1[n]);
+	free(receive5_1flux1[nl[n]]);
+	free(receive5_3flux1[nl[n]]);
+	free(receive5_5flux1[nl[n]]);
+	free(receive5_7flux1[nl[n]]);
+	free(receive6_2flux1[nl[n]]);
+	free(receive6_4flux1[nl[n]]);
+	free(receive6_6flux1[nl[n]]);
+	free(receive6_8flux1[nl[n]]);
 	#endif
-	free(receive1_3flux2[n]);
-	free(receive1_4flux2[n]);
-	free(receive1_7flux2[n]);
-	free(receive1_8flux2[n]);
-	free(receive2_1flux2[n]);
-	free(receive2_2flux2[n]);
-	free(receive2_3flux2[n]);
-	free(receive2_4flux2[n]);
-	free(receive3_1flux2[n]);
-	free(receive3_2flux2[n]);
-	free(receive3_5flux2[n]);
-	free(receive3_6flux2[n]);
-	free(receive4_5flux2[n]);
-	free(receive4_6flux2[n]);
-	free(receive4_7flux2[n]);
-	free(receive4_8flux2[n]);
+	free(receive1_3flux2[nl[n]]);
+	free(receive1_4flux2[nl[n]]);
+	free(receive1_7flux2[nl[n]]);
+	free(receive1_8flux2[nl[n]]);
+	free(receive2_1flux2[nl[n]]);
+	free(receive2_2flux2[nl[n]]);
+	free(receive2_3flux2[nl[n]]);
+	free(receive2_4flux2[nl[n]]);
+	free(receive3_1flux2[nl[n]]);
+	free(receive3_2flux2[nl[n]]);
+	free(receive3_5flux2[nl[n]]);
+	free(receive3_6flux2[nl[n]]);
+	free(receive4_5flux2[nl[n]]);
+	free(receive4_6flux2[nl[n]]);
+	free(receive4_7flux2[nl[n]]);
+	free(receive4_8flux2[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1flux2[n]);
-	free(receive5_3flux2[n]);
-	free(receive5_5flux2[n]);
-	free(receive5_7flux2[n]);
-	free(receive6_2flux2[n]);
-	free(receive6_4flux2[n]);
-	free(receive6_6flux2[n]);
-	free(receive6_8flux2[n]);
+	free(receive5_1flux2[nl[n]]);
+	free(receive5_3flux2[nl[n]]);
+	free(receive5_5flux2[nl[n]]);
+	free(receive5_7flux2[nl[n]]);
+	free(receive6_2flux2[nl[n]]);
+	free(receive6_4flux2[nl[n]]);
+	free(receive6_6flux2[nl[n]]);
+	free(receive6_8flux2[nl[n]]);
 	#endif
-	free(send1_flux[n]);
-	free(send2_flux[n]);
-	free(send3_flux[n]);
-	free(send4_flux[n]);
+	free(send1_flux[nl[n]]);
+	free(send2_flux[nl[n]]);
+	free(send3_flux[nl[n]]);
+	free(send4_flux[nl[n]]);
 	#if(N3G>0)
-	free(send5_flux[n]);
-	free(send6_flux[n]);
+	free(send5_flux[nl[n]]);
+	free(send6_flux[nl[n]]);
 	#endif
-	free(receive1_E[n]);
-	free(receive2_E[n]);
-	free(receive3_E[n]);
-	free(receive4_E[n]);
-	free(receive5_E[n]);
-	free(receive6_E[n]);
-	free(receive1_3E[n]);
-	free(receive1_4E[n]);
-	free(receive1_7E[n]);
-	free(receive1_8E[n]);
-	free(receive2_1E[n]);
-	free(receive2_2E[n]);
-	free(receive2_3E[n]);
-	free(receive2_4E[n]);
-	free(receive3_1E[n]);
-	free(receive3_2E[n]);
-	free(receive3_5E[n]);
-	free(receive3_6E[n]);
-	free(receive4_5E[n]);
-	free(receive4_6E[n]);
-	free(receive4_7E[n]);
-	free(receive4_8E[n]);
+	free(receive1_E[nl[n]]);
+	free(receive2_E[nl[n]]);
+	free(receive3_E[nl[n]]);
+	free(receive4_E[nl[n]]);
+	free(receive5_E[nl[n]]);
+	free(receive6_E[nl[n]]);
+	free(receive1_3E[nl[n]]);
+	free(receive1_4E[nl[n]]);
+	free(receive1_7E[nl[n]]);
+	free(receive1_8E[nl[n]]);
+	free(receive2_1E[nl[n]]);
+	free(receive2_2E[nl[n]]);
+	free(receive2_3E[nl[n]]);
+	free(receive2_4E[nl[n]]);
+	free(receive3_1E[nl[n]]);
+	free(receive3_2E[nl[n]]);
+	free(receive3_5E[nl[n]]);
+	free(receive3_6E[nl[n]]);
+	free(receive4_5E[nl[n]]);
+	free(receive4_6E[nl[n]]);
+	free(receive4_7E[nl[n]]);
+	free(receive4_8E[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1E[n]);
-	free(receive5_3E[n]);
-	free(receive5_5E[n]);
-	free(receive5_7E[n]);
-	free(receive6_2E[n]);
-	free(receive6_4E[n]);
-	free(receive6_6E[n]);
-	free(receive6_8E[n]);
+	free(receive5_1E[nl[n]]);
+	free(receive5_3E[nl[n]]);
+	free(receive5_5E[nl[n]]);
+	free(receive5_7E[nl[n]]);
+	free(receive6_2E[nl[n]]);
+	free(receive6_4E[nl[n]]);
+	free(receive6_6E[nl[n]]);
+	free(receive6_8E[nl[n]]);
 	#endif
-	free(receive1_E1[n]);
-	free(receive2_E1[n]);
-	free(receive3_E1[n]);
-	free(receive4_E1[n]);
-	free(receive5_E1[n]);
-	free(receive6_E1[n]);
-	free(receive1_3E1[n]);
-	free(receive1_4E1[n]);
-	free(receive1_7E1[n]);
-	free(receive1_8E1[n]);
-	free(receive2_1E1[n]);
-	free(receive2_2E1[n]);
-	free(receive2_3E1[n]);
-	free(receive2_4E1[n]);
-	free(receive3_1E1[n]);
-	free(receive3_2E1[n]);
-	free(receive3_5E1[n]);
-	free(receive3_6E1[n]);
-	free(receive4_5E1[n]);
-	free(receive4_6E1[n]);
-	free(receive4_7E1[n]);
-	free(receive4_8E1[n]);
-#if(N3G>0)
-	free(receive5_1E1[n]);
-	free(receive5_3E1[n]);
-	free(receive5_5E1[n]);
-	free(receive5_7E1[n]);
-	free(receive6_2E1[n]);
-	free(receive6_4E1[n]);
-	free(receive6_6E1[n]);
-	free(receive6_8E1[n]);
-#endif
-	free(receive1_3E2[n]);
-	free(receive1_4E2[n]);
-	free(receive1_7E2[n]);
-	free(receive1_8E2[n]);
-	free(receive2_1E2[n]);
-	free(receive2_2E2[n]);
-	free(receive2_3E2[n]);
-	free(receive2_4E2[n]);
-	free(receive3_1E2[n]);
-	free(receive3_2E2[n]);
-	free(receive3_5E2[n]);
-	free(receive3_6E2[n]);
-	free(receive4_5E2[n]);
-	free(receive4_6E2[n]);
-	free(receive4_7E2[n]);
-	free(receive4_8E2[n]);
-#if(N3G>0)
-	free(receive5_1E2[n]);
-	free(receive5_3E2[n]);
-	free(receive5_5E2[n]);
-	free(receive5_7E2[n]);
-	free(receive6_2E2[n]);
-	free(receive6_4E2[n]);
-	free(receive6_6E2[n]);
-	free(receive6_8E2[n]);
-#endif
-	free(send1_E[n]);
-	free(send2_E[n]);
-	free(send3_E[n]);
-	free(send4_E[n]);
-#if(N3G>0)
-	free(send5_E[n]);
-	free(send6_E[n]);
-#endif
-	free(send_E3_corn1[n]);
-	free(send_E3_corn2[n]);
-	free(send_E3_corn3[n]);
-	free(send_E3_corn4[n]);
-#if(N3G>0)
-	free(send_E2_corn5[n]);
-	free(send_E2_corn6[n]);
-	free(send_E2_corn7[n]);
-	free(send_E2_corn8[n]);
-	free(send_E1_corn9[n]);
-	free(send_E1_corn10[n]);
-	free(send_E1_corn11[n]);
-	free(send_E1_corn12[n]);
-#endif
-	free(receive_E3_corn1[n]);
-	free(receive_E3_corn2[n]);
-	free(receive_E3_corn3[n]);
-	free(receive_E3_corn4[n]);
-#if(N3G>0)
-	free(receive_E2_corn5[n]);
-	free(receive_E2_corn6[n]);
-	free(receive_E2_corn7[n]);
-	free(receive_E2_corn8[n]);
-	free(receive_E1_corn9[n]);
-	free(receive_E1_corn10[n]);
-	free(receive_E1_corn11[n]);
-	free(receive_E1_corn12[n]);
-#endif
-	free(receive_E3_corn1_1[n]);
-	free(receive_E3_corn2_1[n]);
-	free(receive_E3_corn3_1[n]);
-	free(receive_E3_corn4_1[n]);
-#if(N3G>0)
-	free(receive_E2_corn5_1[n]);
-	free(receive_E2_corn6_1[n]);
-	free(receive_E2_corn7_1[n]);
-	free(receive_E2_corn8_1[n]);
-	free(receive_E1_corn9_1[n]);
-	free(receive_E1_corn10_1[n]);
-	free(receive_E1_corn11_1[n]);
-	free(receive_E1_corn12_1[n]);
-#endif
-	free(receive_E3_corn1_2[n]);
-	free(receive_E3_corn2_2[n]);
-	free(receive_E3_corn3_2[n]);
-	free(receive_E3_corn4_2[n]);
-#if(N3G>0)
-	free(receive_E2_corn5_2[n]);
-	free(receive_E2_corn6_2[n]);
-	free(receive_E2_corn7_2[n]);
-	free(receive_E2_corn8_2[n]);
-	free(receive_E1_corn9_2[n]);
-	free(receive_E1_corn10_2[n]);
-	free(receive_E1_corn11_2[n]);
-	free(receive_E1_corn12_2[n]);
-#endif
-	free(tempreceive_E3_corn1[n]);
-	free(tempreceive_E3_corn2[n]);
-	free(tempreceive_E3_corn3[n]);
-	free(tempreceive_E3_corn4[n]);
-#if(N3G>0)
-	free(tempreceive_E2_corn5[n]);
-	free(tempreceive_E2_corn6[n]);
-	free(tempreceive_E2_corn7[n]);
-	free(tempreceive_E2_corn8[n]);
-	free(tempreceive_E1_corn9[n]);
-	free(tempreceive_E1_corn10[n]);
-	free(tempreceive_E1_corn11[n]);
-	free(tempreceive_E1_corn12[n]);
-#endif
-	free(tempreceive_E3_corn1_1[n]);
-	free(tempreceive_E3_corn2_1[n]);
-	free(tempreceive_E3_corn3_1[n]);
-	free(tempreceive_E3_corn4_1[n]);
-#if(N3G>0)
-	free(tempreceive_E2_corn5_1[n]);
-	free(tempreceive_E2_corn6_1[n]);
-	free(tempreceive_E2_corn7_1[n]);
-	free(tempreceive_E2_corn8_1[n]);
-	free(tempreceive_E1_corn9_1[n]);
-	free(tempreceive_E1_corn10_1[n]);
-	free(tempreceive_E1_corn11_1[n]);
-	free(tempreceive_E1_corn12_1[n]);
-#endif
-	free(tempreceive_E3_corn1_2[n]);
-	free(tempreceive_E3_corn2_2[n]);
-	free(tempreceive_E3_corn3_2[n]);
-	free(tempreceive_E3_corn4_2[n]);
+	free(receive1_E1[nl[n]]);
+	free(receive2_E1[nl[n]]);
+	free(receive3_E1[nl[n]]);
+	free(receive4_E1[nl[n]]);
+	free(receive5_E1[nl[n]]);
+	free(receive6_E1[nl[n]]);
+	free(receive1_3E1[nl[n]]);
+	free(receive1_4E1[nl[n]]);
+	free(receive1_7E1[nl[n]]);
+	free(receive1_8E1[nl[n]]);
+	free(receive2_1E1[nl[n]]);
+	free(receive2_2E1[nl[n]]);
+	free(receive2_3E1[nl[n]]);
+	free(receive2_4E1[nl[n]]);
+	free(receive3_1E1[nl[n]]);
+	free(receive3_2E1[nl[n]]);
+	free(receive3_5E1[nl[n]]);
+	free(receive3_6E1[nl[n]]);
+	free(receive4_5E1[nl[n]]);
+	free(receive4_6E1[nl[n]]);
+	free(receive4_7E1[nl[n]]);
+	free(receive4_8E1[nl[n]]);
 	#if(N3G>0)
-	free(tempreceive_E2_corn5_2[n]);
-	free(tempreceive_E2_corn6_2[n]);
-	free(tempreceive_E2_corn7_2[n]);
-	free(tempreceive_E2_corn8_2[n]);
-	free(tempreceive_E1_corn9_2[n]);
-	free(tempreceive_E1_corn10_2[n]);
-	free(tempreceive_E1_corn11_2[n]);
-	free(tempreceive_E1_corn12_2[n]);
+	free(receive5_1E1[nl[n]]);
+	free(receive5_3E1[nl[n]]);
+	free(receive5_5E1[nl[n]]);
+	free(receive5_7E1[nl[n]]);
+	free(receive6_2E1[nl[n]]);
+	free(receive6_4E1[nl[n]]);
+	free(receive6_6E1[nl[n]]);
+	free(receive6_8E1[nl[n]]);
 	#endif
-	free(receive_E3_corn1_12[n]);
-	free(receive_E3_corn2_12[n]);
-	free(receive_E3_corn3_12[n]);
-	free(receive_E3_corn4_12[n]);
+	free(receive1_3E2[nl[n]]);
+	free(receive1_4E2[nl[n]]);
+	free(receive1_7E2[nl[n]]);
+	free(receive1_8E2[nl[n]]);
+	free(receive2_1E2[nl[n]]);
+	free(receive2_2E2[nl[n]]);
+	free(receive2_3E2[nl[n]]);
+	free(receive2_4E2[nl[n]]);
+	free(receive3_1E2[nl[n]]);
+	free(receive3_2E2[nl[n]]);
+	free(receive3_5E2[nl[n]]);
+	free(receive3_6E2[nl[n]]);
+	free(receive4_5E2[nl[n]]);
+	free(receive4_6E2[nl[n]]);
+	free(receive4_7E2[nl[n]]);
+	free(receive4_8E2[nl[n]]);
 	#if(N3G>0)
-	free(receive_E2_corn5_12[n]);
-	free(receive_E2_corn6_12[n]);
-	free(receive_E2_corn7_12[n]);
-	free(receive_E2_corn8_12[n]);
-	free(receive_E1_corn9_12[n]);
-	free(receive_E1_corn10_12[n]);
-	free(receive_E1_corn11_12[n]);
-	free(receive_E1_corn12_12[n]);
+	free(receive5_1E2[nl[n]]);
+	free(receive5_3E2[nl[n]]);
+	free(receive5_5E2[nl[n]]);
+	free(receive5_7E2[nl[n]]);
+	free(receive6_2E2[nl[n]]);
+	free(receive6_4E2[nl[n]]);
+	free(receive6_6E2[nl[n]]);
+	free(receive6_8E2[nl[n]]);
 	#endif
-	free(receive_E3_corn1_22[n]);
-	free(receive_E3_corn2_22[n]);
-	free(receive_E3_corn3_22[n]);
-	free(receive_E3_corn4_22[n]);
+	free(send1_E[nl[n]]);
+	free(send2_E[nl[n]]);
+	free(send3_E[nl[n]]);
+	free(send4_E[nl[n]]);
 	#if(N3G>0)
-	free(receive_E2_corn5_22[n]);
-	free(receive_E2_corn6_22[n]);
-	free(receive_E2_corn7_22[n]);
-	free(receive_E2_corn8_22[n]);
-	free(receive_E1_corn9_22[n]);
-	free(receive_E1_corn10_22[n]);
-	free(receive_E1_corn11_22[n]);
-	free(receive_E1_corn12_22[n]);
+	free(send5_E[nl[n]]);
+	free(send6_E[nl[n]]);
+	#endif
+	free(send_E3_corn1[nl[n]]);
+	free(send_E3_corn2[nl[n]]);
+	free(send_E3_corn3[nl[n]]);
+	free(send_E3_corn4[nl[n]]);
+	#if(N3G>0)
+	free(send_E2_corn5[nl[n]]);
+	free(send_E2_corn6[nl[n]]);
+	free(send_E2_corn7[nl[n]]);
+	free(send_E2_corn8[nl[n]]);
+	free(send_E1_corn9[nl[n]]);
+	free(send_E1_corn10[nl[n]]);
+	free(send_E1_corn11[nl[n]]);
+	free(send_E1_corn12[nl[n]]);
+	#endif
+	free(receive_E3_corn1[nl[n]]);
+	free(receive_E3_corn2[nl[n]]);
+	free(receive_E3_corn3[nl[n]]);
+	free(receive_E3_corn4[nl[n]]);
+	#if(N3G>0)
+	free(receive_E2_corn5[nl[n]]);
+	free(receive_E2_corn6[nl[n]]);
+	free(receive_E2_corn7[nl[n]]);
+	free(receive_E2_corn8[nl[n]]);
+	free(receive_E1_corn9[nl[n]]);
+	free(receive_E1_corn10[nl[n]]);
+	free(receive_E1_corn11[nl[n]]);
+	free(receive_E1_corn12[nl[n]]);
+	#endif
+	free(receive_E3_corn1_1[nl[n]]);
+	free(receive_E3_corn2_1[nl[n]]);
+	free(receive_E3_corn3_1[nl[n]]);
+	free(receive_E3_corn4_1[nl[n]]);
+	#if(N3G>0)
+	free(receive_E2_corn5_1[nl[n]]);
+	free(receive_E2_corn6_1[nl[n]]);
+	free(receive_E2_corn7_1[nl[n]]);
+	free(receive_E2_corn8_1[nl[n]]);
+	free(receive_E1_corn9_1[nl[n]]);
+	free(receive_E1_corn10_1[nl[n]]);
+	free(receive_E1_corn11_1[nl[n]]);
+	free(receive_E1_corn12_1[nl[n]]);
+	#endif
+	free(receive_E3_corn1_2[nl[n]]);
+	free(receive_E3_corn2_2[nl[n]]);
+	free(receive_E3_corn3_2[nl[n]]);
+	free(receive_E3_corn4_2[nl[n]]);
+	#if(N3G>0)
+	free(receive_E2_corn5_2[nl[n]]);
+	free(receive_E2_corn6_2[nl[n]]);
+	free(receive_E2_corn7_2[nl[n]]);
+	free(receive_E2_corn8_2[nl[n]]);
+	free(receive_E1_corn9_2[nl[n]]);
+	free(receive_E1_corn10_2[nl[n]]);
+	free(receive_E1_corn11_2[nl[n]]);
+	free(receive_E1_corn12_2[nl[n]]);
+	#endif
+	free(tempreceive_E3_corn1[nl[n]]);
+	free(tempreceive_E3_corn2[nl[n]]);
+	free(tempreceive_E3_corn3[nl[n]]);
+	free(tempreceive_E3_corn4[nl[n]]);
+	#if(N3G>0)
+	free(tempreceive_E2_corn5[nl[n]]);
+	free(tempreceive_E2_corn6[nl[n]]);
+	free(tempreceive_E2_corn7[nl[n]]);
+	free(tempreceive_E2_corn8[nl[n]]);
+	free(tempreceive_E1_corn9[nl[n]]);
+	free(tempreceive_E1_corn10[nl[n]]);
+	free(tempreceive_E1_corn11[nl[n]]);
+	free(tempreceive_E1_corn12[nl[n]]);
+	#endif
+	free(tempreceive_E3_corn1_1[nl[n]]);
+	free(tempreceive_E3_corn2_1[nl[n]]);
+	free(tempreceive_E3_corn3_1[nl[n]]);
+	free(tempreceive_E3_corn4_1[nl[n]]);
+	#if(N3G>0)
+	free(tempreceive_E2_corn5_1[nl[n]]);
+	free(tempreceive_E2_corn6_1[nl[n]]);
+	free(tempreceive_E2_corn7_1[nl[n]]);
+	free(tempreceive_E2_corn8_1[nl[n]]);
+	free(tempreceive_E1_corn9_1[nl[n]]);
+	free(tempreceive_E1_corn10_1[nl[n]]);
+	free(tempreceive_E1_corn11_1[nl[n]]);
+	free(tempreceive_E1_corn12_1[nl[n]]);
+	#endif
+	free(tempreceive_E3_corn1_2[nl[n]]);
+	free(tempreceive_E3_corn2_2[nl[n]]);
+	free(tempreceive_E3_corn3_2[nl[n]]);
+	free(tempreceive_E3_corn4_2[nl[n]]);
+	#if(N3G>0)
+	free(tempreceive_E2_corn5_2[nl[n]]);
+	free(tempreceive_E2_corn6_2[nl[n]]);
+	free(tempreceive_E2_corn7_2[nl[n]]);
+	free(tempreceive_E2_corn8_2[nl[n]]);
+	free(tempreceive_E1_corn9_2[nl[n]]);
+	free(tempreceive_E1_corn10_2[nl[n]]);
+	free(tempreceive_E1_corn11_2[nl[n]]);
+	free(tempreceive_E1_corn12_2[nl[n]]);
+	#endif
+	free(receive_E3_corn1_12[nl[n]]);
+	free(receive_E3_corn2_12[nl[n]]);
+	free(receive_E3_corn3_12[nl[n]]);
+	free(receive_E3_corn4_12[nl[n]]);
+	#if(N3G>0)
+	free(receive_E2_corn5_12[nl[n]]);
+	free(receive_E2_corn6_12[nl[n]]);
+	free(receive_E2_corn7_12[nl[n]]);
+	free(receive_E2_corn8_12[nl[n]]);
+	free(receive_E1_corn9_12[nl[n]]);
+	free(receive_E1_corn10_12[nl[n]]);
+	free(receive_E1_corn11_12[nl[n]]);
+	free(receive_E1_corn12_12[nl[n]]);
+	#endif
+	free(receive_E3_corn1_22[nl[n]]);
+	free(receive_E3_corn2_22[nl[n]]);
+	free(receive_E3_corn3_22[nl[n]]);
+	free(receive_E3_corn4_22[nl[n]]);
+	#if(N3G>0)
+	free(receive_E2_corn5_22[nl[n]]);
+	free(receive_E2_corn6_22[nl[n]]);
+	free(receive_E2_corn7_22[nl[n]]);
+	free(receive_E2_corn8_22[nl[n]]);
+	free(receive_E1_corn9_22[nl[n]]);
+	free(receive_E1_corn10_22[nl[n]]);
+	free(receive_E1_corn11_22[nl[n]]);
+	free(receive_E1_corn12_22[nl[n]]);
 	#endif
 	#endif
 	//#endif
-	free(Katm[n]);
-	free(array[n]);
-	free(array_rdump[n]);
-	free(array_gdump1[n]);
-	free(array_gdump2[n]);
-	free(array_diag[n]);
+	free(Katm[nl[n]]);
+	free(array[nl[n]]);
+	free(array_rdump[nl[n]]);
+	free(array_gdump1[nl[n]]);
+	free(array_gdump2[nl[n]]);
+	free(array_diag[nl[n]]);
+
+	mem_spot[nl[n]] = 0;
 }
 
 
 int index_3D(int n, int i, int j, int z)
 {
-	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(N3_GPU[n] + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
+	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(BS_3 + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
 }
 int index_2D(int n, int i, int j, int z)
 {
 	#if(!NONSYMMETRIC)
-	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G) + ((j - N2_GPU_offset[n]) + N2G));
+	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G) + ((j - N2_GPU_offset[n]) + N2G));
 	#else
-	return(((i - N1_GPU_offset[n]) + N1G)*(N2_GPU[n] + 2 * N2G)*(N3_GPU[n] + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(N3_GPU[n] + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
+	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(BS_3 + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
 	#endif
 }
 
@@ -1338,7 +1357,7 @@ void set_grid(int n)
 
 	/* set up boundaries, steps in coordinate grid */
 	set_points(n) ;
-	dV = dx[n][1] * dx[n][2] * dx[n][3];
+	dV = dx[nl[n]][1] * dx[nl[n]][2] * dx[nl[n]][3];
 	double X[NDIM];
 
 	double temp = a;
@@ -1347,9 +1366,9 @@ void set_grid(int n)
 		DLOOPA X[j] = 0.;
 		#pragma omp for collapse(2) schedule(dynamic)
 		#if(!NONSYMMETRIC)
-		ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]) {
+		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]) {
 		#else
-		ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
+		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		#endif
 			if (j<0 || j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND) a = -temp;
 			else a = temp;
@@ -1360,14 +1379,14 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n,i, j, z, CENT, X);
-			gcov_func(X, gcov[n][index_2D(n, i, j, z)][CENT]);
-			gdet[n][index_2D(n, i, j, z)][CENT] = gdet_func(gcov[n][index_2D(n, i, j, z)][CENT]);
-			if (j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])-1 && TRANS_BOUND == 1)gdet[n][index_2D(n, i, j, z)][CENT] *= 1.0;
-			gcon_func(gcov[n][index_2D(n, i, j, z)][CENT], gcon[n][index_2D(n, i, j, z)][CENT]);
+			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
+			gdet[nl[n]][index_2D(n, i, j, z)][CENT] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
+			if (j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])-1 && TRANS_BOUND == 1)gdet[nl[n]][index_2D(n, i, j, z)][CENT] *= 1.0;
+			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT], gcon[nl[n]][index_2D(n, i, j, z)][CENT]);
 			get_geometry(n, i, j, z, CENT, &geom);
-			conn_func(X, &geom, conn[n][index_2D(n, i, j, z)]);
+			conn_func(X, &geom, conn[nl[n]][index_2D(n, i, j, z)]);
 			if ((j == -1 || j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL])) && (TRANS_BOUND==1)){
-				//for (i1 = 0; i1 < NDIM; i1++)for (j1 = 0; j1 < NDIM; j1++)for (z1 = 0; z1 < NDIM; z1++)conn[n][index_2D(n, i, j, z)][i1][j1][z1] = 0.;
+				//for (i1 = 0; i1 < NDIM; i1++)for (j1 = 0; j1 < NDIM; j1++)for (z1 = 0; z1 < NDIM; z1++)conn[nl[n]][index_2D(n, i, j, z)][i1][j1][z1] = 0.;
 			}
 
 			/* corner-centered */
@@ -1376,9 +1395,9 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n, i, j, z, FACE1, X);
-			gcov_func(X, gcov[n][index_2D(n, i, j, z)][CORN]);
-			gdet[n][index_2D(n, i, j, z)][CORN] = gdet_func(gcov[n][index_2D(n, i, j, z)][CORN]);
-			gcon_func(gcov[n][index_2D(n, i, j, z)][CORN], gcon[n][index_2D(n, i, j, z)][CORN]);*/
+			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][CORN]);
+			gdet[nl[n]][index_2D(n, i, j, z)][CORN] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][CORN]);
+			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][CORN], gcon[nl[n]][index_2D(n, i, j, z)][CORN]);*/
 
 			/* r-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, CORN, X);
@@ -1386,9 +1405,9 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, CORN, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, CORN, X);
 			else coord(n, i, j, z, FACE1, X);
-			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE1]);
-			gdet[n][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE1]);
-			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE1], gcon[n][index_2D(n, i, j, z)][FACE1]);
+			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
+			gdet[nl[n]][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
+			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1], gcon[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			
 			/* phi-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
@@ -1396,9 +1415,9 @@ void set_grid(int n)
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z, FACE2, X);
 			else coord(n, i, j, z, FACE3, X);
-			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE3]);
-			gdet[n][index_2D(n, i, j, z)][FACE3] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE3]);
-			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE3], gcon[n][index_2D(n, i, j, z)][FACE3]);
+			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
+			gdet[nl[n]][index_2D(n, i, j, z)][FACE3] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
+			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3], gcon[nl[n]][index_2D(n, i, j, z)][FACE3]);
 
 			/* theta-face-centered */
 			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
@@ -1414,73 +1433,73 @@ void set_grid(int n)
 				a = 0.;
 			}
 			else coord(n, i, j, z, FACE2, X);
-			gcov_func(X, gcov[n][index_2D(n, i, j, z)][FACE2]);
-			gdet[n][index_2D(n, i, j, z)][FACE2] = gdet_func(gcov[n][index_2D(n, i, j, z)][FACE2]);
-			gcon_func(gcov[n][index_2D(n, i, j, z)][FACE2], gcon[n][index_2D(n, i, j, z)][FACE2]);	
+			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
+			gdet[nl[n]][index_2D(n, i, j, z)][FACE2] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
+			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);	
 		}
 	}
 
 	#if(LEER)
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		//Set temporary array with r, th, phi distances between pixels in x1,x2,x3-->0,1,2 at the faces of the cell and x1,x2,x3-->3,4,5 at the cell centres
 		coord(n, i, j, z, FACE1, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index_3D(n, i, j, z)][0] = r;
+		dq[nl[n]][index_3D(n, i, j, z)][0] = r;
 		
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index_3D(n, i, j, z)][3] = r;
+		dq[nl[n]][index_3D(n, i, j, z)][3] = r;
 
 		coord(n, i, j, z, FACE2, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index_3D(n, i, j, z)][1] = th;
+		dq[nl[n]][index_3D(n, i, j, z)][1] = th;
 		
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index_3D(n, i, j, z)][4] = th;
+		dq[nl[n]][index_3D(n, i, j, z)][4] = th;
 
 		coord(n, i, j, z, FACE3, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index_3D(n, i, j, z)][2] = phi;
+		dq[nl[n]][index_3D(n, i, j, z)][2] = phi;
 		
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		dq[n][index_3D(n, i, j, z)][5] = phi;
+		dq[nl[n]][index_3D(n, i, j, z)][5] = phi;
 
-		for (k = 0; k < 6; k++) V[n][index_3D(n, i, j, z)][k] = 0.0;
+		for (k = 0; k < 6; k++) V[nl[n]][index_3D(n, i, j, z)][k] = 0.0;
 	}
-	ZSLOOP3D(-N1G + N1_GPU_offset[n],-N1G + N1_GPU_offset[n], -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
-		V[n][index_3D(n, i, j, z)][3] = V[n][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE1][1][1]);//(r*sin(th)*dphi)^2
-	}
-
-	ZSLOOP3D(-D1 + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], -N2G + N2_GPU_offset[n], -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
-		V[n][index_3D(n, i, j, z)][4] = V[n][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE2][2][2]);//(r*sin(th)*dphi)^2
+	ZSLOOP3D(-N1G + N1_GPU_offset[n],-N1G + N1_GPU_offset[n], -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+		V[nl[n]][index_3D(n, i, j, z)][3] = V[nl[n]][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE1][1][1]);//(r*sin(th)*dphi)^2
 	}
 
-	ZSLOOP3D(-D1 + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], -N3G + N3_GPU_offset[n]) {
-		V[n][index_3D(n, i, j, z)][5] = V[n][index_3D(n, i, j, z)][2] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE3][3][3]);//(r*sin(th)*dphi)^2
+	ZSLOOP3D(-D1 + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], -N2G + N2_GPU_offset[n], -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+		V[nl[n]][index_3D(n, i, j, z)][4] = V[nl[n]][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE2][2][2]);//(r*sin(th)*dphi)^2
 	}
 
-	ZSLOOP3D(-D1+ N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
+	ZSLOOP3D(-D1 + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], -N3G + N3_GPU_offset[n]) {
+		V[nl[n]][index_3D(n, i, j, z)][5] = V[nl[n]][index_3D(n, i, j, z)][2] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE3][3][3]);//(r*sin(th)*dphi)^2
+	}
+
+	ZSLOOP3D(-D1+ N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -D2 + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -D3 + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		//Calculate distances between pixels in x1,x2,x3-->0,1,2 at the faces of the cell and x1,x2,x3-->3,4,5 at the cell centres
-		V[n][index_3D(n, i, j, z)][0] = V[n][index_3D(n, i - D1, j, z)][3] + 0.5*sqrt(gcov[n][index_2D(n, i - D1, j, z)][CENT][1][1]);
-		V[n][index_3D(n, i, j, z)][3] = V[n][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE1][1][1]);
+		V[nl[n]][index_3D(n, i, j, z)][0] = V[nl[n]][index_3D(n, i - D1, j, z)][3] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i - D1, j, z)][CENT][1][1]);
+		V[nl[n]][index_3D(n, i, j, z)][3] = V[nl[n]][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE1][1][1]);
 		
-		V[n][index_3D(n, i, j, z)][1] = V[n][index_3D(n, i, j - D2, z)][4] + 0.5*sqrt(gcov[n][index_2D(n, i, j - D2, z)][CENT][2][2]);
-		V[n][index_3D(n, i, j, z)][4] = V[n][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE2][2][2]);
+		V[nl[n]][index_3D(n, i, j, z)][1] = V[nl[n]][index_3D(n, i, j - D2, z)][4] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j - D2, z)][CENT][2][2]);
+		V[nl[n]][index_3D(n, i, j, z)][4] = V[nl[n]][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE2][2][2]);
 
-		V[n][index_3D(n, i, j, z)][2] = V[n][index_3D(n, i, j, z - D3)][5] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z - D3)][CENT][3][3]);
-		V[n][index_3D(n, i, j, z)][5] = V[n][index_3D(n, i, j, z)][2] + 0.5*sqrt(gcov[n][index_2D(n, i, j, z)][FACE3][3][3]);
+		V[nl[n]][index_3D(n, i, j, z)][2] = V[nl[n]][index_3D(n, i, j, z - D3)][5] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z - D3)][CENT][3][3]);
+		V[nl[n]][index_3D(n, i, j, z)][5] = V[nl[n]][index_3D(n, i, j, z)][2] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE3][3][3]);
 	}
 	#endif
 
 	a=temp;
 
 	#if ZIRI_DUMP
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		coord(n,i, j, z, CENT, X);
-		dxdxp_func(X, dxdxp_z[n][index_3D(n ,i,j,z)]);
-		//invert_matrix(dxdxp_z[n][index_3D(n ,i,j,z)], dxpdx_z[n][index_3D(n ,i,j,z)]);
+		dxdxp_func(X, dxdxp_z[nl[n]][index_3D(n ,i,j,z)]);
+		//invert_matrix(dxdxp_z[nl[n]][index_3D(n ,i,j,z)], dxpdx_z[nl[n]][index_3D(n ,i,j,z)]);
 	}
 	#endif
 

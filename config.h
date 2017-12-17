@@ -107,10 +107,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
-#define PRESTEP2 1
+#define PRESTEP2 0
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
@@ -209,6 +209,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
+
 
 /*************************************************************************
 MNEMONICS SECTION
@@ -457,6 +458,10 @@ Section with derived quantities
 #endif
 #endif
 
+/*Maximum number of blocks per node*/
+#define MAX_BLOCKS (100*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define NB_LOCAL (MAX_BLOCKS*3)
+
 /*Macro declerations*/
 #define PLOOP  for(k=0;k<NPR;k++) //loop over all Dimensions; second rank loop */
 #define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)//loop over all Dimensions; first rank loop */
@@ -468,13 +473,13 @@ Section with derived quantities
 #define delta(i,j) ( (i == j) ? 1. : 0.)
 #define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]) 
 #define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
-#define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]];i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] ;j++)
+#define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)
 #if (N3>1)
 #define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
-#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]];i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] ;z++)
+#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + BS_3 ;z++)
 #else
 #define ZLOOP3D for(i=0;i<N1;i++)for(j=0;j<N2;j++)for(z=0;z<N3;z++)
-#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]];i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] ;z++)
+#define ZLOOP3D_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)for(z=N3_GPU_offset[n_ord[n]];z<N3_GPU_offset[n_ord[n]] + BS_3 ;z++)
 #endif
 #define ZSLOOP(istart,istop,jstart,jstop) for(i=istart;i<=istop;i++) for(j=jstart;j<=jstop;j++)
 #if (N3>1)

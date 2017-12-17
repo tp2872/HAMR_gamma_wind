@@ -55,9 +55,9 @@ void set_Mud(int n){
 	double A, B, C, D, E, F, G, H;
 	struct of_geom geom;
 	#if(!NONSYMMETRIC)
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]) {
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]) {
 	#else
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU[n] + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G) {
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 	#endif
 		//dir 1
 		get_geometry(n, i, j, z, FACE1, &geom);
@@ -65,44 +65,44 @@ void set_Mud(int n){
 		B = pow((geom.gcon[0][0])*(geom.gcon[0][0] * geom.gcon[1][1] - geom.gcon[0][1] * geom.gcon[0][1]), -0.5);
 		C = pow(geom.gcov[3][3], -0.5);
 		D = pow((geom.gcov[3][3])*(geom.gcov[2][2] * geom.gcov[3][3] - geom.gcov[2][3] * geom.gcov[2][3]), -0.5);
-		Mud[n][index2(n, i, j, z)][1][0][0] = A*geom.gcon[0][0];
-		Mud[n][index2(n, i, j, z)][1][0][1] = 0;
-		Mud[n][index2(n, i, j, z)][1][0][2] = 0;
-		Mud[n][index2(n, i, j, z)][1][0][3] = 0;
-		Mud[n][index2(n, i, j, z)][1][1][0] = A*geom.gcon[0][1];
-		Mud[n][index2(n, i, j, z)][1][1][1] = B*(geom.gcon[0][1] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[1][1]);
-		Mud[n][index2(n, i, j, z)][1][1][2] = 0;
-		Mud[n][index2(n, i, j, z)][1][1][3] = 0;
-		Mud[n][index2(n, i, j, z)][1][2][0] = A*geom.gcon[0][2];
-		Mud[n][index2(n, i, j, z)][1][2][1] = B*(geom.gcon[0][1] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[1][2]);
-		Mud[n][index2(n, i, j, z)][1][2][2] = D*geom.gcov[3][3];
-		Mud[n][index2(n, i, j, z)][1][2][3] = 0;
-		Mud[n][index2(n, i, j, z)][1][3][0] = A*geom.gcon[0][3];
-		Mud[n][index2(n, i, j, z)][1][3][1] = B*(geom.gcon[0][1] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[1][3]);
-		Mud[n][index2(n, i, j, z)][1][3][2] = -D*geom.gcov[2][3];
-		Mud[n][index2(n, i, j, z)][1][3][3] = C;
+		Mud[nl[n]][index2(n, i, j, z)][1][0][0] = A*geom.gcon[0][0];
+		Mud[nl[n]][index2(n, i, j, z)][1][0][1] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][1][0][2] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][1][0][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][1][1][0] = A*geom.gcon[0][1];
+		Mud[nl[n]][index2(n, i, j, z)][1][1][1] = B*(geom.gcon[0][1] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[1][1]);
+		Mud[nl[n]][index2(n, i, j, z)][1][1][2] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][1][1][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][1][2][0] = A*geom.gcon[0][2];
+		Mud[nl[n]][index2(n, i, j, z)][1][2][1] = B*(geom.gcon[0][1] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[1][2]);
+		Mud[nl[n]][index2(n, i, j, z)][1][2][2] = D*geom.gcov[3][3];
+		Mud[nl[n]][index2(n, i, j, z)][1][2][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][1][3][0] = A*geom.gcon[0][3];
+		Mud[nl[n]][index2(n, i, j, z)][1][3][1] = B*(geom.gcon[0][1] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[1][3]);
+		Mud[nl[n]][index2(n, i, j, z)][1][3][2] = -D*geom.gcov[2][3];
+		Mud[nl[n]][index2(n, i, j, z)][1][3][3] = C;
 
 		E = geom.gcon[0][1] * geom.gcon[1][2] - geom.gcon[1][1] * geom.gcon[0][2];
 		F = geom.gcon[0][1] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[1][2];
 		G = geom.gcon[0][1] * geom.gcon[1][3] - geom.gcon[1][1] * geom.gcon[0][3];
 		H = geom.gcon[0][1] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[1][3];
 
-		Mud_inv[n][index2(n, i, j, z)][1][0][0] = -A;
-		Mud_inv[n][index2(n, i, j, z)][1][0][1] = 0;
-		Mud_inv[n][index2(n, i, j, z)][1][0][2] = 0;
-		Mud_inv[n][index2(n, i, j, z)][1][0][3] = 0;
-		Mud_inv[n][index2(n, i, j, z)][1][1][0] = B*geom.gcon[0][1];
-		Mud_inv[n][index2(n, i, j, z)][1][1][1] = -B*geom.gcon[0][0];
-		Mud_inv[n][index2(n, i, j, z)][1][1][2] = 0;
-		Mud_inv[n][index2(n, i, j, z)][1][1][3] = 0;
-		Mud_inv[n][index2(n, i, j, z)][1][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[3][3]);
-		Mud_inv[n][index2(n, i, j, z)][1][2][1] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[3][3]);;
-		Mud_inv[n][index2(n, i, j, z)][1][2][2] = 1./(D*geom.gcov[3][3]);
-		Mud_inv[n][index2(n, i, j, z)][1][2][3] = 0;
-		Mud_inv[n][index2(n, i, j, z)][1][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[2][3]/geom.gcov[3][3]);
-		Mud_inv[n][index2(n, i, j, z)][1][3][1] = (B*B / C)*geom.gcon[0][0]*(H+F*geom.gcov[2][3]/geom.gcov[3][3]);
-		Mud_inv[n][index2(n, i, j, z)][1][3][2] = (1./C)*geom.gcov[2][3]/geom.gcov[3][3];
-		Mud_inv[n][index2(n, i, j, z)][1][3][3] = 1./C;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][0] = -A;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][1] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][2] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][3] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][0] = B*geom.gcon[0][1];
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][1] = -B*geom.gcon[0][0];
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][2] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][3] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[3][3]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][1] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[3][3]);;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][2] = 1./(D*geom.gcov[3][3]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][3] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[2][3]/geom.gcov[3][3]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][1] = (B*B / C)*geom.gcon[0][0]*(H+F*geom.gcov[2][3]/geom.gcov[3][3]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][2] = (1./C)*geom.gcov[2][3]/geom.gcov[3][3];
+		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][3] = 1./C;
 
 		//dir 2
 		get_geometry(n, i, j, z, FACE2, &geom);
@@ -110,44 +110,44 @@ void set_Mud(int n){
 		B = pow((geom.gcon[0][0])*(geom.gcon[0][0] * geom.gcon[2][2] - geom.gcon[0][2] * geom.gcon[0][2]), -0.5);
 		C = pow(geom.gcov[1][1], -0.5);
 		D = pow((geom.gcov[1][1])*(geom.gcov[3][3] * geom.gcov[1][1] - geom.gcov[3][1] * geom.gcov[3][1]), -0.5);
-		Mud[n][index2(n, i, j, z)][2][0][0] = A*geom.gcon[0][0];
-		Mud[n][index2(n, i, j, z)][2][0][1] = 0;
-		Mud[n][index2(n, i, j, z)][2][0][2] = 0;
-		Mud[n][index2(n, i, j, z)][2][0][3] = 0;
-		Mud[n][index2(n, i, j, z)][2][2][0] = A*geom.gcon[0][2];
-		Mud[n][index2(n, i, j, z)][2][2][1] = B*(geom.gcon[0][2] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[2][2]);
-		Mud[n][index2(n, i, j, z)][2][2][2] = 0;
-		Mud[n][index2(n, i, j, z)][2][2][3] = 0;
-		Mud[n][index2(n, i, j, z)][2][3][0] = A*geom.gcon[0][3];
-		Mud[n][index2(n, i, j, z)][2][3][1] = B*(geom.gcon[0][2] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[2][3]);
-		Mud[n][index2(n, i, j, z)][2][3][2] = D*geom.gcov[1][1];
-		Mud[n][index2(n, i, j, z)][2][3][3] = 0;
-		Mud[n][index2(n, i, j, z)][2][1][0] = A*geom.gcon[0][1];
-		Mud[n][index2(n, i, j, z)][2][1][1] = B*(geom.gcon[0][2] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[2][1]);
-		Mud[n][index2(n, i, j, z)][2][1][2] = -D*geom.gcov[3][1];
-		Mud[n][index2(n, i, j, z)][2][1][3] = C;
+		Mud[nl[n]][index2(n, i, j, z)][2][0][0] = A*geom.gcon[0][0];
+		Mud[nl[n]][index2(n, i, j, z)][2][0][1] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][2][0][2] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][2][0][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][2][2][0] = A*geom.gcon[0][2];
+		Mud[nl[n]][index2(n, i, j, z)][2][2][1] = B*(geom.gcon[0][2] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[2][2]);
+		Mud[nl[n]][index2(n, i, j, z)][2][2][2] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][2][2][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][2][3][0] = A*geom.gcon[0][3];
+		Mud[nl[n]][index2(n, i, j, z)][2][3][1] = B*(geom.gcon[0][2] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[2][3]);
+		Mud[nl[n]][index2(n, i, j, z)][2][3][2] = D*geom.gcov[1][1];
+		Mud[nl[n]][index2(n, i, j, z)][2][3][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][2][1][0] = A*geom.gcon[0][1];
+		Mud[nl[n]][index2(n, i, j, z)][2][1][1] = B*(geom.gcon[0][2] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[2][1]);
+		Mud[nl[n]][index2(n, i, j, z)][2][1][2] = -D*geom.gcov[3][1];
+		Mud[nl[n]][index2(n, i, j, z)][2][1][3] = C;
 
 		E = geom.gcon[0][2] * geom.gcon[2][3] - geom.gcon[2][2] * geom.gcon[0][3];
 		F = geom.gcon[0][2] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[2][3];
 		G = geom.gcon[0][2] * geom.gcon[2][1] - geom.gcon[2][2] * geom.gcon[0][1];
 		H = geom.gcon[0][2] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[2][1];
 
-		Mud_inv[n][index2(n, i, j, z)][2][0][0] = -A;
-		Mud_inv[n][index2(n, i, j, z)][2][0][2] = 0;
-		Mud_inv[n][index2(n, i, j, z)][2][0][3] = 0;
-		Mud_inv[n][index2(n, i, j, z)][2][0][1] = 0;
-		Mud_inv[n][index2(n, i, j, z)][2][1][0] = B*geom.gcon[0][2];
-		Mud_inv[n][index2(n, i, j, z)][2][1][2] = -B*geom.gcon[0][0];
-		Mud_inv[n][index2(n, i, j, z)][2][1][3] = 0;
-		Mud_inv[n][index2(n, i, j, z)][2][1][1] = 0;
-		Mud_inv[n][index2(n, i, j, z)][2][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[1][1]);
-		Mud_inv[n][index2(n, i, j, z)][2][2][2] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[1][1]);;
-		Mud_inv[n][index2(n, i, j, z)][2][2][3] = 1. / (D*geom.gcov[1][1]);
-		Mud_inv[n][index2(n, i, j, z)][2][2][1] = 0;
-		Mud_inv[n][index2(n, i, j, z)][2][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[3][1] / geom.gcov[1][1]);
-		Mud_inv[n][index2(n, i, j, z)][2][3][2] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[3][1] / geom.gcov[1][1]);
-		Mud_inv[n][index2(n, i, j, z)][2][3][3] = (1. / C)*geom.gcov[3][1] / geom.gcov[1][1];
-		Mud_inv[n][index2(n, i, j, z)][2][3][1] = 1. / C;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][0] = -A;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][2] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][3] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][1] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][0] = B*geom.gcon[0][2];
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][2] = -B*geom.gcon[0][0];
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][3] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][1] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[1][1]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][2] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[1][1]);;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][3] = 1. / (D*geom.gcov[1][1]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][1] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[3][1] / geom.gcov[1][1]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][2] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[3][1] / geom.gcov[1][1]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][3] = (1. / C)*geom.gcov[3][1] / geom.gcov[1][1];
+		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][1] = 1. / C;
 
 		//dir 3
 		get_geometry(n, i, j, z, FACE3, &geom);
@@ -155,44 +155,44 @@ void set_Mud(int n){
 		B = pow((geom.gcon[0][0])*(geom.gcon[0][0] * geom.gcon[3][3] - geom.gcon[0][3] * geom.gcon[0][3]), -0.5);
 		C = pow(geom.gcov[2][2], -0.5);
 		D = pow((geom.gcov[2][2])*(geom.gcov[1][1] * geom.gcov[2][2] - geom.gcov[1][2] * geom.gcov[1][2]), -0.5);
-		Mud[n][index2(n, i, j, z)][3][0][0] = A*geom.gcon[0][0];
-		Mud[n][index2(n, i, j, z)][3][0][1] = 0;
-		Mud[n][index2(n, i, j, z)][3][0][2] = 0;
-		Mud[n][index2(n, i, j, z)][3][0][3] = 0;
-		Mud[n][index2(n, i, j, z)][3][3][0] = A*geom.gcon[0][3];
-		Mud[n][index2(n, i, j, z)][3][3][1] = B*(geom.gcon[0][3] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[3][3]);
-		Mud[n][index2(n, i, j, z)][3][3][2] = 0;
-		Mud[n][index2(n, i, j, z)][3][3][3] = 0;
-		Mud[n][index2(n, i, j, z)][3][1][0] = A*geom.gcon[0][1];
-		Mud[n][index2(n, i, j, z)][3][1][1] = B*(geom.gcon[0][3] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[3][1]);
-		Mud[n][index2(n, i, j, z)][3][1][2] = D*geom.gcov[2][2];
-		Mud[n][index2(n, i, j, z)][3][1][3] = 0;
-		Mud[n][index2(n, i, j, z)][3][2][0] = A*geom.gcon[0][2];
-		Mud[n][index2(n, i, j, z)][3][2][1] = B*(geom.gcon[0][3] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[3][2]);
-		Mud[n][index2(n, i, j, z)][3][2][2] = -D*geom.gcov[1][2];
-		Mud[n][index2(n, i, j, z)][3][2][3] = C;
+		Mud[nl[n]][index2(n, i, j, z)][3][0][0] = A*geom.gcon[0][0];
+		Mud[nl[n]][index2(n, i, j, z)][3][0][1] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][3][0][2] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][3][0][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][3][3][0] = A*geom.gcon[0][3];
+		Mud[nl[n]][index2(n, i, j, z)][3][3][1] = B*(geom.gcon[0][3] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[3][3]);
+		Mud[nl[n]][index2(n, i, j, z)][3][3][2] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][3][3][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][3][1][0] = A*geom.gcon[0][1];
+		Mud[nl[n]][index2(n, i, j, z)][3][1][1] = B*(geom.gcon[0][3] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[3][1]);
+		Mud[nl[n]][index2(n, i, j, z)][3][1][2] = D*geom.gcov[2][2];
+		Mud[nl[n]][index2(n, i, j, z)][3][1][3] = 0;
+		Mud[nl[n]][index2(n, i, j, z)][3][2][0] = A*geom.gcon[0][2];
+		Mud[nl[n]][index2(n, i, j, z)][3][2][1] = B*(geom.gcon[0][3] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[3][2]);
+		Mud[nl[n]][index2(n, i, j, z)][3][2][2] = -D*geom.gcov[1][2];
+		Mud[nl[n]][index2(n, i, j, z)][3][2][3] = C;
 
 		E = geom.gcon[0][3] * geom.gcon[3][1] - geom.gcon[3][3] * geom.gcon[0][1];
 		F = geom.gcon[0][3] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[3][1];
 		G = geom.gcon[0][3] * geom.gcon[3][2] - geom.gcon[3][3] * geom.gcon[0][2];
 		H = geom.gcon[0][3] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[3][2];
 
-		Mud_inv[n][index2(n, i, j, z)][3][0][0] = -A;
-		Mud_inv[n][index2(n, i, j, z)][3][0][3] = 0;
-		Mud_inv[n][index2(n, i, j, z)][3][0][1] = 0;
-		Mud_inv[n][index2(n, i, j, z)][3][0][2] = 0;
-		Mud_inv[n][index2(n, i, j, z)][3][1][0] = B*geom.gcon[0][3];
-		Mud_inv[n][index2(n, i, j, z)][3][1][3] = -B*geom.gcon[0][0];
-		Mud_inv[n][index2(n, i, j, z)][3][1][1] = 0;
-		Mud_inv[n][index2(n, i, j, z)][3][1][2] = 0;
-		Mud_inv[n][index2(n, i, j, z)][3][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[2][2]);
-		Mud_inv[n][index2(n, i, j, z)][3][2][3] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[2][2]);;
-		Mud_inv[n][index2(n, i, j, z)][3][2][1] = 1. / (D*geom.gcov[2][2]);
-		Mud_inv[n][index2(n, i, j, z)][3][2][2] = 0;
-		Mud_inv[n][index2(n, i, j, z)][3][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[1][2] / geom.gcov[2][2]);
-		Mud_inv[n][index2(n, i, j, z)][3][3][3] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[1][2] / geom.gcov[2][2]);
-		Mud_inv[n][index2(n, i, j, z)][3][3][1] = (1. / C)*geom.gcov[1][2] / geom.gcov[2][2];
-		Mud_inv[n][index2(n, i, j, z)][3][3][2] = 1. / C;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][0] = -A;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][3] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][1] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][2] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][0] = B*geom.gcon[0][3];
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][3] = -B*geom.gcon[0][0];
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][1] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][2] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[2][2]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][3] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[2][2]);;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][1] = 1. / (D*geom.gcov[2][2]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][2] = 0;
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[1][2] / geom.gcov[2][2]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][3] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[1][2] / geom.gcov[2][2]);
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][1] = (1. / C)*geom.gcov[1][2] / geom.gcov[2][2];
+		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][2] = 1. / C;
 	}
 	#endif
 }
@@ -207,7 +207,7 @@ slope_lim();
 -- only has HLL and Lax-Friedrichs  approximate Riemann solvers implemented;
 
 ***********************************************************************************************/
-double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int dir, int flag, int n)
+double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
 	#if(HLLC)
 	int i, j, z, k, idel, jdel, zdel, face, i1, j1, i2, j2;
@@ -237,17 +237,17 @@ double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR]
 			ndt_thread = 1.e9;
 
 			/* then evaluate slopes */
-			#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+2*D1)*(N2_GPU[n]+2*D2)/nthreads)
-			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + N3_GPU[n] - 1 + D3){
+			#pragma omp for collapse(2) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)/nthreads)
+			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + BS_3 - 1 + D3){
 				// #pragma ivdep
 				PLOOP{
-					dq[n][index(n, i, j, z)][k] = slope_lim(pr[n][index(n, i - idel, j - jdel, z - zdel)][k], pr[n][index(n, i, j, z)][k], pr[n][index(n, i + idel, j + jdel, z + zdel)][k]);
+					dq[nl[n]][index(n, i, j, z)][k] = slope_lim(pr[nl[n]][index(n, i - idel, j - jdel, z - zdel)][k], pr[nl[n]][index(n, i, j, z)][k], pr[nl[n]][index(n, i + idel, j + jdel, z + zdel)][k]);
 				}
 			}
 
-			#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+jdel+zdel+1)*(N2_GPU[n]+idel+zdel+1)/nthreads)
-			ZSLOOP((N1_GPU_offset[n] - jdel - zdel)*D1, (N1_GPU_offset[n] + N1_GPU[n])*D1, (N2_GPU_offset[n] - idel - zdel)*D2, (N2_GPU_offset[n] + N2_GPU[n])*D2) 	{
-				for (z = (N3_GPU_offset[n] - idel - jdel)*D3; z <= (N3_GPU_offset[n] + N3_GPU[n])*D3; z++){
+			#pragma omp for collapse(2) schedule(static,(BS_1+jdel+zdel+1)*(BS_2+idel+zdel+1)/nthreads)
+			ZSLOOP((N1_GPU_offset[n] - jdel - zdel)*D1, (N1_GPU_offset[n] + BS_1)*D1, (N2_GPU_offset[n] - idel - zdel)*D2, (N2_GPU_offset[n] + BS_2)*D2) 	{
+				for (z = (N3_GPU_offset[n] - idel - jdel)*D3; z <= (N3_GPU_offset[n] + BS_3)*D3; z++){
 					get_geometry(n, i, j, z, face, &geom);
 					get_trans(n, i, j, z, dir, &trans);
 
@@ -256,22 +256,22 @@ double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR]
 
 					#pragma ivdep
 					PLOOP{
-						p_l[k] = pr[n][ind1][k] + 0.5*dq[n][ind1][k];
-						p_r[k] = pr[n][ind0][k] - 0.5*dq[n][ind0][k];
+						p_l[k] = pr[nl[n]][ind1][k] + 0.5*dq[nl[n]][ind1][k];
+						p_r[k] = pr[nl[n]][ind0][k] - 0.5*dq[nl[n]][ind0][k];
 						#if(STAGGERED)
 						if ((dir == 1 && k == B1)){
-							if (flag == 0) p_l[k] = ps[n][ind0][k - (B1 - 1)];
-							else p_l[k] = psh[n][ind0][k - (B1 - 1)];
+							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
+							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
 						if ((dir == 2 && k == B2)){
-							if (flag == 0) p_l[k] = ps[n][ind0][k - (B1 - 1)];
-							else p_l[k] = psh[n][ind0][k - (B1 - 1)];
+							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
+							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
 						if ((dir == 3 && k == B3)){
-							if (flag == 0) p_l[k] = ps[n][ind0][k - (B1 - 1)];
-							else p_l[k] = psh[n][ind0][k - (B1 - 1)];
+							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
+							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
 					#endif
@@ -495,7 +495,7 @@ double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR]
 					}
 					
 					F1[dir][UU] += F1[dir][RHO];
-					PLOOP F[n][ind0][k] = F1[dir][k];
+					PLOOP F[nl[n]][ind0][k] = F1[dir][k];
 
 					double ctop_grid1[NDIM], ctop_grid2[NDIM];
 					for (j1 = 0; j1 < NDIM; j1++)ctop_grid1[j1] = 0.;
@@ -506,13 +506,13 @@ double fluxcalc_hllc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR]
 						ctop_new += ctop_grid2[dir] * trans.Mud[dir][j1]/ctop_grid2[0];
 					}
 					// evaluate restriction on timestep 
-					dtij = fabs(cour*dx[n][dir] / ctop_new);
+					dtij = fabs(cour*dx[nl[n]][dir] / ctop_new);
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;
 						#if(!TRANS_BOUND)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL]))) {
 							//#pragma ivdep
-							PLOOP F[n][ind0][k] = 0.;
+							PLOOP F[nl[n]][ind0][k] = 0.;
 						}
 						#endif
 					}

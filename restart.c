@@ -57,8 +57,8 @@ void restart_write(void)
 	//First close rdump files in progress
 	if (first_rdump == 1){
 		for (n = 0; n < n_active; n++){
-			MPI_Wait(&req_block_rdump[n_ord[n]][0], &Statbound[n_ord[n]][0]);
-			MPI_File_close(&rdump[n_ord[n]]);
+			MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
+			MPI_File_close(&rdump[nl[n_ord[n]]]);
 		}
 	}
 	first_rdump = 0;
@@ -85,8 +85,8 @@ void restart_write(void)
 	for (n = 0; n < n_active; n++){
 		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
 		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
-		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &rdump[n_ord[n]]);
-		rdump_block_write(&rdump[n_ord[n]], n_ord[n]);
+		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &rdump[nl[n_ord[n]]]);
+		rdump_block_write(&rdump[nl[n_ord[n]]], n_ord[n]);
 	}
 	first_rdump = 1;
 
@@ -98,11 +98,11 @@ void rdump_block_write(MPI_File *fp, int n)
 {
 	int i, j, z, k;
 	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
-		for (k = 0; k < NPR; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[n][index_3D(n, i, j, z)][k];
-		for (k = 0; k < NDIM; k++) array_rdump[n][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k + NPR)] = ps[n][index_3D(n, i, j, z)][k];
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G){
+		for (k = 0; k < NPR; k++) array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[nl[n]][index_3D(n, i, j, z)][k];
+		for (k = 0; k < NDIM; k++) array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][k];
 	}
-	MPI_File_iwrite(fp[0], array_rdump[n], (NPR + NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), MPI_DOUBLE, &req_block_rdump[n][0]);
+	MPI_File_iwrite(fp[0], array_rdump[nl[n]], (NPR + NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), MPI_DOUBLE, &req_block_rdump[nl[n]][0]);
 }
 
 void rdump_block_read(FILE *fp, int n)
@@ -110,15 +110,15 @@ void rdump_block_read(FILE *fp, int n)
 	int i, j, z, k;
 	int double_size = sizeof(double);
 
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1 + N3G){
-		PLOOP fread(&(p[n][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G){
+		PLOOP fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
 		#if(STAGGERED)
-		for (k = 0; k<NDIM; k++) fread(&(ps[n][index_3D(n, i, j, z)][k]), double_size, 1, fp);
-		for (k = 0; k<NDIM; k++) ps[n][index_3D(n, i, j, z)][k]*=1.0;
+		for (k = 0; k<NDIM; k++) fread(&(ps[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+		for (k = 0; k<NDIM; k++) ps[nl[n]][index_3D(n, i, j, z)][k]*=1.0;
 		#endif
- 		p[n][index_3D(n, i, j, z)][B1]*=1.0;
-		p[n][index_3D(n, i, j, z)][B2]*=1.0;
-		p[n][index_3D(n, i, j, z)][B3]*=1.0;
+ 		p[nl[n]][index_3D(n, i, j, z)][B1]*=1.0;
+		p[nl[n]][index_3D(n, i, j, z)][B2]*=1.0;
+		p[nl[n]][index_3D(n, i, j, z)][B3]*=1.0;
 	}
 }
 
@@ -187,7 +187,7 @@ void restart_read_grid(void)
 
 	if (param == NULL) {
 		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
-		return 0;
+		return;
 	}
 
 	fread(&k, int_size, 1, param);

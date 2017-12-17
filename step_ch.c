@@ -139,9 +139,9 @@ double advance(int flag)
 
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1){
-			#pragma omp parallel shared(n,p, ph, n_ord,N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset,nthreads) private(i,j,z,k)
+			#pragma omp parallel shared(n,p, ph, n_ord, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset,nthreads) private(i,j,z,k)
 			{
-				#pragma omp for collapse(2) schedule(static,N1_GPU[n_ord[n]]*N2_GPU[n_ord[n]]/nthreads)
+				#pragma omp for collapse(2) schedule(static,BS_1*BS_2/nthreads)
 				ZLOOP3D_MPI{
 					ind0 = index_3D(n_ord[n], i, j, z);
 					#pragma ivdep
@@ -153,17 +153,17 @@ double advance(int flag)
 
 	ndt1 = ndt2 = ndt3 = 1e9;
 	for (n = 0; n < n_active; n++){
-		bdt[n_ord[n]][0] = bdt[n_ord[n]][1] = bdt[n_ord[n]][2] = bdt[n_ord[n]][3] = 1e9;
+		bdt[nl[n_ord[n]]][0] = bdt[nl[n_ord[n]]][1] = bdt[nl[n_ord[n]]][2] = bdt[nl[n_ord[n]]][3] = 1e9;
 	}
 	#if(N1G>0)
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][1] = fluxcalc(ph, F1, 1, 1, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][1] = fluxcalc(p, F1, 1, 0, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[nl[n_ord[n]]][1] = fluxcalc(ph, F1, 1, 1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[nl[n_ord[n]]][1] = fluxcalc(p, F1, 1, 0, n_ord[n]);
 		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+				ndt1 = MY_MIN(ndt1, bdt[nl[n_ord[n]]][1]);
 		}
 		else{
-			ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			ndt1 = MY_MIN(ndt1, bdt[nl[n_ord[n]]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send1(F1, Bufferp_1, n_ord[n]);
@@ -173,13 +173,13 @@ double advance(int flag)
 	#endif
 	#if(N2G>0)
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[n_ord[n]][2] = fluxcalc(ph, F2, 2, 1, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][2] = fluxcalc(p, F2, 2, 0, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[nl[n_ord[n]]][2] = fluxcalc(ph, F2, 2, 1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[nl[n_ord[n]]][2] = fluxcalc(p, F2, 2, 0, n_ord[n]);
 		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-			ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+			ndt2 = MY_MIN(ndt2, bdt[nl[n_ord[n]]][2]);
 		}
 		else{
-			ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			ndt2 = MY_MIN(ndt2, bdt[nl[n_ord[n]]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send2(F2, Bufferp_1, n_ord[n]);
@@ -189,13 +189,13 @@ double advance(int flag)
 	#endif
 	#if(N3G>0)
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[n_ord[n]][3] = fluxcalc(ph, F3, 3, 1, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[n_ord[n]][3] = fluxcalc(p, F3, 3, 0, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  bdt[nl[n_ord[n]]][3] = fluxcalc(ph, F3, 3, 1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[nl[n_ord[n]]][3] = fluxcalc(p, F3, 3, 0, n_ord[n]);
 		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-			ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+			ndt3 = MY_MIN(ndt3, bdt[nl[n_ord[n]]][3]);
 		}
 		else{
-			ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			ndt3 = MY_MIN(ndt3, bdt[nl[n_ord[n]]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send3(F3, Bufferp_1, n_ord[n]);
@@ -224,12 +224,12 @@ double advance(int flag)
 	ndt = 1e9;
 
 	for (n = 0; n < n_active; n++){
-		bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+		bdt[nl[n_ord[n]]][0] = 1. / (1. / bdt[nl[n_ord[n]]][1] + 1. / bdt[nl[n_ord[n]]][2] + 1. / bdt[nl[n_ord[n]]][3]);
 		if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-			ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+			ndt = MY_MIN(ndt, bdt[nl[n_ord[n]]][0]);
 		}
 		else{
-			ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+			ndt = MY_MIN(ndt, bdt[nl[n_ord[n]]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
 	
@@ -238,7 +238,7 @@ double advance(int flag)
 	return defcon*ndt;
 }
 
-void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], double(*restrict pf[NB])[NPR], double(*restrict psf[NB])[NDIM], double Dt, int n)
+void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {
 	int i, j, z, k;
 	double ndt, ndt1, ndt2, ndt3, U[NPR], dU[NPR];
@@ -246,14 +246,14 @@ void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], doubl
 	struct of_state q;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel default(none) shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx, N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
 	{
-		#pragma omp for collapse(2) schedule(static,N1_GPU[n]*N2_GPU[n]/nthreads)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1){
+		#pragma omp for collapse(2) schedule(static,BS_1*BS_2/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
-			source(pb[n][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
-			get_state(pi[n][index_3D(n, i, j, z)], &geom, &q);
-			primtoU(pi[n][index_3D(n, i, j, z)], &q, &geom, U);
+			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
+			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+			primtoU(pi[nl[n]][index_3D(n, i, j, z)], &q, &geom, U);
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
@@ -262,44 +262,44 @@ void utoprim(double(*restrict pi[NB])[NPR], double(*restrict pb[NB])[NPR], doubl
 			PLOOP{
 				U[k] += Dt*(
 				#if( N1G > 0 )
-				- (F1[n][ind1][k] - F1[n][ind0][k]) / dx[n][1]
+				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
 				#endif
 				#if( N2G > 0 )
-				- (F2[n][ind2][k] - F2[n][ind0][k]) / dx[n][2]
+				- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
 				#endif
 				#if( N3G > 0 )
-				- (F3[n][ind3][k] - F3[n][ind0][k]) / dx[n][3]
+				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif
 				+ dU[k]);
 			}
 
 			#if(ELLIPTICAL2)
 			if(z==0){
-				PLOOP U[k] += Dt*(dU_s[n][index_2D(n,i,j,z)][k]);
+				PLOOP U[k] += Dt*(dU_s[nl[n]][index_2D(n,i,j,z)][k]);
 			}
 			#endif
 
 			#if STAGGERED
-			U[B1] = 0.5*(psf[n][index_3D(n, i, j, z)][1] * gdet[n][index_2D(n, i, j, z)][FACE1] + psf[n][index_3D(n, i + D1, j, z)][1] * gdet[n][index_2D(n, i + D1, j, z)][FACE1]);
-			U[B2] = 0.5*(psf[n][index_3D(n, i, j, z)][2] * gdet[n][index_2D(n, i, j, z)][FACE2] + psf[n][index_3D(n, i, j + D2, z)][2] * gdet[n][index_2D(n, i, j + D2, z)][FACE2]);
+			U[B1] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + psf[nl[n]][index_3D(n, i + D1, j, z)][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
+			U[B2] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + psf[nl[n]][index_3D(n, i, j + D2, z)][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
 			#if(N3G>0)
-			U[B3] = 0.5*(psf[n][index_3D(n, i, j, z)][3] * gdet[n][index_2D(n, i, j, z)][FACE3] + psf[n][index_3D(n, i, j, z + D3)][3] * gdet[n][index_2D(n, i, j, z + D3)][FACE3]);
+			U[B3] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-			pflag[n][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[n][ind0]);
+			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
 
 			#if( DO_FONT_FIX ) 
-			if (pflag[n][index_3D(n, i, j, z)]) {
-				failimage[n][index_3D(n, i, j, z)][0]++;
+			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
+				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
 				#if DOKTOT
-				pflag[n][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[n][index_3D(n, i, j, z)], pf[n][index_3D(n, i, j, z)][KTOT]);
+				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT]);
 				#endif
-				if (pflag[n][index_3D(n, i, j, z)]) {
-					failimage[n][index_3D(n, i, j, z)][1]++;
-					if (pflag[n][index_3D(n, i, j, z)]){
-						pflag[n][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[n][index_3D(n, i, j, z)], pf[n][index_3D(n, i, j, z)][KTOT]);
-						pflag[n][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-						failimage[n][index_3D(n, i, j, z)][2]++;
+				if (pflag[nl[n]][index_3D(n, i, j, z)]) {
+					failimage[nl[n]][index_3D(n, i, j, z)][1]++;
+					if (pflag[nl[n]][index_3D(n, i, j, z)]){
+						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT]);
+						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+						failimage[nl[n]][index_3D(n, i, j, z)][2]++;
 					}
 				}
 			}
@@ -318,7 +318,7 @@ slope_lim();
 -- only has HLL and Lax-Friedrichs  approximate Riemann solvers implemented;
 
 ***********************************************************************************************/
-double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int dir, int flag, int n)
+double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
 	int i, j, z, k, idel, jdel, zdel, face;
 	double p_l[NPR], p_r[NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR], F_HLL[NPR], U_HLL[NPR], vcon[NDIM], U_i[NPR], ptot;
@@ -341,31 +341,31 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; }
 	else { exit(10); }
 	
-		#pragma omp parallel default(none) shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel, N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ctop, dtij, ind0, ind1, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
+		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ctop, dtij, ind0, ind1, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
 		{
 			ndt_thread = 1.e9;
 			#if(RESCALE)
 			/** evaluate slopes of primitive variables **/
 			/* first rescale */
 			#pragma omp for schedule(static,1)
-			ZSLOOP(N1_GPU_offset[n] - 2, N1_GPU_offset[n] + N1_GPU[n] + 1, N2_GPU_offset[n] - 2, N2_GPU_offset[n] + N2_GPU[n] + 1) 	{
+			ZSLOOP(N1_GPU_offset[n] - 2, N1_GPU_offset[n] + BS_1 + 1, N2_GPU_offset[n] - 2, N2_GPU_offset[n] + BS_2 + 1) 	{
 				get_geometry(n,i, j,z, CENT, &geom);
-				rescale(pr[n][index_3D(n ,i, j, z)], FORWARD, dir, i, j, CENT, &geom);
+				rescale(pr[nl[n]][index_3D(n ,i, j, z)], FORWARD, dir, i, j, CENT, &geom);
 			}
 			#endif
 
 			/* then evaluate slopes */
-			#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+2*D1)*(N2_GPU[n]+2*D2)/nthreads)
-			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + N1_GPU[n] - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + N2_GPU[n] - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + N3_GPU[n] - 1 + D3){
+			#pragma omp for collapse(2) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)/nthreads)
+			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + BS_3 - 1 + D3){
 				// #pragma ivdep
 				PLOOP{
-					dq[n][index_3D(n, i, j, z)][k] = slope_lim(pr[n][index_3D(n, i - idel, j - jdel, z - zdel)][k], pr[n][index_3D(n, i, j, z)][k], pr[n][index_3D(n, i + idel, j + jdel, z + zdel)][k]);
+					dq[nl[n]][index_3D(n, i, j, z)][k] = slope_lim(pr[nl[n]][index_3D(n, i - idel, j - jdel, z - zdel)][k], pr[nl[n]][index_3D(n, i, j, z)][k], pr[nl[n]][index_3D(n, i + idel, j + jdel, z + zdel)][k]);
 				}
 			}
 
-			#pragma omp for collapse(2) schedule(static,(N1_GPU[n]+jdel+zdel+1)*(N2_GPU[n]+idel+zdel+1)/nthreads)
-			ZSLOOP((N1_GPU_offset[n] - jdel - zdel)*D1, (N1_GPU_offset[n] + N1_GPU[n])*D1, (N2_GPU_offset[n] - idel - zdel)*D2, (N2_GPU_offset[n] + N2_GPU[n])*D2) 	{
-				for (z = (N3_GPU_offset[n] - idel - jdel)*D3; z <= (N3_GPU_offset[n] + N3_GPU[n])*D3; z++){
+			#pragma omp for collapse(2) schedule(static,(BS_1+jdel+zdel+1)*(BS_2+idel+zdel+1)/nthreads)
+			ZSLOOP((N1_GPU_offset[n] - jdel - zdel)*D1, (N1_GPU_offset[n] + BS_1)*D1, (N2_GPU_offset[n] - idel - zdel)*D2, (N2_GPU_offset[n] + BS_2)*D2) 	{
+				for (z = (N3_GPU_offset[n] - idel - jdel)*D3; z <= (N3_GPU_offset[n] + BS_3)*D3; z++){
 					get_geometry(n, i, j, z, face, &geom);
 					/* this avoids problems on the pole */
 					ind0 = index_3D(n, i, j, z);
@@ -373,22 +373,22 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 
 					#pragma ivdep
 					PLOOP{
-						p_l[k] = pr[n][ind1][k] + 0.5*dq[n][ind1][k];
-						p_r[k] = pr[n][ind0][k] - 0.5*dq[n][ind0][k];
+						p_l[k] = pr[nl[n]][ind1][k] + 0.5*dq[nl[n]][ind1][k];
+						p_r[k] = pr[nl[n]][ind0][k] - 0.5*dq[nl[n]][ind0][k];
 						#if(STAGGERED)
 						if ((dir == 1 && k == B1)){
-							if (flag == 0) p_l[k] = ps[n][ind0][k - (B1 - 1)];
-							else p_l[k] = psh[n][ind0][k - (B1 - 1)];
+							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
+							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
 						if ((dir == 2 && k == B2)){
-							if (flag == 0) p_l[k] = ps[n][ind0][k - (B1 - 1)];
-							else p_l[k] = psh[n][ind0][k - (B1 - 1)];
+							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
+							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
 						if ((dir == 3 && k == B3)){
-							if (flag == 0) p_l[k] = ps[n][ind0][k - (B1 - 1)];
-							else p_l[k] = psh[n][ind0][k - (B1 - 1)];
+							if (flag == 0) p_l[k] = ps[nl[n]][ind0][k - (B1 - 1)];
+							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
 						#endif
@@ -426,21 +426,21 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 					#pragma ivdep
 					PLOOP{
 						#if(HLLF)
-						F[n][ind0][k] = (cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
+						F[nl[n]][ind0][k] = (cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
 						#else
-						F[n][ind0][k] = 0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k]));
+						F[nl[n]][ind0][k] = 0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k]));
 						#endif
 					}
 
 					/* evaluate restriction on timestep */
 					cmax = MY_MAX(cmax, cmin);
-					dtij = cour*dx[n][dir] / cmax;
+					dtij = cour*dx[nl[n]][dir] / cmax;
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;
 						#if(!TRANS_BOUND)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1+REF_2,block[n][AMR_LEVEL]))) {
 							//#pragma ivdep
-							PLOOP F[n][ind0][k] = 0.;
+							PLOOP F[nl[n]][ind0][k] = 0.;
 						}
 						#endif
 					}
@@ -456,9 +456,9 @@ double fluxcalc(double(*restrict pr[NB])[NPR], double(*restrict F[NB])[NPR], int
 
 			#if(RESCALE)
 			#pragma omp for schedule(static,1)
-			ZSLOOP(N1_GPU_offset[n] - 2, N1_GPU_offset[n] + N1_GPU[n] + 1, N2_GPU_offset[n] - 2, N2_GPU_offset[n] + N2_GPU[n] + 1) 	{
+			ZSLOOP(N1_GPU_offset[n] - 2, N1_GPU_offset[n] + BS_1 + 1, N2_GPU_offset[n] - 2, N2_GPU_offset[n] + BS_2 + 1) 	{
 				get_geometry(n,i, j,z, CENT, &geom);
-				rescale(pr[n][index_3D(n ,i, j, z)], REVERSE, dir, i, j, CENT, &geom);
+				rescale(pr[nl[n]][index_3D(n ,i, j, z)], REVERSE, dir, i, j, CENT, &geom);
 			}
 			#endif
 		}
@@ -539,35 +539,35 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 0){
 		ndt1 = ndt2 = ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
-			bdt[n_ord[n]][0] = bdt[n_ord[n]][1] = bdt[n_ord[n]][2] = bdt[n_ord[n]][3] = 1e9;
+			bdt[nl[n_ord[n]]][0] = bdt[nl[n_ord[n]]][1] = bdt[nl[n_ord[n]]][2] = bdt[nl[n_ord[n]]][3] = 1e9;
 		}
 	}
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		prestep_half[n_ord[n]] = (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
+		prestep_half[nl[n_ord[n]]] = (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
 			|| (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) < block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
-		prestep_full[n_ord[n]] = (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
+		prestep_full[nl[n_ord[n]]] = (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
 			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
 	}
 
 	#if(N1G>0)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
 	}
 
 	//read_time_GPU();
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][1] = fluxcalc_GPU(n_ord[n],1);
+	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1) bdt[nl[n_ord[n]]][1] = fluxcalc_GPU(n_ord[n],1);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt1 = 1e9;
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1]);
+				ndt1 = MY_MIN(ndt1, bdt[nl[n_ord[n]]][1]);
 			}
 			else{
-				ndt1 = MY_MIN(ndt1, bdt[n_ord[n]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+				ndt1 = MY_MIN(ndt1, bdt[nl[n_ord[n]]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 			}
 		}
 	}
@@ -577,21 +577,21 @@ double advance_GPU(void)
 	#if(N2G>0)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
 	}
 
 	//read_time_GPU();
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][2] = fluxcalc_GPU(n_ord[n],2);
+	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1) bdt[nl[n_ord[n]]][2] = fluxcalc_GPU(n_ord[n],2);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt2 = 1e9;
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2]);
+				ndt2 = MY_MIN(ndt2, bdt[nl[n_ord[n]]][2]);
 			}
 			else{
-				ndt2 = MY_MIN(ndt2, bdt[n_ord[n]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+				ndt2 = MY_MIN(ndt2, bdt[nl[n_ord[n]]][2] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		    }
 	}
 }
@@ -601,21 +601,21 @@ double advance_GPU(void)
 	#if(N3G>0)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
 	}
 
 	//read_time_GPU();
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1) bdt[n_ord[n]][3] = fluxcalc_GPU(n_ord[n],3);
+	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1) bdt[nl[n_ord[n]]][3] = fluxcalc_GPU(n_ord[n],3);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3]);
+				ndt3 = MY_MIN(ndt3, bdt[nl[n_ord[n]]][3]);
 			}
 			else{
-				ndt3 = MY_MIN(ndt3, bdt[n_ord[n]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+				ndt3 = MY_MIN(ndt3, bdt[nl[n_ord[n]]][3] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 			}
 		}
 	}
@@ -634,7 +634,7 @@ double advance_GPU(void)
 	}
 	}*/
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1){
+	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1){
 		flux_send1(F1, BufferF1_1, n_ord[n]);
 		flux_send2(F2, BufferF2_1, n_ord[n]);	
 		#if(N3G>0)
@@ -645,7 +645,7 @@ double advance_GPU(void)
 	#if(PRESTEP)
 	//For last timestep synchronize electric fields immediately
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
 		flux_rec1(F1, BufferF1_1, n_ord[n], 5);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 5);
 		#if(N3G>0)
@@ -655,7 +655,7 @@ double advance_GPU(void)
 
 	//For first timestep do not synchronize electrice fields 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++)if (prestep_full[n_ord[n]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
+	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
 		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
 		#if(N3G>0)
@@ -685,25 +685,25 @@ double advance_GPU(void)
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
 	#if(!TRANS_BOUND)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[n_ord[n]] == 1 || prestep_half[n_ord[n]] == 1) GPU_fix_flux(n_ord[n]);
+	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1) GPU_fix_flux(n_ord[n]);
 	#endif
 	#if(STAGGERED)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport1(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport1(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	rc = 0;
 	GPU_consttransport_bound();
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 
 	#else
@@ -713,12 +713,12 @@ double advance_GPU(void)
 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status,timestep)
 	for (n = 0; n < n_active; n++){
-		if (prestep_full[n_ord[n]] == 1){
+		if (prestep_full[nl[n_ord[n]]] == 1){
 			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
 			GPU_Utoprim(1, n_ord[n], timestep);
 			GPU_fixup(1, n_ord[n], timestep);
 		}
-		else if (prestep_half[n_ord[n]] == 1){
+		else if (prestep_half[nl[n_ord[n]]] == 1){
 			timestep = 0.5 * dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
 			GPU_Utoprim(0, n_ord[n], timestep);
 			GPU_fixup(0, n_ord[n], timestep);
@@ -728,12 +728,12 @@ double advance_GPU(void)
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt = 1e9;
 		for (n = 0; n < n_active; n++){
-			bdt[n_ord[n]][0] = 1. / (1. / bdt[n_ord[n]][1] + 1. / bdt[n_ord[n]][2] + 1. / bdt[n_ord[n]][3]);
+			bdt[nl[n_ord[n]]][0] = 1. / (1. / bdt[nl[n_ord[n]]][1] + 1. / bdt[nl[n_ord[n]]][2] + 1. / bdt[nl[n_ord[n]]][3]);
 			if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1) {
-				ndt = MY_MIN(ndt, bdt[n_ord[n]][0]);
+				ndt = MY_MIN(ndt, bdt[nl[n_ord[n]]][0]);
 			}
 			else{
-				ndt = MY_MIN(ndt, bdt[n_ord[n]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
+				ndt = MY_MIN(ndt, bdt[nl[n_ord[n]]][0] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 			}
 		}
 	}
@@ -769,7 +769,7 @@ void step_ch_debug()
 
 	/*Temporary store ph array from CPU to test array so ph array from GPU can be loaded*/
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			PLOOP{
 				F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
 				F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
@@ -781,7 +781,7 @@ void step_ch_debug()
 	code produce inconsistent output*/
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			PLOOP{
 				if (ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] > 1.001 || ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] < 0.999){
 					if (k != 8){
@@ -795,7 +795,7 @@ void step_ch_debug()
 
 	/*Restore CPU version of ph array*/
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			PLOOP{
 				ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
 				p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
@@ -825,7 +825,7 @@ void step_ch_debug()
 
 	/*Temporary store p array from CPU to test array so ph array from GPU can be loaded*/
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			PLOOP{
 				F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
 				F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
@@ -837,7 +837,7 @@ void step_ch_debug()
 	code produce inconsistent output*/
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			PLOOP{
 				if (p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k]>1.001 || p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] / F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] < 0.999){
 					if (k != 8){
@@ -851,7 +851,7 @@ void step_ch_debug()
 
 	/*Restore CPU version of p array*/
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], N1_GPU[n_ord[n]] + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] + N3G - 1) {
+		ZSLOOP3D(-2 + N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] + 1, -2 + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + 1, -N3G + N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 			PLOOP{
 				p[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F1[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];
 				ph[n_ord[n]][index_3D(n_ord[n], i, j, z)][k] = F2[n_ord[n]][index_3D(n_ord[n], i, j, z)][k];

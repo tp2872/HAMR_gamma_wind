@@ -47,14 +47,14 @@
 
 /* apply floors to density, internal energy */
 
-void fixup(double((* restrict pv[NB])[NPR]), int n)
+void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 {
 	int i, j, z;
-	#pragma omp parallel shared(n,pv,N1_GPU, N2_GPU, N3_GPU, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z)
+	#pragma omp parallel shared(n,pv, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z)
 	{
-		#pragma omp for collapse(2) schedule(static,N1_GPU[n]*N2_GPU[n]/nthreads)
-		for (i = N1_GPU_offset[n]; i<N1_GPU_offset[n] + N1_GPU[n]; i++)for (j = N2_GPU_offset[n]; j<N2_GPU_offset[n] + N2_GPU[n]; j++)for (z = N3_GPU_offset[n]; z<N3_GPU_offset[n] + N3_GPU[n]; z++){			
-			fixup1zone(i, j, z, n, pv[n][index_3D(n, i, j, z)]);
+		#pragma omp for collapse(2) schedule(static,BS_1*BS_2/nthreads)
+		for (i = N1_GPU_offset[n]; i<N1_GPU_offset[n] + BS_1; i++)for (j = N2_GPU_offset[n]; j<N2_GPU_offset[n] + BS_2; j++)for (z = N3_GPU_offset[n]; z<N3_GPU_offset[n] + BS_3; z++){			
+			fixup1zone(i, j, z, n, pv[nl[n]][index_3D(n, i, j, z)]);
 		}
 	}
 }
@@ -184,9 +184,9 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
   if( gamma_calc(pv,&geom,&gamma) ) { 
     /* Treat gamma failure here as "fixable" for fixup_utoprim() */
 	  fprintf(stderr, "Gamma fail: %d %d %d %d \n",n, i, j, z);
-    pflag[n][index_3D(n ,i,j,z)] = -333;
-	pflag[n][index_3D(n ,N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-    failimage[n][index_3D(n ,i,j,z)][3]++ ;
+    pflag[nl[n]][index_3D(n ,i,j,z)] = -333;
+	pflag[nl[n]][index_3D(n ,N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+    failimage[nl[n]][index_3D(n ,i,j,z)][3]++ ;
   }
   else { 
     if(gamma > GAMMAMAX) {
@@ -257,33 +257,33 @@ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 
 /* 12345678 */
 #define AVG8(pr,i,j,z,k, n)  \
-        (0.125*(pr[n][index_3D(n ,i-1,j+1,z)][k]+pr[n][index_3D(n ,i,j+1,z)][k]+pr[n][index_3D(n ,i+1,j+1,z)][k]+pr[n][index_3D(n ,i+1,j,z)][k]+pr[n][index_3D(n ,i+1,j-1,z)][k]+pr[n][index_3D(n ,i,j-1,z)][k]+pr[n][index_3D(n ,i-1,j-1,z)][k]+pr[n][index_3D(n ,i-1,j,z)][k])) 
+        (0.125*(pr[nl[n]][index_3D(n ,i-1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i,j+1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j,z)][k]+pr[nl[n]][index_3D(n ,i+1,j-1,z)][k]+pr[nl[n]][index_3D(n ,i,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j,z)][k])) 
 
 /* 2468  */
-#define AVG4_1(pr,i,j,z,k, n) (0.25*(pr[n][index_3D(n ,i,j+1,z)][k]+pr[n][index_3D(n ,i,j-1,z)][k]+pr[n][index_3D(n ,i-1,j,z)][k]+pr[n][index_3D(n ,i+1,j,z)][k]))
+#define AVG4_1(pr,i,j,z,k, n) (0.25*(pr[nl[n]][index_3D(n ,i,j+1,z)][k]+pr[nl[n]][index_3D(n ,i,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j,z)][k]+pr[nl[n]][index_3D(n ,i+1,j,z)][k]))
 
 /* 1357  */
-#define AVG4_2(pr,i,j,z, k, n) (0.25*(pr[n][index_3D(n ,i+1,j+1,z)][k]+pr[n][index_3D(n ,i+1,j-1,z)][k]+pr[n][index_3D(n ,i-1,j+1,z)][k]+pr[n][index_3D(n ,i-1,j-1,z)][k]))
+#define AVG4_2(pr,i,j,z, k, n) (0.25*(pr[nl[n]][index_3D(n ,i+1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j-1,z)][k]))
 
 /* 2468+cells in 3rd dimension  */
-#define AVG6_1(pr,i,j,z,k, n) (1./6.*(pr[n][index_3D(n ,i,j+1,z)][k]+pr[n][index_3D(n ,i,j-1,z)][k]+pr[n][index_3D(n ,i-1,j,z)][k]+pr[n][index_3D(n ,i+1,j,z)][k] +pr[n][index_3D(n ,i,j,z+1)][k]+pr[n][index_3D(n ,i,j,z-1)][k]))
+#define AVG6_1(pr,i,j,z,k, n) (1./6.*(pr[nl[n]][index_3D(n ,i,j+1,z)][k]+pr[nl[n]][index_3D(n ,i,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j,z)][k]+pr[nl[n]][index_3D(n ,i+1,j,z)][k] +pr[nl[n]][index_3D(n ,i,j,z+1)][k]+pr[nl[n]][index_3D(n ,i,j,z-1)][k]))
 
 /* 2468+cells in 3rd dimension  */
-#define AVG6_2(pr,i,j,z,k, n) (1./6.*(pr[n][index_3D(n ,i+1,j+1,z)][k]+pr[n][index_3D(n ,i+1,j-1,z)][k]+pr[n][index_3D(n ,i-1,j+1,z)][k]+pr[n][index_3D(n ,i-1,j-1,z)][k] +pr[n][index_3D(n ,i,j,z+1)][k]+pr[n][index_3D(n ,i,j,z-1)][k]))
+#define AVG6_2(pr,i,j,z,k, n) (1./6.*(pr[nl[n]][index_3D(n ,i+1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j-1,z)][k] +pr[nl[n]][index_3D(n ,i,j,z+1)][k]+pr[nl[n]][index_3D(n ,i,j,z-1)][k]))
 
 /* + shaped,  Linear interpolation in X1 or X2 directions using only neighbors in these direction */
 /* 48  */
-#define AVG2_X1(pr,i,j,z,k, n) (0.5*(pr[n][index_3D(n ,i-1,j,z)][k]+pr[n][index_3D(n ,i+1,j,z)][k]))
+#define AVG2_X1(pr,i,j,z,k, n) (0.5*(pr[nl[n]][index_3D(n ,i-1,j,z)][k]+pr[nl[n]][index_3D(n ,i+1,j,z)][k]))
 /* 26  */
-#define AVG2_X2(pr,i,j,z,k, n) (0.5*(pr[n][index_3D(n ,i,j-1,z)][k]+pr[n][index_3D(n ,i,j+1,z)][k]))
+#define AVG2_X2(pr,i,j,z,k, n) (0.5*(pr[nl[n]][index_3D(n ,i,j-1,z)][k]+pr[nl[n]][index_3D(n ,i,j+1,z)][k]))
 /*910*/
-#define AVG2_X3(pr,i,j,z,k, n) (0.5*(pr[n][index_3D(n ,i,j,z-1)][k]+pr[n][index_3D(n ,i,j,z+1)][k]))
+#define AVG2_X3(pr,i,j,z,k, n) (0.5*(pr[nl[n]][index_3D(n ,i,j,z-1)][k]+pr[nl[n]][index_3D(n ,i,j,z+1)][k]))
 
 /* x shaped,  Linear interpolation diagonally along both X1 and X2 directions "corner" neighbors */
 /* 37  */
-#define AVG2_1_X1X2(pr,i,j,z,k, n) (0.5*(pr[n][index_3D(n ,i-1,j-1,z)][k]+pr[n][index_3D(n ,i+1,j+1,z)][k]))
+#define AVG2_1_X1X2(pr,i,j,z,k, n) (0.5*(pr[nl[n]][index_3D(n ,i-1,j-1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j+1,z)][k]))
 /* 15  */
-#define AVG2_2_X1X2(pr,i,j,z,k, n) (0.5*(pr[n][index_3D(n ,i-1,j+1,z)][k]+pr[n][index_3D(n ,i+1,j-1,z)][k]))
+#define AVG2_2_X1X2(pr,i,j,z,k, n) (0.5*(pr[nl[n]][index_3D(n ,i-1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j-1,z)][k]))
 
 /*******************************************************************************************
   fixup_utoprim(): 
@@ -298,7 +298,7 @@ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 
  *******************************************************************************************/
 
-void fixup_utoprim(double((* restrict pv[NB])[NPR]), int n)
+void fixup_utoprim(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 {
   int i, j, z, k;
   int pf[11];
@@ -307,14 +307,14 @@ void fixup_utoprim(double((* restrict pv[NB])[NPR]), int n)
 	#pragma omp parallel shared(pflag, pv) private(i,j,z,k, pf)
 	{
 		#pragma omp for schedule(static,1)
-		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) 	{
-			if (pflag[n][index_3D(n ,i, j, z)] != 0) {
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) 	{
+			if (pflag[nl[n]][index_3D(n ,i, j, z)] != 0) {
 				//fprintf(stderr, "i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);
-				pf[1] = !pflag[n][index_3D(n ,i - 1, j + 1, z)];   pf[2] = !pflag[n][index_3D(n ,i, j + 1, z)];  pf[3] = !pflag[n][index_3D(n ,i + 1, j + 1, z)];
-				pf[8] = !pflag[n][index_3D(n ,i - 1, j, z)];                           pf[4] = !pflag[n][index_3D(n ,i + 1, j, z)];
-				pf[7] = !pflag[n][index_3D(n ,i - 1, j - 1, z)];   pf[6] = !pflag[n][index_3D(n ,i, j - 1, z)];  pf[5] = !pflag[n][index_3D(n ,i + 1, j - 1, z)];
+				pf[1] = !pflag[nl[n]][index_3D(n ,i - 1, j + 1, z)];   pf[2] = !pflag[nl[n]][index_3D(n ,i, j + 1, z)];  pf[3] = !pflag[nl[n]][index_3D(n ,i + 1, j + 1, z)];
+				pf[8] = !pflag[nl[n]][index_3D(n ,i - 1, j, z)];                           pf[4] = !pflag[nl[n]][index_3D(n ,i + 1, j, z)];
+				pf[7] = !pflag[nl[n]][index_3D(n ,i - 1, j - 1, z)];   pf[6] = !pflag[nl[n]][index_3D(n ,i, j - 1, z)];  pf[5] = !pflag[nl[n]][index_3D(n ,i + 1, j - 1, z)];
 				#if(N3>1)
-				pf[9] = !pflag[n][index_3D(n ,i, j, z + 1)]; pf[10] = !pflag[n][index_3D(n ,i, j, z - 1)];
+				pf[9] = !pflag[nl[n]][index_3D(n ,i, j, z + 1)]; pf[10] = !pflag[nl[n]][index_3D(n ,i, j, z - 1)];
 				#else
 				pf[9]=0;						      pf[10]=0;
 				#endif
@@ -334,34 +334,34 @@ void fixup_utoprim(double((* restrict pv[NB])[NPR]), int n)
 
 				// Old way:
 				if (pf[2] && pf[4] && pf[6] && pf[8] && pf[9] && pf[10]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG6_1(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG6_1(pv, i, j, z, k, n);
 				}
 				else if (pf[1] && pf[3] && pf[5] && pf[7] && pf[9] && pf[10]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG6_2(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG6_2(pv, i, j, z, k, n);
 				}
 				else if (pf[2] && pf[4] && pf[6] && pf[8]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG4_1(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG4_1(pv, i, j, z, k, n);
 				}
 				else if (pf[1] && pf[3] && pf[5] && pf[7]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG4_2(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG4_2(pv, i, j, z, k, n);
 				}
 				else if (pf[2] && pf[6]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG2_X1(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG2_X1(pv, i, j, z, k, n);
 				}
 				else if (pf[4] && pf[8]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG2_X2(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG2_X2(pv, i, j, z, k, n);
 				}
 				else if (pf[9] && pf[10]){
-					FLOOP pv[n][index_3D(n, i, j, z)][k] = AVG2_X3(pv, i, j, z, k, n);
+					FLOOP pv[nl[n]][index_3D(n, i, j, z)][k] = AVG2_X3(pv, i, j, z, k, n);
 				}
 				else{
-					failimage[n][index_3D(n ,i, j, z)][4]++;
+					failimage[nl[n]][index_3D(n ,i, j, z)][4]++;
 					/* if nothing better to do, then leave densities and B-field unchanged, set v^i = 0 */
-					for (k = RHO; k <= UU; k++) { pv[n][index_3D(n, i, j, z)][k] = 0.5*(AVG4_1(pv, i, j, z, k, n) + AVG4_2(pv, i, j, z, k, n)); }
-					pv[n][index_3D(n ,i, j, z)][U1] = pv[n][index_3D(n ,i, j, z)][U2] = pv[n][index_3D(n ,i, j, z)][U3] = 0.;
+					for (k = RHO; k <= UU; k++) { pv[nl[n]][index_3D(n, i, j, z)][k] = 0.5*(AVG4_1(pv, i, j, z, k, n) + AVG4_2(pv, i, j, z, k, n)); }
+					pv[nl[n]][index_3D(n ,i, j, z)][U1] = pv[nl[n]][index_3D(n ,i, j, z)][U2] = pv[nl[n]][index_3D(n ,i, j, z)][U3] = 0.;
 				}
-				pflag[n][index_3D(n ,i, j, z)] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
-				//fixup1zone(i, j,z, pv[n][index_3D(n ,i,j,z)]);  /* Floor and limit gamma the interpolated value */
+				pflag[nl[n]][index_3D(n ,i, j, z)] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
+				//fixup1zone(i, j,z, pv[nl[n]][index_3D(n ,i,j,z)]);  /* Floor and limit gamma the interpolated value */
 			}
 		}
 	}
@@ -398,12 +398,12 @@ void set_Katm( void )
 
   for (n = 0; n < n_active; n++){
 	  j = N2_GPU_offset[n_ord[n]];
-	  for (i = N1_GPU_offset[n_ord[n]]-N1G; i < N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]]+N1G; i++) {
+	  for (i = N1_GPU_offset[n_ord[n]]-N1G; i < N1_GPU_offset[n_ord[n]] + BS_1+N1G; i++) {
 		  PLOOP prim[k] = 0.;
 		  prim[RHO] = prim[UU] = -1.;
 
 		  fixup1zone(i, j, N3_GPU_offset[n_ord[n]], n_ord[n], prim);
-		  Katm[n_ord[n]][i - (N1_GPU_offset[n_ord[n]]-N1G)] = (gam - 1.) * prim[UU] / pow(prim[RHO], G_tmp);
+		  Katm[nl[n_ord[n]]][i - (N1_GPU_offset[n_ord[n]]-N1G)] = (gam - 1.) * prim[UU] / pow(prim[RHO], G_tmp);
 	  }
   }
   return;
@@ -413,7 +413,7 @@ void set_Katm( void )
 
 #undef FLOOP 
 
-void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], double(*restrict F3[NB])[NPR], int n)
+void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n)
 {
 	int i, j, z, k;
 	double test;
@@ -421,13 +421,13 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 		#pragma omp parallel shared(block, n,n_ord,F1, F2, F3) private(i,z,k)
 		{
 			#pragma omp for schedule(static,1)
-			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
+			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + BS_1 + D1; i++){
 				#pragma ivdep
-				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-					F1[n][index_3D(n, i, -1, z)][B2] = -F1[n][index_3D(n, i, 0, z)][B2];
-					F3[n][index_3D(n, i, -1, z)][B2] = -F3[n][index_3D(n, i, 0, z)][B2];
+				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + BS_3 + D3; z++){
+					F1[nl[n]][index_3D(n, i, -1, z)][B2] = -F1[nl[n]][index_3D(n, i, 0, z)][B2];
+					F3[nl[n]][index_3D(n, i, -1, z)][B2] = -F3[nl[n]][index_3D(n, i, 0, z)][B2];
 					#if INFLOW==0
-					PLOOP F2[n][index_3D(n, i, 0, z)][k] = 0.;
+					PLOOP F2[nl[n]][index_3D(n, i, 0, z)][k] = 0.;
 					#endif	
 				}
 			}
@@ -438,11 +438,11 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 		#pragma omp parallel shared(block,n,n_ord,F1, F2, F3) private(i,z,k)
 		{
 			#pragma omp for schedule(static,1)
-			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + N1_GPU[n] + D1; i++){
+			for (i = N1_GPU_offset[n] - D1; i < N1_GPU_offset[n] + BS_1 + D1; i++){
 				#pragma ivdep
-				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-					F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
-					F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+				for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + BS_3 + D3; z++){
+					F1[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F1[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
+					F3[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][B2] = -F3[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][B2];
 				}
 				#if INFLOW==0
 				PLOOP F2[n][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = 0.;
@@ -455,10 +455,10 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
 			{
 				#pragma omp for schedule(static,1)
-				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
+				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + BS_2 + D2; j++){
 					#pragma ivdep
-					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-						if (F1[n][index_3D(n, 0, j, z)][RHO] > 0.) F1[n][index_3D(n, 0, j, z)][RHO] = 0.;
+					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + BS_3 + D3; z++){
+						if (F1[nl[n]][index_3D(n, 0, j, z)][RHO] > 0.) F1[nl[n]][index_3D(n, 0, j, z)][RHO] = 0.;
 					}
 				}
 			}
@@ -467,10 +467,10 @@ void fix_flux(double(*restrict F1[NB])[NPR], double(*restrict F2[NB])[NPR], doub
 			#pragma omp parallel shared(block,n,n_ord,F1) private(j,z)
 			{
 				#pragma omp for schedule(static,1)
-				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + N2_GPU[n] + D2; j++){
+				for (j = N2_GPU_offset[n] - D2; j < N2_GPU_offset[n] + BS_2 + D2; j++){
 					#pragma ivdep
-					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + N3_GPU[n] + D3; z++){
-						if (F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[n][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
+					for (z = N3_GPU_offset[n] - D3; z < N3_GPU_offset[n] + BS_3 + D3; z++){
+						if (F1[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] < 0.) F1[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL]), j, z)][RHO] = 0.;
 					}
 				}
 			}

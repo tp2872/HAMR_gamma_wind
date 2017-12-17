@@ -1,6 +1,6 @@
 #include "decs_MPI.h"
 
-void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -9,14 +9,14 @@ void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
-					send[n][(i - i1)*zsize*jsize + (j - j1)*zsize + (z - z1)] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1];
+					send[nl[n]][(i - i1)*zsize*jsize + (j - j1)*zsize + (z - z1)] = prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1];
 				}
 			}
 		}
 	}
 }
 
-void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -25,14 +25,14 @@ void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i++){
 				for (z = z1; z < z2; z++){
-					send[n][(j - j1)*zsize*isize + (i - i1)*zsize + (z - z1)] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2];
+					send[nl[n]][(j - j1)*zsize*isize + (i - i1)*zsize + (z - z1)] = prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2];
 				}
 			}
 		}
 	}
 }
 
-void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict prim[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -41,14 +41,14 @@ void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
-					send[n][(z - z1)*jsize*isize + (i - i1)*jsize + (j - j1)] = prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3];
+					send[nl[n]][(z - z1)*jsize*isize + (i - i1)*jsize + (j - j1)] = prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3];
 				}
 			}
 		}
 	}
 }
 
-void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB], double(*restrict F1[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -57,18 +57,18 @@ void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j += 1 + REF_2){
 				for (z = z1; z < z2; z += (1 + REF_3)){
-					send[n][(i - i1) *zsize*jsize + (j - j1) / (1 + REF_2)*zsize + (z - z1) / (1 + REF_3)]
-						= 0.25*(F1[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] +
-						F1[n][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] +
-						F1[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][1] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE1]
-						+ F1[n][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][1] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE1]);
+					send[nl[n]][(i - i1) *zsize*jsize + (j - j1) / (1 + REF_2)*zsize + (z - z1) / (1 + REF_3)]
+						= 0.25*(F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] +
+						F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] +
+						F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][1] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE1]
+						+ F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][1] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE1]);
 				}
 			}
 		}
 	}
 }
 
-void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB], double(*restrict F2[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -77,18 +77,18 @@ void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i += 1 + REF_1){
 				for (z = z1; z < z2; z += 1 + REF_3){
-					send[n][(j - j1)*isize*zsize + (i - i1) / (1 + REF_1)*zsize + (z - z1) / (1 + REF_3)]
-						= 0.25*(F2[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2] +
-						F2[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][2] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE2] +
-						F2[n][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] * gdet[n][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2]
-						+ F2[n][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][2] * gdet[n][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE2]);
+					send[nl[n]][(j - j1)*isize*zsize + (i - i1) / (1 + REF_1)*zsize + (z - z1) / (1 + REF_3)]
+						= 0.25*(F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2] +
+						F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][2] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE2] +
+						F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] * gdet[nl[n]][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2]
+						+ F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][2] * gdet[nl[n]][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][FACE2]);
 				}
 			}
 		}
 	}
 }
 
-void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB], double(*restrict F3[NB])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -97,11 +97,11 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i += 1 + REF_1){
 				for (j = j1; j < j2; j += 1 + REF_2){
-					send[n][(z - z1)*isize*jsize + (i - i1) / (1 + REF_1)*jsize + (j - j1) / (1 + REF_2)]
-						= 0.25*(F3[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] +
-						F3[n][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] +
-						F3[n][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3]
-						+ F3[n][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[n][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3]);
+					send[nl[n]][(z - z1)*isize*jsize + (i - i1) / (1 + REF_1)*jsize + (j - j1) / (1 + REF_2)]
+						= 0.25*(F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] +
+						F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] +
+						F3[nl[n]][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[nl[n]][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3]
+						+ F3[nl[n]][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] * gdet[nl[n]][index_2D(n, i + REF_1 + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3]);
 				}
 			}
 		}
@@ -109,7 +109,7 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 }
 
 
-void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
+void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -119,16 +119,16 @@ void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
-					if (div == 1) factor = gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1];
-					prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1]
-						= receive[n_rec][(i - i1)*zsize*jsize + (j - j1)*zsize + (z - z1)] / factor;
+					if (div == 1) factor = gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1];
+					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1]
+						= receive[nl[n_rec]][(i - i1)*zsize*jsize + (j - j1)*zsize + (z - z1)] / factor;
 				}
 			}
 		}
 	}
 }
 
-void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg){
+void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg){
 	if (gpu == 1){
 
 	}
@@ -139,17 +139,17 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i++){
 				for (z = z1; z < z2; z++){
-					if (neg==0 && div == 1) factor = gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2];
-					else if (neg == 1 && div == 1) factor = -gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2];
-					prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2]
-						= receive[n_rec][(j - j1)*zsize*isize + (i - i1)*zsize + (z - z1)] / factor;
+					if (neg==0 && div == 1) factor = gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2];
+					else if (neg == 1 && div == 1) factor = -gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2];
+					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2]
+						= receive[nl[n_rec]][(j - j1)*zsize*isize + (i - i1)*zsize + (z - z1)] / factor;
 				}
 			}
 		}
 	}
 }
 
-void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB], double(*restrict prim[NB])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
+void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
 	if (gpu == 1){
 
 	}
@@ -159,9 +159,9 @@ void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
-					if (div == 1) factor = gdet[n][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3];
-					prim[n][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3]
-						= receive[n_rec][(z - z1)*isize*jsize + (i - i1)*jsize + (j - j1)] / factor;
+					if (div == 1) factor = gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3];
+					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3]
+						= receive[nl[n_rec]][(z - z1)*isize*jsize + (i - i1)*jsize + (j - j1)] / factor;
 				}
 			}
 		}
@@ -169,7 +169,7 @@ void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 }
 
 /*Send boundaries between compute nodes through MPI*/
-void B_send1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
+void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n){
 #if (MPI_enable)
 	//MPI_Barrier(mpi_cartcomm);
 
@@ -178,32 +178,32 @@ void B_send1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 	if (block[n][AMR_NBR2] >= 0){
 		if (block[block[n][AMR_NBR2]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
-				rc += MPI_Irecv(&receive4_fine[n][0], NDIM * (N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], (540 * n_active_total + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][540]);
+				rc += MPI_Irecv(&receive4_fine[nl[n]][0], NDIM * (BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], (540 * n_active_total + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][540]);
 			}
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive4_5fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][545]);
+			rc += MPI_Irecv(&receive4_5fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][545]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive4_6fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][546]);
+			rc += MPI_Irecv(&receive4_6fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][546]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive4_7fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][547]);
+			rc += MPI_Irecv(&receive4_7fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][547]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive4_8fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][548]);
+			rc += MPI_Irecv(&receive4_8fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE], (540 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][548]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B_average1(n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send2_fine, F1, &(Bufferp[n]), &(Buffersend2fine[n]), &(boundevent[n][520]));
+				pack_send_B_average1(n, BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
+					BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send2_fine, F1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[n]]), &(boundevent[nl[n]][520]));
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						
 					}
-					rc += MPI_Isend(&send2_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N2_GPU[n]) / (1 + REF_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (520 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send2_fine[nl[n]][0], NDIM*(BS_3) / (1 + REF_3)*(BS_2) / (1 + REF_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (520 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -212,39 +212,39 @@ void B_send1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 	//Negative X1
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_ACTIVE] == 1){
-			pack_send_B1(n, 0, 1, 0, N2_GPU[n], 0, N3_GPU[n],
-				N2_GPU[n], N3_GPU[n], send4_fine, F1, &(Bufferp[n]), &(Buffersend4fine[n]), &(boundevent[n][540]));
+			pack_send_B1(n, 0, 1, 0, BS_2, 0, BS_3,
+				BS_2, BS_3, send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundevent[nl[n]][540]));
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 				
 				}
-				rc += MPI_Isend(&send4_fine[n][0], NDIM*N3_GPU[n] * N2_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (540 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-				MPI_Request_free(&req[n]);
+				rc += MPI_Isend(&send4_fine[nl[n]][0], NDIM*BS_3 * BS_2, MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (540 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+				MPI_Request_free(&req[nl[n]]);
 			}
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive2_1fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][521]);
+			rc += MPI_Irecv(&receive2_1fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][521]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive2_2fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][522]);
+			rc += MPI_Irecv(&receive2_2fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][522]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive2_3fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][523]);
+			rc += MPI_Irecv(&receive2_3fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][523]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]&& REF_2 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive2_4fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N2_GPU[n] / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][524]);
+			rc += MPI_Irecv(&receive2_4fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_2 / (1 + REF_2)), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE], (520 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][524]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B_average1(n, 0, 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send4_fine, F1, &(Bufferp[n]), &(Buffersend4fine[n]), &(boundevent[n][540]));
+				pack_send_B_average1(n, 0, 1, 0, BS_2, 0, BS_3,
+					BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundevent[nl[n]][540]));
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						
 					}
-					rc += MPI_Isend(&send4_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N2_GPU[n]) / (1 + REF_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (540 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send4_fine[nl[n]][0], NDIM*(BS_3) / (1 + REF_3)*(BS_2) / (1 + REF_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (540 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -252,7 +252,7 @@ void B_send1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 #endif
 }
 
-void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
+void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n){
 #if (MPI_enable)
 	//Exchange boundary cells for MPI threads
 	//Positive X2
@@ -260,52 +260,52 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 		if (block[block[n][AMR_NBR3]][AMR_ACTIVE] == 1){
 			if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 				if (block[n][AMR_COORD3] < NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
-					pack_send_B2(n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-						N1_GPU[n], N3_GPU[n], send3_fine, F2, &(Bufferp[n]), &(Buffersend3fine[n]), &(boundevent[n][530]));
+					pack_send_B2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+						BS_1, BS_3, send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][530]));
 					if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 						if (gpu == 1){
 						
 						}
-						rc += MPI_Isend(&send3_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (530 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-						MPI_Request_free(&req[n]);
+						rc += MPI_Isend(&send3_fine[nl[n]][0], NDIM*BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (530 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						MPI_Request_free(&req[nl[n]]);
 					}
 				}
 				else if (block[n][AMR_COORD3] >= NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
 					if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
-						rc += MPI_Irecv(&receive1_fine[n][0], NDIM * N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (530 * n_active_total + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][510]);
+						rc += MPI_Irecv(&receive1_fine[nl[n]][0], NDIM * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (530 * n_active_total + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][510]);
 					}
 				}
 			}
 			else{
 				if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Irecv(&receive1_fine[n][0], NDIM * N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (510 * n_active_total + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][510]);
+					rc += MPI_Irecv(&receive1_fine[nl[n]][0], NDIM * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (510 * n_active_total + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][510]);
 				}
 			}
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive1_3fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][513]);
+			rc += MPI_Irecv(&receive1_3fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][513]);
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive1_4fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][514]);
+			rc += MPI_Irecv(&receive1_4fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][514]);
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]&& REF_1 == 1){
-			rc += MPI_Irecv(&receive1_7fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][517]);
+			rc += MPI_Irecv(&receive1_7fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][517]);
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive1_8fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][518]);
+			rc += MPI_Irecv(&receive1_8fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE], (510 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][518]);
 		}
 		
 		if (block[block[n][AMR_NBR3]][AMR_PARENT] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
 			if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B_average2(n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send3_fine, F2, &(Bufferp[n]), &(Buffersend3fine[n]), &(boundevent[n][530]));
+				pack_send_B_average2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+					BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][530]));
 				if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 					
 					}
-					rc += MPI_Isend(&send3_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (530 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send3_fine[nl[n]][0], NDIM*(BS_3) / (1 + REF_3)*(BS_1) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (530 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -316,57 +316,57 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 		if (block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1){	
 			if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 				if (block[n][AMR_COORD3] < NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
-					pack_send_B2(n, 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-						N1_GPU[n], N3_GPU[n], send1_fine, F2, &(Bufferp[n]), &(Buffersend1fine[n]), &(boundevent[n][510]));
+					pack_send_B2(n, 0, BS_1, 0, 1, 0, BS_3,
+						BS_1, BS_3, send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]));
 					if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 						if (gpu == 1){
 							
 						}
-						rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (510 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-						MPI_Request_free(&req[n]);
+						rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (510 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						MPI_Request_free(&req[nl[n]]);
 					}
 				}
 				else if (block[n][AMR_COORD3] >= NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
 					if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
-						rc += MPI_Irecv(&receive3_fine[n][0], NDIM * N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (510 * n_active_total + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][530]);
+						rc += MPI_Irecv(&receive3_fine[nl[n]][0], NDIM * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (510 * n_active_total + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][530]);
 					}
 				}
 			}
 			else{
-				pack_send_B2(n, 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-					N1_GPU[n], N3_GPU[n], send1_fine, F2, &(Bufferp[n]), &(Buffersend1fine[n]), &(boundevent[n][510]));
+				pack_send_B2(n, 0, BS_1, 0, 1, 0, BS_3,
+					BS_1, BS_3, send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]));
 				if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						
 					}
-					rc += MPI_Isend(&send1_fine[n][0], NDIM*N3_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (510 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (510 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive3_1fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][531]);
+			rc += MPI_Irecv(&receive3_1fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][531]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1 ){
-			rc += MPI_Irecv(&receive3_2fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][532]);
+			rc += MPI_Irecv(&receive3_2fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][532]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 ){
-			rc += MPI_Irecv(&receive3_5fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][535]);
+			rc += MPI_Irecv(&receive3_5fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][535]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive3_6fine[n][0], NDIM*(N3_GPU[n] / (1 + REF_3))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][536]);
+			rc += MPI_Irecv(&receive3_6fine[nl[n]][0], NDIM*(BS_3 / (1 + REF_3))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE], (530 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][536]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_PARENT] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
 			if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B_average2(n, 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send1_fine, F2, &(Bufferp[n]), &(Buffersend1fine[n]), &(boundevent[n][510]));
+				pack_send_B_average2(n, 0, BS_1, 0, 1, 0, BS_3,
+					BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]));
 				if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 					
 					}
-					rc += MPI_Isend(&send1_fine[n][0], NDIM*(N3_GPU[n]) / (1 + REF_3)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (510 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*(BS_3) / (1 + REF_3)*(BS_1) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (510 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -374,38 +374,38 @@ void B_send2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 #endif
 }
 
-void B_send3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
+void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
 		if (block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
-				rc += MPI_Irecv(&receive6_fine[n][0], NDIM * N2_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], (560 * n_active_total + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][560]);
+				rc += MPI_Irecv(&receive6_fine[nl[n]][0], NDIM * BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], (560 * n_active_total + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][560]);
 			}
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive6_2fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][562]);
+			rc += MPI_Irecv(&receive6_2fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][562]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive6_4fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][564]);
+			rc += MPI_Irecv(&receive6_4fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][564]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			rc += MPI_Irecv(&receive6_6fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][566]);
+			rc += MPI_Irecv(&receive6_6fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][566]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_2 == 1){
-			rc += MPI_Irecv(&receive6_8fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][568]);
+			rc += MPI_Irecv(&receive6_8fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (560 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][568]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B_average3(n, 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send5_fine, F3, &(Bufferp[n]), &(Buffersend5fine[n]), &(boundevent[n][550]));
+				pack_send_B_average3(n, 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
+					BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send5_fine, F3, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[n]]), &(boundevent[nl[n]][550]));
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						
 					}
-					rc += MPI_Isend(&send5_fine[n][0], NDIM*(N2_GPU[n]) / (1 + REF_2)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (550 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send5_fine[nl[n]][0], NDIM*(BS_2) / (1 + REF_2)*(BS_1) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (550 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -414,38 +414,38 @@ void B_send3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1){
-			pack_send_B3(n, 0, N1_GPU[n], 0, N2_GPU[n], 0, D3, N1_GPU[n], N2_GPU[n], send6_fine, F3, &(Bufferp[n]), &(Buffersend6fine[n]), &(boundevent[n][560]));
+			pack_send_B3(n, 0, BS_1, 0, BS_2, 0, D3, BS_1, BS_2, send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundevent[nl[n]][560]));
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
 				if (gpu == 1){
 				
 				}
-				rc += MPI_Isend(&send6_fine[n][0], NDIM*N2_GPU[n] * N1_GPU[n], MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (560 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-				MPI_Request_free(&req[n]);
+				rc += MPI_Isend(&send6_fine[nl[n]][0], NDIM*BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (560 * n_active_total + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+				MPI_Request_free(&req[nl[n]]);
 			}
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive5_1fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][551]);
+			rc += MPI_Irecv(&receive5_1fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][551]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive5_3fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][553]);
+			rc += MPI_Irecv(&receive5_3fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][553]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			rc += MPI_Irecv(&receive5_5fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][555]);
+			rc += MPI_Irecv(&receive5_5fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][555]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_2 == 1){
-			rc += MPI_Irecv(&receive5_7fine[n][0], NDIM*(N2_GPU[n] / (1 + REF_2))*(N1_GPU[n] / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][557]);
+			rc += MPI_Irecv(&receive5_7fine[nl[n]][0], NDIM*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE], (550 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][557]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B_average3(n, 0, N1_GPU[n], 0, N2_GPU[n], 0, D3,
-					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send6_fine, F3, &(Bufferp[n]), &(Buffersend6fine[n]), &(boundevent[n][560]));
+				pack_send_B_average3(n, 0, BS_1, 0, BS_2, 0, D3,
+					BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundevent[nl[n]][560]));
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						
 					}
-					rc += MPI_Isend(&send6_fine[n][0], NDIM*(N2_GPU[n]) / (1 + REF_2)*(N1_GPU[n]) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (560 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send6_fine[nl[n]][0], NDIM*(BS_2) / (1 + REF_2)*(BS_1) / (1 + REF_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (560 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -456,52 +456,52 @@ void B_send3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 
 
 /*Receive boundaries for compute nodes through MPI*/
-void B_rec1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
+void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n){
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][521], &Statbound[n][521]);
-				unpack_receive_B1(n, n, 0, 1, 0, N2_GPU[n] / (1 + REF_2), 0, N3_GPU[n] / (1 + REF_3),
-					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_1fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_1fine[n]), NULL);
+				MPI_Wait(&boundreqs[nl[n]][521], &Statbound[nl[n]][521]);
+				unpack_receive_B1(n, n, 0, 1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3),
+					BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive2_1fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec2_1fine[nl[n]]), NULL);
 			}
 			else{
-				unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD5], 0, 1, 0, N2_GPU[n] / (1 + REF_2), 0, N3_GPU[n] / (1 + REF_3),
-					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[n]), &(Buffersend2fine[block[block[n][AMR_NBR4]][AMR_CHILD5]]), &(boundevent[block[block[n][AMR_NBR4]][AMR_CHILD5]][520]));
+				unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD5], 0, 1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3),
+					BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[block[n][AMR_NBR4]][AMR_CHILD5]]]), &(boundevent[nl[block[block[n][AMR_NBR4]][AMR_CHILD5]]][520]));
 			}
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][522], &Statbound[n][522]);
-					unpack_receive_B1(n, n, 0, 1, 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_2fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_2fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][522], &Statbound[nl[n]][522]);
+					unpack_receive_B1(n, n, 0, 1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive2_2fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec2_2fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD6], 0, 1, 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[n]), &(Buffersend2fine[block[block[n][AMR_NBR4]][AMR_CHILD6]]), &(boundevent[block[block[n][AMR_NBR4]][AMR_CHILD6]][520]));
+					unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD6], 0, 1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[block[n][AMR_NBR4]][AMR_CHILD6]]]), &(boundevent[nl[block[block[n][AMR_NBR4]][AMR_CHILD6]]][520]));
 				}
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][523], &Statbound[n][523]);
-					unpack_receive_B1(n, n, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, N3_GPU[n] / (1 + REF_3),
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_3fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_3fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][523], &Statbound[nl[n]][523]);
+					unpack_receive_B1(n, n, 0, 1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3),
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive2_3fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec2_3fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD7], 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, N3_GPU[n] / (1 + REF_3),
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[n]), &(Buffersend2fine[block[block[n][AMR_NBR4]][AMR_CHILD7]]), &(boundevent[block[block[n][AMR_NBR4]][AMR_CHILD7]][520]));
+					unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD7], 0, 1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3),
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[block[n][AMR_NBR4]][AMR_CHILD7]]]), &(boundevent[nl[block[block[n][AMR_NBR4]][AMR_CHILD7]]][520]));
 				}
 			}
 			if (REF_2 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][524], &Statbound[n][524]);
-					unpack_receive_B1(n, n, 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive2_4fine, F1, 1, &(Bufferp[n]), &(Bufferrec2_4fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][524], &Statbound[nl[n]][524]);
+					unpack_receive_B1(n, n, 0, 1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive2_4fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec2_4fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD8], 0, 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[n]), &(Buffersend2fine[block[block[n][AMR_NBR4]][AMR_CHILD8]]), &(boundevent[block[block[n][AMR_NBR4]][AMR_CHILD8]][520]));
+					unpack_receive_B1(n, block[block[n][AMR_NBR4]][AMR_CHILD8], 0, 1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[block[n][AMR_NBR4]][AMR_CHILD8]]]), &(boundevent[nl[block[block[n][AMR_NBR4]][AMR_CHILD8]]][520]));
 				}
 			}
 		}
@@ -512,57 +512,57 @@ void B_rec1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 		if (block[block[n][AMR_NBR2]][AMR_ACTIVE] == 1){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][540], &Statbound[n][540]);
-				unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n], N3_GPU[n], receive4_fine, F1, 0, &(Bufferp[n]), &(Bufferrec4fine[n]), NULL);
+				MPI_Wait(&boundreqs[nl[n]][540], &Statbound[nl[n]][540]);
+				unpack_receive_B1(n, n, BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
+					BS_2, BS_3, receive4_fine, F1, 0, &(Bufferp[nl[n]]), &(Bufferrec4fine[nl[n]]), NULL);
 			}
 			else{
-				unpack_receive_B1(n, block[n][AMR_NBR2], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n], N3_GPU[n], send4_fine, F1, 0, &(Bufferp[n]), &(Buffersend4fine[block[n][AMR_NBR2]]), &(boundevent[block[n][AMR_NBR2]][540]));
+				unpack_receive_B1(n, block[n][AMR_NBR2], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
+					BS_2, BS_3, send4_fine, F1, 0, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2]]]), &(boundevent[nl[block[n][AMR_NBR2]]][540]));
 			}		
 		}	
 		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][545], &Statbound[n][545]);
-				unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n] / (1 + REF_2), 0, N3_GPU[n] / (1 + REF_3),
-					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_5fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_5fine[n]), NULL);
+				MPI_Wait(&boundreqs[nl[n]][545], &Statbound[nl[n]][545]);
+				unpack_receive_B1(n, n, BS_1, BS_1 + 1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3),
+					BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive4_5fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec4_5fine[nl[n]]), NULL);
 			}
 			else{
-				unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD1], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n] / (1 + REF_2), 0, N3_GPU[n] / (1 + REF_3),
-					N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[n]), &(Buffersend4fine[block[block[n][AMR_NBR2]][AMR_CHILD1]]), &(boundevent[block[block[n][AMR_NBR2]][AMR_CHILD1]][540]));
+				unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD1], BS_1, BS_1 + 1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3),
+					BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[block[n][AMR_NBR2]][AMR_CHILD1]]]), &(boundevent[nl[block[block[n][AMR_NBR2]][AMR_CHILD1]]][540]));
 			}
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][546], &Statbound[n][546]);
-					unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_6fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_6fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][546], &Statbound[nl[n]][546]);
+					unpack_receive_B1(n, n, BS_1, BS_1 + 1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive4_6fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec4_6fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD2], N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[n]), &(Buffersend4fine[block[block[n][AMR_NBR2]][AMR_CHILD2]]), &(boundevent[block[block[n][AMR_NBR2]][AMR_CHILD2]][540]));
+					unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD2], BS_1, BS_1 + 1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[block[n][AMR_NBR2]][AMR_CHILD2]]]), &(boundevent[nl[block[block[n][AMR_NBR2]][AMR_CHILD2]]][540]));
 				}
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][547], &Statbound[n][547]);
-					unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, N3_GPU[n] / (1 + REF_3),
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_7fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_7fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][547], &Statbound[nl[n]][547]);
+					unpack_receive_B1(n, n, BS_1, BS_1 + 1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3),
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive4_7fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec4_7fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD3], N1_GPU[n], N1_GPU[n] + 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, N3_GPU[n] / (1 + REF_3),
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[n]), &(Buffersend4fine[block[block[n][AMR_NBR2]][AMR_CHILD3]]), &(boundevent[block[block[n][AMR_NBR2]][AMR_CHILD3]][540]));
+					unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD3], BS_1, BS_1 + 1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3),
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[block[n][AMR_NBR2]][AMR_CHILD3]]]), &(boundevent[nl[block[block[n][AMR_NBR2]][AMR_CHILD3]]][540]));
 				}
 			}
 			if (REF_2==1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][548], &Statbound[n][548]);
-					unpack_receive_B1(n, n, N1_GPU[n], N1_GPU[n] + 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), receive4_8fine, F1, 1, &(Bufferp[n]), &(Bufferrec4_8fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][548], &Statbound[nl[n]][548]);
+					unpack_receive_B1(n, n, BS_1, BS_1 + 1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), receive4_8fine, F1, 1, &(Bufferp[nl[n]]), &(Bufferrec4_8fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD4], N1_GPU[n], N1_GPU[n] + 1, N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N2_GPU[n] / (1 + REF_2), N3_GPU[n] / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[n]), &(Buffersend4fine[block[block[n][AMR_NBR2]][AMR_CHILD4]]), &(boundevent[block[block[n][AMR_NBR2]][AMR_CHILD4]][540]));
+					unpack_receive_B1(n, block[block[n][AMR_NBR2]][AMR_CHILD4], BS_1, BS_1 + 1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3,
+						BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[block[n][AMR_NBR2]][AMR_CHILD4]]]), &(boundevent[nl[block[block[n][AMR_NBR2]][AMR_CHILD4]]][540]));
 				}
 			}
 		}
@@ -570,7 +570,7 @@ void B_rec1(double(*restrict F1[NB])[NDIM], double * Bufferp[NB], int n){
 #endif
 }
 
-void B_rec2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
+void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n){
 #if (MPI_enable)
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0){
@@ -578,13 +578,13 @@ void B_rec2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 			//receive from same level grid
 			if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && block[n][AMR_COORD3] >=NB_3*pow(1+REF_3,block[n][AMR_LEVEL])/2){
 				if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][530], &Statbound[n][530]);
-					unpack_receive_B2(n, n, 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-						N1_GPU[n], N3_GPU[n], receive3_fine, F2, 0, &(Bufferp[n]), &(Bufferrec3fine[n]), NULL, 1);
+					MPI_Wait(&boundreqs[nl[n]][530], &Statbound[nl[n]][530]);
+					unpack_receive_B2(n, n, 0, BS_1, 0, 1, 0, BS_3,
+						BS_1, BS_3, receive3_fine, F2, 0, &(Bufferp[nl[n]]), &(Bufferrec3fine[nl[n]]), NULL, 1);
 				}
 				else{
-					unpack_receive_B2(n, block[n][AMR_NBR1], 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-						N1_GPU[n], N3_GPU[n], send1_fine, F2, 0, &(Bufferp[n]), &(Buffersend1fine[block[n][AMR_NBR1]]), &(boundevent[block[n][AMR_NBR1]][510]), 1);
+					unpack_receive_B2(n, block[n][AMR_NBR1], 0, BS_1, 0, 1, 0, BS_3,
+						BS_1, BS_3, send1_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR1]]]), &(boundevent[nl[block[n][AMR_NBR1]]][510]), 1);
 				}
 			}
 			else{
@@ -594,45 +594,45 @@ void B_rec2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][531], &Statbound[n][531]);
-				unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, 1, 0, N3_GPU[n] / (1 + REF_3),
-					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_1fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_1fine[n]), NULL, 0);
+				MPI_Wait(&boundreqs[nl[n]][531], &Statbound[nl[n]][531]);
+				unpack_receive_B2(n, n, 0, BS_1 / (1 + REF_1), 0, 1, 0, BS_3 / (1 + REF_3),
+					BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive3_1fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec3_1fine[nl[n]]), NULL, 0);
 			}
 			else{
-				unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD3], 0, N1_GPU[n] / (1 + REF_1), 0, 1, 0, N3_GPU[n] / (1 + REF_3),
-					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[n]), &(Buffersend3fine[block[block[n][AMR_NBR1]][AMR_CHILD3]]), &(boundevent[block[block[n][AMR_NBR1]][AMR_CHILD3]][530]), 0);
+				unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD3], 0, BS_1 / (1 + REF_1), 0, 1, 0, BS_3 / (1 + REF_3),
+					BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[block[n][AMR_NBR1]][AMR_CHILD3]]]), &(boundevent[nl[block[block[n][AMR_NBR1]][AMR_CHILD3]]][530]), 0);
 			}
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][532], &Statbound[n][532]);
-					unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_2fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_2fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][532], &Statbound[nl[n]][532]);
+					unpack_receive_B2(n, n, 0, BS_1 / (1 + REF_1), 0, 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive3_2fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec3_2fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD4], 0, N1_GPU[n] / (1 + REF_1), 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[n]), &(Buffersend3fine[block[block[n][AMR_NBR1]][AMR_CHILD4]]), &(boundevent[block[block[n][AMR_NBR1]][AMR_CHILD4]][530]), 0);
+					unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD4], 0, BS_1 / (1 + REF_1), 0, 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[block[n][AMR_NBR1]][AMR_CHILD4]]]), &(boundevent[nl[block[block[n][AMR_NBR1]][AMR_CHILD4]]][530]), 0);
 				}
 			}
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][535], &Statbound[n][535]);
-					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, 1, 0, N3_GPU[n] / (1 + REF_3),
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_5fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_5fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][535], &Statbound[nl[n]][535]);
+					unpack_receive_B2(n, n, BS_1 / (1 + REF_1), BS_1, 0, 1, 0, BS_3 / (1 + REF_3),
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive3_5fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec3_5fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD7], N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, 1, 0, N3_GPU[n] / (1 + REF_3),
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[n]), &(Buffersend3fine[block[block[n][AMR_NBR1]][AMR_CHILD7]]), &(boundevent[block[block[n][AMR_NBR1]][AMR_CHILD7]][530]), 0);
+					unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD7], BS_1 / (1 + REF_1), BS_1, 0, 1, 0, BS_3 / (1 + REF_3),
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[block[n][AMR_NBR1]][AMR_CHILD7]]]), &(boundevent[nl[block[block[n][AMR_NBR1]][AMR_CHILD7]]][530]), 0);
 				}
 			}
 			if (REF_1==1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][536], &Statbound[n][536]);
-					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive3_6fine, F2, 1, &(Bufferp[n]), &(Bufferrec3_6fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][536], &Statbound[nl[n]][536]);
+					unpack_receive_B2(n, n, BS_1 / (1 + REF_1), BS_1, 0, 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive3_6fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec3_6fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD8], N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[n]), &(Buffersend3fine[block[block[n][AMR_NBR1]][AMR_CHILD8]]), &(boundevent[block[block[n][AMR_NBR1]][AMR_CHILD8]][530]), 0);
+					unpack_receive_B2(n, block[block[n][AMR_NBR1]][AMR_CHILD8], BS_1 / (1 + REF_1), BS_1, 0, 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[block[n][AMR_NBR1]][AMR_CHILD8]]]), &(boundevent[nl[block[block[n][AMR_NBR1]][AMR_CHILD8]]][530]), 0);
 				}
 			}
 		}
@@ -645,122 +645,122 @@ void B_rec2(double(*restrict F2[NB])[NDIM], double * Bufferp[NB], int n){
 			if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 				if (block[n][AMR_COORD3] >= NB_3*pow(1 + REF_3, block[n][AMR_LEVEL]) / 2){
 					if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
-						MPI_Wait(&boundreqs[n][510], &Statbound[n][510]);
-						unpack_receive_B2(n, n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-							N1_GPU[n], N3_GPU[n], receive1_fine, F2, 0, &(Bufferp[n]), &(Bufferrec1fine[n]), NULL, 1);
+						MPI_Wait(&boundreqs[nl[n]][510], &Statbound[nl[n]][510]);
+						unpack_receive_B2(n, n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+							BS_1, BS_3, receive1_fine, F2, 0, &(Bufferp[nl[n]]), &(Bufferrec1fine[nl[n]]), NULL, 1);
 					}
 					else{
-						unpack_receive_B2(n, block[n][AMR_NBR3], 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-							N1_GPU[n], N3_GPU[n], send3_fine, F2, 0, &(Bufferp[n]), &(Buffersend3fine[block[n][AMR_NBR3]]), &(boundevent[block[n][AMR_NBR3]][530]), 1);
+						unpack_receive_B2(n, block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+							BS_1, BS_3, send3_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR3]]]), &(boundevent[nl[block[n][AMR_NBR3]]][530]), 1);
 					}
 				}
 			}
 			else{
 				if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][510], &Statbound[n][510]);
-					unpack_receive_B2(n, n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-						N1_GPU[n], N3_GPU[n], receive1_fine, F2, 0, &(Bufferp[n]), &(Bufferrec1fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][510], &Statbound[nl[n]][510]);
+					unpack_receive_B2(n, n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+						BS_1, BS_3, receive1_fine, F2, 0, &(Bufferp[nl[n]]), &(Bufferrec1fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[n][AMR_NBR3], 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-						N1_GPU[n], N3_GPU[n], send1_fine, F2, 0, &(Bufferp[n]), &(Buffersend1fine[block[n][AMR_NBR3]]), &(boundevent[block[n][AMR_NBR3]][510]), 0);
+					unpack_receive_B2(n, block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+						BS_1, BS_3, send1_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3]]]), &(boundevent[nl[block[n][AMR_NBR3]]][510]), 0);
 				}
 			}
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][513], &Statbound[n][513]);
-				unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n] / (1 + REF_3),
-					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_3fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_3fine[n]), NULL, 0);
+				MPI_Wait(&boundreqs[nl[n]][513], &Statbound[nl[n]][513]);
+				unpack_receive_B2(n, n, 0, BS_1 / (1 + REF_1), BS_2, BS_2 + 1, 0, BS_3 / (1 + REF_3),
+					BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive1_3fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec1_3fine[nl[n]]), NULL, 0);
 			}
 			else{
-				unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD1], 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n] / (1 + REF_3),
-					N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[n]), &(Buffersend1fine[block[block[n][AMR_NBR3]][AMR_CHILD1]]), &(boundevent[block[block[n][AMR_NBR3]][AMR_CHILD1]][510]), 0);
+				unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD1], 0, BS_1 / (1 + REF_1), BS_2, BS_2 + 1, 0, BS_3 / (1 + REF_3),
+					BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[block[n][AMR_NBR3]][AMR_CHILD1]]]), &(boundevent[nl[block[block[n][AMR_NBR3]][AMR_CHILD1]]][510]), 0);
 			}
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][514], &Statbound[n][514]);
-					unpack_receive_B2(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n], N2_GPU[n] + 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_4fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_4fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][514], &Statbound[nl[n]][514]);
+					unpack_receive_B2(n, n, 0, BS_1 / (1 + REF_1), BS_2, BS_2 + 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive1_4fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec1_4fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD2], 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n], N2_GPU[n] + 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[n]), &(Buffersend1fine[block[block[n][AMR_NBR3]][AMR_CHILD2]]), &(boundevent[block[block[n][AMR_NBR3]][AMR_CHILD2]][510]), 0);
+					unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD2], 0, BS_1 / (1 + REF_1), BS_2, BS_2 + 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[block[n][AMR_NBR3]][AMR_CHILD2]]]), &(boundevent[nl[block[block[n][AMR_NBR3]][AMR_CHILD2]]][510]), 0);
 				}
 			}
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][517], &Statbound[n][517]);
-					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n] / (1 + REF_3),
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_7fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_7fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][517], &Statbound[nl[n]][517]);
+					unpack_receive_B2(n, n, BS_1 / (1 + REF_1), BS_1, BS_2, BS_2 + 1, 0, BS_3 / (1 + REF_3),
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive1_7fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec1_7fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD5], N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n] / (1 + REF_3),
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[n]), &(Buffersend1fine[block[block[n][AMR_NBR3]][AMR_CHILD5]]), &(boundevent[block[block[n][AMR_NBR3]][AMR_CHILD5]][510]), 0);
+					unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD5], BS_1 / (1 + REF_1), BS_1, BS_2, BS_2 + 1, 0, BS_3 / (1 + REF_3),
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[block[n][AMR_NBR3]][AMR_CHILD5]]]), &(boundevent[nl[block[block[n][AMR_NBR3]][AMR_CHILD5]]][510]), 0);
 				}
 			}
 			if (REF_1==1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][518], &Statbound[n][518]);
-					unpack_receive_B2(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), receive1_8fine, F2, 1, &(Bufferp[n]), &(Bufferrec1_8fine[n]), NULL, 0);
+					MPI_Wait(&boundreqs[nl[n]][518], &Statbound[nl[n]][518]);
+					unpack_receive_B2(n, n, BS_1 / (1 + REF_1), BS_1, BS_2, BS_2 + 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), receive1_8fine, F2, 1, &(Bufferp[nl[n]]), &(Bufferrec1_8fine[nl[n]]), NULL, 0);
 				}
 				else{
-					unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD6], N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, N3_GPU[n] / (1 + REF_3), N3_GPU[n],
-						N1_GPU[n] / (1 + REF_1), N3_GPU[n] / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[n]), &(Buffersend1fine[block[block[n][AMR_NBR3]][AMR_CHILD6]]), &(boundevent[block[block[n][AMR_NBR3]][AMR_CHILD6]][510]), 0);
+					unpack_receive_B2(n, block[block[n][AMR_NBR3]][AMR_CHILD6], BS_1 / (1 + REF_1), BS_1, BS_2, BS_2 + 1, BS_3 / (1 + REF_3), BS_3,
+						BS_1 / (1 + REF_1), BS_3 / (1 + REF_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[block[n][AMR_NBR3]][AMR_CHILD6]]]), &(boundevent[nl[block[block[n][AMR_NBR3]][AMR_CHILD6]]][510]), 0);
 				}
 			}
 		}
 	}
 #endif
 }
-void B_rec3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
+void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], int n){
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][551], &Statbound[n][551]);
-				unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, N2_GPU[n] / (1 + REF_2), 0, D3,
-					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_1fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_1fine[n]), NULL);
+				MPI_Wait(&boundreqs[nl[n]][551], &Statbound[nl[n]][551]);
+				unpack_receive_B3(n, n, 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), 0, D3,
+					BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive5_1fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec5_1fine[nl[n]]), NULL);
 			}
 			else{
-				unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD2], 0, N1_GPU[n] / (1 + REF_1), 0, N2_GPU[n] / (1 + REF_2), 0, D3,
-					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[n]), &(Buffersend5fine[block[block[n][AMR_NBR6]][AMR_CHILD2]]), &(boundevent[block[block[n][AMR_NBR6]][AMR_CHILD2]][550]));
+				unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD2], 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), 0, D3,
+					BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[block[n][AMR_NBR6]][AMR_CHILD2]]]), &(boundevent[nl[block[block[n][AMR_NBR6]][AMR_CHILD2]]][550]));
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][553], &Statbound[n][553]);
-					unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_3fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_3fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][553], &Statbound[nl[n]][553]);
+					unpack_receive_B3(n, n, 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, 0, D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive5_3fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec5_3fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD4], 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[n]), &(Buffersend5fine[block[block[n][AMR_NBR6]][AMR_CHILD4]]), &(boundevent[block[block[n][AMR_NBR6]][AMR_CHILD4]][550]));
+					unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD4], 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, 0, D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[block[n][AMR_NBR6]][AMR_CHILD4]]]), &(boundevent[nl[block[block[n][AMR_NBR6]][AMR_CHILD4]]][550]));
 				}
 			}
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][555], &Statbound[n][555]);
-					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, N2_GPU[n] / (1 + REF_2), 0, D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_5fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_5fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][555], &Statbound[nl[n]][555]);
+					unpack_receive_B3(n, n, BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), 0, D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive5_5fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec5_5fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD6], N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, N2_GPU[n] / (1 + REF_2), 0, D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[n]), &(Buffersend5fine[block[block[n][AMR_NBR6]][AMR_CHILD6]]), &(boundevent[block[block[n][AMR_NBR6]][AMR_CHILD6]][550]));
+					unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD6], BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), 0, D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[block[n][AMR_NBR6]][AMR_CHILD6]]]), &(boundevent[nl[block[block[n][AMR_NBR6]][AMR_CHILD6]]][550]));
 				}
 			}
 			if (REF_1==1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][557], &Statbound[n][557]);
-					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive5_7fine, F3, 1, &(Bufferp[n]), &(Bufferrec5_7fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][557], &Statbound[nl[n]][557]);
+					unpack_receive_B3(n, n, BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, 0, D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive5_7fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec5_7fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD8], N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n] / (1 + REF_2), N2_GPU[n], 0, D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[n]), &(Buffersend5fine[block[block[n][AMR_NBR6]][AMR_CHILD8]]), &(boundevent[block[block[n][AMR_NBR6]][AMR_CHILD8]][550]));
+					unpack_receive_B3(n, block[block[n][AMR_NBR6]][AMR_CHILD8], BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, 0, D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[block[n][AMR_NBR6]][AMR_CHILD8]]]), &(boundevent[nl[block[block[n][AMR_NBR6]][AMR_CHILD8]]][550]));
 				}
 			}
 		}
@@ -771,57 +771,57 @@ void B_rec3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 		if (block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][560], &Statbound[n][560]);
-				unpack_receive_B3(n, n, 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n], N2_GPU[n], receive6_fine, F3, 0, &(Bufferp[n]), &(Bufferrec6fine[n]), NULL);
+				MPI_Wait(&boundreqs[nl[n]][560], &Statbound[nl[n]][560]);
+				unpack_receive_B3(n, n, 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
+					BS_1, BS_2, receive6_fine, F3, 0, &(Bufferp[nl[n]]), &(Bufferrec6fine[nl[n]]), NULL);
 			}
 			else{
-				unpack_receive_B3(n, block[n][AMR_NBR5], 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n], N2_GPU[n], send6_fine, F3, 0, &(Bufferp[n]), &(Buffersend6fine[block[n][AMR_NBR5]]), &(boundevent[block[n][AMR_NBR5]][560]));
+				unpack_receive_B3(n, block[n][AMR_NBR5], 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
+					BS_1, BS_2, send6_fine, F3, 0, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5]]]), &(boundevent[nl[block[n][AMR_NBR5]]][560]));
 			}
 		}
 		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-				MPI_Wait(&boundreqs[n][562], &Statbound[n][562]);
-				unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_2fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_2fine[n]), NULL);
+				MPI_Wait(&boundreqs[nl[n]][562], &Statbound[nl[n]][562]);
+				unpack_receive_B3(n, n, 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), BS_3, BS_3 + D3,
+					BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive6_2fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec6_2fine[nl[n]]), NULL);
 			}
 			else{
-				unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD1], 0, N1_GPU[n] / (1 + REF_1), 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[n]), &(Buffersend6fine[block[block[n][AMR_NBR5]][AMR_CHILD1]]), &(boundevent[block[block[n][AMR_NBR5]][AMR_CHILD1]][560]));
+				unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD1], 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), BS_3, BS_3 + D3,
+					BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[block[n][AMR_NBR5]][AMR_CHILD1]]]), &(boundevent[nl[block[block[n][AMR_NBR5]][AMR_CHILD1]]][560]));
 			}
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][564], &Statbound[n][564]);
-					unpack_receive_B3(n, n, 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_4fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_4fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][564], &Statbound[nl[n]][564]);
+					unpack_receive_B3(n, n, 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, BS_3, BS_3 + D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive6_4fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec6_4fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD3], 0, N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[n]), &(Buffersend6fine[block[block[n][AMR_NBR5]][AMR_CHILD3]]), &(boundevent[block[block[n][AMR_NBR5]][AMR_CHILD3]][560]));
+					unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD3], 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, BS_3, BS_3 + D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[block[n][AMR_NBR5]][AMR_CHILD3]]]), &(boundevent[nl[block[block[n][AMR_NBR5]][AMR_CHILD3]]][560]));
 				}
 			}
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][566], &Statbound[n][566]);
-					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n], N3_GPU[n] + D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_6fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_6fine[n]),NULL);
+					MPI_Wait(&boundreqs[nl[n]][566], &Statbound[nl[n]][566]);
+					unpack_receive_B3(n, n, BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), BS_3, BS_3 + D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive6_6fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec6_6fine[nl[n]]),NULL);
 				}
 				else{
-					unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD5], N1_GPU[n] / (1 + REF_1), N1_GPU[n], 0, N2_GPU[n] / (1 + REF_2), N3_GPU[n], N3_GPU[n] + D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[n]), &(Buffersend6fine[block[block[n][AMR_NBR5]][AMR_CHILD5]]), &(boundevent[block[block[n][AMR_NBR5]][AMR_CHILD5]][560]));
+					unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD5], BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), BS_3, BS_3 + D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[block[n][AMR_NBR5]][AMR_CHILD5]]]), &(boundevent[nl[block[block[n][AMR_NBR5]][AMR_CHILD5]]][560]));
 				}
 			}
 			if (REF_1==1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					MPI_Wait(&boundreqs[n][568], &Statbound[n][568]);
-					unpack_receive_B3(n, n, N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), receive6_8fine, F3, 1, &(Bufferp[n]), &(Bufferrec6_8fine[n]), NULL);
+					MPI_Wait(&boundreqs[nl[n]][568], &Statbound[nl[n]][568]);
+					unpack_receive_B3(n, n, BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, BS_3, BS_3 + D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), receive6_8fine, F3, 1, &(Bufferp[nl[n]]), &(Bufferrec6_8fine[nl[n]]), NULL);
 				}
 				else{
-					unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD7], N1_GPU[n] / (1 + REF_1), N1_GPU[n], N2_GPU[n] / (1 + REF_2), N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-						N1_GPU[n] / (1 + REF_1), N2_GPU[n] / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[n]), &(Buffersend6fine[block[block[n][AMR_NBR5]][AMR_CHILD7]]), &(boundevent[block[block[n][AMR_NBR5]][AMR_CHILD7]][560]));
+					unpack_receive_B3(n, block[block[n][AMR_NBR5]][AMR_CHILD7], BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, BS_3, BS_3 + D3,
+						BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[block[n][AMR_NBR5]][AMR_CHILD7]]]), &(boundevent[nl[block[block[n][AMR_NBR5]][AMR_CHILD7]]][560]));
 				}
 			}
 		}
@@ -831,32 +831,32 @@ void B_rec3(double(*restrict F3[NB])[NDIM], double * Bufferp[NB], int n){
 }
 
 /*Send boundaries between compute nodes through MPI*/
-void Bp_send1(double(*restrict F1[NB])[NDIM], int n){
+void Bp_send1(double(*restrict F1[NB_LOCAL])[NDIM], int n){
 #if (MPI_enable)
 	int i;
 	//Exchange boundary cells for MPI threads
 	//Positive X1
 	if (block[n][AMR_NBR2] >= 0){
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive4_5[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][100]);
+			rc += MPI_Irecv(&receive4_5[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][100]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive4_6[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][101]);
+			rc += MPI_Irecv(&receive4_6[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][101]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive4_7[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][102]);
+			rc += MPI_Irecv(&receive4_7[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][102]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive4_8[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][103]);
+			rc += MPI_Irecv(&receive4_8[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE], (640 * n_active_total + block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][103]);
 		}
 		if (block[block[n][AMR_NBR2]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B1(n, N1_GPU[n], N1_GPU[n] + 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n], N3_GPU[n], send2, F1, NULL, NULL, NULL);
+				pack_send_B1(n, BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
+					BS_2, BS_3, send2, F1, NULL, NULL, NULL);
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Isend(&send2[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]) , MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (620 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send2[nl[n]][0], NDIM*(BS_3)*(BS_2) , MPI_DOUBLE, block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (620 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -865,25 +865,25 @@ void Bp_send1(double(*restrict F1[NB])[NDIM], int n){
 	//Negative X1
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive2_1[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][104]);
+			rc += MPI_Irecv(&receive2_1[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][104]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive2_2[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][105]);
+			rc += MPI_Irecv(&receive2_2[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][105]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive2_3[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][106]);
+			rc += MPI_Irecv(&receive2_3[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][106]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive2_4[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][107]);
+			rc += MPI_Irecv(&receive2_4[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE], (620 * n_active_total + block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][107]);
 		}
 		if (block[block[n][AMR_NBR4]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B1(n, 0, 1, 0, N2_GPU[n], 0, N3_GPU[n],
-					N2_GPU[n], N3_GPU[n] , send4, F1, NULL,NULL,NULL);
+				pack_send_B1(n, 0, 1, 0, BS_2, 0, BS_3,
+					BS_2, BS_3 , send4, F1, NULL,NULL,NULL);
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Isend(&send4[n][0], NDIM*(N3_GPU[n])*(N2_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (640 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send4[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (640 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -891,33 +891,33 @@ void Bp_send1(double(*restrict F1[NB])[NDIM], int n){
 #endif
 }
 
-void Bp_send2(double(*restrict F2[NB])[NDIM], int n){
+void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 #if (MPI_enable)
 	int j;
 	//Exchange boundary cells for MPI threads
 	//Positive X2
 	if (block[n][AMR_NBR3] >= 0){
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive1_3[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][108]);
+			rc += MPI_Irecv(&receive1_3[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][108]);
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive1_4[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][109]);
+			rc += MPI_Irecv(&receive1_4[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][109]);
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			rc += MPI_Irecv(&receive1_7[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][110]);
+			rc += MPI_Irecv(&receive1_7[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][110]);
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive1_8[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][111]);
+			rc += MPI_Irecv(&receive1_8[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE], (610 * n_active_total + block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][111]);
 		}
 
 		if (block[block[n][AMR_NBR3]][AMR_PARENT] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
 			if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B2(n, 0, N1_GPU[n], N2_GPU[n], N2_GPU[n] + 1, 0, N3_GPU[n],
-					N1_GPU[n], N3_GPU[n], send3, F2, NULL, NULL, NULL);
+				pack_send_B2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
+					BS_1, BS_3, send3, F2, NULL, NULL, NULL);
 				if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Isend(&send3[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (630 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send3[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (630 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -926,26 +926,26 @@ void Bp_send2(double(*restrict F2[NB])[NDIM], int n){
 	//Negative X2
 	if (block[n][AMR_NBR1] >= 0){
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive3_1[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][112]);
+			rc += MPI_Irecv(&receive3_1[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][112]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			rc += MPI_Irecv(&receive3_2[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][113]);
+			rc += MPI_Irecv(&receive3_2[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][113]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			rc += MPI_Irecv(&receive3_5[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][114]);
+			rc += MPI_Irecv(&receive3_5[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][114]);
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_3 == 1){
-			rc += MPI_Irecv(&receive3_6[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][115]);
+			rc += MPI_Irecv(&receive3_6[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE], (630 * n_active_total + block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][115]);
 		}
 
 		if (block[block[n][AMR_NBR1]][AMR_PARENT] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
 			if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B2(n, 0, N1_GPU[n], 0, 1, 0, N3_GPU[n],
-					N1_GPU[n], N3_GPU[n], send1, F2, NULL, NULL, NULL);
+				pack_send_B2(n, 0, BS_1, 0, 1, 0, BS_3,
+					BS_1, BS_3, send1, F2, NULL, NULL, NULL);
 				if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Isend(&send1[n][0], NDIM*(N3_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (610 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send1[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (610 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -953,32 +953,32 @@ void Bp_send2(double(*restrict F2[NB])[NDIM], int n){
 #endif
 }
 
-void Bp_send3(double(*restrict F3[NB])[NDIM], int n){
+void Bp_send3(double(*restrict F3[NB_LOCAL])[NDIM], int n){
 #if (MPI_enable)
 	int z;
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive6_2[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][116]);
+			rc += MPI_Irecv(&receive6_2[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][116]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive6_4[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][117]);
+			rc += MPI_Irecv(&receive6_4[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][117]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			rc += MPI_Irecv(&receive6_6[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][118]);
+			rc += MPI_Irecv(&receive6_6[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][118]);
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_2 == 1){
-			rc += MPI_Irecv(&receive6_8[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][119]);
+			rc += MPI_Irecv(&receive6_8[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (660 * n_active_total + block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][119]);
 		}
 
 		if (block[block[n][AMR_NBR5]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B3(n, 0, N1_GPU[n], 0, N2_GPU[n], N3_GPU[n], N3_GPU[n] + D3,
-					N1_GPU[n], N2_GPU[n], send5, F3, NULL, NULL, NULL);
+				pack_send_B3(n, 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
+					BS_1, BS_2, send5, F3, NULL, NULL, NULL);
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Isend(&send5[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (650 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send5[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (650 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -987,25 +987,25 @@ void Bp_send3(double(*restrict F3[NB])[NDIM], int n){
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-			rc += MPI_Irecv(&receive5_1[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][120]);
+			rc += MPI_Irecv(&receive5_1[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][120]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			rc += MPI_Irecv(&receive5_3[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][121]);
+			rc += MPI_Irecv(&receive5_3[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][121]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			rc += MPI_Irecv(&receive5_5[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][122]);
+			rc += MPI_Irecv(&receive5_5[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][122]);
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_2 == 1){
-			rc += MPI_Irecv(&receive5_7[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[n][123]);
+			rc += MPI_Irecv(&receive5_7[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE], (650 * n_active_total + block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][123]);
 		}
 
 		if (block[block[n][AMR_NBR6]][AMR_PARENT] >= 0){
 			if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_ACTIVE] == 1){
 				//send to coarser grid
-				pack_send_B3(n, 0, N1_GPU[n], 0, N2_GPU[n], 0, D3, N1_GPU[n], N2_GPU[n], send6, F3, NULL, NULL, NULL);
+				pack_send_B3(n, 0, BS_1, 0, BS_2, 0, D3, BS_1, BS_2, send6, F3, NULL, NULL, NULL);
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
-					rc += MPI_Isend(&send6[n][0], NDIM*(N2_GPU[n])*(N1_GPU[n]), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (660 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[n]);
-					MPI_Request_free(&req[n]);
+					rc += MPI_Isend(&send6[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (660 * n_active_total + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+					MPI_Request_free(&req[nl[n]]);
 				}
 			}
 		}
@@ -1020,38 +1020,38 @@ void Bp_rec1(int n){
 	//Positive X1
 	if (block[n][AMR_NBR2] >= 0){
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			MPI_Wait(&boundreqs[n][100], &Statbound[n][100]);
+			MPI_Wait(&boundreqs[nl[n]][100], &Statbound[nl[n]][100]);
 		}
 		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive4_5[n][i] = send4[block[block[n][AMR_NBR2]][AMR_CHILD1]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive4_5[nl[n]][i] = send4[nl[block[block[n][AMR_NBR2]][AMR_CHILD1]]][i];
 			}
 		}
 
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][101], &Statbound[n][101]);
+			MPI_Wait(&boundreqs[nl[n]][101], &Statbound[nl[n]][101]);
 		}
 		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && REF_3 == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive4_6[n][i] = send4[block[block[n][AMR_NBR2]][AMR_CHILD2]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive4_6[nl[n]][i] = send4[nl[block[block[n][AMR_NBR2]][AMR_CHILD2]]][i];
 			}
 		}
 
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			MPI_Wait(&boundreqs[n][102], &Statbound[n][102]);
+			MPI_Wait(&boundreqs[nl[n]][102], &Statbound[nl[n]][102]);
 		}
 		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && REF_2 == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive4_7[n][i] = send4[block[block[n][AMR_NBR2]][AMR_CHILD3]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive4_7[nl[n]][i] = send4[nl[block[block[n][AMR_NBR2]][AMR_CHILD3]]][i];
 			}
 		}
 
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1 && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][103], &Statbound[n][103]);
+			MPI_Wait(&boundreqs[nl[n]][103], &Statbound[nl[n]][103]);
 		}
 		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && REF_2 == 1 && REF_3 == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive4_8[n][i] = send4[block[block[n][AMR_NBR2]][AMR_CHILD4]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive4_8[nl[n]][i] = send4[nl[block[block[n][AMR_NBR2]][AMR_CHILD4]]][i];
 			}
 		}
 	}
@@ -1059,38 +1059,38 @@ void Bp_rec1(int n){
 	//Negative X1
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-			MPI_Wait(&boundreqs[n][104], &Statbound[n][104]);
+			MPI_Wait(&boundreqs[nl[n]][104], &Statbound[nl[n]][104]);
 		}
 		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive2_1[n][i] = send2[block[block[n][AMR_NBR4]][AMR_CHILD5]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive2_1[nl[n]][i] = send2[nl[block[block[n][AMR_NBR4]][AMR_CHILD5]]][i];
 			}
 		}
 
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][105], &Statbound[n][105]);
+			MPI_Wait(&boundreqs[nl[n]][105], &Statbound[nl[n]][105]);
 		}
 		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && REF_3 == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive2_2[n][i] = send2[block[block[n][AMR_NBR4]][AMR_CHILD6]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive2_2[nl[n]][i] = send2[nl[block[block[n][AMR_NBR4]][AMR_CHILD6]]][i];
 			}
 		}
 
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			MPI_Wait(&boundreqs[n][106], &Statbound[n][106]);
+			MPI_Wait(&boundreqs[nl[n]][106], &Statbound[nl[n]][106]);
 		}
 		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && REF_2 == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive2_3[n][i] = send2[block[block[n][AMR_NBR4]][AMR_CHILD7]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive2_3[nl[n]][i] = send2[nl[block[block[n][AMR_NBR4]][AMR_CHILD7]]][i];
 			}
 		}
 
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1 && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][107], &Statbound[n][107]);
+			MPI_Wait(&boundreqs[nl[n]][107], &Statbound[nl[n]][107]);
 		}
 		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && REF_2 == 1 && REF_3 == 1){
-			for (i = 0; i < NDIM*(N3_GPU[n])*(N2_GPU[n]); i++){
-				receive2_4[n][i] = send2[block[block[n][AMR_NBR4]][AMR_CHILD8]][i];
+			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
+				receive2_4[nl[n]][i] = send2[nl[block[block[n][AMR_NBR4]][AMR_CHILD8]]][i];
 			}
 		}
 	}
@@ -1101,38 +1101,38 @@ void Bp_rec2(int n){
 	//Positive X2
 	if (block[n][AMR_NBR3] >= 0){
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			MPI_Wait(&boundreqs[n][108], &Statbound[n][108]);
+			MPI_Wait(&boundreqs[nl[n]][108], &Statbound[nl[n]][108]);
 		}
 		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive1_3[n][j] = send1[block[block[n][AMR_NBR3]][AMR_CHILD1]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive1_3[nl[n]][j] = send1[nl[block[block[n][AMR_NBR3]][AMR_CHILD1]]][j];
 			}
 		}
 
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][109], &Statbound[n][109]);
+			MPI_Wait(&boundreqs[nl[n]][109], &Statbound[nl[n]][109]);
 		}
 		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && REF_3 == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive1_4[n][j] = send1[block[block[n][AMR_NBR3]][AMR_CHILD2]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive1_4[nl[n]][j] = send1[nl[block[block[n][AMR_NBR3]][AMR_CHILD2]]][j];
 			}
 		}
 
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			MPI_Wait(&boundreqs[n][110], &Statbound[n][110]);
+			MPI_Wait(&boundreqs[nl[n]][110], &Statbound[nl[n]][110]);
 		}
 		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && REF_1 == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive1_7[n][j] = send1[block[block[n][AMR_NBR3]][AMR_CHILD5]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive1_7[nl[n]][j] = send1[nl[block[block[n][AMR_NBR3]][AMR_CHILD5]]][j];
 			}
 		}
 
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][111], &Statbound[n][111]);
+			MPI_Wait(&boundreqs[nl[n]][111], &Statbound[nl[n]][111]);
 		}
 		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && REF_1 == 1 && REF_3 == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive1_8[n][j] = send1[block[block[n][AMR_NBR3]][AMR_CHILD6]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive1_8[nl[n]][j] = send1[nl[block[block[n][AMR_NBR3]][AMR_CHILD6]]][j];
 			}
 		}
 	}
@@ -1140,38 +1140,38 @@ void Bp_rec2(int n){
 	//Negative X2
 	if (block[n][AMR_NBR1] >= 0){
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-			MPI_Wait(&boundreqs[n][112], &Statbound[n][112]);
+			MPI_Wait(&boundreqs[nl[n]][112], &Statbound[nl[n]][112]);
 		}
 		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive3_1[n][j] = send3[block[block[n][AMR_NBR1]][AMR_CHILD3]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive3_1[nl[n]][j] = send3[nl[block[block[n][AMR_NBR1]][AMR_CHILD3]]][j];
 			}
 		}
 
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][113], &Statbound[n][113]);
+			MPI_Wait(&boundreqs[nl[n]][113], &Statbound[nl[n]][113]);
 		}
 		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && REF_3 == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive3_2[n][j] = send3[block[block[n][AMR_NBR1]][AMR_CHILD4]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive3_2[nl[n]][j] = send3[nl[block[block[n][AMR_NBR1]][AMR_CHILD4]]][j];
 			}
 		}
 
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			MPI_Wait(&boundreqs[n][114], &Statbound[n][114]);
+			MPI_Wait(&boundreqs[nl[n]][114], &Statbound[nl[n]][114]);
 		}
 		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && REF_1 == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive3_5[n][j] = send3[block[block[n][AMR_NBR1]][AMR_CHILD7]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive3_5[nl[n]][j] = send3[nl[block[block[n][AMR_NBR1]][AMR_CHILD7]]][j];
 			}
 		}
 
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_3 == 1){
-			MPI_Wait(&boundreqs[n][115], &Statbound[n][115]);
+			MPI_Wait(&boundreqs[nl[n]][115], &Statbound[nl[n]][115]);
 		}
 		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && REF_1 == 1 && REF_3 == 1){
-			for (j = 0; j < NDIM*(N3_GPU[n])*(N1_GPU[n]); j++){
-				receive3_6[n][j] = send3[block[block[n][AMR_NBR1]][AMR_CHILD8]][j];
+			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
+				receive3_6[nl[n]][j] = send3[nl[block[block[n][AMR_NBR1]][AMR_CHILD8]]][j];
 			}
 		}
 	}
@@ -1182,35 +1182,35 @@ void Bp_rec3(int n){
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-			MPI_Wait(&boundreqs[n][116], &Statbound[n][116]);
+			MPI_Wait(&boundreqs[nl[n]][116], &Statbound[nl[n]][116]);
 		}
 		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive6_2[n][z] = send6[block[block[n][AMR_NBR5]][AMR_CHILD1]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive6_2[nl[n]][z] = send6[nl[block[block[n][AMR_NBR5]][AMR_CHILD1]]][z];
 			}
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			MPI_Wait(&boundreqs[n][117], &Statbound[n][117]);
+			MPI_Wait(&boundreqs[nl[n]][117], &Statbound[nl[n]][117]);
 		}
 		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && REF_2 == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive6_4[n][z] = send6[block[block[n][AMR_NBR5]][AMR_CHILD3]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive6_4[nl[n]][z] = send6[nl[block[block[n][AMR_NBR5]][AMR_CHILD3]]][z];
 			}
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			MPI_Wait(&boundreqs[n][118], &Statbound[n][118]);
+			MPI_Wait(&boundreqs[nl[n]][118], &Statbound[nl[n]][118]);
 		}
 		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && REF_1 == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive6_6[n][z] = send6[block[block[n][AMR_NBR5]][AMR_CHILD5]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive6_6[nl[n]][z] = send6[nl[block[block[n][AMR_NBR5]][AMR_CHILD5]]][z];
 			}
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_2 == 1){
-			MPI_Wait(&boundreqs[n][119], &Statbound[n][119]);
+			MPI_Wait(&boundreqs[nl[n]][119], &Statbound[nl[n]][119]);
 		}
 		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && REF_1 == 1 && REF_2 == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive6_8[n][z] = send6[block[block[n][AMR_NBR5]][AMR_CHILD7]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive6_8[nl[n]][z] = send6[nl[block[block[n][AMR_NBR5]][AMR_CHILD7]]][z];
 			}
 		}
 	}
@@ -1218,35 +1218,35 @@ void Bp_rec3(int n){
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-			MPI_Wait(&boundreqs[n][120], &Statbound[n][120]);
+			MPI_Wait(&boundreqs[nl[n]][120], &Statbound[nl[n]][120]);
 		}
 		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive5_1[n][z] = send5[block[block[n][AMR_NBR6]][AMR_CHILD2]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive5_1[nl[n]][z] = send5[nl[block[block[n][AMR_NBR6]][AMR_CHILD2]]][z];
 			}
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && REF_2 == 1){
-			MPI_Wait(&boundreqs[n][121], &Statbound[n][121]);
+			MPI_Wait(&boundreqs[nl[n]][121], &Statbound[nl[n]][121]);
 		}
 		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && REF_2 == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive5_3[n][z] = send5[block[block[n][AMR_NBR6]][AMR_CHILD4]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive5_3[nl[n]][z] = send5[nl[block[block[n][AMR_NBR6]][AMR_CHILD4]]][z];
 			}
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1){
-			MPI_Wait(&boundreqs[n][122], &Statbound[n][122]);
+			MPI_Wait(&boundreqs[nl[n]][122], &Statbound[nl[n]][122]);
 		}
 		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && REF_1 == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive5_5[n][z] = send5[block[block[n][AMR_NBR6]][AMR_CHILD6]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive5_5[nl[n]][z] = send5[nl[block[block[n][AMR_NBR6]][AMR_CHILD6]]][z];
 			}
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && REF_1 == 1 && REF_2 == 1){
-			MPI_Wait(&boundreqs[n][123], &Statbound[n][123]);
+			MPI_Wait(&boundreqs[nl[n]][123], &Statbound[nl[n]][123]);
 		}
 		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && REF_1 == 1 && REF_2 == 1){
-			for (z = 0; z < NDIM*(N2_GPU[n])*(N1_GPU[n]); z++){
-				receive5_7[n][z] = send5[block[block[n][AMR_NBR6]][AMR_CHILD8]][z];
+			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
+				receive5_7[nl[n]][z] = send5[nl[block[block[n][AMR_NBR6]][AMR_CHILD8]]][z];
 			}
 		}
 	}

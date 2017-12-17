@@ -2,12 +2,12 @@
 #include <mpi.h>
 
 //MPI Variables
-extern MPI_Request req[NB], boundreqs[NB][600], cornreqs[NB][16];
-extern MPI_Status Statbound[NB][600], Statcorn[NB][16], Statrec[2];
+extern MPI_Request req[NB_LOCAL], boundreqs[NB_LOCAL][600];
+extern MPI_Status Statbound[NB_LOCAL][600];
 extern MPI_Comm  mpi_cartcomm, mpi_self;
 extern MPI_Comm row_comm[8];
-extern MPI_File fdump[100], fdumpdiag[100], rdump[NB],gdump[NB];
-extern MPI_Request req_block[NB][1], req_block_rdump[NB][1], req_blockdiag[NB][1], req_gdump1[NB][1], req_gdump2[NB][1];
+extern MPI_File fdump[100], fdumpdiag[100], rdump[NB_LOCAL],gdump[NB_LOCAL];
+extern MPI_Request req_block[NB_LOCAL][1], req_block_rdump[NB_LOCAL][1], req_blockdiag[NB_LOCAL][1], req_gdump1[NB_LOCAL][1], req_gdump2[NB_LOCAL][1];
 extern MPI_Request request_timelevel[NB];
 
 //MPI functions

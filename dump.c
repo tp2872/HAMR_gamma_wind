@@ -42,7 +42,7 @@
 
 ***********************************************************************************/
 #include "decs_MPI.h"
-void gdump_grid(FILE *fp);
+
 void dump_new(void){
 	int n, u;
 	char filename[100], dirpath[100];
@@ -54,9 +54,9 @@ void dump_new(void){
 
 	if (first_dump == 1){
 		for (n = 0; n < n_active; n++){
-			MPI_Wait(&req_block[n_ord[n]][0], &Statbound[n_ord[n]][0]);
+			MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 			if (dump_cnt % 1 == 0){
-				MPI_Wait(&req_blockdiag[n_ord[n]][0], &Statbound[n_ord[n]][1]);
+				MPI_Wait(&req_blockdiag[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][1]);
 			}
 		}
 
@@ -216,32 +216,32 @@ void dump_block(MPI_File *fp, int n)
 	struct of_state q;
 
 	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,geom,q)
-	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[n][index_3D(n, i, j, z)][0];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[n][index_3D(n, i, j, z)][1];
+	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[n][index_3D(n, i, j, z)][0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[n][index_3D(n, i, j, z)][1];
 
 		get_geometry(n, i, j, z, CENT, &geom);
 		get_state(p[n][index_3D(n, i, j, z)], &geom, &q);
 
-		for (k = 0; k < NDIM; k++) array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + (k + 2)] = (float)q.ucon[k];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = (float)p[n][index_3D(n, i, j, z)][5];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[n][index_3D(n, i, j, z)][6];
-		array[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[n][index_3D(n, i, j, z)][7];
+		for (k = 0; k < NDIM; k++) array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + (k + 2)] = (float)q.ucon[k];
+		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = (float)p[n][index_3D(n, i, j, z)][5];
+		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[n][index_3D(n, i, j, z)][6];
+		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[n][index_3D(n, i, j, z)][7];
 	}
-	MPI_File_iwrite(fp[0], array[n], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[n][0]);
+	MPI_File_iwrite(fp[0], array[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[n][0]);
 }
 
 void dump_blockdiag(MPI_File *fp, int n)
 {
 	int i, j, z;
 	#pragma omp parallel for schedule(dynamic,1) private(i,j,z)
-	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1) {
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 0] = (float)divb_calc(n, i, j, z);
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[n][index_3D(n, i, j, z)][0];
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 2] = (float)failimage[n][index_3D(n, i, j, z)][1];
-		array_diag[n][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 3] = (float)failimage[n][index_3D(n, i, j, z)][2];
+	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 0] = (float)divb_calc(n, i, j, z);
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[n][index_3D(n, i, j, z)][0];
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 2] = (float)failimage[n][index_3D(n, i, j, z)][1];
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 3] = (float)failimage[n][index_3D(n, i, j, z)][2];
 	}
-	MPI_File_iwrite(fp[0], array_diag[n], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[n][0]);
+	MPI_File_iwrite(fp[0], array_diag[nl[n]], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
 }
 
 void gdump_new(void){
@@ -259,16 +259,16 @@ void gdump_new(void){
 		if (block[n_ord_total[n]][GDUMP_WRI0EN] != 1 && block[n_ord_total[n]][GDUMP_WRI0EN] != 2){
 			sprintf(filename, "gdumps/gdump%d", n_ord_total[n]);
 			if (block[n_ord_total[n]][AMR_NODE] == rank){
-				MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &gdump[n_ord_total[n]]);
+				MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &gdump[nl[n_ord_total[n]]]);
 				gdump_block(&gdump[n_ord_total[n]], n_ord_total[n]);
 			}
 			block[n_ord_total[n]][GDUMP_WRI0EN] = 2;
 		}
 		else if(block[n_ord_total[n]][GDUMP_WRI0EN] == 2){
 			if (block[n_ord_total[n]][AMR_NODE] == rank){
-				MPI_Wait(&req_gdump1[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
-				MPI_Wait(&req_gdump2[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
-				MPI_File_close(&gdump[n_ord_total[n]]);
+				MPI_Wait(&req_gdump1[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
+				MPI_Wait(&req_gdump2[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
+				MPI_File_close(&gdump[nl[n_ord_total[n]]]);
 			}
 			block[n_ord_total[n]][GDUMP_WRI0EN] = 1;
 		}
@@ -307,25 +307,25 @@ void gdump_block(MPI_File  *fp, int n)
 	Write header information :
 	***************************************************************/
 	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,X,r,th,phi)
-	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n] + N3_GPU[n] - 1)
+	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1)
 	{
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (double)i*pow(2., (N_LEVELS - (block[n][AMR_LEVEL] + 1))*REF_1);
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (double)j*pow(2., (N_LEVELS - (block[n][AMR_LEVEL] + 1))*REF_2);
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 2] = (double)z*pow(2., (N_LEVELS - (block[n][AMR_LEVEL] + 1))*REF_3);
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 3] = X[1];
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 4] = X[2];
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 5] = X[3];
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = r;
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = th;
-		array_gdump1[n][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = phi;
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (double)i*pow(2., (N_LEVELS - (block[n][AMR_LEVEL] + 1))*REF_1);
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (double)j*pow(2., (N_LEVELS - (block[n][AMR_LEVEL] + 1))*REF_2);
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 2] = (double)z*pow(2., (N_LEVELS - (block[n][AMR_LEVEL] + 1))*REF_3);
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 3] = X[1];
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 4] = X[2];
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 5] = X[3];
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = r;
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = th;
+		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = phi;
 	}
 	MPI_File_seek(fp[0], 0*sizeof(double), MPI_SEEK_SET);
-	MPI_File_iwrite(fp[0], array_gdump1[n], 9 * BS_1*BS_2*BS_3, MPI_DOUBLE, &req_gdump1[n][0]);
+	MPI_File_iwrite(fp[0], array_gdump1[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_DOUBLE, &req_gdump1[nl[n]][0]);
 
 	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,l,X,geom,dxdxp)
-	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + N1_GPU[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + N2_GPU[n] - 1, N3_GPU_offset[n], N3_GPU_offset[n])
+	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n])
 	{
 		coord(n, i, j, z, CENT, X);
 		get_geometry(n, i, j, z, CENT, &geom);
@@ -334,27 +334,27 @@ void gdump_block(MPI_File  *fp, int n)
 		//g_{kl}
 		for (k = 0; k < NDIM; k++){
 			for (l = 0; l < NDIM; l++){
-				array_gdump2[n][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + k*NDIM + l] = geom.gcov[k][l];
+				array_gdump2[nl[n]][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + k*NDIM + l] = geom.gcov[k][l];
 			}
 		}
 		//g^{kl}
 		for (k = 0; k < NDIM; k++){
 			for (l = 0; l < NDIM; l++){
-				array_gdump2[n][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + NDIM*NDIM + k*NDIM + l] = geom.gcon[k][l];
+				array_gdump2[nl[n]][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + NDIM*NDIM + k*NDIM + l] = geom.gcon[k][l];
 			}
 		}
 		//(-deg(g))**0.5
-		array_gdump2[n][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + 2 * NDIM*NDIM + k*NDIM + 1] = geom.g;
+		array_gdump2[nl[n]][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + 2 * NDIM*NDIM + k*NDIM + 1] = geom.g;
 
 		//dr^i/dx^j
 		for (k = 0; k < NDIM; k++) {
 			for (l = 0; l < NDIM; l++) {
-				array_gdump2[n][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + 2*NDIM*NDIM + 1 + k*NDIM + l] = dxdxp[k][l];
+				array_gdump2[nl[n]][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + 2*NDIM*NDIM + 1 + k*NDIM + l] = dxdxp[k][l];
 			}
 		}
 	}
 	MPI_File_seek(fp[0], 9 * BS_1*BS_2*BS_3*sizeof(double), MPI_SEEK_SET);
-	MPI_File_iwrite(fp[0], array_gdump2[n], 49 * BS_1*BS_2, MPI_DOUBLE, &req_gdump2[n][0]);
+	MPI_File_iwrite(fp[0], array_gdump2[nl[n]], 49 * BS_1*BS_2, MPI_DOUBLE, &req_gdump2[nl[n]][0]);
 }
 
 

@@ -73,29 +73,29 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j;
 	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2) j_local = j;
 	if (loc == FACE1) {
-		X[1] = startx[1] + i*dx[n][1];
-		X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
-		X[3] = startx[3] + (z + 0.5)*dx[n][3];
+		X[1] = startx[1] + i*dx[nl[n]][1];
+		X[2] = startx[2] + (j_local + 0.5)*dx[nl[n]][2];
+		X[3] = startx[3] + (z + 0.5)*dx[nl[n]][3];
 	}
 	else if (loc == FACE2) {
-		X[1] = startx[1] + (i + 0.5)*dx[n][1];
-		X[2] = startx[2] + j_local*dx[n][2];
-		X[3] = startx[3] + (z + 0.5)*dx[n][3];
+		X[1] = startx[1] + (i + 0.5)*dx[nl[n]][1];
+		X[2] = startx[2] + j_local*dx[nl[n]][2];
+		X[3] = startx[3] + (z + 0.5)*dx[nl[n]][3];
 	}
 	else if (loc == FACE3) {
-		X[1] = startx[1] + (i + 0.5)*dx[n][1];
-		X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
-		X[3] = startx[3] + z*dx[n][3];
+		X[1] = startx[1] + (i + 0.5)*dx[nl[n]][1];
+		X[2] = startx[2] + (j_local + 0.5)*dx[nl[n]][2];
+		X[3] = startx[3] + z*dx[nl[n]][3];
 	}
 	else if (loc == CENT) {
-		X[1] = startx[1] + (i + 0.5)*dx[n][1];
-		X[2] = startx[2] + (j_local + 0.5)*dx[n][2];
-		X[3] = startx[3] + (z + 0.5)*dx[n][3];
+		X[1] = startx[1] + (i + 0.5)*dx[nl[n]][1];
+		X[2] = startx[2] + (j_local + 0.5)*dx[nl[n]][2];
+		X[3] = startx[3] + (z + 0.5)*dx[nl[n]][3];
 	}
 	else {
-		X[1] = startx[1] + i*dx[n][1];
-		X[2] = startx[2] + j_local*dx[n][2];
-		X[3] = startx[3] + z*dx[n][3];
+		X[1] = startx[1] + i*dx[nl[n]][1];
+		X[2] = startx[2] + j_local*dx[nl[n]][2];
+		X[3] = startx[3] + z*dx[nl[n]][3];
 	}
 
 	if (j < 0){
@@ -210,14 +210,14 @@ void set_points(int n)
 	startx[2] = -1.+1.*(1.-fractheta) ;
 	startx[3] = 0.;
 	if(Rout<=RTRANS){
-		dx[n][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
 	}
 	else{
-		dx[n][1] = ((Rout - RTRANS + Xtrans *RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP)) / (RADEXP*exp(pow(Xtrans, RADEXP))*
+		dx[nl[n]][1] = ((Rout - RTRANS + Xtrans *RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP)) / (RADEXP*exp(pow(Xtrans, RADEXP))*
 			pow(Xtrans, -1. + RADEXP)) - pow(log(Rin), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
 	}
-	dx[n][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
-	dx[n][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
+	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
+	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

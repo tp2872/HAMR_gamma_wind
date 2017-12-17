@@ -59,7 +59,7 @@ void diag(int call_code)
 		zmax = 0.;
 		for (n = 0; n < n_active; n++){
 			//#pragma omp parallel for schedule(dynamic,1) private(divb,i,j,z)
-			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + N1_GPU[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + N2_GPU[n_ord[n]] - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + N3_GPU[n_ord[n]] - 1) {
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + BS_1 - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				divb = divb_calc(n_ord[n], i, j, z);
 				//#pragma omp critical
 				if (divb > divbmax && i > 1 && j > 0 && (z > 0 || N3 == 1)) {
@@ -104,9 +104,9 @@ void diag(int call_code)
 
 		if (first_dump == 1){
 			for (n = 0; n < n_active; n++){
-				MPI_Wait(&req_block[n_ord[n]][0], &Statbound[n_ord[n]][0]);
+				MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 				if (dump_cnt % 1 == 0){
-					MPI_Wait(&req_blockdiag[n_ord[n]][0], &Statbound[n_ord[n]][1]);
+					MPI_Wait(&req_blockdiag[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][1]);
 				}
 			}
 
@@ -122,17 +122,17 @@ void diag(int call_code)
 		//First close rdump files in progress
 		if (first_rdump == 1){
 			for (n = 0; n < n_active; n++){
-				MPI_Wait(&req_block_rdump[n_ord[n]][0], &Statbound[n_ord[n]][0]);
-				MPI_File_close(&rdump[n_ord[n]]);
+				MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
+				MPI_File_close(&rdump[nl[n_ord[n]]]);
 			}
 		}
 		first_rdump = 0;
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][GDUMP_WRI0EN] == 2){
 				if (block[n_ord_total[n]][AMR_NODE] == rank){
-					MPI_Wait(&req_gdump1[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
-					MPI_Wait(&req_gdump2[n_ord_total[n]][0], &Statbound[n_ord_total[n]][1]);
-					MPI_File_close(&gdump[n_ord_total[n]]);
+					MPI_Wait(&req_gdump1[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
+					MPI_Wait(&req_gdump2[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
+					MPI_File_close(&gdump[nl[n_ord_total[n]]]);
 				}
 				block[n_ord_total[n]][GDUMP_WRI0EN] = 1;
 			}
@@ -176,7 +176,7 @@ void fail(int fail_type)
 }
 
 /* map out region around failure point */
-void area_map(int i, int j, int n, double (*restrict prim[NB])[NPR])
+void area_map(int i, int j, int n, double (*restrict prim[NB_LOCAL])[NPR])
 {
 	int k ;
 	fprintf(stderr,"area map\n") ;
@@ -185,19 +185,19 @@ void area_map(int i, int j, int n, double (*restrict prim[NB])[NPR])
 		fprintf(stderr,"i = \t %12d %12d %12d\n",i-1,i,i+1) ;
 		fprintf(stderr,"j = %d \t %12.5g %12.5g %12.5g\n",
 				j+1,
-				prim[n_ord[n]][index_3D(n_ord[n] ,i-1, j+1, 0)][k],
-				prim[n_ord[n]][index_3D(n_ord[n] ,i, j + 1, 0)][k],
-				prim[n_ord[n]][index_3D(n_ord[n] ,i + 1, j + 1, 0)][k]);
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i-1, j+1, 0)][k],
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, 0)][k],
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i + 1, j + 1, 0)][k]);
 		fprintf(stderr,"j = %d \t %12.5g %12.5g %12.5g\n",
 				j,
-				prim[n_ord[n]][index_3D(n_ord[n] ,i - 1, j, 0)][k],
-				prim[n_ord[n]][index_3D(n_ord[n] ,i, j , 0)][k],
-				prim[n_ord[n]][index_3D(n_ord[n] ,i + 1, j, 0)][k]);
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i - 1, j, 0)][k],
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j , 0)][k],
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i + 1, j, 0)][k]);
 		fprintf(stderr,"j = %d \t %12.5g %12.5g %12.5g\n",
 				j-1,
-				prim[n_ord[n]][index_3D(n_ord[n] ,i - 1, j - 1, 0)][k],
-				prim[n_ord[n]][index_3D(n_ord[n] ,i, j - 1, 0)][k],
-				prim[n_ord[n]][index_3D(n_ord[n] ,i +1, j - 1, 0)][k]);
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i - 1, j - 1, 0)][k],
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j - 1, 0)][k],
+				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i +1, j - 1, 0)][k]);
 	}
 }
 
@@ -212,20 +212,20 @@ double divb_calc(int n, int i, int j, int z){
 	divb = fabs(
 		#if(N1>1)
 		0.25*(
-		+ps[n][index_3D(n, i + di, j, z)][1] * gdet[n][index_2D(n, i + di, j, z)][FACE1]
-		- ps[n][index_3D(n, i, j, z)][1] * gdet[n][index_2D(n, i, j, z)][FACE1]
-		) / dx[n][1]
+		+ps[nl[n]][index_3D(n, i + di, j, z)][1] * gdet[nl[n]][index_2D(n, i + di, j, z)][FACE1]
+		- ps[nl[n]][index_3D(n, i, j, z)][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1]
+		) / dx[nl[n]][1]
 		#endif
 		#if(N2>1)
 		+ 0.25*(
-		+ps[n][index_3D(n, i, j + dj, z)][2] * gdet[n][index_2D(n, i, j + dj, z)][FACE2]
-		- ps[n][index_3D(n, i, j, z)][2] * gdet[n][index_2D(n, i, j, z)][FACE2]
-		) / dx[n][2]
+		+ps[nl[n]][index_3D(n, i, j + dj, z)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z)][FACE2]
+		- ps[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2]
+		) / dx[nl[n]][2]
 		#endif
 		#if(N3>1)
 		+ 0.25*(
-		+ps[n][index_3D(n, i, j, z + dz)][3] * gdet[n][index_2D(n, i, j, z + dz)][FACE3]
-		- ps[n][index_3D(n, i, j, z)][3] * gdet[n][index_2D(n, i, j, z)][FACE3]
+		+ps[nl[n]][index_3D(n, i, j, z + dz)][3] * gdet[nl[n]][index_2D(n, i, j, z + dz)][FACE3]
+		- ps[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3]
 		) / dx[n][3]
 		#endif
 	);
@@ -234,39 +234,39 @@ double divb_calc(int n, int i, int j, int z){
 	divb = fabs(
 		#if(N1>1)
 		0.25*(
-		+p[n][index_3D(n, i, j, z)][B1] * gdet[n][index_2D(n, i, j, z)][CENT]
-		+ p[n][index_3D(n, i, j, z - dz)][B1] * gdet[n][index_2D(n, i, j, z - dz)][CENT]
-		+ p[n][index_3D(n, i, j - dj, z)][B1] * gdet[n][index_2D(n, i, j - dj, z)][CENT]
-		+ p[n][index_3D(n, i, j - dj, z - dz)][B1] * gdet[n][index_2D(n, i, j - dj, z - dz)][CENT]
-		- p[n][index_3D(n, i - 1, j, z)][B1] * gdet[n][index_2D(n, i - 1, j, z)][CENT]
-		- p[n][index_3D(n, i - 1, j, z - dz)][B1] * gdet[n][index_2D(n, i - 1, j, z - dz)][CENT]
-		- p[n][index_3D(n, i - 1, j - dj, z)][B1] * gdet[n][index_2D(n, i - 1, j - dj, z)][CENT]
-		- p[n][index_3D(n, i - 1, j - dj, z - dz)][B1] * gdet[n][index_2D(n, i - 1, j - dj, z - dz)][CENT]
-		) / dx[n][1]
+		+p[nl[n]][index_3D(n, i, j, z)][B1] * gdet[nl[n]][index_2D(n, i, j, z)][CENT]
+		+ p[nl[n]][index_3D(n, i, j, z - dz)][B1] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
+		+ p[nl[n]][index_3D(n, i, j - dj, z)][B1] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
+		+ p[nl[n]][index_3D(n, i, j - dj, z - dz)][B1] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
+		- p[nl[n]][index_3D(n, i - 1, j, z)][B1] * gdet[nl[n]][index_2D(n, i - 1, j, z)][CENT]
+		- p[nl[n]][index_3D(n, i - 1, j, z - dz)][B1] * gdet[nl[n]][index_2D(n, i - 1, j, z - dz)][CENT]
+		- p[nl[n]][index_3D(n, i - 1, j - dj, z)][B1] * gdet[nl[n]][index_2D(n, i - 1, j - dj, z)][CENT]
+		- p[nl[n]][index_3D(n, i - 1, j - dj, z - dz)][B1] * gdet[nl[n]][index_2D(n, i - 1, j - dj, z - dz)][CENT]
+		) / dx[nl[n]][1]
 		#endif
 		#if(N2>1)
 		+ 0.25*(
-		+p[n][index_3D(n, i, j, z)][B2] * gdet[n][index_2D(n, i, j, z)][CENT]
-		+ p[n][index_3D(n, i, j, z - dz)][B2] * gdet[n][index_2D(n, i, j, z - dz)][CENT]
-		+ p[n][index_3D(n, i - di, j, z)][B2] * gdet[n][index_2D(n, i - di, j, z)][CENT]
-		+ p[n][index_3D(n, i - di, j, z - dz)][B2] * gdet[n][index_2D(n, i - di, j, z - dz)][CENT]
-		- p[n][index_3D(n, i, j - 1, z)][B2] * gdet[n][index_2D(n, i, j - 1, z)][CENT]
-		- p[n][index_3D(n, i, j - 1, z - dz)][B2] * gdet[n][index_2D(n, i, j - 1, z - dz)][CENT]
-		- p[n][index_3D(n, i - di, j - 1, z)][B2] * gdet[n][index_2D(n, i - di, j - 1, z)][CENT]
-		- p[n][index_3D(n, i - di, j - 1, z - dz)][B2] * gdet[n][index_2D(n, i - di, j - 1, z - dz)][CENT]
-		) / dx[n][2]
+		+p[nl[n]][index_3D(n, i, j, z)][B2] * gdet[nl[n]][index_2D(n, i, j, z)][CENT]
+		+ p[nl[n]][index_3D(n, i, j, z - dz)][B2] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
+		+ p[nl[n]][index_3D(n, i - di, j, z)][B2] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
+		+ p[nl[n]][index_3D(n, i - di, j, z - dz)][B2] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
+		- p[nl[n]][index_3D(n, i, j - 1, z)][B2] * gdet[nl[n]][index_2D(n, i, j - 1, z)][CENT]
+		- p[nl[n]][index_3D(n, i, j - 1, z - dz)][B2] * gdet[nl[n]][index_2D(n, i, j - 1, z - dz)][CENT]
+		- p[nl[n]][index_3D(n, i - di, j - 1, z)][B2] * gdet[nl[n]][index_2D(n, i - di, j - 1, z)][CENT]
+		- p[nl[n]][index_3D(n, i - di, j - 1, z - dz)][B2] * gdet[nl[n]][index_2D(n, i - di, j - 1, z - dz)][CENT]
+		) / dx[nl[n]][2]
 		#endif
 		#if(N3>1)
 		+ 0.25*(
-		+p[n][index_3D(n, i, j, z)][B3] * gdet[n][index_2D(n, i, j, z)][CENT]
-		+ p[n][index_3D(n, i - di, j, z)][B3] * gdet[n][index_2D(n, i - di, j, z)][CENT]
-		+ p[n][index_3D(n, i, j - dj, z)][B3] * gdet[n][index_2D(n, i, j - dj, z)][CENT]
-		+ p[n][index_3D(n, i - di, j - dj, z)][B3] * gdet[n][index_2D(n, i - di, j - dj, z)][CENT]
-		- p[n][index_3D(n, i, j, z - 1)][B3] * gdet[n][index_2D(n, i, j, z - 1)][CENT]
-		- p[n][index_3D(n, i - di, j, z - 1)][B3] * gdet[n][index_2D(n, i - di, j, z - 1)][CENT]
-		- p[n][index_3D(n, i, j - dj, z - 1)][B3] * gdet[n][index_2D(n, i, j - dj, z - 1)][CENT]
-		- p[n][index_3D(n, i - di, j - dj, z - 1)][B3] * gdet[n][index_2D(n, i - di, j - dj, z - 1)][CENT]
-		) / dx[n][3]
+		+p[nl[n]][index_3D(n, i, j, z)][B3] * gdet[nl[n]][index_2D(n, i, j, z)][CENT]
+		+ p[nl[n]][index_3D(n, i - di, j, z)][B3] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
+		+ p[nl[n]][index_3D(n, i, j - dj, z)][B3] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
+		+ p[nl[n]][index_3D(n, i - di, j - dj, z)][B3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
+		- p[nl[n]][index_3D(n, i, j, z - 1)][B3] * gdet[nl[n]][index_2D(n, i, j, z - 1)][CENT]
+		- p[nl[n]][index_3D(n, i - di, j, z - 1)][B3] * gdet[nl[n]][index_2D(n, i - di, j, z - 1)][CENT]
+		- p[nl[n]][index_3D(n, i, j - dj, z - 1)][B3] * gdet[nl[n]][index_2D(n, i, j - dj, z - 1)][CENT]
+		- p[nl[n]][index_3D(n, i - di, j - dj, z - 1)][B3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - 1)][CENT]
+		) / dx[nl[n]][3]
 		#endif
 	);
 	#endif

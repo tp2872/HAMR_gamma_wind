@@ -41,7 +41,7 @@ void set_timelevel(void){
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
-				if (bdt[n_ord[n]][0] / dt >=1.0 * pow(2, i)){
+				if (bdt[nl[n_ord[n]]][0] / dt >=1.0 * pow(2, i)){
 					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
 					break;
 				}
@@ -55,8 +55,8 @@ void set_timelevel(void){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
 			for (task = 0; task < numtasks; task++){
 				if (task != rank){
-					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, n % MPI_TAG_MAX, mpi_cartcomm, &req[n_ord_total[n]]);
-					MPI_Request_free(&req[n_ord_total[n]]);
+					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, n % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+					MPI_Request_free(&req[0]);
 				}
 			}
 		}
@@ -68,7 +68,7 @@ void set_timelevel(void){
 	//Receive from other nodes using blocking receive
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[n_ord[0]][0]);
+			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 		}
 	}
 
@@ -196,35 +196,35 @@ void prestep_bound(void){
 	//If block is prestepped send non-corrected boundary cells to blocks with finer timelevels for interpolation in time
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (prestep_full[n_ord[n]] == 1) GPU_boundprim1(1, n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_boundprim1(0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1(0, n_ord[n]);
 	}
 	#if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (prestep_full[n_ord[n]] == 1) GPU_boundprim2(1, n_ord[n]);
-		else if (prestep_half[n_ord[n]] == 1) GPU_boundprim2(0, n_ord[n]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2(0, n_ord[n]);
 	}
 	#endif
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (prestep_full[n_ord[n]] == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
-		else if (prestep_half[n_ord[n]] == 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
+		if (prestep_full[nl[n_ord[n]]] == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
+		else if (prestep_half[nl[n_ord[n]]] == 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 	}
 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (prestep_full[n_ord[n]] == 1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
-		else if (prestep_half[n_ord[n]] == 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
+		if (prestep_full[nl[n_ord[n]]] == 1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
+		else if (prestep_half[nl[n_ord[n]]] == 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 	}
 
 	if (N3 > 1){
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-			if (prestep_full[n_ord[n]] == 1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
-			else if (prestep_half[n_ord[n]] == 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
+			if (prestep_full[nl[n_ord[n]]] == 1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
+			else if (prestep_half[nl[n_ord[n]]] == 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 		}
 	}
 
