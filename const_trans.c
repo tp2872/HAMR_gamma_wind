@@ -112,7 +112,7 @@ void const_transport_bound(void){
 }
 
 void E_average(void){
-	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB];
+	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB],req_local[NB_1*NB_3];
 
 	//Read in average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1){
@@ -133,13 +133,13 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, 0, z);
 				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (100 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][490]);
+					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (100 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local[i*NB_3 + z]);
 				}
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag1[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (100 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[i]);
-							MPI_Request_free(&req[i]);
+							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (100 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+							MPI_Request_free(&req[0]);
 						}
 					}
 				}
@@ -156,13 +156,13 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, NB_2 - 1, z);
 				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (101 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[number][491]);
+					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (101 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local[i*NB_3 + z]);
 				}
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag2[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (101 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[i]);
-							MPI_Request_free(&req[i]);
+							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (101 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+							MPI_Request_free(&req[0]);
 						}
 					}
 				}
@@ -183,7 +183,7 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, 0, z);
 				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					MPI_Wait(&boundreqs[number][490], &Statbound[number][490]);
+					MPI_Wait(&req_local[i*NB_3 + z], &Statbound[0][490]);
 				}
 			}
 		}
@@ -199,7 +199,7 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, NB_2 - 1, z);
 				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					MPI_Wait(&boundreqs[number][491], &Statbound[number][491]);
+					MPI_Wait(&req_local[i*NB_3 + z], &Statbound[0][491]);
 				}
 			}
 		}

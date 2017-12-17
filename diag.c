@@ -68,7 +68,7 @@ void diag(int call_code)
 					zmax = z*pow(1 + REF_3, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					divbmax = divb;
 				}
-				if(divb>0.0001)fprintf(stderr, "divb (%d,%d,%d): %f \n", i, j, z, divb);
+				//if(divb>0.0001)fprintf(stderr, "divb (%d,%d,%d): %f \n", i, j, z, divb);
 			}
 		}
 		#if (MPI_enable)
@@ -226,7 +226,7 @@ double divb_calc(int n, int i, int j, int z){
 		+ 0.25*(
 		+ps[nl[n]][index_3D(n, i, j, z + dz)][3] * gdet[nl[n]][index_2D(n, i, j, z + dz)][FACE3]
 		- ps[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3]
-		) / dx[n][3]
+		) / dx[nl[n]][3]
 		#endif
 	);
 	#else

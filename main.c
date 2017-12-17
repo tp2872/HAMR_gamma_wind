@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
 	#endif
 	
 	/* do initial diagnostics */
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	first_dump = 0;
 	diag(INIT_OUT);
 
@@ -279,6 +280,7 @@ void set_arrays(int n)
 		mem_spot[i] = 1;
 		return;
 	}
+	mem_spot[i] = 1;
 
 	array[nl[n]] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
 	array_gdump1[nl[n]] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
