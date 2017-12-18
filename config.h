@@ -73,7 +73,7 @@ Numerical Parameters section
 #define MPI_TAG_MAX 126400576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 0
+#define COPY_BFIELD 1
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -86,7 +86,7 @@ Numerical Parameters section
 #define BS_3 30
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 3
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -211,7 +211,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Do not use; Used to load in 3 level AMR data into 4-level AMR grid*/
-#define READ_OLD (0)
+#define READ_OLD (1)
 
 /*************************************************************************
 MNEMONICS SECTION
