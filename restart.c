@@ -46,6 +46,7 @@
 #include "decs_MPI.h"
 
 void restart_read_grid(void);
+int AMR_coord_linear_old(int level, int i, int j, int z);
 
 /*Write restart file*/
 void restart_write(void)
@@ -125,15 +126,18 @@ void rdump_block_read(FILE *fp, int n)
 /*Read restart file*/
 int restart_read(void)
 {
-	int n;
+	int n, num;
 	char filename[100], dirpath[100];
 	FILE *rdump;
 
-	//restart_read_grid();
-
+	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
-		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
-		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
+		num = n_ord[n];
+		#if(READ_OLD)
+		num = AMR_coord_linear_old(block[num][AMR_LEVEL], block[num][AMR_COORD1], block[num][AMR_COORD2], block[num][AMR_COORD3]);
+		#endif
+		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", num);
+		else sprintf(filename, "rdumps1/rdump%d", num);
 		rdump = fopen(filename, "rb");
 		if (rdump == NULL) {
 			if (rank == 0) fprintf(stderr, "Cannot open restart file %s\n", filename);
@@ -319,4 +323,44 @@ void param_read(FILE *fp){
 	nstep = 0;
 }
 
+int AMR_coord_linear_old(int level, int i, int j, int z){
+	int index[N_LEVELS - 1], coord[NDIM], factor[N_LEVELS-1], u, y, n;
+
+	if (i < 0 || j < 0 || z < 0){
+		n = -1;
+		return n;
+	}
+
+	for (y = 0; y < N_LEVELS - 1; y++){
+		factor[y] = 1;
+		for (u = 0; u < N_LEVELS - y - 2; u++){
+			factor[y] = factor[y] * pow(2, REF_1 + REF_2 + REF_3) + 1;
+		}
+	}
+	#if(REVERSE_ORDERING)
+	index[0] = ((z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level) * NB_2*NB_1 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_1
+		+ (i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level));
+	n = index[0] * factor[0];
+	for (u = level; u > 0; u--){
+		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
+		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
+		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
+		index[u] = coord[3] * (1 + REF_2)*(1 + REF_1) + coord[2] * (1 + REF_1) + coord[1]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
+		n += index[u] * factor[u] + 1;
+	}
+	#else
+	index[0] = ((i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level) * NB_2*NB_3 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_3
+		+ (z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level));
+	n = index[0] * factor[0];
+	for (u = level; u > 0; u--){
+		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
+		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
+		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
+		index[u] = coord[1] * (1 + REF_2)*(1 + REF_3) + coord[2] * (1 + REF_3) + coord[3]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
+		n += index[u] * factor[u] + 1;
+	}
+	#endif
+
+	return n;
+}
 

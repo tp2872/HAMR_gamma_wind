@@ -427,6 +427,9 @@ void set_AMR(void){
 
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
+	#if(READ_OLD)
+	restart_read_grid();
+	#endif
 	activate_blocks();
 	set_corners();
 

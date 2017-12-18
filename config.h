@@ -210,6 +210,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
+/*Do not use; Used to load in 3 level AMR data into 4-level AMR grid*/
+#define READ_OLD (0)
 
 /*************************************************************************
 MNEMONICS SECTION

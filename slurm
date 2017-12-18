@@ -3,11 +3,11 @@
 ### set the number of PEs per node
 ### set the XE/XK feature
 #PBS -q high
-#PBS -l nodes=100:ppn=16:xk
+#PBS -l nodes=150:ppn=16:xk
 ### set the wallclock time
-#PBS -l walltime=00:40:00
+#PBS -l walltime=01:40:00
 ### set the job name
-#PBS -N TDISKS25A93T45S_CUDA
+#PBS -N TTDISKS25A93T60_CUDA
 ### set the job stdout and stderr
 #PBS -e $PBS_JOBID.err
 #PBS -o $PBS_JOBID.out
@@ -21,8 +21,8 @@ module swap cray-mpich/7.5.0 cray-mpich/7.5.3
 export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH 
 export MPICH_RDMA_ENABLED_CUDA=1
 
-cd /scratch/sciteam/liska/TDISKS25A93T45S
+cd /scratch/sciteam/liska/TTDISKS25A93T60
 make clean
 make -j
-aprun -n 100 -N 1 -d 16 -cc none ./harm
-aprun -n 99 -N 1 -d 16 -cc none ./harm
+aprun -n 150 -N 1 -d 16 -cc none ./harm
+aprun -n 149 -N 1 -d 16 -cc none ./harm

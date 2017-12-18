@@ -597,7 +597,6 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_2, BS_3, receive4_flux, receive4_flux1, NULL, F1, &(Bufferp[nl[n]]), &(Bufferrec4flux[nl[n]]), &(Bufferrec4flux1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr);
 			}
 			else{
-				fprintf(stderr, "test");
 				unpack_receive1_flux(n, block[n][AMR_NBR2], block[n][AMR_NBR2], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
 					BS_2, BS_3, send4_flux, receive4_flux1, NULL, F1,
 					&(Bufferp[nl[n]]), &(Buffersend4flux[nl[block[n][AMR_NBR2]]]), &(Bufferrec4flux1[nl[n]]), &(NULL_POINTER[nl[n]]), &(boundevent[nl[block[n][AMR_NBR2]]][140]), calc_corr);

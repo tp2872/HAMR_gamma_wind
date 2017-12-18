@@ -27,7 +27,12 @@ void GPU_init(void)
 void set_arrays_GPU(int n, int device){
 	int i;
 
-	if (mem_spot[nl[n]] == 0) return;
+	if (mem_spot[nl[n]] == 0){
+		#if(GPU_ENABLED)
+		mem_spot[nl[n]] = 1;
+		#endif
+		return;
+	}
 
 	/*Set the global work size and make sure that it is a multiple of the group size. The Nvidia OpenCL framework crashes otherwise!*/
 	fix_mem[nl[n]] = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
@@ -1946,7 +1951,9 @@ void GPU_read(int n)
 void GPU_finish(int n)
 {
 	int i;
+	mem_spot[nl[n]] = 0;
 	if (nl[n]<(n_active_total / numtasks)) return;
+	mem_spot[nl[n]] = -1;
 
 	//Select correct CUDA device
 	//cudaSetDevice(block[n][AMR_GPU]);
