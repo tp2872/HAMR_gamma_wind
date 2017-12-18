@@ -25,7 +25,7 @@ void GPU_init(void)
 }
 
 void set_arrays_GPU(int n, int device){
-	int i, j, z;
+	int i;
 
 	if (mem_spot[nl[n]] == 0) return;
 
@@ -1946,7 +1946,7 @@ void GPU_read(int n)
 void GPU_finish(int n)
 {
 	int i;
-	if (nl[n]<MAX_BLOCKS*1.5) return;
+	if (nl[n]<(n_active_total / numtasks)) return;
 
 	//Select correct CUDA device
 	//cudaSetDevice(block[n][AMR_GPU]);

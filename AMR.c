@@ -406,7 +406,7 @@ void set_AMR(void){
 		//For the moment don't refine any block
 		block[n][AMR_REFINED] = 0;
 
-		block[n][GDUMP_WRI0EN] = 0;
+		block[n][GDUMP_WRITTEN] = 0;
 
 		//No node assigned yet
 		block[n][AMR_NODE] = -1;
@@ -437,19 +437,23 @@ void set_AMR(void){
 }
 
 void balance_load(void){
-	int i, node, tt, fp, ip, y, rem, nr_timesteps, n_active_localsteps[NB], max_timelevel;
+	int i,j, z, node, tt, fp, ip, y, rem, nr_timesteps, n_active_localsteps[NB], max_timelevel;
 	int i1, j1, z1, k, n, u, b, g, stride;
 	int n_active_total_steps = 0, n_active_total_steps_t[10];
 	int steps_total_RM[NB];
 	int NODE[NB];
-	int n_active_total_t[10], n_ord_total_RM_t[10][NB];
+	int n_active_total_t[10];
+	int (*n_ord_total_RM_t)[10];
+	double(*temp_ps[NB])[NDIM];
+	double(*temp_p[NB])[NPR];
+	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
 	int timelevel_cutoff = AMR_MAXTIMELEVEL;
 #if(DEREFINE_POLE)
 	rm_order();
 #else
 	rm_order2();
 #endif
-
+	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
 	int n_active_local_max = 0;
 	int n_active_local_min = 1;
 
@@ -571,7 +575,7 @@ void balance_load(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total_RM[n]][AMR_ACTIVE] == 1){
 				tl = MY_MIN(round(log(block[n_ord_total_RM[n]][AMR_TIMELEVEL]) / log(2)), log(timelevel_cutoff) / log(2));
-				n_ord_total_RM_t[tl][n_active_total_t[tl]] = n_ord_total_RM[n];
+				n_ord_total_RM_t[n_active_total_t[tl]][tl] = n_ord_total_RM[n];
 				n_active_total_steps_t[tl] += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
 				n_active_total_t[tl]++;
 			}
@@ -591,7 +595,7 @@ void balance_load(void){
 
 			//If there is not an even load from the previous timelevel, first correct for that
 			if (n_active_localsteps[(u - 1 + numtasks) % numtasks] > n_active_localsteps[u % numtasks]){
-				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM_t[i][0]][AMR_TIMELEVEL], timelevel_cutoff);
+				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM_t[0][i]][AMR_TIMELEVEL], timelevel_cutoff);
 				increment = (n_active_localsteps[(u - 1 + numtasks) % numtasks] - n_active_localsteps[u % numtasks]) / nr_timesteps;
 				fillup_mode = 1;
 			}
@@ -604,7 +608,7 @@ void balance_load(void){
 			n = 0;
 			while (n < n_active_total_t[i]){
 
-				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM_t[i][n]][AMR_TIMELEVEL], timelevel_cutoff);
+				nr_timesteps = AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM_t[n][i]][AMR_TIMELEVEL], timelevel_cutoff);
 				if (fillup_mode == 1) increment = (n_active_localsteps[(u - 1 + numtasks) % numtasks] - n_active_localsteps[u % numtasks]) / nr_timesteps;
 				if (n_active_localsteps[(u - 1 + numtasks) % numtasks] == n_active_localsteps[u % numtasks]){
 					rem = (n_active_total_t[i] - n) % (numtasks); //remainder number of blocks at given timelevel
@@ -619,7 +623,7 @@ void balance_load(void){
 				}
 				increment = MY_MIN(increment, n_active_total_t[i] - n);
 				for (j = 0; j < increment; j++){
-					NODE[n_ord_total_RM_t[i][n + j]] = u%numtasks;
+					NODE[n_ord_total_RM_t[n + j][i]] = u%numtasks;
 					n_active_localsteps[u%numtasks] += nr_timesteps;
 					if (rank == u%numtasks)n_active_local_max++;
 				}
@@ -654,12 +658,12 @@ void balance_load(void){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
 			if (NODE[n_ord_total_RM[i]] == rank){
 				//Allocate memory for active blocks on node
-				set_arrays(n_ord_total_RM[i]);
-				set_grid(n_ord_total_RM[i]);
+				temp_p[n_ord_total_RM[i]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+				temp_ps[n_ord_total_RM[i]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
-					rc = MPI_Irecv(&p[nl[n_ord_total_RM[i]]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][10]);
+					rc = MPI_Irecv(&temp_p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_ord_total_RM[i]]);
 					#if STAGGERED
-					rc += MPI_Irecv(&ps[nl[n_ord_total_RM[i]]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][11]);
+					rc += MPI_Irecv(&temp_ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_ord_total_RM[i]]);
 					#endif
 					if (rc != 0)fprintf(stderr, "Error balance_load receive %d", rc);
 				}
@@ -668,7 +672,6 @@ void balance_load(void){
 	}
 
 	for (i = 0; i < n_active_total; i++){
-
 		//Then use MPI_wait to clean up data that has been sent
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
@@ -679,25 +682,33 @@ void balance_load(void){
 				#if(GPU_ENABLED || GPU_DEBUG )
 				GPU_finish(n_ord_total_RM[i]);
 				#endif
-				free_arrays(n_ord_total_RM[i]);
+				free_arrays(n_ord_total_RM[i]);		
 			}
 		}
 	}
 
-
 	//Then use MPI_wait to receive data 
-	for (i = 0; i < n_active_total; i++){
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
-			if (NODE[n_ord_total_RM[i]] == rank){
-				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
-					MPI_Wait(&boundreqs[nl[n_ord_total_RM[i]]][10], &Statbound[nl[n_ord_total_RM[i]]][10]);
+	for (n = 0; n < n_active_total; n++){
+		if (block[n_ord_total_RM[n]][AMR_NODE] != NODE[n_ord_total_RM[n]]){
+			if (NODE[n_ord_total_RM[n]] == rank){
+				if (block[n_ord_total_RM[n]][AMR_NODE] >= 0){
+					MPI_Wait(&boundreqstemp1[n_ord_total_RM[n]], &Statbound[0][10]);
 					#if STAGGERED
-					MPI_Wait(&boundreqs[nl[n_ord_total_RM[i]]][11], &Statbound[nl[n_ord_total_RM[i]]][11]);
+					MPI_Wait(&boundreqstemp2[n_ord_total_RM[n]], &Statbound[0][11]);
 					#endif
 				}
+				set_arrays(n_ord_total_RM[n]);
+				set_grid(n_ord_total_RM[n]);
+				#pragma omp parallel for schedule(dynamic,1)  private(i, j, z, k)
+				ZSLOOP3D(N1_GPU_offset[n_ord_total_RM[n]] - N1G, N1_GPU_offset[n_ord_total_RM[n]] + BS_1 - 1 + N1G, N2_GPU_offset[n_ord_total_RM[n]] - N2G, N2_GPU_offset[n_ord_total_RM[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord_total_RM[n]] - N3G, N3_GPU_offset[n_ord_total_RM[n]] + BS_3 - 1 + N3G){
+					PLOOP p[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_p[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+					for(k=0; k<NDIM; k++) ps[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_ps[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+				}
+				free(temp_p[n_ord_total_RM[n]]);
+				free(temp_ps[n_ord_total_RM[n]]);
 				#if(GPU_ENABLED || GPU_DEBUG )
-				set_arrays_GPU(n_ord_total_RM[i], block[n_ord_total_RM[i]][AMR_GPU]);
-				GPU_write(n_ord_total_RM[i]);
+				set_arrays_GPU(n_ord_total_RM[n], block[n_ord_total_RM[n]][AMR_GPU]);
+				GPU_write(n_ord_total_RM[n]);
 				#endif
 			}
 		}
@@ -731,7 +742,7 @@ void balance_load(void){
 	#if(GPU_ENABLED)
 	GPU_boundprim(1);
 	#endif
-	//free(n_ord_total_RM_t);
+	free(n_ord_total_RM_t);
 	if (rank == 0) fprintf(stderr, "Load balance finished! \n");
 }
 
@@ -1434,9 +1445,9 @@ void pre_refine(void){
 		{
 			#pragma omp for collapse(2) schedule(dynamic)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n1]] - N1G, N1_GPU_offset[n_ord[n1]] + BS_1 + N1G - 1, -N2G + N2_GPU_offset[n_ord[n1]], N2_GPU_offset[n_ord[n1]] + BS_2 + N2G - 1, N3_GPU_offset[n_ord[n1]] - N3G, N3_GPU_offset[n_ord[n1]] + BS_3 + N3G - 1) {
-				psh[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][1] = ps[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][1] * gdet[n_ord[n1]][index_2D(n_ord[n1], i, j, z)][FACE1];
-				psh[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][2] = ps[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][2] * gdet[n_ord[n1]][index_2D(n_ord[n1], i, j, z)][FACE2];
-				psh[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][3] = ps[n_ord[n1]][index_3D(n_ord[n1], i, j, z)][3] * gdet[n_ord[n1]][index_2D(n_ord[n1], i, j, z)][FACE3];
+				psh[nl[n_ord[n1]]][index_3D(n_ord[n1], i, j, z)][1] = ps[nl[n_ord[n1]]][index_3D(n_ord[n1], i, j, z)][1] * gdet[nl[n_ord[n1]]][index_2D(n_ord[n1], i, j, z)][FACE1];
+				psh[nl[n_ord[n1]]][index_3D(n_ord[n1], i, j, z)][2] = ps[nl[n_ord[n1]]][index_3D(n_ord[n1], i, j, z)][2] * gdet[nl[n_ord[n1]]][index_2D(n_ord[n1], i, j, z)][FACE2];
+				psh[nl[n_ord[n1]]][index_3D(n_ord[n1], i, j, z)][3] = ps[nl[n_ord[n1]]][index_3D(n_ord[n1], i, j, z)][3] * gdet[nl[n_ord[n1]]][index_2D(n_ord[n1], i, j, z)][FACE3];
 			}
 		}
 	}
@@ -1636,10 +1647,13 @@ void check_nesting(int n){
 
 //Refine on basis of some criteria rhomax (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
-	int n, task, i, l, level, number;
+	int n, task, i,j,z,k, l, level, number;
 	int node, n_send, n_blocks;
 	double rhomax[NB], rho_rec;
 	int NODE[NB];
+	double(*temp_ps[NB])[NDIM];
+	double(*temp_p[NB])[NPR];
+	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
 	if (max_levels == 0) max_levels = N_LEVELS;
 	int tag;
 	int count;
@@ -1679,17 +1693,19 @@ void check_refcrit(void){
 	}
 	first_rdump = 0;
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][GDUMP_WRI0EN] == 2){
+		if (block[n_ord_total[n]][GDUMP_WRITTEN] == 2){
 			if (block[n_ord_total[n]][AMR_NODE] == rank){
 				MPI_Wait(&req_gdump1[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
 				MPI_Wait(&req_gdump2[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
 				MPI_File_close(&gdump[nl[n_ord_total[n]]]);
 			}
-			block[n_ord_total[n]][GDUMP_WRI0EN] = 1;
+			block[n_ord_total[n]][GDUMP_WRITTEN] = 1;
 		}
 	}
 
 	MPI_Barrier(mpi_cartcomm);
+	if (rank == 0) fprintf(stderr, "Starting refinement! \n");
+
 	begin1 = time(NULL);
 
 	do{
@@ -1881,12 +1897,14 @@ void check_refcrit(void){
 					rc = 0;
 					if (node == rank){
 						//Allocate memory for active blocks on node
-						set_arrays(n_send);
-						set_grid(n_send);
+						//set_arrays(n_send);
+						//set_grid(n_send);
+						temp_p[n_send] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+						temp_ps[n_send] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 						if (block[n_send][AMR_NODE] >= 0){
-							rc += MPI_Irecv(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][596]);
+							rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
 							#if STAGGERED
-							rc += MPI_Irecv(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][595]);
+							rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
 							#endif
 						}
 					}
@@ -1925,14 +1943,23 @@ void check_refcrit(void){
 				if (block[n_send][AMR_NODE] != node){
 					if (node == rank){
 						if (block[n_send][AMR_NODE] >= 0){
-							MPI_Wait(&boundreqs[nl[n_send]][596], &Statbound[nl[n_send]][10]);
+							MPI_Wait(&boundreqstemp1[n_send], &Statbound[0][10]);
 							#if STAGGERED
-							MPI_Wait(&boundreqs[nl[n_send]][595], &Statbound[nl[n_send]][11]);
+							MPI_Wait(&boundreqstemp2[n_send], &Statbound[0][11]);
 							#endif
 						}
+						set_arrays(n_send);
+						set_grid(n_send);
+						#pragma omp parallel for schedule(dynamic,1)  private(i, j, z, k)
+						ZSLOOP3D(N1_GPU_offset[n_send] - N1G, N1_GPU_offset[n_send] + BS_1 - 1 + N1G, N2_GPU_offset[n_send] - N2G, N2_GPU_offset[n_send] + BS_2 - 1 + N2G, N3_GPU_offset[n_send] - N3G, N3_GPU_offset[n_send] + BS_3 - 1 + N3G){
+							PLOOP p[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_p[n_send][index_3D(n_send, i, j, z)][k];
+							for (k = 0; k<NDIM; k++) ps[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_ps[n_send][index_3D(n_send, i, j, z)][k];
+						}
+						free(temp_p[n_send]);
+						free(temp_ps[n_send]);
 						#if(GPU_ENABLED || GPU_DEBUG )
 						set_arrays_GPU(n_send, block[n_send][AMR_GPU]);
-						//GPU_write(n_send);
+						GPU_write(n_send);
 						#endif
 					}
 				}

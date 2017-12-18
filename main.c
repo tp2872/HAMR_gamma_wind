@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;	
-
+			if (nstep > 20000) break;
 			//Safe and exit at end of 24 hour runtime
 			if ((double)(begin2 - end1) > RUNTIME*3600.){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
@@ -812,7 +812,9 @@ void set_arrays(int n)
 
 void free_arrays(int n)
 {
-	if (nl[n]<MAX_BLOCKS*1.5) return;
+	mem_spot[nl[n]] = 0;
+	if (nl[n]<(n_active_total/numtasks)) return;
+	mem_spot[nl[n]] = -1;
 
 	free(p[nl[n]]);
 	free(ph[nl[n]]);
@@ -1323,7 +1325,6 @@ void free_arrays(int n)
 	free(array_gdump2[nl[n]]);
 	free(array_diag[nl[n]]);
 
-	mem_spot[nl[n]] = 0;
 }
 
 

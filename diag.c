@@ -128,13 +128,13 @@ void diag(int call_code)
 		}
 		first_rdump = 0;
 		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total[n]][GDUMP_WRI0EN] == 2){
+			if (block[n_ord_total[n]][GDUMP_WRITTEN] == 2){
 				if (block[n_ord_total[n]][AMR_NODE] == rank){
 					MPI_Wait(&req_gdump1[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
 					MPI_Wait(&req_gdump2[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
 					MPI_File_close(&gdump[nl[n_ord_total[n]]]);
 				}
-				block[n_ord_total[n]][GDUMP_WRI0EN] = 1;
+				block[n_ord_total[n]][GDUMP_WRITTEN] = 1;
 			}
 		}
 

@@ -107,7 +107,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 1
+#define PRESTEP 0
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
 #define PRESTEP2 0
@@ -354,7 +354,7 @@ MNEMONICS SECTION
 #define AMR_CORN11D_2 72
 #define AMR_CORN12D_2 73
 #define RM_ORDER 74
-#define GDUMP_WRI0EN 75
+#define GDUMP_WRITTEN 75
 #define AMR_PRESTEP 76
 #define AMR_GPU 77
 #define AMR_NSTEP 78
@@ -459,8 +459,8 @@ Section with derived quantities
 #endif
 
 /*Maximum number of blocks per node*/
-#define MAX_BLOCKS (100*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
-#define NB_LOCAL (MAX_BLOCKS*3)
+#define MAX_BLOCKS (35*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define NB_LOCAL (300)
 
 /*Macro declerations*/
 #define PLOOP  for(k=0;k<NPR;k++) //loop over all Dimensions; second rank loop */
