@@ -451,11 +451,11 @@ void balance_load(void){
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
 	int timelevel_cutoff = AMR_MAXTIMELEVEL;
-#if(DEREFINE_POLE)
+	#if(DEREFINE_POLE)
 	rm_order();
-#else
+	#else
 	rm_order2();
-#endif
+	#endif
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
 	int n_active_local_max = 0;
 	int n_active_local_min = 1;
@@ -792,7 +792,8 @@ void activate_blocks(void){
 
 	n_active = 0;
 	n_active_total = 0;
-	
+	MPI_Barrier(MPI_COMM_WORLD);
+
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_ACTIVE] == 1 && block[n][AMR_NODE] == rank){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active
@@ -811,6 +812,7 @@ void activate_blocks(void){
 			block[n][AMR_REFINED] = 0;
 		}
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
 
 }
 

@@ -70,10 +70,10 @@ Numerical Parameters section
 #define GPU_DIRECT 1
 
 /*Maximum tag number for MPI messages so not to overflow*/
-#define MPI_TAG_MAX 22064576
+#define MPI_TAG_MAX 126400576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 1
+#define COPY_BFIELD 0
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4

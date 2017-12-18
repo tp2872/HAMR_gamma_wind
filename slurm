@@ -7,7 +7,7 @@
 ### set the wallclock time
 #PBS -l walltime=01:40:00
 ### set the job name
-#PBS -N TTDISKS25A93T60_CUDA
+#PBS -N TTDISKS25A93T60S_CUDA
 ### set the job stdout and stderr
 #PBS -e $PBS_JOBID.err
 #PBS -o $PBS_JOBID.out
@@ -21,7 +21,7 @@ module swap cray-mpich/7.5.0 cray-mpich/7.5.3
 export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH 
 export MPICH_RDMA_ENABLED_CUDA=1
 
-cd /scratch/sciteam/liska/TTDISKS25A93T60
+cd /scratch/sciteam/liska/NEW/TTDISKS25A93T60S
 make clean
 make -j
 aprun -n 150 -N 1 -d 16 -cc none ./harm
