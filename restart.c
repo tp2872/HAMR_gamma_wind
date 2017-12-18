@@ -324,7 +324,7 @@ void param_read(FILE *fp){
 }
 
 int AMR_coord_linear_old(int level, int i, int j, int z){
-	int index[N_LEVELS - 1], coord[NDIM], factor[N_LEVELS-1], u, y, n;
+	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n;
 
 	if (i < 0 || j < 0 || z < 0){
 		n = -1;
