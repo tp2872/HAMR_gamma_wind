@@ -5,7 +5,7 @@
 #PBS -q normal
 #PBS -l nodes=250:ppn=16:xk
 ### set the wallclock time
-#PBS -l walltime=24:00:00
+#PBS -l walltime=00:25:00
 ### set the job name
 #PBS -N TDISKS25A93T65S
 ### set the job stdout and stderr

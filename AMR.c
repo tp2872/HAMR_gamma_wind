@@ -648,9 +648,9 @@ void balance_load(void){
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
 			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
-				rc = MPI_Isend(&p[nl[n_ord_total_RM[i]]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][0]);
+				rc = MPI_Isend(&p[nl[n_ord_total_RM[i]]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (5 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][0]);
 				#if STAGGERED
-				rc += MPI_Isend(&ps[nl[n_ord_total_RM[i]]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][1]);
+				rc += MPI_Isend(&ps[nl[n_ord_total_RM[i]]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (6 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][1]);
 				#endif
 				if (rc != 0)fprintf(stderr, "Error balance_load send %d", rc);
 			}
@@ -664,9 +664,9 @@ void balance_load(void){
 				temp_p[n_ord_total_RM[i]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 				temp_ps[n_ord_total_RM[i]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
-					rc = MPI_Irecv(&temp_p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 0) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_ord_total_RM[i]]);
+					rc = MPI_Irecv(&temp_p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (5 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_ord_total_RM[i]]);
 					#if STAGGERED
-					rc += MPI_Irecv(&temp_ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (2 * n_ord_total_RM[i] + 1) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_ord_total_RM[i]]);
+					rc += MPI_Irecv(&temp_ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (6 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_ord_total_RM[i]]);
 					#endif
 					if (rc != 0)fprintf(stderr, "Error balance_load receive %d", rc);
 				}
@@ -789,11 +789,12 @@ void balance_load_gpu(void){
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 void activate_blocks(void){
 	int n, i;
-
+	int NODE[NB];
 	n_active = 0;
 	n_active_total = 0;
 	MPI_Barrier(MPI_COMM_WORLD);
 
+	for (n = 0; n < numtasks; n++) NODE[n] = 0;
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_ACTIVE] == 1 && block[n][AMR_NODE] == rank){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active
@@ -806,7 +807,8 @@ void activate_blocks(void){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active_total
 			n_ord_total[n_active_total] = n;
 			n_ord_total_RM[n_active_total] = n;
-			block[n][AMR_NUMBER] = n_active_total;
+			block[n][AMR_NUMBER] = NODE[block[n][AMR_NODE]];
+			NODE[block[n][AMR_NODE]]++;
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;
 			block[n][AMR_REFINED] = 0;
@@ -1735,13 +1737,13 @@ void check_refcrit(void){
 				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 				for (task = 0; task < numtasks; task++){
 					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task,n_active_total+ n % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, (17 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 						MPI_Request_free(&req[0]);
 					}
 				}
 			}
 			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_active_total + n % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], (17 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 			}
 		}
 		for (n = 0; n < n_active_total; n++){
@@ -1827,13 +1829,13 @@ void check_refcrit(void){
 				rhomax[n_ord_total[n]] = calc_rhomax(n_ord_total[n]);
 				for (task = 0; task < numtasks; task++){
 					if (rank != task){
-						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, n_active_total + n % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						rc = MPI_Isend(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, task, (18 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 						MPI_Request_free(&req[0]);
 					}
 				}
 			}
 			if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], n_active_total + n % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+				rc = MPI_Irecv(&rhomax[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], (18 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 			}
 		}
 		for (n = 0; n < n_active_total; n++){
@@ -1880,9 +1882,9 @@ void check_refcrit(void){
 					//if (rank==0)fprintf(stderr,"check_refcrit %d %d %d \n ", block[n_send][AMR_NODE],node, rank);
 					rc = 0;
 					if (block[n_send][AMR_NODE] == rank){
-						rc += MPI_Isend(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (50 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][598]);
+						rc += MPI_Isend(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][598]);
 						#if STAGGERED
-						rc += MPI_Isend(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (51 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][597]);
+						rc += MPI_Isend(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][597]);
 						#endif
 					}
 					if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
@@ -1907,9 +1909,9 @@ void check_refcrit(void){
 						temp_p[n_send] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 						temp_ps[n_send] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 						if (block[n_send][AMR_NODE] >= 0){
-							rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (50 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
+							rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
 							#if STAGGERED
-							rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (51 * n_active_total + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
+							rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
 							#endif
 						}
 					}

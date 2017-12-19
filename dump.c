@@ -344,7 +344,7 @@ void gdump_block(MPI_File  *fp, int n)
 			}
 		}
 		//(-deg(g))**0.5
-		array_gdump2[nl[n]][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + 2 * NDIM*NDIM + k*NDIM + 1] = geom.g;
+		array_gdump2[nl[n]][(i - N1_GPU_offset[n]) * 49 * BS_2 + (j - N2_GPU_offset[n]) * 49 + 2 * NDIM*NDIM + 1] = geom.g;
 
 		//dr^i/dx^j
 		for (k = 0; k < NDIM; k++) {

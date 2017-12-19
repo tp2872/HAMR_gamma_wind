@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;	
-
+			if (nstep > 2500) break;
 			//Safe and exit at end of 24 hour runtime
 			if ((double)(begin2 - end1) > RUNTIME*3600.){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");

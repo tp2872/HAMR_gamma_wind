@@ -133,12 +133,12 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, 0, z);
 				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
-					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (58 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[i*NB_3 + z]);
+					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[i*NB_3 + z]);
 				}
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag1[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (58 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 							MPI_Request_free(&req[0]);
 						}
 					}
@@ -156,12 +156,12 @@ void E_average(void){
 			for (z = 0; z < NB_3; z++){
 				number = AMR_coord_linear(0, i, NB_2 - 1, z);
 				if (block[number][AMR_NODE] != rank && send_tag2[rank] == 1){
-					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (59 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[i*NB_3 + z]);
+					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[i*NB_3 + z]);
 				}
 				if (block[number][AMR_NODE] == rank){
 					for (u = 0; u < numtasks; u++){
 						if (send_tag2[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (59 * n_active_total + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
 							MPI_Request_free(&req[0]);
 						}
 					}
