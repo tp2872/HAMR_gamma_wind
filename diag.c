@@ -83,7 +83,7 @@ void diag(int call_code)
 		jcurr = jmax;
 		
 		if (rank == 0){
-			fprintf(stderr, "LOG      t=%g \t divbmax: %d %d %d %g\n", t, imax, jmax, zmax, divbmax - 0.212854);
+			fprintf(stderr, "LOG      t=%g \t divbmax: %d %d %d %g\n", t, imax, jmax, zmax, divbmax);
 		}
 		if (divbmax > 1.0) exit(44);
 	}
