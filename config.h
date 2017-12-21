@@ -461,7 +461,7 @@ Section with derived quantities
 #endif
 
 /*Maximum number of blocks per node*/
-#define MAX_BLOCKS (35*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define MAX_BLOCKS (100*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 #define NB_LOCAL (300)
 
 /*Macro declerations*/
