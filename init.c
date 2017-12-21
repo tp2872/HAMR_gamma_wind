@@ -1342,8 +1342,6 @@ void init_torus_grb(){
 		beta = 100.;
 	}
 	else if (WHICHFIELD == TOROIDALFIELD){
-		a = 0.9; //spin for the toroidal field run; was not defined previously, so added here
-		gam = 4. / 3.; //polytropic index for toroidal field run; was not defined previously, so added here
 		rin = 6.;
 		rmax = 13.792;
 		kappa = 1.e-2;
