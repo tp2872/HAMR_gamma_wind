@@ -81,6 +81,8 @@ extern double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 extern double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];
 extern double(*restrict gdet[NB_LOCAL])[NPG];
+extern double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
+extern double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict dU_s[NB_LOCAL])[NPR];
 
 /*GPU transfer arrays*/
@@ -757,6 +759,11 @@ struct of_geom {
 	double g;
 };
 
+struct of_trans {
+	double Mud[NDIM][NDIM];
+	double Mud_inv[NDIM][NDIM];
+};
+
 struct of_state {
 	double ucon[NDIM];
 	double ucov[NDIM];
@@ -898,6 +905,7 @@ int  get_G_ATM(double *g_tmp);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double *X, double lgcov[][NDIM]);
 void get_geometry(int n, int i, int j, int z, int loc, struct of_geom *geom);
+void get_trans(int n, int ii, int jj, int zz, int ff, struct of_trans * restrict trans);
 void get_geometry_direct(int ii, int jj, int zz, int ff, struct of_geom *geom);
 int index_3D(int n, int i, int j, int z);
 int index_2D(int n, int i, int j, int z);

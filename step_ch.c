@@ -74,10 +74,12 @@ void step_ch()
 	for (u = 0; u < 2*AMR_MAXTIMELEVEL; u++){
 		set_prestep();
 		ndt = advance(0);
+
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  fixup(p, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup(ph, n_ord[n]);
 		}
+
 		/*for (n = 0; n < n_active; n++){
 			if (pflag[n_ord[n]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] == 100){
 				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
@@ -145,7 +147,7 @@ double advance(int flag)
 				ZLOOP3D_MPI{
 					ind0 = index_3D(n_ord[n], i, j, z);
 					#pragma ivdep
-					PLOOP ph[n_ord[n]][ind0][k] = p[n_ord[n]][ind0][k];        /* needed for Utoprim */
+					PLOOP ph[nl[n_ord[n]]][ind0][k] = p[nl[n_ord[n]]][ind0][k];        /* needed for Utoprim */
 				}
 			}
 		}
@@ -155,6 +157,7 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++){
 		bdt[nl[n_ord[n]]][0] = bdt[nl[n_ord[n]]][1] = bdt[nl[n_ord[n]]][2] = bdt[nl[n_ord[n]]][3] = 1e9;
 	}
+
 	#if(N1G>0)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) bdt[nl[n_ord[n]]][1] = fluxcalc(ph, F1, 1, 1, n_ord[n]);
@@ -166,6 +169,7 @@ double advance(int flag)
 			ndt1 = MY_MIN(ndt1, bdt[nl[n_ord[n]]][1] / ((double)block[n_ord[n]][AMR_TIMELEVEL]));
 		}
 	}
+
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send1(F1, Bufferp_1, n_ord[n]);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 1);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 2);
@@ -286,6 +290,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			U[B3] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
+
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
 
 			#if( DO_FONT_FIX ) 
@@ -320,6 +325,10 @@ slope_lim();
 ***********************************************************************************************/
 double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
+	#if(HLLC)
+	ndt = fluxcalc_hllc(pr, F, dir, flag, n);
+	return ndt;
+	#endif
 	int i, j, z, k, idel, jdel, zdel, face;
 	double p_l[NPR], p_r[NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR], F_HLL[NPR], U_HLL[NPR], vcon[NDIM], U_i[NPR], ptot;
 	double cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ndt, ndt_thread, dtij;

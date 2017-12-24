@@ -429,6 +429,18 @@ void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restri
 	geom->g = gdet[nl[n]][index_2D(n, ii, jj, zz)][ff];
 }
 
+/* load local geometry into structure geom */
+void get_trans(int n, int ii, int jj, int zz, int ff, struct of_trans * restrict trans)
+{
+	int i, j;
+	for (i = 0; i < NDIM; i++){
+		for (j = 0; j < NDIM; j++){
+			trans->Mud[i][j] = Mud[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
+			trans->Mud_inv[i][j] = Mud_inv[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
+		}
+	}
+}
+
 /*Load local geometry into structure geom for cases where the values are not stored in the memory 
 such as during image output for MPI on the host node*/
 void get_geometry_direct(int ii, int jj, int zz, int ff, struct of_geom *geom)

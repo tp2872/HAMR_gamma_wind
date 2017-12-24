@@ -65,44 +65,44 @@ void set_Mud(int n){
 		B = pow((geom.gcon[0][0])*(geom.gcon[0][0] * geom.gcon[1][1] - geom.gcon[0][1] * geom.gcon[0][1]), -0.5);
 		C = pow(geom.gcov[3][3], -0.5);
 		D = pow((geom.gcov[3][3])*(geom.gcov[2][2] * geom.gcov[3][3] - geom.gcov[2][3] * geom.gcov[2][3]), -0.5);
-		Mud[nl[n]][index2(n, i, j, z)][1][0][0] = A*geom.gcon[0][0];
-		Mud[nl[n]][index2(n, i, j, z)][1][0][1] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][1][0][2] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][1][0][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][1][1][0] = A*geom.gcon[0][1];
-		Mud[nl[n]][index2(n, i, j, z)][1][1][1] = B*(geom.gcon[0][1] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[1][1]);
-		Mud[nl[n]][index2(n, i, j, z)][1][1][2] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][1][1][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][1][2][0] = A*geom.gcon[0][2];
-		Mud[nl[n]][index2(n, i, j, z)][1][2][1] = B*(geom.gcon[0][1] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[1][2]);
-		Mud[nl[n]][index2(n, i, j, z)][1][2][2] = D*geom.gcov[3][3];
-		Mud[nl[n]][index2(n, i, j, z)][1][2][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][1][3][0] = A*geom.gcon[0][3];
-		Mud[nl[n]][index2(n, i, j, z)][1][3][1] = B*(geom.gcon[0][1] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[1][3]);
-		Mud[nl[n]][index2(n, i, j, z)][1][3][2] = -D*geom.gcov[2][3];
-		Mud[nl[n]][index2(n, i, j, z)][1][3][3] = C;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][0][0] = A*geom.gcon[0][0];
+		Mud[nl[n]][index_2D(n, i, j, z)][1][0][1] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][0][2] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][0][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][1][0] = A*geom.gcon[0][1];
+		Mud[nl[n]][index_2D(n, i, j, z)][1][1][1] = B*(geom.gcon[0][1] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[1][1]);
+		Mud[nl[n]][index_2D(n, i, j, z)][1][1][2] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][1][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][2][0] = A*geom.gcon[0][2];
+		Mud[nl[n]][index_2D(n, i, j, z)][1][2][1] = B*(geom.gcon[0][1] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[1][2]);
+		Mud[nl[n]][index_2D(n, i, j, z)][1][2][2] = D*geom.gcov[3][3];
+		Mud[nl[n]][index_2D(n, i, j, z)][1][2][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][1][3][0] = A*geom.gcon[0][3];
+		Mud[nl[n]][index_2D(n, i, j, z)][1][3][1] = B*(geom.gcon[0][1] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[1][3]);
+		Mud[nl[n]][index_2D(n, i, j, z)][1][3][2] = -D*geom.gcov[2][3];
+		Mud[nl[n]][index_2D(n, i, j, z)][1][3][3] = C;
 
 		E = geom.gcon[0][1] * geom.gcon[1][2] - geom.gcon[1][1] * geom.gcon[0][2];
 		F = geom.gcon[0][1] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[1][2];
 		G = geom.gcon[0][1] * geom.gcon[1][3] - geom.gcon[1][1] * geom.gcon[0][3];
 		H = geom.gcon[0][1] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[1][3];
 
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][0] = -A;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][1] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][2] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][0][3] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][0] = B*geom.gcon[0][1];
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][1] = -B*geom.gcon[0][0];
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][2] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][1][3] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[3][3]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][1] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[3][3]);;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][2] = 1./(D*geom.gcov[3][3]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][2][3] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[2][3]/geom.gcov[3][3]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][1] = (B*B / C)*geom.gcon[0][0]*(H+F*geom.gcov[2][3]/geom.gcov[3][3]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][2] = (1./C)*geom.gcov[2][3]/geom.gcov[3][3];
-		Mud_inv[nl[n]][index2(n, i, j, z)][1][3][3] = 1./C;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][0][0] = -A;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][0][1] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][0][2] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][0][3] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][1][0] = B*geom.gcon[0][1];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][1][1] = -B*geom.gcon[0][0];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][1][2] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][1][3] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[3][3]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][2][1] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[3][3]);;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][2][2] = 1./(D*geom.gcov[3][3]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][2][3] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[2][3]/geom.gcov[3][3]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][3][1] = (B*B / C)*geom.gcon[0][0]*(H+F*geom.gcov[2][3]/geom.gcov[3][3]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][3][2] = (1./C)*geom.gcov[2][3]/geom.gcov[3][3];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][1][3][3] = 1./C;
 
 		//dir 2
 		get_geometry(n, i, j, z, FACE2, &geom);
@@ -110,44 +110,44 @@ void set_Mud(int n){
 		B = pow((geom.gcon[0][0])*(geom.gcon[0][0] * geom.gcon[2][2] - geom.gcon[0][2] * geom.gcon[0][2]), -0.5);
 		C = pow(geom.gcov[1][1], -0.5);
 		D = pow((geom.gcov[1][1])*(geom.gcov[3][3] * geom.gcov[1][1] - geom.gcov[3][1] * geom.gcov[3][1]), -0.5);
-		Mud[nl[n]][index2(n, i, j, z)][2][0][0] = A*geom.gcon[0][0];
-		Mud[nl[n]][index2(n, i, j, z)][2][0][1] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][2][0][2] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][2][0][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][2][2][0] = A*geom.gcon[0][2];
-		Mud[nl[n]][index2(n, i, j, z)][2][2][1] = B*(geom.gcon[0][2] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[2][2]);
-		Mud[nl[n]][index2(n, i, j, z)][2][2][2] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][2][2][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][2][3][0] = A*geom.gcon[0][3];
-		Mud[nl[n]][index2(n, i, j, z)][2][3][1] = B*(geom.gcon[0][2] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[2][3]);
-		Mud[nl[n]][index2(n, i, j, z)][2][3][2] = D*geom.gcov[1][1];
-		Mud[nl[n]][index2(n, i, j, z)][2][3][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][2][1][0] = A*geom.gcon[0][1];
-		Mud[nl[n]][index2(n, i, j, z)][2][1][1] = B*(geom.gcon[0][2] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[2][1]);
-		Mud[nl[n]][index2(n, i, j, z)][2][1][2] = -D*geom.gcov[3][1];
-		Mud[nl[n]][index2(n, i, j, z)][2][1][3] = C;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][0][0] = A*geom.gcon[0][0];
+		Mud[nl[n]][index_2D(n, i, j, z)][2][0][1] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][0][2] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][0][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][2][0] = A*geom.gcon[0][2];
+		Mud[nl[n]][index_2D(n, i, j, z)][2][2][1] = B*(geom.gcon[0][2] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[2][2]);
+		Mud[nl[n]][index_2D(n, i, j, z)][2][2][2] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][2][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][3][0] = A*geom.gcon[0][3];
+		Mud[nl[n]][index_2D(n, i, j, z)][2][3][1] = B*(geom.gcon[0][2] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[2][3]);
+		Mud[nl[n]][index_2D(n, i, j, z)][2][3][2] = D*geom.gcov[1][1];
+		Mud[nl[n]][index_2D(n, i, j, z)][2][3][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][2][1][0] = A*geom.gcon[0][1];
+		Mud[nl[n]][index_2D(n, i, j, z)][2][1][1] = B*(geom.gcon[0][2] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[2][1]);
+		Mud[nl[n]][index_2D(n, i, j, z)][2][1][2] = -D*geom.gcov[3][1];
+		Mud[nl[n]][index_2D(n, i, j, z)][2][1][3] = C;
 
 		E = geom.gcon[0][2] * geom.gcon[2][3] - geom.gcon[2][2] * geom.gcon[0][3];
 		F = geom.gcon[0][2] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[2][3];
 		G = geom.gcon[0][2] * geom.gcon[2][1] - geom.gcon[2][2] * geom.gcon[0][1];
 		H = geom.gcon[0][2] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[2][1];
 
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][0] = -A;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][2] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][3] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][0][1] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][0] = B*geom.gcon[0][2];
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][2] = -B*geom.gcon[0][0];
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][3] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][1][1] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[1][1]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][2] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[1][1]);;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][3] = 1. / (D*geom.gcov[1][1]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][2][1] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[3][1] / geom.gcov[1][1]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][2] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[3][1] / geom.gcov[1][1]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][3] = (1. / C)*geom.gcov[3][1] / geom.gcov[1][1];
-		Mud_inv[nl[n]][index2(n, i, j, z)][2][3][1] = 1. / C;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][0][0] = -A;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][0][2] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][0][3] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][0][1] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][1][0] = B*geom.gcon[0][2];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][1][2] = -B*geom.gcon[0][0];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][1][3] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][1][1] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[1][1]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][2][2] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[1][1]);;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][2][3] = 1. / (D*geom.gcov[1][1]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][2][1] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[3][1] / geom.gcov[1][1]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][3][2] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[3][1] / geom.gcov[1][1]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][3][3] = (1. / C)*geom.gcov[3][1] / geom.gcov[1][1];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][2][3][1] = 1. / C;
 
 		//dir 3
 		get_geometry(n, i, j, z, FACE3, &geom);
@@ -155,44 +155,44 @@ void set_Mud(int n){
 		B = pow((geom.gcon[0][0])*(geom.gcon[0][0] * geom.gcon[3][3] - geom.gcon[0][3] * geom.gcon[0][3]), -0.5);
 		C = pow(geom.gcov[2][2], -0.5);
 		D = pow((geom.gcov[2][2])*(geom.gcov[1][1] * geom.gcov[2][2] - geom.gcov[1][2] * geom.gcov[1][2]), -0.5);
-		Mud[nl[n]][index2(n, i, j, z)][3][0][0] = A*geom.gcon[0][0];
-		Mud[nl[n]][index2(n, i, j, z)][3][0][1] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][3][0][2] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][3][0][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][3][3][0] = A*geom.gcon[0][3];
-		Mud[nl[n]][index2(n, i, j, z)][3][3][1] = B*(geom.gcon[0][3] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[3][3]);
-		Mud[nl[n]][index2(n, i, j, z)][3][3][2] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][3][3][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][3][1][0] = A*geom.gcon[0][1];
-		Mud[nl[n]][index2(n, i, j, z)][3][1][1] = B*(geom.gcon[0][3] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[3][1]);
-		Mud[nl[n]][index2(n, i, j, z)][3][1][2] = D*geom.gcov[2][2];
-		Mud[nl[n]][index2(n, i, j, z)][3][1][3] = 0;
-		Mud[nl[n]][index2(n, i, j, z)][3][2][0] = A*geom.gcon[0][2];
-		Mud[nl[n]][index2(n, i, j, z)][3][2][1] = B*(geom.gcon[0][3] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[3][2]);
-		Mud[nl[n]][index2(n, i, j, z)][3][2][2] = -D*geom.gcov[1][2];
-		Mud[nl[n]][index2(n, i, j, z)][3][2][3] = C;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][0][0] = A*geom.gcon[0][0];
+		Mud[nl[n]][index_2D(n, i, j, z)][3][0][1] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][0][2] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][0][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][3][0] = A*geom.gcon[0][3];
+		Mud[nl[n]][index_2D(n, i, j, z)][3][3][1] = B*(geom.gcon[0][3] * geom.gcon[0][3] - geom.gcon[0][0] * geom.gcon[3][3]);
+		Mud[nl[n]][index_2D(n, i, j, z)][3][3][2] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][3][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][1][0] = A*geom.gcon[0][1];
+		Mud[nl[n]][index_2D(n, i, j, z)][3][1][1] = B*(geom.gcon[0][3] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[3][1]);
+		Mud[nl[n]][index_2D(n, i, j, z)][3][1][2] = D*geom.gcov[2][2];
+		Mud[nl[n]][index_2D(n, i, j, z)][3][1][3] = 0;
+		Mud[nl[n]][index_2D(n, i, j, z)][3][2][0] = A*geom.gcon[0][2];
+		Mud[nl[n]][index_2D(n, i, j, z)][3][2][1] = B*(geom.gcon[0][3] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[3][2]);
+		Mud[nl[n]][index_2D(n, i, j, z)][3][2][2] = -D*geom.gcov[1][2];
+		Mud[nl[n]][index_2D(n, i, j, z)][3][2][3] = C;
 
 		E = geom.gcon[0][3] * geom.gcon[3][1] - geom.gcon[3][3] * geom.gcon[0][1];
 		F = geom.gcon[0][3] * geom.gcon[0][1] - geom.gcon[0][0] * geom.gcon[3][1];
 		G = geom.gcon[0][3] * geom.gcon[3][2] - geom.gcon[3][3] * geom.gcon[0][2];
 		H = geom.gcon[0][3] * geom.gcon[0][2] - geom.gcon[0][0] * geom.gcon[3][2];
 
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][0] = -A;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][3] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][1] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][0][2] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][0] = B*geom.gcon[0][3];
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][3] = -B*geom.gcon[0][0];
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][1] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][1][2] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[2][2]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][3] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[2][2]);;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][1] = 1. / (D*geom.gcov[2][2]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][2][2] = 0;
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[1][2] / geom.gcov[2][2]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][3] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[1][2] / geom.gcov[2][2]);
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][1] = (1. / C)*geom.gcov[1][2] / geom.gcov[2][2];
-		Mud_inv[nl[n]][index2(n, i, j, z)][3][3][2] = 1. / C;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][0][0] = -A;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][0][3] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][0][1] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][0][2] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][1][0] = B*geom.gcon[0][3];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][1][3] = -B*geom.gcon[0][0];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][1][1] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][1][2] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][2][0] = B*B*E*geom.gcon[0][0] / (D*geom.gcov[2][2]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][2][3] = B*B*F*geom.gcon[0][0] / (D*geom.gcov[2][2]);;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][2][1] = 1. / (D*geom.gcov[2][2]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][2][2] = 0;
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][3][0] = (B*B / C)*geom.gcon[0][0] * (G + E*geom.gcov[1][2] / geom.gcov[2][2]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][3][3] = (B*B / C)*geom.gcon[0][0] * (H + F*geom.gcov[1][2] / geom.gcov[2][2]);
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][3][1] = (1. / C)*geom.gcov[1][2] / geom.gcov[2][2];
+		Mud_inv[nl[n]][index_2D(n, i, j, z)][3][3][2] = 1. / C;
 	}
 	#endif
 }
@@ -209,7 +209,6 @@ slope_lim();
 ***********************************************************************************************/
 double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
-	#if(HLLC)
 	int i, j, z, k, idel, jdel, zdel, face, i1, j1, i2, j2;
 	double p_l[NPR], p_r[NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR], F_HLL[NPR], U_HLL[NPR], vcon[NDIM], U_i[NPR], F1[NDIM][NPR], F_FT[NDIM][NPR], ptot;
 	double cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ndt, ndt_thread, dtij;
@@ -241,7 +240,7 @@ double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + BS_3 - 1 + D3){
 				// #pragma ivdep
 				PLOOP{
-					dq[nl[n]][index(n, i, j, z)][k] = slope_lim(pr[nl[n]][index(n, i - idel, j - jdel, z - zdel)][k], pr[nl[n]][index(n, i, j, z)][k], pr[nl[n]][index(n, i + idel, j + jdel, z + zdel)][k]);
+					dq[nl[n]][index_3D(n, i, j, z)][k] = slope_lim(pr[nl[n]][index_3D(n, i - idel, j - jdel, z - zdel)][k], pr[nl[n]][index_3D(n, i, j, z)][k], pr[nl[n]][index_3D(n, i + idel, j + jdel, z + zdel)][k]);
 				}
 			}
 
@@ -251,8 +250,8 @@ double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 					get_geometry(n, i, j, z, face, &geom);
 					get_trans(n, i, j, z, dir, &trans);
 
-					ind0 = index(n, i, j, z);
-					ind1 = index(n, i - idel, j - jdel, z - zdel);
+					ind0 = index_3D(n, i, j, z);
+					ind1 = index_3D(n, i - idel, j - jdel, z - zdel);
 
 					#pragma ivdep
 					PLOOP{
@@ -274,7 +273,7 @@ double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 							else p_l[k] = psh[nl[n]][ind0][k - (B1 - 1)];
 							p_r[k] = p_l[k];
 						}
-					#endif
+						#endif
 					}
 
 					#if(STAGGERED)
@@ -308,227 +307,216 @@ double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 					ctop = MY_MAX(cmax, cmin);
+					// evaluate restriction on timestep 
+					dtij = fabs(cour*dx[nl[n]][dir] / ctop);
+					if (dtij < ndt_thread) {
+						ndt_thread = dtij;
 
-					//Calculate HLL flux for F[B1]-F[B3]
-					#pragma ivdep
-					for (k = B1; k <= B3+DOKTOT; k++){
-						F1[dir][k] = HLLF*((cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-							+ LAXF*(0.5*(F_l[k] + F_l[k] - ctop * (U_r[k] - U_l[k])));
 					}
-
-				
-
-					//Transform 4 velocities and 4 magnetic fields to orthonormal frame
-					for (i1 = 0; i1 < NDIM; i1++){
-						state_l_FT.ucon[i1] = 0.0;
-						state_l_FT.ucov[i1] = 0.0;
-						state_l_FT.bcon[i1] = 0.0;
-						state_l_FT.bcov[i1] = 0.0;
-						state_r_FT.ucon[i1] = 0.0;
-						state_r_FT.ucov[i1] = 0.0;
-						state_r_FT.bcon[i1] = 0.0;
-						state_r_FT.bcov[i1] = 0.0;
-						for (j1 = 0; j1 < NDIM; j1++){
-							state_l_FT.ucon[i1] += state_l.ucon[j1] * trans.Mud_inv[i1][j1];
-							state_l_FT.ucov[i1] += state_l.ucov[j1] * trans.Mud[j1][i1];
-							state_l_FT.bcon[i1] += state_l.bcon[j1] * trans.Mud_inv[i1][j1];
-							state_l_FT.bcov[i1] += state_l.bcov[j1] * trans.Mud[j1][i1];
-							state_r_FT.ucon[i1] += state_r.ucon[j1] * trans.Mud_inv[i1][j1];
-							state_r_FT.ucov[i1] += state_r.ucov[j1] * trans.Mud[j1][i1];
-							state_r_FT.bcon[i1] += state_r.bcon[j1] * trans.Mud_inv[i1][j1];
-							state_r_FT.bcov[i1] += state_r.bcov[j1] * trans.Mud[j1][i1];
+					
+						//Calculate HLL flux for F[B1]-F[B3]
+						#pragma ivdep
+						for (k = B1; k < NPR; k++){
+							F1[dir][k] = HLLF*((cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
+								+ LAXF*(0.5*(F_l[k] + F_l[k] - ctop * (U_r[k] - U_l[k])));
 						}
-					}
-					if ((dot(state_l_FT.bcon, state_l_FT.bcov) - dot(state_l.bcon, state_l.bcov)) / dot(state_l.bcon, state_l.bcov)>0.00001) fprintf(stderr, "test: %f %f \n", log(dot(state_l_FT.bcon, state_l_FT.bcov)), log(dot(state_l.bcon, state_l.bcov)));
 
-					primtoflux_FT(p_l, &state_l_FT, dir, &geom, F_l);
-					primtoflux_FT(p_r, &state_r_FT, dir, &geom, F_r);
 
-					primtoflux_FT(p_l, &state_l_FT, TT, &geom, U_l);
-					primtoflux_FT(p_r, &state_r_FT, TT, &geom, U_r);
 
-					vchar_FT(p_l, &state_l_FT, &geom, dir, &(cmax_l), &(cmin_l), n, i, j, z);
-					vchar_FT(p_r, &state_r_FT, &geom, dir, &(cmax_r), &(cmin_r), n, i, j, z);
-
-					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
-					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
-					ctop = MY_MAX(cmax, cmin);
-
-					#if(0)
-					for (i1 = 1; i1 < NDIM; i1++){
-						if (dot(state_r_FT.bcon, state_r_FT.bcov) / p_r[RHO] > 0.0001 && dot(state_l_FT.bcon, state_l_FT.bcov) / p_r[RHO] > 0.0001){
-							//Get wavespeed defined as maximum of left and right state
-							cmax_roe = MY_MAX(cmax_r[i1], cmax_l[i1]);
-							cmin_roe = MY_MIN(cmin_r[i1], cmin_l[i1]);
-							fail_HLLC=0;
-							
-							//Set U_HLL and F_HLL
-							for (k = 0; k < B1; k++){
-								U_HLL[k] = (F_l[i1][k] - F_r[i1][k] + cmax_roe*F_r[0][k] - cmin_roe*F_l[0][k]) / (cmax_roe - cmin_roe+ SMALL);
-								F_HLL[k] = (cmax_roe*F_l[i1][k] - cmin_roe*F_r[i1][k] + cmax_roe*cmin_roe*(F_r[0][k] - F_l[0][k])) / (cmax_roe - cmin_roe + SMALL);
+						//Transform 4 velocities and 4 magnetic fields to orthonormal frame
+						for (i1 = 0; i1 < NDIM; i1++){
+							state_l_FT.ucon[i1] = 0.0;
+							state_l_FT.ucov[i1] = 0.0;
+							state_l_FT.bcon[i1] = 0.0;
+							state_l_FT.bcov[i1] = 0.0;
+							state_r_FT.ucon[i1] = 0.0;
+							state_r_FT.ucov[i1] = 0.0;
+							state_r_FT.bcon[i1] = 0.0;
+							state_r_FT.bcov[i1] = 0.0;
+							for (j1 = 0; j1 < NDIM; j1++){
+								state_l_FT.ucon[i1] += state_l.ucon[j1] * trans.Mud_inv[i1][j1];
+								state_l_FT.ucov[i1] += state_l.ucov[j1] * trans.Mud[j1][i1];
+								state_l_FT.bcon[i1] += state_l.bcon[j1] * trans.Mud_inv[i1][j1];
+								state_l_FT.bcov[i1] += state_l.bcov[j1] * trans.Mud[j1][i1];
+								state_r_FT.ucon[i1] += state_r.ucon[j1] * trans.Mud_inv[i1][j1];
+								state_r_FT.ucov[i1] += state_r.ucov[j1] * trans.Mud[j1][i1];
+								state_r_FT.bcon[i1] += state_r.bcon[j1] * trans.Mud_inv[i1][j1];
+								state_r_FT.bcov[i1] += state_r.bcov[j1] * trans.Mud[j1][i1];
 							}
+						}
+						if ((dot(state_l_FT.bcon, state_l_FT.bcov) - dot(state_l.bcon, state_l.bcov)) / dot(state_l.bcon, state_l.bcov)>0.00001) printf("test: %f %f \n", log(dot(state_l_FT.bcon, state_l_FT.bcov)), log(dot(state_l.bcon, state_l.bcov)));
+						if ((dot(state_l_FT.ucon, state_l_FT.ucov) - dot(state_l.ucon, state_l.ucov)) / dot(state_l.ucon, state_l.ucov)>0.00001) printf("test2: %f %f \n", log(dot(state_l_FT.ucon, state_l_FT.ucov)), log(dot(state_l.ucon, state_l.ucov)));
 
-							/*Set strength of magnetic field (free parameter in solution, will just take the average of the left and right
-							extrapolated state for the moment untill we know better)*/
-							if(j1==1) U_HLL[B1] = p_l[B1];
-							else if (j1 == 2) U_HLL[B2] = p_l[B2];
-							else if (j1 == 3) U_HLL[B3] = p_l[B3];
+						primtoflux_FT(p_l, &state_l_FT, dir, &geom, F_l);
+						primtoflux_FT(p_r, &state_r_FT, dir, &geom, F_r);
 
-							//If |B1|<0.001*|B2| || |B1|<0.001*|B3| revert to HLL flux
-							if (fabs(U_HLL[B1]) < 0.001*fabs(U_HLL[B2]) || fabs(U_HLL[B1]) < 0.001*fabs(U_HLL[B3]) && i1 == 1) fail_HLLC = 1;
-							if (fabs(U_HLL[B2]) < 0.001*fabs(U_HLL[B1]) || fabs(U_HLL[B2]) < 0.001*fabs(U_HLL[B3]) && i1 == 2) fail_HLLC = 1;
-							if (fabs(U_HLL[B3]) < 0.001*fabs(U_HLL[B1]) || fabs(U_HLL[B3]) < 0.001*fabs(U_HLL[B1]) && i1 == 3) fail_HLLC = 1;
+						primtoflux_FT(p_l, &state_l_FT, 0, &geom, U_l);
+						primtoflux_FT(p_r, &state_r_FT, 0, &geom, U_r);
 
-							//Solve for velocities of intermediate state and calculate magnetic field b.
-							solve_HLLC(&qi, &geom, vcon, U_HLL, F_HLL, &fail_HLLC, i1);
-							bsq = dot(qi.bcon, qi.bcov);
+						vchar_FT(p_l, &state_l_FT, &geom, dir, &(cmax_l), &(cmin_l), n, i, j, z);
+						vchar_FT(p_r, &state_r_FT, &geom, dir, &(cmax_r), &(cmin_r), n, i, j, z);
 
-							//Calculate total pressure ptot=pgas+0.5*bsq
-							ptot = F_HLL[UU+i1] + qi.bcon[i1] * qi.bcov[i1] - qi.ucov[i1] / qi.ucov[0] * (F_HLL[UU] + qi.bcon[i1] * qi.bcov[0]);
-							if(ptot<0.) fail_HLLC=1;
+						#if(0)
+						for (i1 = 1; i1 < NDIM; i1++){
+							if (dot(state_r_FT.bcon, state_r_FT.bcov) / p_r[RHO] > 0.0001 && dot(state_l_FT.bcon, state_l_FT.bcov) / p_r[RHO] > 0.0001){
+								//Get wavespeed defined as maximum of left and right state
+								cmax_roe = MY_MAX(cmax_r[i1], cmax_l[i1]);
+								cmin_roe = MY_MIN(cmin_r[i1], cmin_l[i1]);
+								fail_HLLC=0;
 
-							if (cmax_roe>0. && qi.ucon[i1] <= 0. && fail_HLLC == 0){
-								//Set Rankine-Hugoniot jump conditions
-								if (i1 == 1){
-									U_i[RHO] = (cmax_roe - state_r.ucon[i1] / state_r.ucon[0]) / (cmax_roe - vcon[i1] + SMALL)*U_r[RHO];
-									U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_r[i1][UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[i1] + SMALL);
-									U_i[U1] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
-									U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_r[i1][U2] + cmax_roe*U_r[U2]) / (cmax_roe - vcon[i1] + SMALL);
-									U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_r[i1][U3] + cmax_roe*U_r[U3]) / (cmax_roe - vcon[i1] + SMALL);
-								}
-								else if (i1 == 2){
-									U_i[RHO] = (cmax_roe - state_r.ucon[i1] / state_r.ucon[0]) / (cmax_roe - vcon[i1] + SMALL)*U_r[RHO];
-									U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_r[i1][UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[i1] + SMALL);
-									U_i[U2] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
-									U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_r[i1][U3] + cmax_roe*U_r[U3]) / (cmax_roe - vcon[i1] + SMALL);
-									U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_r[i1][U1] + cmax_roe*U_r[U1]) / (cmax_roe - vcon[i1] + SMALL);
-								}
-								else if (i1 == 3){
-									U_i[RHO] = (cmax_roe - state_r.ucon[i1] / state_r.ucon[0]) / (cmax_roe - vcon[i1] + SMALL)*U_r[RHO];
-									U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_r[i1][UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[i1] + SMALL);
-									U_i[U3] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
-									U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_r[i1][U1] + cmax_roe*U_r[U1]) / (cmax_roe - vcon[i1] + SMALL);
-									U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_r[i1][U2] + cmax_roe*U_r[U2]) / (cmax_roe - vcon[i1] + SMALL);
+								//Set U_HLL and F_HLL
+								for (k = 0; k < B1; k++){
+									U_HLL[k] = (F_l[i1][k] - F_r[i1][k] + cmax_roe*F_r[0][k] - cmin_roe*F_l[0][k]) / (cmax_roe - cmin_roe+ SMALL);
+									F_HLL[k] = (cmax_roe*F_l[i1][k] - cmin_roe*F_r[i1][k] + cmax_roe*cmin_roe*(F_r[0][k] - F_l[0][k])) / (cmax_roe - cmin_roe + SMALL);
 								}
 
-								//Calculate HLLC flux
-								for (k = 0; k < B1; k++) F_FT[i1][k] = (F_r[i1][k] + cmax_roe*(U_i[k] - F_r[0][k]));
+								/*Set strength of magnetic field (free parameter in solution, will just take the average of the left and right
+								extrapolated state for the moment untill we know better)*/
+								if(j1==1) U_HLL[B1] = p_l[B1];
+								else if (j1 == 2) U_HLL[B2] = p_l[B2];
+								else if (j1 == 3) U_HLL[B3] = p_l[B3];
+
+								//If |B1|<0.001*|B2| || |B1|<0.001*|B3| revert to HLL flux
+								if (fabs(U_HLL[B1]) < 0.001*fabs(U_HLL[B2]) || fabs(U_HLL[B1]) < 0.001*fabs(U_HLL[B3]) && i1 == 1) fail_HLLC = 1;
+								if (fabs(U_HLL[B2]) < 0.001*fabs(U_HLL[B1]) || fabs(U_HLL[B2]) < 0.001*fabs(U_HLL[B3]) && i1 == 2) fail_HLLC = 1;
+								if (fabs(U_HLL[B3]) < 0.001*fabs(U_HLL[B1]) || fabs(U_HLL[B3]) < 0.001*fabs(U_HLL[B1]) && i1 == 3) fail_HLLC = 1;
+
+								//Solve for velocities of intermediate state and calculate magnetic field b.
+								solve_HLLC(&qi, &geom, vcon, U_HLL, F_HLL, &fail_HLLC, i1);
+								bsq = dot(qi.bcon, qi.bcov);
+
+								//Calculate total pressure ptot=pgas+0.5*bsq
+								ptot = F_HLL[UU+i1] + qi.bcon[i1] * qi.bcov[i1] - qi.ucov[i1] / qi.ucov[0] * (F_HLL[UU] + qi.bcon[i1] * qi.bcov[0]);
+								if(ptot<0.) fail_HLLC=1;
+
+								if (cmax_roe>0. && qi.ucon[i1] <= 0. && fail_HLLC == 0){
+									//Set Rankine-Hugoniot jump conditions
+									if (i1 == 1){
+										U_i[RHO] = (cmax_roe - state_r.ucon[i1] / state_r.ucon[0]) / (cmax_roe - vcon[i1] + SMALL)*U_r[RHO];
+										U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_r[i1][UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[i1] + SMALL);
+										U_i[U1] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
+										U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_r[i1][U2] + cmax_roe*U_r[U2]) / (cmax_roe - vcon[i1] + SMALL);
+										U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_r[i1][U3] + cmax_roe*U_r[U3]) / (cmax_roe - vcon[i1] + SMALL);
+									}
+									else if (i1 == 2){
+										U_i[RHO] = (cmax_roe - state_r.ucon[i1] / state_r.ucon[0]) / (cmax_roe - vcon[i1] + SMALL)*U_r[RHO];
+										U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_r[i1][UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[i1] + SMALL);
+										U_i[U2] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
+										U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_r[i1][U3] + cmax_roe*U_r[U3]) / (cmax_roe - vcon[i1] + SMALL);
+										U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_r[i1][U1] + cmax_roe*U_r[U1]) / (cmax_roe - vcon[i1] + SMALL);
+									}
+									else if (i1 == 3){
+										U_i[RHO] = (cmax_roe - state_r.ucon[i1] / state_r.ucon[0]) / (cmax_roe - vcon[i1] + SMALL)*U_r[RHO];
+										U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_r[i1][UU] + cmax_roe*U_r[UU]) / (cmax_roe - vcon[i1] + SMALL);
+										U_i[U3] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
+										U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_r[i1][U1] + cmax_roe*U_r[U1]) / (cmax_roe - vcon[i1] + SMALL);
+										U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_r[i1][U2] + cmax_roe*U_r[U2]) / (cmax_roe - vcon[i1] + SMALL);
+									}
+
+									//Calculate HLLC flux
+									for (k = 0; k < B1; k++) F_FT[i1][k] = (F_r[i1][k] + cmax_roe*(U_i[k] - F_r[0][k]));
+								}
+								else if (cmin_roe<0. && qi.ucon[i1] >= 0. && fail_HLLC == 0){
+									//Set Rankine-Hugoniot jump conditions
+									if (i1 == 1){
+										U_i[RHO] = (cmin_roe - state_l.ucon[i1] / state_l.ucon[0]) / (cmin_roe - vcon[i1] + SMALL)*F_l[0][RHO];
+										U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[1] * qi.bcov[0] - F_l[i1][UU] + cmin_roe*F_l[0][UU]) / (cmin_roe - vcon[i1] + SMALL);
+										U_i[U1] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
+										U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_l[i1][U2] + cmin_roe*F_l[0][U2]) / (cmin_roe - vcon[i1] + SMALL);
+										U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_l[i1][U3] + cmin_roe*F_r[0][U3]) / (cmin_roe - vcon[i1] + SMALL);
+									}
+									else if (i1 == 2){
+										U_i[RHO] = (cmin_roe - state_l.ucon[i1] / state_l.ucon[0]) / (cmin_roe - vcon[i1] + SMALL)*F_l[0][RHO];
+										U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_l[i1][UU] + cmin_roe*F_l[0][UU]) / (cmin_roe - vcon[i1] + SMALL);
+										U_i[U2] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
+										U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_l[i1][U3] + cmin_roe*F_l[0][U3]) / (cmin_roe - vcon[i1] + SMALL);
+										U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_l[i1][U1] + cmin_roe*F_r[0][U1]) / (cmin_roe - vcon[i1] + SMALL);
+									}
+									else if (i1 == 3){
+										U_i[RHO] = (cmin_roe - state_l.ucon[i1] / state_l.ucon[0]) / (cmin_roe - vcon[i1] + SMALL)*F_l[0][RHO];
+										U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_l[i1][UU] + cmin_roe*F_l[0][UU]) / (cmin_roe - vcon[i1] + SMALL);
+										U_i[U3] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
+										U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_l[i1][U1] + cmin_roe*F_l[0][U1]) / (cmin_roe - vcon[i1] + SMALL);
+										U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_l[i1][U2] + cmin_roe*F_r[0][U2]) / (cmin_roe - vcon[i1] + SMALL);
+									}
+
+									//Calculate HLLC flux
+									for (k = 0; k < B1; k++) F_FT[i1][k] = (F_l[i1][k] + cmin_roe*(U_i[k] - F_l[0][k]));
+								}
+								else if (cmin_roe >= 0. && fail_HLLC == 0){
+									for (k = 0; k < B1; k++) F_FT[i1][k] = F_l[i1][k];
+								}
+								else if (cmax_roe <= 0. && fail_HLLC == 0){
+									for (k = 0; k < B1; k++) F_FT[i1][k] = F_r[i1][k];
+								}
+								else{ //revert to HLL flux
+									for (k = 0; k < B1; k++){
+										F_FT[i1][k] = HLLF*((cmax[i1] * F_l[i1][k] + cmin[i1] * F_r[i1][k] - cmax[i1] * cmin[i1] * (F_r[0][k] - F_l[0][k])) / (cmax[i1] + cmin[i1] + SMALL))
+											+ LAXF*(0.5*(F_l[i1][k] + F_r[i1][k] - ctop[i1] * (F_r[0][k] - F_l[0][k])));
+									}
+									fail_HLLC = 0;
+								}
 							}
-							else if (cmin_roe<0. && qi.ucon[i1] >= 0. && fail_HLLC == 0){
-								//Set Rankine-Hugoniot jump conditions
-								if (i1 == 1){
-									U_i[RHO] = (cmin_roe - state_l.ucon[i1] / state_l.ucon[0]) / (cmin_roe - vcon[i1] + SMALL)*F_l[0][RHO];
-									U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[1] * qi.bcov[0] - F_l[i1][UU] + cmin_roe*F_l[0][UU]) / (cmin_roe - vcon[i1] + SMALL);
-									U_i[U1] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
-									U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_l[i1][U2] + cmin_roe*F_l[0][U2]) / (cmin_roe - vcon[i1] + SMALL);
-									U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_l[i1][U3] + cmin_roe*F_r[0][U3]) / (cmin_roe - vcon[i1] + SMALL);
-								}
-								else if (i1 == 2){
-									U_i[RHO] = (cmin_roe - state_l.ucon[i1] / state_l.ucon[0]) / (cmin_roe - vcon[i1] + SMALL)*F_l[0][RHO];
-									U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_l[i1][UU] + cmin_roe*F_l[0][UU]) / (cmin_roe - vcon[i1] + SMALL);
-									U_i[U2] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
-									U_i[U3] = (qi.bcon[0] * qi.bcov[3] * vcon[i1] - qi.bcon[i1] * qi.bcov[3] - F_l[i1][U3] + cmin_roe*F_l[0][U3]) / (cmin_roe - vcon[i1] + SMALL);
-									U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_l[i1][U1] + cmin_roe*F_r[0][U1]) / (cmin_roe - vcon[i1] + SMALL);
-								}
-								else if (i1 == 3){
-									U_i[RHO] = (cmin_roe - state_l.ucon[i1] / state_l.ucon[0]) / (cmin_roe - vcon[i1] + SMALL)*F_l[0][RHO];
-									U_i[UU] = ((qi.bcon[0] * qi.bcov[0] - ptot)* vcon[i1] - qi.bcon[i1] * qi.bcov[0] - F_l[i1][UU] + cmin_roe*F_l[0][UU]) / (cmin_roe - vcon[i1] + SMALL);
-									U_i[U3] = (U_i[UU] - ptot + qi.bcon[0] * qi.bcov[0])*qi.ucov[i1] / qi.ucov[0] - qi.bcon[0] * qi.bcov[i1];
-									U_i[U1] = (qi.bcon[0] * qi.bcov[1] * vcon[i1] - qi.bcon[i1] * qi.bcov[1] - F_l[i1][U1] + cmin_roe*F_l[0][U1]) / (cmin_roe - vcon[i1] + SMALL);
-									U_i[U2] = (qi.bcon[0] * qi.bcov[2] * vcon[i1] - qi.bcon[i1] * qi.bcov[2] - F_l[i1][U2] + cmin_roe*F_r[0][U2]) / (cmin_roe - vcon[i1] + SMALL);
-								}
-
-								//Calculate HLLC flux
-								for (k = 0; k < B1; k++) F_FT[i1][k] = (F_l[i1][k] + cmin_roe*(U_i[k] - F_l[0][k]));
-							}
-							else if (cmin_roe >= 0. && fail_HLLC == 0){
-								for (k = 0; k < B1; k++) F_FT[i1][k] = F_l[i1][k];
-							}
-							else if (cmax_roe <= 0. && fail_HLLC == 0){
-								for (k = 0; k < B1; k++) F_FT[i1][k] = F_r[i1][k];
-							}
-							else{ //revert to HLL flux
+							else{//Magnetic field too weak for HLLC solver
+#pragma ivdep
 								for (k = 0; k < B1; k++){
 									F_FT[i1][k] = HLLF*((cmax[i1] * F_l[i1][k] + cmin[i1] * F_r[i1][k] - cmax[i1] * cmin[i1] * (F_r[0][k] - F_l[0][k])) / (cmax[i1] + cmin[i1] + SMALL))
 										+ LAXF*(0.5*(F_l[i1][k] + F_r[i1][k] - ctop[i1] * (F_r[0][k] - F_l[0][k])));
 								}
-								fail_HLLC = 0;
+				}
+			}
+						#else
+						cmax_roe = MY_MAX(cmax_r, cmax_l);
+						cmin_roe = MY_MIN(cmin_r, cmin_l);
+						double int_velocity = geom.gcon[0][dir] / (sqrt(geom.gcon[0][dir] * geom.gcon[0][dir] - geom.gcon[0][0] * geom.gcon[dir][dir]));
+						for (i1 = 0; i1 < NDIM; i1++)for (k = 0; k < B1; k++) F_FT[i1][k] = 0.;
+
+						if (cmax_roe > int_velocity && cmin_roe < int_velocity) for (k = 0; k < B1; k++) F_FT[0][k] = (F_l[k] - F_r[k] + cmax_roe*U_r[k] - cmin_roe*U_l[k]) / (cmax_roe - cmin_roe + SMALL);
+						else if (cmax_roe < int_velocity) for (k = 0; k < B1; k++) F_FT[0][k] = U_r[k];
+						else for (k = 0; k < B1; k++) F_FT[0][k] = U_l[k];
+
+						//for (k = 0; k < B1; k++){
+						//	F_FT[dir][k] = HLLF*((cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
+						//		+ LAXF*(0.5*(F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k])));
+						//}
+						if (cmax_roe > int_velocity && cmin_roe < int_velocity) for (k = 0; k < B1; k++) F_FT[dir][k] = HLLF*((cmax_roe * F_l[k] - cmin_roe * F_r[k] + cmax_roe * cmin_roe * (U_r[k] - U_l[k])) / (cmax_roe - cmin_roe + SMALL));
+						else if (cmax_roe < int_velocity) for (k = 0; k < B1; k++) F_FT[dir][k] = F_r[k];
+						else for (k = 0; k < B1; k++) F_FT[dir][k] = F_l[k];
+						#endif
+						//Transform from orthonormal frame to coordinate basis
+						for (j1 = 0; j1<NDIM; j1++){
+							F1[dir][j1 + UU] = 0.;
+							for (i2 = 0; i2<NDIM; i2++) {
+								for (j2 = 0; j2<NDIM; j2++){
+									F1[dir][j1 + UU] += F_FT[i2][j2 + UU] * trans.Mud[dir][i2] * trans.Mud_inv[j2][j1];
+								}
 							}
 						}
-						else{//Magnetic field too weak for HLLC solver
-							#pragma ivdep
-							for (k = 0; k < B1; k++){
-								F_FT[i1][k] = HLLF*((cmax[i1] * F_l[i1][k] + cmin[i1] * F_r[i1][k] - cmax[i1] * cmin[i1] * (F_r[0][k] - F_l[0][k])) / (cmax[i1] + cmin[i1] + SMALL))
-									+ LAXF*(0.5*(F_l[i1][k] + F_r[i1][k] - ctop[i1] * (F_r[0][k] - F_l[0][k])));
-							}
+
+						//Transform wave from orthonormal basis to coordinate basis
+						F1[dir][RHO] = 0.;
+						for (j1 = 0; j1 < NDIM; j1++){
+							F1[dir][RHO] += F_FT[j1][RHO] * trans.Mud[dir][j1];
 						}
-					}					
-					#else
-					cmax_roe = MY_MAX(cmax_r, cmax_l);
-					cmin_roe = MY_MIN(cmin_r, cmin_l);
-					for (i1 = 0; i1 < NDIM; i1++)for (k = 0; k < B1; k++) F_FT[i1][k] = 0.;
-					
-					if (cmax_roe > 0. && cmin_roe < 0.) for (k = 0; k < B1; k++) F_FT[0][k] = (F_l[k] - F_r[k] + cmax_roe*U_r[k] - cmin_roe*U_l[k]) / (cmax_roe - cmin_roe + SMALL);
-					else if (cmax_roe < 0.) for (k = 0; k < B1; k++) F_FT[0][k] = U_r[k];
-					else for (k = 0; k < B1; k++) F_FT[0][k] = U_l[k];
 
-					for (k = 0; k < B1; k++){
-						F_FT[dir][k] = HLLF*((cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL))
-							+ LAXF*(0.5*(F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k])));
-					}
-				
-					#endif
-					//Transform from orthonormal frame to coordinate basis
-					for (j1 = 0; j1<NDIM; j1++){
-						F1[dir][j1+UU] = 0.;
-						for (i2 = 0; i2<NDIM; i2++) {
-							for (j2 = 0; j2<NDIM; j2++){
-								F1[dir][j1 + UU] += F_FT[i2][j2 + UU] * trans.Mud[dir][i2] * trans.Mud_inv[j2][j1];
-							}
-						}
-					}
-
-					//Transform wave from orthonormal basis to coordinate basis
-					F1[dir][RHO] = 0.;
-					for (j1 = 0; j1 < NDIM; j1++){
-						F1[dir][RHO] += F_FT[j1][RHO] * trans.Mud[dir][j1];
-					}
-					
-					F1[dir][UU] += F1[dir][RHO];
-					PLOOP F[nl[n]][ind0][k] = F1[dir][k];
-
-					double ctop_grid1[NDIM], ctop_grid2[NDIM];
-					for (j1 = 0; j1 < NDIM; j1++)ctop_grid1[j1] = 0.;
-					ctop_grid1[dir] = ctop;
-					ctop_to_utop(ctop_grid1,ctop_grid2);
-					double ctop_new=0.;
-					for (j1 = 0; j1 < NDIM; j1++){
-						ctop_new += ctop_grid2[dir] * trans.Mud[dir][j1]/ctop_grid2[0];
-					}
-					// evaluate restriction on timestep 
-					dtij = fabs(cour*dx[nl[n]][dir] / ctop_new);
-					if (dtij < ndt_thread) {
-						ndt_thread = dtij;
+						F1[dir][UU] += F1[dir][RHO];
+						PLOOP F[nl[n]][ind0][k] = F1[dir][k];
 						#if(!TRANS_BOUND)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL]))) {
 							//#pragma ivdep
 							PLOOP F[nl[n]][ind0][k] = 0.;
 						}
 						#endif
-					}
 				}
-				
-			}
-			#pragma omp critical
-			{
-				if (ndt_thread < ndt){
-					ndt = ndt_thread;
-				}
+		}
+		#pragma omp critical
+		{
+			if (ndt_thread < ndt){
+				ndt = ndt_thread;
 			}
 		}
-		return(ndt);
-	#endif
-		return 1;
+	}
+	return(ndt);
 }
 
 void ctop_to_utop(double ctop[NDIM], double cmax[NDIM]){
@@ -570,107 +558,96 @@ void primtoflux_FT(double * restrict pr, struct of_state * restrict q, int dir,s
 	for (k = 0; k < 4; k++){
 		flux[k + 1] = mhd[k];
 	}
-	//flux[UU] += flux[RHO];
-
-	/* dual of Maxwell tensor */
-	#pragma ivdep
-	for (k = B1; k <= B3; k++){
-		flux[k] = q->bcon[k - 4] * q->ucon[dir] - q->bcon[dir] * q->ucon[k - 4];
-	}
-	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * pr[KTOT];
-	#endif
 
 	PLOOP flux[k] *= geom->g;
 	#endif
 }
 
-void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js, double  restrict *vmax, double restrict *vmin, int n, int a, int b, int c)
+void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int dir, double  restrict *vmax, double restrict *vmin, int n, int a, int b, int c)
 {
 	#if(HLLC)
 	double discr, vp, vm, bsq, EE, EF, va2, cs2, cms2, rho, u;
-	double Acov_old[NDIM], Bcov_old[NDIM], Acon_old[NDIM], Bcon_old[NDIM];
-	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
+	double Acon_0, Acon_js, Bcon_0, Bcon_js;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
-	int j, i1,j1;
-	struct of_trans trans;
+	int j;
 
-	//get_trans(n, a, b, c, js, &trans);
-
-	#pragma ivdep
-	DLOOPA Acov[j] = 0.;
-	DLOOPA Acon[j] = 0.;
-	Acov[js] = 1.;
-	Acon[js] = 1.;
-
-	#pragma ivdep
-	DLOOPA Bcov[j] = 0.;
-	DLOOPA Bcon[j] = 0.;
-	Bcov[TT] = 1.;
-	Bcon[TT] = -1.;
-
-	//Transform 4 velocities and 4 magnetic fields to orthonormal frame
-	/*for (i1 = 0; i1 < NDIM; i1++){
-		Acon[i1] = 0.0;
-		Acov[i1] = 0.0;
-		Bcon[i1] = 0.0;
-		Bcov[i1] = 0.0;
-		for (j1 = 0; j1 < NDIM; j1++){
-			Acon[i1] += Acon_old[j1] * trans.Mud_inv[i1][j1];
-			Acov[i1] += Acov_old[j1] * trans.Mud[j1][i1];
-			Bcon[i1] += Bcon_old[j1] * trans.Mud_inv[i1][j1];
-			Bcov[i1] += Bcov_old[j1] * trans.Mud[j1][i1];
-		}
-	}*/
+	if (dir == 1){
+		Acon_0 = 0;
+		Acon_js = 1.;
+	}
+	else if (dir == 2){
+		Acon_0 =0.;
+		Acon_js = 1.;
+	}
+	else if (dir == 3){
+		Acon_0 = 0.;
+		Acon_js = 1.;
+	}
 
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon, q->bcov);
 	rho = pr[RHO];
 	u = pr[UU];
+	#if AMD
+	EF = fma(gam, u, rho);
+	#else
 	EF = rho + gam*u;
+	#endif
 	EE = bsq + EF;
-	va2 = bsq / EE;
 	cs2 = gam*(gam - 1.)*u / EF;
+	va2 = bsq / EE;
+
+
+
+	/* find fast magnetosonic speed */
+	cs2 = gam*(gam - 1.)*pr[UU] / EF;
+	va2 = bsq / EE;
 	cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
 
 	/* check on it! */
 	if (cms2 < 0.) {
-		fail(FAIL_COEFF_NEG);
+		//fail(FAIL_COEFF_NEG) ;
 		cms2 = SMALL;
 	}
 	if (cms2 > 1.) {
-		fail(FAIL_COEFF_SUP);
+		//fail(FAIL_COEFF_SUP) ;
 		cms2 = 1.;
 	}
 
 	/* now require that speed of wave measured by observer
 	q->ucon is cms2 */
-	Asq = dot(Acon, Acov);
-	Bsq = dot(Bcon, Bcov);
-	Au = dot(Acov, q->ucon);
-	Bu = dot(Bcov, q->ucon);
-	AB = dot(Acon, Bcov);
+	Asq = Acon_js;
+	Bsq = geom->gcon[0][0];// dot(Bcon, Bcov);
+	Au = q->ucon[dir];
+	Bu = q->ucon[0];
+	AB = Acon_0;
 	Au2 = Au*Au;
 	Bu2 = Bu*Bu;
 	AuBu = Au*Bu;
 
+	#if AMD
+	A = fma(-(Bsq + Bu2), cms2, Bu2);
+	B = 2.* fma(-(AB + AuBu), cms2, AuBu);
+	C = fma(-(Asq + Au2), cms2, Au2);
+	discr = fma(B, B, -4.*A*C);
+	#else
 	A = Bu2 - (Bsq + Bu2)*cms2;
 	B = 2.*(AuBu - (AB + AuBu)*cms2);
 	C = Au2 - (Asq + Au2)*cms2;
-
 	discr = B*B - 4.*A*C;
+	#endif
 	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
 	else if (discr < -1.e-10) {
-		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, cms2);
-		fprintf(stderr, "\n\t q->ucon: %g %g %g %g\n", q->ucon[0], q->ucon[1],
-			q->ucon[2], q->ucon[3]);
-		fprintf(stderr, "\n\t q->bcon: %g %g %g %g\n", q->bcon[0], q->bcon[1],
-			q->bcon[2], q->bcon[3]);
-		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
-			Acon[2], Acon[3]);
-		fprintf(stderr, "\n\t Bcon: %g %g %g %g\n", Bcon[0], Bcon[1],
-			Bcon[2], Bcon[3]);
-		fail(FAIL_VCHAR_DISCR);
+		/*fprintf(stderr,"\n\t %g %g %g %g %g\n",A,B,C,discr,cms2) ;
+		fprintf(stderr,"\n\t q->ucon: %g %g %g %g\n",q->ucon[0],q->ucon[1],
+		q->ucon[2],q->ucon[3]) ;
+		fprintf(stderr,"\n\t q->bcon: %g %g %g %g\n",q->bcon[0],q->bcon[1],
+		q->bcon[2],q->bcon[3]) ;
+		fprintf(stderr,"\n\t Acon: %g %g %g %g\n",Acon[0],Acon[1],
+		Acon[2],Acon[3]) ;
+		fprintf(stderr,"\n\t Bcon: %g %g %g %g\n",Bcon[0],Bcon[1],
+		Bcon[2],Bcon[3]) ;
+		fail(FAIL_VCHAR_DISCR) ;*/
 		discr = 0.;
 	}
 
@@ -678,14 +655,23 @@ void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom
 	vp = -(-B + discr) / (2.*A);
 	vm = -(-B - discr) / (2.*A);
 
+	#if( FULL_DISP ) 
+	double vp2, vm2;
+	vp2 = NewtonRaphson(vp, 1, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+	vm2 = NewtonRaphson(vm, 1, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+	vp = vp2;
+	vm = vm2;
+	#endif
+
 	if (vp > vm) {
 		*vmax = vp;
 		*vmin = vm;
-	}
+}
 	else {
 		*vmax = vm;
 		*vmin = vp;
 	}
+
 	return;
 	#endif
 }

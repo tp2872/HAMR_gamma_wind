@@ -84,7 +84,9 @@ int main(int argc, char *argv[])
 	#endif
 	
 	/* do initial diagnostics */
+	#if(GPU_ENABLED || GPU_DEBUG )
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	#endif
 	first_dump = 0;
 	diag(INIT_OUT);
 
@@ -196,10 +198,10 @@ void MPI_initialize(int argc, char *argv[])
 	if (getenv("OMPI_COMM_WORLD_LOCAL_RANK") != NULL){
 		local_rank = getenv("OMPI_COMM_WORLD_LOCAL_RANK") == NULL ? 0 : atoi(getenv("OMPI_COMM_WORLD_LOCAL_RANK"));
 	}
-	//#if(GPU_ENABLED)
+	#if(GPU_ENABLED)
 	cudaGetDeviceCount(&numdevices);
 	cudaSetDevice(local_rank%numdevices);
-	//#endif
+	#endif
 	rc = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &i);
 
 	if (rc != MPI_SUCCESS) {
@@ -323,6 +325,10 @@ void set_arrays(int n)
 	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NPG][NDIM][NDIM]));
 	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPG][NDIM][NDIM]));
 	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPG]));
+	#endif
+	#if(HLLC)
+	Mud[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
+	Mud_inv[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
 	#endif
 	#if(ZIRI_DUMP)
 	dump_buffer[nl[n]] = (double(*))calloc(BS_1 * BS_2 * BS_3 * 13 *sizeof(double));
@@ -845,6 +851,8 @@ void free_arrays(int n)
 	free(gcov[nl[n]]);
 	free(gcon[nl[n]]);
 	free(gdet[nl[n]]);
+	free(Mud[nl[n]]);
+	free(Mud_inv[nl[n]]);
 	#if(ZIRI_DUMP)
 	free(dump_buffer[nl[n]]);
 	free(dxdxp_z[nl[n]]);
@@ -1445,7 +1453,9 @@ void set_grid(int n)
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);	
 		}
 	}
-
+	#if(HLLC)
+	set_Mud(n);
+	#endif
 	#if(LEER)
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
 		//Set temporary array with r, th, phi distances between pixels in x1,x2,x3-->0,1,2 at the faces of the cell and x1,x2,x3-->3,4,5 at the cell centres
