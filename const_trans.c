@@ -112,7 +112,8 @@ void const_transport_bound(void){
 }
 
 void E_average(void){
-	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB], req_local1[NB_1*NB_3], req_local2[NB_1*NB_3];
+	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB]; 
+	MPI_Request req_local1[NB_1*NB_3], req_local2[NB_1*NB_3];
 
 	//Read in average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1){
