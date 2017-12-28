@@ -241,12 +241,13 @@ void MPI_initialize(int argc, char *argv[])
 
 void mpi_synch(void){
 	int i;
-	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-			break;
-		}
-	}
+	MPI_Barrier(MPI_COMM_WORLD);
+	//for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+	//	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+	//		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+	//		break;
+	//	}
+	//}
 }
 
 
@@ -851,8 +852,10 @@ void free_arrays(int n)
 	free(gcov[nl[n]]);
 	free(gcon[nl[n]]);
 	free(gdet[nl[n]]);
+	#if(HLLC)
 	free(Mud[nl[n]]);
 	free(Mud_inv[nl[n]]);
+	#endif
 	#if(ZIRI_DUMP)
 	free(dump_buffer[nl[n]]);
 	free(dxdxp_z[nl[n]]);

@@ -1955,6 +1955,9 @@ void GPU_finish(int n)
 {
 	int i;
 	mem_spot[nl[n]] = 0;
+	for (i = 0; i < 600; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][i], 0);
+	for (i = 0; i < 100; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
+
 	if (nl[n]<(n_active_total / numtasks)) return;
 	mem_spot[nl[n]] = -1;
 

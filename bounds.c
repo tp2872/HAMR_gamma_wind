@@ -65,6 +65,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	#endif
 	rc = 0;
 	gpu = 0;
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
@@ -95,6 +96,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
+	MPI_Barrier(MPI_COMM_WORLD);
 	#if (STAGGERED && COPY_BFIELD)
 	rc = 0;
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1 || bound_force == 1){ //watch out does this for both half and full timestep while only needed for full timestep
@@ -107,6 +109,8 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 			for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) B_rec3(ps, Bufferps_1, n_ord[n]);
 		}
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
+
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomB \n");
 	#endif
 
