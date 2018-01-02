@@ -795,6 +795,7 @@ void activate_blocks(void){
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	for (n = 0; n < numtasks; n++) NODE[n] = 0;
+	for (n = 0; n <= n_max; n++) block[n][AMR_REFINED] = 0;
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_ACTIVE] == 1 && block[n][AMR_NODE] == rank){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active
@@ -811,7 +812,6 @@ void activate_blocks(void){
 			NODE[block[n][AMR_NODE]]++;
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;
-			block[n][AMR_REFINED] = 0;
 		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);

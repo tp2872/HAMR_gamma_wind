@@ -360,7 +360,7 @@ void set_corners(void){
 			counter3_1 = AMR_MAXTIMELEVEL;
 			counter3_2 = AMR_MAXTIMELEVEL;
 
-			if (block[n_ord_total[n]][AMR_NBR1] >= 0 && block[n_ord_total[n]][AMR_POLE] != 1 && block[n_ord_total[n]][AMR_POLE] != 4){
+			if (block[n_ord_total[n]][AMR_NBR1] >= 0 && block[n_ord_total[n]][AMR_POLE] != 1 && block[n_ord_total[n]][AMR_POLE] != 3){
 				if (block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1){
 					counter1 = AMR_MAXTIMELEVEL - block[block[n_ord_total[n]][AMR_NBR1]][AMR_TIMELEVEL];
 					if (counter1 > counter0){
