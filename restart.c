@@ -314,12 +314,14 @@ void param_read(FILE *fp){
 		if(rank==0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
 	}
 	//Read AMR grid hierarchy
+	#if(!READ_OLD)
 	for (u = 0; u <= n_max; u++){
 		fread(&block[u][AMR_REFINED], int_size, 1, fp);
 	}
 	for (u = 0; u <= n_max; u++){
 		fread(&block[u][AMR_ACTIVE], int_size, 1, fp);
 	}
+	#endif
 	nstep = 0;
 }
 
