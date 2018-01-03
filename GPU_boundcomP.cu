@@ -522,8 +522,8 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 
 			for (k = 0; k < NPR; k++){
 				//dq2[k] = dq3[k] = 0.;
-				psh[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k + NPR + 1] = receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + (k + NPR)] + 0.25*(double)(is)*dq1[(k + NPR)] + 0.25*(double)(js)*dq2[(k + NPR)] + 0.25*(double)(zs)*dq3[k];
-				ps[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k + NPR + 1] = receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + (k + NPR)] + 0.25*(double)(is)*dq1[(k + NPR)] + 0.25*(double)(js)*dq2[(k + NPR)] + 0.25*(double)(zs)*dq3[k];
+				ph[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + (k)] + 0.25*(double)(is)*dq1[(k)] + 0.25*(double)(js)*dq2[(k)] + 0.25*(double)(zs)*dq3[k];
+				p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + (k)] + 0.25*(double)(is)*dq1[(k)] + 0.25*(double)(js)*dq2[(k)] + 0.25*(double)(zs)*dq3[k];
 			}
 
 			#if(STAGGERED)
