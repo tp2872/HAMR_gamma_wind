@@ -714,6 +714,7 @@ double Rin, Rout, hslope, R0, fractheta;
 double cour;
 double dV, dx[NB_LOCAL][NPR], startx[NPR];
 double dt, bdt[NB_LOCAL][4];
+int NODE_global[NB];
 double t, tf;
 int nstep;
 double sourceflag, period_max;
@@ -759,6 +760,7 @@ int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
 int(*block)[NV];
+double ref_val[NB];
 int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 int n_active, n_active_total, n_max;
 int mem_spot[NB_LOCAL];

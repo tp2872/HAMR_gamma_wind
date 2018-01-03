@@ -56,13 +56,7 @@ void restart_write(void)
 	FILE *param;
 
 	//First close rdump files in progress
-	if (first_rdump == 1){
-		for (n = 0; n < n_active; n++){
-			MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
-			MPI_File_close(&rdump[nl[n_ord[n]]]);
-		}
-	}
-	first_rdump = 0;
+	close_rdump();
 
 	if (rank == 0){
 		//sprintf(dirpath, "mkdir rdumps%d", dump_cnt);

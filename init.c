@@ -2018,7 +2018,7 @@ double thintorus_findl(double r, double th, double a, double c, double al){
 	//solve for lin using bisection, specify large enough root search range, (1e-3, 1e3)
 	//demand accuracy 5x machine prec.
 	//in non-rel limit l_K = sqrt(r), use 10x that as the upper limit:
-	l = rtbis(&lfunc, parms, 1, 10 * sqrt(r), 5.*DBL_EPSILON);
+	//l = rtbis(&lfunc, parms, 1, 10 * sqrt(r), 5.*DBL_EPSILON);
 
 	return(l);
 }
@@ -2095,7 +2095,7 @@ double get_maxprimvalrpow(double(*restrict prim[NB])[NPR], double rpow, int m){
 	double  r, th, ph;
 
 	double val;
-	double maxval = -DBL_MAX;
+	double maxval = 0.0;// -DBL_MAX;
 
 	for (n = 0; n < n_active; n++){
 		ZLOOP3D_MPI{

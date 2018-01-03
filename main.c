@@ -241,13 +241,13 @@ void MPI_initialize(int argc, char *argv[])
 
 void mpi_synch(void){
 	int i;
-	MPI_Barrier(MPI_COMM_WORLD);
-	//for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-	//	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-	//		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-	//		break;
-	//	}
-	//}
+	//MPI_Barrier(MPI_COMM_WORLD);
+	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			break;
+		}
+	}
 }
 
 

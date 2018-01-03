@@ -24,7 +24,7 @@ Physical Parameters section
 #define ELLIPTICAL (0)
 #define ELLIPTICAL2 (0)
 
-/*Wheter to cool the disk to predifined thickness H_OVER_R*/
+/*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (1)
 #define H_OVER_R (0.03)
 
@@ -86,7 +86,7 @@ Numerical Parameters section
 #define BS_3 30
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 3
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -211,7 +211,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Do not use; Used to load in 3 level AMR data into 4-level AMR grid*/
-#define READ_OLD (0)
+#define READ_OLD (1)
 
 /*************************************************************************
 MNEMONICS SECTION
@@ -461,7 +461,7 @@ Section with derived quantities
 #endif
 
 /*Maximum number of blocks per node*/
-#define MAX_BLOCKS (100*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define MAX_BLOCKS (26*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 #define NB_LOCAL (300)
 
 /*Macro declerations*/

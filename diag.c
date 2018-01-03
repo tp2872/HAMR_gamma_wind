@@ -97,48 +97,9 @@ void diag(int call_code)
 
 	if (call_code == FINAL_OUT) {
 		//First close dump files in progress
-		int u;
-		int u_stride = 200;
-		int u_max = (n_active_total - n_active_total%u_stride) / u_stride;
-		if (n_active_total%u_stride != 0) u_max++;
-
-		if (first_dump == 1){
-			for (n = 0; n < n_active; n++){
-				MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
-				if (dump_cnt % 1 == 0){
-					MPI_Wait(&req_blockdiag[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][1]);
-				}
-			}
-
-			for (u = 0; u < u_max; u++){
-				MPI_File_close(&fdump[u]);
-				if (dump_cnt % 1 == 0){
-					MPI_File_close(&fdumpdiag[u]);
-				}
-			}
-		}
-		first_dump = 0;
-
-		//First close rdump files in progress
-		if (first_rdump == 1){
-			for (n = 0; n < n_active; n++){
-				MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
-				MPI_File_close(&rdump[nl[n_ord[n]]]);
-			}
-		}
-		first_rdump = 0;
-		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total[n]][GDUMP_WRITTEN] == 2){
-				if (block[n_ord_total[n]][AMR_NODE] == rank){
-					MPI_Wait(&req_gdump1[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
-					MPI_Wait(&req_gdump2[nl[n_ord_total[n]]][0], &Statbound[nl[n_ord_total[n]]][1]);
-					MPI_File_close(&gdump[nl[n_ord_total[n]]]);
-				}
-				block[n_ord_total[n]][GDUMP_WRITTEN] = 1;
-			}
-		}
-
-		MPI_Barrier(mpi_cartcomm);
+		close_dump();
+		close_rdump();
+		close_gdump();
 	}
 
 	// dump at regular intervals 

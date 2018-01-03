@@ -95,7 +95,12 @@ void set_timelevel(void){
 	}
 
 	//Create communicators for nodes which have a minimum (i) timelevel
-	int min_timelevel[8];
+	set_communicator();
+	set_corners();
+}
+
+void set_communicator(void){
+	int min_timelevel[8],i,n;
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
 		if (nstep > 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
 
@@ -105,7 +110,6 @@ void set_timelevel(void){
 		}
 		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
 	}
-	set_corners();
 }
 
 void set_prestep(void){
