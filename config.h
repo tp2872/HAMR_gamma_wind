@@ -10,14 +10,14 @@ Physical Parameters section
 #define BONDI_PROBLEM_1D 6
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM_GRB
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
-#define BH_SPIN (0.9375)
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.9)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
+#define TILTED (0)
 #define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
@@ -25,7 +25,7 @@ Physical Parameters section
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.03)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
@@ -55,9 +55,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 1
+#define GPU_ENABLED 0
 #define GPU_DEBUG 0
-#define CPU_OPENMP 0
+#define CPU_OPENMP 1
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -77,24 +77,24 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 12
-#define NB_3 10
+#define NB_2 6
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 24
+#define BS_2 12
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 4
+#define N_LEVELS 2
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
-#define REF_1 1
-#define REF_2 1
+#define REF_1 0
+#define REF_2 0
 #define REF_3 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
@@ -211,7 +211,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Do not use; Used to load in 3 level AMR data into 4-level AMR grid*/
-#define READ_OLD (1)
+#define READ_OLD (0)
 
 /*************************************************************************
 MNEMONICS SECTION
@@ -461,7 +461,7 @@ Section with derived quantities
 #endif
 
 /*Maximum number of blocks per node*/
-#define MAX_BLOCKS (26*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
+#define MAX_BLOCKS (100*(184*22*34)/((BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)))
 #define NB_LOCAL (300)
 
 /*Macro declerations*/

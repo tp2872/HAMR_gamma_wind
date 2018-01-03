@@ -50,6 +50,7 @@
  * cfg 8-10-01
  *
  */
+#include <float.h>
 #include "decs_MPI.h"
 
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -85,6 +86,12 @@ double global_kappa, aphipow;
 
 #ifndef M_PI_2
 #define M_PI_2 (M_PI/2.)
+#endif
+#ifndef DBL_EPSILON
+#define DBL_EPSILON 2.2204460492503131E-16
+#endif
+#ifndef DBL_MAX
+#define DBL_MAX 1.7976931348623158e+308
 #endif
 
 typedef struct {
@@ -1329,7 +1336,7 @@ void init_torus_grb(){
 
 	double Amin, Amax, cutoff_frac = 0.001;
 
-	const double frac_pert = 4.e-2;
+  const double frac_pert = 5.e-2; //increase the perturbation amplitude to 5% to match Sasha's toroidal field setup
 
 	/* radial distribution of angular momentum */
 	ang = 0.25;  // = 0 constant ang. mom. torus; 0.25 standard setting for large MAD torii
@@ -1589,6 +1596,11 @@ void init_torus_grb(){
 	MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	umax *= rho_scale_factor;
 	rhomax *= rho_scale_factor;
+#if( DOAUTOCOMPUTEENK0 )
+  //recompute once again in case normalization changed things
+  global_kappa *= pow(rho_scale_factor, 1 - gam);
+#endif
+
 	if (rank == 0) fprintf(stderr, "After normalization: rhomax: %g, torus_mass: %g\n", rhomax, torus_mass);
 
 	if (WHICHFIELD == NORMALFIELD) aphipow = 0.;
@@ -2018,7 +2030,7 @@ double thintorus_findl(double r, double th, double a, double c, double al){
 	//solve for lin using bisection, specify large enough root search range, (1e-3, 1e3)
 	//demand accuracy 5x machine prec.
 	//in non-rel limit l_K = sqrt(r), use 10x that as the upper limit:
-	//l = rtbis(&lfunc, parms, 1, 10 * sqrt(r), 5.*DBL_EPSILON);
+	l = rtbis(&lfunc, parms, 1, 10 * sqrt(r), 5.*DBL_EPSILON);
 
 	return(l);
 }
@@ -2095,7 +2107,7 @@ double get_maxprimvalrpow(double(*restrict prim[NB])[NPR], double rpow, int m){
 	double  r, th, ph;
 
 	double val;
-	double maxval = 0.0;// -DBL_MAX;
+	double maxval = -DBL_MAX;
 
 	for (n = 0; n < n_active; n++){
 		ZLOOP3D_MPI{
@@ -2144,13 +2156,19 @@ double compute_rat(double(*restrict prim[NB])[NPR], double(*restrict A[NB])[NPR]
 	double  r, th, ph;
 	double rho, u;
 
-	get_geometry(n, i, j, z, loc, &geom);
-	coord(n, i, j, z, loc, X);
-	bl_coord(X, &r, &th, &ph);
+// copied example from elsewhere:
+//  get_geometry(n_ord[n], i, j, z, CENT, &geom);
+//  bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
+//  u_ij = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+//  beta_ij = (gam - 1.)*u_ij / (0.5*(bsq_ij + SMALL));
 
-	bsq_ij = bsq_calc(prim[n][index_3D(n, i, j, z)], &geom);
+  get_geometry(n, i, j, z, loc, &geom);
+	//coord(n, i, j, z, loc, X);
+	//bl_coord(X, &r, &th, &ph);
 
-	rho = prim[n][index_3D(n, i, j, z)][RHO];
+	bsq_ij = bsq_calc(prim[nl[n]][index_3D(n, i, j, z)], &geom);
+
+	rho = prim[nl[n]][index_3D(n, i, j, z)][RHO];
 	//use the following instead of MACP0A1(prim,i,j,k,UU) because the latter
 	//can be perturbed by random noise, which we want to avoid
 	u = global_kappa * pow(rho, gam) / (gam - 1.);
@@ -2181,10 +2199,10 @@ double compute_profile(double(*restrict prim[NB])[NPR], double amax, double aphi
 	coord(n, i, j, z, loc, X);
 	bl_coord(X, &r, &th, &ph);
 
-	profile = (log10(pow(r, aphipow)*prim[n][index_3D(n, i, j, z)][RHO] / amax + SMALL) + 3.) / 1.0;
+	profile = (log10(pow(r, aphipow)*prim[nl[n]][index_3D(n, i, j, z)][RHO] / amax + SMALL) + 3.) / 1.0;
 	if (profile<0.) profile = 0.;
 	if (profile>1.) profile = 1.;
-	profile = 1.;
+	//profile = 1.; //SashaTch commented out this line because want zero field outside torus
 	return(profile);
 }
 
