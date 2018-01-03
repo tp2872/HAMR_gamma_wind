@@ -849,7 +849,7 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
 void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd);
-void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double Dt);
+void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);

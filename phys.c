@@ -86,7 +86,6 @@ struct of_geom * restrict geom, double * restrict flux)
  * historical reasons */
 void primtoU(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U)
 {
-
 	primtoflux(pr,q,0,geom, U) ;
 	return ;
 }
@@ -110,10 +109,10 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	int j ;
 	double r,u,P,w,bsq,eta,ptot ;
 
-        r = pr[RHO] ;
-        u = pr[UU] ;
-        P = (gam - 1.)*u ;
-        w = P + r + u ;
+    r = pr[RHO] ;
+    u = pr[UU] ;
+    P = (gam - 1.)*u ;
+    w = P + r + u ;
 	bsq = dot(q->bcon,q->bcov) ;
 	eta = w + bsq ;
 	ptot = P + 0.5*bsq;
@@ -151,8 +150,12 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 		dU[U3] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
 		//fprintf(stderr, "(%d,%d,%f):%f\n", j, k, gcon[index_2D(ii, jj)][0][k][j] / gcon[index_2D(ii, jj)][0][j][k], log(fabs(gcon[index_2D(ii, jj)][0][k][j])));
 	}
-
-	//misc_source(ph, ii, jj, geom, &q, dU, Dt) ;
+	#if(COOL_DISK)
+	double X[NDIM],r,th,ph;
+	coord(n, i,j, z, CENT,X) ;
+	bl_coord(X,&r,&th, &phi) ;
+	misc_source(ph, ii, jj, geom, &q, dU,r, Dt) ;
+	#endif
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
 
@@ -344,18 +347,31 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 }
 
 /* Add any additional source terms (e.g. cooling functions) */
-void misc_source(double *ph, int ii, int jj, struct of_geom *geom, 
-		struct of_state *q, double *dU, double Dt) 
+void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_state *q, double *dU, double r, double Dt) 
 {
-  
-  /* This is merely an example and does not represent any physical source term that I can think of */
-  /* Place your calculation for the extra source terms here */
-  dU[RHO]  += ph[RHO] ;
-  dU[UU ]  += ph[UU ] ;
-  dU[U1 ]  += ph[U1 ] ;
-  dU[U2 ]  += ph[U2 ] ;
-  dU[U3 ]  += ph[U3 ] ;
+	double epsilon = ph[UU] / ph[RHO];
+	double om_kepler = 1. / (pow(r, 3. / 2.) + a);
+	double T_target = M_PI / 2.*pow(H_OVER_R*r*om_kepler, 2.);
+	double Y = (gam - 1.)*epsilon / T_target;
+	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
+	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
+	double bsq = dot(q->bcon, q->bcov);
 
+	if (bsq / ph[RHO]<1. || r<10.){
+		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
+			dU[UU] += -q->ucov[0] * lambda;
+			dU[U1] += -q->ucov[1] * lambda;
+			dU[U2] += -q->ucov[2] * lambda;
+			dU[U3] += -q->ucov[3] * lambda;
+		}
+		else{
+			lambda *= (0.1*fabs(int_energy)) / (fabs(q->ucov[0] * lambda)*Dt);
+			dU[UU] += -q->ucov[0] * lambda;
+			dU[U1] += -q->ucov[1] * lambda;
+			dU[U2] += -q->ucov[2] * lambda;
+			dU[U3] += -q->ucov[3] * lambda;
+		}
+	}
 }
 
 double NewtonRaphson(double start, int max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq)
