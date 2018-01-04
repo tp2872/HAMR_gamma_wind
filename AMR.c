@@ -528,6 +528,7 @@ void balance_load(void){
 
 		if (n_active_local_max> MAX_BLOCKS && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
 	} while (n_active_local_max> MAX_BLOCKS && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
+	printf("test1 \n");
 
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS || count == round(log(timelevel_cutoff) / log(2))+1)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
@@ -1356,7 +1357,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
 	//MPI_Barrier(mpi_cartcomm);
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > MAX_BLOCKS){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 1){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -1537,14 +1538,14 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 16.0 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.01 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
 	int n, task, i,j,z,k, l, level, number;
 	int node, n_send;
-	double ref_val[NB], rho_rec;
+	double  rho_rec;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
@@ -1567,9 +1568,9 @@ void check_refcrit(void){
 		tag = 0;
 
 		/*Only allow refinement for one block per node per step*/
-		//for (i = 0; i < numtasks; i++){
-		//	NODE_global[i] = 0;
-		//}
+		for (i = 0; i < numtasks; i++){
+			NODE_global[i] = 0;
+		}
 
 		//Count the number of blocks per node and reset tag
 		for (n = 0; n < n_active_total; n++){

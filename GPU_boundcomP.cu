@@ -611,10 +611,10 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 					gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k + 2 * (k == 2)];
 
 				if (ij == 0){
-					dq2[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * 0 * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k + NPR], receive[nl[n_rec2]][(NPR + 3)*REF_2*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k +NPR]);
+					dq2[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * 0 * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*REF_2*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)]);
 				}
 				else{
-					dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * 0 * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*REF_2*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k + NPR], avg[k + NPR]);
+					dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * 0 * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*REF_2*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)], avg[k + NPR]);
 				}
 				dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii - REF_1)*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii + REF_1)*zsize + (NPR + 3)*iz + (k + NPR)]);
 				dq3[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz - REF_3) + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz + REF_3) + (k + NPR)]);
