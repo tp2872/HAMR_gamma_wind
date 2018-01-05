@@ -348,7 +348,7 @@ void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 					temp1[nl[n]][2 * (i - i1)*zsize*jsize + 2 * (j - j1)*zsize + 2 * (z - z1) + 1] = (receive[nl[n_rec]][2 * (i - i1)*zsize*jsize + 2 * (j - j1)*zsize + 2 * (z - z1) + 1] - temp2[nl[n]][2 * (i - i1)*zsize*jsize + 2 * (j - j1)*zsize + 2 * (z - z1) + 1]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1 + e1*D3; z < z2 + e2*D3; z++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] += temp1[nl[n]][2 * (i - i1)*zsize*jsize + 2 * (j - j1)*zsize + 2 * (z - z1) + 0] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -356,7 +356,7 @@ void unpack_receive1_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] += temp1[nl[n]][2 * (i - i1)*zsize*jsize + 2 * (j - j1)*zsize + 2 * (z - z1) + 1] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 *PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1 + e1*D3; z < z2 + e2*D3; z++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] -= temp1[nl[n]][2 * (i - i1)*zsize*jsize + 2 * (j - j1)*zsize + 2 * (z - z1) + 0] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -471,7 +471,7 @@ void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 					temp1[nl[n]][2 * (j - j1)*zsize*isize + 2 * (i - i1)*zsize + 2 * (z - z1) + 1] = (receive[nl[n_rec]][2 * (j - j1)*zsize*isize + 2 * (i - i1)*zsize + 2 * (z - z1) + 1] - temp2[nl[n]][2 * (j - j1)*zsize*isize + 2 * (i - i1)*zsize + 2 * (z - z1) + 1]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (j = j1; j < j2; j++) for (i = i1; i < i2; i++) for (z = z1 + e1*D3; z < z2 + e2*D3; z++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] += temp1[nl[n]][2 * (j - j1)*zsize*isize + 2 * (i - i1)*zsize + 2 * (z - z1) + 0] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -479,7 +479,7 @@ void unpack_receive2_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] += temp1[nl[n]][2 * (j - j1)*zsize*isize + 2 * (i - i1)*zsize + 2 * (z - z1) + 1] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (j = j1; j < j2; j++) for (i = i1; i < i2; i++) for (z = z1 + e1*D3; z < z2 + e2*D3; z++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] -= temp1[nl[n]][2 * (j - j1)*zsize*isize + 2 * (i - i1)*zsize + 2 * (z - z1) + 0] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -588,7 +588,7 @@ void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 					temp1[nl[n]][2 * (z - z1)*isize*jsize + 2 * (i - i1)*jsize + 2 * (j - j1) + 1] = (receive[nl[n_rec]][2 * (z - z1)*isize*jsize + 2 * (i - i1)*jsize + 2 * (j - j1) + 1] - temp2[nl[n]][2 * (z - z1)*isize*jsize + 2 * (i - i1)*jsize + 2 * (j - j1) + 1]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1 + d1; j < j2 + d2; j++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] += temp1[nl[n]][2 * (z - z1)*isize*jsize + 2 * (i - i1)*jsize + 2 * (j - j1) + 0] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -596,7 +596,7 @@ void unpack_receive3_E(int n, int n_rec, int n_rec2, int i1, int i2, int j1, int
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] += temp1[nl[n]][2 * (z - z1)*isize*jsize + 2 * (i - i1)*jsize + 2 * (j - j1) + 1] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1 + d1; j < j2 + d2; j++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] -= temp1[nl[n]][2 * (z - z1)*isize*jsize + 2 * (i - i1)*jsize + 2 * (j - j1) + 0] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -882,12 +882,12 @@ void unpack_receive_E1_corn(int n, int n_rec, int n_rec2, int i1, int i2, int j,
 					temp1[nl[n]][(i - i1)] = (receive[nl[n_rec]][(i - i1)] - temp2[nl[n]][(i - i1)]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (i = i1; i < i2; i++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] += temp1[nl[n]][(i - i1)] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (i = i1; i < i2; i++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][1] -= temp1[nl[n]][(i - i1)] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -964,12 +964,12 @@ void unpack_receive_E2_corn(int n, int n_rec, int n_rec2, int i, int j1, int j2,
 					temp1[nl[n]][(j - j1)] = (receive[nl[n_rec]][(j - j1)] - temp2[nl[n]][(j - j1)]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (j = j1; j < j2; j++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] += temp1[nl[n]][(j - j1)] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (j = j1; j < j2; j++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][2] -= temp1[nl[n]][(j - j1)] / factor; //times dt_old/dt_new to add in future code
 				}
@@ -1045,12 +1045,12 @@ void unpack_receive_E3_corn(int n, int n_rec, int n_rec2, int i, int j, int z1, 
 					temp1[nl[n]][(z - z1)] = (receive[nl[n_rec]][(z - z1)] - temp2[nl[n]][(z - z1)]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n_rec2][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (z = z1; z < z2; z++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] += temp1[nl[n]][(z - z1)] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (z = z1; z < z2; z++){
 					prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][3] -= temp1[nl[n]][(z - z1)] / factor; //times dt_old/dt_new to add in future code
 				}

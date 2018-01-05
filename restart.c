@@ -235,10 +235,10 @@ void param_read(FILE *fp){
 	fread(&dt, double_size, 1, fp);
 	fread(&failed, int_size, 1, fp);
 
-	if (calc_mem(n_active_total)>((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 0){
-		fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by reading in too many blocks! Code will segfault! \n");
-		max_levels -= 1;
-	}
+	//if (calc_mem(n_active_total)>((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 0){
+	//	fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by reading in too many blocks! Code will segfault! \n");
+	//	max_levels -= 1;
+	//}
 
 	//Print out stuff that should be checked later
 	int BS1_print = BS_1;

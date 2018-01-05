@@ -267,13 +267,13 @@ void unpack_receive1_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 						= (receive[nl[n_rec]][NPR*(i - i1)*zsize*jsize + NPR*(j - j1)*zsize + NPR*(z - z1) + k] - temp2[nl[n]][NPR*(i - i1)*zsize*jsize + NPR*(j - j1)*zsize + NPR*(z - z1) + k]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1; z < z2; z++){
 					PLOOP prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						+= temp1[nl[n]][NPR*(i - i1)*zsize*jsize + NPR*(j - j1)*zsize + NPR*(z - z1) + k] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (i = i1; i < i2; i++)for (j = j1; j < j2; j++) for (z = z1; z < z2; z++){
 					PLOOP prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						-= temp1[nl[n]][NPR*(i - i1)*zsize*jsize + NPR*(j - j1)*zsize + NPR*(z - z1) + k] / factor; //times dt_old/dt_new to add in future code
@@ -355,13 +355,13 @@ void unpack_receive2_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 						= (receive[nl[n_rec]][NPR*(j - j1)*zsize*isize + NPR*(i - i1)*zsize + NPR*(z - z1) + k] - temp2[nl[n]][NPR*(j - j1)*zsize*isize + NPR*(i - i1)*zsize + NPR*(z - z1) + k]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1; z < z2; z++){
 					PLOOP prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						+= temp1[nl[n]][NPR*(j - j1)*zsize*isize + NPR*(i - i1)*zsize + NPR*(z - z1) + k] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1; z < z2; z++){
 					PLOOP prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						-= temp1[nl[n]][NPR*(j - j1)*zsize*isize + NPR*(i - i1)*zsize + NPR*(z - z1) + k] / factor; //times dt_old/dt_new to add in future code
@@ -442,13 +442,13 @@ void unpack_receive3_flux(int n, int n_rec, int n_rec2, int i1, int i2, int j1, 
 						= (receive[nl[n_rec]][NPR*(z - z1)*isize*jsize + NPR*(i - i1)*jsize + NPR*(j - j1) + k] - temp2[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1)*jsize + NPR*(j - j1) + k]);
 				}
 			}
-			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			else if (calc_corr == 2 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1; j < j2; j++){
 					PLOOP prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						+= temp1[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1)*jsize + NPR*(j - j1) + k] / factor; //times dt_old/dt_new to add in future code
 				}
 			}
-			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
+			else if (calc_corr == 3 && block[n][AMR_NSTEP] % (2 * block[n_rec2][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 && (block[n][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* block[n_rec2][AMR_TIMELEVEL] - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
 				for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1; j < j2; j++){
 					PLOOP prim[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						-= temp1[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1)*jsize + NPR*(j - j1) + k] / factor; //times dt_old/dt_new to add in future code
