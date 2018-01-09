@@ -1319,7 +1319,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct o
 	#if AMD
 	w = fma(gam, pr[UU], pr[RHO]);
 	#else
-	w = rho + gam*pr[UU];
+	w = pr[RHO] + gam*pr[UU];
 	#endif
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;

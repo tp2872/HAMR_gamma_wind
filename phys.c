@@ -151,8 +151,8 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 		//fprintf(stderr, "(%d,%d,%f):%f\n", j, k, gcon[index_2D(ii, jj)][0][k][j] / gcon[index_2D(ii, jj)][0][j][k], log(fabs(gcon[index_2D(ii, jj)][0][k][j])));
 	}
 	#if(COOL_DISK)
-	double X[NDIM],r,th,ph;
-	coord(n, i,j, z, CENT,X) ;
+	double X[NDIM],r,th,phi;
+	coord(n, ii,jj, zz, CENT,X) ;
 	bl_coord(X,&r,&th, &phi) ;
 	misc_source(ph, ii, jj, geom, &q, dU,r, Dt) ;
 	#endif
