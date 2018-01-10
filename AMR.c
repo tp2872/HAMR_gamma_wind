@@ -528,7 +528,6 @@ void balance_load(void){
 
 		if (n_active_local_max> MAX_BLOCKS && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
 	} while (n_active_local_max> MAX_BLOCKS && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
-	printf("test1 \n");
 
 	if (rank == 0 && (n_active_local_max > MAX_BLOCKS || count == round(log(timelevel_cutoff) / log(2))+1)) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
