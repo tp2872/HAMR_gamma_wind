@@ -1859,14 +1859,14 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 		double x0, x1, x2, x3, x4, x5, temp[1], result[1];
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x0 = p[k*(ksize)+global_id - 3 * zdel - 3 * (BS_3 + 2 * N3G)*jdel - 3 * isize*idel];
-			x1 = p[k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel];
-			x2 = p[k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel];
+			x0 = p[MY_MAX(k*(ksize)+global_id - 3 * zdel - 3 * (BS_3 + 2 * N3G)*jdel - 3 * isize*idel,0)];
+			x1 = p[MY_MAX(k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
+			x2 = p[MY_MAX(k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
 			x3 = p[k*(ksize)+global_id];
-			x4 = p[k*(ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel];
+			x4 = p[MY_MIN(k*(ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			para(x0, x1, x2, x3, x4, temp, result);
 			dq1[k*(ksize)+global_id] = result[0];
-			x5 = p[k*(ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel];
+			x5 = p[MY_MIN(k*(ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+fix_mem1))];
 			para(x1, x2, x3, x4, x5, result, temp);
 			dq2[k*(ksize)+global_id] = result[0];
 		}

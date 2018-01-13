@@ -186,7 +186,7 @@ void set_points(int n)
 	/* Grid parameters*/
 	a = BH_SPIN;
 	Rin = 0.85*(1. + sqrt(1. - a*a));
-	Rout = 100000.;
+	Rout = 250.;
 	lim = MC;
 	failed = 0;	/* start slow */
 	cour = COUR;

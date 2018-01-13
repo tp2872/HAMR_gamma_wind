@@ -167,9 +167,9 @@ void init_torus()
 	
 	double temp = a;
 	a = 0.9375;
-	rin = 12.5;
+	rin = 6.0;
 	//rmax = 14.6145;
-	rmax = 25.;
+	rmax = 12.;
 	//rmax = 14.6165;
 	///rin = 12.;
 	//rmax = 14.616;
