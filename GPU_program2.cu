@@ -612,8 +612,8 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			if (i1 < 0 && REF_1 == 1) ii = NG - 1;
 			else if (REF_1 == 1) ii = 0;
 			else ii = i - i1;
-			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + (NG - 1)*REF_2;
-			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + (NG - 1)*REF_3;
+			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + REF_2;
+			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + REF_3;
 
 			is = ((i == i1) ? (-1) : (1));
 			js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
@@ -655,21 +655,23 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			iz = REF_3;
 
 			for (k = 0; k < NPR; k++){
+				#if(REF_1)
 				avg[k] = 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)]);
 				avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)]);
-
 				if (ii == 0){
 					dq1[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + 0 * (1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + REF_1*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)]);
 				}
 				else{
 					dq1[k] = slope_lim(receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + 0 * (1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + REF_1*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], avg[k]);
 				}
+				#endif
 				dq2[k] = slope_lim(receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij - REF_2)*(1 + 2 * REF_3) + (iz)], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij + REF_2)*(1 + 2 * REF_3) + (iz)]);
 				dq3[k] = slope_lim(receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz - REF_3)], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[k*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz + REF_3)]);
 			}
 			for (k = 0; k < 3; k++){
+				#if(REF_1)
 				avg[(k + NPR)] = 0.25*(psim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] +
 					psim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))])*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G) + jcurr];
 				avg[(k + NPR)] += 0.25*(psim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2*(k == 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3*(k == 1))] +
@@ -680,6 +682,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 				else{
 					dq1[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + 0 * (1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + REF_1*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], avg[(k + NPR)]);
 				}
+				#endif
 				dq2[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij - REF_2)*(1 + 2 * REF_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij + REF_2)*(1 + 2 * REF_3) + (iz)]);
 				dq3[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz - REF_3)], receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * REF_2)*(1 + 2 * REF_3)*(i2 - i1) + ii*(1 + 2 * REF_2)*(1 + 2 * REF_3) + (ij)*(1 + 2 * REF_3) + (iz + REF_3)]);
 			}
@@ -743,8 +746,8 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 			else if (REF_2 == 1) ij = 0;
 			else ij = j - j1;
 
-			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + REF_1)) / (1 + REF_1) + (NG - 1)*REF_1;
-			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + (NG - 1)*REF_3;
+			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + REF_1)) / (1 + REF_1) + REF_1;
+			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + REF_3;
 
 			is = (((icurr - i1 - N1G) % (1 + REF_1) == 0) ? (-1) : (1));
 			js = ((j == j1) ? (-1) : (1));
@@ -785,10 +788,12 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 			ii = REF_1;
 			iz = REF_3;
 			for (k = 0; k < NPR; k++){
+				#if(REF_2)
 				avg[k] = 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)]);
 				avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3)]);
+				#endif
 				if (ij == 0){
 					dq2[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + 0 * (1 + 2 * REF_1)*(1 + 2 * REF_3) + ii*(1 + 2 * REF_3) + (iz)], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + REF_2*(1 + 2 * REF_1)*(1 + 2 * REF_3) + ii*(1 + 2 * REF_3) + (iz)]);
 				}
@@ -799,6 +804,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				dq3[k] = slope_lim(receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + (iz - REF_3)], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + iz], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + (iz + REF_3)]);
 			}
 			for (k = 0; k < 3; k++){
+				#if(REF_2)
 				avg[NPR + k] = 0.25*(psim[k * (ksize)+(icurr - icurr % (1 + REF_1))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))] + 
 					psim[k * (ksize)+(icurr - icurr % (1 + REF_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3))])*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + j + N2G];
 				avg[NPR + k] += 0.25*(psim[k * (ksize)+(icurr - icurr % (1 + REF_1) + REF_1*(k == 2))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + REF_3) + REF_3*(k == 0))] +
@@ -809,6 +815,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				else{
 					dq2[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + 0 * (1 + 2 * REF_1)*(1 + 2 * REF_3) + ii*(1 + 2 * REF_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + REF_2*(1 + 2 * REF_1)*(1 + 2 * REF_3) + ii*(1 + 2 * REF_3) + (iz)], avg[(NPR + k)]);
 				}
+				#endif
 				dq1[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii - REF_1)*(1 + 2 * REF_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + iz], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii + REF_1)*(1 + 2 * REF_3) + (iz)]);
 				dq3[(NPR + k)] =  slope_lim(receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + (iz - REF_3)], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + iz], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_3)*(j2 - j1) + ij*(1 + 2 * REF_1)*(1 + 2 * REF_3) + (ii)*(1 + 2 * REF_3) + (iz + REF_3)]);
 			}			
@@ -869,8 +876,8 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 			if (z1 < 0 && REF_3 == 1) iz = NG - 1;
 			else if (REF_3 == 1) iz = 0;
 			else iz = z - z1;
-			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + REF_1)) / (1 + REF_1) + (NG - 1)*REF_1;
-			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + (NG - 1)*REF_2;
+			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + REF_1)) / (1 + REF_1) + REF_1;
+			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + REF_2;
 			is = (((icurr - i1 - N1G) % (1 + REF_1) == 0) ? (-1) : (1));
 			js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
 			zs = ((z == z1) ? (-1) : (1));
@@ -910,23 +917,24 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 			ii = REF_1;
 			ij = REF_2;
 			for (k = 0; k < NPR; k++){
+				#if(REF_3)
 				avg[k] = 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 				avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1)*isize + (jcurr - jcurr % (1 + REF_2) + REF_2)*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
-
 				if (iz == 0){
 					dq3[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + 0 * (1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + REF_3*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij]);
 				}
 				else{
 					dq3[k] = slope_lim(receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + 0 * (1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + REF_3*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], avg[k]);
 				}
-
+				#endif
 				dq1[k] = slope_lim(receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii - REF_1)*(1 + 2 * REF_2) + (ij)], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii + REF_1)*(1 + 2 * REF_2) + (ij)]);
 				dq2[k] = slope_lim(receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii)*(1 + 2 * REF_2) + (ij - REF_2)], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[k*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii)*(1 + 2 * REF_2) + (ij + REF_2)]);
 			}
 
 			for (k = 0; k < 3; k++){
+				#if(REF_3)
 				avg[NPR + k] = 0.25*(psim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + 
 					psim[k*(ksize)+(icurr - icurr % (1 + REF_1))*isize + (jcurr - jcurr % (1 + REF_2))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))])*gdet_GPU[(k+2*(k==2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];
 				avg[NPR + k] += 0.25*(psim[k*(ksize)+(icurr - icurr % (1 + REF_1) + REF_1*(k == 1))*isize + (jcurr - jcurr % (1 + REF_2) + REF_2*(k == 0))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] +
@@ -937,6 +945,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 				else{
 					dq3[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + 0 * (1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + REF_3*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], avg[NPR + k]);
 				}
+				#endif
 				dq1[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii - REF_1)*(1 + 2 * REF_2) + ij], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii + REF_1)*(1 + 2 * REF_2) + ij]);
 				dq2[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii)*(1 + 2 * REF_2) + (ij - REF_2)], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + ii*(1 + 2 * REF_2) + ij], receive_local[(NPR + k)*(1 + 2 * REF_1)*(1 + 2 * REF_2)*(z2 - z1) + iz*(1 + 2 * REF_1)*(1 + 2 * REF_2) + (ii)*(1 + 2 * REF_2) + (ij + REF_2)]);
 			}
