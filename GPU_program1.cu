@@ -3665,3 +3665,65 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 		#endif
 	}
 }
+
+__global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
+{
+	int j, k;
+	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	int zcurr = global_id % (BS_3 + 2 * N3G);
+	int icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+
+	// polar BCs
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1) {
+		for (j = -N2G; j < 0; j++){
+			#pragma unroll 9
+			for (k = 0; k < NPR; k++){
+				pv[k*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			}
+			pv[U2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[U3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+
+			#if(STAGGERED)
+			ps[0 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			ps[2 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -ps[2 * (ksize)+isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			#endif
+		}
+		global_id = -10;
+		icurr = -10;
+		zcurr = -10;
+	}
+
+	if (global_id<(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)){
+		global_id = -10;
+		icurr = -10;
+		zcurr = -10;
+	}
+	else if (global_id >= (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)){
+		global_id = global_id - (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G);
+		zcurr = global_id % (BS_3 + 2 * N3G);
+		icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
+	}
+
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == -1) {
+		for (j = BS_2; j < BS_2 + N2G; j++){
+			#pragma unroll 9
+			for (k = 0; k < NPR; k++){
+				pv[k*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k*(ksize)+isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			}
+			pv[U2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[U3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+
+			#if(STAGGERED)
+			ps[0 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			ps[2 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -ps[2 * (ksize)+isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			#endif
+		}
+	}
+}

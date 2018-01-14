@@ -85,5 +85,6 @@ __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn)
 __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet);
 __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps);
 __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
+__global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps);
 
 		

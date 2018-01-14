@@ -78,12 +78,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 6
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 36
 #define BS_2 16
-#define BS_3 24
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2
@@ -126,7 +126,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
 
 /*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define LEER (0)
 
 /*Wheter to set floors in ZAMO frame*/

@@ -877,6 +877,7 @@ void GPU_fix_flux(int n);
 void GPU_boundprim(int bound_force);
 void GPU_boundprim1(int flag, int n);
 void GPU_boundprim2(int flag, int n);
+void GPU_boundprim_trans(int flag, int n);
 void GPU_step_ch();
 void GPU_read(int n);
 void GPU_consttransport1(int flag, double Dt, int n);

@@ -45,6 +45,7 @@
 #include "decs_MPI.h"
 void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
+void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 
 /* bound array containing entire set of primitive variables */
 void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
@@ -63,6 +64,14 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim2(ph,psh, n_ord[n]);
 	}
 	#endif
+
+	#if(TRANS_BOUND && NB_3==1)
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim_trans(p, ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim_trans(ph, psh, n_ord[n]);
+	}
+	#endif
+
 	rc = 0;
 	gpu = 0;
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -347,15 +356,15 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					pflag[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)] = pflag[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)];
 					#if(STAGGERED)
 					k = 1;
-					ps[nl[n]][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL])-1, z)][k];
-					ps[nl[n]][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL])-2, z)][k];
+					ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
+					ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
 					#if(N2G==3)
 					ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
 					#endif
 					#if(N3>1)
 					k = 3;
-					ps[nl[n]][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
-					ps[nl[n]][index_3D(n,i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
+					ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]), z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 1, z)][k];
+					ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 1, z)][k] = ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 2, z)][k];
 					#if(N2G==3)
 					ps[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + 2, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - 3, z)][k];
 					#endif
@@ -392,6 +401,65 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + N2G; j++) {
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.;
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n){
+	int i, j, z, k;
+
+	// polar BCs 
+	if (block[n][AMR_NBR1] == -1){
+		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag,gdet) private(i,j,z, k)
+		{
+			//#pragma omp for collapse(2) schedule(dynamic)	
+			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
+				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+					for (j = -N2G; j < 0; j++){
+						//#pragma omp   simd
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, -j - 1, (z + BS_3 / 2) % BS_3)][k];
+						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
+
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, -j - 1, (z + BS_3 / 2) % BS_3)][1];
+						#if(N3>1)
+						ps[nl[n]][index_3D(n, i, j, z)][3] = -ps[nl[n]][index_3D(n, i, -j - 1, (z + BS_3 / 2) % BS_3)][3];
+						#endif			
+						#endif
+					}
+				}
+			}
+		}
+	}
+
+	if (block[n][AMR_NBR3] == -1){
+		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag, gdet) private(i,z, k)
+		{
+			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
+			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
+				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
+					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) + N2G; j++){
+						//#pragma omp   simd
+						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - j - 1 , (z + BS_3 / 2) % BS_3)][k];
+						prim[nl[n]][index_3D(n, i, j , z)][U2] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
+
+						#if(STAGGERED)
+						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - j - 1, (z + BS_3 / 2) % BS_3)][1];
+						#if(N3>1)
+						ps[nl[n]][index_3D(n, i, j, z)][3] = -ps[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL]) - j - 1, (z + BS_3 / 2) % BS_3)][3];
+						#endif			
+						#endif
 					}
 				}
 			}
