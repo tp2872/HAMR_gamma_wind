@@ -487,7 +487,16 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			ij = (j - j1 - (j - j1) % (1 + REF_2)) / (1 + REF_2) + REF_2;
 			iz = (z - z1 - (z - z1) % (1 + REF_3)) / (1 + REF_3) + REF_3;
 
-			is = ((i == i1) ? (-1) : (1));
+			if (i < 0){
+				if (i == -3) is = -2;
+				else if (i == -2) is = -1;
+				else if (i == -1) is = 1;
+			}
+			if(i>0){
+				if(i == NG) is=-1;
+				else if (i == NG + 1) is = 1;
+				else if (i == NG + 2) is = 2;
+			}
 			js = (((j - j1) % (1 + REF_2) == 0) ? (-1) : (1));
 			zs = (((z - z1) % (1 + REF_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR; k++){
@@ -591,7 +600,16 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			iz = (z - z1 - (z - z1) % (1 + REF_3)) / (1 + REF_3) + REF_3;
 
 			is = (((i - i1) % (1 + REF_1) == 0) ? (-1) : (1));
-			js = ((j == j1) ? (-1) : (1));
+			if (j < 0){
+				if (j == -3) js = -2;
+				else if (j == -2) js = -1;
+				else if (j == -1) js = 1;
+			}
+			if(j>0){
+				if(j == NG) js=-1;
+				else if (j == NG + 1) js = 1;
+				else if (j == NG + 2) js = 2;
+			}			
 			zs = (((z - z1) % (1 + REF_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR; k++){
 				#if(REF_2)
@@ -694,8 +712,16 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 
 			is = (((i - i1) % (1 + REF_1) == 0) ? (-1) : (1));
 			js = (((j - j1) % (1 + REF_2) == 0) ? (-1) : (1));
-			zs = ((z == z1) ? (-1) : (1));
-
+			if (z < 0){
+				if (z == -3) zs = -2;
+				else if (z == -2) zs = -1;
+				else if (z == -1) zs = 1;
+			}
+			if (j>0){
+				if (z == NG) zs = -1;
+				else if (z == NG + 1) zs = 1;
+				else if (z == NG + 2) zs = 2;
+			}
 			for (k = 0; k < NPR; k++){
 				#if(REF_3)
 				avg[k] = 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + REF_1) + N1_GPU_offset[n], j - j % (1 + REF_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + REF_1) + N1_GPU_offset[n], j - j % (1 + REF_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);

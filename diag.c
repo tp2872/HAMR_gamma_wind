@@ -61,7 +61,7 @@ void diag(int call_code)
 			#pragma omp parallel for schedule(dynamic,1) private(divb,i,j,z)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + BS_1 - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				divb = divb_calc(n_ord[n], i, j, z);
-				//#pragma omp critical
+				#pragma omp critical
 				if (divb > divbmax && i > 1 && j > 0 && (z > 0 || N3 == 1)) {
 					imax = i*pow(1 + REF_1, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					jmax = j*pow(1 + REF_2, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);

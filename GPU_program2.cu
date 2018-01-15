@@ -615,7 +615,16 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + REF_2;
 			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + REF_3;
 
-			is = ((i == i1) ? (-1) : (1));
+			if (i < 0){
+				if (i == -3) is = -2;
+				else if (i == -2) is = -1;
+				else if (i == -1) is = 1;
+			}
+			if (i>0){
+				if(i == NG) is=-1;
+				else if (i == NG + 1) is = 1;
+				else if (i == NG + 2) is = 2;
+			}
 			js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
 			zs = (((zcurr - z1 - N3G) % (1 + REF_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR + 3; k++){
@@ -750,7 +759,16 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + REF_3)) / (1 + REF_3) + REF_3;
 
 			is = (((icurr - i1 - N1G) % (1 + REF_1) == 0) ? (-1) : (1));
-			js = ((j == j1) ? (-1) : (1));
+			if (j < 0){
+				if (j == -3) js = -2;
+				else if (j == -2) js = -1;
+				else if (j == -1) js = 1;
+			}
+			if (j>0){
+				if(j == NG) js=-1;
+				else if (j == NG + 1) js = 1;
+				else if (j == NG + 2) js = 2;
+			}	
 			zs = (((zcurr - z1 - N3G) % (1 + REF_3) == 0) ? (-1) : (1));
 
 			for (k = 0; k < NPR+3; k++){
@@ -880,7 +898,16 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + REF_2)) / (1 + REF_2) + REF_2;
 			is = (((icurr - i1 - N1G) % (1 + REF_1) == 0) ? (-1) : (1));
 			js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
-			zs = ((z == z1) ? (-1) : (1));
+			if (z < 0){
+				if (z == -3) zs = -2;
+				else if (z == -2) zs = -1;
+				else if (z == -1) zs = 1;
+			}
+			if (j>0){
+				if (z == NG) zs = -1;
+				else if (z == NG + 1) zs = 1;
+				else if (z == NG + 2) zs = 2;
+			}
 
 			for (k = 0; k < NPR+3; k++){
 				for (ii1 = ii - REF_1; ii1 <= ii + REF_1; ii1++)for (ij1 = ij - REF_2; ij1 <= ij + REF_2; ij1++)for (iz1 = 0; iz1 < z2-z1; iz1++){
