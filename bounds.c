@@ -65,12 +65,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	#endif
 
-	#if(TRANS_BOUND && NB_3==1)
-	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim_trans(p, ps, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim_trans(ph, psh, n_ord[n]);
-	}
-	#endif
+
 
 	rc = 0;
 	gpu = 0;
@@ -105,6 +100,14 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
+
+	#if(TRANS_BOUND && NB_3==1)
+	for (n = 0; n < n_active; n++){
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim_trans(p, ps, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim_trans(ph, psh, n_ord[n]);
+	}
+	#endif
+
 	MPI_Barrier(MPI_COMM_WORLD);
 	#if (STAGGERED && COPY_BFIELD)
 	rc = 0;
@@ -413,7 +416,7 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 	int i, j, z, k;
 
 	// polar BCs 
-	if (block[n][AMR_NBR1] == -1){
+	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag,gdet) private(i,j,z, k)
 		{
 			//#pragma omp for collapse(2) schedule(dynamic)	
@@ -440,7 +443,7 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 		}
 	}
 
-	if (block[n][AMR_NBR3] == -1){
+	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag, gdet) private(i,z, k)
 		{
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	

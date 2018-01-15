@@ -3677,7 +3677,7 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	// polar BCs
-	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1) {
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == 1) {
 		for (j = -N2G; j < 0; j++){
 			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
@@ -3709,7 +3709,7 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 		icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	}
 
-	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == -1) {
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == 1) {
 		for (j = BS_2; j < BS_2 + N2G; j++){
 			#pragma unroll 9
 			for (k = 0; k < NPR; k++){

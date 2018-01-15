@@ -287,8 +287,8 @@ void set_AMR(void){
 		block[n][AMR_POLE] = 0; //If there are no transmissive boundary conditions no special treatment of the pole is necessary
 		
 		//Find the neighbours in the case we have transmissive boundary conditions at the pole
-		#if (TRANS_BOUND && NB_3>1)
-		if (NB_3 % 2 != 0 && rank==0) fprintf(stderr, "Number of blocks in the third dimension is not an even number. This is incompatible with TRANS_BOUND");
+		#if (TRANS_BOUND)
+		//if (NB_3 % 2 != 0 && rank==0) fprintf(stderr, "Number of blocks in the third dimension is not an even number. This is incompatible with TRANS_BOUND");
 
 		//First tell the code if you are dealing with a pole at theta=0 (1) or at theta=Pi (2)
 		if (j == 0 ){
@@ -300,7 +300,7 @@ void set_AMR(void){
 			block[n][AMR_NBR3] = AMR_coord_linear(level, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
 		}
 		#endif
-
+	
 		//Find corners of block assuming only third dimension is periodic
 		//x-y plane
 		if (i + 1 > i_max || j - 1 < 0){
@@ -1537,7 +1537,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.01 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 16.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)

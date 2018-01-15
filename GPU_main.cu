@@ -459,7 +459,8 @@ void set_arrays_GPU(int n, int device){
 	if (REF_3)cudaMalloc(&Bufferrec1_4E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	if (REF_1)cudaMalloc(&Bufferrec1_7E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	if (REF_1 && REF_3)cudaMalloc(&Bufferrec1_8E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
-	#if(!DEREFINE_POLE)	cudaMalloc(&Bufferrec2_1E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	#if(!DEREFINE_POLE)	
+	cudaMalloc(&Bufferrec2_1E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	if (REF_3)cudaMalloc(&Bufferrec2_2E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	if (REF_2)cudaMalloc(&Bufferrec2_3E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	if (REF_2 && REF_3)cudaMalloc(&Bufferrec2_4E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
@@ -1732,14 +1733,6 @@ void GPU_boundprim(int bound_force)
 	}
 	#endif
 
-	#if(TRANS_BOUND && NB_3==1)
-	for (n = 0; n < n_active; n++){
-		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim_trans(1, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim_trans(0, n_ord[n]);
-	}
-	#endif
-
 	//For last timestep do not receive synchronized electrice fields 
 	if (rank == 0){
 		begin2 =clock();
@@ -1840,7 +1833,13 @@ void GPU_boundprim(int bound_force)
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
-	
+	#if(TRANS_BOUND && NB_3==1)
+	for (n = 0; n < n_active; n++){
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim_trans(1, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim_trans(0, n_ord[n]);
+	}
+	#endif
 	//MPI communication
 	mpi_synch();
 
@@ -1884,12 +1883,12 @@ void GPU_boundprim2(int flag, int n)
 
 void GPU_boundprim_trans(int flag, int n)
 {
-	if (block[n][AMR_NBR1] == -1 || block[n][AMR_NBR3] == -1){
+	if (block[n][AMR_POLE] != 0 ){
 		if (flag == 0){
-			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferpsh_1[nl[n]]);
+			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
 		}
 		else{
-			boundprim_trans<< < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
+			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferps_1[nl[n]]);
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
