@@ -717,7 +717,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				else if (z == -2) zs = -1;
 				else if (z == -1) zs = 1;
 			}
-			if (j>0){
+			if (z>0){
 				if (z == NG) zs = -1;
 				else if (z == NG + 1) zs = 1;
 				else if (z == NG + 2) zs = 2;

@@ -193,7 +193,7 @@ void init_torus()
 	
     /* output choices */
 	tf = 200000000.0 ;
-	DTd = 25.;	/* dumping frequency, in units of M */
+	DTd = 5.;	/* dumping frequency, in units of M */
 	DTl = 50.0;	/* logfile frequency, in units of M */
 	DTi = 100.0; 	/* image file frequ., in units of M */
 	DTr = 5.0 * 1000.; 	/* restart file frequ., in timesteps */

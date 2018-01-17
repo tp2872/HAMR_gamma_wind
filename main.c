@@ -131,6 +131,15 @@ int main(int argc, char *argv[])
 			#if(!DEREFINE_POLE && N_LEVELS!=1)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
+			#else
+			close_dump();
+			close_rdump();
+			close_gdump();
+			balance_load();
+			#if(GPU_ENABLED)
+			balance_load_gpu();
+			#endif
+			set_communicator();
 			#endif
 			tref += TREF;
 		}
@@ -339,24 +348,7 @@ void set_arrays(int n)
 	#if (ELLIPTICAL2)
 	dU_s[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G),sizeof(double[NPR]));
 	#endif
-	receive1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	receive6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	#endif
-	#if(PRESTEP || PRESTEP2)
-	tempreceive1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	tempreceive2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	tempreceive3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	tempreceive4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	tempreceive5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	tempreceive6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	#endif
-	#endif
+	
 	send1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
 	send3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
@@ -370,88 +362,100 @@ void set_arrays(int n)
 	if(REF_3)send1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_1)send1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3 && REF_1)send1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive1_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3)receive1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_1)receive1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_1)receive1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3)send2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_2)send2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3 && REF_2)send2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3)receive2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_2)receive2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_2)receive2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
 	send3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3)send3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_1)send3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3 && REF_1)send3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3)receive3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_1)receive3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_1)receive3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3)send4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_2)send4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	if (REF_3 && REF_2)send4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3)receive4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_2)receive4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_2)receive4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	#if(N3G>0)
 	send5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	if (REF_2)send5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	if (REF_1)send5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	if (REF_2 && REF_1)send5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
 	send6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	if (REF_2)send6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	if (REF_1)send6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	if (REF_2 && REF_1)send6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	#if(PRESTEP || PRESTEP2)
-	tempreceive1_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if(REF_3)tempreceive1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if(REF_1)tempreceive1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_1)tempreceive1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	tempreceive2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)tempreceive2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_2)tempreceive2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_2)tempreceive2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	tempreceive3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if(REF_3)tempreceive3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if(REF_1)tempreceive3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_1)tempreceive3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1/ (1 + REF_1) + 2 * N1G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	tempreceive4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)tempreceive4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_2)tempreceive4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_2)tempreceive4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G)*(BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1[nl[n]] = (double *)calloc((1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3[nl[n]] = (double *)calloc((1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	tempreceive5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)tempreceive5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)tempreceive5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)tempreceive5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	tempreceive6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)tempreceive6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)tempreceive6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)tempreceive6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2/ (1 + REF_2) + 2 * N2G) *(BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_1)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_1)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	receive1_3[nl[n]] = receive1[nl[n]];
+	receive1_4[nl[n]] = receive1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive1_7[nl[n]] = receive1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive1_8[nl[n]] = receive1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive2_1[nl[n]] = receive2[nl[n]];
+	receive2_2[nl[n]] = receive2[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive2_3[nl[n]] = receive2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive2_4[nl[n]] = receive2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive3_1[nl[n]] = receive3[nl[n]];
+	receive3_2[nl[n]] = receive3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive3_5[nl[n]] = receive3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive3_6[nl[n]] = receive3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive4_5[nl[n]] = receive4[nl[n]];
+	receive4_6[nl[n]] = receive4[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive4_7[nl[n]] = receive4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive4_8[nl[n]] = receive4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	#if(N3G>0)	
+	receive5_1[nl[n]] = receive5[nl[n]];
+	receive5_3[nl[n]] = receive5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive5_5[nl[n]] = receive5[nl[n]] + (REF_1 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive5_7[nl[n]] = receive5[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive6_2[nl[n]] = receive6[nl[n]];
+	receive6_4[nl[n]] = receive6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive6_6[nl[n]] = receive6[nl[n]] + (REF_1 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive6_8[nl[n]] = receive6[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
 	#endif
 	#endif
-	#endif
-	receive1_fine[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive2_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	receive3_fine[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	receive4_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	#if(PRESTEP==-100 || PRESTEP2==-100)
+	tempreceive1[nl[n]] = (double *)calloc((1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	tempreceive2[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	tempreceive3[nl[n]] = (double *)calloc((1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	tempreceive4[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive5_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
-	receive6_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
+	tempreceive5[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_1)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	tempreceive6[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_1)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	tempreceive1_3[nl[n]] = tempreceive1[nl[n]];
+	tempreceive1_4[nl[n]] = tempreceive1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive1_7[nl[n]] = tempreceive1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive1_8[nl[n]] = tempreceive1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive2_1[nl[n]] = tempreceive2[nl[n]];
+	tempreceive2_2[nl[n]] = tempreceive2[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive2_3[nl[n]] = tempreceive2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive2_4[nl[n]] = tempreceive2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive3_1[nl[n]] = tempreceive3[nl[n]];
+	tempreceive3_2[nl[n]] = tempreceive3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive3_5[nl[n]] = tempreceive3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive3_6[nl[n]] = tempreceive3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive4_5[nl[n]] = tempreceive4[nl[n]];
+	tempreceive4_6[nl[n]] = tempreceive4[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive4_7[nl[n]] = tempreceive4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempreceive4_8[nl[n]] = tempreceive4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	#if(N3G>0)	
+	tempreceive5_1[nl[n]] = tempreceive5[nl[n]];
+	tempreceive5_3[nl[n]] = tempreceive5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	tempreceive5_5[nl[n]] = tempreceive5[nl[n]] + (REF_1 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	tempreceive5_7[nl[n]] = tempreceive5[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	tempreceive6_2[nl[n]] = tempreceive6[nl[n]];
+	tempreceive6_4[nl[n]] = tempreceive6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	tempreceive6_6[nl[n]] = tempreceive6[nl[n]] + (REF_1 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	tempreceive6_8[nl[n]] = tempreceive6[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	#endif
+	#endif
 	#endif
 	send1_fine[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
@@ -461,366 +465,381 @@ void set_arrays(int n)
 	send5_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
 	send6_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	receive1_3fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive1_4fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_1)receive1_7fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_1)receive1_8fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive2_1fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive2_2fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_2)receive2_3fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_2)receive2_4fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive3_1fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive3_2fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_1)receive3_5fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_1)receive3_6fine[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive4_5fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive4_6fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_2)receive4_7fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3 && REF_2)receive4_8fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_fine[nl[n]] = (double *)calloc((1 + REF_1)*(1 + REF_3)* (NPR)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive2_fine[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_3)* (NPR)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive3_fine[nl[n]] = (double *)calloc((1 + REF_1)*(1 + REF_3)* (NPR)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive4_fine[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_3)* (NPR)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	receive5_1fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8fine[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	#endif
-	#if(CPU_OPENMP)
-	receive1_flux[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive2_flux[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive3_flux[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive4_flux[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_flux[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	receive6_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	#endif
-	receive1_flux1[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive2_flux1[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive3_flux1[nl[n]] = (double *)calloc(NPR* (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive4_flux1[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_flux1[nl[n]] = (double *)calloc(NPR* (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	receive6_flux1[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive5_fine[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_1)* (NPR)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive6_fine[nl[n]] = (double *)calloc((1 + REF_2)*(1 + REF_1)* (NPR)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive1_3flux[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive1_4flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive1_7flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive1_8flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive2_2flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive2_3flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive2_4flux[nl[n]] = (double *)calloc(NPR * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1flux[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive3_2flux[nl[n]] = (double *)calloc(NPR * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive3_5flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive3_6flux[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive4_6flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive4_7flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive4_8flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_1flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6flux[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8flux[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	#endif
-	receive1_3flux1[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive1_4flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive1_7flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive1_8flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive2_2flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive2_3flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive2_4flux1[nl[n]] = (double *)calloc(NPR * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1flux1[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive3_2flux1[nl[n]] = (double *)calloc(NPR * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive3_5flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive3_6flux1[nl[n]] = (double *)calloc(NPR* (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive4_6flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive4_7flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive4_8flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_1flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6flux1[nl[n]] = (double *)calloc(NPR* (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8flux1[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	#endif
-	receive1_3flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive1_4flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive1_7flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive1_8flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive2_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive2_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive2_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive3_2flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive3_5flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive3_6flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive4_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive4_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive4_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	#endif
-	receive1_3E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive1_4E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive1_7E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive1_8E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive2_2E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive2_3E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive2_4E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive3_2E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive3_5E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive3_6E[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive4_6E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive4_7E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive4_8E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_1E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8E[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	#endif
-	receive1_3E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive1_4E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive1_7E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive1_8E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive2_2E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive2_3E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive2_4E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive3_2E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive3_5E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive3_6E1[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive4_6E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive4_7E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive4_8E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_1E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8E1[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	#endif
-	receive1_3E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive1_4E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive1_7E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive1_8E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive2_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive2_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive2_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive2_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive3_1E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_3)receive3_2E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if(REF_1)receive3_5E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_1)receive3_6E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	receive4_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3)receive4_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_2)receive4_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	if (REF_3 && REF_2)receive4_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G) , sizeof(double));
-	#if(N3G>0)
-	receive5_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive5_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive5_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive5_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive6_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2)receive6_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive6_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_2 && REF_1)receive6_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive1_3fine[nl[n]] = receive1_fine[nl[n]];
+	receive1_4fine[nl[n]] = receive1_fine[nl[n]] + REF_3*(NPR *(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive1_7fine[nl[n]] = receive1_fine[nl[n]] + (REF_3 + REF_1)*(NPR *(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive1_8fine[nl[n]] = receive1_fine[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR *(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive2_1fine[nl[n]] = receive2_fine[nl[n]];
+	receive2_2fine[nl[n]] = receive2_fine[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive2_3fine[nl[n]] = receive2_fine[nl[n]] + (REF_3 + REF_2)*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive2_4fine[nl[n]] = receive2_fine[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive3_1fine[nl[n]] = receive3_fine[nl[n]];
+	receive3_2fine[nl[n]] = receive3_fine[nl[n]] + REF_3*(NPR *(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive3_5fine[nl[n]] = receive3_fine[nl[n]] + (REF_3 + REF_1)*(NPR *(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive3_6fine[nl[n]] = receive3_fine[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR *(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive4_5fine[nl[n]] = receive4_fine[nl[n]];
+	receive4_6fine[nl[n]] = receive4_fine[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive4_7fine[nl[n]] = receive4_fine[nl[n]] + (REF_3 + REF_2)*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	receive4_8fine[nl[n]] = receive4_fine[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	#if(N3G>0)	
+	receive5_1fine[nl[n]] = receive5_fine[nl[n]];
+	receive5_3fine[nl[n]] = receive5_fine[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive5_5fine[nl[n]] = receive5_fine[nl[n]] + (REF_1 + REF_2)*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive5_7fine[nl[n]] = receive5_fine[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive6_2fine[nl[n]] = receive6_fine[nl[n]];
+	receive6_4fine[nl[n]] = receive6_fine[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive6_6fine[nl[n]] = receive6_fine[nl[n]] + (REF_1 + REF_2)*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
+	receive6_8fine[nl[n]] = receive6_fine[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(NPR *(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_1 / (1 + REF_1) + 2 * N1G));
 	#endif
 	#endif
+	#if(CPU_OPENMP)
 	send1_flux[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
 	send3_flux[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
-	send4_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	send4_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
 	send5_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	send6_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	send6_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	receive1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive4_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	receive1_flux[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3) , sizeof(double));
+	receive2_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3) , sizeof(double));
+	receive3_flux[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3) , sizeof(double));
+	receive4_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3) , sizeof(double));
 	#if(N3G>0)
-	receive5_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	receive6_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive5_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1) , sizeof(double));
+	receive6_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1) , sizeof(double));
+	#endif	
+	#if(N_LEVELS>1)
+	receive1_3flux[nl[n]] = receive1_flux[nl[n]];
+	receive1_4flux[nl[n]] = receive1_flux[nl[n]] + REF_3*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive1_7flux[nl[n]] = receive1_flux[nl[n]] + (REF_3 + REF_1)*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive1_8flux[nl[n]] = receive1_flux[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive2_1flux[nl[n]] = receive2_flux[nl[n]];
+	receive2_2flux[nl[n]] = receive2_flux[nl[n]] + REF_3*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive2_3flux[nl[n]] = receive2_flux[nl[n]] + (REF_3 + REF_2)*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive2_4flux[nl[n]] = receive2_flux[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive3_1flux[nl[n]] = receive3_flux[nl[n]];
+	receive3_2flux[nl[n]] = receive3_flux[nl[n]] + REF_3*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive3_5flux[nl[n]] = receive3_flux[nl[n]] + (REF_3 + REF_1)*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive3_6flux[nl[n]] = receive3_flux[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive4_5flux[nl[n]] = receive4_flux[nl[n]];
+	receive4_6flux[nl[n]] = receive4_flux[nl[n]] + REF_3*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive4_7flux[nl[n]] = receive4_flux[nl[n]] + (REF_3 + REF_2)*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive4_8flux[nl[n]] = receive4_flux[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	#if(N3G>0)
+	receive5_1flux[nl[n]] = receive5_flux[nl[n]];
+	receive5_3flux[nl[n]] = receive5_flux[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive5_5flux[nl[n]] = receive5_flux[nl[n]] + (REF_2 + REF_1)*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive5_7flux[nl[n]] = receive5_flux[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive6_2flux[nl[n]] = receive6_flux[nl[n]];
+	receive6_4flux[nl[n]] = receive6_flux[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive6_6flux[nl[n]] = receive6_flux[nl[n]] + (REF_2 + REF_1)*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive6_8flux[nl[n]] = receive6_flux[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
 	#endif
-	receive1_E1[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive2_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive3_E1[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) , sizeof(double));
-	receive4_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	#endif
+	receive1_flux1[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3) , sizeof(double));
+	receive2_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3) , sizeof(double));
+	receive3_flux1[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3) , sizeof(double));
+	receive4_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3) , sizeof(double));
 	#if(N3G>0)
-	receive5_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
-	receive6_E1[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	receive5_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1) , sizeof(double));
+	receive6_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1) , sizeof(double));
+	#endif	
+	#if(N_LEVELS>1)
+	receive1_3flux1[nl[n]] = receive1_flux1[nl[n]];
+	receive1_4flux1[nl[n]] = receive1_flux1[nl[n]] + REF_3*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive1_7flux1[nl[n]] = receive1_flux1[nl[n]] + (REF_3 + REF_1)*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive1_8flux1[nl[n]] = receive1_flux1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive2_1flux1[nl[n]] = receive2_flux1[nl[n]];
+	receive2_2flux1[nl[n]] = receive2_flux1[nl[n]] + REF_3*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive2_3flux1[nl[n]] = receive2_flux1[nl[n]] + (REF_3 + REF_2)*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive2_4flux1[nl[n]] = receive2_flux1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive3_1flux1[nl[n]] = receive3_flux1[nl[n]];
+	receive3_2flux1[nl[n]] = receive3_flux1[nl[n]] + REF_3*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive3_5flux1[nl[n]] = receive3_flux1[nl[n]] + (REF_3 + REF_1)*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive3_6flux1[nl[n]] = receive3_flux1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR *(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
+	receive4_5flux1[nl[n]] = receive4_flux1[nl[n]];
+	receive4_6flux1[nl[n]] = receive4_flux1[nl[n]] + REF_3*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive4_7flux1[nl[n]] = receive4_flux1[nl[n]] + (REF_3 + REF_2)*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	receive4_8flux1[nl[n]] = receive4_flux1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR *(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	#if(N3G>0)
+	receive5_1flux1[nl[n]] = receive5_flux1[nl[n]];
+	receive5_3flux1[nl[n]] = receive5_flux1[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive5_5flux1[nl[n]] = receive5_flux1[nl[n]] + (REF_2 + REF_1)*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive5_7flux1[nl[n]] = receive5_flux1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive6_2flux1[nl[n]] = receive6_flux1[nl[n]];
+	receive6_4flux1[nl[n]] = receive6_flux1[nl[n]] + REF_2*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive6_6flux1[nl[n]] = receive6_flux1[nl[n]] + (REF_2 + REF_1)*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	receive6_8flux1[nl[n]] = receive6_flux1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR *(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	#endif
+	receive1_3flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if(REF_3)receive1_4flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if(REF_1)receive1_7flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_3 && REF_1)receive1_8flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	receive2_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_3)receive2_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_2)receive2_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_3 && REF_2)receive2_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	receive3_1flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if(REF_3)receive3_2flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if(REF_1)receive3_5flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_3 && REF_1)receive3_6flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	receive4_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_3)receive4_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_2)receive4_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	if (REF_3 && REF_2)receive4_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)) , sizeof(double));
+	#if(N3G>0)
+	receive5_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	if (REF_2)receive5_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	if (REF_1)receive5_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	if (REF_2 && REF_1)receive5_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	receive6_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	if (REF_2)receive6_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	if (REF_1)receive6_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2)) *(BS_1 / (1 + REF_1)), sizeof(double));
+	if (REF_2 && REF_1)receive6_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + REF_2) + 2 * N2G) *(BS_1 / (1 + REF_1)), sizeof(double));
+	#endif
 	#endif
 	send1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
 	send3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
-	send4_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double));
+	send4_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
 	send5_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	send6_E[nl[n]] = (double *)calloc(2*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) , sizeof(double));
+	send6_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
 	#endif
-	
-	send_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	send_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	send_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	send_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
+	receive1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * D1)*(BS_3 + 2 * N3G), sizeof(double));
+	receive2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * D2)*(BS_3 + 2 * N3G), sizeof(double));
+	receive3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * D1)*(BS_3 + 2 * N3G), sizeof(double));
+	receive4_E[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	send_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	send_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	send_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	send_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	send_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	send_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	send_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	send_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	#endif
-	receive_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	receive_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	receive_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	receive_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	#if(N3G>0)
-	receive_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	receive_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	receive_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	receive_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	receive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	receive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	receive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	receive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	#endif
-	tempreceive_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * N3G), sizeof(double));
-	#if(N3G>0)
-	tempreceive_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * N2G), sizeof(double));
-	tempreceive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * N1G), sizeof(double));
+	receive5_E[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_1 + 2 * D1), sizeof(double));
+	receive6_E[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_1 + 2 * D1), sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_3E[nl[n]] = receive1_E[nl[n]];
+	receive1_4E[nl[n]] = receive1_E[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive1_7E[nl[n]] = receive1_E[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive1_8E[nl[n]] = receive1_E[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive2_1E[nl[n]] = receive2_E[nl[n]];
+	receive2_2E[nl[n]] = receive2_E[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive2_3E[nl[n]] = receive2_E[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive2_4E[nl[n]] = receive2_E[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive3_1E[nl[n]] = receive3_E[nl[n]];
+	receive3_2E[nl[n]] = receive3_E[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive3_5E[nl[n]] = receive3_E[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive3_6E[nl[n]] = receive3_E[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive4_5E[nl[n]] = receive4_E[nl[n]];
+	receive4_6E[nl[n]] = receive4_E[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive4_7E[nl[n]] = receive4_E[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive4_8E[nl[n]] = receive4_E[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
 	#if(N3G>0)
-	receive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1E[nl[n]] = receive5_E[nl[n]];
+	receive5_3E[nl[n]] = receive5_E[nl[n]] + REF_2*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive5_5E[nl[n]] = receive5_E[nl[n]] + (REF_2 + REF_1)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive5_7E[nl[n]] = receive5_E[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive6_2E[nl[n]] = receive6_E[nl[n]];
+	receive6_4E[nl[n]] = receive6_E[nl[n]] + REF_2*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive6_6E[nl[n]] = receive6_E[nl[n]] + (REF_2 + REF_1)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive6_8E[nl[n]] = receive6_E[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
 	#endif
-	if (REF_3)receive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	#if(N3G>0)
-	if (REF_2)receive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)receive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)receive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)receive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_1)receive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
 	#endif
-	tempreceive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	tempreceive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_E1[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * D1)*(BS_3 + 2 * N3G), sizeof(double));
+	receive2_E1[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_3 + 2 * N3G), sizeof(double));
+	receive3_E1[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * D1)*(BS_3 + 2 * N3G), sizeof(double));
+	receive4_E1[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_3 + 2 * N3G), sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	tempreceive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	tempreceive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	tempreceive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_E1[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_1 + 2 * D1), sizeof(double));
+	receive6_E1[nl[n]] = (double *)calloc(2 * (BS_2+ 2 * D2)*(BS_1 + 2 * D1), sizeof(double));
 	#endif
-	if (REF_3)tempreceive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)tempreceive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)tempreceive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)tempreceive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
+	#if(N_LEVELS>1)
+	receive1_3E1[nl[n]] = receive1_E1[nl[n]];
+	receive1_4E1[nl[n]] = receive1_E1[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive1_7E1[nl[n]] = receive1_E1[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive1_8E1[nl[n]] = receive1_E1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive2_1E1[nl[n]] = receive2_E1[nl[n]];
+	receive2_2E1[nl[n]] = receive2_E1[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive2_3E1[nl[n]] = receive2_E1[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive2_4E1[nl[n]] = receive2_E1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive3_1E1[nl[n]] = receive3_E1[nl[n]];
+	receive3_2E1[nl[n]] = receive3_E1[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive3_5E1[nl[n]] = receive3_E1[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive3_6E1[nl[n]] = receive3_E1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive4_5E1[nl[n]] = receive4_E1[nl[n]];
+	receive4_6E1[nl[n]] = receive4_E1[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive4_7E1[nl[n]] = receive4_E1[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	receive4_8E1[nl[n]] = receive4_E1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
 	#if(N3G>0)
-	if (REF_2)tempreceive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)tempreceive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)tempreceive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)tempreceive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_1)tempreceive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)tempreceive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)tempreceive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1 / (1 + REF_1)+ 2 * N1G), sizeof(double));
-	if (REF_1)tempreceive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1E1[nl[n]] = receive5_E1[nl[n]];
+	receive5_3E1[nl[n]] = receive5_E1[nl[n]] + REF_2*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive5_5E1[nl[n]] = receive5_E1[nl[n]] + (REF_2 + REF_1)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive5_7E1[nl[n]] = receive5_E1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive6_2E1[nl[n]] = receive6_E1[nl[n]];
+	receive6_4E1[nl[n]] = receive6_E1[nl[n]] + REF_2*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive6_6E1[nl[n]] = receive6_E1[nl[n]] + (REF_2 + REF_1)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	receive6_8E1[nl[n]] = receive6_E1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
 	#endif
-	receive_E3_corn1_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive_E3_corn2_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive_E3_corn3_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	receive_E3_corn4_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
+	receive1_3E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if(REF_3)receive1_4E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if(REF_1)receive1_7E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_3 && REF_1)receive1_8E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	receive2_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_3)receive2_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_2)receive2_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_3 && REF_2)receive2_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	receive3_1E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if(REF_3)receive3_2E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if(REF_1)receive3_5E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_3 && REF_1)receive3_6E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + REF_1) + 2 * D1)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	receive4_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_3)receive4_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_2)receive4_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
+	if (REF_3 && REF_2)receive4_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2)*(BS_3 / (1 + REF_3)+ 2 * D3) , sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E2_corn6_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E2_corn7_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E2_corn8_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	receive_E1_corn9_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive_E1_corn10_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive_E1_corn11_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	receive_E1_corn12_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
+	receive5_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_2)receive5_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive5_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_2 && REF_1)receive5_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	receive6_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_2)receive6_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive6_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_2 && REF_1)receive6_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + REF_2)+ 2 * D2) *(BS_1 / (1 + REF_1) + 2 * D1), sizeof(double));
 	#endif
-	if (REF_3)receive_E3_corn1_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive_E3_corn2_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive_E3_corn3_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
-	if (REF_3)receive_E3_corn4_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3) + 2 * N3G), sizeof(double));
+	#endif
+	send_E3_corn1[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	send_E3_corn2[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	send_E3_corn3[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	send_E3_corn4[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
 	#if(N3G>0)
-	if (REF_2)receive_E2_corn5_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)receive_E2_corn6_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)receive_E2_corn7_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_2)receive_E2_corn8_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2) + 2 * N2G), sizeof(double));
-	if (REF_1)receive_E1_corn9_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive_E1_corn10_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive_E1_corn11_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
-	if (REF_1)receive_E1_corn12_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * N1G), sizeof(double));
+	send_E2_corn5[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	send_E2_corn6[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	send_E2_corn7[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	send_E2_corn8[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	send_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	send_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	send_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	send_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	#endif
+	receive_E3_corn1[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	receive_E3_corn2[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	receive_E3_corn3[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	receive_E3_corn4[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	receive_E2_corn5[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	receive_E2_corn6[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	receive_E2_corn7[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	receive_E2_corn8[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	receive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	#endif
+	tempreceive_E3_corn1[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	tempreceive_E3_corn2[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	tempreceive_E3_corn3[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	tempreceive_E3_corn4[nl[n]] = (double *)calloc((BS_3+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	tempreceive_E2_corn5[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	tempreceive_E2_corn6[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	tempreceive_E2_corn7[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	tempreceive_E2_corn8[nl[n]] = (double *)calloc((BS_2+ 2 * D2), sizeof(double));
+	tempreceive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	tempreceive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	tempreceive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	tempreceive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	receive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	receive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	receive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	receive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	receive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	receive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	receive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	receive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	#endif
+	if (REF_3)receive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)receive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)receive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)receive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	if (REF_2)receive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)receive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)receive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)receive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_1)receive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	#endif
+	tempreceive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	tempreceive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	tempreceive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	tempreceive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	tempreceive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	tempreceive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	tempreceive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	tempreceive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	tempreceive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	tempreceive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	tempreceive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	tempreceive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	#endif
+	if (REF_3)tempreceive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)tempreceive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)tempreceive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)tempreceive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	if (REF_2)tempreceive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)tempreceive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)tempreceive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)tempreceive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_1)tempreceive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)tempreceive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)tempreceive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1 / (1 + REF_1)+ 2 * D1), sizeof(double));
+	if (REF_1)tempreceive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	#endif
+	receive_E3_corn1_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	receive_E3_corn2_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	receive_E3_corn3_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	receive_E3_corn4_12[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	receive_E2_corn5_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E2_corn6_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E2_corn7_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E2_corn8_12[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	receive_E1_corn9_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	receive_E1_corn10_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	receive_E1_corn11_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	receive_E1_corn12_12[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	#endif
+	if (REF_3)receive_E3_corn1_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)receive_E3_corn2_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)receive_E3_corn3_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	if (REF_3)receive_E3_corn4_22[nl[n]] = (double *)calloc((BS_3/ (1 + REF_3)+ 2 * D3), sizeof(double));
+	#if(N3G>0)
+	if (REF_2)receive_E2_corn5_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)receive_E2_corn6_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)receive_E2_corn7_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_2)receive_E2_corn8_22[nl[n]] = (double *)calloc((BS_2/ (1 + REF_2)+ 2 * D2), sizeof(double));
+	if (REF_1)receive_E1_corn9_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive_E1_corn10_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive_E1_corn11_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
+	if (REF_1)receive_E1_corn12_22[nl[n]] = (double *)calloc((BS_1/ (1 + REF_1) + 2 * D1), sizeof(double));
 	#endif
 	#endif
 	#endif
@@ -870,24 +889,7 @@ void free_arrays(int n)
 	#if (ELLIPTICAL2)
 	free(dU_s[nl[n]]);
 	#endif
-	free(receive1[nl[n]]);
-	free(receive2[nl[n]]);
-	free(receive3[nl[n]]);
-	free(receive4[nl[n]]);
-	#if(N3G>0)
-	free(receive5[nl[n]]);
-	free(receive6[nl[n]]);
-	#endif
-	#if(PRESTEP || PRESTEP2)
-	free(tempreceive1[nl[n]]);
-	free(tempreceive2[nl[n]]);
-	free(tempreceive3[nl[n]]);
-	free(tempreceive4[nl[n]]);
-	#if(N3G>0)
-	free(tempreceive5[nl[n]]);
-	free(tempreceive6[nl[n]]);
-	#endif
-	#endif
+
 	free(send1[nl[n]]);
 	free(send2[nl[n]]);
 	free(send3[nl[n]]);
@@ -896,6 +898,7 @@ void free_arrays(int n)
 	free(send5[nl[n]]);
 	free(send6[nl[n]]);
 	#endif
+	#if(N_LEVELS>1)
 	free(send1_3[nl[n]]);
 	if (REF_3)free(send1_4[nl[n]]);
 	if (REF_1)free(send1_7[nl[n]]);
@@ -922,67 +925,25 @@ void free_arrays(int n)
 	if (REF_1)free(send6_6[nl[n]]);
 	if (REF_2 && REF_1)free(send6_8[nl[n]]);
 	#endif
-	free(receive1_3[nl[n]]);
-	if (REF_3)free(receive1_4[nl[n]]);
-	if (REF_1)free(receive1_7[nl[n]]);
-	if (REF_3 && REF_1)free(receive1_8[nl[n]]);
-	free(receive2_1[nl[n]]);
-	if (REF_3)free(receive2_2[nl[n]]);
-	if (REF_2)free(receive2_3[nl[n]]);
-	if (REF_3 && REF_2)free(receive2_4[nl[n]]);
-	free(receive3_1[nl[n]]);
-	if (REF_3)free(receive3_2[nl[n]]);
-	if (REF_1)free(receive3_5[nl[n]]);
-	if (REF_3 && REF_1)free(receive3_6[nl[n]]);
-	free(receive4_5[nl[n]]);
-	if (REF_3)free(receive4_6[nl[n]]);
-	if (REF_2)free(receive4_7[nl[n]]);
-	if (REF_3 && REF_2)free(receive4_8[nl[n]]);
-	#if(N3G>0)
-	free(receive5_1[nl[n]]);
-	if (REF_2)free(receive5_3[nl[n]]);
-	if (REF_1)free(receive5_5[nl[n]]);
-	if (REF_2 && REF_1)free(receive5_7[nl[n]]);
-	free(receive6_2[nl[n]]);
-	if (REF_2)free(receive6_4[nl[n]]);
-	if (REF_1)free(receive6_6[nl[n]]);
-	if (REF_2 && REF_1)free(receive6_8[nl[n]]);
 	#endif
-	#if(PRESTEP || PRESTEP2)
-	free(tempreceive1_3[nl[n]]);
-	if (REF_3)free(tempreceive1_4[nl[n]]);
-	if (REF_1)free(tempreceive1_7[nl[n]]);
-	if (REF_3 && REF_1)free(tempreceive1_8[nl[n]]);
-	free(tempreceive2_1[nl[n]]);
-	if (REF_3)free(tempreceive2_2[nl[n]]);
-	if (REF_2)free(tempreceive2_3[nl[n]]);
-	if (REF_3 && REF_2)free(tempreceive2_4[nl[n]]);
-	free(tempreceive3_1[nl[n]]);
-	if (REF_3)free(tempreceive3_2[nl[n]]);
-	if (REF_1)free(tempreceive3_5[nl[n]]);
-	if (REF_3 && REF_1)free(tempreceive3_6[nl[n]]);
-	free(tempreceive4_5[nl[n]]);
-	if (REF_3)free(tempreceive4_6[nl[n]]);
-	if (REF_2)free(tempreceive4_7[nl[n]]);
-	if (REF_3 && REF_2)free(tempreceive4_8[nl[n]]);
+	free(receive1[nl[n]]);
+	free(receive2[nl[n]]);
+	free(receive3[nl[n]]);
+	free(receive4[nl[n]]);
 	#if(N3G>0)
-	free(tempreceive5_1[nl[n]]);
-	if (REF_2)free(tempreceive5_3[nl[n]]);
-	if (REF_1)free(tempreceive5_5[nl[n]]);
-	if (REF_2 && REF_1)free(tempreceive5_7[nl[n]]);
-	free(tempreceive6_2[nl[n]]);
-	if (REF_2)free(tempreceive6_4[nl[n]]);
-	if (REF_1)free(tempreceive6_6[nl[n]]);
-	if (REF_2 && REF_1)free(tempreceive6_8[nl[n]]);
+	free(receive5[nl[n]]);
+	free(receive6[nl[n]]);
 	#endif
-	#endif
-	free(receive1_fine[nl[n]]);
-	free(receive2_fine[nl[n]]);
-	free(receive3_fine[nl[n]]);
-	free(receive4_fine[nl[n]]);
+	#if(PRESTEP==-100 || PRESTEP2==-100)
+	free(tempreceive1[nl[n]]);
+	free(tempreceive2[nl[n]]);
+	free(tempreceive3[nl[n]]);
+	free(tempreceive4[nl[n]]);
 	#if(N3G>0)
-	free(receive5_fine[nl[n]]);
-	free(receive6_fine[nl[n]]);
+	free(tempreceive5[nl[n]]);
+	free(tempreceive6[nl[n]]);
+	#endif
+	
 	#endif
 	free(send1_fine[nl[n]]);
 	free(send2_fine[nl[n]]);
@@ -992,97 +953,37 @@ void free_arrays(int n)
 	free(send5_fine[nl[n]]);
 	free(send6_fine[nl[n]]);
 	#endif
-	free(receive1_3fine[nl[n]]);
-	if (REF_3)free(receive1_4fine[nl[n]]);
-	if (REF_1)free(receive1_7fine[nl[n]]);
-	if (REF_3 && REF_1)free(receive1_8fine[nl[n]]);
-	free(receive2_1fine[nl[n]]);
-	if (REF_3)free(receive2_2fine[nl[n]]);
-	if (REF_2)free(receive2_3fine[nl[n]]);
-	if (REF_3 && REF_2)free(receive2_4fine[nl[n]]);
-	free(receive3_1fine[nl[n]]);
-	if (REF_3)free(receive3_2fine[nl[n]]);
-	if (REF_1)free(receive3_5fine[nl[n]]);
-	if (REF_3 && REF_1)free(receive3_6fine[nl[n]]);
-	free(receive4_5fine[nl[n]]);
-	if (REF_3)free(receive4_6fine[nl[n]]);
-	if (REF_2)free(receive4_7fine[nl[n]]);
-	if (REF_3 && REF_2)free(receive4_8fine[nl[n]]);
+	free(receive1_fine[nl[n]]);
+	free(receive2_fine[nl[n]]);
+	free(receive3_fine[nl[n]]);
+	free(receive4_fine[nl[n]]);
 	#if(N3G>0)
-	free(receive5_1fine[nl[n]]);
-	if (REF_2)free(receive5_3fine[nl[n]]);
-	if (REF_1)free(receive5_5fine[nl[n]]);
-	if (REF_2 && REF_1)free(receive5_7fine[nl[n]]);
-	free(receive6_2fine[nl[n]]);
-	if (REF_2)free(receive6_4fine[nl[n]]);
-	if (REF_1)free(receive6_6fine[nl[n]]);
-	if (REF_2 && REF_1)free(receive6_8fine[nl[n]]);
+	free(receive5_fine[nl[n]]);
+	free(receive6_fine[nl[n]]);
 	#endif
+	
 	#if(CPU_OPENMP)
+	free(send1_flux[nl[n]]);
+	free(send2_flux[nl[n]]);
+	free(send3_flux[nl[n]]);
+	free(send4_flux[nl[n]]);
+	#if(N3G>0)
+	free(send5_flux[nl[n]]);
+	free(send6_flux[nl[n]]);
+	#endif
+	#if(N_LEVELS>1)
 	free(receive1_flux[nl[n]]);
 	free(receive2_flux[nl[n]]);
 	free(receive3_flux[nl[n]]);
 	free(receive4_flux[nl[n]]);
 	free(receive5_flux[nl[n]]);
 	free(receive6_flux[nl[n]]);
-	free(receive1_3flux[nl[n]]);
-	if (REF_3)free(receive1_4flux[nl[n]]);
-	if (REF_1)free(receive1_7flux[nl[n]]);
-	if (REF_3 && REF_1)free(receive1_8flux[nl[n]]);
-	free(receive2_1flux[nl[n]]);
-	if (REF_3)free(receive2_2flux[nl[n]]);
-	if (REF_2)free(receive2_3flux[nl[n]]);
-	if (REF_3 && REF_2)free(receive2_4flux[nl[n]]);
-	free(receive3_1flux[nl[n]]);
-	if (REF_3)free(receive3_2flux[nl[n]]);
-	if (REF_1)free(receive3_5flux[nl[n]]);
-	if (REF_3 && REF_1)free(receive3_6flux[nl[n]]);
-	free(receive4_5flux[nl[n]]);
-	if (REF_3)free(receive4_6flux[nl[n]]);
-	if (REF_2)free(receive4_7flux[nl[n]]);
-	if (REF_3 && REF_2)free(receive4_8flux[nl[n]]);
-	#if(N3G>0)
-	free(receive5_1flux[nl[n]]);
-	if (REF_2)free(receive5_3flux[nl[n]]);
-	if (REF_1)free(receive5_5flux[nl[n]]);
-	if (REF_2 && REF_1)free(receive5_7flux[nl[n]]);
-	free(receive6_2flux[nl[n]]);
-	if (REF_2)free(receive6_4flux[nl[n]]);
-	if (REF_1)free(receive6_6flux[nl[n]]);
-	if (REF_2 && REF_1)free(receive6_8flux[nl[n]]);
-	#endif
 	free(receive1_flux1[nl[n]]);
 	free(receive2_flux1[nl[n]]);
 	free(receive3_flux1[nl[n]]);
 	free(receive4_flux1[nl[n]]);
 	free(receive5_flux1[nl[n]]);
 	free(receive6_flux1[nl[n]]);
-	free(receive1_3flux1[nl[n]]);
-	if (REF_3)free(receive1_4flux1[nl[n]]);
-	if (REF_1)free(receive1_7flux1[nl[n]]);
-	if (REF_3 && REF_1)free(receive1_8flux1[nl[n]]);
-	free(receive2_1flux1[nl[n]]);
-	if (REF_3)free(receive2_2flux1[nl[n]]);
-	if (REF_2)free(receive2_3flux1[nl[n]]);
-	if (REF_3 && REF_2)free(receive2_4flux1[nl[n]]);
-	free(receive3_1flux1[nl[n]]);
-	if (REF_3)free(receive3_2flux1[nl[n]]);
-	if (REF_1)free(receive3_5flux1[nl[n]]);
-	if (REF_3 && REF_1)free(receive3_6flux1[nl[n]]);
-	free(receive4_5flux1[nl[n]]);
-	if (REF_3)free(receive4_6flux1[nl[n]]);
-	if (REF_2)free(receive4_7flux1[nl[n]]);
-	if (REF_3 && REF_2)free(receive4_8flux1[nl[n]]);
-	#if(N3G>0)
-	free(receive5_1flux1[nl[n]]);
-	if (REF_2)free(receive5_3flux1[nl[n]]);
-	if (REF_1)free(receive5_5flux1[nl[n]]);
-	if (REF_2 && REF_1)free(receive5_7flux1[nl[n]]);
-	free(receive6_2flux1[nl[n]]);
-	if (REF_2)free(receive6_4flux1[nl[n]]);
-	if (REF_1)free(receive6_6flux1[nl[n]]);
-	if (REF_2 && REF_1)free(receive6_8flux1[nl[n]]);
-	#endif
 	free(receive1_3flux2[nl[n]]);
 	if (REF_3)free(receive1_4flux2[nl[n]]);
 	if (REF_1)free(receive1_7flux2[nl[n]]);
@@ -1109,78 +1010,28 @@ void free_arrays(int n)
 	if (REF_1)free(receive6_6flux2[nl[n]]);
 	if (REF_2 && REF_1)free(receive6_8flux2[nl[n]]);
 	#endif
-	free(send1_flux[nl[n]]);
-	free(send2_flux[nl[n]]);
-	free(send3_flux[nl[n]]);
-	free(send4_flux[nl[n]]);
-	#if(N3G>0)
-	free(send5_flux[nl[n]]);
-	free(send6_flux[nl[n]]);
 	#endif
+	free(send1_E[nl[n]]);
+	free(send2_E[nl[n]]);
+	free(send3_E[nl[n]]);
+	free(send4_E[nl[n]]);
+	#if(N3G>0)
+	free(send5_E[nl[n]]);
+	free(send6_E[nl[n]]);
+	#endif
+	#if(N_LEVELS>1)
 	free(receive1_E[nl[n]]);
 	free(receive2_E[nl[n]]);
 	free(receive3_E[nl[n]]);
 	free(receive4_E[nl[n]]);
 	free(receive5_E[nl[n]]);
 	free(receive6_E[nl[n]]);
-	free(receive1_3E[nl[n]]);
-	if (REF_3)free(receive1_4E[nl[n]]);
-	if (REF_1)free(receive1_7E[nl[n]]);
-	if (REF_3 && REF_1)free(receive1_8E[nl[n]]);
-	free(receive2_1E[nl[n]]);
-	if (REF_3)free(receive2_2E[nl[n]]);
-	if (REF_2)free(receive2_3E[nl[n]]);
-	if (REF_3 && REF_2)free(receive2_4E[nl[n]]);
-	free(receive3_1E[nl[n]]);
-	if (REF_3)free(receive3_2E[nl[n]]);
-	if (REF_1)free(receive3_5E[nl[n]]);
-	if (REF_3 && REF_1)free(receive3_6E[nl[n]]);
-	free(receive4_5E[nl[n]]);
-	if (REF_3)free(receive4_6E[nl[n]]);
-	if (REF_2)free(receive4_7E[nl[n]]);
-	if (REF_3 && REF_2)free(receive4_8E[nl[n]]);
-	#if(N3G>0)
-	free(receive5_1E[nl[n]]);
-	if (REF_2)free(receive5_3E[nl[n]]);
-	if (REF_1)free(receive5_5E[nl[n]]);
-	if (REF_2 && REF_1)free(receive5_7E[nl[n]]);
-	free(receive6_2E[nl[n]]);
-	if (REF_2)free(receive6_4E[nl[n]]);
-	if (REF_1)free(receive6_6E[nl[n]]);
-	if (REF_2 && REF_1)free(receive6_8E[nl[n]]);
-	#endif
 	free(receive1_E1[nl[n]]);
 	free(receive2_E1[nl[n]]);
 	free(receive3_E1[nl[n]]);
 	free(receive4_E1[nl[n]]);
 	free(receive5_E1[nl[n]]);
 	free(receive6_E1[nl[n]]);
-	free(receive1_3E1[nl[n]]);
-	if (REF_3)free(receive1_4E1[nl[n]]);
-	if (REF_1)free(receive1_7E1[nl[n]]);
-	if (REF_3 && REF_1)free(receive1_8E1[nl[n]]);
-	free(receive2_1E1[nl[n]]);
-	if (REF_3)free(receive2_2E1[nl[n]]);
-	if (REF_2)free(receive2_3E1[nl[n]]);
-	if (REF_3 && REF_2)free(receive2_4E1[nl[n]]);
-	free(receive3_1E1[nl[n]]);
-	if (REF_3)free(receive3_2E1[nl[n]]);
-	if (REF_1)free(receive3_5E1[nl[n]]);
-	if (REF_3 && REF_1)free(receive3_6E1[nl[n]]);
-	free(receive4_5E1[nl[n]]);
-	if (REF_3)free(receive4_6E1[nl[n]]);
-	if (REF_2)free(receive4_7E1[nl[n]]);
-	if (REF_3 && REF_2)free(receive4_8E1[nl[n]]);
-	#if(N3G>0)
-	free(receive5_1E1[nl[n]]);
-	if (REF_2)free(receive5_3E1[nl[n]]);
-	if (REF_1)free(receive5_5E1[nl[n]]);
-	if (REF_2 && REF_1)free(receive5_7E1[nl[n]]);
-	free(receive6_2E1[nl[n]]);
-	if (REF_2)free(receive6_4E1[nl[n]]);
-	if (REF_1)free(receive6_6E1[nl[n]]);
-	if (REF_2 && REF_1)free(receive6_8E1[nl[n]]);
-	#endif
 	free(receive1_3E2[nl[n]]);
 	if (REF_3)free(receive1_4E2[nl[n]]);
 	if (REF_1)free(receive1_7E2[nl[n]]);
@@ -1207,13 +1058,6 @@ void free_arrays(int n)
 	if (REF_1)free(receive6_6E2[nl[n]]);
 	if (REF_2 && REF_1)free(receive6_8E2[nl[n]]);
 	#endif
-	free(send1_E[nl[n]]);
-	free(send2_E[nl[n]]);
-	free(send3_E[nl[n]]);
-	free(send4_E[nl[n]]);
-	#if(N3G>0)
-	free(send5_E[nl[n]]);
-	free(send6_E[nl[n]]);
 	#endif
 	free(send_E3_corn1[nl[n]]);
 	free(send_E3_corn2[nl[n]]);
@@ -1243,6 +1087,7 @@ void free_arrays(int n)
 	free(receive_E1_corn11[nl[n]]);
 	free(receive_E1_corn12[nl[n]]);
 	#endif
+	#if(N_LEVELS>1)
 	free(receive_E3_corn1_1[nl[n]]);
 	free(receive_E3_corn2_1[nl[n]]);
 	free(receive_E3_corn3_1[nl[n]]);
@@ -1271,6 +1116,7 @@ void free_arrays(int n)
 	if(REF_1)free(receive_E1_corn11_2[nl[n]]);
 	if(REF_1)free(receive_E1_corn12_2[nl[n]]);
 	#endif
+	#endif
 	free(tempreceive_E3_corn1[nl[n]]);
 	free(tempreceive_E3_corn2[nl[n]]);
 	free(tempreceive_E3_corn3[nl[n]]);
@@ -1285,6 +1131,7 @@ void free_arrays(int n)
 	free(tempreceive_E1_corn11[nl[n]]);
 	free(tempreceive_E1_corn12[nl[n]]);
 	#endif
+	#if(N_LEVELS>1)
 	free(tempreceive_E3_corn1_1[nl[n]]);
 	free(tempreceive_E3_corn2_1[nl[n]]);
 	free(tempreceive_E3_corn3_1[nl[n]]);
@@ -1342,14 +1189,13 @@ void free_arrays(int n)
 	if(REF_1)free(receive_E1_corn12_22[nl[n]]);
 	#endif
 	#endif
-	//#endif
+	#endif
 	free(Katm[nl[n]]);
 	free(array[nl[n]]);
 	free(array_rdump[nl[n]]);
 	free(array_gdump1[nl[n]]);
 	free(array_gdump2[nl[n]]);
 	free(array_diag[nl[n]]);
-
 }
 
 

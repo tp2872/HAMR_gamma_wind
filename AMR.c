@@ -1356,7 +1356,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
 	//MPI_Barrier(mpi_cartcomm);
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 100){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 10000){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -1517,8 +1517,14 @@ void post_refine(void){
 
 	//Set boundary conditions
 	bound_prim(p, 1);
+	MPI_Barrier(mpi_cartcomm);
+	if (rank == 0)fprintf(stderr, "Bound CPU! \n");
+
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
+	MPI_Barrier(mpi_cartcomm);
+	if (rank == 0)fprintf(stderr, "Bound GPU! \n");
+
 	#endif
 }
 
@@ -1864,6 +1870,7 @@ int derefine_pole(void){
 			}
 		}
 		MPI_Barrier(mpi_cartcomm);
+		if (rank == 0)fprintf(stderr, "Before post refine \n", l);
 		post_refine();
 		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
 	}

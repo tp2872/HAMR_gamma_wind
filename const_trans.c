@@ -212,7 +212,7 @@ void E_average(void){
 			z_max = NB_3;
 			for (z = 0; z < z_max; z++){
 				number = AMR_coord_linear(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
-				for (i = 0; i < BS_1 + N1G; i++){
+				for (i = 0; i < BS_1 + D1; i++){
 					if (z == 0)E_avg1_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] = E_avg1[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
 					else E_avg1_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] += E_avg1[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
 				}
@@ -223,7 +223,7 @@ void E_average(void){
 			z_max = NB_3;
 			for (z = 0; z < z_max; z++){
 				number = AMR_coord_linear(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
-				for (i = 0; i < BS_1 + N1G; i++){
+				for (i = 0; i < BS_1 + D1; i++){
 					if (z == 0)E_avg2_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] = E_avg2[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
 					else E_avg2_new[block[n_ord[n]][AMR_COORD1] * NB_3 + block[n_ord[n]][AMR_COORD3]][i] += E_avg2[block[number][AMR_COORD1] * NB_3 + block[number][AMR_COORD3]][i] / ((double)z_max);
 				}
