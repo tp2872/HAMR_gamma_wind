@@ -76,17 +76,17 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
-#define NB_2 24
+#define NB_1 12
+#define NB_2 48
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 12
-#define BS_3 14
+#define BS_1 136
+#define BS_2 22
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 4
+#define N_LEVELS 5
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 0

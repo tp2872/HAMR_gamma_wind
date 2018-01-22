@@ -1356,7 +1356,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
 	//MPI_Barrier(mpi_cartcomm);
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 10000){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 100){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -1857,7 +1857,11 @@ int derefine_pole(void){
 	}
 	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
 	for (l = 0; l < N_LEVELS - 1; l++){
+		MPI_Barrier(mpi_cartcomm);
+		if (rank == 0)fprintf(stderr, "Before prerefine \n");
 		pre_refine();
+		MPI_Barrier(mpi_cartcomm);
+		if (rank == 0)fprintf(stderr, "After prerefine \n");
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
 		nz = NB_3*pow(1 + REF_3, l);
@@ -1870,9 +1874,13 @@ int derefine_pole(void){
 			}
 		}
 		MPI_Barrier(mpi_cartcomm);
-		if (rank == 0)fprintf(stderr, "Before post refine \n", l);
+		if (rank == 0)fprintf(stderr, "Before post refine \n");
 		post_refine();
 		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
+		balance_load();
+		#if(GPU_ENABLED)
+		balance_load_gpu();
+		#endif
 	}
 	balance_load();
 	#if(GPU_ENABLED)

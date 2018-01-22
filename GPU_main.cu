@@ -111,9 +111,7 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferV[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#endif
 	cudaMalloc(&Bufferradius[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
-	#if(PPM || LEER)
 	cudaMalloc(&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
-	#endif
 	cudaMalloc(&Bufferp_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferph_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#if(STAGGERED)
@@ -131,128 +129,138 @@ void set_arrays_GPU(int n, int device){
 	if (cudaSuccess != cudaGetLastError() ) fprintf(stderr, "Error in setting kernel arguments 3: %d \n", cudaGetLastError());
 	cudaHostAlloc(&dtij_GPU[nl[n]], (nr_workgroups[nl[n]] + 1)*sizeof(double), 0);
 	//cudaMalloc(&Bufferdtij[nl[n]], (nr_workgroups[nl[n]] + 1)*sizeof(double));
-	
 	#if(GPU_DIRECT)
+	//cudaMalloc(&NULL_POINTER[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	cudaMalloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend1_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_3)cudaMalloc(&Buffersend1_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_1)cudaMalloc(&Buffersend1_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_1 && REF_3)cudaMalloc(&Buffersend1_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend1_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend1_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend1_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
 	cudaMalloc(&Buffersend2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
+	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend2_1[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_3)cudaMalloc(&Buffersend2_2[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_2)cudaMalloc(&Buffersend2_3[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_2 && REF_3)cudaMalloc(&Buffersend2_4[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend2_2[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend2_3[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend2_4[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
 	cudaMalloc(&Buffersend3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend3_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_3)cudaMalloc(&Buffersend3_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_1)cudaMalloc(&Buffersend3_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_1 && REF_3)cudaMalloc(&Buffersend3_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend3_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend3_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend3_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
 	cudaMalloc(&Buffersend4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
+	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend4_5[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_3)cudaMalloc(&Buffersend4_6[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_2)cudaMalloc(&Buffersend4_7[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	if (REF_2 && REF_3)cudaMalloc(&Buffersend4_8[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend4_6[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend4_7[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Buffersend4_8[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#endif
 	#if(N3G>0)
 	cudaMalloc(&Buffersend5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
+	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend5_1[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
-	if (REF_2)cudaMalloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	if (REF_1)cudaMalloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	if (REF_1 && REF_2)cudaMalloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	cudaMalloc(&Buffersend6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
+	#if(N_LEVELS>1)
 	cudaMalloc(&Buffersend6_2[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
-	if (REF_2)cudaMalloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	if (REF_1)cudaMalloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	if (REF_1 && REF_2)cudaMalloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	#endif
-	cudaMalloc(&Bufferrec1[nl[n]], (1+REF_1)*(1+REF_3)* NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)*sizeof(double));
-	Bufferrec1_3[nl[n]]= Bufferrec1[nl[n]]; 
-	Bufferrec1_4[nl[n]]= Bufferrec1[nl[n]]+ REF_3*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
-	Bufferrec1_7[nl[n]]= Bufferrec1[nl[n]]+ (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
-	Bufferrec1_8[nl[n]] = Bufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaMalloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	Bufferrec2_1[nl[n]] = Bufferrec2[nl[n]];
-	Bufferrec2_2[nl[n]] = Bufferrec2[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec2_3[nl[n]] = Bufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec2_4[nl[n]] = Bufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaMalloc(&Bufferrec3[nl[n]], (1+REF_1)*(1+REF_3)* NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)*sizeof(double));
-	Bufferrec3_1[nl[n]]= Bufferrec3[nl[n]]; 
-	Bufferrec3_2[nl[n]]= Bufferrec3[nl[n]]+ REF_3*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
-	Bufferrec3_5[nl[n]]= Bufferrec3[nl[n]]+ (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
-	Bufferrec3_6[nl[n]] = Bufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaMalloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	Bufferrec4_5[nl[n]] = Bufferrec4[nl[n]];
-	Bufferrec4_6[nl[n]] = Bufferrec4[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec4_7[nl[n]] = Bufferrec4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec4_8[nl[n]] = Bufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	#if(N3G>0)
-	cudaMalloc(&Bufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	Bufferrec5_1[nl[n]] = Bufferrec5[nl[n]];
-	Bufferrec5_3[nl[n]] = Bufferrec5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec5_5[nl[n]] = Bufferrec5[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec5_7[nl[n]] = Bufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	cudaMalloc(&Bufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	Bufferrec6_2[nl[n]] = Bufferrec6[nl[n]];
-	Bufferrec6_4[nl[n]] = Bufferrec6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec6_6[nl[n]] = Bufferrec6[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec6_8[nl[n]] = Bufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	#endif
-	#if(PRESTEP || PRESTEP2)
-	cudaMalloc(&tempBufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
-	tempBufferrec1_3[nl[n]] = tempBufferrec1[nl[n]];
-	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&Bufferrec1_3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_4[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_7[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_8[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#endif
-	cudaMalloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
-	tempBufferrec2_1[nl[n]] = tempBufferrec2[nl[n]];
-	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&Bufferrec2_1[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_3[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#endif
-	cudaMalloc(&tempBufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
-	tempBufferrec3_1[nl[n]] = tempBufferrec3[nl[n]];
-	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&Bufferrec3_1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_2[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#endif
-	cudaMalloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
-	tempBufferrec4_5[nl[n]] = tempBufferrec4[nl[n]];
-	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&Bufferrec4_5[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_6[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_7[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_8[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#endif
 	#if(N3G>0)
-	cudaMalloc(&tempBufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
-	tempBufferrec5_1[nl[n]] = tempBufferrec5[nl[n]];
-	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	cudaMalloc(&Bufferrec5_1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_7[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#endif
-	cudaMalloc(&tempBufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
-	tempBufferrec6_2[nl[n]] = tempBufferrec6[nl[n]];
-	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	cudaMalloc(&Bufferrec6_2[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_4[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_8[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#endif
+	#endif
+	cudaMalloc(&tempBufferrec1[nl[n]], 2 * NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec1_3[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec1_4[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec1_7[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec1_8[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	#endif
+	cudaMalloc(&tempBufferrec2[nl[n]], 2 * NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec2_1[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec2_2[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec2_3[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec2_4[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	#endif
+	cudaMalloc(&tempBufferrec3[nl[n]], 2 * NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec3_1[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec3_2[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec3_5[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec3_6[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	#endif
+	cudaMalloc(&tempBufferrec4[nl[n]], 2 * NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
+	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec4_5[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec4_6[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec4_7[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec4_8[nl[n]], 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	#endif
+	#if(N3G>0)
+	cudaMalloc(&tempBufferrec5[nl[n]], 2 * NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec5_1[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec5_3[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec5_5[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec5_7[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	#endif
+	cudaMalloc(&tempBufferrec6[nl[n]], 2 * NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
+	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec6_2[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec6_4[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec6_6[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec6_8[nl[n]], 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	#endif
 	cudaMalloc(&Buffersend1flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double));
@@ -271,31 +279,33 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&Bufferrec5flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	cudaMalloc(&Bufferrec6flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	#endif
-	Bufferrec1_3flux[nl[n]] = Bufferrec1flux[nl[n]];
-	Bufferrec1_4flux[nl[n]] = Bufferrec1flux[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_7flux[nl[n]] = Bufferrec1flux[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_8flux[nl[n]] = Bufferrec1flux[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_1flux[nl[n]] = Bufferrec2flux[nl[n]];
-	Bufferrec2_2flux[nl[n]] = Bufferrec2flux[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_3flux[nl[n]] = Bufferrec2flux[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_4flux[nl[n]] = Bufferrec2flux[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_1flux[nl[n]] = Bufferrec3flux[nl[n]];
-	Bufferrec3_2flux[nl[n]] = Bufferrec3flux[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_5flux[nl[n]] = Bufferrec3flux[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_6flux[nl[n]] = Bufferrec3flux[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_5flux[nl[n]] = Bufferrec4flux[nl[n]];
-	Bufferrec4_6flux[nl[n]] = Bufferrec4flux[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_7flux[nl[n]] = Bufferrec4flux[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_8flux[nl[n]] = Bufferrec4flux[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
+	#if(N_LEVELS>1)
+	cudaMalloc(&Bufferrec1_3flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_4flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_7flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_8flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_1flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_2flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_3flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_4flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_1flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_2flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_5flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_6flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_5flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_6flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_7flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_8flux[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
 	#if(N3G>0)
-	Bufferrec5_1flux[nl[n]] = Bufferrec5flux[nl[n]];
-	Bufferrec5_3flux[nl[n]] = Bufferrec5flux[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_5flux[nl[n]] = Bufferrec5flux[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_7flux[nl[n]] = Bufferrec5flux[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_2flux[nl[n]] = Bufferrec6flux[nl[n]];
-	Bufferrec6_4flux[nl[n]] = Bufferrec6flux[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_6flux[nl[n]] = Bufferrec6flux[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_8flux[nl[n]] = Bufferrec6flux[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	cudaMalloc(&Bufferrec5_1flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_3flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_5flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_7flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_2flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_4flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_6flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_8flux[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	#endif
 	#endif
 	cudaMalloc(&Bufferrec1flux1[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double));
 	cudaMalloc(&Bufferrec2flux1[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double));
@@ -305,766 +315,851 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&Bufferrec5flux1[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	cudaMalloc(&Bufferrec6flux1[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	#endif
-	Bufferrec1_3flux1[nl[n]] = Bufferrec1flux1[nl[n]];
-	Bufferrec1_4flux1[nl[n]] = Bufferrec1flux1[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_7flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_8flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_1flux1[nl[n]] = Bufferrec2flux1[nl[n]];
-	Bufferrec2_2flux1[nl[n]] = Bufferrec2flux1[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_3flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_4flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_1flux1[nl[n]] = Bufferrec3flux1[nl[n]];
-	Bufferrec3_2flux1[nl[n]] = Bufferrec3flux1[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_5flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_6flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_5flux1[nl[n]] = Bufferrec4flux1[nl[n]];
-	Bufferrec4_6flux1[nl[n]] = Bufferrec4flux1[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_7flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_8flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	#if(N3G>0)
-	Bufferrec5_1flux1[nl[n]] = Bufferrec5flux1[nl[n]];
-	Bufferrec5_3flux1[nl[n]] = Bufferrec5flux1[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_5flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_7flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_2flux1[nl[n]] = Bufferrec6flux1[nl[n]];
-	Bufferrec6_4flux1[nl[n]] = Bufferrec6flux1[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_6flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_8flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	#endif
 	#if(N_LEVELS>1)
-	cudaMalloc(&Bufferrec1_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec1_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec1_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_1 && REF_3)cudaMalloc(&Bufferrec1_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	#if(!DEREFINE_POLE)
-	cudaMalloc(&Bufferrec2_1flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec2_2flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec2_3flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_2 && REF_3)cudaMalloc(&Bufferrec2_4flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	#endif
-	cudaMalloc(&Bufferrec3_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec3_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec3_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_1 && REF_3)cudaMalloc(&Bufferrec3_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
-	#if(!DEREFINE_POLE)
-	cudaMalloc(&Bufferrec4_5flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec4_6flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec4_7flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	if (REF_2 && REF_3)cudaMalloc(&Bufferrec4_8flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
-	#endif
+	cudaMalloc(&Bufferrec1_3flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_4flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_7flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_8flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_1flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_2flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_3flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_4flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_1flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_2flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_5flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_6flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_5flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_6flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_7flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_8flux1[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
-	cudaMalloc(&Bufferrec5_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec5_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec5_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	if (REF_1 && REF_2)cudaMalloc(&Bufferrec5_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	cudaMalloc(&Bufferrec6_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec6_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec6_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
-	if (REF_1 && REF_2)cudaMalloc(&Bufferrec6_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_1flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_3flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_5flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_7flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_2flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_4flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_6flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_8flux1[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
 	#endif
+	cudaMalloc(&Bufferrec1_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec1_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_1flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_2flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_3flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec2_4flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec3_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_5flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_6flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_7flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	cudaMalloc(&Bufferrec4_8flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec5_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
+	cudaMalloc(&Bufferrec6_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double));
 	#endif
 	#endif
 
 	cudaHostAlloc(&Buffersend1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Buffersend2fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
 	cudaHostAlloc(&Buffersend3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Buffersend4fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	//cudaHostAlloc(&Buffersend5fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	//cudaHostAlloc(&Buffersend6fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#endif
 	cudaHostAlloc(&Bufferrec1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Bufferrec2fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
 	cudaHostAlloc(&Bufferrec3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&Bufferrec4fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	//cudaHostAlloc(&Bufferrec5fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	//cudaHostAlloc(&Bufferrec6fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#endif
 
-	cudaMalloc(&Buffersend1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Buffersend2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Buffersend3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Buffersend4E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
+	/*#if(N_LEVELS>1)
+	cudaMalloc(&Bufferrec1_3fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_4fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_7fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec1_8fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_1fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_2fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_3fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2_4fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_1fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_2fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_5fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3_6fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_5fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_6fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_7fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4_8fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&Buffersend5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&Buffersend6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
+	cudaMalloc(&Bufferrec5_1fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_3fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_5fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec5_7fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_2fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_4fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_6fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6_8fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
-	cudaMalloc(&Bufferrec1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Bufferrec2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Bufferrec3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Bufferrec4E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
+	#endif*/
+	cudaMalloc(&Buffersend1E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Buffersend2E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Buffersend3E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Buffersend4E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&Bufferrec5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&Bufferrec6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
+	cudaMalloc(&Buffersend5E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&Buffersend6E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double));
 	#endif
-	Bufferrec1_3E[nl[n]] = Bufferrec1E[nl[n]];
-	Bufferrec1_4E[nl[n]] = Bufferrec1E[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_7E[nl[n]] = Bufferrec1E[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_8E[nl[n]] = Bufferrec1E[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_1E[nl[n]] = Bufferrec2E[nl[n]];
-	Bufferrec2_2E[nl[n]] = Bufferrec2E[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_3E[nl[n]] = Bufferrec2E[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_4E[nl[n]] = Bufferrec2E[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_1E[nl[n]] = Bufferrec3E[nl[n]];
-	Bufferrec3_2E[nl[n]] = Bufferrec3E[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_5E[nl[n]] = Bufferrec3E[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_6E[nl[n]] = Bufferrec3E[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_5E[nl[n]] = Bufferrec4E[nl[n]];
-	Bufferrec4_6E[nl[n]] = Bufferrec4E[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_7E[nl[n]] = Bufferrec4E[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_8E[nl[n]] = Bufferrec4E[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	cudaMalloc(&Bufferrec1E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double));
 	#if(N3G>0)
-	Bufferrec5_1E[nl[n]] = Bufferrec5E[nl[n]];
-	Bufferrec5_3E[nl[n]] = Bufferrec5E[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_5E[nl[n]] = Bufferrec5E[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_7E[nl[n]] = Bufferrec5E[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_2E[nl[n]] = Bufferrec6E[nl[n]];
-	Bufferrec6_4E[nl[n]] = Bufferrec6E[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	#endif
-	cudaMalloc(&Bufferrec1E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Bufferrec2E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Bufferrec3E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&Bufferrec4E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	#if(N3G>0)
-	cudaMalloc(&Bufferrec5E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&Bufferrec6E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	#endif
-	Bufferrec1_3E1[nl[n]] = Bufferrec1E1[nl[n]];
-	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_7E1[nl[n]] = Bufferrec1E1[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_8E1[nl[n]] = Bufferrec1E1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_1E1[nl[n]] = Bufferrec2E1[nl[n]];
-	Bufferrec2_2E1[nl[n]] = Bufferrec2E1[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_3E1[nl[n]] = Bufferrec2E1[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_4E1[nl[n]] = Bufferrec2E1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_1E1[nl[n]] = Bufferrec3E1[nl[n]];
-	Bufferrec3_2E1[nl[n]] = Bufferrec3E1[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_5E1[nl[n]] = Bufferrec3E1[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_6E1[nl[n]] = Bufferrec3E1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_5E1[nl[n]] = Bufferrec4E1[nl[n]];
-	Bufferrec4_6E1[nl[n]] = Bufferrec4E1[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_7E1[nl[n]] = Bufferrec4E1[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_8E1[nl[n]] = Bufferrec4E1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	#if(N3G>0)
-	Bufferrec5_1E1[nl[n]] = Bufferrec5E1[nl[n]];
-	Bufferrec5_3E1[nl[n]] = Bufferrec5E1[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_5E1[nl[n]] = Bufferrec5E1[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_7E1[nl[n]] = Bufferrec5E1[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_2E1[nl[n]] = Bufferrec6E1[nl[n]];
-	Bufferrec6_4E1[nl[n]] = Bufferrec6E1[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_6E1[nl[n]] = Bufferrec6E1[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_8E1[nl[n]] = Bufferrec6E1[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	cudaMalloc(&Bufferrec5E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	cudaMalloc(&Bufferrec1_3E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec1_4E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec1_7E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_1 && REF_3)cudaMalloc(&Bufferrec1_8E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	#if(!DEREFINE_POLE)
-	cudaMalloc(&Bufferrec2_1E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec2_2E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec2_3E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_2 && REF_3)cudaMalloc(&Bufferrec2_4E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_3E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_4E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_7E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_8E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_1E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_2E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_3E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_4E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_1E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_2E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_5E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_6E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_5E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_6E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_7E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_8E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5_1E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_3E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_5E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_7E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_2E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_4E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_6E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_8E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
 	#endif
-	cudaMalloc(&Bufferrec3_1E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec3_2E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec3_5E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_1 && REF_3)cudaMalloc(&Bufferrec3_6E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	#if(!DEREFINE_POLE)
-	cudaMalloc(&Bufferrec4_5E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&Bufferrec4_6E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec4_7E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_2 && REF_3)cudaMalloc(&Bufferrec4_8E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
+	#endif
+	cudaMalloc(&Bufferrec1E1[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec2E1[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec3E1[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&Bufferrec4E1[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5E1[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&Bufferrec6E1[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double));
+	#endif
+	#if(N_LEVELS>1)
+	cudaMalloc(&Bufferrec1_3E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_4E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_7E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_8E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_1E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_2E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_3E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_4E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_1E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_2E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_5E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_6E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_5E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_6E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_7E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_8E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5_1E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_3E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_5E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_7E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_2E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_4E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_6E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_8E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	#endif
+	cudaMalloc(&Bufferrec1_3E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_4E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_7E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec1_8E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_1E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_2E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_3E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec2_4E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_1E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_2E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_5E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec3_6E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_5E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_6E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_7E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&Bufferrec4_8E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	#if(N3G>0)
+	cudaMalloc(&Bufferrec5_1E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_3E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_5E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec5_7E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_2E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_4E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_6E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&Bufferrec6_8E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	#endif
 	#endif
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
-	cudaMalloc(&Bufferrec5_1E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec5_3E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec5_5E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_1 && REF_2)cudaMalloc(&Bufferrec5_7E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&Bufferrec6_2E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&Bufferrec6_4E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_1)cudaMalloc(&Bufferrec6_6E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_1 && REF_2)cudaMalloc(&Bufferrec6_8E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BuffersendE1corn9[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BuffersendE1corn10[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BuffersendE1corn11[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BuffersendE1corn12[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BuffersendE2corn5[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&BuffersendE2corn6[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&BuffersendE2corn7[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&BuffersendE2corn8[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
 	#endif
-	#endif
-	#endif
+	cudaMalloc(&BuffersendE3corn1[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&BuffersendE3corn2[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&BuffersendE3corn3[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&BuffersendE3corn4[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&BuffersendE1corn9[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BuffersendE1corn10[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BuffersendE1corn11[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BuffersendE1corn12[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BuffersendE2corn5[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&BuffersendE2corn6[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&BuffersendE2corn7[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&BuffersendE2corn8[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
+	cudaMalloc(&BufferrecE1corn9[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BufferrecE1corn10[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BufferrecE1corn11[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BufferrecE1corn12[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&BufferrecE2corn5[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&BufferrecE2corn6[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&BufferrecE2corn7[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&BufferrecE2corn8[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
 	#endif
-	cudaMalloc(&BuffersendE3corn1[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&BuffersendE3corn2[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&BuffersendE3corn3[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&BuffersendE3corn4[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	#if(N3G>0)
-	cudaMalloc(&BufferrecE1corn9[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn10[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn11[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BufferrecE1corn12[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn5[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn6[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn7[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&BufferrecE2corn8[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	#endif
-	cudaMalloc(&BufferrecE3corn1[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&BufferrecE3corn2[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&BufferrecE3corn3[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&BufferrecE3corn4[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
+	cudaMalloc(&BufferrecE3corn1[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&BufferrecE3corn2[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&BufferrecE3corn3[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&BufferrecE3corn4[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	cudaMalloc(&BufferrecE1corn9_3[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn9_7[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE1corn10_1[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn10_5[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE1corn11_2[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn11_6[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE1corn12_4[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn12_8[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn5_2[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn5_4[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn6_1[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn6_3[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn7_5[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn7_7[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn8_6[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn8_8[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn9_3[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn9_7[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn10_1[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn10_5[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn11_2[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn11_6[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn12_4[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn12_8[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn5_2[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn5_4[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn6_1[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn6_3[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn7_5[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn7_7[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn8_6[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn8_8[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
 	#endif
 	cudaMalloc(&BufferrecE3corn1_3[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn1_4[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn1_4[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	cudaMalloc(&BufferrecE3corn2_1[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn2_2[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn2_2[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	cudaMalloc(&BufferrecE3corn3_5[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn3_6[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn3_6[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	cudaMalloc(&BufferrecE3corn4_7[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn4_8[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn4_8[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	#endif
 	#if(N3G>0)
-	cudaMalloc(&tempBufferrecE1corn9[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&tempBufferrecE1corn10[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&tempBufferrecE1corn11[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&tempBufferrecE1corn12[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn5[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn6[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn7[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn8[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn9[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn10[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn11[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn12[nl[n]], 1 * (BS_1 + N1G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn5[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn6[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn7[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn8[nl[n]], 1 * (BS_2 + N2G)*sizeof(double));
 	#endif
-	cudaMalloc(&tempBufferrecE3corn1[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&tempBufferrecE3corn2[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&tempBufferrecE3corn3[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
-	cudaMalloc(&tempBufferrecE3corn4[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn1[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn2[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn3[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn4[nl[n]], 1 * (BS_3 + N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	cudaMalloc(&tempBufferrecE1corn9_3[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&tempBufferrecE1corn9_7[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&tempBufferrecE1corn10_1[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&tempBufferrecE1corn10_5[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&tempBufferrecE1corn11_2[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&tempBufferrecE1corn11_6[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&tempBufferrecE1corn12_4[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&tempBufferrecE1corn12_8[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn5_2[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&tempBufferrecE2corn5_4[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn6_1[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&tempBufferrecE2corn6_3[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn7_5[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&tempBufferrecE2corn7_7[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&tempBufferrecE2corn8_6[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&tempBufferrecE2corn8_8[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn9_3[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn9_7[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn10_1[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn10_5[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn11_2[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn11_6[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn12_4[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE1corn12_8[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn5_2[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn5_4[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn6_1[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn6_3[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn7_5[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn7_7[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn8_6[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&tempBufferrecE2corn8_8[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
 	#endif
-	cudaMalloc(&tempBufferrecE3corn1_3[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&tempBufferrecE3corn1_4[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	cudaMalloc(&tempBufferrecE3corn2_1[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&tempBufferrecE3corn2_2[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	cudaMalloc(&tempBufferrecE3corn3_5[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&tempBufferrecE3corn3_6[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	cudaMalloc(&tempBufferrecE3corn4_7[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&tempBufferrecE3corn4_8[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn1_3[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn1_4[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn2_1[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn2_2[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn3_5[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn3_6[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn4_7[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&tempBufferrecE3corn4_8[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	#if(N3G>0)
-	cudaMalloc(&BufferrecE1corn9_32[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn9_72[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE1corn10_12[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn10_52[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE1corn11_22[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn11_62[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE1corn12_42[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	if (REF_1)cudaMalloc(&BufferrecE1corn12_82[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn5_22[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn5_42[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn6_12[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn6_32[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn7_52[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn7_72[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	cudaMalloc(&BufferrecE2corn8_62[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
-	if (REF_2)cudaMalloc(&BufferrecE2corn8_82[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn9_32[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn9_72[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn10_12[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn10_52[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn11_22[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn11_62[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn12_42[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE1corn12_82[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn5_22[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn5_42[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn6_12[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn6_32[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn7_52[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn7_72[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn8_62[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
+	cudaMalloc(&BufferrecE2corn8_82[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double));
 	#endif
-	cudaMalloc(&BufferrecE3corn1_32[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn1_42[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	cudaMalloc(&BufferrecE3corn2_12[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn2_22[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	cudaMalloc(&BufferrecE3corn3_52[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn3_62[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	cudaMalloc(&BufferrecE3corn4_72[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
-	if (REF_3)cudaMalloc(&BufferrecE3corn4_82[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn1_32[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn1_42[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn2_12[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn2_22[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn3_52[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn3_62[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn4_72[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
+	cudaMalloc(&BufferrecE3corn4_82[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double));
 	#endif
 	#else
-	cudaHostAlloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	//cudaHostAlloc(&NULL_POINTER[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
 	#if(N_LEVELS>1)
-	cudaHostAlloc(&Buffersend1_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Buffersend1_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Buffersend1_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_1 && REF_3)cudaHostAlloc(&Buffersend1_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend1_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend1_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend1_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend1_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Buffersend2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
-	cudaHostAlloc(&Buffersend2_1[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Buffersend2_2[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Buffersend2_3[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_2 && REF_3)cudaHostAlloc(&Buffersend2_4[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	#endif
-	cudaHostAlloc(&Buffersend3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
 	#if(N_LEVELS>1)
-	cudaHostAlloc(&Buffersend3_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Buffersend3_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Buffersend3_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_1 && REF_3)cudaHostAlloc(&Buffersend3_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend2_1[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend2_2[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend2_3[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend2_4[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Buffersend4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
-	cudaHostAlloc(&Buffersend4_5[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Buffersend4_6[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Buffersend4_7[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	if (REF_2 && REF_3)cudaHostAlloc(&Buffersend4_8[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Buffersend3_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Buffersend4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Buffersend4_5[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend4_6[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend4_7[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend4_8[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
 	#endif
 	#if(N3G>0)
-	cudaHostAlloc(&Buffersend5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double), 0);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
-	cudaHostAlloc(&Buffersend5_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	if (REF_1 && REF_2)cudaHostAlloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Buffersend5_1[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Buffersend6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double), 0);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
-	cudaHostAlloc(&Buffersend6_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	if (REF_1 && REF_2)cudaHostAlloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Buffersend6_2[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double),0);
 	#endif
 	#endif
-	cudaHostAlloc(&Bufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	Bufferrec1_3[nl[n]] = Bufferrec1[nl[n]];
-	Bufferrec1_4[nl[n]] = Bufferrec1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec1_7[nl[n]] = Bufferrec1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec1_8[nl[n]] = Bufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaHostAlloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	Bufferrec2_1[nl[n]] = Bufferrec2[nl[n]];
-	Bufferrec2_2[nl[n]] = Bufferrec2[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec2_3[nl[n]] = Bufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec2_4[nl[n]] = Bufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaHostAlloc(&Bufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	Bufferrec3_1[nl[n]] = Bufferrec3[nl[n]];
-	Bufferrec3_2[nl[n]] = Bufferrec3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec3_5[nl[n]] = Bufferrec3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec3_6[nl[n]] = Bufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaHostAlloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	Bufferrec4_5[nl[n]] = Bufferrec4[nl[n]];
-	Bufferrec4_6[nl[n]] = Bufferrec4[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec4_7[nl[n]] = Bufferrec4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	Bufferrec4_8[nl[n]] = Bufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaHostAlloc(&Bufferrec1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec1_3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Bufferrec2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec2_1[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Bufferrec3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec3_1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Bufferrec4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec4_5[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#endif
 	#if(N3G>0)
-	cudaHostAlloc(&Bufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	Bufferrec5_1[nl[n]] = Bufferrec5[nl[n]];
-	Bufferrec5_3[nl[n]] = Bufferrec5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec5_5[nl[n]] = Bufferrec5[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec5_7[nl[n]] = Bufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	cudaHostAlloc(&Bufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	Bufferrec6_2[nl[n]] = Bufferrec6[nl[n]];
-	Bufferrec6_4[nl[n]] = Bufferrec6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec6_6[nl[n]] = Bufferrec6[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	Bufferrec6_8[nl[n]] = Bufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	cudaHostAlloc(&Bufferrec5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec5_1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
 	#endif
-	#if(PRESTEP || PRESTEP2)
-	cudaHostAlloc(&tempBufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	tempBufferrec1_3[nl[n]] = tempBufferrec1[nl[n]];
-	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaHostAlloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	tempBufferrec2_1[nl[n]] = tempBufferrec2[nl[n]];
-	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaHostAlloc(&tempBufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	tempBufferrec3_1[nl[n]] = tempBufferrec3[nl[n]];
-	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaHostAlloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double), 0);
-	tempBufferrec4_5[nl[n]] = tempBufferrec4[nl[n]];
-	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaHostAlloc(&Bufferrec6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec6_2[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#endif
+	#endif
+	cudaHostAlloc(&tempBufferrec1[nl[n]], 2*NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&tempBufferrec1_3[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec1_4[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec1_7[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec1_8[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&tempBufferrec2[nl[n]], 2*NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&tempBufferrec2_1[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec2_2[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec2_3[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec2_4[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&tempBufferrec3[nl[n]], 2*NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&tempBufferrec3_1[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec3_2[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec3_5[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec3_6[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&tempBufferrec4[nl[n]], 2*NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&tempBufferrec4_5[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec4_6[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec4_7[nl[n]], 2*NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec4_8[nl[n]],2* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#endif
 	#if(N3G>0)
-	cudaHostAlloc(&tempBufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	tempBufferrec5_1[nl[n]] = tempBufferrec5[nl[n]];
-	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	cudaHostAlloc(&tempBufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double), 0);
-	tempBufferrec6_2[nl[n]] = tempBufferrec6[nl[n]];
-	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	cudaHostAlloc(&tempBufferrec5[nl[n]], 2*NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&tempBufferrec5_1[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec5_3[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec5_5[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec5_7[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&tempBufferrec6[nl[n]], 2*NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&tempBufferrec6_2[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec6_4[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec6_6[nl[n]], 2*NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrec6_8[nl[n]], 2* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
 	#endif
 	#endif
-	cudaHostAlloc(&Buffersend1flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend2flux[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend3flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend4flux[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend1flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend2flux[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend4flux[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
-	cudaHostAlloc(&Buffersend5flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend6flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend5flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend6flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Bufferrec1flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec2flux[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec3flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec4flux[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double), 0);
+	cudaHostAlloc(&Bufferrec1flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2flux[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4flux[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
-	cudaHostAlloc(&Bufferrec5flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec6flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double), 0);
-	#endif
-	Bufferrec1_3flux[nl[n]] = Bufferrec1flux[nl[n]];
-	Bufferrec1_4flux[nl[n]] = Bufferrec1flux[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_7flux[nl[n]] = Bufferrec1flux[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_8flux[nl[n]] = Bufferrec1flux[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_1flux[nl[n]] = Bufferrec2flux[nl[n]];
-	Bufferrec2_2flux[nl[n]] = Bufferrec2flux[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_3flux[nl[n]] = Bufferrec2flux[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_4flux[nl[n]] = Bufferrec2flux[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_1flux[nl[n]] = Bufferrec3flux[nl[n]];
-	Bufferrec3_2flux[nl[n]] = Bufferrec3flux[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_5flux[nl[n]] = Bufferrec3flux[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_6flux[nl[n]] = Bufferrec3flux[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_5flux[nl[n]] = Bufferrec4flux[nl[n]];
-	Bufferrec4_6flux[nl[n]] = Bufferrec4flux[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_7flux[nl[n]] = Bufferrec4flux[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_8flux[nl[n]] = Bufferrec4flux[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	#if(N3G>0)
-	Bufferrec5_1flux[nl[n]] = Bufferrec5flux[nl[n]];
-	Bufferrec5_3flux[nl[n]] = Bufferrec5flux[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_5flux[nl[n]] = Bufferrec5flux[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_7flux[nl[n]] = Bufferrec5flux[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_2flux[nl[n]] = Bufferrec6flux[nl[n]];
-	Bufferrec6_4flux[nl[n]] = Bufferrec6flux[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_6flux[nl[n]] = Bufferrec6flux[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_8flux[nl[n]] = Bufferrec6flux[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	#endif
-	cudaHostAlloc(&Bufferrec1flux1[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec2flux1[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec3flux1[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec4flux1[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double), 0);
-	#if(N3G>0)
-	cudaHostAlloc(&Bufferrec5flux1[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec6flux1[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double), 0);
-	#endif
-	Bufferrec1_3flux1[nl[n]] = Bufferrec1flux1[nl[n]];
-	Bufferrec1_4flux1[nl[n]] = Bufferrec1flux1[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_7flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec1_8flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_1flux1[nl[n]] = Bufferrec2flux1[nl[n]];
-	Bufferrec2_2flux1[nl[n]] = Bufferrec2flux1[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_3flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec2_4flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_1flux1[nl[n]] = Bufferrec3flux1[nl[n]];
-	Bufferrec3_2flux1[nl[n]] = Bufferrec3flux1[nl[n]] + REF_3*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_5flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (REF_3 + REF_1)*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec3_6flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_5flux1[nl[n]] = Bufferrec4flux1[nl[n]];
-	Bufferrec4_6flux1[nl[n]] = Bufferrec4flux1[nl[n]] + REF_3*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_7flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (REF_3 + REF_2)*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	Bufferrec4_8flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3)));
-	#if(N3G>0)
-	Bufferrec5_1flux1[nl[n]] = Bufferrec5flux1[nl[n]];
-	Bufferrec5_3flux1[nl[n]] = Bufferrec5flux1[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_5flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec5_7flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_2flux1[nl[n]] = Bufferrec6flux1[nl[n]];
-	Bufferrec6_4flux1[nl[n]] = Bufferrec6flux1[nl[n]] + REF_2*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_6flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (REF_2 + REF_1)*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
-	Bufferrec6_8flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NPR*(BS_2 / (1 + REF_2))*(BS_1 / (1 + REF_1)));
+	cudaHostAlloc(&Bufferrec5flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6flux[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
 	#endif
 	#if(N_LEVELS>1)
-	cudaHostAlloc(&Bufferrec1_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec1_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec1_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_1 && REF_3)cudaHostAlloc(&Bufferrec1_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	#if(!DEREFINE_POLE)
-	cudaHostAlloc(&Bufferrec2_1flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec2_2flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec2_3flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_2 && REF_3)cudaHostAlloc(&Bufferrec2_4flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	#endif
-	cudaHostAlloc(&Bufferrec3_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec3_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec3_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_1 && REF_3)cudaHostAlloc(&Bufferrec3_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	#if(!DEREFINE_POLE)
-	cudaHostAlloc(&Bufferrec4_5flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec4_6flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec4_7flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	if (REF_2 && REF_3)cudaHostAlloc(&Bufferrec4_8flux2[nl[n]], NPR*(BS_2 / (1 + REF_2))*(BS_3 / (1 + REF_3))*sizeof(double), 0);
-	#endif
+	cudaHostAlloc(&Bufferrec1_3flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8flux[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
-	cudaHostAlloc(&Bufferrec5_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec5_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec5_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	if (REF_1 && REF_2)cudaHostAlloc(&Bufferrec5_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec6_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec6_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec6_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
-	if (REF_1 && REF_2)cudaHostAlloc(&Bufferrec6_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1))*(BS_2 / (1 + REF_2))*sizeof(double), 0);
+	cudaHostAlloc(&Bufferrec5_1flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8flux[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
 	#endif
+	#endif
+	cudaHostAlloc(&Bufferrec1flux1[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2flux1[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3flux1[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4flux1[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5flux1[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6flux1[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec1_3flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8flux1[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5_1flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8flux1[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Bufferrec1_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8flux2[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5_1flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8flux2[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
 	#endif
 	#endif
 
-	cudaHostAlloc(&Buffersend1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
+	cudaHostAlloc(&Buffersend1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend2fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend4fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Buffersend5fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend6fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Bufferrec1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4fine[nl[n]], NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double),0);
+	#endif
 
-	cudaHostAlloc(&Buffersend1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend4E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double), 0);
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec1_3fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8fine[nl[n]], NPR*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double),0);
 	#if(N3G>0)
-	cudaHostAlloc(&Buffersend5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double), 0);
+	cudaHostAlloc(&Bufferrec5_1fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8fine[nl[n]], NPR*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Bufferrec1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec4E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	#if(N3G>0)
-	cudaHostAlloc(&Bufferrec5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double), 0);
 	#endif
-	Bufferrec1_3E[nl[n]] = Bufferrec1E[nl[n]];
-	Bufferrec1_4E[nl[n]] = Bufferrec1E[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_7E[nl[n]] = Bufferrec1E[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_8E[nl[n]] = Bufferrec1E[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_1E[nl[n]] = Bufferrec2E[nl[n]];
-	Bufferrec2_2E[nl[n]] = Bufferrec2E[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_3E[nl[n]] = Bufferrec2E[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_4E[nl[n]] = Bufferrec2E[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_1E[nl[n]] = Bufferrec3E[nl[n]];
-	Bufferrec3_2E[nl[n]] = Bufferrec3E[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_5E[nl[n]] = Bufferrec3E[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_6E[nl[n]] = Bufferrec3E[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_5E[nl[n]] = Bufferrec4E[nl[n]];
-	Bufferrec4_6E[nl[n]] = Bufferrec4E[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_7E[nl[n]] = Bufferrec4E[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_8E[nl[n]] = Bufferrec4E[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
+	cudaHostAlloc(&Buffersend1E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend2E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend3E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend4E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double),0);
 	#if(N3G>0)
-	Bufferrec5_1E[nl[n]] = Bufferrec5E[nl[n]];
-	Bufferrec5_3E[nl[n]] = Bufferrec5E[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_5E[nl[n]] = Bufferrec5E[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_7E[nl[n]] = Bufferrec5E[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_2E[nl[n]] = Bufferrec6E[nl[n]];
-	Bufferrec6_4E[nl[n]] = Bufferrec6E[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	cudaHostAlloc(&Buffersend5E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&Buffersend6E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Bufferrec1E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec2E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec3E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec4E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double), 0);
+	cudaHostAlloc(&Bufferrec1E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3E[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4E[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double),0);
 	#if(N3G>0)
-	cudaHostAlloc(&Bufferrec5E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec6E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double), 0);
-	#endif
-	Bufferrec1_3E1[nl[n]] = Bufferrec1E1[nl[n]];
-	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_7E1[nl[n]] = Bufferrec1E1[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec1_8E1[nl[n]] = Bufferrec1E1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_1E1[nl[n]] = Bufferrec2E1[nl[n]];
-	Bufferrec2_2E1[nl[n]] = Bufferrec2E1[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_3E1[nl[n]] = Bufferrec2E1[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec2_4E1[nl[n]] = Bufferrec2E1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_1E1[nl[n]] = Bufferrec3E1[nl[n]];
-	Bufferrec3_2E1[nl[n]] = Bufferrec3E1[nl[n]] + REF_3*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_5E1[nl[n]] = Bufferrec3E1[nl[n]] + (REF_3 + REF_1)*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec3_6E1[nl[n]] = Bufferrec3E1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * ((BS_1 + 2 * D1) / (1 + REF_1))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_5E1[nl[n]] = Bufferrec4E1[nl[n]];
-	Bufferrec4_6E1[nl[n]] = Bufferrec4E1[nl[n]] + REF_3*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_7E1[nl[n]] = Bufferrec4E1[nl[n]] + (REF_3 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	Bufferrec4_8E1[nl[n]] = Bufferrec4E1[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_3 + 2 * D3) / (1 + REF_3)));
-	#if(N3G>0)
-	Bufferrec5_1E1[nl[n]] = Bufferrec5E1[nl[n]];
-	Bufferrec5_3E1[nl[n]] = Bufferrec5E1[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_5E1[nl[n]] = Bufferrec5E1[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec5_7E1[nl[n]] = Bufferrec5E1[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_2E1[nl[n]] = Bufferrec6E1[nl[n]];
-	Bufferrec6_4E1[nl[n]] = Bufferrec6E1[nl[n]] + REF_1*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_6E1[nl[n]] = Bufferrec6E1[nl[n]] + (REF_1 + REF_2)*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
-	Bufferrec6_8E1[nl[n]] = Bufferrec6E1[nl[n]] + (REF_1 + REF_2 + (REF_1 && REF_2))*(2 * ((BS_2 + 2 * D2) / (1 + REF_2))*((BS_1 + 2 * D1) / (1 + REF_1)));
+	cudaHostAlloc(&Bufferrec5E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6E[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double),0);
 	#endif
 	#if(N_LEVELS>1)
-	cudaHostAlloc(&Bufferrec1_3E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec1_4E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec1_7E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_1 && REF_3)cudaHostAlloc(&Bufferrec1_8E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	#if(!DEREFINE_POLE)
-	cudaHostAlloc(&Bufferrec2_1E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec2_2E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec2_3E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_2 && REF_3)cudaHostAlloc(&Bufferrec2_4E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
+	cudaHostAlloc(&Bufferrec1_3E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8E[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5_1E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8E[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
 	#endif
-	cudaHostAlloc(&Bufferrec3_1E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec3_2E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec3_5E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_1 && REF_3)cudaHostAlloc(&Bufferrec3_6E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	#if(!DEREFINE_POLE)
-	cudaHostAlloc(&Bufferrec4_5E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&Bufferrec4_6E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec4_7E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_2 && REF_3)cudaHostAlloc(&Bufferrec4_8E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + REF_2) *(BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
+	#endif
+	cudaHostAlloc(&Bufferrec1E1[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2E1[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3E1[nl[n]], 2 * (BS_1 + N1G)*(BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4E1[nl[n]], 2 * (BS_2 + N2G)*(BS_3 + N3G)*sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5E1[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6E1[nl[n]], 2 * (BS_1 + N1G)*(BS_2 + N2G)*sizeof(double),0);
+	#endif
+	#if(N_LEVELS>1)
+	cudaHostAlloc(&Bufferrec1_3E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8E1[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5_1E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8E1[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	#endif
+	cudaHostAlloc(&Bufferrec1_3E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_4E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_7E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec1_8E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_1E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_2E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_3E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec2_4E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_1E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_2E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_5E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec3_6E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_5E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_6E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_7E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec4_8E2[nl[n]], 2 * (BS_2 + N2G) / (1 + REF_2) *(BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	#if(N3G>0)
+	cudaHostAlloc(&Bufferrec5_1E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_3E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_5E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec5_7E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_2E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_4E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_6E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&Bufferrec6_8E2[nl[n]], 2 * (BS_1 + N1G) / (1 + REF_1) *(BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	#endif
 	#endif
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
-	cudaHostAlloc(&Bufferrec5_1E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec5_3E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec5_5E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_1 && REF_2)cudaHostAlloc(&Bufferrec5_7E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec6_2E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&Bufferrec6_4E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&Bufferrec6_6E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_1 && REF_2)cudaHostAlloc(&Bufferrec6_8E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + REF_1) *(BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
+	cudaHostAlloc(&BuffersendE1corn9[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE1corn10[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE1corn11[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE1corn12[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE2corn5[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE2corn6[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE2corn7[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE2corn8[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
 	#endif
-	#endif
-	#endif
+	cudaHostAlloc(&BuffersendE3corn1[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE3corn2[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE3corn3[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&BuffersendE3corn4[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
 	#if(N3G>0)
-	cudaHostAlloc(&BuffersendE1corn9[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE1corn10[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE1corn11[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE1corn12[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE2corn5[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE2corn6[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE2corn7[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE2corn8[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
+	cudaHostAlloc(&BufferrecE1corn9[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn10[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn11[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn12[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn5[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn6[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn7[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn8[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&BuffersendE3corn1[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE3corn2[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE3corn3[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&BuffersendE3corn4[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	#if(N3G>0)
-	cudaHostAlloc(&BufferrecE1corn9[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn10[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn11[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn12[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn5[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn6[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn7[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn8[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	#endif
-	cudaHostAlloc(&BufferrecE3corn1[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn2[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn3[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn4[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
+	cudaHostAlloc(&BufferrecE3corn1[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn2[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn3[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn4[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	cudaHostAlloc(&BufferrecE1corn9_3[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn9_7[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn10_1[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn10_5[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn11_2[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn11_6[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn12_4[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn12_8[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn5_2[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn5_4[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn6_1[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn6_3[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn7_5[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn7_7[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn8_6[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn8_8[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
+	cudaHostAlloc(&BufferrecE1corn9_3[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn9_7[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn10_1[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn10_5[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn11_2[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn11_6[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn12_4[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn12_8[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn5_2[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn5_4[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn6_1[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn6_3[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn7_5[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn7_7[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn8_6[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn8_8[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
 	#endif
-	cudaHostAlloc(&BufferrecE3corn1_3[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn1_4[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn2_1[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn2_2[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn3_5[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn3_6[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn4_7[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn4_8[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double), 0);
+	cudaHostAlloc(&BufferrecE3corn1_3[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn1_4[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn2_1[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn2_2[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn3_5[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn3_6[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn4_7[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn4_8[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
 	#endif
 	#if(N3G>0)
-	cudaHostAlloc(&tempBufferrecE1corn9[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE1corn10[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE1corn11[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE1corn12[nl[n]], 1 * (BS_1 + 2 * D1)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn5[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn6[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn7[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn8[nl[n]], 1 * (BS_2 + 2 * D2)*sizeof(double), 0);
+	cudaHostAlloc(&tempBufferrecE1corn9[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn10[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn11[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn12[nl[n]], 1 * (BS_1 + N1G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn5[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn6[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn7[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn8[nl[n]], 1 * (BS_2 + N2G)*sizeof(double),0);
 	#endif
-	cudaHostAlloc(&tempBufferrecE3corn1[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE3corn2[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE3corn3[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE3corn4[nl[n]], 1 * (BS_3 + 2 * D3)*sizeof(double), 0);
+	cudaHostAlloc(&tempBufferrecE3corn1[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn2[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn3[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn4[nl[n]], 1 * (BS_3 + N3G)*sizeof(double),0);
 	#if(N_LEVELS>1)
 	#if(N3G>0)
-	cudaHostAlloc(&tempBufferrecE1corn9_3[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&tempBufferrecE1corn9_7[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE1corn10_1[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&tempBufferrecE1corn10_5[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE1corn11_2[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&tempBufferrecE1corn11_6[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE1corn12_4[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&tempBufferrecE1corn12_8[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn5_2[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&tempBufferrecE2corn5_4[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn6_1[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&tempBufferrecE2corn6_3[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn7_5[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&tempBufferrecE2corn7_7[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE2corn8_6[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&tempBufferrecE2corn8_8[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
+	cudaHostAlloc(&tempBufferrecE1corn9_3[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn9_7[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn10_1[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn10_5[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn11_2[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn11_6[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn12_4[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE1corn12_8[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn5_2[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn5_4[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn6_1[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn6_3[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn7_5[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn7_7[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn8_6[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE2corn8_8[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
 	#endif
-	cudaHostAlloc(&tempBufferrecE3corn1_3[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&tempBufferrecE3corn1_4[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE3corn2_1[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&tempBufferrecE3corn2_2[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE3corn3_5[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&tempBufferrecE3corn3_6[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&tempBufferrecE3corn4_7[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&tempBufferrecE3corn4_8[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
+	cudaHostAlloc(&tempBufferrecE3corn1_3[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn1_4[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn2_1[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn2_2[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn3_5[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn3_6[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn4_7[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&tempBufferrecE3corn4_8[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
 	#if(N3G>0)
-	cudaHostAlloc(&BufferrecE1corn9_32[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn9_72[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn10_12[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn10_52[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn11_22[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn11_62[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE1corn12_42[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	if (REF_1)cudaHostAlloc(&BufferrecE1corn12_82[nl[n]], 1 * (BS_1 + 2 * D1) / (1 + REF_1) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn5_22[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn5_42[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn6_12[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn6_32[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn7_52[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn7_72[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE2corn8_62[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
-	if (REF_2)cudaHostAlloc(&BufferrecE2corn8_82[nl[n]], 1 * (BS_2 + 2 * D2) / (1 + REF_2) *sizeof(double), 0);
+	cudaHostAlloc(&BufferrecE1corn9_32[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn9_72[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn10_12[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn10_52[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn11_22[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn11_62[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn12_42[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE1corn12_82[nl[n]], 1 * (BS_1 + N1G) / (1 + REF_1) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn5_22[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn5_42[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn6_12[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn6_32[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn7_52[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn7_72[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn8_62[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE2corn8_82[nl[n]], 1 * (BS_2 + N2G) / (1 + REF_2) *sizeof(double),0);
 	#endif
-	cudaHostAlloc(&BufferrecE3corn1_32[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn1_42[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn2_12[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn2_22[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn3_52[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn3_62[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	cudaHostAlloc(&BufferrecE3corn4_72[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
-	if (REF_3)cudaHostAlloc(&BufferrecE3corn4_82[nl[n]], 1 * (BS_3 + 2 * D3) / (1 + REF_3) *sizeof(double), 0);
+	cudaHostAlloc(&BufferrecE3corn1_32[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn1_42[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn2_12[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn2_22[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn3_52[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn3_62[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn4_72[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
+	cudaHostAlloc(&BufferrecE3corn4_82[nl[n]], 1 * (BS_3 + N3G) / (1 + REF_3) *sizeof(double),0);
 	#endif
 	#endif
 	status = cudaGetLastError();
@@ -1181,7 +1276,8 @@ void GPU_write(int n)
 	#else
 	#endif
 
-	//cudaDeviceSynchronize();
+
+	cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error in GPU_write: %d \n", status);
 }
@@ -1489,10 +1585,10 @@ void GPU_consttransport1(int flag, double Dt, int n){
 	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
-		 consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferdq_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+		 consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferstorage1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
 	}
 	else{
-		consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferdq_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+		 consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferstorage1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -1506,11 +1602,11 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	//cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
-		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferdq_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+		 consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], 
 			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
 	}
 	else{
-		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferdq_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+		 consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], 
 			Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
 	}
 	//cudaDeviceSynchronize();
@@ -1668,7 +1764,6 @@ void GPU_boundprim(int bound_force)
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
 	}
-
 	#if(!TRANS_BOUND)
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1777,13 +1872,7 @@ void GPU_boundprim(int bound_force)
 		}
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
-	#if(TRANS_BOUND && NB_3==1)
-	for (n = 0; n < n_active; n++){
-		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim_trans(1, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim_trans(0, n_ord[n]);
-	}
-	#endif
+	
 	//MPI communication
 	mpi_synch();
 
@@ -1818,21 +1907,6 @@ void GPU_boundprim2(int flag, int n)
 		}
 		else{
 			 boundprim2 << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1], block[n][AMR_NBR3], Bufferps_1[nl[n]]);
-		}
-		//cudaDeviceSynchronize();
-		status = cudaGetLastError();
-		if (cudaSuccess != status) fprintf(stderr, "Error boundprim2.1 %d\n", status);
-	}
-}
-
-void GPU_boundprim_trans(int flag, int n)
-{
-	if (block[n][AMR_POLE] != 0 ){
-		if (flag == 0){
-			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferpsh_1[nl[n]]);
-		}
-		else{
-			boundprim_trans << < nr_workgroups_special2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Buffergdet[nl[n]], block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3, block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3, Bufferps_1[nl[n]]);
 		}
 		//cudaDeviceSynchronize();
 		status = cudaGetLastError();
@@ -1922,9 +1996,7 @@ void GPU_finish(int n)
 	status += cudaFree(BufferV[nl[n]]);
 	#endif
 	status += cudaFree(Bufferradius[nl[n]]);
-	#if(PPM || LEER)
 	status += cudaFree(Bufferstorage1[nl[n]]);
-	#endif
 	status += cudaFree(Bufferp_1[nl[n]]);
 	status += cudaFree(Bufferph_1[nl[n]]);
 	#if(STAGGERED)
@@ -1942,67 +2014,101 @@ void GPU_finish(int n)
 	#if(GPU_DIRECT)
 	//status += cudaFree(NULL_POINTER[nl[n]]);
 	status += cudaFree(Buffersend1[nl[n]]);
-	#if(N_LEVELS>1)
 	status += cudaFree(Buffersend1_3[nl[n]]);
-	if (REF_3)status += cudaFree(Buffersend1_4[nl[n]]);
-	if (REF_1)status += cudaFree(Buffersend1_7[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFree(Buffersend1_8[nl[n]]);
-	#endif
+	status += cudaFree(Buffersend1_4[nl[n]]);
+	status += cudaFree(Buffersend1_7[nl[n]]);
+	status += cudaFree(Buffersend1_8[nl[n]]);
 	status += cudaFree(Buffersend2[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFree(Buffersend2_1[nl[n]]);
-	if (REF_3)status += cudaFree(Buffersend2_2[nl[n]]);
-	if (REF_2)status += cudaFree(Buffersend2_3[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFree(Buffersend2_4[nl[n]]);
-	#endif
+	status += cudaFree(Buffersend2_2[nl[n]]);
+	status += cudaFree(Buffersend2_3[nl[n]]);
+	status += cudaFree(Buffersend2_4[nl[n]]);
 	status += cudaFree(Buffersend3[nl[n]]);
-	#if(N_LEVELS>1)
 	status += cudaFree(Buffersend3_1[nl[n]]);
-	if (REF_3)status += cudaFree(Buffersend3_2[nl[n]]);
-	if (REF_1)status += cudaFree(Buffersend3_5[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFree(Buffersend3_6[nl[n]]);
-	#endif
+	status += cudaFree(Buffersend3_2[nl[n]]);
+	status += cudaFree(Buffersend3_5[nl[n]]);
+	status += cudaFree(Buffersend3_6[nl[n]]);
 	status += cudaFree(Buffersend4[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFree(Buffersend4_5[nl[n]]);
-	if (REF_3)status += cudaFree(Buffersend4_6[nl[n]]);
-	if (REF_2)status += cudaFree(Buffersend4_7[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFree(Buffersend4_8[nl[n]]);
-	#endif
+	status += cudaFree(Buffersend4_6[nl[n]]);
+	status += cudaFree(Buffersend4_7[nl[n]]);
+	status += cudaFree(Buffersend4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFree(Buffersend5[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFree(Buffersend5_1[nl[n]]);
-	if (REF_2)status += cudaFree(Buffersend5_3[nl[n]]);
-	if (REF_1)status += cudaFree(Buffersend5_5[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFree(Buffersend5_7[nl[n]]);
-	#endif
+	status += cudaFree(Buffersend5_3[nl[n]]);
+	status += cudaFree(Buffersend5_5[nl[n]]);
+	status += cudaFree(Buffersend5_7[nl[n]]);
 	status += cudaFree(Buffersend6[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFree(Buffersend6_2[nl[n]]);
-	if (REF_2)status += cudaFree(Buffersend6_4[nl[n]]);
-	if (REF_1)status += cudaFree(Buffersend6_6[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFree(Buffersend6_8[nl[n]]);
-	#endif
+	status += cudaFree(Buffersend6_4[nl[n]]);
+	status += cudaFree(Buffersend6_6[nl[n]]);
+	status += cudaFree(Buffersend6_8[nl[n]]);
 	#endif
 	status += cudaFree(Bufferrec1[nl[n]]);
+	status += cudaFree(Bufferrec1_3[nl[n]]);
+	status += cudaFree(Bufferrec1_4[nl[n]]);
+	status += cudaFree(Bufferrec1_7[nl[n]]);
+	status += cudaFree(Bufferrec1_8[nl[n]]);
 	status += cudaFree(Bufferrec2[nl[n]]);
+	status += cudaFree(Bufferrec2_1[nl[n]]);
+	status += cudaFree(Bufferrec2_2[nl[n]]);
+	status += cudaFree(Bufferrec2_3[nl[n]]);
+	status += cudaFree(Bufferrec2_4[nl[n]]);
 	status += cudaFree(Bufferrec3[nl[n]]);
+	status += cudaFree(Bufferrec3_1[nl[n]]);
+	status += cudaFree(Bufferrec3_2[nl[n]]);
+	status += cudaFree(Bufferrec3_5[nl[n]]);
+	status += cudaFree(Bufferrec3_6[nl[n]]);
 	status += cudaFree(Bufferrec4[nl[n]]);
+	status += cudaFree(Bufferrec4_5[nl[n]]);
+	status += cudaFree(Bufferrec4_6[nl[n]]);
+	status += cudaFree(Bufferrec4_7[nl[n]]);
+	status += cudaFree(Bufferrec4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFree(Bufferrec5[nl[n]]);
+	status += cudaFree(Bufferrec5_1[nl[n]]);
+	status += cudaFree(Bufferrec5_3[nl[n]]);
+	status += cudaFree(Bufferrec5_5[nl[n]]);
+	status += cudaFree(Bufferrec5_7[nl[n]]);
 	status += cudaFree(Bufferrec6[nl[n]]);
+	status += cudaFree(Bufferrec6_2[nl[n]]);
+	status += cudaFree(Bufferrec6_4[nl[n]]);
+	status += cudaFree(Bufferrec6_6[nl[n]]);
+	status += cudaFree(Bufferrec6_8[nl[n]]);
 	#endif
-	#if(PRESTEP || PRESTEP2)
 	status += cudaFree(tempBufferrec1[nl[n]]);
+	status += cudaFree(tempBufferrec1_3[nl[n]]);
+	status += cudaFree(tempBufferrec1_4[nl[n]]);
+	status += cudaFree(tempBufferrec1_7[nl[n]]);
+	status += cudaFree(tempBufferrec1_8[nl[n]]);
 	status += cudaFree(tempBufferrec2[nl[n]]);
+	status += cudaFree(tempBufferrec2_1[nl[n]]);
+	status += cudaFree(tempBufferrec2_2[nl[n]]);
+	status += cudaFree(tempBufferrec2_3[nl[n]]);
+	status += cudaFree(tempBufferrec2_4[nl[n]]);
 	status += cudaFree(tempBufferrec3[nl[n]]);
+	status += cudaFree(tempBufferrec3_1[nl[n]]);
+	status += cudaFree(tempBufferrec3_2[nl[n]]);
+	status += cudaFree(tempBufferrec3_5[nl[n]]);
+	status += cudaFree(tempBufferrec3_6[nl[n]]);
 	status += cudaFree(tempBufferrec4[nl[n]]);
+	status += cudaFree(tempBufferrec4_5[nl[n]]);
+	status += cudaFree(tempBufferrec4_6[nl[n]]);
+	status += cudaFree(tempBufferrec4_7[nl[n]]);
+	status += cudaFree(tempBufferrec4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFree(tempBufferrec5[nl[n]]);
+	status += cudaFree(tempBufferrec5_1[nl[n]]);
+	status += cudaFree(tempBufferrec5_3[nl[n]]);
+	status += cudaFree(tempBufferrec5_5[nl[n]]);
+	status += cudaFree(tempBufferrec5_7[nl[n]]);
 	status += cudaFree(tempBufferrec6[nl[n]]);
+	status += cudaFree(tempBufferrec6_2[nl[n]]);
+	status += cudaFree(tempBufferrec6_4[nl[n]]);
+	status += cudaFree(tempBufferrec6_6[nl[n]]);
+	status += cudaFree(tempBufferrec6_8[nl[n]]);
 	#endif
-	#endif	
 	status += cudaFree(Buffersend1flux[nl[n]]);
 	status += cudaFree(Buffersend2flux[nl[n]]);
 	status += cudaFree(Buffersend3flux[nl[n]]);
@@ -2019,7 +2125,32 @@ void GPU_finish(int n)
 	status += cudaFree(Bufferrec5flux[nl[n]]);
 	status += cudaFree(Bufferrec6flux[nl[n]]);
 	#endif
-
+	status += cudaFree(Bufferrec1_3flux[nl[n]]);
+	status += cudaFree(Bufferrec1_4flux[nl[n]]);
+	status += cudaFree(Bufferrec1_7flux[nl[n]]);
+	status += cudaFree(Bufferrec1_8flux[nl[n]]);
+	status += cudaFree(Bufferrec2_1flux[nl[n]]);
+	status += cudaFree(Bufferrec2_2flux[nl[n]]);
+	status += cudaFree(Bufferrec2_3flux[nl[n]]);
+	status += cudaFree(Bufferrec2_4flux[nl[n]]);
+	status += cudaFree(Bufferrec3_1flux[nl[n]]);
+	status += cudaFree(Bufferrec3_2flux[nl[n]]);
+	status += cudaFree(Bufferrec3_5flux[nl[n]]);
+	status += cudaFree(Bufferrec3_6flux[nl[n]]);
+	status += cudaFree(Bufferrec4_5flux[nl[n]]);
+	status += cudaFree(Bufferrec4_6flux[nl[n]]);
+	status += cudaFree(Bufferrec4_7flux[nl[n]]);
+	status += cudaFree(Bufferrec4_8flux[nl[n]]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1flux[nl[n]]);
+	status += cudaFree(Bufferrec5_3flux[nl[n]]);
+	status += cudaFree(Bufferrec5_5flux[nl[n]]);
+	status += cudaFree(Bufferrec5_7flux[nl[n]]);
+	status += cudaFree(Bufferrec6_2flux[nl[n]]);
+	status += cudaFree(Bufferrec6_4flux[nl[n]]);
+	status += cudaFree(Bufferrec6_6flux[nl[n]]);
+	status += cudaFree(Bufferrec6_8flux[nl[n]]);
+	#endif
 	status += cudaFree(Bufferrec1flux1[nl[n]]);
 	status += cudaFree(Bufferrec2flux1[nl[n]]);
 	status += cudaFree(Bufferrec3flux1[nl[n]]);
@@ -2028,45 +2159,103 @@ void GPU_finish(int n)
 	status += cudaFree(Bufferrec5flux1[nl[n]]);
 	status += cudaFree(Bufferrec6flux1[nl[n]]);
 	#endif
-	status += cudaFree(Bufferrec1_3flux2[nl[n]]);
-	#if(N_LEVELS>1)
-	if (REF_3)status += cudaFree(Bufferrec1_4flux2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec1_7flux2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFree(Bufferrec1_8flux2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFree(Bufferrec2_1flux2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec2_2flux2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec2_3flux2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFree(Bufferrec2_4flux2[nl[n]]);
-	#endif
-	status += cudaFree(Bufferrec3_1flux2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec3_2flux2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec3_5flux2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFree(Bufferrec3_6flux2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFree(Bufferrec4_5flux2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec4_6flux2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec4_7flux2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFree(Bufferrec4_8flux2[nl[n]]);
-	#endif
+	status += cudaFree(Bufferrec1_3flux1[nl[n]]);
+	status += cudaFree(Bufferrec1_4flux1[nl[n]]);
+	status += cudaFree(Bufferrec1_7flux1[nl[n]]);
+	status += cudaFree(Bufferrec1_8flux1[nl[n]]);
+	status += cudaFree(Bufferrec2_1flux1[nl[n]]);
+	status += cudaFree(Bufferrec2_2flux1[nl[n]]);
+	status += cudaFree(Bufferrec2_3flux1[nl[n]]);
+	status += cudaFree(Bufferrec2_4flux1[nl[n]]);
+	status += cudaFree(Bufferrec3_1flux1[nl[n]]);
+	status += cudaFree(Bufferrec3_2flux1[nl[n]]);
+	status += cudaFree(Bufferrec3_5flux1[nl[n]]);
+	status += cudaFree(Bufferrec3_6flux1[nl[n]]);
+	status += cudaFree(Bufferrec4_5flux1[nl[n]]);
+	status += cudaFree(Bufferrec4_6flux1[nl[n]]);
+	status += cudaFree(Bufferrec4_7flux1[nl[n]]);
+	status += cudaFree(Bufferrec4_8flux1[nl[n]]);
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
+	status += cudaFree(Bufferrec5_1flux1[nl[n]]);
+	status += cudaFree(Bufferrec5_3flux1[nl[n]]);
+	status += cudaFree(Bufferrec5_5flux1[nl[n]]);
+	status += cudaFree(Bufferrec5_7flux1[nl[n]]);
+	status += cudaFree(Bufferrec6_2flux1[nl[n]]);
+	status += cudaFree(Bufferrec6_4flux1[nl[n]]);
+	status += cudaFree(Bufferrec6_6flux1[nl[n]]);
+	status += cudaFree(Bufferrec6_8flux1[nl[n]]);
+	#endif
+	status += cudaFree(Bufferrec1_3flux2[nl[n]]);
+	status += cudaFree(Bufferrec1_4flux2[nl[n]]);
+	status += cudaFree(Bufferrec1_7flux2[nl[n]]);
+	status += cudaFree(Bufferrec1_8flux2[nl[n]]);
+	status += cudaFree(Bufferrec2_1flux2[nl[n]]);
+	status += cudaFree(Bufferrec2_2flux2[nl[n]]);
+	status += cudaFree(Bufferrec2_3flux2[nl[n]]);
+	status += cudaFree(Bufferrec2_4flux2[nl[n]]);
+	status += cudaFree(Bufferrec3_1flux2[nl[n]]);
+	status += cudaFree(Bufferrec3_2flux2[nl[n]]);
+	status += cudaFree(Bufferrec3_5flux2[nl[n]]);
+	status += cudaFree(Bufferrec3_6flux2[nl[n]]);
+	status += cudaFree(Bufferrec4_5flux2[nl[n]]);
+	status += cudaFree(Bufferrec4_6flux2[nl[n]]);
+	status += cudaFree(Bufferrec4_7flux2[nl[n]]);
+	status += cudaFree(Bufferrec4_8flux2[nl[n]]);
+	#if(N3G>0)
 	status += cudaFree(Bufferrec5_1flux2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec5_3flux2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec5_5flux2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFree(Bufferrec5_7flux2[nl[n]]);
+	status += cudaFree(Bufferrec5_3flux2[nl[n]]);
+	status += cudaFree(Bufferrec5_5flux2[nl[n]]);
+	status += cudaFree(Bufferrec5_7flux2[nl[n]]);
 	status += cudaFree(Bufferrec6_2flux2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec6_4flux2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec6_6flux2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFree(Bufferrec6_8flux2[nl[n]]);
-	#endif
-	#endif
+	status += cudaFree(Bufferrec6_4flux2[nl[n]]);
+	status += cudaFree(Bufferrec6_6flux2[nl[n]]);
+	status += cudaFree(Bufferrec6_8flux2[nl[n]]);
 	#endif
 	status += cudaFreeHost(Buffersend1fine[nl[n]]);
 	status += cudaFreeHost(Buffersend3fine[nl[n]]);
 	status += cudaFreeHost(Bufferrec1fine[nl[n]]);
 	status += cudaFreeHost(Bufferrec3fine[nl[n]]);
 
+	/*
+	status += cudaFree(Buffersend2fine[nl[n]]);
+	status += cudaFree(Buffersend4fine[nl[n]]);
+	#if(N3G>0)
+	status += cudaFree(Buffersend5fine[nl[n]]);
+	status += cudaFree(Buffersend6fine[nl[n]]);
+	#endif
+	status += cudaFree(Bufferrec2fine[nl[n]]);
+	status += cudaFree(Bufferrec4fine[nl[n]]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5fine[nl[n]]);
+	status += cudaFree(Bufferrec6fine[nl[n]]);
+	#endif
+	status += cudaFree(Bufferrec1_3fine[nl[n]]);
+	status += cudaFree(Bufferrec1_4fine[nl[n]]);
+	status += cudaFree(Bufferrec1_7fine[nl[n]]);
+	status += cudaFree(Bufferrec1_8fine[nl[n]]);
+	status += cudaFree(Bufferrec2_1fine[nl[n]]);
+	status += cudaFree(Bufferrec2_2fine[nl[n]]);
+	status += cudaFree(Bufferrec2_3fine[nl[n]]);
+	status += cudaFree(Bufferrec2_4fine[nl[n]]);
+	status += cudaFree(Bufferrec3_1fine[nl[n]]);
+	status += cudaFree(Bufferrec3_2fine[nl[n]]);
+	status += cudaFree(Bufferrec3_5fine[nl[n]]);
+	status += cudaFree(Bufferrec3_6fine[nl[n]]);
+	status += cudaFree(Bufferrec4_5fine[nl[n]]);
+	status += cudaFree(Bufferrec4_6fine[nl[n]]);
+	status += cudaFree(Bufferrec4_7fine[nl[n]]);
+	status += cudaFree(Bufferrec4_8fine[nl[n]]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1fine[nl[n]]);
+	status += cudaFree(Bufferrec5_3fine[nl[n]]);
+	status += cudaFree(Bufferrec5_5fine[nl[n]]);
+	status += cudaFree(Bufferrec5_7fine[nl[n]]);
+	status += cudaFree(Bufferrec6_2fine[nl[n]]);
+	status += cudaFree(Bufferrec6_4fine[nl[n]]);
+	status += cudaFree(Bufferrec6_6fine[nl[n]]);
+	status += cudaFree(Bufferrec6_8fine[nl[n]]);
+	#endif
+	*/
 	status += cudaFree(Buffersend1E[nl[n]]);
 	status += cudaFree(Buffersend2E[nl[n]]);
 	status += cudaFree(Buffersend3E[nl[n]]);
@@ -2083,6 +2272,32 @@ void GPU_finish(int n)
 	status += cudaFree(Bufferrec5E[nl[n]]);
 	status += cudaFree(Bufferrec6E[nl[n]]);
 	#endif
+	status += cudaFree(Bufferrec1_3E[nl[n]]);
+	status += cudaFree(Bufferrec1_4E[nl[n]]);
+	status += cudaFree(Bufferrec1_7E[nl[n]]);
+	status += cudaFree(Bufferrec1_8E[nl[n]]);
+	status += cudaFree(Bufferrec2_1E[nl[n]]);
+	status += cudaFree(Bufferrec2_2E[nl[n]]);
+	status += cudaFree(Bufferrec2_3E[nl[n]]);
+	status += cudaFree(Bufferrec2_4E[nl[n]]);
+	status += cudaFree(Bufferrec3_1E[nl[n]]);
+	status += cudaFree(Bufferrec3_2E[nl[n]]);
+	status += cudaFree(Bufferrec3_5E[nl[n]]);
+	status += cudaFree(Bufferrec3_6E[nl[n]]);
+	status += cudaFree(Bufferrec4_5E[nl[n]]);
+	status += cudaFree(Bufferrec4_6E[nl[n]]);
+	status += cudaFree(Bufferrec4_7E[nl[n]]);
+	status += cudaFree(Bufferrec4_8E[nl[n]]);
+	#if(N3G>0)
+	status += cudaFree(Bufferrec5_1E[nl[n]]);
+	status += cudaFree(Bufferrec5_3E[nl[n]]);
+	status += cudaFree(Bufferrec5_5E[nl[n]]);
+	status += cudaFree(Bufferrec5_7E[nl[n]]);
+	status += cudaFree(Bufferrec6_2E[nl[n]]);
+	status += cudaFree(Bufferrec6_4E[nl[n]]);
+	status += cudaFree(Bufferrec6_6E[nl[n]]);
+	status += cudaFree(Bufferrec6_8E[nl[n]]);
+	#endif
 	status += cudaFree(Bufferrec1E1[nl[n]]);
 	status += cudaFree(Bufferrec2E1[nl[n]]);
 	status += cudaFree(Bufferrec3E1[nl[n]]);
@@ -2091,39 +2306,57 @@ void GPU_finish(int n)
 	status += cudaFree(Bufferrec5E1[nl[n]]);
 	status += cudaFree(Bufferrec6E1[nl[n]]);
 	#endif
-	#if(N_LEVELS>1)
-	status += cudaFree(Bufferrec1_3E2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec1_4E2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec1_7E2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFree(Bufferrec1_8E2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFree(Bufferrec2_1E2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec2_2E2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec2_3E2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFree(Bufferrec2_4E2[nl[n]]);
-	#endif
-	status += cudaFree(Bufferrec3_1E2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec3_2E2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec3_5E2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFree(Bufferrec3_6E2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFree(Bufferrec4_5E2[nl[n]]);
-	if (REF_3)status += cudaFree(Bufferrec4_6E2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec4_7E2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFree(Bufferrec4_8E2[nl[n]]);
-	#endif
+	status += cudaFree(Bufferrec1_3E1[nl[n]]);
+	status += cudaFree(Bufferrec1_4E1[nl[n]]);
+	status += cudaFree(Bufferrec1_7E1[nl[n]]);
+	status += cudaFree(Bufferrec1_8E1[nl[n]]);
+	status += cudaFree(Bufferrec2_1E1[nl[n]]);
+	status += cudaFree(Bufferrec2_2E1[nl[n]]);
+	status += cudaFree(Bufferrec2_3E1[nl[n]]);
+	status += cudaFree(Bufferrec2_4E1[nl[n]]);
+	status += cudaFree(Bufferrec3_1E1[nl[n]]);
+	status += cudaFree(Bufferrec3_2E1[nl[n]]);
+	status += cudaFree(Bufferrec3_5E1[nl[n]]);
+	status += cudaFree(Bufferrec3_6E1[nl[n]]);
+	status += cudaFree(Bufferrec4_5E1[nl[n]]);
+	status += cudaFree(Bufferrec4_6E1[nl[n]]);
+	status += cudaFree(Bufferrec4_7E1[nl[n]]);
+	status += cudaFree(Bufferrec4_8E1[nl[n]]);
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
+	status += cudaFree(Bufferrec5_1E1[nl[n]]);
+	status += cudaFree(Bufferrec5_3E1[nl[n]]);
+	status += cudaFree(Bufferrec5_5E1[nl[n]]);
+	status += cudaFree(Bufferrec5_7E1[nl[n]]);
+	status += cudaFree(Bufferrec6_2E1[nl[n]]);
+	status += cudaFree(Bufferrec6_4E1[nl[n]]);
+	status += cudaFree(Bufferrec6_6E1[nl[n]]);
+	status += cudaFree(Bufferrec6_8E1[nl[n]]);
+	#endif
+	status += cudaFree(Bufferrec1_3E2[nl[n]]);
+	status += cudaFree(Bufferrec1_4E2[nl[n]]);
+	status += cudaFree(Bufferrec1_7E2[nl[n]]);
+	status += cudaFree(Bufferrec1_8E2[nl[n]]);
+	status += cudaFree(Bufferrec2_1E2[nl[n]]);
+	status += cudaFree(Bufferrec2_2E2[nl[n]]);
+	status += cudaFree(Bufferrec2_3E2[nl[n]]);
+	status += cudaFree(Bufferrec2_4E2[nl[n]]);
+	status += cudaFree(Bufferrec3_1E2[nl[n]]);
+	status += cudaFree(Bufferrec3_2E2[nl[n]]);
+	status += cudaFree(Bufferrec3_5E2[nl[n]]);
+	status += cudaFree(Bufferrec3_6E2[nl[n]]);
+	status += cudaFree(Bufferrec4_5E2[nl[n]]);
+	status += cudaFree(Bufferrec4_6E2[nl[n]]);
+	status += cudaFree(Bufferrec4_7E2[nl[n]]);
+	status += cudaFree(Bufferrec4_8E2[nl[n]]);
+	#if(N3G>0)
 	status += cudaFree(Bufferrec5_1E2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec5_3E2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec5_5E2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFree(Bufferrec5_7E2[nl[n]]);
+	status += cudaFree(Bufferrec5_3E2[nl[n]]);
+	status += cudaFree(Bufferrec5_5E2[nl[n]]);
+	status += cudaFree(Bufferrec5_7E2[nl[n]]);
 	status += cudaFree(Bufferrec6_2E2[nl[n]]);
-	if (REF_2)status += cudaFree(Bufferrec6_4E2[nl[n]]);
-	if (REF_1)status += cudaFree(Bufferrec6_6E2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFree(Bufferrec6_8E2[nl[n]]);
-	#endif
-	#endif
+	status += cudaFree(Bufferrec6_4E2[nl[n]]);
+	status += cudaFree(Bufferrec6_6E2[nl[n]]);
+	status += cudaFree(Bufferrec6_8E2[nl[n]]);
 	#endif
 	#if(N3G>0)
 	status += cudaFree(BuffersendE1corn9[nl[n]]);
@@ -2153,166 +2386,196 @@ void GPU_finish(int n)
 	status += cudaFree(BufferrecE3corn2[nl[n]]);
 	status += cudaFree(BufferrecE3corn3[nl[n]]);
 	status += cudaFree(BufferrecE3corn4[nl[n]]);
-	#if(N_LEVELS>1)
 	#if(N3G>0)
 	status += cudaFree(BufferrecE1corn9_3[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn9_7[nl[n]]);
+	status += cudaFree(BufferrecE1corn9_7[nl[n]]);
 	status += cudaFree(BufferrecE1corn10_1[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn10_5[nl[n]]);
+	status += cudaFree(BufferrecE1corn10_5[nl[n]]);
 	status += cudaFree(BufferrecE1corn11_2[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn11_6[nl[n]]);
+	status += cudaFree(BufferrecE1corn11_6[nl[n]]);
 	status += cudaFree(BufferrecE1corn12_4[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn12_8[nl[n]]);
+	status += cudaFree(BufferrecE1corn12_8[nl[n]]);
 	status += cudaFree(BufferrecE2corn5_2[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn5_4[nl[n]]);
+	status += cudaFree(BufferrecE2corn5_4[nl[n]]);
 	status += cudaFree(BufferrecE2corn6_1[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn6_3[nl[n]]);
+	status += cudaFree(BufferrecE2corn6_3[nl[n]]);
 	status += cudaFree(BufferrecE2corn7_5[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn7_7[nl[n]]);
+	status += cudaFree(BufferrecE2corn7_7[nl[n]]);
 	status += cudaFree(BufferrecE2corn8_6[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn8_8[nl[n]]);
+	status += cudaFree(BufferrecE2corn8_8[nl[n]]);
 	#endif
 	status += cudaFree(BufferrecE3corn1_3[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn1_4[nl[n]]);
+	status += cudaFree(BufferrecE3corn1_4[nl[n]]);
 	status += cudaFree(BufferrecE3corn2_1[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn2_2[nl[n]]);
+	status += cudaFree(BufferrecE3corn2_2[nl[n]]);
 	status += cudaFree(BufferrecE3corn3_5[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn3_6[nl[n]]);
+	status += cudaFree(BufferrecE3corn3_6[nl[n]]);
 	status += cudaFree(BufferrecE3corn4_7[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn4_8[nl[n]]);
+	status += cudaFree(BufferrecE3corn4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFree(tempBufferrecE1corn9[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE1corn10[nl[n]]);
+	status += cudaFree(tempBufferrecE1corn10[nl[n]]);
 	status += cudaFree(tempBufferrecE1corn11[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE1corn12[nl[n]]);
+	status += cudaFree(tempBufferrecE1corn12[nl[n]]);
 	status += cudaFree(tempBufferrecE2corn5[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE2corn6[nl[n]]);
+	status += cudaFree(tempBufferrecE2corn6[nl[n]]);
 	status += cudaFree(tempBufferrecE2corn7[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE2corn8[nl[n]]);
-	#endif
+	status += cudaFree(tempBufferrecE2corn8[nl[n]]);
 	#endif
 	status += cudaFree(tempBufferrecE3corn1[nl[n]]);
 	status += cudaFree(tempBufferrecE3corn2[nl[n]]);
 	status += cudaFree(tempBufferrecE3corn3[nl[n]]);
 	status += cudaFree(tempBufferrecE3corn4[nl[n]]);
-	#if(N_LEVELS>1)
 	#if(N3G>0)
 	status += cudaFree(tempBufferrecE1corn9_3[nl[n]]);
-	if (REF_1)status += cudaFree(tempBufferrecE1corn9_7[nl[n]]);
+	status += cudaFree(tempBufferrecE1corn9_7[nl[n]]);
 	status += cudaFree(tempBufferrecE1corn10_1[nl[n]]);
-	if (REF_1)status += cudaFree(tempBufferrecE1corn10_5[nl[n]]);
+	status += cudaFree(tempBufferrecE1corn10_5[nl[n]]);
 	status += cudaFree(tempBufferrecE1corn11_2[nl[n]]);
-	if (REF_1)status += cudaFree(tempBufferrecE1corn11_6[nl[n]]);
+	status += cudaFree(tempBufferrecE1corn11_6[nl[n]]);
 	status += cudaFree(tempBufferrecE1corn12_4[nl[n]]);
-	if (REF_1)status += cudaFree(tempBufferrecE1corn12_8[nl[n]]);
+	status += cudaFree(tempBufferrecE1corn12_8[nl[n]]);
 	status += cudaFree(tempBufferrecE2corn5_2[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE2corn5_4[nl[n]]);
+	status += cudaFree(tempBufferrecE2corn5_4[nl[n]]);
 	status += cudaFree(tempBufferrecE2corn6_1[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE2corn6_3[nl[n]]);
+	status += cudaFree(tempBufferrecE2corn6_3[nl[n]]);
 	status += cudaFree(tempBufferrecE2corn7_5[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE2corn7_7[nl[n]]);
+	status += cudaFree(tempBufferrecE2corn7_7[nl[n]]);
 	status += cudaFree(tempBufferrecE2corn8_6[nl[n]]);
-	if (REF_2)status += cudaFree(tempBufferrecE2corn8_8[nl[n]]);
+	status += cudaFree(tempBufferrecE2corn8_8[nl[n]]);
 	#endif
 	status += cudaFree(tempBufferrecE3corn1_3[nl[n]]);
-	if (REF_3)status += cudaFree(tempBufferrecE3corn1_4[nl[n]]);
+	status += cudaFree(tempBufferrecE3corn1_4[nl[n]]);
 	status += cudaFree(tempBufferrecE3corn2_1[nl[n]]);
-	if (REF_3)status += cudaFree(tempBufferrecE3corn2_2[nl[n]]);
+	status += cudaFree(tempBufferrecE3corn2_2[nl[n]]);
 	status += cudaFree(tempBufferrecE3corn3_5[nl[n]]);
-	if (REF_3)status += cudaFree(tempBufferrecE3corn3_6[nl[n]]);
+	status += cudaFree(tempBufferrecE3corn3_6[nl[n]]);
 	status += cudaFree(tempBufferrecE3corn4_7[nl[n]]);
-	if (REF_3)status += cudaFree(tempBufferrecE3corn4_8[nl[n]]);
+	status += cudaFree(tempBufferrecE3corn4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFree(BufferrecE1corn9_32[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn9_72[nl[n]]);
+	status += cudaFree(BufferrecE1corn9_72[nl[n]]);
 	status += cudaFree(BufferrecE1corn10_12[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn10_52[nl[n]]);
+	status += cudaFree(BufferrecE1corn10_52[nl[n]]);
 	status += cudaFree(BufferrecE1corn11_22[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn11_62[nl[n]]);
+	status += cudaFree(BufferrecE1corn11_62[nl[n]]);
 	status += cudaFree(BufferrecE1corn12_42[nl[n]]);
-	if (REF_1)status += cudaFree(BufferrecE1corn12_82[nl[n]]);
+	status += cudaFree(BufferrecE1corn12_82[nl[n]]);
 	status += cudaFree(BufferrecE2corn5_22[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn5_42[nl[n]]);
+	status += cudaFree(BufferrecE2corn5_42[nl[n]]);
 	status += cudaFree(BufferrecE2corn6_12[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn6_32[nl[n]]);
+	status += cudaFree(BufferrecE2corn6_32[nl[n]]);
 	status += cudaFree(BufferrecE2corn7_52[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn7_72[nl[n]]);
+	status += cudaFree(BufferrecE2corn7_72[nl[n]]);
 	status += cudaFree(BufferrecE2corn8_62[nl[n]]);
-	if (REF_2)status += cudaFree(BufferrecE2corn8_82[nl[n]]);
+	status += cudaFree(BufferrecE2corn8_82[nl[n]]);
 	#endif
 	status += cudaFree(BufferrecE3corn1_32[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn1_42[nl[n]]);
+	status += cudaFree(BufferrecE3corn1_42[nl[n]]);
 	status += cudaFree(BufferrecE3corn2_12[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn2_22[nl[n]]);
+	status += cudaFree(BufferrecE3corn2_22[nl[n]]);
 	status += cudaFree(BufferrecE3corn3_52[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn3_62[nl[n]]);
+	status += cudaFree(BufferrecE3corn3_62[nl[n]]);
 	status += cudaFree(BufferrecE3corn4_72[nl[n]]);
-	if (REF_3)status += cudaFree(BufferrecE3corn4_82[nl[n]]);
-	#endif
+	status += cudaFree(BufferrecE3corn4_82[nl[n]]);
 	#else
 	//status += cudaFreeHost(NULL_POINTER[nl[n]]);
 	status += cudaFreeHost(Buffersend1[nl[n]]);
-	#if(N_LEVELS>1)
 	status += cudaFreeHost(Buffersend1_3[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Buffersend1_4[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Buffersend1_7[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFreeHost(Buffersend1_8[nl[n]]);
-	#endif
+	status += cudaFreeHost(Buffersend1_4[nl[n]]);
+	status += cudaFreeHost(Buffersend1_7[nl[n]]);
+	status += cudaFreeHost(Buffersend1_8[nl[n]]);
 	status += cudaFreeHost(Buffersend2[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFreeHost(Buffersend2_1[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Buffersend2_2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Buffersend2_3[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFreeHost(Buffersend2_4[nl[n]]);
-	#endif
+	status += cudaFreeHost(Buffersend2_2[nl[n]]);
+	status += cudaFreeHost(Buffersend2_3[nl[n]]);
+	status += cudaFreeHost(Buffersend2_4[nl[n]]);
 	status += cudaFreeHost(Buffersend3[nl[n]]);
-	#if(N_LEVELS>1)
 	status += cudaFreeHost(Buffersend3_1[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Buffersend3_2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Buffersend3_5[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFreeHost(Buffersend3_6[nl[n]]);
-	#endif
+	status += cudaFreeHost(Buffersend3_2[nl[n]]);
+	status += cudaFreeHost(Buffersend3_5[nl[n]]);
+	status += cudaFreeHost(Buffersend3_6[nl[n]]);
 	status += cudaFreeHost(Buffersend4[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFreeHost(Buffersend4_5[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Buffersend4_6[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Buffersend4_7[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFreeHost(Buffersend4_8[nl[n]]);
-	#endif
+	status += cudaFreeHost(Buffersend4_6[nl[n]]);
+	status += cudaFreeHost(Buffersend4_7[nl[n]]);
+	status += cudaFreeHost(Buffersend4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFreeHost(Buffersend5[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFreeHost(Buffersend5_1[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Buffersend5_3[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Buffersend5_5[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFreeHost(Buffersend5_7[nl[n]]);
-	#endif
+	status += cudaFreeHost(Buffersend5_3[nl[n]]);
+	status += cudaFreeHost(Buffersend5_5[nl[n]]);
+	status += cudaFreeHost(Buffersend5_7[nl[n]]);
 	status += cudaFreeHost(Buffersend6[nl[n]]);
-	#if(N_LEVELS>1 && !DEREFINE_POLE)
 	status += cudaFreeHost(Buffersend6_2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Buffersend6_4[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Buffersend6_6[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFreeHost(Buffersend6_8[nl[n]]);
-	#endif
+	status += cudaFreeHost(Buffersend6_4[nl[n]]);
+	status += cudaFreeHost(Buffersend6_6[nl[n]]);
+	status += cudaFreeHost(Buffersend6_8[nl[n]]);
 	#endif
 	status += cudaFreeHost(Bufferrec1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_3[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8[nl[n]]);
 	status += cudaFreeHost(Bufferrec2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4[nl[n]]);
 	status += cudaFreeHost(Bufferrec3[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6[nl[n]]);
 	status += cudaFreeHost(Bufferrec4[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFreeHost(Bufferrec5[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7[nl[n]]);
 	status += cudaFreeHost(Bufferrec6[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_2[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8[nl[n]]);
 	#endif
-	#if(PRESTEP || PRESTEP2)
 	status += cudaFreeHost(tempBufferrec1[nl[n]]);
+	status += cudaFreeHost(tempBufferrec1_3[nl[n]]);
+	status += cudaFreeHost(tempBufferrec1_4[nl[n]]);
+	status += cudaFreeHost(tempBufferrec1_7[nl[n]]);
+	status += cudaFreeHost(tempBufferrec1_8[nl[n]]);
 	status += cudaFreeHost(tempBufferrec2[nl[n]]);
+	status += cudaFreeHost(tempBufferrec2_1[nl[n]]);
+	status += cudaFreeHost(tempBufferrec2_2[nl[n]]);
+	status += cudaFreeHost(tempBufferrec2_3[nl[n]]);
+	status += cudaFreeHost(tempBufferrec2_4[nl[n]]);
 	status += cudaFreeHost(tempBufferrec3[nl[n]]);
+	status += cudaFreeHost(tempBufferrec3_1[nl[n]]);
+	status += cudaFreeHost(tempBufferrec3_2[nl[n]]);
+	status += cudaFreeHost(tempBufferrec3_5[nl[n]]);
+	status += cudaFreeHost(tempBufferrec3_6[nl[n]]);
 	status += cudaFreeHost(tempBufferrec4[nl[n]]);
+	status += cudaFreeHost(tempBufferrec4_5[nl[n]]);
+	status += cudaFreeHost(tempBufferrec4_6[nl[n]]);
+	status += cudaFreeHost(tempBufferrec4_7[nl[n]]);
+	status += cudaFreeHost(tempBufferrec4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFreeHost(tempBufferrec5[nl[n]]);
+	status += cudaFreeHost(tempBufferrec5_1[nl[n]]);
+	status += cudaFreeHost(tempBufferrec5_3[nl[n]]);
+	status += cudaFreeHost(tempBufferrec5_5[nl[n]]);
+	status += cudaFreeHost(tempBufferrec5_7[nl[n]]);
 	status += cudaFreeHost(tempBufferrec6[nl[n]]);
+	status += cudaFreeHost(tempBufferrec6_2[nl[n]]);
+	status += cudaFreeHost(tempBufferrec6_4[nl[n]]);
+	status += cudaFreeHost(tempBufferrec6_6[nl[n]]);
+	status += cudaFreeHost(tempBufferrec6_8[nl[n]]);
 	#endif
-	#endif	
 	status += cudaFreeHost(Buffersend1flux[nl[n]]);
 	status += cudaFreeHost(Buffersend2flux[nl[n]]);
 	status += cudaFreeHost(Buffersend3flux[nl[n]]);
@@ -2329,7 +2592,32 @@ void GPU_finish(int n)
 	status += cudaFreeHost(Bufferrec5flux[nl[n]]);
 	status += cudaFreeHost(Bufferrec6flux[nl[n]]);
 	#endif
-
+	status += cudaFreeHost(Bufferrec1_3flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8flux[nl[n]]);
+	#if(N3G>0)
+	status += cudaFreeHost(Bufferrec5_1flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_2flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6flux[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8flux[nl[n]]);
+	#endif
 	status += cudaFreeHost(Bufferrec1flux1[nl[n]]);
 	status += cudaFreeHost(Bufferrec2flux1[nl[n]]);
 	status += cudaFreeHost(Bufferrec3flux1[nl[n]]);
@@ -2338,45 +2626,103 @@ void GPU_finish(int n)
 	status += cudaFreeHost(Bufferrec5flux1[nl[n]]);
 	status += cudaFreeHost(Bufferrec6flux1[nl[n]]);
 	#endif
-	status += cudaFreeHost(Bufferrec1_3flux2[nl[n]]);
-	#if(N_LEVELS>1)
-	if (REF_3)status += cudaFreeHost(Bufferrec1_4flux2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec1_7flux2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFreeHost(Bufferrec1_8flux2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFreeHost(Bufferrec2_1flux2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec2_2flux2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec2_3flux2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFreeHost(Bufferrec2_4flux2[nl[n]]);
-	#endif
-	status += cudaFreeHost(Bufferrec3_1flux2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec3_2flux2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec3_5flux2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFreeHost(Bufferrec3_6flux2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFreeHost(Bufferrec4_5flux2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec4_6flux2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec4_7flux2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFreeHost(Bufferrec4_8flux2[nl[n]]);
-	#endif
+	status += cudaFreeHost(Bufferrec1_3flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8flux1[nl[n]]);
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
+	status += cudaFreeHost(Bufferrec5_1flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_2flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6flux1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8flux1[nl[n]]);
+	#endif
+	status += cudaFreeHost(Bufferrec1_3flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8flux2[nl[n]]);
+	#if(N3G>0)
 	status += cudaFreeHost(Bufferrec5_1flux2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec5_3flux2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec5_5flux2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFreeHost(Bufferrec5_7flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7flux2[nl[n]]);
 	status += cudaFreeHost(Bufferrec6_2flux2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec6_4flux2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec6_6flux2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFreeHost(Bufferrec6_8flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6flux2[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8flux2[nl[n]]);
 	#endif
-	#endif
-	#endif
-	status += cudaFreeHostHost(Buffersend1fine[nl[n]]);
-	status += cudaFreeHostHost(Buffersend3fine[nl[n]]);
-	status += cudaFreeHostHost(Bufferrec1fine[nl[n]]);
-	status += cudaFreeHostHost(Bufferrec3fine[nl[n]]);
+	status += cudaFreeHost(Buffersend1fine[nl[n]]);
+	status += cudaFreeHost(Buffersend3fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec1fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec3fine[nl[n]]);
 
+	/*
+	status += cudaFreeHost(Buffersend2fine[nl[n]]);
+	status += cudaFreeHost(Buffersend4fine[nl[n]]);
+	#if(N3G>0)
+	status += cudaFreeHost(Buffersend5fine[nl[n]]);
+	status += cudaFreeHost(Buffersend6fine[nl[n]]);
+	#endif
+	status += cudaFreeHost(Bufferrec2fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec4fine[nl[n]]);
+	#if(N3G>0)
+	status += cudaFreeHost(Bufferrec5fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec6fine[nl[n]]);
+	#endif
+	status += cudaFreeHost(Bufferrec1_3fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8fine[nl[n]]);
+	#if(N3G>0)
+	status += cudaFreeHost(Bufferrec5_1fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_2fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6fine[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8fine[nl[n]]);
+	#endif
+	*/
 	status += cudaFreeHost(Buffersend1E[nl[n]]);
 	status += cudaFreeHost(Buffersend2E[nl[n]]);
 	status += cudaFreeHost(Buffersend3E[nl[n]]);
@@ -2393,6 +2739,32 @@ void GPU_finish(int n)
 	status += cudaFreeHost(Bufferrec5E[nl[n]]);
 	status += cudaFreeHost(Bufferrec6E[nl[n]]);
 	#endif
+	status += cudaFreeHost(Bufferrec1_3E[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4E[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7E[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8E[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1E[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2E[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3E[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4E[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1E[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2E[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5E[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6E[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5E[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6E[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7E[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8E[nl[n]]);
+	#if(N3G>0)
+	status += cudaFreeHost(Bufferrec5_1E[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3E[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5E[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7E[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_2E[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4E[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6E[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8E[nl[n]]);
+	#endif
 	status += cudaFreeHost(Bufferrec1E1[nl[n]]);
 	status += cudaFreeHost(Bufferrec2E1[nl[n]]);
 	status += cudaFreeHost(Bufferrec3E1[nl[n]]);
@@ -2401,39 +2773,57 @@ void GPU_finish(int n)
 	status += cudaFreeHost(Bufferrec5E1[nl[n]]);
 	status += cudaFreeHost(Bufferrec6E1[nl[n]]);
 	#endif
-	#if(N_LEVELS>1)
-	status += cudaFreeHost(Bufferrec1_3E2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec1_4E2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec1_7E2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFreeHost(Bufferrec1_8E2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFreeHost(Bufferrec2_1E2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec2_2E2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec2_3E2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFreeHost(Bufferrec2_4E2[nl[n]]);
-	#endif
-	status += cudaFreeHost(Bufferrec3_1E2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec3_2E2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec3_5E2[nl[n]]);
-	if (REF_3 && REF_1)status += cudaFreeHost(Bufferrec3_6E2[nl[n]]);
-	#if(!DEREFINE_POLE)
-	status += cudaFreeHost(Bufferrec4_5E2[nl[n]]);
-	if (REF_3)status += cudaFreeHost(Bufferrec4_6E2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec4_7E2[nl[n]]);
-	if (REF_3 && REF_2)status += cudaFreeHost(Bufferrec4_8E2[nl[n]]);
-	#endif
+	status += cudaFreeHost(Bufferrec1_3E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8E1[nl[n]]);
 	#if(N3G>0)
-	#if(!DEREFINE_POLE)
+	status += cudaFreeHost(Bufferrec5_1E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_2E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_4E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6E1[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8E1[nl[n]]);
+	#endif
+	status += cudaFreeHost(Bufferrec1_3E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_4E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_7E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec1_8E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_1E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_2E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_3E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec2_4E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_1E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_2E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_5E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec3_6E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_5E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_6E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_7E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec4_8E2[nl[n]]);
+	#if(N3G>0)
 	status += cudaFreeHost(Bufferrec5_1E2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec5_3E2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec5_5E2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFreeHost(Bufferrec5_7E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_3E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_5E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec5_7E2[nl[n]]);
 	status += cudaFreeHost(Bufferrec6_2E2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(Bufferrec6_4E2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(Bufferrec6_6E2[nl[n]]);
-	if (REF_2 && REF_1)status += cudaFreeHost(Bufferrec6_8E2[nl[n]]);
-	#endif
-	#endif
+	status += cudaFreeHost(Bufferrec6_4E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_6E2[nl[n]]);
+	status += cudaFreeHost(Bufferrec6_8E2[nl[n]]);
 	#endif
 	#if(N3G>0)
 	status += cudaFreeHost(BuffersendE1corn9[nl[n]]);
@@ -2463,104 +2853,100 @@ void GPU_finish(int n)
 	status += cudaFreeHost(BufferrecE3corn2[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn3[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn4[nl[n]]);
-	#if(N_LEVELS>1)
 	#if(N3G>0)
 	status += cudaFreeHost(BufferrecE1corn9_3[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn9_7[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn9_7[nl[n]]);
 	status += cudaFreeHost(BufferrecE1corn10_1[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn10_5[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn10_5[nl[n]]);
 	status += cudaFreeHost(BufferrecE1corn11_2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn11_6[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn11_6[nl[n]]);
 	status += cudaFreeHost(BufferrecE1corn12_4[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn12_8[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn12_8[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn5_2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn5_4[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn5_4[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn6_1[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn6_3[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn6_3[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn7_5[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn7_7[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn7_7[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn8_6[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn8_8[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn8_8[nl[n]]);
 	#endif
 	status += cudaFreeHost(BufferrecE3corn1_3[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn1_4[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn1_4[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn2_1[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn2_2[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn2_2[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn3_5[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn3_6[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn3_6[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn4_7[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn4_8[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFreeHost(tempBufferrecE1corn9[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE1corn10[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE1corn10[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE1corn11[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE1corn12[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE1corn12[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE2corn5[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE2corn6[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE2corn6[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE2corn7[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE2corn8[nl[n]]);
-	#endif
+	status += cudaFreeHost(tempBufferrecE2corn8[nl[n]]);
 	#endif
 	status += cudaFreeHost(tempBufferrecE3corn1[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE3corn2[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE3corn3[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE3corn4[nl[n]]);
-	#if(N_LEVELS>1)
 	#if(N3G>0)
 	status += cudaFreeHost(tempBufferrecE1corn9_3[nl[n]]);
-	if (REF_1)status += cudaFreeHost(tempBufferrecE1corn9_7[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE1corn9_7[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE1corn10_1[nl[n]]);
-	if (REF_1)status += cudaFreeHost(tempBufferrecE1corn10_5[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE1corn10_5[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE1corn11_2[nl[n]]);
-	if (REF_1)status += cudaFreeHost(tempBufferrecE1corn11_6[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE1corn11_6[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE1corn12_4[nl[n]]);
-	if (REF_1)status += cudaFreeHost(tempBufferrecE1corn12_8[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE1corn12_8[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE2corn5_2[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE2corn5_4[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE2corn5_4[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE2corn6_1[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE2corn6_3[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE2corn6_3[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE2corn7_5[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE2corn7_7[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE2corn7_7[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE2corn8_6[nl[n]]);
-	if (REF_2)status += cudaFreeHost(tempBufferrecE2corn8_8[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE2corn8_8[nl[n]]);
 	#endif
 	status += cudaFreeHost(tempBufferrecE3corn1_3[nl[n]]);
-	if (REF_3)status += cudaFreeHost(tempBufferrecE3corn1_4[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE3corn1_4[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE3corn2_1[nl[n]]);
-	if (REF_3)status += cudaFreeHost(tempBufferrecE3corn2_2[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE3corn2_2[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE3corn3_5[nl[n]]);
-	if (REF_3)status += cudaFreeHost(tempBufferrecE3corn3_6[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE3corn3_6[nl[n]]);
 	status += cudaFreeHost(tempBufferrecE3corn4_7[nl[n]]);
-	if (REF_3)status += cudaFreeHost(tempBufferrecE3corn4_8[nl[n]]);
+	status += cudaFreeHost(tempBufferrecE3corn4_8[nl[n]]);
 	#if(N3G>0)
 	status += cudaFreeHost(BufferrecE1corn9_32[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn9_72[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn9_72[nl[n]]);
 	status += cudaFreeHost(BufferrecE1corn10_12[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn10_52[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn10_52[nl[n]]);
 	status += cudaFreeHost(BufferrecE1corn11_22[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn11_62[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn11_62[nl[n]]);
 	status += cudaFreeHost(BufferrecE1corn12_42[nl[n]]);
-	if (REF_1)status += cudaFreeHost(BufferrecE1corn12_82[nl[n]]);
+	status += cudaFreeHost(BufferrecE1corn12_82[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn5_22[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn5_42[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn5_42[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn6_12[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn6_32[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn6_32[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn7_52[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn7_72[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn7_72[nl[n]]);
 	status += cudaFreeHost(BufferrecE2corn8_62[nl[n]]);
-	if (REF_2)status += cudaFreeHost(BufferrecE2corn8_82[nl[n]]);
+	status += cudaFreeHost(BufferrecE2corn8_82[nl[n]]);
 	#endif
 	status += cudaFreeHost(BufferrecE3corn1_32[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn1_42[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn1_42[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn2_12[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn2_22[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn2_22[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn3_52[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn3_62[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn3_62[nl[n]]);
 	status += cudaFreeHost(BufferrecE3corn4_72[nl[n]]);
-	if (REF_3)status += cudaFreeHost(BufferrecE3corn4_82[nl[n]]);
+	status += cudaFreeHost(BufferrecE3corn4_82[nl[n]]);
 	#endif
-	#endif
-
+	
 	cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error in GPU_finish_1: %d \n", status);
