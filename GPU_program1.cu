@@ -1859,7 +1859,16 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 		double x0, x1, x2, x3, x4, x5, temp[1], result[1];
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x0 = p[MY_MAX(k*(ksize)+global_id - 3 * zdel - 3 * (BS_3 + 2 * N3G)*jdel - 3 * isize*idel,0)];
+			x1 = p[MY_MAX(k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
+			x2 = p[MY_MAX(k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
+			x3 = p[k*(ksize)+global_id];
+			x4 = p[MY_MIN(k*(ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x5 = p[MY_MIN(k*(ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+fix_mem1))];
+			para(x1, x2, x3, x4, x5, result, temp);
+			dq1[k*(ksize)+global_id] = result[0];
+			dq2[k*(ksize)+global_id] = temp[0];
+
+			/*x0 = p[MY_MAX(k*(ksize)+global_id - 3 * zdel - 3 * (BS_3 + 2 * N3G)*jdel - 3 * isize*idel, 0)];
 			x1 = p[MY_MAX(k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
 			x2 = p[MY_MAX(k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
 			x3 = p[k*(ksize)+global_id];
@@ -1868,7 +1877,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			dq1[k*(ksize)+global_id] = result[0];
 			x5 = p[MY_MIN(k*(ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+fix_mem1))];
 			para(x1, x2, x3, x4, x5, result, temp);
-			dq2[k*(ksize)+global_id] = result[0];
+			dq2[k*(ksize)+global_id] = result[0];*/
 		}
 		#elif(LEER)
 		double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
@@ -1955,7 +1964,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 		#if(PPM || LEER)
 		for (k = 0; k < NPR; k++){
-			p[k] = dq1[k*(ksize)+global_id];
+			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
 		}
 		#else
 		#pragma unroll 9
@@ -1991,7 +2000,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#if(PPM || LEER)
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++){
-			p[k] = dq2[k*(ksize)+global_id];
+			p[k] = dq1[k*(ksize)+global_id];
 		}
 		#else
 		#pragma unroll 9
