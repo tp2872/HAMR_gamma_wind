@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 	time_spent3 = 0.0;
 	begin1 = clock();
 	begin2 = begin1;
-	DTd = 100.0;
+
 	//cuProfilerStart();
 	while(t < tf) {
 		/*Used for running OpenCL on either GPU or CPU*/
@@ -250,13 +250,13 @@ void MPI_initialize(int argc, char *argv[])
 
 void mpi_synch(void){
 	int i;
-	//MPI_Barrier(MPI_COMM_WORLD);
-	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-			break;
-		}
-	}
+	MPI_Barrier(MPI_COMM_WORLD);
+	//for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		//if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			//if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			//break;
+		//}
+	//}
 }
 
 

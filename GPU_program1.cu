@@ -2610,7 +2610,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, const  double* _
 
 		r = radius[icurr];
 		rhoscal = pow(r, -POWRHO);
-		uuscal = pow(r, -5./2.);
+		uuscal = pow(rhoscal, gam);
 
 		rhoflr = RHOMIN*rhoscal;
 		uuflr = UUMIN*uuscal;

@@ -13,11 +13,11 @@ Physical Parameters section
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
+#define TILTED (1)
 #define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
@@ -25,18 +25,18 @@ Physical Parameters section
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (0)
+#define COOL_DISK (1)
 #define H_OVER_R (0.03)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
 #define FULL_DISP (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(1.e-5)
-#define UUMIN	(0.3333*1.e-7)
+#define RHOMIN	(1.e-6)
+#define UUMIN	(1.e-7)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
-#define POWRHO (1.5)
+#define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
@@ -64,7 +64,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (1)
+#define V100 (0)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
@@ -77,20 +77,20 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 6
-#define NB_3 1
+#define NB_2 12
+#define NB_3 10
 
 /*Set block size in each dimension*/
-#define BS_1 76
-#define BS_2 32
-#define BS_3 96
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
-#define REF_1 0
-#define REF_2 0
+#define REF_1 1
+#define REF_2 1
 #define REF_3 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
@@ -101,10 +101,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 64
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -126,7 +126,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
 
 /*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
-#define PPM (1)
+#define PPM (0)
 #define LEER (0)
 
 /*Wheter to set floors in ZAMO frame*/

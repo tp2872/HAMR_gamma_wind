@@ -1344,6 +1344,7 @@ void pre_refine(void){
 
 	gpu = 0;
 	rc = 0;
+	MPI_Barrier(MPI_COMM_WORLD);
 	for (n1 = 0; n1 < n_active; n1++)Bp_send1(psh, n_ord[n1]);
 	for (n1 = 0; n1 < n_active; n1++)Bp_rec1(n_ord[n1]);
 	for (n1 = 0; n1 < n_active; n1++)Bp_send2(psh, n_ord[n1]);
@@ -1356,7 +1357,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
 	//MPI_Barrier(mpi_cartcomm);
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 10000){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]] > 1){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
