@@ -94,7 +94,7 @@ Numerical Parameters section
 #define REF_3 1
 
 /*Number of GPUs per MPI rank*/
-#define N_GPU 1
+#define N_GPU 2
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
 #define DEREFINE_POLE (0)

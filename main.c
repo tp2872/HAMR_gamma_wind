@@ -297,6 +297,7 @@ void set_arrays(int n)
 	#if(!GPU_ENABLED)
 	mem_spot[i] = 1;
 	#endif
+	if (N_GPU>1) mem_spot[i] = 1;
 
 	array[nl[n]] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
 	array_gdump1[nl[n]] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
