@@ -645,6 +645,7 @@ double advance_GPU(void)
 	}*/
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		flux_send1(F1, BufferF1_1, n_ord[n]);
 		flux_send2(F2, BufferF2_1, n_ord[n]);	
 		#if(N3G>0)
@@ -656,6 +657,7 @@ double advance_GPU(void)
 	//For last timestep synchronize electric fields immediately
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		flux_rec1(F1, BufferF1_1, n_ord[n], 5);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 5);
 		#if(N3G>0)
@@ -665,7 +667,8 @@ double advance_GPU(void)
 
 	//For first timestep do not synchronize electrice fields 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){ //
+	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
 		#if(N3G>0)
@@ -675,6 +678,7 @@ double advance_GPU(void)
 	#elif(!PRESTEP2)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 		#if(N3G>0)
@@ -684,7 +688,8 @@ double advance_GPU(void)
 
 	//For first timestep do not synchronize electrice fields
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){ //
+	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
 		#if(N3G>0)

@@ -733,7 +733,7 @@ extern int prestep_half[NB_LOCAL], prestep_full[NB_LOCAL];
 extern int max_levels;
 extern int reduce_timestep;
 extern int nthreads,numdevices;
-extern int gpu;
+extern int gpu, gpu_offset;
 extern int status;
 
 /* output parameters */

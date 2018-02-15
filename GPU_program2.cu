@@ -621,9 +621,9 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 				else if (i == -1) is = 1;
 			}
 			if (i>0){
-				if(i == NG) is=-1;
-				else if (i == NG + 1) is = 1;
-				else if (i == NG + 2) is = 2;
+				if (i == BS_1) is = -1;
+				else if (i == BS_1 + 1) is = 1;
+				else if (i == BS_1 + 2) is = 2;
 			}
 			js = (((jcurr - j1 - N2G) % (1 + REF_2) == 0) ? (-1) : (1));
 			zs = (((zcurr - z1 - N3G) % (1 + REF_3) == 0) ? (-1) : (1));
@@ -765,9 +765,9 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				else if (j == -1) js = 1;
 			}
 			if (j>0){
-				if(j == NG) js=-1;
-				else if (j == NG + 1) js = 1;
-				else if (j == NG + 2) js = 2;
+				if(j == BS_2) js=-1;
+				else if (j == BS_2 + 1) js = 1;
+				else if (j == BS_2 + 2) js = 2;
 			}	
 			zs = (((zcurr - z1 - N3G) % (1 + REF_3) == 0) ? (-1) : (1));
 
@@ -904,9 +904,9 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 				else if (z == -1) zs = 1;
 			}
 			if (z>0){
-				if (z == NG) zs = -1;
-				else if (z == NG + 1) zs = 1;
-				else if (z == NG + 2) zs = 2;
+				if (z == BS_3) zs = -1;
+				else if (z == BS_3 + 1) zs = 1;
+				else if (z == BS_3 + 2) zs = 2;
 			}
 
 			for (k = 0; k < NPR+3; k++){

@@ -725,7 +725,7 @@ int prestep_half[NB_LOCAL], prestep_full[NB_LOCAL];
 int max_levels, numdevices;
 int reduce_timestep;
 int nthreads;
-int gpu;
+int gpu, gpu_offset;
 int status;
 
 /* output parameters */

@@ -13,11 +13,11 @@ Physical Parameters section
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
+#define TILTED (0)
 #define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
@@ -25,18 +25,18 @@ Physical Parameters section
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.03)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
 #define FULL_DISP (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(1.e-6)
-#define UUMIN	(1.e-7)
+#define RHOMIN	(1.e-5)
+#define UUMIN	(0.3333*1.e-7)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
-#define POWRHO (2.0)
+#define POWRHO (1.5)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
@@ -64,7 +64,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (0)
+#define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
@@ -76,32 +76,35 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 12
-#define NB_3 10
+#define NB_1 2
+#define NB_2 2
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 4
+#define N_LEVELS 2
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
 #define REF_2 1
 #define REF_3 1
 
+/*Number of GPUs per MPI rank*/
+#define N_GPU 1
+
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
