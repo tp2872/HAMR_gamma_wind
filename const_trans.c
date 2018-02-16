@@ -247,7 +247,7 @@ void read_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_
 	isize = (BS_1 + N1G);
 	zsize = (BS_3 + N3G);
 
-	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
+	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		pack_send2_E(n, n, i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][399]));
 		if (gpu == 1){
@@ -287,7 +287,8 @@ void write_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB
 	z2 = BS_3 + N3G;
 	isize = (BS_1 + N1G);
 	zsize = (BS_3 + N3G);
-	//if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
+
+	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){
 			if (gpu == 1)for (z = z1; z < z2; z++){

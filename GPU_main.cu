@@ -38,12 +38,17 @@ void GPU_init(void)
 
 void set_arrays_GPU(int n, int device){
 	int i;
-	cudaSetDevice(block[n][AMR_GPU]);
-	if (mem_spot[nl[n]] == 0 && N_GPU==1){
-		mem_spot[nl[n]] = 1;
+
+	if (mem_spot_gpu[nl[n]] == device){
+		block[n][AMR_GPU] = device;
 		return;
 	}
-	mem_spot[nl[n]] = 1;
+	else if (mem_spot_gpu[nl[n]] != device && mem_spot_gpu[nl[n]] != -1){
+		GPU_finish(n, 1);
+	}
+	block[n][AMR_GPU] = device;
+	cudaSetDevice(device);
+	mem_spot_gpu[nl[n]] = device;
 
 	/*Set the global work size and make sure that it is a multiple of the group size. The Nvidia OpenCL framework crashes otherwise!*/
 	fix_mem[nl[n]] = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
@@ -1893,18 +1898,30 @@ void GPU_read(int n)
 	if (cudaSuccess != status )fprintf(stderr, "Error in GPU_read: %d \n", status);
 }
 
-void GPU_finish(int n)
+void GPU_finish(int n, int force_delete)
 {
 	int i;
-	//Select correct CUDA device
-	cudaSetDevice(block[n][AMR_GPU]);
 
-	mem_spot[nl[n]] = 0;
+	//Tell code no GPU
+	block[n][AMR_GPU] = -1;
+	if (mem_spot[nl[n]] == 1) fprintf(stderr, "Error, tries to deallocate GPU memory before deaalocating RAM! \n");
+	if (mem_spot[nl[n]] == 0 && force_delete==0){
+		return;
+	}
+	else if (mem_spot_gpu[nl[n]] == -1){
+		return;
+	}
+	else{
+		//Select correct CUDA device
+		cudaSetDevice(mem_spot_gpu[nl[n]]);
+		
+		//Tell the code that memory is deallocated on the GPU
+		mem_spot_gpu[nl[n]] = -1;
+	}
+
+	//Make sure all events are finished
 	for (i = 0; i < 600; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][i], 0);
 	for (i = 0; i < 100; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
-
-	if (nl[n]<(n_active_total / numtasks)  && N_GPU==1) return;
-	mem_spot[nl[n]] = -1;
 
 	//Destroy CUDA events associated with block
 	for (i = 0; i < 600; i++) cudaEventDestroy(boundevent[nl[n]][i]);
@@ -2577,7 +2594,7 @@ void GPU_finish(int n)
 	#endif
 	#endif
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error in GPU_finish_1: %d \n", status);
 }

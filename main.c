@@ -185,7 +185,10 @@ int main(int argc, char *argv[])
 	diag(FINAL_OUT) ;
 
 	/*Close GPU*/
-	for (n=0; n<n_active; n++) GPU_finish(n_ord[n]);
+	for (n = 0; n < n_active; n++){
+		free_arrays(n_ord[n]);
+		GPU_finish(n_ord[n], 1);
+	}
 	return(0) ;
 }
 
@@ -193,7 +196,7 @@ int main(int argc, char *argv[])
 The host node is node 0 by default.*/
 void MPI_initialize(int argc, char *argv[])
 {
-#if (MPI_enable)
+	#if (MPI_enable)
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 	int i, j, z, len, dim, corn, rankloop;
 	int dims[3], periods[3], coords[3];
@@ -231,7 +234,7 @@ void MPI_initialize(int argc, char *argv[])
 		}
 		fprintf(stderr, "Number of MPI tasks: %d \nRunning on: %s\n", numtasks, hostname);
 	}
-#endif
+	#endif
 
 	#pragma omp parallel shared(nthreads) private(threadid)
 	{
@@ -279,25 +282,23 @@ void set_arrays_image(void)
 void set_arrays(int n)
 {
 	int i=0;
+
+	//Find location in memory for new block and set nl[n]
 	while (i < NB_LOCAL){
 		if (mem_spot[i] != 1) break;
 		i++;
-	}
-	if (i == NB_LOCAL){
-		fprintf(stderr, "Node %d ran out of local node memory! Stopping \n", rank);
-		exit(0);
+		if (i == NB_LOCAL){
+			fprintf(stderr, "Node %d ran out of local node memory! Stopping \n", rank);
+			exit(0);
+		}
 	}
 	nl[n] = i;
+
 	if (mem_spot[i] == 0){
-		#if(!GPU_ENABLED)
 		mem_spot[i] = 1;
-		#endif
 		return;
 	}
-	#if(!GPU_ENABLED)
-	mem_spot[i] = 1;
-	#endif
-	if (N_GPU>1) mem_spot[i] = 1;
+	else mem_spot[i] = 1;
 
 	array[nl[n]] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
 	array_gdump1[nl[n]] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
@@ -849,9 +850,26 @@ void set_arrays(int n)
 
 void free_arrays(int n)
 {
-	mem_spot[nl[n]] = 0;
-	if (nl[n]<(n_active_total/numtasks)) return;
-	mem_spot[nl[n]] = -1;
+	int i, count_node = 0, count_gpu = 0;
+	//Count on node/GPU
+	for (i = 0; i < NB_LOCAL; i++){
+		if (mem_spot[i] != -1){
+			count_node++; //Number of allocated blocks on node
+			if (mem_spot_gpu[i] == block[n][AMR_GPU] && GPU_ENABLED==1) count_gpu++;
+		}
+	}
+	#if(GPU_ENABLED)
+	if (count_gpu < (n_active_total / (numtasks*N_GPU)) || count_node < (n_active_total / numtasks)){
+		mem_spot[nl[n]] = 0;
+		return;
+	}
+	#else
+	if (count_node < (n_active_total / numtasks)){
+		mem_spot[nl[n]] = 0;
+		return;
+	}
+	#endif
+	else mem_spot[nl[n]] = -1;
 
 	free(p[nl[n]]);
 	free(ph[nl[n]]);
