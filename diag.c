@@ -73,16 +73,17 @@ void diag(int call_code)
 		}
 		#if (MPI_enable)
 		MPI_Barrier(mpi_cartcomm);
+		double divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &imax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &jmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Allreduce(MPI_IN_PLACE, &zmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
+		//MPI_Allreduce(MPI_IN_PLACE, &imax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
+		//MPI_Allreduce(MPI_IN_PLACE, &jmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
+		//MPI_Allreduce(MPI_IN_PLACE, &zmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Barrier(mpi_cartcomm);
 		#endif
 		icurr = imax;
 		jcurr = jmax;
 		
-		if (rank == 0){
+		if (divbmax==divbmax_local){
 			fprintf(stderr, "LOG      t=%g \t divbmax: %d %d %d %g\n", t, imax, jmax, zmax, divbmax);
 		}
 		if (divbmax > 1.0) exit(44);

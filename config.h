@@ -76,14 +76,14 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 3
-#define NB_2 6
-#define NB_3 2
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 52
-#define BS_2 24
-#define BS_3 40
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2
@@ -97,14 +97,14 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -114,6 +114,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
 #define PRESTEP2 0
+
+/*Preevolve primitive variables for Summit*/
+#define PRESTEP_P 1
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0

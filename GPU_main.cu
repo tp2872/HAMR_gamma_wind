@@ -26,7 +26,10 @@ void GPU_init(void)
 		}
 	}
 	status = cudaGetLastError();
-	if (cudaSuccess != status) fprintf(stderr, "Error in setting peeraccess: %d \n", status);
+	if (cudaSuccess != status){
+		exit(0);
+		fprintf(stderr, "Error in setting peeraccess: %d \n", status);
+	}
 
 	/*Set cache config, this is fastest on NVIDIA Kepler*/
 	cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
@@ -127,6 +130,8 @@ void set_arrays_GPU(int n, int device){
 	#if(PPM || LEER)
 	cudaMalloc(&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#endif
+	cudaMalloc(&Bufferstorage2[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
+	cudaMalloc(&Bufferstorage3[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferp_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferph_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#if(STAGGERED)
@@ -1206,26 +1211,26 @@ void GPU_fluxcalcprep(int dir, int flag, int ppm_solver, int n)
 	cudaSetDevice(block[n][AMR_GPU]);
 	if (dir == 1){
 		if (flag == 1){
-			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]]);
+			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]], poststep_p);
 		}
 		else{
-			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]]);
+			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]], poststep_p);
 		}
 	}
 	else if (dir == 2){
 		if (flag == 1){
-			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]]);
+			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]], poststep_p);
 		}
 		else{
-			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]]);
+			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]], poststep_p);
 		}
 	}
 	else{
 		if (flag == 1){
-			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]]);
+			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]], poststep_p);
 		}
 		else{
-			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]]);
+			fluxcalcprep << < nr_workgroups2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], dir, lim, ppm_solver, BufferV[nl[n]], poststep_p);
 		}
 	}
 	//cudaDeviceSynchronize();
@@ -1242,34 +1247,34 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 		if (dir == 1){
 			fluxcalc2D2 << < nr_workgroups2_1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				lim, dir, gam, cour, dtij_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),  
-				dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3]);
+				dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], poststep_p);
 		}
 		if (dir == 2){
 			fluxcalc2D2 << < nr_workgroups2_2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], poststep_p);
 		}
 		if (dir == 3){
 			fluxcalc2D2 << < nr_workgroups2_3[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], poststep_p);
 		}
 	}
 	else{
 		if (dir == 1){
 			fluxcalc2D2 << < nr_workgroups2_1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), 
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], poststep_p);
 		}
 		if (dir == 2){
 			fluxcalc2D2 << < nr_workgroups2_2[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], poststep_p);
 		}
 		if (dir == 3){
 			fluxcalc2D2 << < nr_workgroups2_3[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), 
-				  dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], poststep_p);
 		}
 	}
 	//cudaDeviceSynchronize();
@@ -1510,10 +1515,10 @@ void GPU_consttransport1(int flag, double Dt, int n){
 	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
-		 consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferdq_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+		consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferstorage3[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], poststep_p);
 	}
 	else{
-		consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferdq_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]]);
+		consttransport1 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferstorage3[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], poststep_p);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -1527,12 +1532,12 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
-		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferdq_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
-			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), poststep_p);
 	}
 	else{
-		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferdq_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
-			Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		consttransport2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+			Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), poststep_p);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -1546,10 +1551,10 @@ void GPU_consttransport3(int flag, double Dt, int n){
 	cudaSetDevice(block[n][AMR_GPU]);
 	/*Run kernel*/
 	if (flag == 1){
-		 consttransport3 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Buffergdet[nl[n]], Bufferps_1[nl[n]], Bufferps_1[nl[n]], BufferE_1[nl[n]], Dt);
+		consttransport3 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Buffergdet[nl[n]], Bufferps_1[nl[n]], Bufferps_1[nl[n]], BufferE_1[nl[n]], Dt, poststep_p);
 	}
 	else{
-		 consttransport3 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Buffergdet[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], BufferE_1[nl[n]], Dt);
+		consttransport3 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Buffergdet[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], BufferE_1[nl[n]], Dt, poststep_p);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -1594,28 +1599,28 @@ void GPU_Utoprim(int flag, int n, double Dt)
 	#if(!V100)
 	if (flag == 0){
 		Utoprim0 << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag,poststep_p);
 	}
 	else{
 		Utoprim0 << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag,poststep_p);
 	}
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error Utoprim0 %d\n", status);
 
 	if (flag == 0){
 		Utoprim1 << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag,poststep_p);
 	}
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error Utoprim1 %d\n", status);
 	if (flag == 0){
 		Utoprim2 << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag,poststep_p);
 	}
 	else{
 		Utoprim2 << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag,poststep_p);
 	}
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error Utoprim1 %d\n", status);
@@ -1642,12 +1647,12 @@ void GPU_fixup(int flag, int n, double Dt)
 {
 	cudaSetDevice(block[n][AMR_GPU]);
 	if (flag == 0){
-		fixup << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+		fixup << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, poststep_p);
 	}
 	else{
-		fixup << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag);
+		fixup << < nr_workgroups1[nl[n]], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag,poststep_p);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
@@ -1958,6 +1963,8 @@ void GPU_finish(int n, int force_delete)
 	#if(PPM || LEER)
 	status += cudaFree(Bufferstorage1[nl[n]]);
 	#endif
+	status += cudaFree(Bufferstorage2[nl[n]]);
+	status += cudaFree(Bufferstorage3[nl[n]]);
 	status += cudaFree(Bufferp_1[nl[n]]);
 	status += cudaFree(Bufferph_1[nl[n]]);
 	#if(STAGGERED)

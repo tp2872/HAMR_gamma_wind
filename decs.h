@@ -735,6 +735,7 @@ extern int reduce_timestep;
 extern int nthreads,numdevices;
 extern int gpu, gpu_offset;
 extern int status;
+extern int poststep_p;
 
 /* output parameters */
 extern double DTd;
