@@ -491,12 +491,12 @@ void GPU_step_ch()
 		set_prestep();
 		poststep_p = 0;
 		ndt = advance_GPU();   /* time step primitive variables to the half step */
-
+		
 		#if(PRESTEP_P)
+		if (nstep % (2 * AMR_SWITCHTIMELEVEL) != 0) prestep_receive_bound();
 		poststep_p = 1;
 		ndt = advance_GPU();   /* time step primitive variables to the half step */
 		#endif
-
 
 		//Post-stepping when having 2nd order time accuracy at boundary
 		#if(PRESTEP2)
@@ -539,7 +539,12 @@ void GPU_step_ch()
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
+		#if(PRESTEP_P)
+		prestep_receive_bound();
+		#endif
+		set_timelevel();
+	}
 	#if(TIMESTEP_JET)
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel_jet();
 	#endif

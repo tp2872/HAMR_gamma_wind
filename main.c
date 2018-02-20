@@ -90,7 +90,8 @@ int main(int argc, char *argv[])
 	first_dump = 0;
 	diag(INIT_OUT);
 
-	DTl = 20.0;
+	DTl = 100.0;
+	DTd = 100.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t + TREF;
@@ -127,7 +128,7 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (200 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE && N_LEVELS!=1)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
@@ -145,19 +146,19 @@ int main(int argc, char *argv[])
 		}
 
 		/* Put out dump file*/
-		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump && nstep % (200 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tlog && nstep % (200 * AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 
 		#if TIMER
-		if (nstep % (20*AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (200*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
