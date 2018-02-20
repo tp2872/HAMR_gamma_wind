@@ -130,8 +130,13 @@ void set_arrays_GPU(int n, int device){
 	#if(PPM || LEER)
 	cudaMalloc(&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#endif
+	#if(PRESTEP_P)
 	cudaMalloc(&Bufferstorage2[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferstorage3[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
+	#else
+	Bufferstorage2[nl[n]] = Bufferp_1[nl[n]];
+	Bufferstorage3[nl[n]] = Bufferdq_1[nl[n]];
+	#endif
 	cudaMalloc(&Bufferp_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferph_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#if(STAGGERED)
@@ -1985,8 +1990,10 @@ void GPU_finish(int n, int force_delete)
 	#if(PPM || LEER)
 	status += cudaFree(Bufferstorage1[nl[n]]);
 	#endif
+	#if(PRESTEP_P)
 	status += cudaFree(Bufferstorage2[nl[n]]);
 	status += cudaFree(Bufferstorage3[nl[n]]);
+	#endif
 	status += cudaFree(Bufferp_1[nl[n]]);
 	status += cudaFree(Bufferph_1[nl[n]]);
 	#if(STAGGERED)

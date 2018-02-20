@@ -460,7 +460,7 @@ void balance_load(void){
 	rm_order2();
 	#endif
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
-	if (numtasks_local < NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
+	if (numtasks_local > NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
 	do{
 		count++;
 		/*First make a z-order curve for each timelevel seperately, then load balance for timesteps. This is the best and most advanced method*/
@@ -537,6 +537,8 @@ void balance_load(void){
 			NODE[n_ord_total_RM[n]] = temp / N_GPU;
 			GPU[n_ord_total_RM[n]] = gpu_offset + (temp - NODE[n_ord_total_RM[n]] * N_GPU);
 			if (rank == NODE[n_ord_total_RM[n]])n_active_local_gpu[GPU[n_ord_total_RM[n]]-gpu_offset]++;
+			if (GPU[n_ord_total_RM[n]] >= 4) fprintf(stderr, "Catastrophic load balancing error 1 \n");
+			if (NODE[n_ord_total_RM[n]] >= numtasks) fprintf(stderr, "Catastrophic load balancing error 2 \n");
 		}
 		for (g = 0; g < N_GPU; g++){
 			n_active_local_max = MY_MAX(n_active_local_max, n_active_local_gpu[g]);
@@ -564,7 +566,6 @@ void balance_load(void){
 			}
 		}
 	}
-
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
 			if (NODE[n_ord_total_RM[i]] == rank){
@@ -581,7 +582,6 @@ void balance_load(void){
 			}
 		}
 	}
-
 	for (i = 0; i < n_active_total; i++){
 		//Then use MPI_wait to clean up data that has been sent
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){

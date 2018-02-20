@@ -852,6 +852,7 @@ void set_arrays(int n)
 void free_arrays(int n)
 {
 	int i, count_node = 0, count_gpu = 0;
+
 	//Count on node/GPU
 	for (i = 0; i < NB_LOCAL; i++){
 		if (mem_spot[i] != -1){
@@ -859,17 +860,10 @@ void free_arrays(int n)
 			if (mem_spot_gpu[i] == block[n][AMR_GPU] && GPU_ENABLED==1) count_gpu++;
 		}
 	}
-	#if(GPU_ENABLED)
 	if (count_gpu < (n_active_total / (numtasks*N_GPU)) || count_node < (n_active_total / numtasks)){
 		mem_spot[nl[n]] = 0;
 		return;
 	}
-	#else
-	if (count_node < (n_active_total / numtasks)){
-		mem_spot[nl[n]] = 0;
-		return;
-	}
-	#endif
 	else mem_spot[nl[n]] = -1;
 
 	free(p[nl[n]]);
@@ -909,6 +903,7 @@ void free_arrays(int n)
 	#if (ELLIPTICAL2)
 	free(dU_s[nl[n]]);
 	#endif
+	fprintf(stderr, "Hallo2 \n");
 
 	free(send1[nl[n]]);
 	free(send2[nl[n]]);
@@ -981,7 +976,8 @@ void free_arrays(int n)
 	free(receive5_fine[nl[n]]);
 	free(receive6_fine[nl[n]]);
 	#endif
-	
+	fprintf(stderr, "Hallo3 \n");
+
 	#if(CPU_OPENMP)
 	free(send1_flux[nl[n]]);
 	free(send2_flux[nl[n]]);
