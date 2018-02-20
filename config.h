@@ -73,17 +73,17 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 1
+#define COPY_BFIELD 0
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 2
+#define NB_2 2
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 50
+#define BS_2 50
+#define BS_3 50
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2

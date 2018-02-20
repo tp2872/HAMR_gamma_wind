@@ -1835,31 +1835,19 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 
 __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int poststep_p)
 {
-	/*  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	int isize = (BS_3 + 2 * D3)*(BS_2 + 2 * D2);
-	int zcurr = (global_id % (isize)) % (BS_3 + 2 * D3);
-	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3);
-	int icurr = (global_id - (jcurr*(BS_3 + 2 * D3) + zcurr)) / (isize);
-	zcurr += (N3G - 1)*D3;
-	jcurr += N2G - 1;
-	icurr += N1G - 1;
-	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
-	int k = 0;
-	if (global_id<(BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) k = 1;*/
-
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
-	if (poststep_p == 0){ 
-		isize = (BS_3 + 2 * D3 - 2 * 0*N3G)*(BS_2 + 2 * D2 - 2 * 0*N2G);
-		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * 0*N3G);
-		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * 0*N3G);
-		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * 0*N3G) + zcurr)) / (isize);
-		zcurr += (N3G - 1)*D3 + 0*N3G;
-		jcurr += (N2G - 1)*D2 + 0*N2G;
-		icurr += (N1G - 1)*D1 + 0*N1G;
-		if (global_id<(BS_1 + 2 * D1 - 2 * 0*N1G) * (BS_2 + 2 * D2 - 2 * 0*N2G) * (BS_3 + 2 * D3 - 2 * 0*N3G)) k = 1;
+	if (poststep_p==0){
+		isize = (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G)*(BS_2 + 2 * D2 - 2 * (PRESTEP_P)*N2G);
+		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G);
+		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G);
+		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G) + zcurr)) / (isize);
+		zcurr += (N3G - 1)*D3 + (PRESTEP_P)*N3G;
+		jcurr += (N2G - 1)*D2 + (PRESTEP_P)*N2G;
+		icurr += (N1G - 1)*D1 + (PRESTEP_P)*N1G;
+		if (global_id<(BS_1 + 2 * D1 - 2 * (PRESTEP_P)*N1G) * (BS_2 + 2 * D2 - 2 * (PRESTEP_P)*N2G) * (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G)) k = 1;
 	}
-	#if(!PRESTEP_P)
+	#if(PRESTEP_P)
 	else{
 		if (global_id < (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1)){
 			isize = (BS_2 + 2 * D2)*(BS_3 + 2 * D3);
@@ -1908,7 +1896,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			k = 1;
 		}
 		else if (global_id >= 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2)
-			&& global_id < 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + D3)){
+			&& global_id < 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + 2 * D3)){
 			global_id -= 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2);
 			isize = (BS_1 + 2 * D1)*(BS_2 + 2 * D2);
 			jcurr = (global_id % (isize)) % (BS_2 + 2 * D2);
@@ -1919,9 +1907,9 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			icurr += (N1G - 1)*D1;
 			k = 1;
 		}
-		else if (global_id >= 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + D3)
-			&& global_id < 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + D3)){
-			global_id -= 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + D3);
+		else if (global_id >= 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + 2 * D3)
+			&& global_id < 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + 2 * D3)){
+			global_id -= 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + 2 * D3);
 			isize = (BS_1 + 2 * D1)*(BS_2 + 2 * D2);
 			jcurr = (global_id % (isize)) % (BS_2 + 2 * D2);
 			icurr = ((global_id - jcurr) % (isize)) / (BS_2 + 2 * D2);
@@ -2020,26 +2008,16 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	__shared__ double local_dtij[LOCAL_WORK_SIZE];
 	int k = 0;
 
-	/*int isize = (BS_3 + 2 * D3 - (dir == 3))*(BS_2 + 2 * D2 - (dir == 2));
-	int zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - (dir == 3));
-	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - (dir == 3));
-	int icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - (dir == 3)) + zcurr)) / (isize);
-	zcurr += (N3G - 1)*D3 + (dir == 3);
-	jcurr += (N2G - 1) + (dir == 2);
-	icurr += (N1G - 1) + (dir == 1);
-	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
-	int k = 0;
-	if (global_id<(BS_1 + 2 * D1 - (dir == 1)) * (BS_2 + 2 * D2 - (dir == 2)) * (BS_3 + 2 * D3 - (dir == 3))) k = 1;*/
 	int isize, icurr, jcurr, zcurr;
 	if (poststep_p == 0){
-		isize = (BS_3 + 2 * D3 - 2 * 0*N3G - (dir == 3))*(BS_2 + 2 * D2 - 2 * 0*N2G - (dir == 2));
-		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * 0*N3G - (dir == 3));
-		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * 0*N3G - (dir == 3));
-		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * 0*N3G - (dir == 3)) + zcurr)) / (isize);
-		zcurr += (N3G - 1)*D3 + 0*N3G + (dir == 3);
-		jcurr += (N2G - 1)*D2 + 0*N2G + (dir == 2);
-		icurr += (N1G - 1)*D1 + 0*N1G + (dir == 1);
-		if (global_id<(BS_1 + 2 * D1 - 2 * 0*N1G - (dir == 1)) * (BS_2 + 2 * D2 - 2 * 0*N2G - (dir == 2)) * (BS_3 + 2 * D3 - 2 * 0*N3G - (dir == 3))) k = 1;
+		isize = (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3))*(BS_2 + 2 * D2 - 2 * PRESTEP_P*N2G - (dir == 2));
+		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3));
+		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3));
+		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3)) + zcurr)) / (isize);
+		zcurr += (N3G - 1)*D3 + PRESTEP_P*N3G + (dir == 3);
+		jcurr += (N2G - 1)*D2 + PRESTEP_P*N2G + (dir == 2);
+		icurr += (N1G - 1)*D1 + PRESTEP_P*N1G + (dir == 1);
+		if (global_id<(BS_1 + 2 * D1 - 2 * PRESTEP_P*N1G - (dir == 1)) * (BS_2 + 2 * D2 - 2 * PRESTEP_P*N2G - (dir == 2)) * (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3))) k = 1;
 	}
 	#if(PRESTEP_P)
 	else{
@@ -2099,7 +2077,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			zcurr += (N3G - 1)*D3 + (dir == 3);
 			jcurr += (N2G - 1)*D2 + (dir == 2);
 			icurr += (N1G - 1)*D1 + (dir == 1);
-			k = 0;
+			k = 1;
 		}
 		else if (global_id >= 2 * (BS_2 + 2 * D2 - (dir == 2))*(BS_3 + 2 * D3 - (dir == 3))*(N1G + 2 * D1 - (dir == 1)) + 2 * (BS_1 + 2 * D1 - (dir == 1))*(BS_3 + 2 * D3 - (dir == 3))*(N2G + 2 * D2 - (dir == 2)) + (BS_1 + 2 * D1 - (dir == 1))*(BS_2 + 2 * D2 - (dir == 2))*(N3G + 2 * D3 - (dir == 3))
 			&& global_id < 2 * (BS_2 + 2 * D2 - (dir == 2))*(BS_3 + 2 * D3 - (dir == 3))*(N1G + 2 * D1 - (dir == 1)) + 2 * (BS_1 + 2 * D1 - (dir == 1))*(BS_3 + 2 * D3 - (dir == 3))*(N2G + 2 * D2 - (dir == 2)) + 2 * (BS_1 + 2 * D1 - (dir == 1))*(BS_2 + 2 * D2 - (dir == 2))*(N3G + 2 * D3 - (dir == 3))){
@@ -2111,7 +2089,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			zcurr += (BS_3 - 1)*D3 + (dir == 3);
 			jcurr += (N2G - 1)*D2 + (dir == 2);
 			icurr += (N1G - 1)*D1 + (dir == 1);
-			k = 0;
+			k = 1;
 		}
 	}
 	#endif
@@ -2220,16 +2198,18 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 		local_dtij[local_id] = factor / ctop;
 	}
-	__syncthreads();
-	for (i = local_size / 2; i>1; i = i / 2){
-		if (local_id<i){
-			local_dtij[local_id] = MY_MIN(local_dtij[local_id], local_dtij[local_id + i]);
-		}
+	//if (poststep_p == 0){
 		__syncthreads();
-	}
-	if (local_id == 0){
-		dtij[group_id] = MY_MIN(local_dtij[0], local_dtij[1]);
-	}
+		for (i = local_size / 2; i > 1; i = i / 2){
+			if (local_id < i){
+				local_dtij[local_id] = MY_MIN(local_dtij[local_id], local_dtij[local_id + i]);
+			}
+			__syncthreads();
+		}
+		if (local_id == 0){
+			dtij[group_id] = MY_MIN(local_dtij[0], local_dtij[1]);
+		}
+	//}
 }
 
 __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
@@ -2409,14 +2389,6 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	/*int isize = (BS_3 + D3 - PRESTEP_P*N3G)*(BS_2 + D2 - PRESTEP_P*N2G);
-	int zcurr = (global_id % (isize)) % (BS_3 + D3 - PRESTEP_P*N3G);
-	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3 - PRESTEP_P*N3G);
-	int icurr = (global_id - (jcurr*(BS_3 + D3 - PRESTEP_P*N3G) + zcurr)) / (isize);
-	zcurr += N3G + PRESTEP_P*N3G;
-	jcurr += N2G + PRESTEP_P*N2G;
-	icurr += N1G + PRESTEP_P*N1G;
-	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);*/
 	int isize, icurr, jcurr, zcurr, k=0;
 	if (poststep_p == 0){
 		isize = (BS_3 + D3 - 2 * PRESTEP_P*N3G)*(BS_2 + D2 - 2 * PRESTEP_P*N2G);
@@ -2558,17 +2530,9 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	const  double* __restrict__  E_corn, double Dt, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
-	/*int isize = (BS_3 + D3 - PRESTEP_P*N3G)*(BS_2 + D2 - PRESTEP_P*N2G);
-	int zcurr = (global_id % (isize)) % (BS_3 + D3 - PRESTEP_P*N3G);
-	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3 - PRESTEP_P*N3G);
-	int icurr = (global_id - (jcurr*(BS_3 + D3 - PRESTEP_P*N3G) + zcurr)) / (isize);
-	zcurr += N3G + PRESTEP_P*N3G;
-	jcurr += N2G + PRESTEP_P*N2G;
-	icurr += N1G + PRESTEP_P*N1G;
-	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);*/
 	int isize, icurr, jcurr, zcurr, k=0, i, imin[3], jmin[3], zmin[3], imax[3], jmax[3], zmax[3];
 
-	if (poststep_p == 0){
+	if (poststep_p==0){
 		isize = (BS_3 + D3 - PRESTEP_P*(2 * N3G))*(BS_2 + D2 - PRESTEP_P*(2 * N2G));
 		zcurr = (global_id % (isize)) % (BS_3 + D3 - PRESTEP_P*(2 * N3G));
 		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3 - PRESTEP_P*(2 * N3G));
@@ -2645,14 +2609,14 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			jcurr += (N2G)*D2;
 			icurr += (N1G)*D1;
 			for (i = 0; i < 3; i++){
-				imin[i] = N1G;
+				imin[i] = 2 * N1G;
 				jmin[i] = N2G;
 				zmin[i] = N3G;
-				imax[i] = BS_1 + N1G;
+				imax[i] = BS_1;
 				jmax[i] = 2 * N2G;
 				zmax[i] = BS_3 + N3G;
 			}
-			imin[0] += D1;
+			imax[0] += D1;
 			zmax[2] += D3;
 			k = 1;
 		}
@@ -2667,15 +2631,16 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			jcurr += BS_2;
 			icurr += (N1G)*D1;
 			for (i = 0; i < 3; i++){
-				imin[i] = N1G;
+				imin[i] = 2 * N1G;
 				jmin[i] = BS_2;
 				zmin[i] = N3G;
-				imax[i] = BS_1 + N1G;
+				imax[i] = BS_1;
 				jmax[i] = BS_2 + N2G;
 				zmax[i] = BS_3 + N3G;
 			}
-			imin[0] += D1;
+			imax[0] += D1;
 			jmin[1] += D2;
+			jmax[1] += D2;
 			zmax[2] += D3;
 			k = 1;
 		}
@@ -2690,15 +2655,15 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			jcurr += (N2G)*D2;
 			icurr += (N1G)*D1;
 			for (i = 0; i < 3; i++){
-				imin[i] = N1G;
-				jmin[i] = N2G;
+				imin[i] = 2 * N1G;
+				jmin[i] = 2 * N2G;
 				zmin[i] = N3G;
-				imax[i] = BS_1 + N1G;
-				jmax[i] = BS_2 + N2G;
+				imax[i] = BS_1;
+				jmax[i] = BS_2;
 				zmax[i] = 2 * N3G;
 			}
-			imin[0] += D1;
-			jmin[1] += D2;
+			imax[0] += D1;
+			jmax[1] += D2;
 			k = 1;
 		}
 		else if (global_id >= 2 * (BS_2 + D2)*(BS_3 + D3)*(N1G + D1) + 2 * (BS_1 + D1)*(BS_3 + D3)*(N2G + D2) + (BS_1 + D1)*(BS_2 + D2)*(N3G + D3)
@@ -2712,16 +2677,17 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			jcurr += (N2G)*D2;
 			icurr += (N1G)*D1;
 			for (i = 0; i < 3; i++){
-				imin[i] = N1G;
-				jmin[i] = N2G;
+				imin[i] = 2 * N1G;
+				jmin[i] = 2 * N2G;
 				zmin[i] = BS_3;
-				imax[i] = BS_1 + N1G;
-				jmax[i] = BS_2 + N2G;
+				imax[i] = BS_1;
+				jmax[i] = BS_2;
 				zmax[i] = BS_3 + N3G;
 			}
-			imin[0] += D1;
-			jmin[1] += D2;
+			imax[0] += D1;
+			jmax[1] += D2;
 			zmin[2] += D3;
+			zmax[2] += D3;
 			k = 1;
 		}
 	}
@@ -3586,9 +3552,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		zcurr = (global_id % (isize)) % (BS_3 - 2 * PRESTEP_P*N3G);
 		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 - 2 * PRESTEP_P*N3G);
 		icurr = (global_id - (jcurr*(BS_3 - 2 * PRESTEP_P*N3G) + zcurr)) / (isize);
-		zcurr += N3G + PRESTEP_P * N3G;
-		jcurr += N2G + PRESTEP_P * N2G;
-		icurr += N1G + PRESTEP_P * N1G;
+		zcurr += N3G + PRESTEP_P*N3G;
+		jcurr += N2G + PRESTEP_P*N2G;
+		icurr += N1G + PRESTEP_P*N1G;
 		if (global_id < (BS_1 - 2 * PRESTEP_P*N1G)*(BS_2 - 2 * PRESTEP_P*N2G)*(BS_3 - 2 * PRESTEP_P*N3G)) k = 1;
 	}
 	#if(PRESTEP_P)
