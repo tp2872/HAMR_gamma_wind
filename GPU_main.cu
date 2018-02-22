@@ -123,6 +123,8 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferF3_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferdq_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&BufferE_1[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
+	cudaMalloc(&Bufferp_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
+	cudaMalloc(&Bufferph_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#if(LEER)
 	cudaMalloc(&BufferV[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#endif
@@ -137,8 +139,6 @@ void set_arrays_GPU(int n, int device){
 	Bufferstorage2[nl[n]] = Bufferp_1[nl[n]];
 	Bufferstorage3[nl[n]] = Bufferdq_1[nl[n]];
 	#endif
-	cudaMalloc(&Bufferp_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
-	cudaMalloc(&Bufferph_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#if(STAGGERED)
 	cudaMalloc(&Bufferps_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferpsh_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
@@ -1724,14 +1724,16 @@ void GPU_boundprim(int bound_force)
 	}
 	#endif
 
+	//cudaDeviceSynchronize();
+	//mpi_synch();
 	//For last timestep do not receive synchronized electrice fields 
 	if (rank == 0){
-		begin2 =clock();
+		begin2 = clock();
 	}
 	#if(PRESTEP)
 	rc = 0;
 	//MPI communication
-	//mpi_synch();
+
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
@@ -1835,6 +1837,7 @@ void GPU_boundprim(int bound_force)
 	}
 	#endif
 	//MPI communication
+	//cudaDeviceSynchronize();
 	mpi_synch();
 
 	if (rank == 0){

@@ -3651,13 +3651,13 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			primtoU(pf, &q, &geom, U, gam);
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
-				storage2[k*(ksize)+global_id] = U[k];
+				pi_i[k*(ksize)+global_id] = U[k];
 			}
 		}
 		else{
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
-				U[k] = storage2[k*(ksize)+global_id];
+				U[k] = pi_i[k*(ksize)+global_id];
 			}
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){

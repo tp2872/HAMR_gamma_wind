@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	tlog = t + DTl;
 	tref = t + TREF;
 	time_spent3 = 0.0;
-	begin1 = time(NULL);
+	begin1 = clock();
 	begin2 = begin1;
 
 	//cuProfilerStart();
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
 		//Every swithchtime read out data from GPU and set boundary
 		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
-			end1 = time(NULL);
+			end1 = clock();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (200 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(!DEREFINE_POLE && N_LEVELS!=1)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
@@ -146,25 +146,25 @@ int main(int argc, char *argv[])
 		}
 
 		/* Put out dump file*/
-		if (t >= tdump && nstep % (200 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (200 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 
 		#if TIMER
-		if (nstep % (200*AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (20*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1), time_spent3);
+				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC, time_spent3);
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1,ndt2,ndt3,nstep);
 				fflush(stderr);
 			}
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 				restart_write();
 				break;
 			}
-			begin1 = time(NULL);			
+			begin1 = clock();			
 		}
 		#endif
 	}
