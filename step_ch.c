@@ -554,33 +554,33 @@ void GPU_step_ch()
 
 double advance_GPU(void)
 {
-	int i, n;
+	int i, g, n, temp;
 	double timestep;
 	gpu = 1;
+
+	for (g = 0; g < N_GPU; g++) for (i = timelevel_min; i <= timelevel_max; i++) n_evolve[i*N_GPU + g] = 0;
+
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 0 && poststep_p==0){
 		ndt1 = ndt2 = ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
 			bdt[nl[n_ord[n]]][0] = bdt[nl[n_ord[n]]][1] = bdt[nl[n_ord[n]]][2] = bdt[nl[n_ord[n]]][3] = 1e9;
 		}
 	}
+
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		prestep_half[nl[n_ord[n]]] = (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
 			|| (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) < block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
 		prestep_full[nl[n_ord[n]]] = (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)
 			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
+		temp = n_evolve[(int)(log(block[n_ord[n]][AMR_TIMELEVEL]) / log(2)) * N_GPU + block[n_ord[n]][AMR_GPU]];
+		n_ord_evolve[(int)(log(block[n_ord[n]][AMR_TIMELEVEL]) / log(2)) * N_GPU + block[n_ord[n]][AMR_GPU]][temp] = n_ord[n];
+		n_evolve[(int)(log(block[n_ord[n]][AMR_TIMELEVEL]) / log(2)) * N_GPU + block[n_ord[n]][AMR_GPU]]++;
 	}
 
 	#if(N1G>0)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(1, 0, n_ord[n]);
-	}
-
-	//read_time_GPU();
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1) bdt[nl[n_ord[n]]][1] = fluxcalc_GPU(n_ord[n],1);
+	GPU_fluxcalc2D(1);
+	fluxcalc_GPU(1);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if (poststep_p == 0)ndt1 = 1e9;
 		for (n = 0; n < n_active; n++){
@@ -596,15 +596,8 @@ double advance_GPU(void)
 	ndt1 = 1e9;
 	#endif
 	#if(N2G>0)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(2, 0, n_ord[n]);
-	}
-
-	//read_time_GPU();
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1) bdt[nl[n_ord[n]]][2] = fluxcalc_GPU(n_ord[n],2);
+	GPU_fluxcalc2D(2);
+	fluxcalc_GPU(2);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if (poststep_p == 0)ndt2 = 1e9;
 		for (n = 0; n < n_active; n++){
@@ -620,15 +613,8 @@ double advance_GPU(void)
 	ndt2 = 1e9;
 	#endif
 	#if(N3G>0)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(3, 1, n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(3, 0, n_ord[n]);
-	}
-
-	//read_time_GPU();
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1) bdt[nl[n_ord[n]]][3] = fluxcalc_GPU(n_ord[n],3);
+	GPU_fluxcalc2D(3);
+	fluxcalc_GPU(3);
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if (poststep_p == 0)ndt3 = 1e9;
 		for (n = 0; n < n_active; n++){
@@ -647,13 +633,6 @@ double advance_GPU(void)
 	gpu = 1;
 	rc = 0;
 
-	//MPI communication
-	/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-	if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-	break;
-	}
-	}*/
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && poststep_p == PRESTEP_P){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -710,46 +689,27 @@ double advance_GPU(void)
 	#endif 
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
 	#if(!TRANS_BOUND)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1 && poststep_p==0) GPU_fix_flux(n_ord[n]);
+	GPU_fix_flux();
 	#endif
 	#if(STAGGERED)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport1(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-	}
+	GPU_consttransport1(dt);
+	GPU_consttransport2(dt);
 	rc = 0;
 	if (poststep_p == PRESTEP_P)GPU_consttransport_bound();
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-	}
+	GPU_consttransport3(dt);
 
 	#else
-	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct1(n_ord[n]);
-	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);
+	GPU_flux_ct1();
+	GPU_flux_ct2();
 	#endif
 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status,timestep)
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1){
-			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			GPU_Utoprim(1, n_ord[n], timestep);
-			GPU_fixup(1, n_ord[n], timestep);
-		}
-		else if (prestep_half[nl[n_ord[n]]] == 1){
-			timestep = 0.5 * dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			GPU_Utoprim(0, n_ord[n], timestep);
-			GPU_fixup(0, n_ord[n], timestep);
-		}
-	}
+	#if(!V100)
+	GPU_Utoprim(dt);
+	#else
+	GPU_fixup(dt);
+	#endif
 
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if(poststep_p==0)ndt = 1e9;

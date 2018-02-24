@@ -193,7 +193,7 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
-		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind;
+		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, g;
 	int y, rem, node = 0;
 	block = (int(*)[NV])calloc(NB, sizeof(int[NV]));
 	max_levels = 0;
@@ -203,7 +203,7 @@ void set_AMR(void){
 
 	for (i = 0; i < NB_LOCAL; i++){
 		mem_spot[i] = -1;
-		mem_spot_gpu[i] = -1;
+		for(g=0; g < N_GPU; g++)mem_spot_gpu[g][i] = -1;
 	}
 
  	//Set all 'one-time'parameters of all blocks (refined and unrefined)
@@ -402,6 +402,11 @@ void set_AMR(void){
 		N2_GPU_offset[n] = block[n][AMR_COORD2] * BS_2;
 		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;
 	}
+
+	//Keep track of total number of timelevels and minimum/maximum timelevel in code
+	n_timelevels = log(AMR_MAXTIMELEVEL) / log(2) + 1;
+	timelevel_min = 0;
+	timelevel_max = 0;
 
 	for (n = 0; n <= n_max; n++){
 		set_points(n);

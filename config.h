@@ -75,15 +75,19 @@ Numerical Parameters section
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
 
+/*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
+#define MAX_BLOCKS (2)
+#define NB_LOCAL (300)
+
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 26
-#define BS_2 26
-#define BS_3 26
+#define BS_1 100
+#define BS_2 100
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2
@@ -466,9 +470,9 @@ Section with derived quantities
 #endif
 #endif
 
-/*Maximum number of blocks per node*/
-#define MAX_BLOCKS (80)
-#define NB_LOCAL (300)
+/*Define offset to make GPU memory access coalesced*/
+#define FIX_MEM1 (LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE)
+#define FIX_MEM2 (LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE)
 
 /*Macro declerations*/
 #define PLOOP  for(k=0;k<NPR;k++) //loop over all Dimensions; second rank loop */

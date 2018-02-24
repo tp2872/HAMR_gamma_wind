@@ -738,10 +738,10 @@ int first_dump, first_rdump, first_gdump;
 /*AMR parameters*/
 int(*block)[NV];
 double ref_val[NB];
-int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
-int n_active, n_active_total, n_max;
-int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL];
-int count_node[1];
+int n_ord[NB_LOCAL], nl[NB], nl_gpu[N_GPU][NB_LOCAL], n_ord_total[NB], n_ord_evolve[N_GPU * 16][NB_LOCAL], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
+int n_active, n_active_total, n_evolve[N_GPU * 16], n_timelevels, timelevel_min, timelevel_max, n_max;
+int mem_spot[NB_LOCAL], mem_spot_gpu[N_GPU][NB_LOCAL];
+int count_node[1], nr_workgroups;
 int N1_GPU_offset[NB];
 int N2_GPU_offset[NB];
 int N3_GPU_offset[NB];
