@@ -576,6 +576,8 @@ double advance_GPU(void)
 		temp = n_evolve[(int)(log(block[n_ord[n]][AMR_TIMELEVEL]) / log(2)) * N_GPU + block[n_ord[n]][AMR_GPU]];
 		n_ord_evolve[(int)(log(block[n_ord[n]][AMR_TIMELEVEL]) / log(2)) * N_GPU + block[n_ord[n]][AMR_GPU]][temp] = n_ord[n];
 		n_evolve[(int)(log(block[n_ord[n]][AMR_TIMELEVEL]) / log(2)) * N_GPU + block[n_ord[n]][AMR_GPU]]++;
+		//for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++)cudaMemcpyAsync(n_ord_evolve_g[i*N_GPU + g], n_ord_evolve[i*N_GPU + g], NB*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[g]);
+		//cudaDeviceSynchronize();
 	}
 
 	#if(N1G>0)

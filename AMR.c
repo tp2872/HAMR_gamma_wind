@@ -196,12 +196,19 @@ void set_AMR(void){
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, g;
 	int y, rem, node = 0;
 	int *somearray[NB];
+	int *somearray_g[NB];
 	#if(GPU_ENABLED)
 	cudaHostAlloc(&block, NB*sizeof(int*), 0);
+	//cudaMalloc(&block_g, NB*sizeof(int*));
 	for (i = 0; i < NB; i++) cudaHostAlloc(&somearray[i], NV*sizeof(int), 0);
+	//for (i = 0; i < NB; i++) cudaMalloc(&somearray_g[i], NV*sizeof(int));
 	for (i = 0; i < NB; i++) block[i] = somearray[i];
+	//cudaMemcpyAsync(block_g, somearray_g, NB*sizeof(int*), cudaMemcpyHostToDevice, commandQueueGPU[0]);
+	//for (i = 0; i < NB; i++) block_g[i] = somearray_g[i];
 	for (g = 0; g < N_GPU; g++) cudaHostAlloc(&nl_gpu[g], NB*sizeof(int), 0);
+	for (g = 0; g < N_GPU; g++) cudaMalloc(&nl_gpu_g[g], NB*sizeof(int));
 	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++) cudaHostAlloc(&n_ord_evolve[i*N_GPU + g], NB*sizeof(int), 0);
+	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++) cudaMalloc(&n_ord_evolve_g[i*N_GPU + g], NB*sizeof(int));
 	#else
 	block = (int(*)[NV])calloc(NB, sizeof(int[NV]));
 	#endif
@@ -685,7 +692,7 @@ void balance_load_gpu(void){
 
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 void activate_blocks(void){
-	int n, i;
+	int n, i,g ;
 	n_active = 0;
 	n_active_total = 0;
 
@@ -712,6 +719,12 @@ void activate_blocks(void){
 	for (n = 0; n < n_active_total; n++){
 		NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
 	}
+	#endif
+	#if(GPU_ENABLED)
+	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++)cudaMemcpyAsync(n_ord_evolve_g[i*N_GPU + g], n_ord_evolve[i*N_GPU + g], NB*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[g]);
+	for (g = 0; g < N_GPU; g++) cudaMemcpyAsync(nl_gpu_g[g], nl_gpu[g], NB*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[g]);
+	//for (i = 0; i < NB; i++) cudaMemcpyAsync(block_g[i], block[i], NV*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[0]);
+	cudaDeviceSynchronize();
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
 }

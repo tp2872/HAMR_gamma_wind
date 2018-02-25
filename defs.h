@@ -737,8 +737,9 @@ int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
 int(**block);
+int(**block_g);
 double ref_val[NB];
-int n_ord[NB_LOCAL], nl[NB], *nl_gpu[N_GPU], n_ord_total[NB], *n_ord_evolve[N_GPU * 16], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
+int n_ord[NB_LOCAL], nl[NB], *nl_gpu[N_GPU], *nl_gpu_g[N_GPU], n_ord_total[NB], *n_ord_evolve[N_GPU * 16], *n_ord_evolve_g[N_GPU * 16], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 int n_active, n_active_total, n_evolve[N_GPU * 16], n_timelevels, timelevel_min, timelevel_max, n_max;
 int mem_spot[NB_LOCAL], mem_spot_gpu[N_GPU][NB_LOCAL];
 int count_node[1], nr_workgroups;
