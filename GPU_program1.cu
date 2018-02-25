@@ -1831,7 +1831,7 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 	return(dot(q.bcon, q.bcov));
 }
 
-__global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x)/n_evolve;
@@ -1937,59 +1937,14 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 		double x0, x1, x2, x3, x4, x5, temp[1], result[1];
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x1 = p[MY_MAX(offset_block + (k*ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
-			x2 = p[MY_MAX(offset_block + (k*ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
+			x1 = p[NPR * offset_block + (k*ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel];
+			x2 = p[NPR * offset_block + (k*ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel];
 			x3 = p[NPR * offset_block + (k*ksize)+global_id];
-			x4 = p[MY_MIN(offset_block + (k*ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + FIX_MEM1))];
-			x5 = p[MY_MIN(offset_block + (k*ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+FIX_MEM1))];
+			x4 = p[NPR * offset_block + (k*ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel)];
+			x5 = p[NPR * offset_block + (k*ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel)];
 			para(x1, x2, x3, x4, x5, result, temp);
 			dq1[NPR * offset_block + (k*ksize)+global_id] = result[0];
 			dq2[NPR * offset_block + (k*ksize)+global_id] = temp[0];
-
-			/*x0 = p[MY_MAX(offset_block + (k*ksize)+global_id - 3 * zdel - 3 * (BS_3 + 2 * N3G)*jdel - 3 * isize*idel, 0)];
-			x1 = p[MY_MAX(offset_block + (k*ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
-			x2 = p[MY_MAX(offset_block + (k*ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
-			x3 = p[NPR * offset_block + (k*ksize)+global_id];
-			x4 = p[MY_MIN(offset_block + (k*ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + FIX_MEM1))];
-			para(x0, x1, x2, x3, x4, temp, result);
-			dq1[NPR * offset_block + (k*ksize)+global_id] = result[0];
-			x5 = p[MY_MIN(offset_block + (k*ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+FIX_MEM1))];
-			para(x1, x2, x3, x4, x5, result, temp);
-			dq2[NPR * offset_block + (k*ksize)+global_id] = result[0];*/
-		}
-		#elif(LEER)
-		double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
-		double CFL = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XL);
-		double CBL = (V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
-			(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(dir - 1)*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-		for (k = 0; k<NPR; k++){
-			double d_C = (p[NPR * offset_block + k*ksize + global_id] - p[NPR * offset_block + k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-			double d_L = (p[NPR * offset_block + k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - p[NPR * offset_block + k*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
-				(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]);
-			if (d_L*d_C <= 0.){
-				dq1[NPR * offset_block + (k*ksize)+global_id] = p[NPR * offset_block + k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
-			}
-			else{
-				dq1[NPR * offset_block + (k*ksize)+global_id] = p[NPR * offset_block + k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] + (d_XL*d_L*d_C*(CFL*d_L + CBL*d_C)) / (d_L*d_L + (CFL + CBL - 2.)*d_C*d_L + d_C*d_C);
-			}
-		}
-		double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
-		double d_XR = V[(3 + (dir - 1))*ksize + global_id] - V[(dir - 1)*ksize + global_id];
-		double CFL = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XL);
-		double CBL = (V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
-			(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(dir - 1)*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-		double CFR = (V[(3 + (dir - 1))*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id])
-			/ (V[(dir - 1)*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id]);
-		double CBR = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XR);
-		for (k = 0; k<NPR; k++){
-			double d_C = (p[NPR * offset_block + k*ksize + global_id] - p[NPR * offset_block + k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-			double d_R = (p[NPR * offset_block + k*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - p[NPR * offset_block + k*ksize + global_id]) / (V[(3 + (dir - 1))*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id]);
-			if (d_R*d_C <= 0.){
-				dq2[NPR * offset_block + (k*ksize)+global_id] = p[NPR * offset_block + k*ksize + global_id];
-			}
-			else{
-				dq2[NPR * offset_block + (k*ksize)+global_id] = p[NPR * offset_block + k*ksize + global_id] - (d_XR*d_R*d_C*(CFL*d_R + CBL*d_C)) / (d_R*d_R + (CFL + CBL - 2.)*d_C*d_R + d_C*d_C);
-			}
 		}
 		#else
 		#pragma unroll 9	
@@ -2001,7 +1956,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 }
 
 __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
-	double gam, double cour, double*  dtij, double dx1, double dx2, double dx3, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	double gam, double cour, double*  dtij, double dx1, double dx2, double dx3, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2220,7 +2175,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	//}
 }
 
-__global__ void fix_flux(double *  F1, double *  F2, double *  F3, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void fix_flux(double *  F1, double *  F2, double *  F3, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2283,7 +2238,7 @@ __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int(*block)[N
 	#endif
 }
 
-__global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2401,7 +2356,7 @@ __global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_c
 }
 
 __global__ void consttransport2(double *  emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
-	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2545,7 +2500,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 }
 
 __global__ void consttransport3(double dx1, double dx2, double dx3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
-	const  double* __restrict__  E_corn, double dt, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__  E_corn, double dt, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2743,7 +2698,7 @@ __global__ void consttransport3(double dx1, double dx2, double dx3, const  doubl
 }
 
 __global__ void consttransport3_post(double dx1, double dx2, double dx3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
-	const  double* __restrict__  E_corn, double dt, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__  E_corn, double dt, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2828,7 +2783,7 @@ __global__ void consttransport3_post(double dx1, double dx2, double dx3, const  
 	}
 }
 
-__global__ void flux_ct1(const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double *  emf, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void flux_ct1(const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double *  emf, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2863,7 +2818,7 @@ __global__ void flux_ct1(const  double* __restrict__  F1, const  double* __restr
 	}
 }
 
-__global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double* __restrict__  emf, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double* __restrict__  emf, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -2920,7 +2875,7 @@ __global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double
 
 __global__ void Utoprim0(const  double* __restrict__ pi_i, const  double* __restrict__ pb_i, double* pf_i, double *  psf,
 	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, 
-	const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double dt, int full_step, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double dt, int full_step, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -3051,7 +3006,7 @@ __global__ void Utoprim0(const  double* __restrict__ pi_i, const  double* __rest
 
 __global__ void Utoprim1(double* pi_i, double* pb_i, double* pf_i, double *  psf,
 	double *  F1, double *  F2, double *  F3, double* radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, 
-	const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double a, double Dt, int full_step, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double a, double Dt, int full_step, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -3163,7 +3118,7 @@ __global__ void Utoprim1(double* pi_i, double* pb_i, double* pf_i, double *  psf
 
 __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage, const  double* __restrict__ gcov, 
-	const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double a, double Dt, int full_step, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double a, double Dt, int full_step, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -3292,7 +3247,7 @@ __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, 
 #if(!V100)
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__ F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
-	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double Dt, int full_step, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double Dt, int full_step, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x)/n_evolve;
@@ -3607,7 +3562,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
-	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double dt, int full_step, int poststep_p, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double dt, int full_step, int poststep_p, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -3969,7 +3924,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
-	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double dt, int full_step, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx1, double dx2, double dx3, double a, double dt, int full_step, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -4279,7 +4234,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	}
 }
 
-__global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -4326,7 +4281,7 @@ __global__ void cleanup_post(double* F1, double* F2, double* F3, double* E_corn,
 /* 1357910  */
 #define AVG6_2(pr,icurr,jcurr,zcurr, k) (1.0/6.0*(pr[offset_block + (k*ksize)+(icurr+1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[offset_block + (k*ksize)+(icurr+1)*isize+(jcurr-1)+ zcurr]*(BS_3+2*N3G)+pr[offset_block + (k*ksize)+(icurr-1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[offset_block + (k*ksize)+(icurr-1)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[offset_block + (k*ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr+1)]+pr[offset_block + (k*ksize)+(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]))
 
-__global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -4350,7 +4305,7 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage, const
 	}
 }
 
-__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double *  ps, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void boundprim1(double *   pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double *  ps, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int block_size = (blockDim.x * gridDim.x) / n_evolve;
@@ -4476,7 +4431,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov, cons
 	}
 }
 
-__global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, double *  ps, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, double *  ps, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int j, jref, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -4594,7 +4549,7 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, doubl
 	}
 }
 
-__global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, double *  ps, int(*block)[NV], int *n_ord_evolve, int *nl_gpu, int n_evolve)
+__global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, double *  ps, int(**block), int *n_ord_evolve, int *nl_gpu, int n_evolve)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;

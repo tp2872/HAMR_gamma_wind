@@ -762,9 +762,9 @@ extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_
 extern int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
-extern int(*block)[NV];
+extern int(**block);
 extern double ref_val[NB];
-extern int n_ord[NB_LOCAL], nl[NB], nl_gpu[N_GPU][NB_LOCAL], n_ord_total[NB], n_ord_evolve[N_GPU * 16][NB_LOCAL], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
+extern int n_ord[NB_LOCAL], nl[NB], *nl_gpu[N_GPU], n_ord_total[NB], *n_ord_evolve[N_GPU * 16], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 extern int mem_spot[NB_LOCAL], mem_spot_gpu[N_GPU][NB_LOCAL];
 extern int n_active,  n_active_total, n_evolve[N_GPU*16], n_timelevels, timelevel_min, timelevel_max, n_max;
 extern int count_node[1], nr_workgroups;

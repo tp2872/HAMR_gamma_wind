@@ -37,7 +37,6 @@ void GPU_init(void)
 	fix_mem = FIX_MEM1;
 	fix_mem2 = FIX_MEM2;
 	nr_workgroups = (((LOCAL_WORK_SIZE - ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) / LOCAL_WORK_SIZE);
-
 	for (g = 0; g < N_GPU; g++){
 		cudaSetDevice(g + gpu_offset);
 		
@@ -440,7 +439,6 @@ void set_arrays_GPU(int n, int device){
 	}
 	mem_spot_gpu[g][i] = 1;
 	nl_gpu[g][n] = i;
-
 	//Select correct CUDA device
 	cudaStreamCreate(&commandQueueGPU[nl[n]]);
 
@@ -1081,6 +1079,9 @@ void GPU_fluxcalcprep(int dir)
 	for (g = 0; g < N_GPU; g++){
 		cudaSetDevice(g + gpu_offset);
 		for (i = timelevel_min; i <= timelevel_max; i++){
+			cudaStreamSynchronize(commandQueue[i*N_GPU + g]);
+			status = cudaGetLastError();
+			if (status != cudaSuccess) fprintf(stderr, "Error fluxcalc_GPU66 %d\n", status);
 			if (poststep_p == 0) nr_workgroups_local = n_evolve[i*N_GPU + g] * ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
 			else nr_workgroups_local = n_evolve[i*N_GPU + g] * ((LOCAL_WORK_SIZE - (2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + 2 * D3)) % LOCAL_WORK_SIZE) + 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*(N1G + 2 * D1) + 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*(N2G + 2 * D2) + 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*(N3G + 2 * D3)) / LOCAL_WORK_SIZE;
 			//printf("test: %d \n", n_ord_evolve[i*N_GPU + g][0]);
@@ -1111,6 +1112,9 @@ void GPU_fluxcalcprep(int dir)
 			//cudaDeviceSynchronize();
 			status = cudaGetLastError();
 			if (cudaSuccess != status) fprintf(stderr, "Error Fluxcalcprep %d \n", status);
+			cudaStreamSynchronize(commandQueue[i*N_GPU + g]);
+			status = cudaGetLastError();
+			if (status != cudaSuccess) fprintf(stderr, "Error fluxcalc_GPU66776 %d\n", status);
 		}
 	}
 }
@@ -1184,9 +1188,10 @@ void fluxcalc_GPU(int dir)
 				cudaStreamSynchronize(commandQueue[i*N_GPU + g]);
 				status = cudaGetLastError();
 				if (status != cudaSuccess) fprintf(stderr, "Error fluxcalc_GPU %d\n", status);
-				for (y = nl[n_ord_evolve[i*N_GPU + g][n]] * nr_workgroups; y < nl[n_ord_evolve[i*N_GPU + g][n]] * nr_workgroups + nr_workgroups_local; y++){
+				for (y = n * nr_workgroups_local; y < (n + 1) * nr_workgroups_local; y++){
 					if (dtij_GPU[g][y] < ndt && dtij_GPU[g][y] < 1.e9 && dtij_GPU[g][y] > 1.e-6){
 						bdt[nl[n_ord_evolve[i*N_GPU + g][n]]][dir] = dtij_GPU[g][y];
+						ndt = dtij_GPU[g][y];
 					}
 				}
 			}
@@ -1436,7 +1441,7 @@ void GPU_consttransport2(double Dt){
 					Bufferp_1[g], Buffergcov[g], Buffergcon[g], Buffergdet[g], poststep_p, block, n_ord_evolve[i*N_GPU + g], nl_gpu[g], n_evolve[i*N_GPU + g]);
 			}
 			
-			//cudaDeviceSynchronize();
+			cudaDeviceSynchronize();
 			status = cudaGetLastError();
 			if (cudaSuccess != status)fprintf(stderr, "Error constransport2 %d \n", status);
 		}
@@ -1598,7 +1603,7 @@ void GPU_fixup(double Dt)
 				fixup << <nr_workgroups_local, LOCAL_WORK_SIZE, 0, commandQueue[i*N_GPU + g] >> > (Bufferp_1[g], Bufferp_1[g], Bufferph_1[g], Bufferstorage2[g], Bufferpsh_1[g], BufferF1_1[g], BufferF2_1[g], BufferF3_1[g], Bufferdq_1[g],
 					Bufferradius[g], Bufferpflag[g], Bufferfailimage[g], Buffergcov[g], Buffergcon[g], Buffergdet[g], Bufferconn[g], BufferKatm[g], gam, dx[0][1], dx[0][2], dx[0][3], a, Dt*0.5, 0, poststep_p, block, n_ord_evolve[i*N_GPU + g], nl_gpu[g], n_evolve[i*N_GPU + g]);
 			}
-			//cudaDeviceSynchronize();
+			cudaDeviceSynchronize();
 			status = cudaGetLastError();
 			if (cudaSuccess != status) fprintf(stderr, "Error fixup %d\n", status);
 		}
@@ -1656,7 +1661,7 @@ void GPU_boundprim(int bound_force)
 	GPU_boundprim2();
 	#endif
 
-	//cudaDeviceSynchronize();
+	cudaDeviceSynchronize();
 	//mpi_synch();
 	//For last timestep do not receive synchronized electrice fields 
 	if (rank == 0){
@@ -1767,7 +1772,7 @@ void GPU_boundprim(int bound_force)
 	GPU_boundprim_trans();
 	#endif
 	//MPI communication
-	//cudaDeviceSynchronize();
+	cudaDeviceSynchronize();
 	mpi_synch();
 
 	if (rank == 0){

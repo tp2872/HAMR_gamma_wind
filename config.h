@@ -76,18 +76,18 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (2)
+#define MAX_BLOCKS (64)
 #define NB_LOCAL (300)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 4
+#define NB_2 4
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 26
+#define BS_2 26
+#define BS_3 26
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2

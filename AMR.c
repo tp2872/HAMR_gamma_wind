@@ -195,7 +195,17 @@ void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, g;
 	int y, rem, node = 0;
+	int *somearray[NB];
+	#if(GPU_ENABLED)
+	cudaHostAlloc(&block, NB*sizeof(int*), 0);
+	for (i = 0; i < NB; i++) cudaHostAlloc(&somearray[i], NV*sizeof(int), 0);
+	for (i = 0; i < NB; i++) block[i] = somearray[i];
+	for (g = 0; g < N_GPU; g++) cudaHostAlloc(&nl_gpu[g], NB*sizeof(int), 0);
+	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++) cudaHostAlloc(&n_ord_evolve[i*N_GPU + g], NB*sizeof(int), 0);
+	#else
 	block = (int(*)[NV])calloc(NB, sizeof(int[NV]));
+	#endif
+
 	max_levels = 0;
 
 	//find maximum block number
