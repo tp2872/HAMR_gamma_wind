@@ -37,23 +37,16 @@ void set_timelevel(void){
 	nz = NB_3;
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
-
-	timelevel_min = n_timelevels;
-	timelevel_max = 0;
-
 	if (nstep > 0){
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
 				if (bdt[nl[n_ord[n]]][0] / dt >=1.0 * pow(2, i)){
 					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
-					timelevel_min = MY_MIN(timelevel_min, block[n_ord[n]][AMR_TIMELEVEL]);
-					timelevel_max = MY_MIN(timelevel_max, block[n_ord[n]][AMR_TIMELEVEL]);
 					break;
 				}
 			}
 		}
-		timelevel_min = MY_MIN(timelevel_min, timelevel_max);
 	}
 
 	//First make sure all nodes have the same information regarding the timestep
@@ -205,11 +198,18 @@ void set_prestep(void){
 void prestep_bound(void){
 	int n;
 	//If block is prestepped send non-corrected boundary cells to blocks with finer timelevels for interpolation in time
-	GPU_boundprim1();
+	for (n = 0; n < n_active; n++){
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1(0, n_ord[n]);
+	}
 	#if(!TRANS_BOUND)
-	GPU_boundprim2();
+	for (n = 0; n < n_active; n++){
+		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2(1, n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2(0, n_ord[n]);
+	}
 	#endif
-
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (prestep_full[nl[n_ord[n]]] == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
@@ -259,7 +259,7 @@ void prestep_bound(void){
 	#endif
 	#endif
 	//Then reset flux and electric fields to zero
-	GPU_cleanup_post();
+	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_cleanup_post(n_ord[n]);
 
 	//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
@@ -289,9 +289,9 @@ void prestep_bound(void){
 	#endif
 
 	//Evolve magnetic fields at boundary
-	GPU_consttransport3_post(dt);
+	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_consttransport3_post(dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	//Evolve conserved quantities at boundary using update fluxes and invert to primitive variables plus floor
-	GPU_fixup_post(dt);
+	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
 }
 
 void set_corners(void){

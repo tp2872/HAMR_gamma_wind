@@ -193,26 +193,9 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
-		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, g;
+		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind;
 	int y, rem, node = 0;
-	int *somearray[NB];
-	int *somearray_g[NB];
-	#if(GPU_ENABLED)
-	cudaHostAlloc(&block, NB*sizeof(int*), 0);
-	//cudaMalloc(&block_g, NB*sizeof(int*));
-	for (i = 0; i < NB; i++) cudaHostAlloc(&somearray[i], NV*sizeof(int), 0);
-	//for (i = 0; i < NB; i++) cudaMalloc(&somearray_g[i], NV*sizeof(int));
-	for (i = 0; i < NB; i++) block[i] = somearray[i];
-	//cudaMemcpyAsync(block_g, somearray_g, NB*sizeof(int*), cudaMemcpyHostToDevice, commandQueueGPU[0]);
-	//for (i = 0; i < NB; i++) block_g[i] = somearray_g[i];
-	for (g = 0; g < N_GPU; g++) cudaHostAlloc(&nl_gpu[g], NB*sizeof(int), 0);
-	for (g = 0; g < N_GPU; g++) cudaMalloc(&nl_gpu_g[g], NB*sizeof(int));
-	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++) cudaHostAlloc(&n_ord_evolve[i*N_GPU + g], NB*sizeof(int), 0);
-	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++) cudaMalloc(&n_ord_evolve_g[i*N_GPU + g], NB*sizeof(int));
-	#else
 	block = (int(*)[NV])calloc(NB, sizeof(int[NV]));
-	#endif
-
 	max_levels = 0;
 
 	//find maximum block number
@@ -220,7 +203,7 @@ void set_AMR(void){
 
 	for (i = 0; i < NB_LOCAL; i++){
 		mem_spot[i] = -1;
-		for(g=0; g < N_GPU; g++)mem_spot_gpu[g][i] = -1;
+		mem_spot_gpu[i] = -1;
 	}
 
  	//Set all 'one-time'parameters of all blocks (refined and unrefined)
@@ -419,11 +402,6 @@ void set_AMR(void){
 		N2_GPU_offset[n] = block[n][AMR_COORD2] * BS_2;
 		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;
 	}
-
-	//Keep track of total number of timelevels and minimum/maximum timelevel in code
-	n_timelevels = log(AMR_MAXTIMELEVEL) / log(2) + 1;
-	timelevel_min = 0;
-	timelevel_max = 0;
 
 	for (n = 0; n <= n_max; n++){
 		set_points(n);
@@ -692,7 +670,7 @@ void balance_load_gpu(void){
 
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 void activate_blocks(void){
-	int n, i,g ;
+	int n, i;
 	n_active = 0;
 	n_active_total = 0;
 
@@ -719,12 +697,6 @@ void activate_blocks(void){
 	for (n = 0; n < n_active_total; n++){
 		NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
 	}
-	#endif
-	#if(GPU_ENABLED)
-	for (g = 0; g < N_GPU; g++) for (i = 0; i<16; i++)cudaMemcpyAsync(n_ord_evolve_g[i*N_GPU + g], n_ord_evolve[i*N_GPU + g], NB*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[g]);
-	for (g = 0; g < N_GPU; g++) cudaMemcpyAsync(nl_gpu_g[g], nl_gpu[g], NB*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[g]);
-	//for (i = 0; i < NB; i++) cudaMemcpyAsync(block_g[i], block[i], NV*sizeof(int), cudaMemcpyHostToDevice, commandQueueGPU[0]);
-	cudaDeviceSynchronize();
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
 }

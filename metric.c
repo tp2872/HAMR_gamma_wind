@@ -278,7 +278,7 @@ double gdet_func(double gcov[][NDIM])
   int permute[NDIM]; 
   double gcovtmp[NDIM][NDIM];
   double detg;
-  for (i = 0; i < NDIM; i++)  for (j = 0; j < NDIM; j++){ gcovtmp[i][j] = gcov[i][j]; }
+  for( i = 0 ; i < NDIM*NDIM ; i++ ) {  gcovtmp[0][i] = gcov[0][i]; }
   if( LU_decompose( gcovtmp,  permute ) != 0  ) { 
     fprintf(stderr, "gdet_func(): singular matrix encountered! \n");
     fail(FAIL_METRIC);
@@ -445,16 +445,16 @@ void get_trans(int n, int ii, int jj, int zz, int ff, struct of_trans * restrict
 such as during image output for MPI on the host node*/
 void get_geometry_direct(int ii, int jj, int zz, int ff, struct of_geom *geom)
 {
-	int i, j, k;
+	int j, k;
 	double X[NDIM];
 	double gcov_local[NDIM][NDIM], gcon_local[NDIM][NDIM], gdet_local;
 	coord(0, ii, jj,zz, ff, X);
 	gcov_func(X, gcov_local);
 	gcon_func(gcov_local, gcon_local);
 	gdet_local = gdet_func(gcov_local);
-	for (i = 0; i < NDIM; i++)  for (j = 0; j < NDIM; j++){
-		geom->gcon[i][j] = gcon_local[i][j];
-		geom->gcov[i][j] = gcov_local[i][j];
+	for (j = 0; j <= NDIM*NDIM - 1; j++){
+		geom->gcon[0][j] = gcon_local[0][j];
+		geom->gcov[0][j] = gcov_local[0][j];
 	}
 	geom->g = gdet_local;
 }

@@ -853,7 +853,14 @@ void free_arrays(int n)
 {
 	int i, count_node = 0, count_gpu = 0;
 
-	if (count_node < (n_active_total / numtasks)){
+	//Count on node/GPU
+	for (i = 0; i < NB_LOCAL; i++){
+		if (mem_spot[i] != -1){
+			count_node++; //Number of allocated blocks on node
+			if (mem_spot_gpu[i] == block[n][AMR_GPU] && GPU_ENABLED==1) count_gpu++;
+		}
+	}
+	if (count_gpu < (n_active_total / (numtasks*N_GPU)) || count_node < (n_active_total / numtasks)){
 		mem_spot[nl[n]] = 0;
 		return;
 	}
