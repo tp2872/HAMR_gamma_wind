@@ -50,7 +50,7 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 /* bound array containing entire set of primitive variables */
 void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 {
-	int n;
+	int i, n, flag;
 	double temp=nstep;
 	if (bound_force == 1) nstep = -1;
 	for (n = 0; n < n_active; n++){
@@ -75,29 +75,40 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
-	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
-	}
-
+	do {
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
+		}
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+	} while (flag);
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
-	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
-	}
+	do {
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
+		}
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+	} while (flag);
 
 	if (N3 > 1){
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 		}
-		for (n = 0; n < n_active; n++){
-			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
-			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
-		}
+		do {
+			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+			for (n = 0; n < n_active; n++){
+				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
+				else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
+			}
+			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+		} while (flag);
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
@@ -129,28 +140,61 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	if (bound_force == 1) nstep = temp;
 }
 
+void set_iprobe(int n, int mode, int * flag){
+	int i;
+	if (mode == 0){
+		for (i = AMR_IPROBE1; i <= AMR_IPROBE6_4; i++) block[n][i] = 0;
+		flag = 0;
+	}
+	else{
+		for (i = AMR_IPROBE1; i <= AMR_IPROBE6_4; i++){
+			if (block[n][i] == -1){
+				block[n][i] = 0;
+				flag = 1;
+			}
+			else  block[n][i] = 1;
+		}
+	}
+	return;
+}
+
 void prestep_receive_bound(void){
 	int n;
 #if(PRESTEP_P)
 	nstep--;
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
-	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
-	}
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
-	}
+	do{
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		for (n = 0; n < n_active; n++){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
+		}
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+	}while (flag);
+
+	do{
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		for (n = 0; n < n_active; n++){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
+		}
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+	}while (flag);
+
+	do{
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		for (n = 0; n < n_active; n++){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
+			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
+		}
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+	}while (flag);
+
 	nstep++;
 #endif
 	return;
