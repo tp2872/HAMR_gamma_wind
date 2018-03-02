@@ -135,7 +135,7 @@ update conserved variables;
 ***********************************************************************************************/
 double advance(int flag)
 {
-	int i, j, z, k, n;
+	int i, j, z, k, n, flag_local;
 	double ndt, U[NPR], dU[NPR];
 	int ind0, ind1, ind2, ind3;
 
@@ -171,7 +171,11 @@ double advance(int flag)
 	}
 
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send1(F1, Bufferp_1, n_ord[n]);
-	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 1);
+	set_iprobe(0, &flag_local);
+	do{
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 1);
+		set_iprobe(1, &flag_local);
+	} while (flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 2);
 
 	#endif
@@ -187,7 +191,10 @@ double advance(int flag)
 		}
 	}
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send2(F2, Bufferp_1, n_ord[n]);
-	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec2(F2, Bufferp_1, n_ord[n], 1);
+	do{
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec2(F2, Bufferp_1, n_ord[n], 1);
+		set_iprobe(1, &flag_local);
+	} while (flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec2(F2, Bufferp_1, n_ord[n], 2);
 
 	#endif
@@ -203,7 +210,10 @@ double advance(int flag)
 		}
 	}
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_send3(F3, Bufferp_1, n_ord[n]);
-	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 1);
+	do{
+		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 1);
+		set_iprobe(1, &flag_local);
+	} while (flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 2);
 	#endif
 	#if(!TRANS_BOUND)
@@ -554,7 +564,7 @@ void GPU_step_ch()
 
 double advance_GPU(void)
 {
-	int i, n;
+	int i, n, flag;
 	double timestep;
 	gpu = 1;
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 0 && poststep_p==0){
@@ -595,6 +605,12 @@ double advance_GPU(void)
 	#else
 	ndt1 = 1e9;
 	#endif
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && poststep_p == PRESTEP_P){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		flux_send1(F1, BufferF1_1, n_ord[n]);
+	}
+
 	#if(N2G>0)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
@@ -619,6 +635,12 @@ double advance_GPU(void)
 	#else
 	ndt2 = 1e9;
 	#endif
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && poststep_p == PRESTEP_P){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		flux_send2(F2, BufferF2_1, n_ord[n]);
+	}
+
 	#if(N3G>0)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
@@ -643,26 +665,17 @@ double advance_GPU(void)
 	#else
 	ndt3 = 1e9;
 	#endif
-
-	gpu = 1;
-	rc = 0;
-
-	//MPI communication
-	/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-	if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-	if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-	break;
-	}
-	}*/
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && poststep_p == PRESTEP_P){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		flux_send1(F1, BufferF1_1, n_ord[n]);
-		flux_send2(F2, BufferF2_1, n_ord[n]);	
 		#if(N3G>0)
 		flux_send3(F3, BufferF3_1, n_ord[n]);
 		#endif
 	}
+
+	gpu = 1;
+	rc = 0;
+
 
 	#if(PRESTEP)
 	//For last timestep synchronize electric fields immediately
@@ -687,15 +700,19 @@ double advance_GPU(void)
 		#endif
 	}
 	#elif(!PRESTEP2)
-	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && poststep_p == PRESTEP_P){
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
-		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
-		#if(N3G>0)
-		flux_rec3(F3, BufferF3_1, n_ord[n], 1);
-		#endif
-	}
+	set_iprobe(0, &flag);
+	do{
+		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && poststep_p == PRESTEP_P){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+			#if(N3G>0)
+			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+			#endif
+		}
+		set_iprobe(1, &flag);
+	} while (flag);
 
 	//For first timestep do not synchronize electrice fields
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
