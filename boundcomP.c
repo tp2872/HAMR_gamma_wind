@@ -930,7 +930,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			//receive from same level grid
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[n][AMR_NBR4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 &&  block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4]][AMR_TIMELEVEL] && nstep%block[block[n][AMR_NBR4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[n][AMR_NBR4]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[n][AMR_NBR4]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][20], &Statbound[nl[n]][20]);
 					else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 				}
@@ -947,7 +947,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE], (21 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE], (21 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][21], &Statbound[nl[n]][21]);
 					else if (block[n][AMR_IPROBE2_1] != 1) block[n][AMR_IPROBE2_1] = -1;
 				}
@@ -963,7 +963,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){ 
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE], (22 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE], (22 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][22], &Statbound[nl[n]][22]);
 						else if (block[n][AMR_IPROBE2_2] != 1) block[n][AMR_IPROBE2_2] = -1;
 					}
@@ -980,7 +980,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 &&  block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE], (23 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE], (23 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][23], &Statbound[nl[n]][23]);
 						else if (block[n][AMR_IPROBE2_3] != 1) block[n][AMR_IPROBE2_3] = -1;
 					}
@@ -997,7 +997,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE], (24 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE], (24 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][24], &Statbound[nl[n]][24]);
 						else if (block[n][AMR_IPROBE2_4] != 1) block[n][AMR_IPROBE2_4] = -1;
 					}
@@ -1017,7 +1017,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][21], &Statbound[nl[n]][21]);
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
@@ -1034,7 +1034,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][22], &Statbound[nl[n]][22]);
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
@@ -1051,7 +1051,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][23], &Statbound[nl[n]][23]);
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
@@ -1068,7 +1068,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NODE], (20 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR4]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][24], &Statbound[nl[n]][24]);
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
@@ -1092,7 +1092,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			//receive from same level grid
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[n][AMR_NBR2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2]][AMR_TIMELEVEL] && nstep%block[block[n][AMR_NBR2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[n][AMR_NBR2]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[n][AMR_NBR2]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][40], &Statbound[nl[n]][40]);
 					else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 				}
@@ -1108,7 +1108,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE], (45 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE], (45 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][45], &Statbound[nl[n]][45]);
 					else if (block[n][AMR_IPROBE4_1] != 1) block[n][AMR_IPROBE4_1] = -1;
 				}
@@ -1124,7 +1124,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE], (46 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE], (46 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][46], &Statbound[nl[n]][46]);
 						else if (block[n][AMR_IPROBE4_2] != 1) block[n][AMR_IPROBE4_2] = -1;
 					}
@@ -1141,7 +1141,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE], (47 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE], (47 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][47], &Statbound[nl[n]][47]);
 						else if (block[n][AMR_IPROBE4_3] != 1) block[n][AMR_IPROBE4_3] = -1;
 					}
@@ -1158,7 +1158,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE], (48 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE], (48 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][48], &Statbound[nl[n]][48]);
 						else if (block[n][AMR_IPROBE4_4] != 1) block[n][AMR_IPROBE4_4] = -1;
 					}
@@ -1178,7 +1178,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][45], &Statbound[nl[n]][45]);
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
@@ -1195,7 +1195,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][46], &Statbound[nl[n]][46]);
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
@@ -1212,7 +1212,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][47], &Statbound[nl[n]][47]);
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
@@ -1229,7 +1229,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_2 == 1 && REF_3 == 1){
 				if (block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NODE], (40 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR2]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][48], &Statbound[nl[n]][48]);
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
@@ -1257,7 +1257,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 		if (block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[n][AMR_NBR1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1]][AMR_TIMELEVEL] && nstep%block[block[n][AMR_NBR1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[n][AMR_NBR1]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[n][AMR_NBR1]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][30], &Statbound[nl[n]][30]);
 					else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 				}
@@ -1286,7 +1286,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				//receive from finer grid
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE], (31 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE], (31 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][31], &Statbound[nl[n]][31]);
 						else if (block[n][AMR_IPROBE3_1] != 1) block[n][AMR_IPROBE3_1] = -1;
 					}
@@ -1302,7 +1302,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE], (32 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE], (32 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][32], &Statbound[nl[n]][32]);
 							else if (block[n][AMR_IPROBE3_2] != 1) block[n][AMR_IPROBE3_2] = -1;
 						}
@@ -1319,7 +1319,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (REF_1 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE], (35 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE], (35 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][35], &Statbound[nl[n]][35]);
 							else if (block[n][AMR_IPROBE3_3] != 1) block[n][AMR_IPROBE3_3] = -1;
 						}
@@ -1336,7 +1336,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE], (36 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE], (36 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][36], &Statbound[nl[n]][36]);
 							else if (block[n][AMR_IPROBE3_4] != 1) block[n][AMR_IPROBE3_4] = -1;
 						}
@@ -1356,7 +1356,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][31], &Statbound[nl[n]][31]);
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
@@ -1373,7 +1373,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][32], &Statbound[nl[n]][32]);
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
@@ -1390,7 +1390,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n && REF_1 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][35], &Statbound[nl[n]][35]);
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
@@ -1407,7 +1407,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if ((nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1))){
-							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NODE], (30 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR1]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][36], &Statbound[nl[n]][36]);
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
@@ -1430,7 +1430,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 		if (block[block[n][AMR_NBR3]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[n][AMR_NBR3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3]][AMR_TIMELEVEL] && nstep%block[block[n][AMR_NBR3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[n][AMR_NBR3]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[n][AMR_NBR3]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][10], &Statbound[nl[n]][10]);
 					else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 				}
@@ -1459,7 +1459,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				//receive from finer grid
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE], (13 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE], (13 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][13], &Statbound[nl[n]][13]);
 						else if (block[n][AMR_IPROBE1_1] != 1) block[n][AMR_IPROBE1_1] = -1;
 					}
@@ -1475,7 +1475,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE], (14 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE], (14 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][14], &Statbound[nl[n]][14]);
 							else if (block[n][AMR_IPROBE1_2] != 1) block[n][AMR_IPROBE1_2] = -1;
 						}
@@ -1492,7 +1492,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (REF_1 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE], (17 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE], (17 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][17], &Statbound[nl[n]][17]);
 							else if (block[n][AMR_IPROBE1_3] != 1) block[n][AMR_IPROBE1_3] = -1;
 						}
@@ -1509,7 +1509,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE], (18 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE], (18 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][18], &Statbound[nl[n]][18]);
 							else if (block[n][AMR_IPROBE1_4] != 1) block[n][AMR_IPROBE1_4] = -1;
 						}
@@ -1529,7 +1529,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][13], &Statbound[nl[n]][13]);
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
@@ -1546,7 +1546,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][14], &Statbound[nl[n]][14]);
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
@@ -1563,7 +1563,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_1 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][17], &Statbound[nl[n]][17]);
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
@@ -1580,7 +1580,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 				if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_1 == 1 && REF_3 == 1){
 					if (block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 						if (nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+							MPI_Iprobe(block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR3]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 							if(flag == 1) MPI_Wait(&boundreqs[nl[n]][18], &Statbound[nl[n]][18]);
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
@@ -1608,7 +1608,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[n][AMR_NBR6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6]][AMR_TIMELEVEL] && nstep%block[block[n][AMR_NBR6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[n][AMR_NBR6]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[n][AMR_NBR6]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][50], &Statbound[nl[n]][50]);
 					else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 				}
@@ -1624,7 +1624,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE], (51 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE], (51 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][51], &Statbound[nl[n]][51]);
 					else if (block[n][AMR_IPROBE5_1] != 1) block[n][AMR_IPROBE5_1] = -1;
 				}
@@ -1640,7 +1640,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE], (53 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE], (53 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][53], &Statbound[nl[n]][53]);
 						else if (block[n][AMR_IPROBE5_2] != 1) block[n][AMR_IPROBE5_2] = -1;
 					}
@@ -1657,7 +1657,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE], (55 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE], (55 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][55], &Statbound[nl[n]][55]);
 						else if (block[n][AMR_IPROBE5_3] != 1) block[n][AMR_IPROBE5_3] = -1;
 					}
@@ -1674,7 +1674,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE], (57 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE], (57 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][57], &Statbound[nl[n]][57]);
 						else if (block[n][AMR_IPROBE5_4] != 1) block[n][AMR_IPROBE5_4] = -1;
 					}
@@ -1694,7 +1694,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD1] == n){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][51], &Statbound[nl[n]][51]);
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
@@ -1711,7 +1711,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD3] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][53], &Statbound[nl[n]][53]);
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
@@ -1728,7 +1728,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD5] == n && REF_1 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][55], &Statbound[nl[n]][55]);
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
@@ -1745,7 +1745,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD7] == n && REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NODE], (50 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR6]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][57], &Statbound[nl[n]][57]);
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
@@ -1768,7 +1768,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 		if (block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1){
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[n][AMR_NBR5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5]][AMR_TIMELEVEL] && nstep%block[block[n][AMR_NBR5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[n][AMR_NBR5]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[n][AMR_NBR5]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][60], &Statbound[nl[n]][60]);
 					else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 				}
@@ -1784,7 +1784,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			//receive from finer grid
 			if (block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-					MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE], (62 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+					MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE], (62 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 					if(flag == 1) MPI_Wait(&boundreqs[nl[n]][62], &Statbound[nl[n]][62]);
 					else if (block[n][AMR_IPROBE6_1] != 1) block[n][AMR_IPROBE6_1] = -1;
 				}
@@ -1800,7 +1800,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE], (64 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE], (64 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][64], &Statbound[nl[n]][64]);
 						else if (block[n][AMR_IPROBE6_2] != 1) block[n][AMR_IPROBE6_2] = -1;
 					}
@@ -1817,7 +1817,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_1 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE], (66 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE], (66 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][66], &Statbound[nl[n]][66]);
 						else if (block[n][AMR_IPROBE6_3] != 1) block[n][AMR_IPROBE6_3] = -1;
 					}
@@ -1834,7 +1834,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (68 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE], (68 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][68], &Statbound[nl[n]][68]);
 						else if (block[n][AMR_IPROBE6_4] != 1) block[n][AMR_IPROBE6_4] = -1;
 					}
@@ -1854,7 +1854,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD2] == n){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][62], &Statbound[nl[n]][62]);
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
@@ -1871,7 +1871,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD4] == n && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][64], &Statbound[nl[n]][64]);
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
@@ -1888,7 +1888,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD6] == n && REF_1 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][66], &Statbound[nl[n]][66]);
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
@@ -1905,7 +1905,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			if (block[block[n][AMR_PARENT]][AMR_CHILD8] == n && REF_1 == 1 && REF_2 == 1){
 				if (block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE]){
 					if (nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] - 1 || nstep == -1 || (PRESTEP2 && block[n][AMR_TIMELEVEL] < block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] && nstep%block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1)){
-						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[0]);
+						MPI_Iprobe(block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NODE], (60 * NB_LOCAL + 70 * NB_LOCAL + block[block[block[n][AMR_NBR5]][AMR_PARENT]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &flag, &Statbound[nl[n]][0]);
 						if(flag == 1) MPI_Wait(&boundreqs[nl[n]][68], &Statbound[nl[n]][68]);
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}

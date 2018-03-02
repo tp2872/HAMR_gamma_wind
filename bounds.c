@@ -144,13 +144,13 @@ void set_iprobe(int n, int mode, int * flag){
 	int i;
 	if (mode == 0){
 		for (i = AMR_IPROBE1; i <= AMR_IPROBE6_4; i++) block[n][i] = 0;
-		flag = 0;
+		*flag = 0;
 	}
 	else{
 		for (i = AMR_IPROBE1; i <= AMR_IPROBE6_4; i++){
 			if (block[n][i] == -1){
 				block[n][i] = 0;
-				flag = 1;
+				*flag = 1;
 			}
 			else  block[n][i] = 1;
 		}

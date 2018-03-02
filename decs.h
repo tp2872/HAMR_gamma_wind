@@ -976,6 +976,7 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 
 //Boundary transfer related
 void prestep_receive_bound(void);
+void set_iprobe(int n, int mode, int * flag);
 void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int n, int prestep);
 void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int bound_force, int n);
 void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int n, int prestep);

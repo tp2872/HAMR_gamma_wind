@@ -1707,7 +1707,7 @@ void GPU_fixup_post(int n, double Dt)
 
 void GPU_boundprim(int bound_force)
 {
-	int n;
+	int n, flag;
 	int temp = nstep;
 	gpu = 1;
 
@@ -1837,6 +1837,7 @@ void GPU_boundprim(int bound_force)
 				for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
 			} while (flag);
 		}
+	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
 	#if(TRANS_BOUND && NB_3==1)
