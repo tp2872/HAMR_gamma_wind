@@ -233,48 +233,48 @@ void set_arrays_GPU(int n, int device){
 	Bufferrec6_8[nl[n]] = Bufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
 	#endif
 	#if(PRESTEP || PRESTEP2)
-	cudaMalloc(&tempBufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	tempBufferrec1_3[nl[n]] = tempBufferrec1[nl[n]];
-	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	#endif
-	cudaMalloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	tempBufferrec2_1[nl[n]] = tempBufferrec2[nl[n]];
-	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2)*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	#endif
-	cudaMalloc(&tempBufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	tempBufferrec3_1[nl[n]] = tempBufferrec3[nl[n]];
-	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	#endif
-	cudaMalloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	cudaMalloc(&tempBufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	tempBufferrec4_5[nl[n]] = tempBufferrec4[nl[n]];
-	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2)*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	#endif
 	#if(N3G>0)
-	cudaMalloc(&tempBufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
 	tempBufferrec5_1[nl[n]] = tempBufferrec5[nl[n]];
-	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + REF_2*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
 	#endif
-	cudaMalloc(&tempBufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&tempBufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
 	tempBufferrec6_2[nl[n]] = tempBufferrec6[nl[n]];
-	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + REF_2*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + REF_2*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
 	#endif
 	#endif
 	#endif
@@ -1380,7 +1380,8 @@ void GPU_consttransport_bound(void){
 			#endif
 		}
 		set_iprobe(1, &flag);
-	} while (flag)
+	} while (flag);
+	set_iprobe(0, &flag);
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1462,6 +1463,7 @@ void GPU_consttransport_bound(void){
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
+	set_iprobe(0, &flag);
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1480,12 +1482,12 @@ void GPU_consttransport_bound(void){
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
+	set_iprobe(0, &flag);
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
 	}
-	
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
@@ -1501,6 +1503,7 @@ void GPU_consttransport_bound(void){
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
+	set_iprobe(0, &flag);
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1755,6 +1758,7 @@ void GPU_boundprim(int bound_force)
 	//MPI communication
 
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
+		set_iprobe(0, &flag);
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1803,6 +1807,7 @@ void GPU_boundprim(int bound_force)
 			}
 			set_iprobe(1, &flag);
 		}while(flag);
+		set_iprobe(0, &flag);
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1839,6 +1844,7 @@ void GPU_boundprim(int bound_force)
 			set_iprobe(1, &flag);
 		} while (flag);
 	}
+
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1877,6 +1883,7 @@ void GPU_boundprim(int bound_force)
 			} while (flag);
 		}
 	}
+
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
 	#if(TRANS_BOUND && NB_3==1)

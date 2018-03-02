@@ -903,8 +903,6 @@ void free_arrays(int n)
 	#if (ELLIPTICAL2)
 	free(dU_s[nl[n]]);
 	#endif
-	fprintf(stderr, "Hallo2 \n");
-
 	free(send1[nl[n]]);
 	free(send2[nl[n]]);
 	free(send3[nl[n]]);
@@ -976,8 +974,6 @@ void free_arrays(int n)
 	free(receive5_fine[nl[n]]);
 	free(receive6_fine[nl[n]]);
 	#endif
-	fprintf(stderr, "Hallo3 \n");
-
 	#if(CPU_OPENMP)
 	free(send1_flux[nl[n]]);
 	free(send2_flux[nl[n]]);

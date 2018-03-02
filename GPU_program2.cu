@@ -537,7 +537,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		#endif
 		//When at subsequent timesteps for interpolation
 		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && icurr>=N1G && icurr<BS_1 + N1G && jcurr>=N2G && jcurr < BS_2 + N2G){
-			#if(PRESTEP==-100 || PRESTEP2)
+		#if(PRESTEP==-100 || PRESTEP2)
 			for (k = 0; k < NPR; k++){
 				for (z = z1; z < z2; z++){
 					p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = tempreceive[(k)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + REF_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + REF_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + REF_2))]+

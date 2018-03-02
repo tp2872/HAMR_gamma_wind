@@ -176,6 +176,7 @@ double advance(int flag)
 		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 1);
 		set_iprobe(1, &flag_local);
 	} while (flag_local);
+	set_iprobe(0, &flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec1(F1, Bufferp_1, n_ord[n], 2);
 
 	#endif
@@ -195,6 +196,7 @@ double advance(int flag)
 		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec2(F2, Bufferp_1, n_ord[n], 1);
 		set_iprobe(1, &flag_local);
 	} while (flag_local);
+	set_iprobe(0, &flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec2(F2, Bufferp_1, n_ord[n], 2);
 
 	#endif
@@ -214,6 +216,7 @@ double advance(int flag)
 		for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 1);
 		set_iprobe(1, &flag_local);
 	} while (flag_local);
+	set_iprobe(0, &flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 2);
 	#endif
 	#if(!TRANS_BOUND)
@@ -678,6 +681,7 @@ double advance_GPU(void)
 
 
 	#if(PRESTEP)
+	set_iprobe(0, &flag);
 	//For last timestep synchronize electric fields immediately
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1 && poststep_p==PRESTEP_P){
@@ -713,7 +717,7 @@ double advance_GPU(void)
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
-
+	set_iprobe(0, &flag);
 	//For first timestep do not synchronize electrice fields
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) && poststep_p == PRESTEP_P){

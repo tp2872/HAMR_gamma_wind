@@ -65,8 +65,6 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	#endif
 
-
-
 	rc = 0;
 	gpu = 0;
 
@@ -161,40 +159,40 @@ void set_iprobe(int mode, int * flag){
 }
 
 void prestep_receive_bound(void){
-	int n;
+	int n, flag;
 #if(PRESTEP_P)
 	nstep--;
+	set_iprobe(0, &flag);
 	do{
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
 		}
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+		set_iprobe(1, &flag);
 	}while (flag);
-
+	
+	set_iprobe(0, &flag);
 	do{
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
 		}
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+		set_iprobe(1, &flag);
 	}while (flag);
-
+	
+	set_iprobe(0, &flag);
 	do{
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
 		}
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+		set_iprobe(1, &flag);
 	}while (flag);
 
 	nstep++;
