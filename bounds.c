@@ -69,26 +69,26 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 
 	rc = 0;
 	gpu = 0;
-	MPI_Barrier(MPI_COMM_WORLD);
 
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
+	for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 	do {
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
 		}
 		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
 	} while (flag);
+
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
-	do {
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+	for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		do {
 		for (n = 0; n < n_active; n++){
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
@@ -101,8 +101,8 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 		}
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		do {
-			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 			for (n = 0; n < n_active; n++){
 				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, bound_force, n_ord[n]);
 				else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, bound_force, n_ord[n]);
@@ -142,9 +142,9 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 
 void set_iprobe(int n, int mode, int * flag){
 	int i;
+	*flag = 0;
 	if (mode == 0){
 		for (i = AMR_IPROBE1; i <= AMR_IPROBE6_4; i++) block[n][i] = 0;
-		*flag = 0;
 	}
 	else{
 		for (i = AMR_IPROBE1; i <= AMR_IPROBE6_4; i++){

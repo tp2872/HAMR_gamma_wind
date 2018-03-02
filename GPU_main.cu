@@ -1789,8 +1789,8 @@ void GPU_boundprim(int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
 	if (PRESTEP_P == 0 || bound_force == 1){
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		do{
-			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 			//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 			for (n = 0; n < n_active; n++){
 				cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1807,8 +1807,8 @@ void GPU_boundprim(int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
 	if (PRESTEP_P == 0 || bound_force == 1){
+		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 		do{
-			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
 			//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 			for (n = 0; n < n_active; n++){
 				cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -1826,8 +1826,8 @@ void GPU_boundprim(int bound_force)
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 		}
 		if (PRESTEP_P == 0 || bound_force == 1){
-			do{
-				for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+			do {
 				//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 				for (n = 0; n < n_active; n++){
 					cudaSetDevice(block[n_ord[n]][AMR_GPU]);
