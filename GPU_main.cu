@@ -1789,7 +1789,7 @@ void GPU_boundprim(int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
 	if (PRESTEP_P == 0 || bound_force == 1){
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		set_iprobe(0, &flag);
 		do{
 			//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 			for (n = 0; n < n_active; n++){
@@ -1797,7 +1797,7 @@ void GPU_boundprim(int bound_force)
 				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec1(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
 				else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec1(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
 			}
-			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+			set_iprobe(1, &flag);
 		} while (flag);
 	}
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
@@ -1807,7 +1807,7 @@ void GPU_boundprim(int bound_force)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 	}
 	if (PRESTEP_P == 0 || bound_force == 1){
-		for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+		set_iprobe(0, &flag);
 		do{
 			//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 			for (n = 0; n < n_active; n++){
@@ -1815,7 +1815,7 @@ void GPU_boundprim(int bound_force)
 				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec2(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
 				else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec2(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
 			}
-			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+			set_iprobe(1, &flag);
 		} while (flag);
 	}
 	if (N3 > 1){
@@ -1826,7 +1826,7 @@ void GPU_boundprim(int bound_force)
 			else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
 		}
 		if (PRESTEP_P == 0 || bound_force == 1){
-			for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 0, &flag);
+			set_iprobe(0, &flag);
 			do {
 				//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 				for (n = 0; n < n_active; n++){
@@ -1834,7 +1834,7 @@ void GPU_boundprim(int bound_force)
 					if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) bound_rec3(p, ps, Bufferp_1, Bufferps_1, 0, n_ord[n]);
 					else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_rec3(ph, psh, Bufferph_1, Bufferpsh_1, 0, n_ord[n]);
 				}
-				for (n = 0; n < n_active; n++) set_iprobe(n_ord[n], 1, &flag);
+				set_iprobe(1, &flag);
 			} while (flag);
 		}
 	}
