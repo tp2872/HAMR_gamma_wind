@@ -196,7 +196,7 @@ void set_prestep(void){
 }
 
 void prestep_bound(void){
-	int n;
+	int flag, n;
 	//If block is prestepped send non-corrected boundary cells to blocks with finer timelevels for interpolation in time
 	for (n = 0; n < n_active; n++){
 		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -232,27 +232,44 @@ void prestep_bound(void){
 		}
 	}
 
-	//Store difference between evolved and required flux/electric field in temporary array
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		flux_rec1(F1, BufferF1_1, n_ord[n], 1);
-		flux_rec2(F2, BufferF2_1, n_ord[n], 1);
-		#if(N3G>0)
-		flux_rec3(F3, BufferF3_1, n_ord[n], 1);
-		#endif
-	}
+	set_iprobe(0, &flag);
+	do{
+		//Store difference between evolved and required flux/electric field in temporary array
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+			#if(N3G>0)
+			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+			#endif
+		}
+		set_iprobe(1, &flag);
+	} while (flag);
+	set_iprobe(0, &flag);
+
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	#endif
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		E_rec1(E_corn, BufferE_1, n_ord[n], 1);
-		E_rec2(E_corn, BufferE_1, n_ord[n], 1);
-	}
+
+	set_iprobe(0, &flag);
+	do{
+		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			E_rec1(E_corn, BufferE_1, n_ord[n], 1);
+			E_rec2(E_corn, BufferE_1, n_ord[n], 1);
+			#if(N3G>0)
+			#if(!TIMESTEP_JET)
+			E_rec3(E_corn, BufferE_1, n_ord[n], 1);
+			#endif
+			#endif
+		}
+		set_iprobe(1, &flag);
+	} while (flag);
+	set_iprobe(0, &flag);
+
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		E_rec3(E_corn, BufferE_1, n_ord[n], 1);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
