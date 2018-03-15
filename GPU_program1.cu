@@ -1208,16 +1208,15 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
 {
 	double mhd[NDIM][NDIM];
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int k, j, dir;
 	double conn, P, w, bsq, eta, ptot;
+	#if(NSY)
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id = icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	#else
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = icurr*(BS_2 + 2 * N2G) + jcurr;
-	
-	//get_state(ph, geom, &q) ;
-	//mhd_calc(ph, 0, q, mhd[0], gam);
-	//mhd_calc(ph, 1, q, mhd[1], gam);
-	//mhd_calc(ph, 2, q, mhd[2], gam);
-	//mhd_calc(ph, 3, q, mhd[3], gam);
+	#endif	
 
 	P = (gam - 1.)*ph[UU];
 	w = P + ph[RHO] + ph[UU];
@@ -1246,28 +1245,53 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	
 	#pragma unroll 4	
 	for (k = 0; k<NDIM; k++){
-		dU[UU] += mhd[0][k]*conn_GPU[0*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 0*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U1] += mhd[1][k]*conn_GPU[1*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 1*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U2] += mhd[2][k]*conn_GPU[2*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 2*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U3] += mhd[3][k]*conn_GPU[3*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 3*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		conn=conn_GPU[0*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 1*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id];
-		dU[UU] += mhd[1][k]*conn;
-		dU[U1] += mhd[0][k]*conn;
-		conn=conn_GPU[0*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 2*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[UU] += mhd[2][k]*conn;
-		dU[U2] += mhd[0][k]*conn;
-		conn=conn_GPU[0*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 3*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[UU] += mhd[3][k]*conn;
-		dU[U3] += mhd[0][k]*conn;
-		conn=conn_GPU[1*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 2*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U1] += mhd[2][k]*conn;
-		dU[U2] += mhd[1][k]*conn;
-		conn=conn_GPU[1*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 3*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U1] += mhd[3][k]*conn;
-		dU[U3] += mhd[1][k]*conn ;
-		conn=conn_GPU[2*NDIM*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + 3*NDIM*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + k*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + global_id] ;
-		dU[U2] += mhd[3][k]*conn;
-		dU[U3] += mhd[2][k]*conn;
+		#if(NSY)
+		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd[1][k] * conn_GPU[4 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd[2][k] * conn_GPU[7 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U3] += mhd[3][k] * conn_GPU[9 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[1 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[1][k] * conn;
+		dU[U1] += mhd[0][k] * conn;
+		conn = conn_GPU[2 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[2][k] * conn;
+		dU[U2] += mhd[0][k] * conn;
+		conn = conn_GPU[3 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[3][k] * conn;
+		dU[U3] += mhd[0][k] * conn;
+		conn = conn_GPU[5 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd[2][k] * conn;
+		dU[U2] += mhd[1][k] * conn;
+		conn = conn_GPU[6 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd[3][k] * conn;
+		dU[U3] += mhd[1][k] * conn;
+		conn = conn_GPU[8 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd[3][k] * conn;
+		dU[U3] += mhd[2][k] * conn;
+		#else
+		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd[1][k] * conn_GPU[4 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd[2][k] * conn_GPU[7 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U3] += mhd[3][k] * conn_GPU[9 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[1 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[1][k] * conn;
+		dU[U1] += mhd[0][k] * conn;
+		conn = conn_GPU[2 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[2][k] * conn;
+		dU[U2] += mhd[0][k] * conn;
+		conn = conn_GPU[3 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[3][k] * conn;
+		dU[U3] += mhd[0][k] * conn;
+		conn = conn_GPU[5 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd[2][k] * conn;
+		dU[U2] += mhd[1][k] * conn;
+		conn = conn_GPU[6 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd[3][k] * conn;
+		dU[U3] += mhd[1][k] * conn;
+		conn = conn_GPU[8 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd[3][k] * conn;
+		dU[U3] += mhd[2][k] * conn;
+		#endif
 	}	
 
 	//Add cooling term if needed
@@ -1673,40 +1697,58 @@ __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma)
 /* load local geometry into structure geom */
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU)
 {
+	#if(NSY)
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id = ii*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jj*(BS_3 + 2 * N3G) + zz;
+	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	geom->gcon[0] = gcon_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[0] = gcov_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcon[1] = gcon_GPU[1 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[1] = gcov_GPU[1 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcon[2] = gcon_GPU[2 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[2] = gcov_GPU[2 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcon[3] = gcon_GPU[3 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[3] = gcov_GPU[3 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	//geom->gcon[1] = geom->gcon[1];
-	//geom->gcov[1] = geom->gcov[1];
-	geom->gcon[4] = gcon_GPU[1 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 1 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[4] = gcov_GPU[1 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 1 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcon[5] = gcon_GPU[1 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 2 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[5] = gcov_GPU[1 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 2 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcon[6] = gcon_GPU[1 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 3 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[6] = gcov_GPU[1 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 3 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	//geom->gcon[2] = geom->gcon[2];
-	//geom->gcov[2] = geom->gcov[2];
-	//geom->gcon[5] = geom->gcon[5];
-	//geom->gcov[5] = geom->gcov[5];
-	geom->gcon[7] = gcon_GPU[2 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 2 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[7] = gcov_GPU[2 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 2 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcon[8] = gcon_GPU[2 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 3 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	geom->gcov[8] = gcov_GPU[2 * NDIM*NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + 3 * NPG*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + ii*(BS_2 + 2 * N2G) + jj];
-	//geom->gcon[3] = geom->gcon[3];
-	//geom->gcov[3] = geom->gcov[3];
-	//geom->gcon[6] = geom->gcon[6];
-	//geom->gcov[6] = geom->gcov[6];
-	//geom->gcon[8] = geom->gcon[8];
-	//geom->gcov[8] = geom->gcov[8];	 
-	geom->gcon[9] = gcon_GPU[3*NDIM*NPG*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2)+3*NPG*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + kk*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + ii*(BS_2+2*N2G) + jj];
-	geom->gcov[9] = gcov_GPU[3*NDIM*NPG*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2)+3*NPG*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + kk*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + ii*(BS_2+2*N2G) + jj];
-	geom->g = gdet_GPU[kk*((BS_2+2*N2G)*(BS_1+2*N1G)+fix_mem2) + ii*(BS_2+2*N2G) + jj] ;
+	int global_id = ii*(BS_2 + 2 * N2G) + jj;
+	#endif	
+	#if(NSY)
+	geom->gcon[0] = gcon_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[0] = gcov_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[1] = gcon_GPU[1 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[1] = gcov_GPU[1 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[2] = gcon_GPU[2 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[2] = gcov_GPU[2 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[3] = gcon_GPU[3 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[3] = gcov_GPU[3 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[4] = gcon_GPU[4 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[4] = gcov_GPU[4 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[5] = gcon_GPU[5 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[5] = gcov_GPU[5 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[6] = gcon_GPU[6 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[6] = gcov_GPU[6 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[7] = gcon_GPU[7 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[7] = gcov_GPU[7 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[8] = gcon_GPU[8 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[8] = gcov_GPU[8 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[9] = gcon_GPU[9 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[9] = gcov_GPU[9 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->g = gdet_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	#else
+	geom->gcon[0] = gcon_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[0] = gcov_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[1] = gcon_GPU[1 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[1] = gcov_GPU[1 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[2] = gcon_GPU[2 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[2] = gcov_GPU[2 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[3] = gcon_GPU[3 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[3] = gcov_GPU[3 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[4] = gcon_GPU[4 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[4] = gcov_GPU[4 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[5] = gcon_GPU[5 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[5] = gcov_GPU[5 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[6] = gcon_GPU[6 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[6] = gcov_GPU[6 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[7] = gcon_GPU[7 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[7] = gcov_GPU[7 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[8] = gcon_GPU[8 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[8] = gcov_GPU[8 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[9] = gcon_GPU[9 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcov[9] = gcov_GPU[9 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->g = gdet_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	#endif
 }
 
 __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
@@ -2695,25 +2737,38 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#if(NSY)
+	int fix_mem2 = fix_mem1;
+	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(NSY)
+	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index3 = FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	#else
+	int index1 = FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	int index2 = FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	int index3 = FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	#endif
 
 	if (icurr >= imin[0] && jcurr >= jmin[0] && zcurr >= zmin[0] && icurr<imax[0] && jcurr<jmax[0]  && zcurr<zmax[0] && k==1){
-		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3 * ksize + global_id + (BS_3 + 2 * N3G)] - E_corn[3 * ksize + global_id]) / gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];;
+		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3 * ksize + global_id + (BS_3 + 2 * N3G)] - E_corn[3 * ksize + global_id]) / gdet_GPU[index1];;
 		#if(N3G>0)
-		psf[global_id] += Dt / dx_3*(E_corn[2 * ksize + global_id + D3] - E_corn[2 * ksize + global_id]) / gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];;
+		psf[global_id] += Dt / dx_3*(E_corn[2 * ksize + global_id + D3] - E_corn[2 * ksize + global_id]) / gdet_GPU[index1];;
 		#endif
 	}
 	if (icurr >= imin[1] && jcurr >= jmin[1] && zcurr >= zmin[1] && icurr<imax[1] && jcurr<jmax[1] && zcurr<zmax[1] && k == 1){
-		psf[1 * ksize + global_id] = psi[1 * ksize + global_id] + Dt / dx_1*(E_corn[3 * ksize + global_id + isize] - E_corn[3 * ksize + global_id]) / gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];;
+		psf[1 * ksize + global_id] = psi[1 * ksize + global_id] + Dt / dx_1*(E_corn[3 * ksize + global_id + isize] - E_corn[3 * ksize + global_id]) / gdet_GPU[index2];;
 		#if(N3G>0)
-		psf[1 * ksize + global_id] += -Dt / dx_3*(E_corn[1 * ksize + global_id + D3] - E_corn[1 * ksize + global_id]) / gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];;
+		psf[1 * ksize + global_id] += -Dt / dx_3*(E_corn[1 * ksize + global_id + D3] - E_corn[1 * ksize + global_id]) / gdet_GPU[index2];;
 		#endif
 	}
 	if (icurr >= imin[2] && jcurr >= jmin[2] && zcurr >= zmin[2] && icurr<imax[2] && jcurr<jmax[2] && zcurr<zmax[2] && k == 1){
 		#if(N3G>0)
-		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize] - E_corn[2 * ksize + global_id]) / gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];;
-		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G)] - E_corn[1 * ksize + global_id]) / gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];
+		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize] - E_corn[2 * ksize + global_id]) / gdet_GPU[index3];;
+		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G)] - E_corn[1 * ksize + global_id]) / gdet_GPU[index3];
 		#endif
 	}
 }
@@ -2771,26 +2826,39 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#if(NSY)
+	int fix_mem2 = fix_mem1;
+	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	#if(NSY)
+	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+(k==2))*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + (k == 4))*(BS_3 + 2 * N3G) + zcurr;
+	int index3 = FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + (k==6));
+	#else
+	int index1 = FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + (k == 2))*(BS_2 + 2 * N2G) + jcurr;
+	int index2 = FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4));
+	int index3 = FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	#endif
 
 	if (k >= 1){
 		if (icurr >= N1G + (k != 1) && jcurr >= N2G && zcurr >= N3G + (k == 3 || k == 4) && icurr < BS_1 + N1G + D1 - (k != 2) && jcurr < BS_2 + N2G  && zcurr < BS_3 + N3G - (k == 3 || k == 4)){
-			psf[global_id + (k == 2)*isize] = psi[global_id + (k == 2)*isize] - Dt / dx_2*(E_corn[3 * ksize + global_id + (k == 2)*isize + (BS_3 + 2 * N3G)] - E_corn[3 * ksize + global_id + (k == 2)*isize]) / gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + (k == 2))*(BS_2 + 2 * N2G) + jcurr];
+			psf[global_id + (k == 2)*isize] = psi[global_id + (k == 2)*isize] - Dt / dx_2*(E_corn[3 * ksize + global_id + (k == 2)*isize + (BS_3 + 2 * N3G)] - E_corn[3 * ksize + global_id + (k == 2)*isize]) / gdet_GPU[index1];
 			#if(N3G>0)
-			psf[global_id + (k == 2)*isize] += Dt / dx_3*(E_corn[2 * ksize + global_id + (k == 2)*isize + D3] - E_corn[2 * ksize + global_id + (k == 2)*isize]) / gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + (k == 2))*(BS_2 + 2 * N2G) + jcurr];
+			psf[global_id + (k == 2)*isize] += Dt / dx_3*(E_corn[2 * ksize + global_id + (k == 2)*isize + D3] - E_corn[2 * ksize + global_id + (k == 2)*isize]) / gdet_GPU[index1];
 			#endif
 		}
 		if (icurr >= N1G && jcurr >= N2G + (k != 3) && zcurr >= N3G + (k == 1 || k == 2) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G + D2 - (k != 4) && zcurr < BS_3 + N3G - (k == 1 || k == 2)){
-			psf[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] = psi[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] + Dt / dx_1*(E_corn[3 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G) + isize] - E_corn[3 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4))];
+			psf[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] = psi[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] + Dt / dx_1*(E_corn[3 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G) + isize] - E_corn[3 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[index2];
 			#if(N3G>0)
-			psf[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] += -Dt / dx_3*(E_corn[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G) + D3] - E_corn[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4))];
+			psf[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)] += -Dt / dx_3*(E_corn[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G) + D3] - E_corn[1 * ksize + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[index2];
 			#endif
 		}
 		if (icurr >= N1G && jcurr >= N2G + (k == 1 || k == 2) && zcurr >= N3G + (k != 5) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G - (k == 1 || k == 2) && zcurr < BS_3 + N3G + D3 - (k != 6)){
 			#if(N3G>0)
-			psf[2 * ksize + global_id + (k == 6)] = psi[2 * ksize + global_id + (k == 6)] - Dt / dx_1*(E_corn[2 * ksize + global_id + (k == 6) + isize] - E_corn[2 * ksize + global_id + (k == 6)]) / gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];
-			psf[2 * ksize + global_id + (k == 6)] += Dt / dx_2*(E_corn[1 * ksize + global_id + (k == 6) + (BS_3 + 2 * N3G)] - E_corn[1 * ksize + global_id + (k == 6)]) / gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr];
+			psf[2 * ksize + global_id + (k == 6)] = psi[2 * ksize + global_id + (k == 6)] - Dt / dx_1*(E_corn[2 * ksize + global_id + (k == 6) + isize] - E_corn[2 * ksize + global_id + (k == 6)]) / gdet_GPU[index3];
+			psf[2 * ksize + global_id + (k == 6)] += Dt / dx_2*(E_corn[1 * ksize + global_id + (k == 6) + (BS_3 + 2 * N3G)] - E_corn[1 * ksize + global_id + (k == 6)]) / gdet_GPU[index3];
 			#endif
 		}
 	}
@@ -3198,7 +3266,11 @@ __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, 
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#if(NSY)
+	int fix_mem2 = fix_mem1;
+	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#endif	
 	struct of_geom geom;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double U[NPR], pi[NPR];
@@ -3209,11 +3281,21 @@ __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, 
 			U[k] = U_i[k*(ksize)+global_id] + pi_i[k*(ksize)+global_id];
 		}
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		#if(NSY)
+		#if(STAGGERED)
+		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		#if(N3G>0)
+		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
+		#endif
+		#endif
+		#else
 		#if(STAGGERED)
 		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
 		#if(N3G>0)
 		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		#endif
 		#endif
 		#endif
 	
@@ -3629,7 +3711,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#if(NSY)
+	int fix_mem2 = fix_mem1;
+	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	struct of_geom geom;
@@ -3687,11 +3773,21 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			U[k] += Dt*(dU[k]);
 		}
 
+		#if(NSY)
 		#if(STAGGERED)
-		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
-		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr+D2)]) / 2.0;
+		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		#if(N3G>0)
+		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
+		#endif
+		#endif
+		#else
+		#if(STAGGERED)
+		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
 		#if(N3G>0)
 		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		#endif
 		#endif
 		#endif
 

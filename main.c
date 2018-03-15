@@ -328,7 +328,7 @@ void set_arrays(int n)
 	E_corn[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 	#endif
 	failimage[nl[n]] = (int(*)[NFAIL])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(int[NFAIL]));
-	#if(!NONSYMMETRIC)
+	#if(!NSY)
 	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NDIM][NDIM][NDIM]));
 	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
 	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
@@ -1217,7 +1217,7 @@ int index_3D(int n, int i, int j, int z)
 }
 int index_2D(int n, int i, int j, int z)
 {
-	#if(!NONSYMMETRIC)
+	#if(!NSY)
 	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G) + ((j - N2_GPU_offset[n]) + N2G));
 	#else
 	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(BS_3 + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
@@ -1251,7 +1251,7 @@ void set_grid(int n)
 	{
 		DLOOPA X[j] = 0.;
 		#pragma omp for collapse(2) schedule(dynamic)
-		#if(!NONSYMMETRIC)
+		#if(!NSY)
 		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]) {
 		#else
 		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {

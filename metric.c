@@ -58,7 +58,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	double offset = 0.000000001;
 	double tilt = TILT_ANGLE / 180.*M_PI;
 	DLOOP gcov[j][k] = 0.;
-#if(NONSYMMETRIC)
+#if(NSY)
 	bl_coord(X, &r, &th, &phi);
 
 	//compute Jacobian r,th,phi->x,y,z (dx/dr)
@@ -177,7 +177,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	gcov[3][3] = s2*(rho2 + a*a*s2*(1. + 2.*r / rho2));
 #endif
 
-#if(NONSYMMETRIC)
+#if(NSY)
 	//compute Jacobian r,th,phi->x,y,z (dx/dr)
 	dxdr[0][0] = 1.;
 	dxdr[0][1] = 0.;

@@ -205,7 +205,11 @@ void init_torus()
 
 	rhomax = 0. ;
 	umax = 0. ;
-	tilt = TILT_ANGLE/180.*M_PI;
+	#if(!NSY)
+	tilt = (TILT_ANGLE)/180.*M_PI;
+	#else
+	tilt = -(TILT_ANGLE) / 180.*M_PI;
+	#endif
 	eccentricity = 0.0;
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -511,7 +515,11 @@ void init_disruption()
   
   rhomax = 0. ;
   umax = 0. ;
-  tilt = TILT_ANGLE/180.*M_PI;
+	#if(!NSY)
+  tilt = (TILT_ANGLE) / 180.*M_PI;
+	#else
+  tilt = -(TILT_ANGLE) / 180.*M_PI;
+	#endif  
   eccentricity = 0.0;
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -707,8 +715,11 @@ void set_mag(void){
 	double rho_av, q, beta = 100., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM];
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
-	double tilt = TILT_ANGLE / 180.*M_PI;
-	
+	#if(!NSY)
+	int tilt = (TILT_ANGLE) / 180.*M_PI;
+	#else
+	int tilt = -(TILT_ANGLE) / 180.*M_PI;
+	#endif	
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			if (p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO]> rhomax) rhomax = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];

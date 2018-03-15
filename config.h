@@ -17,7 +17,7 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
+#define TILTED (1)
 #define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
@@ -80,13 +80,14 @@ Numerical Parameters section
 #define NB_LOCAL (300)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_1 2
+#define NB_2 2
+#define NB_3 2
+
 /*Set block size in each dimension*/
-#define BS_1 26
-#define BS_2 26
-#define BS_3 26
+#define BS_1 50
+#define BS_2 50
+#define BS_3 50
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2
@@ -119,7 +120,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define PRESTEP2 0
 
 /*Preevolve primitive variables for Summit*/
-#define PRESTEP_P 1
+#define PRESTEP_P 0
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
@@ -158,7 +159,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NONSYMMETRIC (0)
+#define NSY (1)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (0)
