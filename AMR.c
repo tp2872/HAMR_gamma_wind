@@ -1590,9 +1590,19 @@ void check_refcrit(void){
 
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL];
+				#if(!REFINE_JET)
 				if (block[n_ord_total[n]][AMR_LEVEL] == max_levels - 2 && block[n_ord_total[n]][AMR_COORD1] == 0){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
+				#else
+				if (block[n_ord_total[n]][AMR_COORD1] <= 0 && level==0) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 2 && level == 1) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 6 && level == 2) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 14 && level == 3) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 30 && level == 4) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 62 && level == 5) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 126 && level == 6) block[n_ord_total[n]][AMR_TAG] = 0;
+				#endif
 
 				//Do not refine around both poles
 				number = 0;
@@ -1931,8 +1941,23 @@ void rm_order2(void){
 //Calculate refinement criterion
 double calc_refcrit(int n){
 	int i, j, z;
-	double ref_val = 0.0, enth;
-	#if(WHICHPROBLEM==DISRUPTION_PROBLEM)
+	double ref_val = 0.0, enth, r, bsq, r, th, phi, X[NDIM];
+	struct of_state q;
+	struct of_geom geom;
+	#if(REFINE_JET)
+	if (block[n][AMR_NODE] == rank){
+		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (r > 50.0){
+				get_geometry(n, i, j, z, CENT, &geom);
+				get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+				bsq = bsq_calc(p[nl[n]][index_3D(n, i, j, z)], &geom);
+				if (log(q.ucon[0]) / log(10.0) > 0.5 || log(bsq / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > 1.0 || log(p[nl[n]][index_3D(n, i, j, z)][UU] / p[nl[n]][index_3D(n, i, j, z)][RHO]) / log(10.0) > -0.2) ref_val = 100.0;
+			}
+		}
+	}
+	#elif(WHICHPROBLEM==DISRUPTION_PROBLEM)
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			enth=1.0+p[nl[n]][index_3D(n, i, j, z)][UU]*gam/p[nl[n]][index_3D(n, i, j, z)][RHO];

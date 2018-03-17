@@ -12,13 +12,16 @@ Physical Parameters section
 #define TORUS_PROBLEM_GRB 8
 #define WHICHPROBLEM TORUS_PROBLEM
 
+/*Enable special refinement criterion for large scale jet simulations*/
+#define REFINE_JET (1)
+
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (45.)
+#define TILT_ANGLE (60.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -82,12 +85,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 2
 #define NB_2 2
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 50
 #define BS_2 50
-#define BS_3 50
+#define BS_3 100
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS 2
@@ -108,7 +111,7 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
@@ -136,7 +139,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
 
 /*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define LEER (0)
 
 /*Wheter to set floors in ZAMO frame*/
@@ -162,7 +165,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (1)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (0)
+#define TRANS_BOUND (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
