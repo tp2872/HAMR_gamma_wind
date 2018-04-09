@@ -1552,7 +1552,7 @@ void check_refcrit(void){
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	if (max_levels == 0) max_levels = N_LEVELS;
+	if (max_levels == 0) max_levels = N_LEVELS - 1;
 	int tag, count, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	
@@ -1884,7 +1884,6 @@ int derefine_pole(void){
 			}
 		}
 		MPI_Barrier(mpi_cartcomm);
-		if (rank == 0)fprintf(stderr, "Before post refine \n", l);
 		post_refine();
 		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
 	}
@@ -1941,7 +1940,7 @@ void rm_order2(void){
 //Calculate refinement criterion
 double calc_refcrit(int n){
 	int i, j, z;
-	double ref_val = 0.0, enth, r, bsq, r, th, phi, X[NDIM];
+	double ref_val = 0.0, enth, bsq, r, th, phi, X[NDIM];
 	struct of_state q;
 	struct of_geom geom;
 	#if(REFINE_JET)

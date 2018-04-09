@@ -167,9 +167,9 @@ void init_torus()
 	
 	double temp = a;
 	a = 0.9375;
-	rin = 6.0;
+	rin = 12.5;
 	//rmax = 14.6145;
-	rmax = 12.;
+	rmax = 25.;
 	//rmax = 14.6165;
 	///rin = 12.;
 	//rmax = 14.616;
@@ -784,7 +784,7 @@ void set_mag(void){
 				bl_coord(X, &r, &th, &phi);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*r*r; //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3]* pow(dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q;// pow(q, 2.0) * pow(r, 3.0); //MAD
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
 				//3d jet
 				//X[1] = log(r - RB);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3], 3.0)* pow(r, 3.0)*(0.1 + 0.9*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 0.5), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.05), 2.0))) / 10;

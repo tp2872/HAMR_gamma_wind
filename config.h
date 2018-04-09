@@ -16,12 +16,12 @@ Physical Parameters section
 #define REFINE_JET (1)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (60.)
+#define TILT_ANGLE (50.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -70,7 +70,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -79,25 +79,25 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (64)
+#define MAX_BLOCKS (28)
 #define NB_LOCAL (300)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 2
-#define NB_3 1
+#define NB_1 4
+#define NB_2 12
+#define NB_3 10
 
 /*Set block size in each dimension*/
-#define BS_1 50
-#define BS_2 50
-#define BS_3 100
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
-#define REF_1 0
-#define REF_2 0
+#define REF_1 1
+#define REF_2 1
 #define REF_3 1
 
 /*Number of GPUs per MPI rank*/

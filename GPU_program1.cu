@@ -2052,14 +2052,14 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 	int isize, icurr, jcurr, zcurr;
 	if (poststep_p >= 0){
-		isize = (BS_3 + 2 * D3 - 0 * PRESTEP_P*N3G - (dir == 3))*(BS_2 + 2 * D2 - 0 * PRESTEP_P*N2G - (dir == 2));
-		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 0 * PRESTEP_P*N3G - (dir == 3));
-		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 0 * PRESTEP_P*N3G - (dir == 3));
-		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 0 * PRESTEP_P*N3G - (dir == 3)) + zcurr)) / (isize);
-		zcurr += (N3G - 1)*D3 + 0*PRESTEP_P*N3G + (dir == 3);
-		jcurr += (N2G - 1)*D2 + 0*PRESTEP_P*N2G + (dir == 2);
-		icurr += (N1G - 1)*D1 + 0*PRESTEP_P*N1G + (dir == 1);
-		if (global_id<(BS_1 + 2 * D1 - 0 * PRESTEP_P*N1G - (dir == 1)) * (BS_2 + 2 * D2 - 0 * PRESTEP_P*N2G - (dir == 2)) * (BS_3 + 2 * D3 - 0 * PRESTEP_P*N3G - (dir == 3))) k = 1;
+		isize = (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3))*(BS_2 + 2 * D2 - 2 * PRESTEP_P*N2G - (dir == 2));
+		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3));
+		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3));
+		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3)) + zcurr)) / (isize);
+		zcurr += (N3G - 1)*D3 + 2*PRESTEP_P*N3G + (dir == 3);
+		jcurr += (N2G - 1)*D2 + 2*PRESTEP_P*N2G + (dir == 2);
+		icurr += (N1G - 1)*D1 + 2*PRESTEP_P*N1G + (dir == 1);
+		if (global_id<(BS_1 + 2 * D1 - 2 * PRESTEP_P*N1G - (dir == 1)) * (BS_2 + 2 * D2 - 2 * PRESTEP_P*N2G - (dir == 2)) * (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3))) k = 1;
 	}
 	#if(PRESTEP_P)
 	else{
