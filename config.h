@@ -20,8 +20,8 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (50.)
+#define TILTED (0)
+#define TILT_ANGLE (0.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -70,7 +70,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -84,16 +84,16 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 12
-#define NB_3 10
+#define NB_2 4
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 26
+#define BS_2 26
+#define BS_3 26
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 4
+#define N_LEVELS 2
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -162,7 +162,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1)

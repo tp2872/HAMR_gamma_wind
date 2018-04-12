@@ -720,6 +720,7 @@ double advance_GPU(void)
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
+	set_iprobe(0, &flag);
 
 	//For first timestep do not synchronize electrice fields
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
