@@ -695,7 +695,7 @@ double advance_GPU(void)
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
-	set_iprobe(0, &flag);
+
 	//For first timestep do not synchronize electrice fields 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) && poststep_p==PRESTEP_P){
@@ -720,7 +720,7 @@ double advance_GPU(void)
 		}
 		set_iprobe(1, &flag);
 	} while (flag);
-	set_iprobe(0, &flag);
+
 	//For first timestep do not synchronize electrice fields
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) && poststep_p == PRESTEP_P){

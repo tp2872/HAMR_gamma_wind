@@ -1412,7 +1412,6 @@ void GPU_consttransport_bound(void){
 	E_average();
 	#endif
 
-	set_iprobe(0, &flag);
 	#if(PRESTEP)
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1){
@@ -1431,6 +1430,7 @@ void GPU_consttransport_bound(void){
 	}
 
 	//For last timestep synchronize electric fields immediately
+	set_iprobe(0, &flag);
 	do{
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
