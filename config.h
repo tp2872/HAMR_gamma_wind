@@ -10,14 +10,14 @@ Physical Parameters section
 #define BONDI_PROBLEM_1D 6
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM_GRB
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_JET (1)
+#define REFINE_JET (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
-#define BH_SPIN (0.9375)
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.9)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -35,11 +35,11 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(1.e-5)
-#define UUMIN	(0.3333*1.e-7)
+#define RHOMIN	(1.e-6)
+#define UUMIN	(1.e-7)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
-#define POWRHO (1.5)
+#define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
@@ -67,7 +67,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (1)
+#define V100 (0)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
@@ -79,25 +79,25 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (28)
+#define MAX_BLOCKS (22)
 #define NB_LOCAL (300)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_1 12
+#define NB_2 24
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 26
+#define BS_1 156
 #define BS_2 26
-#define BS_3 26
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
-#define REF_1 1
-#define REF_2 1
+#define REF_1 0
+#define REF_2 0
 #define REF_3 1
 
 /*Number of GPUs per MPI rank*/
@@ -111,13 +111,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 64
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
 #define PRESTEP2 0

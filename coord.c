@@ -185,7 +185,7 @@ void set_points(int n)
 {
 	/* Grid parameters*/
 	a = BH_SPIN;
-	Rin = 0.85*(1. + sqrt(1. - a*a));
+	Rin = 0.9*(1. + sqrt(1. - a*a));
 	Rout = 100000.;
 	lim = MC;
 	failed = 0;	/* start slow */
@@ -193,7 +193,6 @@ void set_points(int n)
 	if (dt>1e-5) dt = dt;
 	else dt = 1.e-5;
 	R0 = 0.0;
-	hslope = 0.6; //Not in use in H-AMR
 	gam = GAMMA;
 
 	if (N2 != 1) {
@@ -251,7 +250,7 @@ void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
 	//X[1] < X0[1] && X[2] < X0[2] (value of X0[3] not used)
 	X0[0] = Xin[0];
 	/*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
-	X0[1] = pow(log(38.*(double)N3 / 200. - RB), 1. / RADEXP);
+	X0[1] = pow(log(38.*(double)N3 / 150. - RB), 1. / RADEXP);
 	X0[2] = -1. + 1. / ((double)(N2));
 	X0[3] = 0.;
 	/*3D jet Rout 10000 Rg 1024x400x100*/

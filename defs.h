@@ -710,7 +710,7 @@ double a;
 double gam;
 
 /* numerical parameters */
-double Rin, Rout, hslope, R0, fractheta;
+double Rin, Rout, R0, fractheta;
 double cour;
 double dV, dx[NB_LOCAL][NPR], startx[NPR];
 double dt, bdt[NB_LOCAL][4];
