@@ -167,9 +167,9 @@ void init_torus()
 	
 	double temp = a;
 	a = 0.9375;
-	rin = 12.5;
+	rin = 6.0;
 	//rmax = 14.6145;
-	rmax = 25.;
+	rmax = 12.;
 	//rmax = 14.6165;
 	///rin = 12.;
 	//rmax = 14.616;
@@ -784,7 +784,7 @@ void set_mag(void){
 				bl_coord(X, &r, &th, &phi);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*r*r; //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3]* pow(dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //MAD
 				//3d jet
 				//X[1] = log(r - RB);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3], 3.0)* pow(r, 3.0)*(0.1 + 0.9*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 0.5), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.05), 2.0))) / 10;
@@ -2141,13 +2141,17 @@ int normalize_field_local_nodivb(double targbeta, double rhomax, double amax, do
 
 	bound_prim(prim, 1);
 	for (n = 0; n < n_active; n++){
+
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3) {
+
+			ratc_ij = compute_rat(prim, A, rhomax, amax, targbeta, FACE3, n_ord[n], i, j, z);
+			if (dir == 3) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= ratc_ij;
+		}
 		ZLOOP3D_MPI{
 			//cell centered ratio in this cell
 			ratc_ij = compute_rat(prim, A, rhomax, amax, targbeta, CENT, n_ord[n], i, j, z);
 
 			// normalize staggered field primitive
-			if (dir == 1) prim[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] *= ratc_ij;
-			if (dir == 2) prim[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] *= ratc_ij;
 			if (dir == 3) prim[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= ratc_ij;
 		}
 	}
@@ -2278,21 +2282,21 @@ int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A
 							//zero out or copy starting element of vpot
 							if (0 == cj) {
 								//if CPU is at physical boundary, initialize (zero out) A[3]
-								A[n][index_3D(n, i, js, z)][3] = 0.0;
+								A[nl[n]][index_3D(n, i, js, z)][3] = 0.0;
 							}
 							else {
 								//else copy B[3] (which was bounded below) -> A[3]
-								A[n][index_3D(n, i, js, z)][3] = prim[n][index_3D(n, i, jsb - dj, z)][B3];
+								A[nl[n]][index_3D(n, i, js, z)][3] = prim[nl[n]][index_3D(n, i, jsb - dj, z)][B3];
 							}
 							//integrate vpot along the theta line
 							for (j = js; j != je; j += dj) {
 								get_geometry(n, i, j - js + jsb, z, CENT, &geom);
 								gdet = geom.g;
 								//take a loop along j-line at a fixed i,k and integrate up vpot
-								A[n][index_3D(n, i, j + dj, z)][3] = A[n][index_3D(n, i, j, z)][3] + dj * prim[n][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[n][2];
+								A[nl[n]][index_3D(n, i, j + dj, z)][3] = A[nl[n]][index_3D(n, i, j, z)][3] + dj * prim[nl[n]][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[nl[n]][2];
 							}
 							//copy A[3] -> B[3] before bounding
-							prim[n][index_3D(n, i, jeb, z)][B3] = A[n][index_3D(n, i, je, z)][3];
+							prim[nl[n]][index_3D(n, i, jeb, z)][B3] = A[nl[n]][index_3D(n, i, je, z)][3];
 						}
 					}
 				}
@@ -2312,21 +2316,21 @@ int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A
 							//zero out or copy starting element of vpot
 							if (0 == cj) {
 								//if CPU is at physical boundary, initialize (zero out) A[3]
-								A[n][index_3D(n, i, js, z)][3] = 0.0;
+								A[nl[n]][index_3D(n, i, js, z)][3] = 0.0;
 							}
 							else {
 								//else copy B[3] (which was bounded below) -> A[3]
-								A[n][index_3D(n, i, js, z)][3] = prim[n][index_3D(n, i, jsb - dj, z)][B3];
+								A[nl[n]][index_3D(n, i, js, z)][3] = prim[nl[n]][index_3D(n, i, jsb - dj, z)][B3];
 							}
 							//integrate vpot along the theta line
 							for (j = js; j != je; j += dj) {
 								get_geometry(n, i, j - js + jsb, z, CENT, &geom);
 								gdet = geom.g;
 								//take a loop along j-line at a fixed i,k and integrate up vpot
-								A[n][index_3D(n, i, j + dj, z)][3] = A[n][index_3D(n, i, j, z)][3] + dj * prim[n][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[n][2];
+								A[nl[n]][index_3D(n, i, j + dj, z)][3] = A[nl[n]][index_3D(n, i, j, z)][3] + dj * prim[nl[n]][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[nl[n]][2];
 							}
 							//copy A[3] -> B[3] before bounding
-							prim[n][index_3D(n, i, jeb, z)][B3] = A[n][index_3D(n, i, je, z)][3];
+							prim[nl[n]][index_3D(n, i, jeb, z)][B3] = A[nl[n]][index_3D(n, i, je, z)][3];
 						}
 					}
 				}
@@ -2390,7 +2394,7 @@ void set_uniform_Bphi(void){
 	struct of_geom geom;
 	#if(TRANS_BOUND && STAGGERED)
 	gpu = 0;
-	E_average();
+	//E_average();
 	#endif
 	for (n = 0; n < n_active; n++){
 		#if(STAGGERED)
