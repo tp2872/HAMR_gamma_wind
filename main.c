@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 {
 	double tdump, tlog;
 	int nfailed = 0;
-	int i, j, u, n;
+	int i, j,z, u, n;
 	double r, th, phi, X[NDIM];
 	clock_t begin2;
 	nstep = 0;
@@ -77,7 +77,14 @@ int main(int argc, char *argv[])
 		derefine_pole();
 		#endif
 	}
-	
+	if (t <= 10.){
+		for (n = 0; n < n_active; n++){
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (1. + 5.e-2*(ranc(0) -0.5));
+			}
+			GPU_write(n_ord[n]);
+		}
+	}
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
@@ -91,7 +98,7 @@ int main(int argc, char *argv[])
 	diag(INIT_OUT);
 
 	DTl = 10.0;
-	DTd = 25.0;
+	DTd = 10.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t + TREF;

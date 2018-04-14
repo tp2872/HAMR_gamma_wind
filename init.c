@@ -2143,8 +2143,10 @@ int normalize_field_local_nodivb(double targbeta, double rhomax, double amax, do
 	for (n = 0; n < n_active; n++){
 
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3) {
-
+			//cell centered ratio in this cell
 			ratc_ij = compute_rat(prim, A, rhomax, amax, targbeta, FACE3, n_ord[n], i, j, z);
+			
+			// normalize staggered field primitive
 			if (dir == 3) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= ratc_ij;
 		}
 		ZLOOP3D_MPI{
