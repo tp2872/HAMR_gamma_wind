@@ -373,7 +373,7 @@ void init_torus()
 	#endif
 
 	#if (GPU_ENABLED)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	GPU_write();
 	#endif
 }
 
@@ -609,7 +609,7 @@ void init_disruption()
 
 
 	#if (GPU_ENABLED)
-  for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+   GPU_write();
 	#endif
 }
 
@@ -1746,7 +1746,7 @@ void init_torus_grb(){
 #endif 
 
 #if (GPU_ENABLED)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	GPU_write();
 #endif
 }
 

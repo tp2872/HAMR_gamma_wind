@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (1. + 5.e-2*(ranc(0) -0.5));
 			}
-			GPU_write(n_ord[n]);
 		}
+		GPU_write();
 	}
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 	
 	/* do initial diagnostics */
 	#if(GPU_ENABLED || GPU_DEBUG )
-	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	GPU_read();
 	#endif
 	first_dump = 0;
 	diag(INIT_OUT);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
 			end1 = clock();
 			#if (GPU_ENABLED==1)
-			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+			GPU_read();
 			#endif
 			bound_prim(p, 1);
 			if (dt > 0.5) break;

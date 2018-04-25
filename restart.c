@@ -166,7 +166,7 @@ int restart_read(void)
 	GPU_boundprim(1);
 	#endif
 	#if(GPU_ENABLED || GPU_DEBUG )
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	GPU_write();
 	#endif
 	return 1;
 }

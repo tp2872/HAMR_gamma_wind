@@ -68,7 +68,7 @@ void diag(int call_code)
 					zmax = z*pow(1 + REF_3, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					divbmax = divb;
 				}
-				//if(divb>0.0001)fprintf(stderr, "divb (%d,%d,%d): %f \n", i, j, z, divb);
+				if(divb>0.0001)fprintf(stderr, "divb (%d,%d,%d): %f \n", i, j, z, divb);
 			}
 		}
 		#if (MPI_enable)
@@ -86,7 +86,7 @@ void diag(int call_code)
 		if (divbmax==divbmax_local){
 			fprintf(stderr, "LOG      t=%g \t divbmax: %d %d %d %g\n", t, imax, jmax, zmax, divbmax);
 		}
-		if (divbmax > 1.0) exit(44);
+		if (divbmax > 100.0) exit(44);
 	}
 
 	/* gdump only at code start */

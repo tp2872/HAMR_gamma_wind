@@ -259,7 +259,7 @@ void read_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_
 
 	if (gpu == 1)cudaSetDevice(block[n][AMR_GPU]);
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, n, i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, &(BufferE_1[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][399]));
+		pack_send2_E(n, n, i1, i2, 0, D2, z1, z2, isize, zsize, send1_fine, E_corn, BufferE_1, &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][399]));
 		if (gpu == 1){
 			cudaStreamSynchronize(commandQueueGPU[nl[n]]);
 		}
@@ -273,7 +273,7 @@ void read_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB_
 		}
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
-		pack_send2_E(n, n, i1, i2, BS_2, BS_2 + D2, z1, z2, isize, zsize, send3_fine, E_corn, &(BufferE_1[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][398]));
+		pack_send2_E(n, n, i1, i2, BS_2, BS_2 + D2, z1, z2, isize, zsize, send3_fine, E_corn, BufferE_1, &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][398]));
 		if (gpu == 1){
 			cudaStreamSynchronize(commandQueueGPU[nl[n]]);
 		}
@@ -308,7 +308,7 @@ void write_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB
 				receive1_fine[nl[n]][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg1[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
 			}
 		}
-		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, &(BufferE_1[nl[n]]), &(Bufferrec1fine[nl[n]]), &(NULL_POINTER[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, 0, D2, z1, z2, isize, zsize, receive1_fine, NULL, NULL, E_corn, BufferE_1, &(Bufferrec1fine[nl[n]]), &(NULL_POINTER[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, 4, 0, 0, 0, 0);
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 		for (i = i1; i < i2; i++){
@@ -319,7 +319,7 @@ void write_E_avg(double E_avg1[NB_1*NB_3][BS_1 + 2 * N1G], double E_avg2[NB_1*NB
 				receive3_fine[nl[n]][2 * (i - i1)*zsize + 2 * (z - z1) + 0] = E_avg2[block[n][AMR_COORD1] * NB_3 + block[n][AMR_COORD3]][i];
 			}
 		}
-		unpack_receive2_E(n, n, n, i1, i2, BS_2, BS_2 + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, &(BufferE_1[nl[n]]), &(Bufferrec3fine[nl[n]]), &(NULL_POINTER[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, 4, 0, 0, 0, 0);
+		unpack_receive2_E(n, n, n, i1, i2, BS_2, BS_2 + D2, z1, z2, isize, zsize, receive3_fine, NULL, NULL, E_corn, BufferE_1, &(Bufferrec3fine[nl[n]]), &(NULL_POINTER[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, 4, 0, 0, 0, 0);
 	}
 }
 

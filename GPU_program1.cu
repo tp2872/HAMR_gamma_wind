@@ -27,17 +27,17 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
-__device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU[NPG*10], const  double* __restrict__ gcon_GPU[NPG*10], const  double* __restrict__ gdet_GPU[NPG]);
+__device__ void get_geometry(int n_blocks, int n, int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam);
 __device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam);
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn[NDIM*10],
+__device__ void source(int n_block, int n, double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,
 struct of_state *  q, double a, double r);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,
 	double a, double gam, double r, double Dt);
-__device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov[NPG*10]1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
+__device__ void inflow_check(int n_blocks, int n, double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
 __device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
 __device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
@@ -1204,7 +1204,7 @@ __device__ void primtoU(double *pr, struct of_state *q, struct of_geom *geom, do
 }
 
 /* add in source terms to equations of motion */
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam,
+__device__ void source(int n_blocks, int n, double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam,
 	const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
 {
 	double mhd[NDIM][NDIM];
@@ -1213,9 +1213,13 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	#if(NSY)
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int gridsize_3D = n_blocks*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_3D = n*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = icurr*(BS_2 + 2 * N2G) + jcurr;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 	#endif	
 
 	P = (gam - 1.)*ph[UU];
@@ -1246,49 +1250,49 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	#pragma unroll 4	
 	for (k = 0; k<NDIM; k++){
 		#if(NSY)
-		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		dU[U1] += mhd[1][k] * conn_GPU[4 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		dU[U2] += mhd[2][k] * conn_GPU[7 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		dU[U3] += mhd[3][k] * conn_GPU[9 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		conn = conn_GPU[1 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
+		dU[U1] += mhd[1][k] * conn_GPU[4 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
+		dU[U2] += mhd[2][k] * conn_GPU[7 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
+		dU[U3] += mhd[3][k] * conn_GPU[9 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
+		conn = conn_GPU[1 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
 		dU[UU] += mhd[1][k] * conn;
 		dU[U1] += mhd[0][k] * conn;
-		conn = conn_GPU[2 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[2 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
 		dU[UU] += mhd[2][k] * conn;
 		dU[U2] += mhd[0][k] * conn;
-		conn = conn_GPU[3 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[3 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
 		dU[UU] += mhd[3][k] * conn;
 		dU[U3] += mhd[0][k] * conn;
-		conn = conn_GPU[5 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[5 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
 		dU[U1] += mhd[2][k] * conn;
 		dU[U2] += mhd[1][k] * conn;
-		conn = conn_GPU[6 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[6 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
 		dU[U1] += mhd[3][k] * conn;
 		dU[U3] += mhd[1][k] * conn;
-		conn = conn_GPU[8 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[8 * NDIM*gridsize_3D + k*gridsize_3D + offset_3D + global_id];
 		dU[U2] += mhd[3][k] * conn;
 		dU[U3] += mhd[2][k] * conn;
 		#else
-		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		dU[U1] += mhd[1][k] * conn_GPU[4 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		dU[U2] += mhd[2][k] * conn_GPU[7 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		dU[U3] += mhd[3][k] * conn_GPU[9 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-		conn = conn_GPU[1 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
+		dU[U1] += mhd[1][k] * conn_GPU[4 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
+		dU[U2] += mhd[2][k] * conn_GPU[7 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
+		dU[U3] += mhd[3][k] * conn_GPU[9 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
+		conn = conn_GPU[1 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
 		dU[UU] += mhd[1][k] * conn;
 		dU[U1] += mhd[0][k] * conn;
-		conn = conn_GPU[2 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[2 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
 		dU[UU] += mhd[2][k] * conn;
 		dU[U2] += mhd[0][k] * conn;
-		conn = conn_GPU[3 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[3 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
 		dU[UU] += mhd[3][k] * conn;
 		dU[U3] += mhd[0][k] * conn;
-		conn = conn_GPU[5 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[5 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
 		dU[U1] += mhd[2][k] * conn;
 		dU[U2] += mhd[1][k] * conn;
-		conn = conn_GPU[6 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[6 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
 		dU[U1] += mhd[3][k] * conn;
 		dU[U3] += mhd[1][k] * conn;
-		conn = conn_GPU[8 * NDIM*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[8 * NDIM * gridsize_2D + k * gridsize_2D + offset_2D + global_id];
 		dU[U2] += mhd[3][k] * conn;
 		dU[U3] += mhd[2][k] * conn;
 		#endif
@@ -1695,68 +1699,72 @@ __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma)
 }
 
 /* load local geometry into structure geom */
-__device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU[NPG*10], const  double* __restrict__ gcon_GPU[NPG*10], const  double* __restrict__ gdet_GPU[NPG])
+__device__ void get_geometry(int n_blocks, int n, int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU)
 {
 	#if(NSY)
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = ii*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jj*(BS_3 + 2 * N3G) + zz;
+	int gridsize_3D = n_blocks*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_3D = n*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = ii*(BS_2 + 2 * N2G) + jj;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 	#endif	
 	#if(NSY)
-	geom->gcon[0] = gcon_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[0] = gcov_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[1] = gcon_GPU[1 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[1] = gcov_GPU[1 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[2] = gcon_GPU[2 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[2] = gcov_GPU[2 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[3] = gcon_GPU[3 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[3] = gcov_GPU[3 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[4] = gcon_GPU[4 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[4] = gcov_GPU[4 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[5] = gcon_GPU[5 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[5] = gcov_GPU[5 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[6] = gcon_GPU[6 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[6] = gcov_GPU[6 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[7] = gcon_GPU[7 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[7] = gcov_GPU[7 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[8] = gcon_GPU[8 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[8] = gcov_GPU[8 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[9] = gcon_GPU[9 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[9] = gcov_GPU[9 * NPG*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->g = gdet_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[0] = gcon_GPU[kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[0] = gcov_GPU[kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[1] = gcon_GPU[1 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[1] = gcov_GPU[1 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[2] = gcon_GPU[2 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[2] = gcov_GPU[2 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[3] = gcon_GPU[3 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[3] = gcov_GPU[3 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[4] = gcon_GPU[4 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[4] = gcov_GPU[4 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[5] = gcon_GPU[5 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[5] = gcov_GPU[5 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[6] = gcon_GPU[6 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[6] = gcov_GPU[6 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[7] = gcon_GPU[7 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[7] = gcov_GPU[7 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[8] = gcon_GPU[8 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[8] = gcov_GPU[8 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcon[9] = gcon_GPU[9 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->gcov[9] = gcov_GPU[9 * NPG*gridsize_3D + kk*gridsize_3D + offset_3D + global_id];
+	geom->g = gdet_GPU[kk*gridsize_3D + offset_3D + global_id];
 	#else
-	geom->gcon[0] = gcon_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[0] = gcov_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[1] = gcon_GPU[1 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[1] = gcov_GPU[1 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[2] = gcon_GPU[2 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[2] = gcov_GPU[2 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[3] = gcon_GPU[3 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[3] = gcov_GPU[3 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[4] = gcon_GPU[4 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[4] = gcov_GPU[4 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[5] = gcon_GPU[5 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[5] = gcov_GPU[5 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[6] = gcon_GPU[6 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[6] = gcov_GPU[6 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[7] = gcon_GPU[7 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[7] = gcov_GPU[7 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[8] = gcon_GPU[8 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[8] = gcov_GPU[8 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcon[9] = gcon_GPU[9 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->gcov[9] = gcov_GPU[9 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
-	geom->g = gdet_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	geom->gcon[0] = gcon_GPU[kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[0] = gcov_GPU[kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[1] = gcon_GPU[1 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[1] = gcov_GPU[1 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[2] = gcon_GPU[2 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[2] = gcov_GPU[2 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[3] = gcon_GPU[3 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[3] = gcov_GPU[3 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[4] = gcon_GPU[4 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[4] = gcov_GPU[4 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[5] = gcon_GPU[5 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[5] = gcov_GPU[5 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[6] = gcon_GPU[6 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[6] = gcov_GPU[6 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[7] = gcon_GPU[7 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[7] = gcov_GPU[7 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[8] = gcon_GPU[8 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[8] = gcov_GPU[8 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcon[9] = gcon_GPU[9 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->gcov[9] = gcov_GPU[9 * NPG * gridsize_2D + kk * gridsize_2D + offset_2D + global_id];
+	geom->g = gdet_GPU[kk * gridsize_2D + offset_2D + global_id];
 	#endif
 }
 
-__device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet)
+__device__ void inflow_check(int n_blocks, int n, double *  pr, int ii, int jj, int zz, int type, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
 {
 	struct of_geom geom;
 	double ucon[NDIM];
 	double alpha, beta1, gamma, vsq;
-	get_geometry(ii, jj, zz, CENT, &geom, gcov, gcon, gdet);
+	get_geometry(n_blocks, n,ii, jj, zz, CENT, &geom, gcov, gcon, gdet);
 	ucon_calc(pr, &geom, ucon);
 
 	if (((ucon[1] > 0.) && (type == 0)) || ((ucon[1] < 0.) && (type == 1))) {
@@ -1777,12 +1785,12 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 		pr[U1] = beta1 / alpha;
 
 		// now find new gamma and put it back in 		
-		vsq = gcov[4] * pr[UTCON1 + 1 - 1] * pr[UTCON1 + 1 - 1]; //1,1
-		vsq += 2.*gcov[5] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 1 - 1]; //1,2
-		vsq += 2.*gcov[6] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //1,3
-		vsq += gcov[7] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 2 - 1]; //2,2
-		vsq += 2 * gcov[8] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 2 - 1]; //2,3
-		vsq += gcov[9] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 3 - 1]; //1,2
+		vsq = geom.gcov[4] * pr[UTCON1 + 1 - 1] * pr[UTCON1 + 1 - 1]; //1,1
+		vsq += 2.*geom.gcov[5] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 1 - 1]; //1,2
+		vsq += 2.*geom.gcov[6] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //1,3
+		vsq += geom.gcov[7] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 2 - 1]; //2,2
+		vsq += 2 * geom.gcov[8] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 2 - 1]; //2,3
+		vsq += geom.gcov[9] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 3 - 1]; //1,2
 		
 		vsq = MY_MAX(1.e-13,vsq);
 		if (vsq >= 1.) {
@@ -1875,9 +1883,12 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 	return(dot(q.bcon, q.bcov));
 }
 
-__global__ void fluxcalcprep(const  double* __restrict__   F[NPR], double *  dq1[NPR], double *  dq2[NPR], const  double* __restrict__  p[NPR], int dir, int lim, int number, const  double* __restrict__  V[NPR], int poststep_p)
+__global__ void fluxcalcprep(int n_blocks, int n2, int **block, const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k=0;
 	if (poststep_p>=0){
 		isize = (BS_3 + 2 * D3 - 2 * (0)*N3G)*(BS_2 + 2 * D2 - 2 * (0)*N2G);
@@ -1967,6 +1978,9 @@ __global__ void fluxcalcprep(const  double* __restrict__   F[NPR], double *  dq1
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
@@ -1976,29 +1990,31 @@ __global__ void fluxcalcprep(const  double* __restrict__   F[NPR], double *  dq1
 		double x0, x1, x2, x3, x4, x5, temp[1], result[1];
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x1 = p[k][MY_MAX(global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
-			x2 = p[k][MY_MAX(global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
-			x3 = p[k][global_id];
-			x4 = p[k][MY_MIN(global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			x5 = p[k][MY_MIN(global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x1 = p[MY_MAX(k * gridsize_3D + offset_3D +global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
+			x2 = p[MY_MAX(k * gridsize_3D + offset_3D +global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
+			x3 = p[k * gridsize_3D + offset_3D +global_id];
+			x4 = p[MY_MIN(k * gridsize_3D + offset_3D +global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x5 = p[MY_MIN(k * gridsize_3D + offset_3D +global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+fix_mem1))];
 			para(x1, x2, x3, x4, x5, result, temp);
-			dq1[k][global_id] = result[0];
-			dq2[k][global_id] = temp[0];
+			dq1[k * gridsize_3D + offset_3D +global_id] = result[0];
+			dq2[k * gridsize_3D + offset_3D +global_id] = temp[0];
 		}
-		#elif(LEER)
 		#else
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			dq1[k][global_id] = slope_lim(p[k][global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel], p[k][global_id], p[k][global_id + idel*isize + jdel*(BS_3 + 2 * N3G) + zdel], 0);
+			dq1[k * gridsize_3D + offset_3D +global_id] = slope_lim(p[k * gridsize_3D + offset_3D +global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel], p[k * gridsize_3D + offset_3D +global_id], p[k * gridsize_3D + offset_3D +global_id + idel*isize + jdel*(BS_3 + 2 * N3G) + zdel], 0);
 		}
 		#endif
 	}
 }
 
-__global__ void fluxcalc2D2(double *  F[NPR], const  double* __restrict__  dq1[NPR], const  double* __restrict__ dq2[NPR], const  double* __restrict__  pv[NPR], const  double* __restrict__  ps[3], const  double* __restrict__ gcov[NPG * 10], const  double* __restrict__ gcon[NPG * 10], const  double* __restrict__ gdet[NPG], int lim, int dir,
+__global__ void fluxcalc2D2(int n_blocks, int n2, int **block, double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
 	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double dx_1, double dx_2, double dx_3, int poststep_p, int calc_time)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int local_id = threadIdx.x;
 	int group_id = blockIdx.x;
 	int local_size = blockDim.x;
@@ -2095,6 +2111,9 @@ __global__ void fluxcalc2D2(double *  F[NPR], const  double* __restrict__  dq1[N
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel, i;
 	int face;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	double factor;
 	double cmax_r, cmin_r, cmax, cmin;
 	double ctop;
@@ -2109,29 +2128,28 @@ __global__ void fluxcalc2D2(double *  F[NPR], const  double* __restrict__  dq1[N
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3; }
 	if (k == 1){
-		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
-
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 		#if(PPM || LEER)
 		for (k = 0; k < NPR; k++){
-			p[k] = dq2[k][global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
+			p[k] = dq2[k * gridsize_3D + offset_3D +global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
 		}
 		#else
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
 			#if AMD
-			p[k] = fma(0.5, dq1[k][global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel], pv[k][global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel]);
+			p[k] = fma(0.5, dq1[k * gridsize_3D + offset_3D +global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel], pv[k * gridsize_3D + offset_3D +global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel]);
 			#else
-			p[k] = pv[k][global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel] + 0.5*dq1[k][global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
+			p[k] = pv[k * gridsize_3D + offset_3D +global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel] + 0.5*dq1[k * gridsize_3D + offset_3D +global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
 			#endif
 		}
 		#endif
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
 			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
-				p[k] = ps[k-B1][global_id];
+				p[k] = ps[(k - B1)*gridsize_3D+offset_3D+global_id];
 			}
 
-			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
+			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)) || (jcurr == N2G && (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)))){
 				#if AMD
 				p[k] = 0.;
 				#else
@@ -2149,24 +2167,24 @@ __global__ void fluxcalc2D2(double *  F[NPR], const  double* __restrict__  dq1[N
 		#if(PPM || LEER)
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++){
-			p[k] = dq1[k][global_id];
+			p[k] = dq1[k * gridsize_3D + offset_3D +global_id];
 		}
 		#else
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
 			#if AMD
-			p[k] = fma(-0.5, dq1[k][global_id], pv[k][global_id]);
+			p[k] = fma(-0.5, dq1[k * gridsize_3D + offset_3D +global_id], pv[k * gridsize_3D + offset_3D +global_id]);
 			#else
-			p[k] = pv[k][global_id] - 0.5*dq1[k][global_id];
+			p[k] = pv[k * gridsize_3D + offset_3D +global_id] - 0.5*dq1[k * gridsize_3D + offset_3D +global_id];
 			#endif
 		}
 		#endif
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
 			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
-				p[k] = ps[k-B1][global_id];
+				p[k] = ps[(k - B1)*gridsize_3D+offset_3D+global_id];
 			}
-			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
+			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)) || (jcurr == N2G && (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)))){
 				#if AMD
 				p[k] = 0.;
 				#else
@@ -2186,9 +2204,9 @@ __global__ void fluxcalc2D2(double *  F[NPR], const  double* __restrict__  dq1[N
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			#if(HLLF)
-			F[k][global_id] = (cmax*temp1[k] +cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+			F[k * gridsize_3D + offset_3D +global_id] = (cmax*temp1[k] +cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
 			#else
-			F[k][global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
+			F[k * gridsize_3D + offset_3D +global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
 			#endif
 		}
 
@@ -2208,43 +2226,49 @@ __global__ void fluxcalc2D2(double *  F[NPR], const  double* __restrict__  dq1[N
 	}
 }
 
-__global__ void fix_flux(double *  F1[NPR], double *  F2[NPR], double *  F3[NPR], int NBR_1, int NBR_2, int NBR_3, int NBR_4)
+__global__ void fix_flux(int n_blocks, int n2, int **block, double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	  int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	  int n = global_id / block_size;
+	  global_id = global_id % block_size;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int icurr, jcurr, zcurr;
 	int k;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	if (global_id<(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)){
 		zcurr = global_id % (BS_3 + 2 * N3G);
 		icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 		if (icurr >= N1G - D1 && zcurr >= N3G - D3 && icurr<BS_1 + N1G + D1 && zcurr<BS_3 + N3G + D3) {
 			if (NBR_1 < 0){
-				F1[B2][icurr*isize + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = -F1[B2][icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr];
+				F1[B2 * gridsize_3D + offset_3D +icurr*isize + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = -F1[B2 * gridsize_3D + offset_3D +icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr];
 				#if(N3G>0)
-				F3[B2][icurr*isize + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2][icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr];
+				F3[B2 * gridsize_3D + offset_3D +icurr*isize + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2 * gridsize_3D + offset_3D +icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
 				#pragma unroll 9	
-				PLOOP F2[k][icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.;
+				PLOOP F2[k * gridsize_3D + offset_3D +icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.;
 				#endif	
 				#pragma unroll 9	
 				for (k = 0; k<NPR; k++){
-					F2[k][icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.0;
+					F2[k * gridsize_3D + offset_3D +icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.0;
 				}
 			}
 			if (NBR_3 < 0){
-				F1[B2][icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = -F1[B2][icurr*isize + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
+				F1[B2 * gridsize_3D + offset_3D +icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = -F1[B2 * gridsize_3D + offset_3D +icurr*isize + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
 				#if(N3G>0)
-				F3[B2][icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2][icurr*isize + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
+				F3[B2 * gridsize_3D + offset_3D +icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2 * gridsize_3D + offset_3D +icurr*isize + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
 				#pragma unroll 9	
-				PLOOP F2[k][icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.;
+				PLOOP F2[k * gridsize_3D + offset_3D +icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.;
 				#endif	
 				#pragma unroll 9	
 				for (k = 0; k<NPR; k++){
-					F2[k][icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.0;
+					F2[k * gridsize_3D + offset_3D +icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.0;
 				}
 			}
 		}
@@ -2256,10 +2280,10 @@ __global__ void fix_flux(double *  F1[NPR], double *  F2[NPR], double *  F3[NPR]
 		jcurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 		if (jcurr >= N2G - D2 && zcurr >= N3G - D3 && jcurr<BS_2 + N2G + D2 && zcurr<BS_3 + N3G + D3) {
 			if (NBR_4<0){
-				if (F1[RHO][N1G*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] > 0.) F1[RHO][N1G*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.;
+				if (F1[RHO*gridsize_3D+offset_3D+N1G*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] > 0.) F1[RHO*gridsize_3D+offset_3D+N1G*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.;
 			}
 			if (NBR_2<0){
-				if (F1[RHO][(BS_1 + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] < 0.) F1[RHO][(BS_1 + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.;
+				if (F1[RHO*gridsize_3D+offset_3D+(BS_1 + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] < 0.) F1[RHO*gridsize_3D+offset_3D+(BS_1 + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.;
 			}
 		}
 
@@ -2267,9 +2291,12 @@ __global__ void fix_flux(double *  F1[NPR], double *  F2[NPR], double *  F3[NPR]
 	#endif
 }
 
-__global__ void consttransport1(const  double* __restrict__  pb_i[3], double * E_cent[NDIM], const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], int poststep_p)
+__global__ void consttransport1(int n_blocks, int n2, int **block, const  double* __restrict__  pb_i, double *  E_cent, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k=0;
 	if (poststep_p == 0){
 		isize = (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G)*(BS_2 + 2 * D2 - 2 * PRESTEP_P*N2G);
@@ -2358,31 +2385,37 @@ __global__ void consttransport1(const  double* __restrict__  pb_i[3], double * E
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	double pb[NPR];
 	struct of_geom geom;
 	struct of_state q;
 
 	if (k==1){
 		for (k = 0; k<NPR; k++){
-			pb[k] = pb_i[k][global_id];
+			pb[k] = pb_i[k * gridsize_3D + offset_3D +global_id];
 		}
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		ucon_calc(pb, &geom, q.ucon);
 		lower(q.ucon, geom.gcov, q.ucov);
 		bcon_calc(pb, q.ucon, q.ucov, q.bcon);
 
 		#if(N3G>0)
-		E_cent[1][global_id] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
-		E_cent[2][global_id] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
+		E_cent[1 * gridsize_3D + offset_3D + global_id] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
+		E_cent[2 * gridsize_3D + offset_3D + global_id] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
 		#endif
-		E_cent[3][global_id] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
+		E_cent[3 * gridsize_3D + offset_3D + global_id] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
 	}
 }
 
-__global__ void consttransport2(double *  emf[NDIM], const  double* __restrict__  E_cent[NDIM], const  double* __restrict__  F1[NPR], const  double* __restrict__  F2[NPR], const  double* __restrict__  F3[NPR],
-	const  double* __restrict__  pb_i[3], const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], int POLE_1, int POLE_2, int poststep_p)
+__global__ void consttransport2(int n_blocks, int n2, int **block, double *  emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
+	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k=0;
 	if (poststep_p == 0){
 		isize = (BS_3 + D3 - 2 * PRESTEP_P*N3G)*(BS_2 + D2 - 2 * PRESTEP_P*N2G);
@@ -2471,58 +2504,64 @@ __global__ void consttransport2(double *  emf[NDIM], const  double* __restrict__
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int jsize = BS_3 + 2 * N3G;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 
 	if (k==1){
-		double dE_LEFT_13_1 = E_cent[1][global_id] - F3[B2][global_id];
-		double dE_LEFT_13_2 = E_cent[1][global_id - jsize*D2] - F3[B2][global_id - jsize*D2];
-		double dE_RIGHT_13_1 = F3[B2][global_id + D3 - D3] - E_cent[1][global_id - D3];
-		double dE_RIGHT_13_2 = F3[B2][global_id + D3 - jsize*D2 - D3] - E_cent[1][global_id - jsize*D2 - D3];
-		double dE_LEFT_12_1 = E_cent[1][global_id] + F2[B3][global_id];
-		double dE_LEFT_12_2 = E_cent[1][global_id - D3] + F2[B3][global_id - D3];
-		double dE_RIGHT_12_1 = -F2[B3][global_id + D2*jsize - D2*jsize] - E_cent[1][global_id - D2*jsize];
-		double dE_RIGHT_12_2 = -F2[B3][global_id + D2*jsize - D2*jsize - D3] - E_cent[1][global_id - D2*jsize - D3];
-		double dE_LEFT_21_1 = E_cent[2][global_id] - F1[B3][global_id];
-		double dE_LEFT_21_2 = E_cent[2][global_id - D3] - F1[B3][global_id - D3];
-		double dE_RIGHT_21_1 = F1[B3][global_id + D1*isize - D1*isize] - E_cent[2][global_id - D1*isize];
-		double dE_RIGHT_21_2 = F1[B3][global_id + D1*isize - D1*isize - D3] - E_cent[2][global_id - D1*isize - D3];
-		double dE_LEFT_23_1 = E_cent[2][global_id] + F3[B1][global_id];
-		double dE_LEFT_23_2 = E_cent[2][global_id - D1*isize] + F3[B1][global_id - D1*isize];
-		double dE_RIGHT_23_1 = -F3[B1][global_id + D3 - D3] - E_cent[2][global_id - D3];
-		double dE_RIGHT_23_2 = -F3[B1][global_id + D3 - isize*D1 - D3] - E_cent[2][global_id - isize*D1 - D3];
-		double dE_LEFT_31_1 = E_cent[3][global_id] + F1[B2][global_id];
-		double dE_LEFT_31_2 = E_cent[3][global_id - D2*jsize] + F1[B2][global_id - D2*jsize];
-		double dE_RIGHT_31_1 = -F1[B2][global_id + D1*isize - D1*isize] - E_cent[3][global_id - D1*isize];
-		double dE_RIGHT_31_2 = -F1[B2][global_id + D1*isize - D1*isize - D2*jsize] - E_cent[3][global_id - D1*isize - D2*jsize];
-		double dE_LEFT_32_1 = E_cent[3][global_id] - F2[B1][global_id];
-		double dE_LEFT_32_2 = E_cent[3][global_id - D1*isize] - F2[B1][global_id - D1*isize];
-		double dE_RIGHT_32_1 = F2[B1][global_id + D2*jsize - D2*jsize] - E_cent[3][global_id - D2*jsize];
-		double dE_RIGHT_32_2 = F2[B1][global_id + D2*jsize - D1*isize - D2*jsize] - E_cent[3][global_id - D1*isize - D2*jsize];
+		double dE_LEFT_13_1 = E_cent[1 * gridsize_3D + offset_3D +global_id] - F3[B2 * gridsize_3D + offset_3D +global_id];
+		double dE_LEFT_13_2 = E_cent[1 * gridsize_3D + offset_3D +global_id - jsize*D2] - F3[B2 * gridsize_3D + offset_3D +global_id - jsize*D2];
+		double dE_RIGHT_13_1 = F3[B2 * gridsize_3D + offset_3D +global_id + D3 - D3] - E_cent[1 * gridsize_3D + offset_3D +global_id - D3];
+		double dE_RIGHT_13_2 = F3[B2 * gridsize_3D + offset_3D +global_id + D3 - jsize*D2 - D3] - E_cent[1 * gridsize_3D + offset_3D +global_id - jsize*D2 - D3];
+		double dE_LEFT_12_1 = E_cent[1 * gridsize_3D + offset_3D +global_id] + F2[B3 * gridsize_3D + offset_3D +global_id];
+		double dE_LEFT_12_2 = E_cent[1 * gridsize_3D + offset_3D +global_id - D3] + F2[B3 * gridsize_3D + offset_3D +global_id - D3];
+		double dE_RIGHT_12_1 = -F2[B3 * gridsize_3D + offset_3D +global_id + D2*jsize - D2*jsize] - E_cent[1 * gridsize_3D + offset_3D +global_id - D2*jsize];
+		double dE_RIGHT_12_2 = -F2[B3 * gridsize_3D + offset_3D +global_id + D2*jsize - D2*jsize - D3] - E_cent[1 * gridsize_3D + offset_3D +global_id - D2*jsize - D3];
+		double dE_LEFT_21_1 = E_cent[2 * gridsize_3D + offset_3D +global_id] - F1[B3 * gridsize_3D + offset_3D +global_id];
+		double dE_LEFT_21_2 = E_cent[2 * gridsize_3D + offset_3D +global_id - D3] - F1[B3 * gridsize_3D + offset_3D +global_id - D3];
+		double dE_RIGHT_21_1 = F1[B3 * gridsize_3D + offset_3D +global_id + D1*isize - D1*isize] - E_cent[2 * gridsize_3D + offset_3D +global_id - D1*isize];
+		double dE_RIGHT_21_2 = F1[B3 * gridsize_3D + offset_3D +global_id + D1*isize - D1*isize - D3] - E_cent[2 * gridsize_3D + offset_3D +global_id - D1*isize - D3];
+		double dE_LEFT_23_1 = E_cent[2 * gridsize_3D + offset_3D +global_id] + F3[B1 * gridsize_3D + offset_3D +global_id];
+		double dE_LEFT_23_2 = E_cent[2 * gridsize_3D + offset_3D +global_id - D1*isize] + F3[B1 * gridsize_3D + offset_3D +global_id - D1*isize];
+		double dE_RIGHT_23_1 = -F3[B1 * gridsize_3D + offset_3D +global_id + D3 - D3] - E_cent[2 * gridsize_3D + offset_3D +global_id - D3];
+		double dE_RIGHT_23_2 = -F3[B1 * gridsize_3D + offset_3D +global_id + D3 - isize*D1 - D3] - E_cent[2 * gridsize_3D + offset_3D +global_id - isize*D1 - D3];
+		double dE_LEFT_31_1 = E_cent[3 * gridsize_3D + offset_3D +global_id] + F1[B2 * gridsize_3D + offset_3D +global_id];
+		double dE_LEFT_31_2 = E_cent[3 * gridsize_3D + offset_3D +global_id - D2*jsize] + F1[B2 * gridsize_3D + offset_3D +global_id - D2*jsize];
+		double dE_RIGHT_31_1 = -F1[B2 * gridsize_3D + offset_3D +global_id + D1*isize - D1*isize] - E_cent[3 * gridsize_3D + offset_3D +global_id - D1*isize];
+		double dE_RIGHT_31_2 = -F1[B2 * gridsize_3D + offset_3D +global_id + D1*isize - D1*isize - D2*jsize] - E_cent[3 * gridsize_3D + offset_3D +global_id - D1*isize - D2*jsize];
+		double dE_LEFT_32_1 = E_cent[3 * gridsize_3D + offset_3D +global_id] - F2[B1 * gridsize_3D + offset_3D +global_id];
+		double dE_LEFT_32_2 = E_cent[3 * gridsize_3D + offset_3D +global_id - D1*isize] - F2[B1 * gridsize_3D + offset_3D +global_id - D1*isize];
+		double dE_RIGHT_32_1 = F2[B1 * gridsize_3D + offset_3D +global_id + D2*jsize - D2*jsize] - E_cent[3 * gridsize_3D + offset_3D +global_id - D2*jsize];
+		double dE_RIGHT_32_2 = F2[B1 * gridsize_3D + offset_3D +global_id + D2*jsize - D1*isize - D2*jsize] - E_cent[3 * gridsize_3D + offset_3D +global_id - D1*isize - D2*jsize];
 
-		emf[1][global_id] = 0.25*((-F2[B3][global_id] - (dE_LEFT_13_1* (double)(F2[RHO][global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO][global_id]>0.0)))
-			+ (-F2[B3][global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO][global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO][global_id - D3]>0.0))) +
-			+(F3[B2][global_id] - (dE_LEFT_12_1* (double)(F3[RHO][global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO][global_id]>0.0)))
-			+ (F3[B2][global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO][global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO][global_id - D2*jsize]>0.0))));
-		emf[2][global_id] = 0.25*((-F3[B1][global_id] - (dE_LEFT_21_1* (double)(F3[RHO][global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO][global_id]>0.0)))
-			+ (-F3[B1][global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO][global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO][global_id - D1*isize]>0.0)))
-			+ (F1[B3][global_id] - (dE_LEFT_23_1* (double)(F1[RHO][global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO][global_id]>0.0)))
-			+ (F1[B3][global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO][global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO][global_id - D3]>0.0))));
-		emf[3][global_id] = 0.25*((F2[B1][global_id] - (dE_LEFT_31_1* (double)(F2[RHO][global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO][global_id]>0.0)))
-			+ (F2[B1][global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO][global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO][global_id - D1*isize]>0.0)))
-			+ (-F1[B2][global_id] - (dE_LEFT_32_1* (double)(F1[RHO][global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO][global_id]>0.0)))
-			+ (-F1[B2][global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO][global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO][global_id - D2*jsize] >0.0))));
+		emf[1 * gridsize_3D + offset_3D +global_id] = 0.25*((-F2[B3 * gridsize_3D + offset_3D +global_id] - (dE_LEFT_13_1* (double)(F2[RHO*gridsize_3D+offset_3D+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*gridsize_3D+offset_3D+global_id]>0.0)))
+			+ (-F2[B3 * gridsize_3D + offset_3D +global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*gridsize_3D+offset_3D+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*gridsize_3D+offset_3D+global_id - D3]>0.0))) +
+			+(F3[B2 * gridsize_3D + offset_3D +global_id] - (dE_LEFT_12_1* (double)(F3[RHO*gridsize_3D+offset_3D+global_id] <= 0.0) + dE_LEFT_12_2* (double)(F3[RHO*gridsize_3D+offset_3D+global_id]>0.0)))
+			+ (F3[B2 * gridsize_3D + offset_3D +global_id - D2*jsize] + (dE_RIGHT_12_1* (double)(F3[RHO*gridsize_3D+offset_3D+global_id - D2*jsize] <= 0.0) + dE_RIGHT_12_2* (double)(F3[RHO*gridsize_3D+offset_3D+global_id - D2*jsize]>0.0))));
+		emf[2 * gridsize_3D + offset_3D +global_id] = 0.25*((-F3[B1 * gridsize_3D + offset_3D +global_id] - (dE_LEFT_21_1* (double)(F3[RHO*gridsize_3D+offset_3D+global_id] <= 0.0) + dE_LEFT_21_2* (double)(F3[RHO*gridsize_3D+offset_3D+global_id]>0.0)))
+			+ (-F3[B1 * gridsize_3D + offset_3D +global_id - D1*isize] + (dE_RIGHT_21_1* (double)(F3[RHO*gridsize_3D+offset_3D+global_id - D1*isize] <= 0.0) + dE_RIGHT_21_2* (double)(F3[RHO*gridsize_3D+offset_3D+global_id - D1*isize]>0.0)))
+			+ (F1[B3 * gridsize_3D + offset_3D +global_id] - (dE_LEFT_23_1* (double)(F1[RHO*gridsize_3D+offset_3D+global_id] <= 0.0) + dE_LEFT_23_2* (double)(F1[RHO*gridsize_3D+offset_3D+global_id]>0.0)))
+			+ (F1[B3 * gridsize_3D + offset_3D +global_id - D3] + (dE_RIGHT_23_1* (double)(F1[RHO*gridsize_3D+offset_3D+global_id - D3] <= 0.0) + dE_RIGHT_23_2* (double)(F1[RHO*gridsize_3D+offset_3D+global_id - D3]>0.0))));
+		emf[3 * gridsize_3D + offset_3D +global_id] = 0.25*((F2[B1 * gridsize_3D + offset_3D +global_id] - (dE_LEFT_31_1* (double)(F2[RHO*gridsize_3D+offset_3D+global_id] <= 0.0) + dE_LEFT_31_2* (double)(F2[RHO*gridsize_3D+offset_3D+global_id]>0.0)))
+			+ (F2[B1 * gridsize_3D + offset_3D +global_id - D1*isize] + (dE_RIGHT_31_1* (double)(F2[RHO*gridsize_3D+offset_3D+global_id - D1*isize] <= 0.0) + dE_RIGHT_31_2* (double)(F2[RHO*gridsize_3D+offset_3D+global_id - D1*isize]>0.0)))
+			+ (-F1[B2 * gridsize_3D + offset_3D +global_id] - (dE_LEFT_32_1* (double)(F1[RHO*gridsize_3D+offset_3D+global_id] <= 0.0) + dE_LEFT_32_2* (double)(F1[RHO*gridsize_3D+offset_3D+global_id]>0.0)))
+			+ (-F1[B2 * gridsize_3D + offset_3D +global_id - D2*jsize] + (dE_RIGHT_32_1* (double)(F1[RHO*gridsize_3D+offset_3D+global_id - D2*jsize] <= 0.0) + dE_RIGHT_32_2* (double)(F1[RHO*gridsize_3D+offset_3D+global_id - D2*jsize] >0.0))));
 
-		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
-			emf[3][global_id] = 0.;
-			emf[1][global_id] = -0.5*(F2[B3][global_id] + F2[B3][global_id - D3]);
+		if (((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && jcurr == N2G) || ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && jcurr == BS_2 + N2G)){
+			emf[3 * gridsize_3D + offset_3D + global_id] = 0.;
+			emf[1 * gridsize_3D + offset_3D +global_id] = -0.5*(F2[B3 * gridsize_3D + offset_3D +global_id] + F2[B3 * gridsize_3D + offset_3D +global_id - D3]);
 		}
 	}
 }
 
-__global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU[NPG], double *  psi[3], double *  psf[3],
-	const  double* __restrict__  E_corn[NDIM], double Dt, int poststep_p)
+__global__ void consttransport3(int n_blocks, int n2, int **block, double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
+	const  double* __restrict__  E_corn, double Dt, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k=0, i, imin[3], jmin[3], zmin[3], imax[3], jmax[3], zmax[3];
 
 	if (poststep_p==0){
@@ -2693,40 +2732,48 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 	#if(NSY)
-	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
-	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
-	int index3 = FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index1 = FACE1 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index2 = FACE2 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index3 = FACE3 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
 	#else
-	int index1 = FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
-	int index2 = FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
-	int index3 = FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	int index1 = FACE1 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr;
+	int index2 = FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr;
+	int index3 = FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr;
 	#endif
 
 	if (icurr >= imin[0] && jcurr >= jmin[0] && zcurr >= zmin[0] && icurr<imax[0] && jcurr<jmax[0]  && zcurr<zmax[0] && k==1){
-		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3][global_id + (BS_3 + 2 * N3G)] - E_corn[3][global_id]) / gdet_GPU[index1];;
+		psf[offset_3D + global_id] = psi[offset_3D + global_id] - Dt / dx_2*(E_corn[3 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] - E_corn[3 * gridsize_3D + offset_3D + global_id]) / gdet_GPU[index1];;
 		#if(N3G>0)
-		psf[global_id] += Dt / dx_3*(E_corn[2][global_id + D3] - E_corn[2][global_id]) / gdet_GPU[index1];;
+		psf[offset_3D + global_id] += Dt / dx_3*(E_corn[2 * gridsize_3D + offset_3D + global_id + D3] - E_corn[2 * gridsize_3D + offset_3D + global_id]) / gdet_GPU[index1];;
 		#endif
 	}
 	if (icurr >= imin[1] && jcurr >= jmin[1] && zcurr >= zmin[1] && icurr<imax[1] && jcurr<jmax[1] && zcurr<zmax[1] && k == 1){
-		psf[1][global_id] = psi[1][global_id] + Dt / dx_1*(E_corn[3][global_id + isize] - E_corn[3][global_id]) / gdet_GPU[index2];;
+		psf[1 * gridsize_3D + offset_3D + global_id] = psi[1 * gridsize_3D + offset_3D + global_id] + Dt / dx_1*(E_corn[3 * gridsize_3D + offset_3D + global_id + isize] - E_corn[3 * gridsize_3D + offset_3D + global_id]) / gdet_GPU[index2];;
 		#if(N3G>0)
-		psf[1][global_id] += -Dt / dx_3*(E_corn[1][global_id + D3] - E_corn[1][global_id]) / gdet_GPU[index2];;
+		psf[1 * gridsize_3D + offset_3D + global_id] += -Dt / dx_3*(E_corn[1 * gridsize_3D + offset_3D + global_id + D3] - E_corn[1 * gridsize_3D + offset_3D + global_id]) / gdet_GPU[index2];;
 		#endif
 	}
 	if (icurr >= imin[2] && jcurr >= jmin[2] && zcurr >= zmin[2] && icurr<imax[2] && jcurr<jmax[2] && zcurr<zmax[2] && k == 1){
 		#if(N3G>0)
-		psf[2][global_id] = psi[2][global_id] - Dt / dx_1*(E_corn[2][global_id + isize] - E_corn[2][global_id]) / gdet_GPU[index3];;
-		psf[2][global_id] += Dt / dx_2*(E_corn[1][global_id + (BS_3 + 2 * N3G)] - E_corn[1][global_id]) / gdet_GPU[index3];
+		psf[2 * gridsize_3D + offset_3D + global_id] = psi[2 * gridsize_3D + offset_3D + global_id] - Dt / dx_1*(E_corn[2 * gridsize_3D + offset_3D + global_id + isize] - E_corn[2 * gridsize_3D + offset_3D + global_id]) / gdet_GPU[index3];;
+		psf[2 * gridsize_3D + offset_3D + global_id] += Dt / dx_2*(E_corn[1 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] - E_corn[1 * gridsize_3D + offset_3D + global_id]) / gdet_GPU[index3];
 		#endif
 	}
 }
 
-__global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU[NPG], double *  psi[3], double *  psf[3],
-	const  double* __restrict__  E_corn[NDIM], double Dt)
+__global__ void consttransport3_post(int n_blocks, int n2, int **block, double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
+	const  double* __restrict__  E_corn, double Dt)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int icurr, jcurr, zcurr, k=0, isize;
 	if (global_id < (BS_2 + D2)*(BS_3 + D3)){
 		k = 1;
@@ -2781,41 +2828,49 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif	
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 	#if(NSY)
-	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+(k==2))*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
-	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + (k == 4))*(BS_3 + 2 * N3G) + zcurr;
-	int index3 = FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + (k==6));
+	int index1 = FACE1 * gridsize_3D + offset_3D + (icurr+(k==2))*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	int index2 = FACE2 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + (k == 4))*(BS_3 + 2 * N3G) + zcurr;
+	int index3 = FACE3 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + (k==6));
 	#else
-	int index1 = FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + (k == 2))*(BS_2 + 2 * N2G) + jcurr;
-	int index2 = FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4));
-	int index3 = FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	int index1 = FACE1 * gridsize_2D + offset_2D + (icurr + (k == 2))*(BS_2 + 2 * N2G) + jcurr;
+	int index2 = FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4));
+	int index3 = FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr;
 	#endif
 
 	if (k >= 1){
 		if (icurr >= N1G + (k != 1) && jcurr >= N2G && zcurr >= N3G + (k == 3 || k == 4) && icurr < BS_1 + N1G + D1 - (k != 2) && jcurr < BS_2 + N2G  && zcurr < BS_3 + N3G - (k == 3 || k == 4)){
-			psf[global_id + (k == 2)*isize] = psi[global_id + (k == 2)*isize] - Dt / dx_2*(E_corn[3][global_id + (k == 2)*isize + (BS_3 + 2 * N3G)] - E_corn[3][global_id + (k == 2)*isize]) / gdet_GPU[index1];
+			psf[0 * gridsize_3D + offset_3D + global_id + (k == 2)*isize] = psi[0 * gridsize_3D + offset_3D + global_id + (k == 2)*isize] - Dt / dx_2*(E_corn[3 * gridsize_3D + offset_3D + global_id + (k == 2)*isize + (BS_3 + 2 * N3G)] - E_corn[3 * gridsize_3D + offset_3D + global_id + (k == 2)*isize]) / gdet_GPU[index1];
 			#if(N3G>0)
-			psf[global_id + (k == 2)*isize] += Dt / dx_3*(E_corn[2][global_id + (k == 2)*isize + D3] - E_corn[2][global_id + (k == 2)*isize]) / gdet_GPU[index1];
+			psf[0 * gridsize_3D + offset_3D + global_id + (k == 2)*isize] += Dt / dx_3*(E_corn[2 * gridsize_3D + offset_3D + global_id + (k == 2)*isize + D3] - E_corn[2 * gridsize_3D + offset_3D + global_id + (k == 2)*isize]) / gdet_GPU[index1];
 			#endif
 		}
 		if (icurr >= N1G && jcurr >= N2G + (k != 3) && zcurr >= N3G + (k == 1 || k == 2) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G + D2 - (k != 4) && zcurr < BS_3 + N3G - (k == 1 || k == 2)){
-			psf[1][global_id + (k == 4)*(BS_3 + 2 * N3G)] = psi[1][global_id + (k == 4)*(BS_3 + 2 * N3G)] + Dt / dx_1*(E_corn[3][global_id + (k == 4)*(BS_3 + 2 * N3G) + isize] - E_corn[3][global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[index2];
+			psf[1 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G)] = psi[1 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G)] + Dt / dx_1*(E_corn[3 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G) + isize] - E_corn[3 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[index2];
 			#if(N3G>0)
-			psf[1][global_id + (k == 4)*(BS_3 + 2 * N3G)] += -Dt / dx_3*(E_corn[1][global_id + (k == 4)*(BS_3 + 2 * N3G) + D3] - E_corn[1][global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[index2];
+			psf[1 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G)] += -Dt / dx_3*(E_corn[1 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G) + D3] - E_corn[1 * gridsize_3D + offset_3D + global_id + (k == 4)*(BS_3 + 2 * N3G)]) / gdet_GPU[index2];
 			#endif
 		}
 		if (icurr >= N1G && jcurr >= N2G + (k == 1 || k == 2) && zcurr >= N3G + (k != 5) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G - (k == 1 || k == 2) && zcurr < BS_3 + N3G + D3 - (k != 6)){
 			#if(N3G>0)
-			psf[2][global_id + (k == 6)] = psi[2][global_id + (k == 6)] - Dt / dx_1*(E_corn[2][global_id + (k == 6) + isize] - E_corn[2][global_id + (k == 6)]) / gdet_GPU[index3];
-			psf[2][global_id + (k == 6)] += Dt / dx_2*(E_corn[1][global_id + (k == 6) + (BS_3 + 2 * N3G)] - E_corn[1][global_id + (k == 6)]) / gdet_GPU[index3];
+			psf[2 * gridsize_3D + offset_3D + global_id + (k == 6)] = psi[2 * gridsize_3D + offset_3D + global_id + (k == 6)] - Dt / dx_1*(E_corn[2 * gridsize_3D + offset_3D + global_id + (k == 6) + isize] - E_corn[2 * gridsize_3D + offset_3D + global_id + (k == 6)]) / gdet_GPU[index3];
+			psf[2 * gridsize_3D + offset_3D + global_id + (k == 6)] += Dt / dx_2*(E_corn[1 * gridsize_3D + offset_3D + global_id + (k == 6) + (BS_3 + 2 * N3G)] - E_corn[1 * gridsize_3D + offset_3D + global_id + (k == 6)]) / gdet_GPU[index3];
 			#endif
 		}
 	}
 }
 
-__global__ void flux_ct1(const  double* __restrict__  F1[NPR],, const  double* __restrict__  F2[NPR], const  double* __restrict__  F3[NPR], double *  emf)
+__global__ void flux_ct1(int n_blocks, int n2, int **block, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double *  emf)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
 	int zcurr = (global_id % (isize)) % (BS_3 + D3);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
@@ -2826,27 +2881,33 @@ __global__ void flux_ct1(const  double* __restrict__  F1[NPR],, const  double* _
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G + D1 && jcurr<BS_2 + N2G + D2  && zcurr<BS_3 + N3G + D3){
 		#if (N2G>0 && N3G>0)
-		emf[1][global_id] = -0.25*(F2[B3][global_id] + F2[B3][global_id - 1] -
-			F3[B2][global_id] - F3[B2][global_id - (BS_3 + 2 * N3G)]);
+		emf[1 * gridsize_3D + offset_3D +global_id] = -0.25*(F2[B3 * gridsize_3D + offset_3D +global_id] + F2[B3 * gridsize_3D + offset_3D +global_id - 1] -
+			F3[B2 * gridsize_3D + offset_3D +global_id] - F3[B2 * gridsize_3D + offset_3D +global_id - (BS_3 + 2 * N3G)]);
 		#endif
 		#if (N1G>0 && N3G>0)
-		emf[2][global_id] = -0.25*(F3[B1][global_id] + F3[B1][global_id - isize] -
-			F1[B3][global_id] - F1[B3][global_id - 1]);
+		emf[2 * gridsize_3D + offset_3D +global_id] = -0.25*(F3[B1 * gridsize_3D + offset_3D +global_id] + F3[B1 * gridsize_3D + offset_3D +global_id - isize] -
+			F1[B3 * gridsize_3D + offset_3D +global_id] - F1[B3 * gridsize_3D + offset_3D +global_id - 1]);
 		#endif
 		#if (N1G>0 && N2G>0)
-		emf[3][global_id] = -0.25*(F1[B2][global_id] + F1[B2][global_id - (BS_3 + 2 * N3G)] -
-			F2[B1][global_id] - F2[B1][global_id - isize]);
+		emf[3 * gridsize_3D + offset_3D +global_id] = -0.25*(F1[B2 * gridsize_3D + offset_3D +global_id] + F1[B2 * gridsize_3D + offset_3D +global_id - (BS_3 + 2 * N3G)] -
+			F2[B1 * gridsize_3D + offset_3D +global_id] - F2[B1 * gridsize_3D + offset_3D +global_id - isize]);
 		#else
-		emf[3][global_id] = -0.25*(F1[B2][global_id] + F1[B2][global_id - (BS_3 + 2 * N3G)]);
+		emf[3 * gridsize_3D + offset_3D +global_id] = -0.25*(F1[B2 * gridsize_3D + offset_3D +global_id] + F1[B2 * gridsize_3D + offset_3D +global_id - (BS_3 + 2 * N3G)]);
 		#endif
 	}
 }
 
-__global__ void flux_ct2(double *  F1[NPR], double *  F2[NPR], double *  F3[NPR], const  double* __restrict__  emf)
+__global__ void flux_ct2(int n_blocks, int n2, int **block, double *  F1, double *  F2, double *  F3, const  double* __restrict__  emf)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	  int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	  int n = global_id / block_size;
+	  global_id = global_id % block_size;
 	int isize = (BS_3 + D3)*(BS_2 + D2);
 	int zcurr = (global_id % (isize)) % (BS_3 + D3);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
@@ -2857,49 +2918,55 @@ __global__ void flux_ct2(double *  F1[NPR], double *  F2[NPR], double *  F3[NPR]
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	double emf1 = -emf[1][global_id];
-	double emf2 = -emf[2][global_id];
-	double emf3 = -emf[3][global_id];
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+	double emf1 = -emf[1 * gridsize_3D + offset_3D +global_id];
+	double emf2 = -emf[2 * gridsize_3D + offset_3D +global_id];
+	double emf3 = -emf[3 * gridsize_3D + offset_3D +global_id];
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G + D1 && jcurr<BS_2 + N2G && zcurr<BS_3 + N3G){
 		#if (N1G>0)
-		F1[B1][global_id] = 0.0;
+		F1[B1 * gridsize_3D + offset_3D +global_id] = 0.0;
 		#endif
 		#if (N1G>0 && N2G>0)
-		F1[B2][global_id] = 0.5*(emf3 - emf[3][global_id + (BS_3 + 2 * N3G)]);
+		F1[B2 * gridsize_3D + offset_3D +global_id] = 0.5*(emf3 - emf[3 * gridsize_3D + offset_3D +global_id + (BS_3 + 2 * N3G)]);
 		#endif
 		#if (N1G>0 && N3G>0)
-		F1[B3][global_id] = -0.5*(emf2 - emf[2][global_id + 1]);
+		F1[B3 * gridsize_3D + offset_3D +global_id] = -0.5*(emf2 - emf[2 * gridsize_3D + offset_3D +global_id + 1]);
 		#endif
 	}
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G && jcurr<BS_2 + N2G + D2 && zcurr<BS_3 + N3G){
 		#if (N1G>0 && N2G>0)		
-		F2[B1][global_id] = -0.5*(emf3 - emf[3][global_id + isize]);
+		F2[B1 * gridsize_3D + offset_3D +global_id] = -0.5*(emf3 - emf[3 * gridsize_3D + offset_3D +global_id + isize]);
 		#endif
 		#if (N2G>0 && N3G>0)
-		F2[B3][global_id] = 0.5*(emf1 - emf[1][global_id + 1]);
+		F2[B3 * gridsize_3D + offset_3D +global_id] = 0.5*(emf1 - emf[1 * gridsize_3D + offset_3D +global_id + 1]);
 		#endif
 		#if(N2G>0)
-		F2[B2][global_id] = 0.0;
+		F2[B2 * gridsize_3D + offset_3D +global_id] = 0.0;
 		#endif
 	}
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G && jcurr<BS_2 + N2G && zcurr<BS_3 + N3G + D3){
 		#if (N1G>0 && N3G>0)
-		F3[B1][global_id] = 0.5*(emf2 - emf[2][global_id + isize]);
+		F3[B1 * gridsize_3D + offset_3D +global_id] = 0.5*(emf2 - emf[2 * gridsize_3D + offset_3D +global_id + isize]);
 		#endif
 		#if (N2G>0 && N3G>0)
-		F3[B2][global_id] = -0.5*(emf1 - emf[1][global_id + (BS_3 + 2 * N3G)]);
+		F3[B2 * gridsize_3D + offset_3D +global_id] = -0.5*(emf1 - emf[1 * gridsize_3D + offset_3D +global_id + (BS_3 + 2 * N3G)]);
 		#endif
 		#if(N3G>0)
-		F3[B3][global_id] = 0.;
+		F3[B3 * gridsize_3D + offset_3D +global_id] = 0.;
 		#endif
 	}
 }
 
-__global__ void Utoprim0(const  double* __restrict__ pi_i[NPR], const  double* __restrict__ pb_i[NPR], double* pf_i[NPR], double *  psf[3],
-	const  double* __restrict__  F1[NPR],, const  double* __restrict__  F2[NPR], const  double* __restrict__  F3[NPR], double* U_i[NPR], double* radius, int* pflag, int* failimage[NFAIL],
-	const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], const  double* __restrict__ conn[NDIM*10], double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
+__global__ void Utoprim0(int n_blocks, int n2, int **block, const  double* __restrict__ pi_i, const  double* __restrict__ pb_i, double* pf_i, double *  psf,
+	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k=0;
 	if (poststep_p == 0){
 		isize = (BS_3 - 2 * PRESTEP_P*N3G)*(BS_2 - 2 * PRESTEP_P*N2G);
@@ -2985,42 +3052,48 @@ __global__ void Utoprim0(const  double* __restrict__ pi_i[NPR], const  double* _
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	struct of_geom geom;
 	struct of_state q;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	double dU[NPR], U[NPR], pb[NPR];
 	if (k == 1){
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			pb[k] = pb_i[k][global_id];
+			pb[k] = pb_i[k * gridsize_3D + offset_3D +global_id];
 		}
 
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			#if( N1G > 0 )
-			U[k] = -(F1[k][global_id + isize] - F1[k][global_id]) / dx_1;
+			U[k] = -(F1[k * gridsize_3D + offset_3D +global_id + isize] - F1[k * gridsize_3D + offset_3D +global_id]) / dx_1;
 			#endif
 			#if( N2G > 0 )
-			U[k] -= (F2[k][global_id + (BS_3 + 2 * N3G)] - F2[k][global_id]) / dx_2;
+			U[k] -= (F2[k * gridsize_3D + offset_3D +global_id + (BS_3 + 2 * N3G)] - F2[k * gridsize_3D + offset_3D +global_id]) / dx_2;
 			#endif
 			#if( N3G > 0 )
-			U[k] -= (F3[k][global_id + 1] - F3[k][global_id]) / dx_3;
+			U[k] -= (F3[k * gridsize_3D + offset_3D +global_id + 1] - F3[k * gridsize_3D + offset_3D +global_id]) / dx_3;
 			#endif
 		}
 
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		get_state(pb, &geom, &q);
-		source(pb, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+		source(n_blocks, n, pb, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[n*(BS_1+2*N1G)+icurr]);
 
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
-			U_i[k][global_id] = Dt*(dU[k] + U[k]);
+			U_i[k * gridsize_3D + offset_3D +global_id] = Dt*(dU[k] + U[k]);
 		}
 	}
 }
 
-__global__ void Utoprim1(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], double *  psf[3],
-	double *  F1[NPR], double *  F2[NPR], double *  F3[NPR], double* radius, int* pflag, int* failimage[NFAIL],
-	const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], const  double* __restrict__ conn[NDIM*10], double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
+__global__ void Utoprim1(int n_blocks, int n2, int **block, double* pi_i, double* pb_i, double* pf_i, double *  psf,
+	double *  F1, double *  F2, double *  F3, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k = 0;
 	if (poststep_p == 0){
 		isize = (BS_3 - 2 * PRESTEP_P*N3G)*(BS_2 - 2 * PRESTEP_P*N2G);
@@ -3104,30 +3177,36 @@ __global__ void Utoprim1(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR]
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	struct of_geom geom;
 	struct of_state q;
 	double U[NPR], pi[NPR];
 	if (k == 1){
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			pi[k] = pi_i[k][global_id];
+			pi[k] = pi_i[k * gridsize_3D + offset_3D +global_id];
 		}
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		get_state(pi, &geom, &q);
 		primtoU(pi, &q, &geom, U, gam);
 
 		#pragma unroll 9	
 		for (k = 0; k< NPR; k++){
-			pi_i[k][global_id] = U[k];
+			pi_i[k * gridsize_3D + offset_3D +global_id] = U[k];
 		}
 	}
 }
 
-__global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i[NPR], double* pf_i[NPR], const  double* __restrict__  psf[3],
-	const  double* __restrict__  F1[NPR],, const  double* __restrict__  F2[NPR], const  double* __restrict__  F3[NPR], double* U_i[NPR], double* radius, int* pflag, int* failimage[NFAIL],
-	const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], const  double* __restrict__ conn[NDIM*10], double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
+__global__ void Utoprim2(int n_blocks, int n2, int **block, double* __restrict__ pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
+	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k = 0;
 	if (poststep_p == 0){
 		isize = (BS_3 - 2 * PRESTEP_P*N3G)*(BS_2 - 2 * PRESTEP_P*N2G);
@@ -3217,53 +3296,62 @@ __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i[NPR], double* p
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif	
 	struct of_geom geom;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+
 	double U[NPR], pi[NPR];
 	if (k == 1){
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			pi[k] = pb_i[k][global_id];
-			U[k] = U_i[k][global_id] + pi_i[k][global_id];
+			pi[k] = pb_i[k * gridsize_3D + offset_3D +global_id];
+			U[k] = U_i[k * gridsize_3D + offset_3D +global_id] + pi_i[k * gridsize_3D + offset_3D +global_id];
 		}
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		#if(NSY)
 		#if(STAGGERED)
-		U[B1] = (psf[0][global_id] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0][global_id + isize] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
-		U[B2] = (psf[1][global_id] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1][global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B1] = (psf[0 * gridsize_3D + offset_3D + global_id] * gdet[FACE1 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0 * gridsize_3D + offset_3D + global_id + isize] * gdet[FACE1 * gridsize_3D + offset_3D + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B2] = (psf[1 * gridsize_3D + offset_3D + global_id] * gdet[FACE2 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
 		#if(N3G>0)
-		U[B3] = (psf[2][global_id] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2][global_id + D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
+		U[B3] = (psf[2 * gridsize_3D + offset_3D + global_id] * gdet[FACE3 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2 * gridsize_3D + offset_3D + global_id + D3] * gdet[FACE3 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
 		#endif
 		#endif
 		#else
 		#if(STAGGERED)
-		U[B1] = (psf[0][global_id] * gdet[FACE1][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0][global_id + isize] * gdet[FACE1][(icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
-		U[B2] = (psf[1][global_id] * gdet[FACE2][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1][global_id + (BS_3 + 2 * N3G)] * gdet[FACE2][icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
+		U[B1] = (psf[0 * gridsize_3D + offset_3D + global_id] * gdet[FACE1 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * gridsize_3D + offset_3D + global_id + isize] * gdet[FACE1 * gridsize_2D + offset_2D + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B2] = (psf[1 * gridsize_3D + offset_3D + global_id] * gdet[FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
 		#if(N3G>0)
-		U[B3] = (psf[2][global_id] * gdet[FACE3][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2][global_id + D3] * gdet[FACE3][icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B3] = (psf[2 * gridsize_3D + offset_3D + global_id] * gdet[FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * gridsize_3D + offset_3D + global_id + D3] * gdet[FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 		#endif
 		#endif
 		#endif
 	
-		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pi);
-		if (pflag[global_id]){
-			failimage[global_id]++;
+		pflag[offset_3D + global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pi);
+		if (pflag[offset_3D + global_id]){
+			failimage[offset_3D + global_id]++;
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
-				U_i[k][global_id] = U[k];
+				U_i[k * gridsize_3D + offset_3D +global_id] = U[k];
 			}
 		}
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			pf_i[k][global_id] = pi[k];
+			pf_i[k * gridsize_3D + offset_3D +global_id] = pi[k];
 		}
 	}
 }
 
 #if(!V100)
-__global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], double* storage2, const  double* __restrict__  psf[3],
-	const  double* __restrict__ F1[NPR], const  double* __restrict__ F2[NPR], const  double* __restrict__ F3[NPR], const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage[NFAIL],
-	const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], const  double* __restrict__ conn[NDIM*10], double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
+__global__ void fixup(int n_blocks, int n2, int **block, double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
+	const  double* __restrict__ F1, const  double* __restrict__ F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize,icurr,jcurr,zcurr,k=0;
 	if (poststep_p == 0){
 		isize = (BS_3 - 2 * PRESTEP_P*N3G)*(BS_2 - 2 * PRESTEP_P*N2G);
@@ -3353,36 +3441,39 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 	double pf[NPR], pf_prefloor[NPR], U[NPR];
 	struct of_geom geom;
 	struct of_state q;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	if (k == 1){
 		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
-			pf[k] = pf_i[k][global_id];
+			pf[k] = pf_i[k * gridsize_3D + offset_3D +global_id];
 		}
 
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		#if( DO_FONT_FIX ) 
-		if (pflag[global_id]) {
+		if (pflag[offset_3D + global_id]) {
 			flag = 1;
 			#pragma unroll 9
 			for (k = 0; k< NPR; k++){
-				U[k] = U_i[k][global_id];
+				U[k] = U_i[k * gridsize_3D + offset_3D +global_id];
 			}
 			#if DOKTOT
-			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+			pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 			#endif
-			if (pflag[global_id]) {
-				failimage[1][global_id]++;
-				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-				if (pflag[global_id]){
-					pflag[0] = global_id;
-					failimage[2][global_id]++;
+			if (pflag[offset_3D + global_id]) {
+				failimage[1 * gridsize_3D + offset_3D +global_id]++;
+				pflag[offset_3D + global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				if (pflag[offset_3D + global_id]){
+					pflag[offset_3D + 0] = global_id;
+					failimage[2 * gridsize_3D + offset_3D +global_id]++;
 				}
 			}
 		}
 		#endif
 
-		r = radius[icurr];
+		r = radius[n*(BS_1+2*N1G)+icurr];
 		rhoscal = pow(r, -POWRHO);
 		uuscal = pow(rhoscal, gam);
 
@@ -3513,21 +3604,21 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 			#pragma unroll 9
 			PLOOP U[k] = U_prefloor[k] + dU[k];
 
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]){
-				failimage[global_id]++;
+			pflag[offset_3D + global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[offset_3D + global_id]){
+				failimage[offset_3D + global_id]++;
 				#if( DO_FONT_FIX ) 
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-				if (pflag[global_id]) {
-					failimage[1][global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-					if (pflag[global_id]){
-						pflag[0] = 100;
-						failimage[2][global_id]++;
+				pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				if (pflag[offset_3D + global_id]) {
+					failimage[1 * gridsize_3D + offset_3D +global_id]++;
+					pflag[offset_3D + global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					if (pflag[offset_3D + global_id]){
+						pflag[offset_3D + 0] = 100;
+						failimage[2 * gridsize_3D + offset_3D +global_id]++;
 					}
 				}
 				#else
-				pflag[0] = 100;
+				pflag[offset_3D + 0] = 100;
 				#endif	
 			}
 		}
@@ -3536,9 +3627,9 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 		// limit gamma wrt normal observer 
 		if (gamma_calc(pf, &geom, &gamma)) {
 			// Treat gamma failure here as "fixable" for fixup_utoprim() 
-			pflag[global_id] = -333;
-			pflag[0] = global_id;;
-			failimage[3][global_id]++;
+			pflag[offset_3D + global_id] = -333;
+			pflag[offset_3D + 0] = global_id;;
+			failimage[3 * gridsize_3D + offset_3D +global_id]++;
 		}
 		else {
 			if (gamma > GAMMAMAX) {
@@ -3554,23 +3645,26 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 		}
 
 		#if DOKTOT
-		pf_i[KTOT][global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
+		pf_i[KTOT*gridsize_3D+offset_3D+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
 		#endif
 		if (flag == 1){
 			#pragma unroll 9
 			for (k = 0; k< NPR - DOKTOT; k++){
-				pf_i[k][global_id] = pf[k];
+				pf_i[k * gridsize_3D + offset_3D +global_id] = pf[k];
 			}
 		}
 	}
 }
 #else
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
-__global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], double* storage2, const  double* __restrict__  psf[3],
-	const  double* __restrict__ F1[NPR], const  double* __restrict__  F2[NPR], const  double* __restrict__ F3[NPR], const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage[NFAIL],
-	const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], const  double* __restrict__ conn[NDIM*10], double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
+__global__ void fixup(int n_blocks, int n2, int **block, double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
+	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize, icurr, jcurr, zcurr, k=0;
 	if (poststep_p == 0){
 		isize = (BS_3 - 2 * PRESTEP_P*N3G)*(BS_2 - 2 * PRESTEP_P*N2G);
@@ -3659,6 +3753,11 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 
 	struct of_geom geom;
 	struct of_state q;
@@ -3670,26 +3769,26 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
 
 	if (k == 1){
-		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		if (full_step == 0){
 			for (k = 0; k<NPR; k++){
-				pf[k] = pi_i[k][global_id];
+				pf[k] = pi_i[k * gridsize_3D + offset_3D +global_id];
 			}
 			get_state(pf, &geom, &q);
 			primtoU(pf, &q, &geom, U, gam);
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
-				storage2[k][global_id] = U[k];
+				storage2[k * gridsize_3D + offset_3D +global_id] = U[k];
 			}
 		}
 		else{
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
-				U[k] = storage2[k][global_id];
+				U[k] = storage2[k * gridsize_3D + offset_3D +global_id];
 			}
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
-				pf[k] = pb_i[k][global_id];
+				pf[k] = pb_i[k * gridsize_3D + offset_3D +global_id];
 			}
 			if (full_step == 1){
 				get_state(pf, &geom, &q);
@@ -3698,17 +3797,17 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			#if( N1G > 0 )
-			U[k] -= Dt*(F1[k][global_id + isize] - F1[k][global_id]) / dx_1;
+			U[k] -= Dt*(F1[k * gridsize_3D + offset_3D +global_id + isize] - F1[k * gridsize_3D + offset_3D +global_id]) / dx_1;
 			#endif
 			#if( N2G > 0 )
-			U[k] -= Dt*(F2[k][global_id + (BS_3 + 2 * N3G)] - F2[k][global_id]) / dx_2;
+			U[k] -= Dt*(F2[k * gridsize_3D + offset_3D +global_id + (BS_3 + 2 * N3G)] - F2[k * gridsize_3D + offset_3D +global_id]) / dx_2;
 			#endif
 			#if( N3G > 0 )
-			U[k] -= Dt*(F3[k][global_id + 1] - F3[k][global_id]) / dx_3;
+			U[k] -= Dt*(F3[k * gridsize_3D + offset_3D +global_id + 1] - F3[k * gridsize_3D + offset_3D +global_id]) / dx_3;
 			#endif
 		}
 
-		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+		source(n_blocks, n, pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[n*(BS_1+2*N1G)+icurr]);
 
 		#pragma unroll 9	
 		for (k = 0; k< NPR; k++){
@@ -3717,45 +3816,45 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 
 		#if(NSY)
 		#if(STAGGERED)
-		U[B1] = (psf[0][global_id] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0][global_id + isize] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
-		U[B2] = (psf[1][global_id] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1][global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B1] = (psf[0 * gridsize_3D + offset_3D + global_id] * gdet[FACE1 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0 * gridsize_3D + offset_3D + global_id + isize] * gdet[FACE1 * gridsize_3D + offset_3D + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B2] = (psf[1 * gridsize_3D + offset_3D + global_id] * gdet[FACE2 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
 		#if(N3G>0)
-		U[B3] = (psf[2][global_id] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2][global_id + D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
+		U[B3] = (psf[2 * gridsize_3D + offset_3D + global_id] * gdet[FACE3 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2 * gridsize_3D + offset_3D + global_id + D3] * gdet[FACE3 * gridsize_3D + offset_3D + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
 		#endif
 		#endif
 		#else
 		#if(STAGGERED)
-		U[B1] = (psf[0][global_id] * gdet[FACE1][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0][global_id + isize] * gdet[FACE1][(icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
-		U[B2] = (psf[1][global_id] * gdet[FACE2][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1][global_id + (BS_3 + 2 * N3G)] * gdet[FACE2][icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
+		U[B1] = (psf[0 * gridsize_3D + offset_3D + global_id] * gdet[FACE1 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * gridsize_3D + offset_3D + global_id + isize] * gdet[FACE1 * gridsize_2D + offset_2D + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B2] = (psf[1 * gridsize_3D + offset_3D + global_id] * gdet[FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
 		#if(N3G>0)
-		U[B3] = (psf[2][global_id] * gdet[FACE3][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2][global_id + D3] * gdet[FACE3][icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B3] = (psf[2 * gridsize_3D + offset_3D + global_id] * gdet[FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * gridsize_3D + offset_3D + global_id + D3] * gdet[FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 		#endif
 		#endif
 		#endif
 
-		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-		if (pflag[global_id]){
-			failimage[global_id]++;
+		pflag[offset_3D + global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		if (pflag[offset_3D + global_id]){
+			failimage[offset_3D + global_id]++;
 		}
 
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		#if( DO_FONT_FIX ) 
-		if (pflag[global_id]) {
+		if (pflag[offset_3D + global_id]) {
 			#if DOKTOT
-			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+			pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 			#endif
-			if (pflag[global_id]) {
-				failimage[1][global_id]++;
-				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-				if (pflag[global_id]){
-					pflag[0] = global_id;
-					failimage[2][global_id]++;
+			if (pflag[offset_3D + global_id]) {
+				failimage[1 * gridsize_3D + offset_3D +global_id]++;
+				pflag[offset_3D + global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				if (pflag[offset_3D + global_id]){
+					pflag[offset_3D + 0] = global_id;
+					failimage[2 * gridsize_3D + offset_3D +global_id]++;
 				}
 			}
 		}
 		#endif
 
-		r = radius[icurr];
+		r = radius[n*(BS_1+2*N1G)+icurr];
 		rhoscal = pow(r, -POWRHO);
 		uuscal = pow(rhoscal, gam);
 
@@ -3880,22 +3979,22 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 			#pragma unroll 9
 			PLOOP U[k] = U_prefloor[k] + dU[k];
 
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]){
-				failimage[global_id]++;
+			pflag[offset_3D + global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[offset_3D + global_id]){
+				failimage[offset_3D + global_id]++;
 				#if( DO_FONT_FIX ) 
 				U_ent = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-				if (pflag[global_id]) {
-					failimage[1][global_id]++;
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[icurr]);
-					if (pflag[global_id]){
-						pflag[0] = 100;
-						failimage[2][global_id]++;
+				pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				if (pflag[offset_3D + global_id]) {
+					failimage[1 * gridsize_3D + offset_3D +global_id]++;
+					pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[n*(BS_1+2*N1G)+icurr]);
+					if (pflag[offset_3D + global_id]){
+						pflag[offset_3D + 0] = 100;
+						failimage[2 * gridsize_3D + offset_3D +global_id]++;
 					}
 				}
 				#else
-				pflag[0] = 100;
+				pflag[offset_3D + 0] = 100;
 				#endif	
 			}
 		}
@@ -3904,9 +4003,9 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 		// limit gamma wrt normal observer 
 		if (gamma_calc(pf, &geom, &gamma)) {
 			// Treat gamma failure here as "fixable" for fixup_utoprim() 
-			pflag[global_id] = -333;
-			pflag[0] = global_id;;
-			failimage[3][global_id]++;
+			pflag[offset_3D + global_id] = -333;
+			pflag[offset_3D + 0] = global_id;;
+			failimage[3 * gridsize_3D + offset_3D +global_id]++;
 		}
 		else {
 			if (gamma > GAMMAMAX) {
@@ -3920,22 +4019,25 @@ __global__ void fixup(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], d
 			}
 		}
 		#if DOKTOT
-		pf_i[KTOT][global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
+		pf_i[KTOT*gridsize_3D+offset_3D+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
 		#endif
 		#pragma unroll 9	
 		for (k = 0; k< NPR - DOKTOT; k++){
-			pf_i[k][global_id] = pf[k];
+			pf_i[k * gridsize_3D + offset_3D +global_id] = pf[k];
 		}
 	}
 }
 #endif
 
-__global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NPR], const  double* __restrict__  psf[3],
-	const  double* __restrict__ F1[NPR], const  double* __restrict__  F2[NPR], const  double* __restrict__ F3[NPR], const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage[NFAIL],
-	const  double* __restrict__ gcov[NPG*10], const  double* __restrict__ gcon[NPG*10], const  double* __restrict__ gdet[NPG], const  double* __restrict__ conn[NDIM*10], double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
+__global__ void fixup_post(int n_blocks, int n2, int **block, double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
+	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
-	int ki = 0,k=0, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
+	int ki = 0,k=0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
 	if (global_id < BS_2*BS_3){
 		ki = 1;
 		global_id -= 0;
@@ -3991,6 +4093,11 @@ __global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NP
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+	int gridsize_2D = n_blocks*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
+	int offset_2D = n*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2);
 
 	struct of_geom geom;
 	struct of_state q;
@@ -4004,9 +4111,9 @@ __global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NP
 	if (k > 0){
 		if (icurr >= N1G  && jcurr >= N2G + (ki == 1 || ki == 2) && zcurr >= N3G + (ki == 1 || ki == 2) + (ki == 3 || ki == 4) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G - (ki == 1 || ki == 2) && zcurr < BS_3 + N3G - (ki == 1 || ki == 2) - (ki == 3 || ki == 4)){
 
-			get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+			get_geometry(n_blocks, n,icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 			for (k = 0; k < NPR; k++){
-				pf[k] = pi_i[k][global_id];
+				pf[k] = pi_i[k * gridsize_3D + offset_3D +global_id];
 			}
 			get_state(pf, &geom, &q);
 			primtoU(pf, &q, &geom, U, gam);
@@ -4015,47 +4122,47 @@ __global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NP
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
 				#if( N1G > 0 )
-				U[k] -= Dt*(F1[k][global_id + isize] - F1[k][global_id]) / dx_1;
+				U[k] -= Dt*(F1[k * gridsize_3D + offset_3D +global_id + isize] - F1[k * gridsize_3D + offset_3D +global_id]) / dx_1;
 				#endif
 				#if( N2G > 0 )
-				U[k] -= Dt*(F2[k][global_id + (BS_3 + 2 * N3G)] - F2[k][global_id]) / dx_2;
+				U[k] -= Dt*(F2[k * gridsize_3D + offset_3D +global_id + (BS_3 + 2 * N3G)] - F2[k * gridsize_3D + offset_3D +global_id]) / dx_2;
 				#endif
 				#if( N3G > 0 )
-				U[k] -= Dt*(F3[k][global_id + 1] - F3[k][global_id]) / dx_3;
+				U[k] -= Dt*(F3[k * gridsize_3D + offset_3D +global_id + 1] - F3[k * gridsize_3D + offset_3D +global_id]) / dx_3;
 				#endif
 			}
 
 			#if(STAGGERED)
-			U[B1] = (psf[0][global_id] * gdet[FACE1][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0][global_id + isize] * gdet[FACE1][(icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
-			U[B2] = (psf[1][global_id] * gdet[FACE2][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1][global_id + (BS_3 + 2 * N3G)] * gdet[FACE2][icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
+			U[B1] = (psf[0 * gridsize_3D + offset_3D + global_id] * gdet[FACE1 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * gridsize_3D + offset_3D + global_id + isize] * gdet[FACE1 * gridsize_2D + offset_2D + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+			U[B2] = (psf[1 * gridsize_3D + offset_3D + global_id] * gdet[FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * gridsize_3D + offset_3D + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
 			#if(N3G>0)
-			U[B3] = (psf[2][global_id] * gdet[FACE3][icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2][global_id + D3] * gdet[FACE3][icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+			U[B3] = (psf[2 * gridsize_3D + offset_3D + global_id] * gdet[FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * gridsize_3D + offset_3D + global_id + D3] * gdet[FACE3 * gridsize_2D + offset_2D + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 			#endif
 			#endif
 
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]){
-				failimage[global_id]++;
+			pflag[offset_3D + global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[offset_3D + global_id]){
+				failimage[offset_3D + global_id]++;
 			}
 
 			//compute the square of fluid frame magnetic field (twice magnetic pressure)
 			#if( DO_FONT_FIX ) 
-			if (pflag[global_id]) {
+			if (pflag[offset_3D + global_id]) {
 				#if DOKTOT
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 				#endif
-				if (pflag[global_id]) {
-					failimage[1][global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-					if (pflag[global_id]){
-						pflag[0] = global_id;
-						failimage[2][global_id]++;
+				if (pflag[offset_3D + global_id]) {
+					failimage[1 * gridsize_3D + offset_3D +global_id]++;
+					pflag[offset_3D + global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					if (pflag[offset_3D + global_id]){
+						pflag[offset_3D + 0] = global_id;
+						failimage[2 * gridsize_3D + offset_3D +global_id]++;
 					}
 				}
 			}
 			#endif
 
-			r = radius[icurr];
+			r = radius[n*(BS_1+2*N1G)+icurr];
 			rhoscal = pow(r, -POWRHO);
 			uuscal = pow(rhoscal, gam);
 
@@ -4180,22 +4287,22 @@ __global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NP
 				#pragma unroll 9
 				PLOOP U[k] = U_prefloor[k] + dU[k];
 
-				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-				if (pflag[global_id]){
-					failimage[global_id]++;
+				pflag[offset_3D + global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+				if (pflag[offset_3D + global_id]){
+					failimage[offset_3D + global_id]++;
 					#if( DO_FONT_FIX ) 
 					U_ent = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
-					if (pflag[global_id]) {
-						failimage[1][global_id]++;
-						pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[icurr]);
-						if (pflag[global_id]){
-							pflag[0] = 100;
-							failimage[2][global_id]++;
+					pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					if (pflag[offset_3D + global_id]) {
+						failimage[1 * gridsize_3D + offset_3D +global_id]++;
+						pflag[offset_3D + global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[n*(BS_1+2*N1G)+icurr]);
+						if (pflag[offset_3D + global_id]){
+							pflag[offset_3D + 0] = 100;
+							failimage[2 * gridsize_3D + offset_3D +global_id]++;
 						}
 					}
 					#else
-					pflag[0] = 100;
+					pflag[offset_3D + 0] = 100;
 					#endif	
 				}
 			}
@@ -4204,9 +4311,9 @@ __global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NP
 			// limit gamma wrt normal observer 
 			if (gamma_calc(pf, &geom, &gamma)) {
 				// Treat gamma failure here as "fixable" for fixup_utoprim() 
-				pflag[global_id] = -333;
-				pflag[0] = global_id;;
-				failimage[3][global_id]++;
+				pflag[offset_3D + global_id] = -333;
+				pflag[offset_3D + 0] = global_id;;
+				failimage[3 * gridsize_3D + offset_3D +global_id]++;
 			}
 			else {
 				if (gamma > GAMMAMAX) {
@@ -4220,19 +4327,22 @@ __global__ void fixup_post(double* pi_i[NPR], double* pb_i[NPR], double* pf_i[NP
 				}
 			}
 			#if DOKTOT
-			pf_i[KTOT][global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
+			pf_i[KTOT*gridsize_3D+offset_3D+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
 			#endif
 			#pragma unroll 9	
 			for (k = 0; k < NPR - DOKTOT; k++){
-				pf_i[k][global_id] = pf[k];
+				pf_i[k * gridsize_3D + offset_3D +global_id] = pf[k];
 			}
 		}
 	}
 }
 
-__global__ void cleanup_post(double* F1[NPR], double* F2[NPR], double* F3[NPR], double* E_corn[NDIM])
+__global__ void cleanup_post(int n_blocks, int n2, int **block, double* F1, double* F2, double* F3, double* E_corn)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize = (BS_3+2*N3G)*(BS_2+2*N2G);
 	int zcurr = (global_id % (isize)) % (BS_3+2*N3G);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * N3G);
@@ -4241,73 +4351,89 @@ __global__ void cleanup_post(double* F1[NPR], double* F2[NPR], double* F3[NPR], 
 	if (global_id<(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)) k = 1;
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 
 	if (k == 1){
 		for (k = 0; k < NPR; k++){
-			F1[k][global_id] = 0.;
-			F2[k][global_id] = 0.;
-			F3[k][global_id] = 0.;
+			F1[k * gridsize_3D + offset_3D + global_id] = 0.;
+			F2[k * gridsize_3D + offset_3D + global_id] = 0.;
+			F3[k * gridsize_3D + offset_3D + global_id] = 0.;
 		}
-		for (k = 0; k < NDIM; k++) E_corn[k][global_id] = 0.;
+		for (k = 0; k < NDIM; k++) E_corn[k * gridsize_3D + offset_3D + global_id] = 0.;
 	}
 }
 
 /* 26 */
-#define AVG2_1(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k][(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k][(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]))
+#define AVG2_1(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]))
 
 /* 48 */
-#define AVG2_2(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k][(icurr-1)*isize+(jcurr)*(BS_3+2*N3G) + zcurr]+pr[k][(icurr+1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]))
+#define AVG2_2(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr)*(BS_3+2*N3G) + zcurr]+pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]))
 
 /* 910 */
-#define AVG2_3(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k][(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]+pr[k][(icurr)*isize+(jcurr)*(BS_3+2*N3G)+ (zcurr+1)]))
+#define AVG2_3(pr,icurr,jcurr,zcurr, k) (0.5*(pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr)*(BS_3+2*N3G)+ (zcurr+1)]))
 
 /* 2468  */
-#define AVG4_1(pr,icurr,jcurr,zcurr, k) (0.25*(pr[k][(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k][(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr-1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr+1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]))
+#define AVG4_1(pr,icurr,jcurr,zcurr, k) (0.25*(pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]))
 
 /* 1357  */
-#define AVG4_2(pr,icurr,jcurr,zcurr, k) (0.25*(pr[k][(icurr+1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr+1)*isize+(jcurr-1)+ zcurr]*(BS_3+2*N3G)+pr[k][(icurr-1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr-1)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]))
+#define AVG4_2(pr,icurr,jcurr,zcurr, k) (0.25*(pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr-1)+ zcurr]*(BS_3+2*N3G)+pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]))
 
 /* 2468910  */
-#define AVG6_1(pr,icurr,jcurr,zcurr, k) (1.0/6.0*(pr[k][(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k][(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr-1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr+1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr+1)]+pr[k][(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]))
+#define AVG6_1(pr,icurr,jcurr,zcurr, k) (1.0/6.0*(pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr+1)*(BS_3+2*N3G) + zcurr]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr+1)]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]))
 
 /* 1357910  */
-#define AVG6_2(pr,icurr,jcurr,zcurr, k) (1.0/6.0*(pr[k][(icurr+1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr+1)*isize+(jcurr-1)+ zcurr]*(BS_3+2*N3G)+pr[k][(icurr-1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr-1)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[k][(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr+1)]+pr[k][(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]))
+#define AVG6_2(pr,icurr,jcurr,zcurr, k) (1.0/6.0*(pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr+1)*isize+(jcurr-1)+ zcurr]*(BS_3+2*N3G)+pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr+1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr-1)*isize+(jcurr-1)*(BS_3+2*N3G)+ zcurr]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr+1)]+pr[k * gridsize_3D + offset_3D +(icurr)*isize+(jcurr)*(BS_3+2*N3G) + (zcurr-1)]))
 
-__global__ void fixuputoprim(double *  pv[NPR], int *  pflag, int *  failimage, const  double* __restrict__ gcov[NPG * 10], const  double* __restrict__ gcon[NPG * 10], const  double* __restrict__ gdet)
+__global__ void fixuputoprim(int n_blocks, int n2, int **block, double *  pv, int *  pflag, int *  failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	  int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	  int n = global_id / block_size;
+	  global_id = global_id % block_size;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = (global_id % (isize)) % (BS_3 + 2 * N3G);
 	int jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * N3G);
 	int icurr = (global_id - (jcurr*(BS_3 + 2 * N3G) + zcurr)) / (isize);
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
+
 	/* Fix the interior points first */
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G && jcurr<BS_2 + N2G && zcurr<BS_3 + N3G) {
-		if (pflag[global_id] != 0) {
+		if (pflag[offset_3D + global_id] != 0) {
 			/* if nothing better to do, then leave densities and B-field unchanged, set v^i = 0 */
-			pv[0][global_id] = 0.5*(AVG4_1(pv, icurr, jcurr, zcurr, 0) + AVG4_2(pv, icurr, jcurr, zcurr, 0));
-			pv[1][global_id] = 0.5*(AVG4_1(pv, icurr, jcurr, zcurr, 1) + AVG4_2(pv, icurr, jcurr, zcurr, 1));
-			pv[2][global_id] = pv[3][global_id] = pv[4][global_id] = 0.;
-			pflag[global_id] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
+			pv[0 * gridsize_3D + offset_3D +global_id] = 0.5*(AVG4_1(pv, icurr, jcurr, zcurr, 0) + AVG4_2(pv, icurr, jcurr, zcurr, 0));
+			pv[1 * gridsize_3D + offset_3D +global_id] = 0.5*(AVG4_1(pv, icurr, jcurr, zcurr, 1) + AVG4_2(pv, icurr, jcurr, zcurr, 1));
+			pv[2 * gridsize_3D + offset_3D +global_id] = pv[3 * gridsize_3D + offset_3D +global_id] = pv[4 * gridsize_3D + offset_3D+global_id] = 0.;
+			pflag[offset_3D + global_id] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
 		}
 	}
 }
 
-__global__ void boundprim1(double *   pv[NPR], const  double* __restrict__ gcov[NPG * 10], const  double* __restrict__ gcon[NPG * 10], const  double* __restrict__ gdet[NPG], int NBR_2, int NBR_4, double *  ps[3])
+__global__ void boundprim1(int n_blocks, int n2, int **block, double *   pv, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int NBR_2, int NBR_4, double *  ps)
 {
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	  int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	  int n = global_id / block_size;
+	  global_id = global_id % block_size;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int k;
 	int zcurr = global_id % (BS_3 + 2 * N3G);
 	int jcurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
 	// inner r boundary condition: u, gdet extrapolation 
-	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
+	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && block[n][AMR_NBR4] == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
-			prim5[k] = pv[k][N1G*isize + global_id];
+			prim5[k] = pv[k * gridsize_3D + offset_3D +N1G*isize + global_id];
 		}
 
 		#pragma unroll 9
@@ -4320,34 +4446,34 @@ __global__ void boundprim1(double *   pv[NPR], const  double* __restrict__ gcov[
 		}
 
 		/*Make sure there is no inflow at inner boundary*/
-		inflow_check(prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
-		inflow_check(prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim1, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim2, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
 		#if(N1G==3)
-		inflow_check(prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim3, 0, jcurr, zcurr, 0, gcov, gcon, gdet);
 		#endif
-		inflow_check(prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
-		inflow_check(prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim1, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim2, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
 		#if(N1G==3)
-		inflow_check(prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim3, 1, jcurr, zcurr, 0, gcov, gcon, gdet);
 		#endif
 		/*Write primitives back to global memory*/
 		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
-			pv[k][global_id] = prim2[k];
-			pv[k][1 * isize + global_id] = prim1[k];
+			pv[k * gridsize_3D + offset_3D +global_id] = prim2[k];
+			pv[k * gridsize_3D + offset_3D +1 * isize + global_id] = prim1[k];
 			#if(N1G==3)
-			pv[k][2 * isize + global_id] = prim3[k];
+			pv[k * gridsize_3D + offset_3D +2 * isize + global_id] = prim3[k];
 			#endif
 		}
 
 		#if(STAGGERED)
-		ps[1][0 * isize + global_id] = ps[1][N1G*isize + global_id];
-		ps[1][1 * isize + global_id] = ps[1][N1G*isize + global_id];
-		ps[2][0 * isize + global_id] = ps[2][N1G*isize + global_id];
-		ps[2][1 * isize + global_id] = ps[2][N1G*isize + global_id];
+		ps[1 * gridsize_3D + offset_3D +0 * isize + global_id] = ps[1 * gridsize_3D + offset_3D +N1G*isize + global_id];
+		ps[1 * gridsize_3D + offset_3D +1 * isize + global_id] = ps[1 * gridsize_3D + offset_3D +N1G*isize + global_id];
+		ps[2 * gridsize_3D + offset_3D +0 * isize + global_id] = ps[2 * gridsize_3D + offset_3D +N1G*isize + global_id];
+		ps[2 * gridsize_3D + offset_3D +1 * isize + global_id] = ps[2 * gridsize_3D + offset_3D +N1G*isize + global_id];
 		#if(N1G==3)
-		ps[1][2 * isize + global_id] = ps[1][N1G*isize + global_id];
-		ps[2][2 * isize + global_id] = ps[2][N1G*isize + global_id];
+		ps[1 * gridsize_3D + offset_3D +2 * isize + global_id] = ps[1 * gridsize_3D + offset_3D +N1G*isize + global_id];
+		ps[2 * gridsize_3D + offset_3D +2 * isize + global_id] = ps[2 * gridsize_3D + offset_3D +N1G*isize + global_id];
 		#endif
 		#endif
 
@@ -4368,10 +4494,10 @@ __global__ void boundprim1(double *   pv[NPR], const  double* __restrict__ gcov[
 	}
 
 	// outer r BC: outflow 
-	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_2 == -1){
+	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && block[n][AMR_NBR2] == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
-			prim6[k] = pv[k][(BS_1 + N1G - 1)*isize + global_id];
+			prim6[k] = pv[k * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
 		}
 
 		#pragma unroll 9
@@ -4382,89 +4508,95 @@ __global__ void boundprim1(double *   pv[NPR], const  double* __restrict__ gcov[
 		}
 
 		/*Make sure there is no inflow at outer boundary*/
-		inflow_check(prim3, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
-		inflow_check(prim4, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim3, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim4, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
 		#if(N1G==3)
-		inflow_check(prim5, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim5, BS_1 + N1G, jcurr, zcurr, 1, gcov, gcon, gdet);
 		#endif
-		inflow_check(prim3, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
-		inflow_check(prim4, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim3, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim4, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
 		#if(N1G==3)
-		inflow_check(prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
+		inflow_check(n_blocks, n, prim5, BS_1 + N1G + 1, jcurr, zcurr, 1, gcov, gcon, gdet);
 		#endif
 
 		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
-			pv[k][(BS_1 + N1G)*isize + global_id] = prim3[k];
-			pv[k][(BS_1 + N1G + 1)*isize + global_id] = prim4[k];
+			pv[k * gridsize_3D + offset_3D +(BS_1 + N1G)*isize + global_id] = prim3[k];
+			pv[k * gridsize_3D + offset_3D +(BS_1 + N1G + 1)*isize + global_id] = prim4[k];
 		#if(N1G==3)
-			pv[k][(BS_1 + N1G + 2)*isize + global_id] = prim5[k];
+			pv[k * gridsize_3D + offset_3D +(BS_1 + N1G + 2)*isize + global_id] = prim5[k];
 		#endif
 		}
 		#if(STAGGERED)
-		ps[1][(BS_1 + N1G)*isize + global_id] = ps[1][(BS_1 + N1G - 1)*isize + global_id];
-		ps[1][(BS_1 + N1G + 1)*isize + global_id] = ps[1][(BS_1 + N1G - 1)*isize + global_id];
-		ps[2][(BS_1 + N1G)*isize + global_id] = ps[2][(BS_1 + N1G - 1)*isize + global_id];
-		ps[2][(BS_1 + N1G + 1)*isize + global_id] = ps[2][(BS_1 + N1G - 1)*isize + global_id];
+		ps[1 * gridsize_3D + offset_3D +(BS_1 + N1G)*isize + global_id] = ps[1 * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
+		ps[1 * gridsize_3D + offset_3D +(BS_1 + N1G + 1)*isize + global_id] = ps[1 * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
+		ps[2 * gridsize_3D + offset_3D +(BS_1 + N1G)*isize + global_id] = ps[2 * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
+		ps[2 * gridsize_3D + offset_3D +(BS_1 + N1G + 1)*isize + global_id] = ps[2 * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
 		#if(N1G==3)
-		ps[1][(BS_1 + N1G + 2)*isize + global_id] = ps[1][(BS_1 + N1G - 1)*isize + global_id];
-		ps[2][(BS_1 + N1G + 2)*isize + global_id] = ps[2][(BS_1 + N1G - 1)*isize + global_id];
+		ps[1 * gridsize_3D + offset_3D +(BS_1 + N1G + 2)*isize + global_id] = ps[1 * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
+		ps[2 * gridsize_3D + offset_3D +(BS_1 + N1G + 2)*isize + global_id] = ps[2 * gridsize_3D + offset_3D +(BS_1 + N1G - 1)*isize + global_id];
 		#endif
 		#endif
 	}
 }
 
-__global__ void boundprim2(double *  pv[NPR], const  double* __restrict__ gdet[NPG], int NBR_1, int NBR_3, double *  ps[3])
+__global__ void boundprim2(int n_blocks, int n2, int **block, double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
 {
 	int j, jref, k;
 	  int global_id=blockDim.x*blockIdx.x+threadIdx.x;
+	  int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	  int n = global_id / block_size;
+	  global_id = global_id % block_size;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % (BS_3 + 2 * N3G);
 	int icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 	jref = POLEFIX;
 
 	// polar BCs
-	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == -1) {
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && block[n][AMR_NBR1] == -1) {
 		for (j = 0; j<jref; j++){
 			//linear interpolation of transverse velocity (both poles)
-			pv[3][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[3][isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[3 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[3 * gridsize_3D + offset_3D +isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 
 			//everything else copy (both poles)
-			pv[0][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[0][isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[1][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[1][isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[2][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[2][isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[4][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[4][isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[0 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[0 * gridsize_3D + offset_3D +isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[1 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[1 * gridsize_3D + offset_3D +isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[2 * gridsize_3D + offset_3D +isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[4 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[4 * gridsize_3D + offset_3D+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#if (N2G==0)
-			//pv[7][isize*icurr+(j+N2G)*(BS_3+2*N3G)+zcurr] = pv[7][isize*icurr+(jref+N2G)*(BS_3+2*N3G)+zcurr];
+			//pv[7*gridsize_3D+offset_3D+isize*icurr+(j+N2G)*(BS_3+2*N3G)+zcurr] = pv[7*gridsize_3D+offset_3D+isize*icurr+(jref+N2G)*(BS_3+2*N3G)+zcurr];
 			#endif
 			#if DOKTOT
-			pv[KTOT][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT][isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[KTOT*gridsize_3D+offset_3D+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*gridsize_3D+offset_3D+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
 		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
-			pv[k][isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[k][isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
+			pv[k * gridsize_3D + offset_3D +isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[k * gridsize_3D + offset_3D +isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
 			#if(N2G==3)
-			pv[k][isize*icurr + (N2G - 3)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (N2G + 2)*(BS_3 + 2 * N3G) + zcurr];
+			pv[k * gridsize_3D + offset_3D +isize*icurr + (N2G - 3)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (N2G + 2)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
 
 		// make sure b and u are antisymmetric at the poles 
 		for (j = 0; j<N2G; j++) {
-			pv[3][isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
-			pv[6][isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
+			pv[3 * gridsize_3D + offset_3D +isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
+			pv[6 * gridsize_3D + offset_3D +isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
 		}
 
 		#if(STAGGERED)
-		ps[0][isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
-		ps[0][isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
-		ps[2][isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = ps[2][isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
-		ps[2][isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = ps[2][isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
+		ps[0 * gridsize_3D + offset_3D +isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
+		ps[0 * gridsize_3D + offset_3D +isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
+		ps[2 * gridsize_3D + offset_3D +isize*icurr + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * gridsize_3D + offset_3D +isize*icurr + (N2G)*(BS_3 + 2 * N3G) + zcurr];
+		ps[2 * gridsize_3D + offset_3D +isize*icurr + (N2G - 2)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * gridsize_3D + offset_3D +isize*icurr + (N2G + 1)*(BS_3 + 2 * N3G) + zcurr];
 		#if(N2G==3)
-		ps[0][isize*icurr + (N2G - 3)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (N2G + 2)*(BS_3 + 2 * N3G) + zcurr];
-		ps[2][isize*icurr + (N2G - 3)*(BS_3 + 2 * N3G) + zcurr] = ps[2][isize*icurr + (N2G + 2)*(BS_3 + 2 * N3G) + zcurr];
+		ps[0 * gridsize_3D + offset_3D +isize*icurr + (N2G - 3)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (N2G + 2)*(BS_3 + 2 * N3G) + zcurr];
+		ps[2 * gridsize_3D + offset_3D +isize*icurr + (N2G - 3)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * gridsize_3D + offset_3D +isize*icurr + (N2G + 2)*(BS_3 + 2 * N3G) + zcurr];
 		#endif
 		#endif
 		global_id = -10;
@@ -4483,75 +4615,81 @@ __global__ void boundprim2(double *  pv[NPR], const  double* __restrict__ gdet[N
 		icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	}
 
-	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == -1) {
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && block[n][AMR_NBR3] == -1) {
 		for (j = 0; j<jref; j++){
 			//linear interpolation of transverse velocity (both poles)
-			pv[3][isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[3][isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[3 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (j + 0.5) / (jref + 0.5) * pv[3 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 
 			//everything else copy (both poles)
-			pv[0][isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[0][isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[1][isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[1][isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[2][isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[2][isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
-			pv[4][isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[4][isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[1 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[1 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[4 * gridsize_3D + offset_3D+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[4 * gridsize_3D + offset_3D+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#if (N2G==0)
-			//pv[7][isize*icurr+(BS_2-1-j+N2G)*(BS_3+2*N3G)+zcurr] = pv[7][isize*icurr+(BS_2-1-jref+N2G)*(BS_3+2*N3G)+zcurr];		
+			//pv[7*gridsize_3D+offset_3D+isize*icurr+(BS_2-1-j+N2G)*(BS_3+2*N3G)+zcurr] = pv[7*gridsize_3D+offset_3D+isize*icurr+(BS_2-1-jref+N2G)*(BS_3+2*N3G)+zcurr];		
 			#endif
 			#if DOKTOT
-			pv[KTOT][isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT][isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[KTOT*gridsize_3D+offset_3D+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*gridsize_3D+offset_3D+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
 		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
-			pv[k][isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
-			pv[k][isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
+			pv[k * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
+			pv[k * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
 			#if(N2G==3)
-			pv[k][isize*icurr + (BS_2 + N2G + 2)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (BS_2 + N2G - 3)*(BS_3 + 2 * N3G) + zcurr];
+			pv[k * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G + 2)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 3)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
 
 		// make sure b and u are antisymmetric at the poles 
 		for (j = BS_2 + N2G; j<BS_2 + 2 * N2G; j++) {
-			pv[3][isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
-			pv[6][isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
+			pv[3 * gridsize_3D + offset_3D +isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
+			pv[6 * gridsize_3D + offset_3D+isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
 		}
 
 		#if(STAGGERED)
-		ps[0][isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
-		ps[0][isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
-		ps[2][isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[2][isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
-		ps[2][isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = ps[2][isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
+		ps[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
+		ps[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
+		ps[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
+		ps[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G + 1)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 2)*(BS_3 + 2 * N3G) + zcurr];
 		#if(N2G==3)
-		ps[0][isize*icurr + (BS_2 + N2G + 2)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (BS_2 + N2G - 3)*(BS_3 + 2 * N3G) + zcurr];
-		ps[2][isize*icurr + (BS_2 + N2G + 2)*(BS_3 + 2 * N3G) + zcurr] = ps[2][isize*icurr + (BS_2 + N2G - 3)*(BS_3 + 2 * N3G) + zcurr];
+		ps[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G + 2)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 3)*(BS_3 + 2 * N3G) + zcurr];
+		ps[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G + 2)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * gridsize_3D + offset_3D +isize*icurr + (BS_2 + N2G - 3)*(BS_3 + 2 * N3G) + zcurr];
 		#endif
 		#endif
 	}
 }
 
-__global__ void boundprim_trans(double *  pv[NPR], const  double* __restrict__ gdet[NPG], int NBR_1, int NBR_3, double *  ps[3])
+__global__ void boundprim_trans(int n_blocks, int n2, int **block, double *  pv, const  double* __restrict__ gdet, int NBR_1, int NBR_3, double *  ps)
 {
 	int j, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int block_size = (blockDim.x * gridDim.x) / n_blocks;
+	int n = global_id / block_size;
+	global_id = global_id % block_size;
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % (BS_3 + 2 * N3G);
 	int icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int gridsize_3D = n_blocks*ksize;
+	int offset_3D = n*ksize;
 
 	// polar BCs
-	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_1 == 1) {
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) {
 		for (j = -N2G; j < 0; j++){
 			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
-				pv[k][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+				pv[k * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
 			}
-			pv[U2][+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
-			pv[U3][+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
-			pv[B2][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
-			pv[B3][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[U2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[U3 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B3 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
 
 			#if(STAGGERED)
-			ps[0][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
-			ps[2][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -ps[2][isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			ps[0 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			ps[2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -ps[2 * gridsize_3D + offset_3D +isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
 			#endif
 		}
 		global_id = -10;
@@ -4570,20 +4708,20 @@ __global__ void boundprim_trans(double *  pv[NPR], const  double* __restrict__ g
 		icurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	}
 
-	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_3 == 1) {
+	if (icurr >= 0 && icurr<BS_1 + 2 * N1G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)) {
 		for (j = BS_2; j < BS_2 + N2G; j++){
 			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
-				pv[k][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k][isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+				pv[k * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[k * gridsize_3D + offset_3D +isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
 			}
-			pv[U2][+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
-			pv[U3][+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
-			pv[B2][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
-			pv[B3][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[U2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[U3 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[B3 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
 
 			#if(STAGGERED)
-			ps[0][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0][isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
-			ps[2][isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -ps[2][isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			ps[0 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * gridsize_3D + offset_3D +isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
+			ps[2 * gridsize_3D + offset_3D +isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -ps[2 * gridsize_3D + offset_3D +isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
 			#endif
 		}
 	}
