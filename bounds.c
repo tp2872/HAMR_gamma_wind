@@ -194,6 +194,7 @@ void prestep_receive_bound(void){
 		}
 		set_iprobe(1, &flag);
 	}while (flag);
+	set_iprobe(0, &flag);
 
 	nstep++;
 #endif

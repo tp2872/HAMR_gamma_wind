@@ -1879,15 +1879,15 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
-	if (poststep_p>=0){
-		isize = (BS_3 + 2 * D3 - 2 * (0)*N3G)*(BS_2 + 2 * D2 - 2 * (0)*N2G);
-		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * (0)*N3G);
-		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * (0)*N3G);
-		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * (0)*N3G) + zcurr)) / (isize);
+	if (poststep_p==0){
+		isize = (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G)*(BS_2 + 2 * D2 - 2 * (PRESTEP_P)*N2G);
+		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G);
+		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G);
+		icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G) + zcurr)) / (isize);
 		zcurr += (N3G - 1)*D3 + (PRESTEP_P)*N3G;
 		jcurr += (N2G - 1)*D2 + (PRESTEP_P)*N2G;
 		icurr += (N1G - 1)*D1 + (PRESTEP_P)*N1G;
-		if (global_id<(BS_1 + 2 * D1 - 2 * (0)*N1G) * (BS_2 + 2 * D2 - 2 * (0)*N2G) * (BS_3 + 2 * D3 - 2 * (0)*N3G)) k = 1;
+		if (global_id<(BS_1 + 2 * D1 - 2 * (PRESTEP_P)*N1G) * (BS_2 + 2 * D2 - 2 * (PRESTEP_P)*N2G) * (BS_3 + 2 * D3 - 2 * (PRESTEP_P)*N3G)) k = 1;
 	}
 	#if(PRESTEP_P)
 	else{
@@ -2040,7 +2040,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	int k = 0;
 
 	int isize, icurr, jcurr, zcurr;
-	if (poststep_p >= 0){
+	if (poststep_p == 0){
 		isize = (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3))*(BS_2 + 2 * D2 - 2 * PRESTEP_P*N2G - (dir == 2));
 		zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3));
 		jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - 2 * PRESTEP_P*N3G - (dir == 3));
@@ -3361,7 +3361,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			icurr = ((global_id - zcurr) % (isize)) / (BS_3);
 			jcurr = (global_id - (icurr*(BS_3)+zcurr)) / (isize);
 			zcurr += N3G;
-			jcurr += BS2;
+			jcurr += BS_2;
 			icurr += 2 * N1G;
 			k = 1;
 		}
