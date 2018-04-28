@@ -786,7 +786,7 @@ extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_
 extern int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
-extern int(**block);
+extern int(*block)[NV];
 extern double ref_val[NB];
 extern int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 extern int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL];
@@ -862,7 +862,7 @@ void step_ch_debug();
 void GPU_benchmark(void);
 void GPU_init(void);
 void set_arrays_GPU(int n, int device);
-void GPU_write(void);
+void GPU_write(int n);
 void GPU_finish(int n, int force_delete);
 void GPU_hcor(int n);
 void GPU_fixup(int flag, int n, double Dt);
@@ -880,7 +880,7 @@ void GPU_boundprim1(int flag, int n);
 void GPU_boundprim2(int flag, int n);
 void GPU_boundprim_trans(int flag, int n);
 void GPU_step_ch();
-void GPU_read(void);
+void GPU_read(int n);
 void GPU_consttransport1(int flag, double Dt, int n);
 void GPU_consttransport2(int flag, double Dt, int n);
 void GPU_consttransport3(int flag, double Dt, int n);

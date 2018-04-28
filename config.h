@@ -10,7 +10,7 @@ Physical Parameters section
 #define BONDI_PROBLEM_1D 6
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM_GRB
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -67,7 +67,7 @@ Numerical Parameters section
 #define AMD (1)
 
 /*Enable if running on the new VOLTA GPUs*/
-#define V100 (1)
+#define V100 (0)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
 #define GPU_DIRECT 1
@@ -79,21 +79,21 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (8)
+#define MAX_BLOCKS (22)
 #define NB_LOCAL (300)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 2
+#define NB_1 12
+#define NB_2 24
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 100
-#define BS_2 100
-#define BS_3 100
+#define BS_1 156
+#define BS_2 26
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 1
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 0
@@ -104,20 +104,20 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 64
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
 #define PRESTEP2 0
@@ -139,7 +139,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
 
 /*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define LEER (0)
 
 /*Wheter to set floors in ZAMO frame*/

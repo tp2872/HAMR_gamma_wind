@@ -760,7 +760,7 @@ double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL];
 int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
-int(**block);
+int(*block)[NV];
 double ref_val[NB];
 int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 int n_active, n_active_total, n_max;

@@ -167,9 +167,9 @@ void init_torus()
 	
 	double temp = a;
 	a = 0.9375;
-	rin = 6.0;
+	rin = 12.5;
 	//rmax = 14.6145;
-	rmax = 12.;
+	rmax = 25.;
 	//rmax = 14.6165;
 	///rin = 12.;
 	//rmax = 14.616;
@@ -223,6 +223,7 @@ void init_torus()
 			rotate_coord(X_cart,-tilt);
 			cart_to_sph(X_cart, &r, &th, &phi);
 			#endif
+
 			#if(ELLIPTICAL)
 			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
 			elliptical_coord(X_cart,pos_new, &r, eccentricity);
@@ -373,7 +374,7 @@ void init_torus()
 	#endif
 
 	#if (GPU_ENABLED)
-	GPU_write();
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 }
 
@@ -609,7 +610,7 @@ void init_disruption()
 
 
 	#if (GPU_ENABLED)
-   GPU_write();
+  for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 }
 
@@ -716,9 +717,9 @@ void set_mag(void){
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
-	int tilt = (TILT_ANGLE) / 180.*M_PI;
+	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
-	int tilt = -(TILT_ANGLE) / 180.*M_PI;
+	double tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif	
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -766,25 +767,26 @@ void set_mag(void){
 			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
 			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
 			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
 		}
 	}
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3){
 			/* field-in-disk version */
 			/* flux_ct */
-			rho_av = 0.25*(
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] +
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i - 1, j, z)][RHO] +
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j - 1, z)][RHO] +
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i - 1, j - 1, z)][RHO]);
+			rho_av =p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+				
 			//rho_av = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
-			q = rho_av / rhomax-0.2;
+			q = rho_av / rhomax-0.05;
 			if (q > 0. && i < i100){
 				coord(n_ord[n],i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*r*r; //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3]* pow(dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q; //MAD
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
 				//3d jet
 				//X[1] = log(r - RB);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3], 3.0)* pow(r, 3.0)*(0.1 + 0.9*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 0.5), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.05), 2.0))) / 10;
@@ -802,21 +804,28 @@ void set_mag(void){
 				sph_to_cart(X_cart, &r, &th, &phi);
 				rotate_coord(X_cart, -tilt);
 				cart_to_sph(X_cart, &r, &th, &phi);
+
 				V[1] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1];
 				V[2] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
 				V[3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];
 				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
 				//rotate_vector(V, pos_new, &r, &th, &phi, tilt);
 				//coord_transform(V, n_ord[n], i, j, z);
-				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
-				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] = V[2];
-				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = V[3];
+				ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
 				#endif
 			}
 		}
 	}
 
-
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z - D3)][1]);
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z - D3)][2]);
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j - D2, z)][3]);
+		}
+	}
 	/* now differentiate to find cell-centered B,
 	and begin normalization */
 	double bsq_max = 0.;
@@ -882,17 +891,17 @@ void set_mag(void){
 				+ (dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][1]
 				- dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z)][1] - dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z + 1)][1]) / (2.*dx[nl[n_ord[n]]][2] * geom.g);
 			#else
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B1] = (ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i + 1, j, z)][1]) / (2.0);
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B2] = (ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][2]) / (2.0);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i + D1, j, z)][FACE1]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + D2, z)][FACE2]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
 			#if(N3G>0)
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][3]) / (2.0);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + D3)][FACE3]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
 			#else
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
 			#endif
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
-			if (bsq_ij > bsq_max) bsq_max = bsq_ij;
+			if (bsq_ij > bsq_max && (j > 4) && (j <N2*pow(1 + REF_2, N_LEVELS - 1) -4 )) bsq_max = bsq_ij;
 		}
 	}
 
@@ -930,7 +939,7 @@ void set_mag(void){
 
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
-			if (bsq_ij > bsq_max) bsq_max = bsq_ij;
+			if (bsq_ij > bsq_max && !((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j == 0) && !((block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3) && j == N2*pow(1 + REF_2, N_LEVELS - 1))) bsq_max = bsq_ij;
 		}
 	}
 
@@ -1109,7 +1118,7 @@ void rotate_vector(double V[NDIM], double pos_new[NDIM], double *r, double *th, 
 
 /*Calculates covariant vector components after vector is rotated from (r, th, phi) to (pos_new[1], pos_new[2], pos_new[3]) over angle tilt*/
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt){
-	double bl_gcov[NDIM][NDIM], bl_gcon[NDIM][NDIM], bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], gdet1, gdet2;
+	double bl_gcov[NDIM][NDIM], bl_gcon[NDIM][NDIM], bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], bl_gcov1[NDIM][NDIM], bl_gcov2[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], gdet1, gdet2;
 	double V_tmp[NDIM], X[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
 	double theta_solve, theta_old, derivative;
 	double delta_X2 = 0.1*M_PI / (double)N2*2. / M_PI;
@@ -1134,7 +1143,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		derivative = (theta_solve - theta_old) / delta_X2;
 		X[2] -= theta_solve / derivative;
 		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N1 && step<3);
+	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);
 	kerr_gcov_func(*r, *th, bl_gcov);
 	invert_matrix(bl_gcov, bl_gcon);
 	dxdxp_func(X, dxdxp);
@@ -1143,14 +1152,18 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	for (i = 0; i<NDIM; i++){
 		for (j = 0; j<NDIM; j++){
 			bl_gcon1[i][j] = 0;
+			bl_gcov1[i][j] = 0;
+
 			for (k = 0; k<NDIM; k++) {
 				for (l = 0; l<NDIM; l++){
 					bl_gcon1[i][j] += bl_gcon[k][l] * dxpdx[i][k] * dxpdx[j][l];
+					bl_gcov1[i][j] += bl_gcov[k][l] * dxdxp[k][i] * dxdxp[l][j];
+
 				}
 			}
 		}
 	}
-	gdet1 = gdet_func(bl_gcon1);
+	gdet1 = gdet_func(bl_gcov1);
 	V_tmp[1] *= sqrt(bl_gcon1[1][1]);
 	V_tmp[2] *= sqrt(bl_gcon1[2][2]);
 	V_tmp[3] *= sqrt(bl_gcon1[3][3]);
@@ -1178,7 +1191,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		derivative = (theta_solve - theta_old) / delta_X2;
 		X[2] -= theta_solve / derivative;
 		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N1 && step<3);
+	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);
 	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
 	invert_matrix(bl_gcov, bl_gcon);
 
@@ -1188,17 +1201,19 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	for (i = 0; i<NDIM; i++){
 		for (j = 0; j<NDIM; j++){
 			bl_gcon2[i][j] = 0;
+			bl_gcov2[i][j] = 0;
 			for (k = 0; k<NDIM; k++) {
 				for (l = 0; l<NDIM; l++){
 					bl_gcon2[i][j] += bl_gcon[k][l] * dxpdx[i][k] * dxpdx[j][l];
+					bl_gcov2[i][j] += bl_gcov[k][l] * dxdxp[k][i] * dxdxp[l][j];
 				}
 			}
 		}
 	}
-	//gdet2 = gdet_func(bl_gcov2);
-	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2])) / sqrt(bl_gcon2[1][1]);
-	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2])) / sqrt(bl_gcon2[2][2]);
-	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3])) / sqrt(bl_gcon2[3][3]);
+	gdet2 = gdet_func(bl_gcov2);
+	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2]))/ sqrt(bl_gcon2[1][1]);
+	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2]))/ sqrt(bl_gcon2[2][2]);
+	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3]))/ sqrt(bl_gcon2[3][3]);
 }
 
 void elliptical_coord(double X_cart[NDIM], double pos_new[NDIM], double *r, double eccentricity){
@@ -1746,7 +1761,7 @@ void init_torus_grb(){
 #endif 
 
 #if (GPU_ENABLED)
-	GPU_write();
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 #endif
 }
 
@@ -2141,19 +2156,13 @@ int normalize_field_local_nodivb(double targbeta, double rhomax, double amax, do
 
 	bound_prim(prim, 1);
 	for (n = 0; n < n_active; n++){
-
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3) {
-			//cell centered ratio in this cell
-			ratc_ij = compute_rat(prim, A, rhomax, amax, targbeta, FACE3, n_ord[n], i, j, z);
-			
-			// normalize staggered field primitive
-			if (dir == 3) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= ratc_ij;
-		}
 		ZLOOP3D_MPI{
 			//cell centered ratio in this cell
 			ratc_ij = compute_rat(prim, A, rhomax, amax, targbeta, CENT, n_ord[n], i, j, z);
 
 			// normalize staggered field primitive
+			if (dir == 1) prim[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] *= ratc_ij;
+			if (dir == 2) prim[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] *= ratc_ij;
 			if (dir == 3) prim[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= ratc_ij;
 		}
 	}
@@ -2284,21 +2293,21 @@ int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A
 							//zero out or copy starting element of vpot
 							if (0 == cj) {
 								//if CPU is at physical boundary, initialize (zero out) A[3]
-								A[nl[n]][index_3D(n, i, js, z)][3] = 0.0;
+								A[n][index_3D(n, i, js, z)][3] = 0.0;
 							}
 							else {
 								//else copy B[3] (which was bounded below) -> A[3]
-								A[nl[n]][index_3D(n, i, js, z)][3] = prim[nl[n]][index_3D(n, i, jsb - dj, z)][B3];
+								A[n][index_3D(n, i, js, z)][3] = prim[n][index_3D(n, i, jsb - dj, z)][B3];
 							}
 							//integrate vpot along the theta line
 							for (j = js; j != je; j += dj) {
 								get_geometry(n, i, j - js + jsb, z, CENT, &geom);
 								gdet = geom.g;
 								//take a loop along j-line at a fixed i,k and integrate up vpot
-								A[nl[n]][index_3D(n, i, j + dj, z)][3] = A[nl[n]][index_3D(n, i, j, z)][3] + dj * prim[nl[n]][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[nl[n]][2];
+								A[n][index_3D(n, i, j + dj, z)][3] = A[n][index_3D(n, i, j, z)][3] + dj * prim[n][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[n][2];
 							}
 							//copy A[3] -> B[3] before bounding
-							prim[nl[n]][index_3D(n, i, jeb, z)][B3] = A[nl[n]][index_3D(n, i, je, z)][3];
+							prim[n][index_3D(n, i, jeb, z)][B3] = A[n][index_3D(n, i, je, z)][3];
 						}
 					}
 				}
@@ -2318,21 +2327,21 @@ int compute_vpot_from_gdetB1(double(*restrict prim[NB])[NPR], double(*restrict A
 							//zero out or copy starting element of vpot
 							if (0 == cj) {
 								//if CPU is at physical boundary, initialize (zero out) A[3]
-								A[nl[n]][index_3D(n, i, js, z)][3] = 0.0;
+								A[n][index_3D(n, i, js, z)][3] = 0.0;
 							}
 							else {
 								//else copy B[3] (which was bounded below) -> A[3]
-								A[nl[n]][index_3D(n, i, js, z)][3] = prim[nl[n]][index_3D(n, i, jsb - dj, z)][B3];
+								A[n][index_3D(n, i, js, z)][3] = prim[n][index_3D(n, i, jsb - dj, z)][B3];
 							}
 							//integrate vpot along the theta line
 							for (j = js; j != je; j += dj) {
 								get_geometry(n, i, j - js + jsb, z, CENT, &geom);
 								gdet = geom.g;
 								//take a loop along j-line at a fixed i,k and integrate up vpot
-								A[nl[n]][index_3D(n, i, j + dj, z)][3] = A[nl[n]][index_3D(n, i, j, z)][3] + dj * prim[nl[n]][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[nl[n]][2];
+								A[n][index_3D(n, i, j + dj, z)][3] = A[n][index_3D(n, i, j, z)][3] + dj * prim[n][index_3D(n, i, j - js + jsb, z)][B1] * gdet*dx[n][2];
 							}
 							//copy A[3] -> B[3] before bounding
-							prim[nl[n]][index_3D(n, i, jeb, z)][B3] = A[nl[n]][index_3D(n, i, je, z)][3];
+							prim[n][index_3D(n, i, jeb, z)][B3] = A[n][index_3D(n, i, je, z)][3];
 						}
 					}
 				}
@@ -2396,7 +2405,7 @@ void set_uniform_Bphi(void){
 	struct of_geom geom;
 	#if(TRANS_BOUND && STAGGERED)
 	gpu = 0;
-	//E_average();
+	E_average();
 	#endif
 	for (n = 0; n < n_active; n++){
 		#if(STAGGERED)
