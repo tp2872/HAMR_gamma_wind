@@ -212,6 +212,7 @@ void init_torus()
 	#endif
 	eccentricity = 0.0;
 	for (n = 0; n < n_active; n++){
+		#pragma omp parallel for collapse(2) schedule(dynamic,1) private(i,j,z) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa,hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X,&r,&th, &phi) ;
@@ -292,9 +293,16 @@ void init_torus()
 					sqrt(SS/AA)*up1/sth ;
 
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
-				if(rho > rhomax) rhomax = rho ;
+
+				if (rho > rhomax){
+					#pragma omp critical
+					rhomax = rho;
+				}
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
-				if(u > umax && r > rin) umax = u ;
+				if(u > umax && r > rin){
+					#pragma omp critical
+					umax = u ;
+				}
 			
 				#if (TILTED)
 				V[1] = ur;

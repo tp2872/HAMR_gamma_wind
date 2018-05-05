@@ -77,14 +77,7 @@ int main(int argc, char *argv[])
 		derefine_pole();
 		#endif
 	}
-	if (t <= 10.){
-		for (n = 0; n < n_active; n++){
-			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (1. + 5.e-2*(ranc(0) -0.5));
-			}
-			GPU_write(n_ord[n]);
-		}
-	}
+
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
@@ -97,13 +90,13 @@ int main(int argc, char *argv[])
 	first_dump = 0;
 	diag(INIT_OUT);
 
-	DTl = 10.0;
-	DTd = 10.0;
+	DTl = 20.0;
+	//DTd = 25.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t + TREF;
 	time_spent3 = 0.0;
-	begin1 = clock();
+	begin1 = time(NULL);
 	begin2 = begin1;
 
 	//cuProfilerStart();
@@ -126,7 +119,7 @@ int main(int argc, char *argv[])
 
 		//Every swithchtime read out data from GPU and set boundary
 		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
-			end1 = clock();
+			end1 = time(NULL);
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -171,7 +164,7 @@ int main(int argc, char *argv[])
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
-				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1)/CLOCKS_PER_SEC, time_spent3);
+				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1), time_spent3);
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1,ndt2,ndt3,nstep);
 				fflush(stderr);
 			}
@@ -183,7 +176,7 @@ int main(int argc, char *argv[])
 				restart_write();
 				break;
 			}
-			begin1 = clock();			
+			begin1 = time(NULL);
 		}
 		#endif
 	}
