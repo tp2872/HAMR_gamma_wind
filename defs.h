@@ -761,7 +761,7 @@ int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
 int(*block)[NV];
-double ref_val[NB];
+double ref_val[MY_MAX(NB, 40000)];
 int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 int n_active, n_active_total, n_max;
 int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL];

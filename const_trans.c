@@ -122,7 +122,7 @@ void const_transport_bound(void){
 }
 
 void E_average(void){
-	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[NB], send_tag2[NB]; 
+	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[MY_MAX(NB, 40000)], send_tag2[MY_MAX(NB, 40000)];
 	MPI_Request req_local1[NB_1*NB_3], req_local2[NB_1*NB_3];
 
 	//Read in average value of E1 at pole for every block on node
@@ -146,7 +146,7 @@ void E_average(void){
 				if (block[number][AMR_NODE] != rank && send_tag1[rank] == 1){
 					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[i*NB_3 + z]);
 				}
-				if (block[number][AMR_NODE] == rank){
+				if (block[number][AMR_NODE] == rank){ 
 					for (u = 0; u < numtasks; u++){
 						if (send_tag1[u] == 1 && u != rank){
 							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
