@@ -123,7 +123,7 @@ void const_transport_bound(void){
 
 void E_average(void){
 	int n, n1, n2, i, j, z, k, ind0, z_max, number, u, send_tag1[MY_MAX(NB, 40000)], send_tag2[MY_MAX(NB, 40000)];
-	MPI_Request req_local1[NB_1*NB_3], req_local2[NB_1*NB_3];
+	MPI_Request req_local1[NB_1*NB_3], req_local2[NB_1*NB_3], req_local;
 
 	//Read in average value of E1 at pole for every block on node
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1){
@@ -134,6 +134,7 @@ void E_average(void){
 	for (i = 0; i < NB_1; i++){
 		//Which nodes have an active block around a slice in phi for a given i
 		if ((nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
+			#pragma omp parallel for schedule(dynamic,1) private(number, u)
 			for (u = 0; u < numtasks; u++){
 				send_tag1[u] = 0;
 				for (z = 0; z < NB_3; z++){
@@ -147,10 +148,11 @@ void E_average(void){
 					rc = MPI_Irecv(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[i*NB_3 + z]);
 				}
 				if (block[number][AMR_NODE] == rank){ 
+					#pragma omp parallel for schedule(dynamic,1) private(req_local, u)
 					for (u = 0; u < numtasks; u++){
 						if (send_tag1[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-							MPI_Request_free(&req[0]);
+							rc = MPI_Isend(&E_avg1[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
+							MPI_Request_free(&req_local);
 						}
 					}
 				}
@@ -170,10 +172,11 @@ void E_average(void){
 					rc = MPI_Irecv(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[i*NB_3 + z]);
 				}
 				if (block[number][AMR_NODE] == rank){
+					#pragma omp parallel for schedule(dynamic,1) private(req_local, u)
 					for (u = 0; u < numtasks; u++){
 						if (send_tag2[u] == 1 && u != rank){
-							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-							MPI_Request_free(&req[0]);
+							rc = MPI_Isend(&E_avg2[i*NB_3 + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
+							MPI_Request_free(&req_local);
 						}
 					}
 				}
@@ -184,6 +187,7 @@ void E_average(void){
 	for (i = 0; i < NB_1; i++){
 		//Which nodes have an active block around a slice in phi for a given i
 		if ((nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
+			#pragma omp parallel for schedule(dynamic,1) private(number, u)
 			for (u = 0; u < numtasks; u++){
 				send_tag1[u] = 0;
 				for (z = 0; z < NB_3; z++){
@@ -200,6 +204,7 @@ void E_average(void){
 		}
 
 		if ((nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear(0, i, NB_2 - 1, 0)][AMR_TIMELEVEL]) == 0)){
+			#pragma omp parallel for schedule(dynamic,1) private(number, u)
 			for (u = 0; u < numtasks; u++){
 				send_tag2[u] = 0;
 				for (z = 0; z < NB_3; z++){

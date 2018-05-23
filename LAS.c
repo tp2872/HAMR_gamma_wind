@@ -31,13 +31,14 @@ void set_timelevel(void){
 	int i, j, z, l, ni, nj, nz;
 	int task;
 	int min_j[NB_1];
-
+	MPI_Request req_local;
 	ni = NB_1;
 	nj = NB_2;
 	nz = NB_3;
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
 	if (nstep > 0){
+		#pragma omp parallel for schedule(dynamic,1) private(n,i)
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
@@ -53,10 +54,11 @@ void set_timelevel(void){
 	//Send for every block (l,i,j,z) to block (l2,i,j2,z2) on other nodes using non-blocking send
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
+			#pragma omp parallel for schedule(dynamic,1) private(req_local, task)
 			for (task = 0; task < numtasks; task++){
 				if (task != rank){
-					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, (2 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Request_free(&req[0]);
+					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, (2 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
+					MPI_Request_free(&req_local);
 				}
 			}
 		}
@@ -211,14 +213,14 @@ void prestep_bound(void){
 	}
 	#endif
 	for (n = 0; n < n_active; n++){
-		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (prestep_full[nl[n_ord[n]]] == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
 		else if (prestep_half[nl[n_ord[n]]] == 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 	}
 
 	//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 	for (n = 0; n < n_active; n++){
-		//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		if (prestep_full[nl[n_ord[n]]] == 1) bound_send2(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
 		else if (prestep_half[nl[n_ord[n]]] == 1) bound_send2(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 	}
@@ -226,7 +228,7 @@ void prestep_bound(void){
 	if (N3 > 1){
 		//#pragma omp parallel for schedule(dynamic,1) private(n,status)
 		for (n = 0; n < n_active; n++){
-			//cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			if (prestep_full[nl[n_ord[n]]] == 1) bound_send3(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 1);
 			else if (prestep_half[nl[n_ord[n]]] == 1) bound_send3(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 1);
 		}
@@ -236,6 +238,7 @@ void prestep_bound(void){
 	do{
 		//Store difference between evolved and required flux/electric field in temporary array
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
 			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 			#if(N3G>0)
@@ -248,6 +251,7 @@ void prestep_bound(void){
 
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
 	#endif
@@ -255,6 +259,7 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 	do{
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			E_rec1(E_corn, BufferE_1, n_ord[n], 1);
 			E_rec2(E_corn, BufferE_1, n_ord[n], 1);
 			#if(N3G>0)
@@ -270,6 +275,7 @@ void prestep_bound(void){
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 	}
@@ -280,6 +286,7 @@ void prestep_bound(void){
 
 	//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		flux_rec1(F1, BufferF1_1, n_ord[n], 6);
 		flux_rec2(F2, BufferF2_1, n_ord[n], 6);
 		#if(N3G>0)
@@ -288,16 +295,19 @@ void prestep_bound(void){
 	}
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
 	}
 	#endif
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec1(E_corn, BufferE_1, n_ord[n], 6);
 		E_rec2(E_corn, BufferE_1, n_ord[n], 6);
 	}
 	#if(N3G>0)
 	#if(!TIMESTEP_JET)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		E_rec3(E_corn, BufferE_1, n_ord[n], 6);
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 6);
