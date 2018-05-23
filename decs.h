@@ -46,6 +46,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
+#ifdef __unix__   
+#include <sys/time.h>
+#endif
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <omp.h>
@@ -816,6 +819,7 @@ void gdump_read(FILE *fp);
 void close_dump();
 void close_rdump();
 void close_gdump();
+double get_wall_time();
 
 /** Evolution/physics functions **/
 double advance(int flag);

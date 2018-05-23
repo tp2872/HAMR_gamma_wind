@@ -590,7 +590,7 @@ void balance_load(void){
 			NODE[n_ord_total_RM[n]] = temp / N_GPU;
 			GPU[n_ord_total_RM[n]] = gpu_offset + (temp - NODE[n_ord_total_RM[n]] * N_GPU);
 			if (rank == NODE[n_ord_total_RM[n]])n_active_local_gpu[GPU[n_ord_total_RM[n]]-gpu_offset]++;
-			if (GPU[n_ord_total_RM[n]] >= 4) fprintf(stderr, "Catastrophic load balancing error 1 \n");
+			if (GPU[n_ord_total_RM[n]] >= 20) fprintf(stderr, "Catastrophic load balancing error 1 \n");
 			if (NODE[n_ord_total_RM[n]] >= numtasks) fprintf(stderr, "Catastrophic load balancing error 2 \n");
 		}
 		for (g = 0; g < N_GPU; g++){

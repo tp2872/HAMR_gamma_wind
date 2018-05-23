@@ -44,6 +44,8 @@
 #include "decs_MPI.h"
 #include "defs.h"
 //#include "cudaProfiler.h"
+
+
 /*****************************************************************/
 /*****************************************************************
    main():
@@ -88,7 +90,7 @@ int main(int argc, char *argv[])
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	first_dump = 0;
-	diag(INIT_OUT);
+	//diag(INIT_OUT);
 
 	DTl = 20.0;
 	//DTd = 25.0;
@@ -96,7 +98,7 @@ int main(int argc, char *argv[])
 	tlog = t + DTl;
 	tref = t + TREF;
 	time_spent3 = 0.0;
-	begin1 = time(NULL);
+	begin1 = get_wall_time();
 	begin2 = begin1;
 
 	//cuProfilerStart();
@@ -119,7 +121,7 @@ int main(int argc, char *argv[])
 
 		//Every swithchtime read out data from GPU and set boundary
 		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
-			end1 = time(NULL);
+			end1 = get_wall_time();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -133,9 +135,9 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
 			#else
-			close_dump();
-			close_rdump();
-			close_gdump();
+			//close_dump();
+			//close_rdump();
+			//close_gdump();
 			balance_load();
 			#if(GPU_ENABLED)
 			balance_load_gpu();
@@ -147,13 +149,13 @@ int main(int argc, char *argv[])
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			diag(DUMP_OUT) ;
+			//diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			restart_write(); //do restart dumb simultaneous with log
+			//restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 
@@ -176,7 +178,7 @@ int main(int argc, char *argv[])
 				restart_write();
 				break;
 			}
-			begin1 = time(NULL);
+			begin1 = get_wall_time();
 		}
 		#endif
 	}
@@ -1392,4 +1394,17 @@ void set_grid(int n)
 	#endif
 
 	/* done! */
+}
+
+double get_wall_time(){
+	#ifdef __unix__   
+	struct timeval time;
+	if (gettimeofday(&time, NULL)){
+		//  Handle error
+		return 0;
+	}
+	return (double)time.tv_sec + (double)time.tv_usec * .000001;
+	#else
+	return clock() / CLOCKS_PER_SEC;
+	#endif
 }
