@@ -140,11 +140,10 @@ void AMR_coord_cart(int n, int *level, int *i, int *j, int *z){
 		*z += cz[y] * pow(1 + REF_3, (*level - y));
 	}
 }
-
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
-	int ci[NDIM], cj[NDIM], cz[NDIM], factor[NDIM], index[N_LEVELS], number[N_LEVELS], y, u, counter, i_counter,j_counter,z_counter;
-	int max_level, coord1, coord2, coord3, size1, size2, size3, i1, temp,s1,s2,s3, increment1, increment2, increment3;
+	int ci[NDIM], cj[NDIM], cz[NDIM], factor[NDIM], index[N_LEVELS], number[N_LEVELS], y, u, counter, i_counter, j_counter, z_counter;
+	int max_level, coord1, coord2, coord3, size1, size2, size3, i1, i2, i3, temp, s1, s2, s3, increment1, increment2, increment3;
 	for (y = 0; y < N_LEVELS; y++){
 		factor[y] = 1;
 		for (u = 0; u < N_LEVELS - y - 1; u++){
@@ -176,6 +175,8 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 	i_counter = 0;
 	j_counter = 0;
 	z_counter = 0;
+	int check[NB_1][NB_2][NB_3];
+	for (i1 = 0; i1 < NB_1; i1++)for (i2 = 0; i2 < NB_2; i2++)for (i3 = 0; i3 < NB_3; i3++)check[i1][i2][i3] = 0;
 	ci[0] = cj[0] = cz[0] = 0;
 	for (y = 0; y <= (*level); y++){
 		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
@@ -189,35 +190,35 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 				increment2 = MY_MIN(pow(2, i1), NB_2 - coord2 - 1);
 				increment3 = MY_MIN(pow(2, i1), NB_3 - coord3 - 1);
 
-				if (increment1>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+				if (increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
 					coord1 += increment1;
 				}
-				if (increment2>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					coord1 -= increment1;
+				if (increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
 					coord2 += increment2;
 				}
-				if (increment1>0 && increment2>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
 					coord1 += increment1;
 				}
-				if (increment3>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					coord1 -= increment1;
-					coord2 -= increment2;
+				if (increment3 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment3;
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					if (increment2 == pow(2, i1)) coord2 -= increment2;
 					coord3 += increment3;
 				}
-				if (increment3>0 && increment1>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+				if (increment3 == pow(2, i1) && increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
 					coord1 += increment1;
 				}
-				if (increment3>0 && increment2>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					coord1 -= increment1;
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
 					coord2 += increment2;
 				}
-				if (increment3>0 && increment2>0 && increment1>0 && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
 					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
 					coord1 += increment1;
 				}
@@ -225,7 +226,9 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 				cj[0] = coord2;
 				cz[0] = coord3;
 			}
-			//printf("n, ci, cj, cz: %d %d %d %d\n", n, ci[0], cj[0], cz[0]);
+			check[ci[0]][cj[0]][cz[0]] += 1;
+			//printf("n, ci, cj, cz, check: %d %d %d %d %d\n", n, ci[0], cj[0], cz[0], check[ci[0]][cj[0]][cz[0]]);
+			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");
 			//ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
 			//cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
 			//cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
@@ -240,7 +243,6 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 		*z += cz[y] * pow(1 + REF_3, (*level - y));
 	}
 }
-
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
