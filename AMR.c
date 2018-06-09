@@ -722,6 +722,7 @@ void balance_load_gpu(void){
 }
 
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
+/*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 void activate_blocks(void){
 	int n, i;
 	n_active = 0;
@@ -740,15 +741,17 @@ void activate_blocks(void){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active_total
 			n_ord_total[n_active_total] = n;
 			n_ord_total_RM[n_active_total] = n;
-			block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
-			NODE_global[block[n][AMR_NODE]]++;
+            if (block[n][AMR_NODE] >= 0){
+                block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
+                NODE_global[block[n][AMR_NODE]]++;
+            }
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;
 		}
 	}
 	#if(N_GPU>1)
 	for (n = 0; n < n_active_total; n++){
-		NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
+		if (block[n_ord_total[n]][AMR_NODE] >= 0) NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++; NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
 	}
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
