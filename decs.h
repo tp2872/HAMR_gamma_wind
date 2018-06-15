@@ -792,6 +792,22 @@ extern double defcon;
 /* set global variables that indicate current local metric, etc. */
 extern int icurr, jcurr, pcurr;
 
+////////////////////////////////
+//SJETCOORDS
+////////////////////////////////
+extern double global_fracdisk;
+extern double global_fracjet;
+extern double global_jetnu1;
+extern double global_jetnu2;
+extern double global_rsjet;
+extern double global_r0grid;
+extern double global_r0jet;
+extern double global_rjetend;
+extern double global_r0disk;
+extern double global_rdiskend;
+extern double global_x10;
+extern double global_x20;
+
 struct of_geom {
 	double gcon[NDIM][NDIM];
 	double gcov[NDIM][NDIM];
