@@ -11,6 +11,8 @@ Physical Parameters section
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
+#define POSTMERGER_PROBLEM 9
+
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/

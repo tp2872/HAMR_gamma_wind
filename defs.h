@@ -781,22 +781,6 @@ double defcon;
 /* set global variables that indicate current local metric, etc. */
 int icurr, jcurr, pcurr;
 
-////////////////////////////////
-//SJETCOORDS
-////////////////////////////////
-double global_fracdisk;
-double global_fracjet;
-double global_jetnu1;
-double global_jetnu2;
-double global_rsjet;
-double global_r0grid;
-double global_r0jet;
-double global_rjetend;
-double global_r0disk;
-double global_rdiskend;
-double global_x10;
-double global_x20;
-
 /*Timing/benchmarking decleration*/
 clock_t begin1, end1, begin2, end2;
 double time_spent3;

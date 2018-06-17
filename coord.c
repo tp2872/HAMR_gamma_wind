@@ -251,21 +251,30 @@ void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
 	//initialize X0: cylindrify region
 	//X[1] < X0[1] && X[2] < X0[2] (value of X0[3] not used)
 	X0[0] = Xin[0];
-	/*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
-	X0[1] = pow(log(38.*(double)N3 / 250.0 - RB), 1. / RADEXP);
-	X0[2] = -1. + 1. / ((double)(N2));
-	X0[3] = 0.;
+  
+  //{0, roughly midpoint between grid origin and x10, -1, 0}
+  DLOOPA Xtr[j] = X[j];
+
+#if( WHICHPROBLEM == POSTMERGER_PROBLEM)
+  X0[1] = 3.5;
+  X0[2] = -1. + 1./256.;
+  X0[3] = 0.;
+  Xtr[1] = log( 0.5*( exp(X0[1])+exp(startx[1]) ) );   //always bound to be between startx[1] and X0[1]
+#else
+  /*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
+  X0[1] = pow(log(38.*(double)N3 / 250.0 - RB), 1. / RADEXP);
+  X0[2] = -1. + 1. / ((double)(N2));
+  X0[3] = 0.;
+  //3D jet
+  //Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
+  Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
+#endif
 	/*3D jet Rout 10000 Rg 1024x400x100*/
 	/*X0[1] = pow(log(600. - RB), 1. / RADEXP);
 	X0[2] = -1. + 3. / (double)N2;
 	X0[3] = 0.;*/
 	vofx(X0, V0);
 
-	//{0, roughly midpoint between grid origin and x10, -1, 0}
-	DLOOPA Xtr[j] = X[j];
-	//3D jet
-	//Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
-	Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
 	vofx(Xtr, Vtr);
 
 	f1 = func1(X0, X, vofx);

@@ -110,6 +110,8 @@ void init()
 	void init_disruption(void);
 	void init_monopole(double Rout_val);
 	void init_thindisk();
+	void init_postmerger(void);
+
 
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
@@ -125,15 +127,16 @@ void init()
 		case THIN_PROBLEM:
 		init_thindisk();
 		break;
-		case BONDI_PROBLEM_1D:
-		init_thindisk();
-		break;
 		case DISRUPTION_PROBLEM:
 		init_disruption();
 		break;
 		case TORUS_PROBLEM_GRB:
 		init_torus_grb();
 		break;
+	        case POSTMERGER_PROBLEM:
+		init_postmerger();
+		break;
+		case BONDI_PROBLEM_1D:
 		case BONDI_PROBLEM_2D:
 		init_bondi();
 		break;
@@ -579,6 +582,251 @@ void init_torus()
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
+}
+
+void init_postmerger()
+{
+  int i,j,z,n ;
+  double r,th,phi,sth,cth ;
+  double ur,uh,up,u,rho ;
+  double bl_gcov[NDIM][NDIM];
+  double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
+  double tilt, eccentricity;
+  struct of_geom geom ;
+  
+  /* for disk interior */
+  double l,rin,lnh,expm2chi,up1 ;
+  double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
+  double kappa,hm1 ;
+  
+  /*For MPI*/
+  double inmsg;
+  
+  /* for magnetic field */
+  double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
+  double lfish_calc(double rmax) ;
+  
+  /* disk parameters (use fishbone.m to select new solutions) */
+  //a = 0.9375 ;
+  //rin = 36.;
+  //rmax = 73.9672;
+  //rin = 5.*36. ;
+  //rmax = 361.95;
+  
+  
+  //rmax = 73.962 ;
+  
+  double temp = a;
+  a = 0.9375;
+  rin = 12.5;
+  //rmax = 14.6145;
+  rmax = 25.;
+  //rmax = 14.6165;
+  ///rin = 12.;
+  //rmax = 14.616;
+  //rmax = 24.;
+  l = lfish_calc(rmax) ;
+  kappa = 1.e-3 ;
+  beta = 100. ;
+  
+  coord(0,5, 0, 0, CENT, X);
+  bl_coord(X, &r, &th, &phi);
+  if (rank == 0) {
+    fprintf(stderr, "r[5]: %g\n", r);
+    fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a*a)));
+    if (r > 1. + sqrt(1. - a*a)) {
+      fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
+    }
+    else {
+      fprintf(stderr, "\n");
+    }
+  }
+  
+  /* output choices */
+  tf = 200000000.0 ;
+  DTd = 5.;  /* dumping frequency, in units of M */
+  DTl = 50.0;  /* logfile frequency, in units of M */
+  DTi = 100.0;   /* image file frequ., in units of M */
+  DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
+  
+  /* start diagnostic counters */
+  dump_cnt = 0 ;
+  image_cnt = 0 ;
+  rdump_cnt = 0 ;
+  
+  rhomax = 0. ;
+  umax = 0. ;
+#if(!NSY)
+  tilt = (TILT_ANGLE)/180.*M_PI;
+#else
+  tilt = -(TILT_ANGLE) / 180.*M_PI;
+#endif
+  eccentricity = 0.0;
+  for (n = 0; n < n_active; n++){
+    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+      coord(n_ord[n], i, j, z, CENT, X);
+      bl_coord(X,&r,&th, &phi) ;
+      pos_new[1] = r;
+      pos_new[2] = th;
+      pos_new[3] = phi;
+#if (TILTED)
+      sph_to_cart(X_cart,  &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+      rotate_coord(X_cart,-tilt);
+      cart_to_sph(X_cart, &r, &th, &phi);
+#endif
+      
+#if(ELLIPTICAL)
+      sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+      elliptical_coord(X_cart,pos_new, &r, eccentricity);
+#endif
+      
+      sth = sin(th) ;
+      cth = cos(th) ;
+      
+      /* calculate lnh */
+      DD = r*r - 2.*r + a*a ;
+      AA = (r*r + a*a)*(r*r + a*a) - DD*a*a*sth*sth ;
+      SS = r*r + a*a*cth*cth ;
+      
+      thin = M_PI/2. ;
+      sthin = sin(thin) ;
+      cthin = cos(thin) ;
+      DDin = rin*rin - 2.*rin + a*a ;
+      AAin = (rin*rin + a*a)*(rin*rin + a*a) 
+      - DDin*a*a*sthin*sthin ;
+      SSin = rin*rin + a*a*cthin*cthin ;
+      
+      if(r >= rin) {
+        lnh = 0.5*log((1. + sqrt(1. + 4.*(l*l*SS*SS)*DD/
+                                 (AA*sth*AA*sth)))/(SS*DD/AA)) 
+        - 0.5*sqrt(1. + 4.*(l*l*SS*SS)*DD/(AA*AA*sth*sth))
+        - 2.*a*r*l/AA 
+        - (0.5*log((1. + sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
+                              (AAin*AAin*sthin*sthin)))/(SSin*DDin/AAin)) 
+           - 0.5*sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
+                      (AAin*AAin*sthin*sthin)) 
+           - 2.*a*rin*l/AAin ) ;
+      }
+      else
+        lnh = 1. ;
+      
+      /* regions outside torus */
+      if(lnh < 0. || r < rin) {
+        rho = 1.e-7*RHOMIN ;
+        u = 1.e-7*UUMIN ;
+        
+        ur = 0. ;
+        uh = 0. ;
+        up = 0. ;
+        
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+      }
+      /* region inside magnetized torus; u^i is calculated in
+       * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
+       * so it needs to be transformed at the end */
+      else { 
+        hm1 = exp(lnh) - 1. ;
+        rho = pow(hm1*(gam - 1.)/(kappa*gam),
+                  1./(gam - 1.)) ; 
+        u = kappa*pow(rho,gam)/(gam - 1.) ;
+        ur = 0. ;
+        uh = 0. ;
+        
+        /* calculate u^phi */
+        expm2chi = SS*SS*DD/(AA*AA*sth*sth) ;
+        up1 = sqrt((-1. + sqrt(1. + 4.*l*l*expm2chi))/2.) ;
+        up = 2.*a*r*sqrt(1. + up1*up1)/sqrt(AA*SS*DD) +
+        sqrt(SS/AA)*up1/sth ;
+        
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
+        if(rho > rhomax) rhomax = rho ;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
+        if(u > umax && r > rin) umax = u ;
+        
+#if (TILTED)
+        V[1] = ur;
+        V[2] = uh;
+        V[3] = up;
+        //th = (th - M_PI / 2.) *(fractheta*0.5) + M_PI / 2.;
+        rotate_vector(V, pos_new, &r, &th, &phi, tilt);
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V[1];
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V[2];
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V[3];
+        
+        /* convert from 4-vel to 3-vel */
+        coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
+#elif(ELLIPTICAL)
+        V_old[1] = ur;
+        V_old[2] = uh;
+        V_old[3] = up;
+        elliptical_vector(X_cart, V_old, V_new, pos_new, &r, &th, eccentricity);
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V_new[1];
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V_new[2];
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V_new[3];
+        
+        /* convert from 4-vel to 3-vel */
+        coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
+#else
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = ur;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
+        
+        /* convert from 4-vel to 3-vel */
+        coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
+#endif
+      }
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;
+    }
+  }
+  a = temp;
+#if (MPI_enable)
+  /*Share rhomax among MPI processes*/
+  MPI_Barrier(mpi_cartcomm);
+  MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+  
+  /*Share umax among MPI processes*/
+  MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+  MPI_Barrier(mpi_cartcomm);
+#endif
+  
+  /* Normalize the densities so that max(rho) = 1 */
+  if (rank == 0){
+    fprintf(stderr, "rhomax: %g\n", rhomax);
+  }
+  //ZSLOOP(0,N1-1,0,N2-1) {
+  for (n = 0; n < n_active; n++){
+    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+    }
+  }
+  umax /= rhomax ;
+  rhomax = 1. ;
+  for (n = 0; n < n_active; n++){
+    fixup(p, n_ord[n]);
+  }
+  bound_prim(p, 1);
+  
+  set_mag();
+  
+#if( DO_FONT_FIX ) 
+  set_Katm();
+#endif 
+  
+  sourceflag=0.;
+#if(ELLIPTICAL2)
+  calc_source();
+#endif
+  
+#if (GPU_ENABLED)
+  for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
+#endif
 }
 
 void init_disruption()
@@ -1951,7 +2199,7 @@ void init_torus_grb(){
 #endif 
 
 #if (GPU_ENABLED)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need this?
 #endif
 }
 
