@@ -118,11 +118,19 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 void bl_coord(double * restrict X, double * restrict r, double * restrict th, double * restrict phi)
 {
 	double V[4];
+  void (*vofx_function_pointer)(double*, double*);
 
+  //choose the type of coordinates depending on the problem at hand
+  #if( WHICHPROBLEM == DISRUPTION_PROBLEM)
+    vofx_function_pointer = vofx_sjetcoords;
+  #else
+    vofx_function_pointer = vofx_matthewcoords;
+  #endif
+  
 	#if(!DOCYLINDRIFYCOORDS)
-	vofx_matthewcoords(X,V);
+    vofx_matthewcoords(X,V);
 	#else
-	vofx_cylindrified(X, vofx_matthewcoords, V);
+    vofx_cylindrified(X, vofx_matthewcoords, V);
 	#endif
 
 	// avoid singularity at polar axis
@@ -182,6 +190,8 @@ void vofx_matthewcoords(double *X, double *V){
 
 void vofx_sjetcoords( double *X, double *V )
 {
+  double thetaofx2(double x2, double ror0nu);
+
   /////////////////////
   //ANGULAR GRID SETUP
   /////////////////////
@@ -276,11 +286,36 @@ void vofx_sjetcoords( double *X, double *V )
   V[3]=X[3];
 }
 
+double thetaofx2(double x2, double ror0nu)
+{
+  double theta;
+  if( x2 < -0.5 ) {
+    theta = 0       + atan( tan((x2+1)*M_PI_2)/ror0nu );
+  }
+  else if( x2 >  0.5 ) {
+    theta = M_PI    + atan( tan((x2-1)*M_PI_2)/ror0nu );
+  }
+  else {
+    theta = M_PI_2 + atan( tan(x2*M_PI_2)*ror0nu );
+  }
+  return(theta);
+}
 
 /* some grid location, dxs */
 void set_points(int n)
 {
-	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
+#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+  double lenx[NDIM];
+
+  lenx[1] = x1max - startx[1];
+	lenx[2] = 2.*fractheta;
+	lenx[3] = 2.*M_PI;
+
+	dx[nl[n]][1] = lenx[1] / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+	dx[nl[n]][2] = lenx[2] / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
+	dx[nl[n]][3] = lenx[3] / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
+#else  
+        double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
 	if(Rout<=RTRANS){
 		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
@@ -290,6 +325,7 @@ void set_points(int n)
 	}
 	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+#endif
 }
 
 void set_gridparam(void) {
@@ -312,10 +348,62 @@ void set_gridparam(void) {
 		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
 		fractheta = 1.e-2;
 	}
-
+#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+  const double RELACC = 1e-14;
+  const int ITERMAX = 50;
+  rbr = 1e+4;
+  npow2=4.0; //power exponent
+  cpow2=1.0; //exponent prefactor (the larger it is, the more hyperexponentiation is)
+  double x1max0, dxmax;
+  int iter;
+  
+  Rin = 0.87*(1. + sqrt(1. - a*a)) ;  //.98
+  Rout = 1e5;
+  
+  x1br = log( rbr - R0 );
+  
+  if( Rout < rbr ) {
+    x1max = log(Rout-R0);
+  }
+  else {
+    x1max0 = 1.;
+    x1max = 2.;
+    
+    //find the root via iterations
+    for( iter = 0; iter < ITERMAX; iter++ ) {
+      if( fabs((x1max - x1max0)/x1max) < RELACC ) {
+        break;
+      }
+      x1max0 = x1max;
+      dxmax= (pow( (log(Rout-R0) - x1max0)/cpow2, 1./npow2 ) + x1br) - x1max0;
+      
+      // need a slight damping factor
+      double dampingfactor=0.5;
+      x1max = x1max0 + dampingfactor*dxmax;
+      if (x1max> log(Rout-R0)){x1max = log(Rout-R0);}
+    }
+    
+    if( iter == ITERMAX ) {
+      if(rank==0) {
+        printf( "Error: iteration procedure for finding x1max has not converged: x1max = %g, dx1max/x1max = %g, iter = %d\n",
+               x1max, (x1max-x1max0)/x1max, iter );
+        printf( "Error: iteration procedure for finding x1max has not converged: rbr= %g, x1br = %g, log(Rout-R0) = %g\n",
+               rbr, x1br, log(Rout-R0) );
+      }
+      exit(1);
+    }
+    else {
+      if(rank==0) printf( "x1max = %g (dx1max/x1max = %g, itno = %d)\n", x1max, (x1max-x1max0)/x1max, iter );
+    }
+  }
+  startx[1] = log(Rin - R0) ;  //minimum values
+  startx[2] = -1.+(1.-fractheta) ;   //minimum values
+  startx[3] = 0. ;   //minimum values
+#else
 	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
 	startx[2] = -1. + 1.*(1. - fractheta);
 	startx[3] = 0.;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

@@ -755,7 +755,7 @@ extern double a;
 extern double gam;
 
 /* numerical parameters */
-extern double Rin, Rout, R0, fractheta;
+extern double Rin, Rout, R0, fractheta, x1br, rbr, npow2, cpow2;
 extern double cour;
 extern double dV, dx[NB_LOCAL][NPR], startx[NPR];
 extern double dt, bdt[NB_LOCAL][4];
@@ -1151,6 +1151,7 @@ static double func1(double *X0, double *X, void(*vofx)(double*, double*));
 static double func2(double *X0, double *X, void(*vofx)(double*, double*));
 void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout);
 void vofx_matthewcoords(double *X, double *V);
+void vofx_sjetcoords( double *X, double *V );
 void dxdxp_func(double *X, double dxdxp[][NDIM]);
 
 //Rotation/ellipticity related
