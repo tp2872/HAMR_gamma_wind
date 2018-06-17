@@ -180,6 +180,103 @@ void vofx_matthewcoords(double *X, double *V){
 	V[3] = X[3];
 }
 
+void vofx_sjetcoords( double *X, double *V )
+{
+  /////////////////////
+  //ANGULAR GRID SETUP
+  /////////////////////
+  
+  //transverse resolution fraction devoted to different components
+  //(sum should be <1)
+  double global_fracdisk = 0.6;
+  double global_fracjet = 0.1;
+  
+  double global_jetnu1 = -1.;  //the nu-parameter that determines jet shape
+  double global_jetnu2 = 0.75;  //the nu-parameter that determines jet shape
+  
+  //subtractor, controls the size of the last few cells close to axis:
+  //if rsjet = 0, then no modification <- *** default for use with grid cylindrification
+  //if rsjet ~ 0.5, the grid is nearly vertical rather than monopolar,
+  //                which makes the timestep larger
+  double global_rsjet = 0.0;
+  
+  //distance at which theta-resolution is *exactly* uniform in the jet grid -- want to have this at BH horizon;
+  //otherwise, near-uniform near jet axis but less resolution (much) further from it
+  //the larger r0grid, the larger the thickness of the jet
+  //to resolve
+  double global_r0grid = 10.*Rin;
+  
+  //distance at which jet part of the grid becomes monopolar
+  //should be the same as r0disk to avoid cell crowding at the interface of jet and disk grids
+  double global_r0jet = Rin;
+  
+  //distance after which the jet grid collimates according to the usual jet formula
+  //the larger this distance, the wider is the jet region of the grid
+  double global_rjetend = 5;
+  
+  //distance at which disk part of the grid becomes monopolar
+  //the larger r0disk, the larger the thickness of the disk
+  //to resolve
+  double global_r0disk = Rin+0*global_r0jet;
+  
+  //distance after which the disk grid collimates to merge with the jet grid
+  //should be roughly outer edge of the disk
+  double global_rdiskend = 300.;
+
+  
+  //for SJETCOORDS
+  double theexp;
+  double Ftrgen( double x, double xa, double xb, double ya, double yb );
+  double limlin( double x, double x0, double dx, double y0 );
+  double minlin( double x, double x0, double dx, double y0 );
+  double mins( double f1, double f2, double df );
+  double maxs( double f1, double f2, double df );
+  double thetaofx2(double x2, double ror0nu);
+  double  fac, faker, ror0nu;
+  double fakerdisk, fakerjet;
+  double rbeforedisk, rinsidedisk, rinsidediskmax, rafterdisk;
+  double ror0nudisk, ror0nujet, thetadisk, thetajet;
+  
+  V[0] = X[0];
+  
+  theexp = X[1];
+  
+  if( X[1] > x1br ) {
+    theexp += cpow2 * pow(X[1]-x1br,npow2);
+  }
+  V[1] = R0+exp(theexp);
+  
+  double r1disk, r1jet, r2jet, r1, dr;
+  fac = Ftrgen( fabs(X[2]), global_fracdisk, 1-global_fracjet, 0, 1 );
+  
+  r1disk = mins( V[1]/global_r0disk, 1. , 0.5 ) * (global_r0disk/global_r0grid);
+  //r2disk = V[1]/r1;
+  
+  if( global_r0disk >= global_r0jet ) {
+    r1jet = mins( V[1]/global_r0jet, 1. , 0.5 ) * (global_r0jet/global_r0grid);
+    r2jet = V[1]/(r1jet*global_r0grid);
+    dr = global_rjetend/global_r0jet;
+    r2jet = mins( r2jet, dr, 0.5*dr );
+  }
+  else {
+    r1jet = mins( V[1]/global_r0disk, 1. , 0.5 ) * (global_r0disk/global_r0grid);
+    r2jet = maxs( V[1]/global_r0jet, 1., 0.5);
+    dr = global_rjetend/global_r0jet;
+    r2jet = mins( r2jet, dr, 0.5*dr );
+  }
+  
+  ror0nudisk = pow( r1disk, 0.5*global_jetnu1);
+  ror0nujet = pow( r1jet, 0.5*global_jetnu1) * pow(r2jet, 0.5*global_jetnu2);
+  
+  thetadisk = thetaofx2( X[2], ror0nudisk );
+  thetajet = thetaofx2( X[2], ror0nujet );
+  V[2] = fac*thetajet + (1 - fac)*thetadisk;
+  
+  // default is uniform \phi grid
+  V[3]=X[3];
+}
+
+
 /* some grid location, dxs */
 void set_points(int n)
 {
