@@ -55,6 +55,7 @@
 
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
+void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
 void set_mag(void);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
@@ -586,6 +587,7 @@ void init_torus()
 
 void init_postmerger()
 {
+  int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p);
   int i,j,z,n ;
   double r,th,phi,sth,cth ;
   double ur,uh,up,u,rho ;
@@ -606,25 +608,22 @@ void init_postmerger()
   double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
   double lfish_calc(double rmax) ;
   
+  /* for ICs */
+  FILE *fp;
+  int ind;
+# define MAXLEN (1024)
+  extent ext;
+  int res;
+  double *icdata;
+  char fname[] = "icdata", headerstr[MAXLEN];
+  size_t memsize, nitems, nread;
+  double prim[NPR];
+  int k;
+  
   /* disk parameters (use fishbone.m to select new solutions) */
-  //a = 0.9375 ;
-  //rin = 36.;
-  //rmax = 73.9672;
-  //rin = 5.*36. ;
-  //rmax = 361.95;
-  
-  
-  //rmax = 73.962 ;
-  
-  double temp = a;
-  a = 0.9375;
-  rin = 12.5;
-  //rmax = 14.6145;
-  rmax = 25.;
-  //rmax = 14.6165;
-  ///rin = 12.;
-  //rmax = 14.616;
-  //rmax = 24.;
+  a = 0.9375 ;  
+  rin = 6;
+  rmax = 12.;
   l = lfish_calc(rmax) ;
   kappa = 1.e-3 ;
   beta = 100. ;
@@ -644,7 +643,7 @@ void init_postmerger()
   
   /* output choices */
   tf = 200000000.0 ;
-  DTd = 5.;  /* dumping frequency, in units of M */
+  DTd = 25.0;  /* dumping frequency, in units of M */
   DTl = 50.0;  /* logfile frequency, in units of M */
   DTi = 100.0;   /* image file frequ., in units of M */
   DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
@@ -654,13 +653,68 @@ void init_postmerger()
   image_cnt = 0 ;
   rdump_cnt = 0 ;
   
+  //read ICs from file
+  //for this, loop over all MPI processes
+  //and let them read the IC data from file, one by one
+  for (ind=0; ind<numtasks; ind++) {
+    if (ind == rank) {
+      fp = fopen(fname, "rb");
+      if (NULL == fp && 0 == rank) {
+        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname);
+        exit(1234);
+      }
+      fgets(headerstr, MAXLEN, fp);
+      sscanf(headerstr, "#%d %d %d %d %lf %lf %lf %lf %lf %lf ",
+             &ext.nvars, &ext.nx, &ext.ny, &ext.nz,
+             &ext.xmin, &ext.xmax, &ext.ymin, &ext.ymax, &ext.zmin, &ext.zmax);
+      if (0 == rank) {
+        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), file %s...",
+                rank,
+                ext.nvars, ext.nx, ext.ny, ext.nz,
+                ext.xmin, ext.xmax,
+                ext.ymin, ext.ymax,
+                ext.zmin, ext.zmax,
+                fname);
+        fflush(stderr);
+      }
+      nitems = (size_t)ext.nvars*ext.nx*ext.ny*ext.nz;
+      memsize = sizeof(double)*nitems;
+      icdata = malloc(memsize);
+      if(NULL == icdata) {
+        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
+        fclose(fp);
+        exit(1235);
+      }
+      //read in the data block from file
+      nread = fread(icdata, sizeof(double), nitems, fp);
+      fclose(fp);
+      fp = NULL;
+      if (nread != nitems) {
+        fprintf( stderr, "[%d] error reading from %s: items expected %ld, written %ld\n", rank, fname, nitems, nread);
+        exit(1236);
+      }
+      if (0 == rank) {
+        fprintf(stderr, " done\n");
+        fflush(stderr);
+      }
+      //now icdata contains the IC information
+    }
+    
+  }
+#if (MPI_enable)
+  MPI_Barrier(mpi_cartcomm);
+#endif
+  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
+  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
+  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+  
   rhomax = 0. ;
   umax = 0. ;
 #if(!NSY)
-  tilt = (TILT_ANGLE)/180.*M_PI;
+  tilt = (TILT_ANGLE) / 180.*M_PI;
 #else
   tilt = -(TILT_ANGLE) / 180.*M_PI;
-#endif
+#endif  
   eccentricity = 0.0;
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -669,122 +723,46 @@ void init_postmerger()
       pos_new[1] = r;
       pos_new[2] = th;
       pos_new[3] = phi;
-#if (TILTED)
-      sph_to_cart(X_cart,  &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-      rotate_coord(X_cart,-tilt);
-      cart_to_sph(X_cart, &r, &th, &phi);
-#endif
-      
-#if(ELLIPTICAL)
-      sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-      elliptical_coord(X_cart,pos_new, &r, eccentricity);
-#endif
       
       sth = sin(th) ;
       cth = cos(th) ;
       
-      /* calculate lnh */
-      DD = r*r - 2.*r + a*a ;
-      AA = (r*r + a*a)*(r*r + a*a) - DD*a*a*sth*sth ;
-      SS = r*r + a*a*cth*cth ;
+      res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
       
-      thin = M_PI/2. ;
-      sthin = sin(thin) ;
-      cthin = cos(thin) ;
-      DDin = rin*rin - 2.*rin + a*a ;
-      AAin = (rin*rin + a*a)*(rin*rin + a*a) 
-      - DDin*a*a*sthin*sthin ;
-      SSin = rin*rin + a*a*cthin*cthin ;
-      
-      if(r >= rin) {
-        lnh = 0.5*log((1. + sqrt(1. + 4.*(l*l*SS*SS)*DD/
-                                 (AA*sth*AA*sth)))/(SS*DD/AA)) 
-        - 0.5*sqrt(1. + 4.*(l*l*SS*SS)*DD/(AA*AA*sth*sth))
-        - 2.*a*r*l/AA 
-        - (0.5*log((1. + sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
-                              (AAin*AAin*sthin*sthin)))/(SSin*DDin/AAin)) 
-           - 0.5*sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
-                      (AAin*AAin*sthin*sthin)) 
-           - 2.*a*rin*l/AAin ) ;
-      }
-      else
-        lnh = 1. ;
-      
-      /* regions outside torus */
-      if(lnh < 0. || r < rin) {
-        rho = 1.e-7*RHOMIN ;
-        u = 1.e-7*UUMIN ;
+      /* regions outside stream */
+      if(res ||prim[RHO] < 1e-20 || r<10) {
+        rho = 1.e-20;
+        u = 1.e-20;
         
         ur = 0. ;
         uh = 0. ;
         up = 0. ;
         
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+        prim[RHO] = rho;
+        prim[UU] = u;
+        prim[U1] = ur;
+        prim[U2] = uh;
+        prim[U3] = up;
       }
-      /* region inside magnetized torus; u^i is calculated in
-       * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
-       * so it needs to be transformed at the end */
-      else { 
-        hm1 = exp(lnh) - 1. ;
-        rho = pow(hm1*(gam - 1.)/(kappa*gam),
-                  1./(gam - 1.)) ; 
-        u = kappa*pow(rho,gam)/(gam - 1.) ;
-        ur = 0. ;
-        uh = 0. ;
-        
-        /* calculate u^phi */
-        expm2chi = SS*SS*DD/(AA*AA*sth*sth) ;
-        up1 = sqrt((-1. + sqrt(1. + 4.*l*l*expm2chi))/2.) ;
-        up = 2.*a*r*sqrt(1. + up1*up1)/sqrt(AA*SS*DD) +
-        sqrt(SS/AA)*up1/sth ;
-        
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
-        if(rho > rhomax) rhomax = rho ;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
-        if(u > umax && r > rin) umax = u ;
-        
-#if (TILTED)
-        V[1] = ur;
-        V[2] = uh;
-        V[3] = up;
-        //th = (th - M_PI / 2.) *(fractheta*0.5) + M_PI / 2.;
-        rotate_vector(V, pos_new, &r, &th, &phi, tilt);
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V[1];
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V[2];
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V[3];
-        
-        /* convert from 4-vel to 3-vel */
-        coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
-#elif(ELLIPTICAL)
-        V_old[1] = ur;
-        V_old[2] = uh;
-        V_old[3] = up;
-        elliptical_vector(X_cart, V_old, V_new, pos_new, &r, &th, eccentricity);
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V_new[1];
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V_new[2];
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V_new[3];
-        
-        /* convert from 4-vel to 3-vel */
-        coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
-#else
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = ur;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
-        
-        /* convert from 4-vel to 3-vel */
-        coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
-#endif
+      else {
+        /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
+        coord_transform(prim, n_ord[n], i, j, z);
       }
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;
+      //if (prim[RHO] < 0.01) prim[RHO] = 0.0;
+      prim[B1] = 0.;
+      prim[B2] = 0.;
+      prim[B3] = 0.;
+      //copy back to full prim array
+      PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k] = prim[k];
+      if(prim[RHO]>rhomax) {
+        rhomax = prim[RHO];
+      }
     }
   }
-  a = temp;
+  if(icdata) {
+    free(icdata);
+    icdata = NULL;
+  }
 #if (MPI_enable)
   /*Share rhomax among MPI processes*/
   MPI_Barrier(mpi_cartcomm);
@@ -811,9 +789,9 @@ void init_postmerger()
   for (n = 0; n < n_active; n++){
     fixup(p, n_ord[n]);
   }
-  bound_prim(p, 1);
+  bound_prim(p,1);
   
-  set_mag();
+  //set_mag();
   
 #if( DO_FONT_FIX ) 
   set_Katm();
@@ -824,6 +802,7 @@ void init_postmerger()
   calc_source();
 #endif
   
+  
 #if (GPU_ENABLED)
   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
 #endif
@@ -831,7 +810,7 @@ void init_postmerger()
 
 void init_disruption()
 {
-  int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p);
+  int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p);
   int i,j,z,n ;
   double r,th,phi,sth,cth ;
   double ur,uh,up,u,rho ;
@@ -1033,6 +1012,32 @@ void init_disruption()
 	#endif
 }
 
+int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p)
+{
+  int interpolate_spec_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
+  double vx, vy, vz, poten, x, y, z, R;
+  double bl_gcov[NDIM][NDIM];
+  int res;
+  //vars: [rho],[p],[Ye],[-u_t],[v^r],[v^theta],[v^phi]
+  //ivar:  0,    1,  2,     3,    4,    5,        6
+  res = interpolate_spec_var(r,th,ph,ext,data,0,&p[RHO]);
+  if(res) return(res);
+  //note that this is pressure, not internal energy
+  res = interpolate_spec_var(r,th,ph,ext,data,1,&p[UU]); p[UU] /= (gam-1);
+  //not yet ready for it
+  //res = interpolate_spec_var(r,th,ph,ext,data,2,&p[YE]);
+  res = interpolate_spec_var(r,th,ph,ext,data,4,&p[U1]);
+  res = interpolate_spec_var(r,th,ph,ext,data,5,&p[U2]);
+  res = interpolate_spec_var(r,th,ph,ext,data,6,&p[U3]);
+  
+  p[B1] = 0.;
+  p[B2] = 0.;
+  p[B3] = 0.;
+  
+  return(0);
+}
+
+
 int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p)
 {
   int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
@@ -1089,6 +1094,55 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
   int i0, j0, k0, i1, j1, k1, nx, ny, nz;
   double c00, c01, c10, c11, c0, c1, c;
 
+  nx = ext.nx;
+  ny = ext.ny;
+  nz = ext.nz;
+  x = r*sin(th)*cos(ph);
+  y = r*sin(th)*sin(ph);
+  z = r*cos(th);
+  dx = (ext.xmax-ext.xmin)/(nx-1);
+  dy = (ext.ymax-ext.ymin)/(ny-1);
+  dz = (ext.zmax-ext.zmin)/(nz-1);
+  i = (x-ext.xmin)/dx;
+  j = (y-ext.ymin)/dy;
+  k = (z-ext.zmin)/dz;
+  i0 = floor(i);
+  j0 = floor(j);
+  k0 = floor(k);
+  i1 = (int)ceil(i);
+  j1 = (int)ceil(j);
+  k1 = (int)ceil(k);
+  if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
+    return(1);
+  }
+  di = i - floor(i);
+  dj = j - floor(j);
+  dk = k - floor(k);
+  c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
+  c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
+  c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
+  c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
+  c0 = c00*(1-dj) + c10*dj;
+  c1 = c01*(1-dj) + c11*dj;
+  c = c0*(1-dk) + c1*dk;
+  if (isnan(c))  return(1);
+  *val = c;
+  return(0);
+  
+}
+//undefine array shortcut to avoid name conflicts
+#undef d
+
+//define compact form for array indexing
+#define d(ii,jj,kk) data[((ivar*nx+ii)*ny+jj)*nz+kk]
+
+int interpolate_spec_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val)
+{
+  double x, y, z, dx, dy, dz;
+  double i, j, k, di, dj, dk;
+  int i0, j0, k0, i1, j1, k1, nx, ny, nz;
+  double c00, c01, c10, c11, c0, c1, c;
+  
   nx = ext.nx;
   ny = ext.ny;
   nz = ext.nz;
@@ -1498,6 +1552,77 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 	pr[U3] = utconp[3];
 	//fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
 	/* done! */
+}
+
+/* this version starts w/ BL 3-velocity and
+ * converts to relative 4-velocity in modified
+ * Kerr-Schild coordinates */
+void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
+{
+  double X[NDIM], r, th, phi, vcon[NDIM], ucon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], old[NDIM];
+  double AA, BB, CC, discr;
+  double alpha, gamma, beta[NDIM];
+  struct of_geom geom;
+  struct of_state q;
+  int i, j, k, m;
+  
+  coord(n, ii, jj, zz, CENT, X);
+  bl_coord(X, &r, &th, &phi);
+  blgset(n, ii, jj, &geom);
+  
+  vcon[0] = 1.0;  
+  vcon[1] = pr[U1];
+  vcon[2] = pr[U2];
+  vcon[3] = pr[U3];
+  
+  //compute u^t corresponding to the new v^i
+  ut_calc_3vel(vcon, &geom, &ut);
+    
+  for(k = 0; k < NDIM; k++) {
+    ucon[k] = ut * vcon[k]; 
+  }
+  /* now we've got ucon in BL coords */
+  //old[1] = ucon[1];
+  //old[2] = ucon[2];
+  //old[3] = ucon[3];
+  /* transform to Kerr-Schild */
+  /* make transform matrix */
+  DLOOP trans[j][k] = 0.;
+  DLOOPA trans[j][j] = 1.;
+  trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
+  trans[3][1] = a / (r*r - 2.*r + a*a);
+  
+  /* transform ucon */
+  DLOOPA tmp[j] = 0.;
+  DLOOP tmp[j] += trans[j][k] * ucon[k];
+  DLOOPA ucon[j] = tmp[j];
+  /* now we've got ucon in KS coords */
+  
+  /* transform to KS' coords */
+  //ucon[1] *= (1. / (r - R0));
+  //ucon[2] *= 1. / dxdxp[2][2];
+  //ucon[3] *= 1.; //!!!ATCH: no need to transform since will use phi = X[3]
+  dxdxp_func(X, dxdxp);
+  /* dx^\mu/dr^\nu jacobian */
+  invert_matrix(dxdxp, dxpdx);
+  
+  for (i = 0; i<NDIM; i++) {
+    uconp[i] = 0;
+    for (j = 0; j<NDIM; j++){
+      uconp[i] += dxpdx[i][j] * ucon[j];
+    }
+  }
+  /* now solve for v-- we can use the same u^t because
+   * it didn't change under KS -> KS' */
+  get_geometry(n,ii, jj,zz, CENT, &geom);
+  
+  ucon_to_utcon(uconp, &geom, utconp);
+  
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
+  /* done! */
 }
 
 //Transform coordinates to Cartesian
