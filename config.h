@@ -19,8 +19,8 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
-#define BH_SPIN (0.9375)
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.8)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
