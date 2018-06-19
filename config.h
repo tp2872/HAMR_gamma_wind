@@ -20,7 +20,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
-#define BH_SPIN (0.8)
+#define BH_SPIN (0.86)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
