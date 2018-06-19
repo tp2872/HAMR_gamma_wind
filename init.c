@@ -707,8 +707,6 @@ void init_postmerger()
       //skip comment lines in the second file
       read_first_line(first_line, MAXLEN, fp2);
       //read_first_line leaves file at the start of the first non-comment line
-
-      ext.xmin/=r_unit;
       
       //account for coordinates counted off from zero
       ext.nx += 1;
@@ -939,6 +937,17 @@ char* read_last_line(char *s, size_t size, FILE *fp)
     return(NULL);
   }
   last_line = last_newline+1;
+
+  if(0 == strlen(last_line)) {
+    *last_newline = '\0';
+    /* and find the last newline character (there must be one, right?) */
+    last_newline = strrchr(s, '\n');
+    //no newline within max_len bytes of file end
+    if(NULL == last_newline) {
+      return(NULL);
+    }
+    last_line = last_newline+1;
+  }
   
   //the length of the last line
   len = len-(last_line-s);
@@ -1014,7 +1023,7 @@ void init_disruption()
   for (ind=0; ind<numtasks; ind++) {
     if (ind == rank) {
       fp = fopen(fname, "rb");
-	  if (NULL == fp && 0 == rank) {
+	    if (NULL == fp && 0 == rank) {
         fprintf(stderr, "Could not open file %s for reading, exiting\n", fname);
         exit(1234);
       }
@@ -1153,23 +1162,39 @@ void init_disruption()
 	#endif
 }
 
+#define VARI 0
+#define VARJ 1
+#define VARK 2
+#define VARR 3
+#define VARTHETA 4
+#define VARPHI 5
+#define VARRHO 6
+#define VARP 7
+#define VARYE 8
+#define VARMUDT 9
+#define VARVUR 10
+#define VARVUTHETA 11
+#define VARVUPHI 12
+#define NVARS 13
+
 int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p)
 {
   int interpolate_spec_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
   double vx, vy, vz, poten, x, y, z, R;
   double bl_gcov[NDIM][NDIM];
   int res;
-  //vars: [rho],[p],[Ye],[-u_t],[v^r],[v^theta],[v^phi]
-  //ivar:  0,    1,  2,     3,    4,    5,        6
-  res = interpolate_spec_var(r,th,ph,ext,data,0,&p[RHO]);
+  
+  //vars: VARI, VARJ, VARK, VARR, VARTHETA, VARPHI, VARRHO, VARP, VARYE, VARMUDT, VARVUR, VARVUTHETA, VARVUPHI
+  //ivar:  0,    1,    2,     3,    4,         5,     6,      7,    8,      9,      10,        11,       12
+  res = interpolate_spec_var(r,th,ph,ext,data,VARRHO,&p[RHO]);
   if(res) return(res);
   //note that this is pressure, not internal energy
-  res = interpolate_spec_var(r,th,ph,ext,data,1,&p[UU]); p[UU] /= (gam-1);
+  res = interpolate_spec_var(r,th,ph,ext,data,VARP,&p[UU]); p[UU] /= (gam-1);
   //not yet ready for it
-  //res = interpolate_spec_var(r,th,ph,ext,data,2,&p[YE]);
-  res = interpolate_spec_var(r,th,ph,ext,data,4,&p[U1]);
-  res = interpolate_spec_var(r,th,ph,ext,data,5,&p[U2]);
-  res = interpolate_spec_var(r,th,ph,ext,data,6,&p[U3]);
+  //res = interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
+  res = interpolate_spec_var(r,th,ph,ext,data,VARVUR,&p[U1]);
+  res = interpolate_spec_var(r,th,ph,ext,data,VARVUTHETA,&p[U2]);
+  res = interpolate_spec_var(r,th,ph,ext,data,VARVUPHI,&p[U3]);
   
   p[B1] = 0.;
   p[B2] = 0.;
@@ -1287,12 +1312,6 @@ int interpolate_spec_var( double r, double th, double ph, extent ext, double *da
   nx = ext.nx;
   ny = ext.ny;
   nz = ext.nz;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  dx = (ext.xmax-ext.xmin)/(nx-1);
-  dy = (ext.ymax-ext.ymin)/(ny-1);
-  dz = (ext.zmax-ext.zmin)/(nz-1);
   i = (x-ext.xmin)/dx;
   j = (y-ext.ymin)/dy;
   k = (z-ext.zmin)/dz;
