@@ -51,6 +51,7 @@
  *
  */
 #include <float.h>
+#include <string.h>
 #include "decs_MPI.h"
 
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -585,10 +586,29 @@ void init_torus()
 	#endif
 }
 
+#define d(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+#define VARI 0
+#define VARJ 1
+#define VARK 2
+#define VARR 3
+#define VARTHETA 4
+#define VARPHI 5
+#define VARRHO 6
+#define VARP 7
+#define VARYE 8
+#define VARMUDT 9
+#define VARVUR 10
+#define VARVUTHETA 11
+#define VARVUPHI 12
+#define NVARS 13
+
 void init_postmerger()
 {
-  int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p);
+  int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p);
+  char* read_first_line(char *s, size_t size, FILE *fp);
+  char* read_last_line(char *s, size_t size, FILE *fp);
   int i,j,z,n ;
+  extent ext;
   double r,th,phi,sth,cth ;
   double ur,uh,up,u,rho ;
   double bl_gcov[NDIM][NDIM];
@@ -609,23 +629,23 @@ void init_postmerger()
   double lfish_calc(double rmax) ;
   
   /* for ICs */
-  FILE *fp;
+  double r_unit = 8.07; //conversion factor = (Mbh/Msun)
+  FILE *fp1, *fp2;
   int ind;
+  int nitems_read, nitems_expected;
 # define MAXLEN (1024)
-  extent ext;
+  int nvars, nx, ny, nz;
   int res;
   double *icdata;
-  char fname[] = "icdata", headerstr[MAXLEN];
+  char fname1[] = "PointsToInterpolateHAMR.dat";
+  char fname2[] = "HAMR_AllData.dat";
+  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], *ptr1, *ptr2;
   size_t memsize, nitems, nread;
   double prim[NPR];
-  int k;
+  int k, ii, jj, kk;
   
   /* disk parameters (use fishbone.m to select new solutions) */
-  a = 0.9375 ;  
-  rin = 6;
-  rmax = 12.;
-  l = lfish_calc(rmax) ;
-  kappa = 1.e-3 ;
+  a = BH_SPIN ;  
   beta = 100. ;
   
   coord(0,5, 0, 0, CENT, X);
@@ -653,53 +673,116 @@ void init_postmerger()
   image_cnt = 0 ;
   rdump_cnt = 0 ;
   
+  ext.nvars = NVARS;
   //read ICs from file
   //for this, loop over all MPI processes
   //and let them read the IC data from file, one by one
   for (ind=0; ind<numtasks; ind++) {
     if (ind == rank) {
-      fp = fopen(fname, "rb");
-      if (NULL == fp && 0 == rank) {
-        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname);
+      fp1 = fopen(fname1, "rb");
+      if (NULL == fp1 && 0 == rank) {
+        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
         exit(1234);
       }
-      fgets(headerstr, MAXLEN, fp);
-      sscanf(headerstr, "#%d %d %d %d %lf %lf %lf %lf %lf %lf ",
-             &ext.nvars, &ext.nx, &ext.ny, &ext.nz,
-             &ext.xmin, &ext.xmax, &ext.ymin, &ext.ymax, &ext.zmin, &ext.zmax);
+      fp2 = fopen(fname2, "rb");
+      if (NULL == fp2 && 0 == rank) {
+        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
+        fclose(fp1);
+        exit(1234);
+      }
+      read_last_line(last_line, MAXLEN, fp1);
+      sscanf(last_line, "%d %d %d %lf %lf %lf ",
+             &ext.nx, &ext.ny, &ext.nz,
+             &ext.xmax, &ext.ymax, &ext.zmax);
+      
+      //rewind the file to the beginning for subsequent reading
+      rewind(fp1);
+
+      //skip comment lines in the first file and read in the first non-comment line
+      read_first_line(first_line, MAXLEN, fp1);
+      sscanf(first_line, "%*d %*d %*d %lf %lf %lf ",
+             &ext.xmin, &ext.ymin, &ext.zmin);
+      //read_first_line leaves file at the start of the first non-comment line
+
+      //skip comment lines in the second file
+      read_first_line(first_line, MAXLEN, fp2);
+      //read_first_line leaves file at the start of the first non-comment line
+
+      ext.xmin/=r_unit;
+      
+      //account for coordinates counted off from zero
+      ext.nx += 1;
+      ext.ny += 1;
+      ext.nz += 1;
+      
+      ext.xmin/=r_unit;
+      ext.xmax/=r_unit;
+      
       if (0 == rank) {
-        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), file %s...",
+        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
                 rank,
                 ext.nvars, ext.nx, ext.ny, ext.nz,
                 ext.xmin, ext.xmax,
                 ext.ymin, ext.ymax,
                 ext.zmin, ext.zmax,
-                fname);
+                fname1, fname2);
         fflush(stderr);
       }
-      nitems = (size_t)ext.nvars*ext.nx*ext.ny*ext.nz;
+      nx = ext.nx;
+      ny = ext.ny;
+      nz = ext.nz;
+      nvars = ext.nvars;
+      nitems = (size_t)nvars*nx*ny*nz;
       memsize = sizeof(double)*nitems;
       icdata = malloc(memsize);
       if(NULL == icdata) {
         fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
-        fclose(fp);
+        fclose(fp1);
+        fclose(fp2);
         exit(1235);
       }
       //read in the data block from file
-      nread = fread(icdata, sizeof(double), nitems, fp);
-      fclose(fp);
-      fp = NULL;
-      if (nread != nitems) {
-        fprintf( stderr, "[%d] error reading from %s: items expected %ld, written %ld\n", rank, fname, nitems, nread);
-        exit(1236);
+      do{
+        //first file, containing grid information
+        ptr1 = fgets(buf1, MAXLEN, fp1);
+        if(NULL == ptr1) break;
+        nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
+        nitems_expected = 3;
+        if(nitems_expected != nitems_read) break;
+        d(ii,jj,kk,VARI) = (double)i;
+        d(ii,jj,kk,VARJ) = (double)j; 
+        d(ii,jj,kk,VARK) = (double)k;
+        nitems_read = sscanf(ptr1, "%lf %lf %lf \n",
+               &d(ii,jj,kk,VARR), &d(ii,jj,kk,VARTHETA), &d(ii,jj,kk,VARPHI));
+        d(ii,jj,kk,VARR) /= r_unit;
+        nitems_expected = 3;
+        if(nitems_expected != nitems_read) break;
+        //second file, containing data information
+        ptr2 = fgets(buf2, MAXLEN, fp2);
+        if(NULL == ptr2) break;
+        nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf \n",
+               &d(ii,jj,kk,VARRHO), &d(ii,jj,kk,VARP), &d(ii,jj,kk,VARYE),
+               &d(ii,jj,kk,VARMUDT), &d(ii,jj,kk,VARVUR), &d(ii,jj,kk,VARVUPHI));
+        nitems_expected = 6;
+        if(nitems_expected != nitems_read) break;
       }
+      while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
+      
+      if( nitems_expected != nitems_read || 
+         ferror(fp1) || ferror(fp2) || 
+         (NULL == ptr1 && !feof(fp1)) || 
+         (NULL == ptr2 && !feof(fp2)) ) {
+        fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
+      }
+      fclose(fp1); fp1 = NULL;
+      fclose(fp2); fp2 = NULL;
+      
       if (0 == rank) {
         fprintf(stderr, " done\n");
         fflush(stderr);
       }
       //now icdata contains the IC information
     }
-    
   }
 #if (MPI_enable)
   MPI_Barrier(mpi_cartcomm);
@@ -807,10 +890,68 @@ void init_postmerger()
   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
 #endif
 }
+#undef d
+
+//returns the pointer to the first non-comment line in the file fp
+//size is the size of the s array
+char* read_first_line(char *s, size_t size, FILE *fp)
+{
+  char *last_newline, *last_line, *ptr;
+  size_t len;
+  fpos_t pos;
+  int is_success;
+    
+  /* rewind the file to the beginning */
+  fseek(fp, 0L, SEEK_SET);
+  do {
+    is_success = fgetpos(fp, &pos);
+    ptr = fgets(s, size, fp);
+  }
+  while( NULL != ptr && '#' == ptr[0] );
+  //restore the file position to the beginning of the line
+  if( is_success && NULL != ptr ) {
+    fsetpos(fp, &pos);
+  }
+  return(ptr);
+}
+
+//returns the pointer to the last line in the file fp
+//size is the size of the s array
+char* read_last_line(char *s, size_t size, FILE *fp)
+{
+  char *last_newline, *last_line;
+  
+  //subtract one to get the max number of characters in the string 
+  //(i.e., not counting the terminating '\0')
+  size--;
+  
+  /* now read that many bytes from the end of the file */
+  fseek(fp, -size, SEEK_END);
+  size_t len = fread(s, sizeof(char), size, fp);
+  
+  /* don't forget the null terminator */
+  s[len] = '\0';
+  
+  /* and find the last newline character (there must be one, right?) */
+  last_newline = strrchr(s, '\n');
+  //no newline within max_len bytes of file end
+  if(NULL == last_newline) {
+    return(NULL);
+  }
+  last_line = last_newline+1;
+  
+  //the length of the last line
+  len = len-(last_line-s);
+  
+  //move the last line to the beginning of s
+  memmove(s, last_line, (len+1)*sizeof(char));
+
+  return(s);
+}
 
 void init_disruption()
 {
-  int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p);
+  int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p);
   int i,j,z,n ;
   double r,th,phi,sth,cth ;
   double ur,uh,up,u,rho ;
@@ -1561,7 +1702,7 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
 {
   double X[NDIM], r, th, phi, vcon[NDIM], ucon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], old[NDIM];
   double AA, BB, CC, discr;
-  double alpha, gamma, beta[NDIM];
+  double alpha, gamma, beta[NDIM], ut;
   struct of_geom geom;
   struct of_state q;
   int i, j, k, m;
