@@ -586,7 +586,7 @@ void init_torus()
 	#endif
 }
 
-#define d(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+#define dd(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 #define VARI 0
 #define VARJ 1
 #define VARK 2
@@ -747,20 +747,20 @@ void init_postmerger()
         nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
         nitems_expected = 3;
         if(nitems_expected != nitems_read) break;
-        d(ii,jj,kk,VARI) = (double)i;
-        d(ii,jj,kk,VARJ) = (double)j; 
-        d(ii,jj,kk,VARK) = (double)k;
+        dd(ii,jj,kk,VARI) = (double)ii;
+        dd(ii,jj,kk,VARJ) = (double)jj; 
+        dd(ii,jj,kk,VARK) = (double)kk;
         nitems_read = sscanf(ptr1, "%lf %lf %lf \n",
-               &d(ii,jj,kk,VARR), &d(ii,jj,kk,VARTHETA), &d(ii,jj,kk,VARPHI));
-        d(ii,jj,kk,VARR) /= r_unit;
+               &dd(ii,jj,kk,VARR), &dd(ii,jj,kk,VARTHETA), &dd(ii,jj,kk,VARPHI));
+        dd(ii,jj,kk,VARR) /= r_unit;
         nitems_expected = 3;
         if(nitems_expected != nitems_read) break;
         //second file, containing data information
         ptr2 = fgets(buf2, MAXLEN, fp2);
         if(NULL == ptr2) break;
-        nitems_read = sscanf(ptr1, "%lf %lf %lf %lf %lf %lf \n",
-               &d(ii,jj,kk,VARRHO), &d(ii,jj,kk,VARP), &d(ii,jj,kk,VARYE),
-               &d(ii,jj,kk,VARMUDT), &d(ii,jj,kk,VARVUR), &d(ii,jj,kk,VARVUPHI));
+        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf \n",
+               &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE),
+               &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUPHI));
         nitems_expected = 6;
         if(nitems_expected != nitems_read) break;
       }
@@ -888,7 +888,6 @@ void init_postmerger()
   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
 #endif
 }
-#undef d
 
 //returns the pointer to the first non-comment line in the file fp
 //size is the size of the s array
@@ -902,7 +901,7 @@ char* read_first_line(char *s, size_t size, FILE *fp)
   /* rewind the file to the beginning */
   fseek(fp, 0L, SEEK_SET);
   do {
-    is_success = fgetpos(fp, &pos);
+    is_success = !fgetpos(fp, &pos);
     ptr = fgets(s, size, fp);
   }
   while( NULL != ptr && '#' == ptr[0] );
@@ -1162,21 +1161,6 @@ void init_disruption()
 	#endif
 }
 
-#define VARI 0
-#define VARJ 1
-#define VARK 2
-#define VARR 3
-#define VARTHETA 4
-#define VARPHI 5
-#define VARRHO 6
-#define VARP 7
-#define VARYE 8
-#define VARMUDT 9
-#define VARVUR 10
-#define VARVUTHETA 11
-#define VARVUPHI 12
-#define NVARS 13
-
 int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p)
 {
   int interpolate_spec_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
@@ -1300,33 +1284,66 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
 #undef d
 
 //define compact form for array indexing
-#define d(ii,jj,kk) data[((ivar*nx+ii)*ny+jj)*nz+kk]
+#define d(ii,jj,kk) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 
-int interpolate_spec_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val)
+int interpolate_spec_var( double r, double th, double ph, extent ext, double *icdata, int ivar, double *val)
 {
   double x, y, z, dx, dy, dz;
   double i, j, k, di, dj, dk;
   int i0, j0, k0, i1, j1, k1, nx, ny, nz;
   double c00, c01, c10, c11, c0, c1, c;
+  int ii, jj, kk;
+  double th0, th1;
+  
+  //limit th, ph to [0,pi], [0,2pi)
+  if(th<0) th = 0;
+  if(th>M_PI) th = M_PI;
+  if(ph>=M_2_PI) ph -= M_2_PI;
+  if(ph<0) ph += M_2_PI;
   
   nx = ext.nx;
   ny = ext.ny;
   nz = ext.nz;
-  i = (x-ext.xmin)/dx;
-  j = (y-ext.ymin)/dy;
-  k = (z-ext.zmin)/dz;
-  i0 = floor(i);
-  j0 = floor(j);
-  k0 = floor(k);
+  for(i0=j0=k0=0; i0<nx; i0++) {
+    if(dd(i0,j0,k0,VARR) > r) break;
+  }
+  i0--;
+  if(i0 < 0 || i0 >= nx-1) return(1);
+  di = log2( r/dd(i0,j0,k0,VARR) ) / log2( dd(i0+1,j0,k0,VARR)/dd(i0,j0,k0,VARR) );
+  i = i0 + di;
+  
+  for(j0=0; j0<ny; j0++) {
+    th1 = dd(i0,j0,k0,VARTHETA)*(1-di)+dd(i0+1,j0,k0,VARTHETA)*di;
+    if( th1 > th ) break;
+  }
+  j0--;
+  if(j0 < 0) {
+    j0 = 0;
+    dj = 0;
+  }
+  else if(j0 >= ext.ny - 1) {
+    j0 = ny-1;
+    dj = 0;
+  }
+  else {
+    th0 = dd(i0,j0,k0,VARTHETA)*(1-di)+dd(i0+1,j0,k0,VARTHETA)*di;
+    dj = (th-th0)/(th1-th0);
+  }
+  j = j0 + dj;
+  
+  dz = (ext.zmax-ext.zmin)/(nz-1);
+  k = (ph-ext.zmin)/dz-0.5;
+  
   i1 = (int)ceil(i);
   j1 = (int)ceil(j);
+  k0 = floor(k);
   k1 = (int)ceil(k);
-  if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
+  if(i0<0 || i1>=nx || j0<0 || j1>=ny || k0<-1 || k1>=nz+1) {
     return(1);
   }
-  di = i - floor(i);
-  dj = j - floor(j);
   dk = k - floor(k);
+  if(k0==-1) k0 = nz-1;
+  if(k1==nz) k1 = 0;
   c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
   c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
   c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
