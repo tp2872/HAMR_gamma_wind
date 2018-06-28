@@ -456,6 +456,22 @@ void blgset(int n, int i, int j, struct of_geom *geom)
 	bl_gcon_func(r, th, geom->gcon);
 }
 
+/* Returns spinning BH metric in Kerr-Schild coordinates; assumes axisymmetry */
+void ksgset(int n, int i, int j, struct of_geom *geom)
+{
+  double r, th,phi, X[NDIM];
+  
+  coord(n, i, j, 0, CENT, X);
+  bl_coord(X, &r, &th, &phi);
+  
+  if (th < 0) th *= -1.;
+  if (th > M_PI) th = 2.*M_PI - th;
+  
+  kerr_gcov_func(r, th, geom->gcov);
+  geom->g = gdet_func(geom->gcov);
+  invert_matrix(geom->gcov, geom->gcon);
+}
+
 double bl_gdet_func(double r, double th)
 {
 	double a2, r2;

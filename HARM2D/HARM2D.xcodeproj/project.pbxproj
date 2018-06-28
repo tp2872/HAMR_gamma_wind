@@ -46,12 +46,12 @@
 		0C10DDBA1FEB47CD00FDCED0 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../config.h; sourceTree = "<group>"; };
 		0C10DDBB1FEB47CD00FDCED0 /* const_trans.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = const_trans.c; path = ../const_trans.c; sourceTree = "<group>"; };
 		0C10DDBC1FEB47CD00FDCED0 /* decs_MPI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decs_MPI.h; path = ../decs_MPI.h; sourceTree = "<group>"; };
-		0C10DDBD1FEB47CD00FDCED0 /* GPU_boundcomE.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = GPU_boundcomE.cu; path = ../GPU_boundcomE.cu; sourceTree = "<group>"; };
-		0C10DDBE1FEB47CD00FDCED0 /* GPU_boundcomF.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = GPU_boundcomF.cu; path = ../GPU_boundcomF.cu; sourceTree = "<group>"; };
-		0C10DDBF1FEB47CD00FDCED0 /* GPU_boundcomP.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = GPU_boundcomP.cu; path = ../GPU_boundcomP.cu; sourceTree = "<group>"; };
-		0C10DDC01FEB47CD00FDCED0 /* GPU_main.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = GPU_main.cu; path = ../GPU_main.cu; sourceTree = "<group>"; };
-		0C10DDC11FEB47CD00FDCED0 /* GPU_program1.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = GPU_program1.cu; path = ../GPU_program1.cu; sourceTree = "<group>"; };
-		0C10DDC21FEB47CD00FDCED0 /* GPU_program2.cu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = GPU_program2.cu; path = ../GPU_program2.cu; sourceTree = "<group>"; };
+		0C10DDBD1FEB47CD00FDCED0 /* GPU_boundcomE.cu */ = {isa = PBXFileReference; explicitFileType = sourcecode.c; fileEncoding = 4; name = GPU_boundcomE.cu; path = ../GPU_boundcomE.cu; sourceTree = "<group>"; };
+		0C10DDBE1FEB47CD00FDCED0 /* GPU_boundcomF.cu */ = {isa = PBXFileReference; explicitFileType = sourcecode.c; fileEncoding = 4; name = GPU_boundcomF.cu; path = ../GPU_boundcomF.cu; sourceTree = "<group>"; };
+		0C10DDBF1FEB47CD00FDCED0 /* GPU_boundcomP.cu */ = {isa = PBXFileReference; explicitFileType = sourcecode.c; fileEncoding = 4; name = GPU_boundcomP.cu; path = ../GPU_boundcomP.cu; sourceTree = "<group>"; };
+		0C10DDC01FEB47CD00FDCED0 /* GPU_main.cu */ = {isa = PBXFileReference; explicitFileType = sourcecode.c; fileEncoding = 4; name = GPU_main.cu; path = ../GPU_main.cu; sourceTree = "<group>"; };
+		0C10DDC11FEB47CD00FDCED0 /* GPU_program1.cu */ = {isa = PBXFileReference; explicitFileType = sourcecode.c; fileEncoding = 4; name = GPU_program1.cu; path = ../GPU_program1.cu; sourceTree = "<group>"; };
+		0C10DDC21FEB47CD00FDCED0 /* GPU_program2.cu */ = {isa = PBXFileReference; explicitFileType = sourcecode.c; fileEncoding = 4; name = GPU_program2.cu; path = ../GPU_program2.cu; sourceTree = "<group>"; };
 		0C10DDC31FEB47CD00FDCED0 /* hllc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hllc.c; path = ../hllc.c; sourceTree = "<group>"; };
 		0C10DDC41FEB47CD00FDCED0 /* LAS.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LAS.c; path = ../LAS.c; sourceTree = "<group>"; };
 		0C677E6C18F32F4100EE533A /* libDummy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDummy.a; sourceTree = BUILT_PRODUCTS_DIR; };

@@ -38,10 +38,17 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(1.e-7)
-#define UUMIN	(1.e-9)
-#define RHOMINLIMIT (1.e-20)
-#define UUMINLIMIT  (1.e-20)
+#if(WHICHPROBLEM==POSTMERGER_PROBLEM)
+  #define RHOMIN  (1.e-26)
+  #define UUMIN  (1.e-27)
+  #define RHOMINLIMIT (1.e-40)
+  #define UUMINLIMIT  (1.e-40)
+#else
+  #define RHOMIN	(1.e-7)
+  #define UUMIN	(1.e-9)
+  #define RHOMINLIMIT (1.e-20)
+  #define UUMINLIMIT  (1.e-20)
+#endif
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (20.*FLOORFACTOR)

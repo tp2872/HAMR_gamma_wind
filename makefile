@@ -4,11 +4,7 @@ USEICC = 0
 
 ifeq ($(USEICC),0)
 CC       = clang
-<<<<<<< HEAD
 CCFLAGS  = -O3 -I/usr/local/cuda/include -g -ggdb
-=======
-CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb
->>>>>>> f3a192e3... Modified min,max functions
 endif
 
 EXTRALIBS = -lm -L/usr/local/cuda/lib -lcudart -lmpi
@@ -25,7 +21,7 @@ GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_p
 
 EXE = harm
 all: $(EXE)
-	
+
 OBJS = \
 eos_helm.o \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \

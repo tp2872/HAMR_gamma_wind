@@ -750,7 +750,7 @@ void init_postmerger()
         dd(ii,jj,kk,VARI) = (double)ii;
         dd(ii,jj,kk,VARJ) = (double)jj; 
         dd(ii,jj,kk,VARK) = (double)kk;
-        nitems_read = sscanf(ptr1, "%lf %lf %lf \n",
+        nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n",
                &dd(ii,jj,kk,VARR), &dd(ii,jj,kk,VARTHETA), &dd(ii,jj,kk,VARPHI));
         dd(ii,jj,kk,VARR) /= r_unit;
         nitems_expected = 3;
@@ -811,9 +811,9 @@ void init_postmerger()
       res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
       
       /* regions outside stream */
-      if(res ||prim[RHO] < 1e-20 || r<10) {
-        rho = 1.e-20;
-        u = 1.e-20;
+      if( res || (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
+        rho = 1.e-30/(r*r);
+        u = 1.e-31/(r*r*r*r);
         
         ur = 0. ;
         uh = 0. ;
@@ -827,7 +827,7 @@ void init_postmerger()
       }
       else {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-        coord_transform(prim, n_ord[n], i, j, z);
+        vconbl_to_utcon(prim, n_ord[n], i, j, z);
       }
       //if (prim[RHO] < 0.01) prim[RHO] = 0.0;
       prim[B1] = 0.;
@@ -859,14 +859,14 @@ void init_postmerger()
     fprintf(stderr, "rhomax: %g\n", rhomax);
   }
   //ZSLOOP(0,N1-1,0,N2-1) {
-  for (n = 0; n < n_active; n++){
-    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-    }
-  }
-  umax /= rhomax ;
-  rhomax = 1. ;
+  //for (n = 0; n < n_active; n++){
+  //  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+  //    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
+  //    p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+  //  }
+  //}
+  //umax /= rhomax ;
+  //rhomax = 1. ;
   for (n = 0; n < n_active; n++){
     fixup(p, n_ord[n]);
   }
@@ -1171,20 +1171,19 @@ int interpolate_spec_prims( double r, double th, double ph, extent ext, double *
   //vars: VARI, VARJ, VARK, VARR, VARTHETA, VARPHI, VARRHO, VARP, VARYE, VARMUDT, VARVUR, VARVUTHETA, VARVUPHI
   //ivar:  0,    1,    2,     3,    4,         5,     6,      7,    8,      9,      10,        11,       12
   res = interpolate_spec_var(r,th,ph,ext,data,VARRHO,&p[RHO]);
-  if(res) return(res);
   //note that this is pressure, not internal energy
-  res = interpolate_spec_var(r,th,ph,ext,data,VARP,&p[UU]); p[UU] /= (gam-1);
+  res += interpolate_spec_var(r,th,ph,ext,data,VARP,&p[UU]); p[UU] /= (gam-1);
   //not yet ready for it
   //res = interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
-  res = interpolate_spec_var(r,th,ph,ext,data,VARVUR,&p[U1]);
-  res = interpolate_spec_var(r,th,ph,ext,data,VARVUTHETA,&p[U2]);
-  res = interpolate_spec_var(r,th,ph,ext,data,VARVUPHI,&p[U3]);
+  res += interpolate_spec_var(r,th,ph,ext,data,VARVUR,&p[U1]);
+  res += interpolate_spec_var(r,th,ph,ext,data,VARVUTHETA,&p[U2]);
+  res += interpolate_spec_var(r,th,ph,ext,data,VARVUPHI,&p[U3]);
   
   p[B1] = 0.;
   p[B2] = 0.;
   p[B3] = 0.;
   
-  return(0);
+  return(res);
 }
 
 
@@ -1742,10 +1741,15 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   struct of_geom geom;
   struct of_state q;
   int i, j, k, m;
+#define USEKS (1)
   
   coord(n, ii, jj, zz, CENT, X);
   bl_coord(X, &r, &th, &phi);
+#if(USEKS)
+  ksgset(n, ii, jj, &geom);
+#else
   blgset(n, ii, jj, &geom);
+#endif
   
   vcon[0] = 1.0;  
   vcon[1] = pr[U1];
@@ -1762,23 +1766,23 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   //old[1] = ucon[1];
   //old[2] = ucon[2];
   //old[3] = ucon[3];
+#if(USEKS)
+  //already in KS coordinates; no transformation needed
+#else
   /* transform to Kerr-Schild */
   /* make transform matrix */
   DLOOP trans[j][k] = 0.;
   DLOOPA trans[j][j] = 1.;
   trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
   trans[3][1] = a / (r*r - 2.*r + a*a);
-  
   /* transform ucon */
   DLOOPA tmp[j] = 0.;
   DLOOP tmp[j] += trans[j][k] * ucon[k];
   DLOOPA ucon[j] = tmp[j];
   /* now we've got ucon in KS coords */
+#endif
   
   /* transform to KS' coords */
-  //ucon[1] *= (1. / (r - R0));
-  //ucon[2] *= 1. / dxdxp[2][2];
-  //ucon[3] *= 1.; //!!!ATCH: no need to transform since will use phi = X[3]
   dxdxp_func(X, dxdxp);
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
