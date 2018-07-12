@@ -758,10 +758,10 @@ void init_postmerger()
         //second file, containing data information
         ptr2 = fgets(buf2, MAXLEN, fp2);
         if(NULL == ptr2) break;
-        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf \n",
+        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf\n",
                &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE),
-               &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUPHI));
-        nitems_expected = 6;
+               &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
+        nitems_expected = 7;
         if(nitems_expected != nitems_read) break;
       }
       while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
