@@ -181,7 +181,7 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 	for (y = 0; y <= (*level); y++){
 		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
 		if (y == 0){
-			max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
+			/*max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
 			for (i1 = max_level; i1 >= 0; i1--){
 				coord1 = ci[0];
 				coord2 = cj[0];
@@ -228,10 +228,10 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 			}
 			check[ci[0]][cj[0]][cz[0]] += 1;
 			//printf("n, ci, cj, cz, check: %d %d %d %d %d\n", n, ci[0], cj[0], cz[0], check[ci[0]][cj[0]][cz[0]]);
-			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");
-			//ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
-			//cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
-			//cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
+			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");*/
+			ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
+			cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
+			cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
 		}
 		else{
 			ci[y] = (index[y] % ((REF_2 + 1)*(REF_1 + 1)) % (REF_1 + 1));
@@ -1414,7 +1414,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
 	//MPI_Barrier(mpi_cartcomm);
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]-gpu_offset] > MAX_BLOCKS){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]-gpu_offset] > 1){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -1627,9 +1627,9 @@ void check_refcrit(void){
 		tag = 0;
 
 		/*Only allow refinement for one block per node per step*/
-		//for (i = 0; i < MY_MIN(numtasks * N_GPU, NB); i++){
-			//NODE_global[i] = 0;
-		//}
+		for (i = 0; i < MY_MIN(numtasks * N_GPU, NB); i++){
+			NODE_global[i] = 0;
+		}
 
 		//Count the number of blocks per node and reset tag
 		for (n = 0; n < n_active_total; n++){

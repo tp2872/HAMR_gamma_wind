@@ -54,7 +54,7 @@ void set_timelevel(void){
 	//Send for every block (l,i,j,z) to block (l2,i,j2,z2) on other nodes using non-blocking send
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
-			#pragma omp parallel for schedule(dynamic,1) private(req_local, task)
+			//#pragma omp parallel for schedule(dynamic,1) private(req_local, task)
 			for (task = 0; task < numtasks; task++){
 				if (task != rank){
 					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, (2 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
