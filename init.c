@@ -57,6 +57,7 @@
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
 void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
+void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void set_mag(void);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
@@ -630,7 +631,7 @@ void init_postmerger()
   
   /* for ICs */
   double r_unit = 8.07; //conversion factor = (Mbh/Msun)
-  FILE *fp1, *fp2;
+  FILE *fp1, *fp2, *fp3;
   int ind;
   int nitems_read, nitems_expected;
 # define MAXLEN (1024)
@@ -639,7 +640,8 @@ void init_postmerger()
   double *icdata;
   char fname1[] = "PointsToInterpolateHAMR.dat";
   char fname2[] = "HAMR_AllData.dat";
-  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], *ptr1, *ptr2;
+  char fname3[] = "HarmDataUtilde.dat";
+  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2, *ptr3;
   size_t memsize, nitems, nread;
   double prim[NPR];
   int k, ii, jj, kk;
@@ -690,6 +692,13 @@ void init_postmerger()
         fclose(fp1);
         exit(1234);
       }
+      fp3 = fopen(fname3, "rb");
+      if (NULL == fp3 && 0 == rank) {
+        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname3);
+        fclose(fp1);
+        fclose(fp2);
+        exit(1234);
+      }
       read_last_line(last_line, MAXLEN, fp1);
       sscanf(last_line, "%d %d %d %lf %lf %lf ",
              &ext.nx, &ext.ny, &ext.nz,
@@ -706,6 +715,8 @@ void init_postmerger()
 
       //skip comment lines in the second file
       read_first_line(first_line, MAXLEN, fp2);
+      //skip comment lines in the third file
+      read_first_line(first_line, MAXLEN, fp3);
       //read_first_line leaves file at the start of the first non-comment line
       
       //account for coordinates counted off from zero
@@ -717,13 +728,13 @@ void init_postmerger()
       ext.xmax/=r_unit;
       
       if (0 == rank) {
-        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
+        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s and %s...",
                 rank,
                 ext.nvars, ext.nx, ext.ny, ext.nz,
                 ext.xmin, ext.xmax,
                 ext.ymin, ext.ymax,
                 ext.zmin, ext.zmax,
-                fname1, fname2);
+                fname1, fname2, fname3);
         fflush(stderr);
       }
       nx = ext.nx;
@@ -737,6 +748,7 @@ void init_postmerger()
         fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
         fclose(fp1);
         fclose(fp2);
+        fclose(fp3);
         exit(1235);
       }
       //read in the data block from file
@@ -758,22 +770,31 @@ void init_postmerger()
         //second file, containing data information
         ptr2 = fgets(buf2, MAXLEN, fp2);
         if(NULL == ptr2) break;
-        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf\n",
-               &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE),
-               &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
-        nitems_expected = 7;
+        nitems_read = sscanf(ptr2, "%lf %lf %lf %*d %*d %*d %*d \n",
+                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE));
+               /* &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));*/
+        nitems_expected = 3;
         if(nitems_expected != nitems_read) break;
+        //third file,  containing relative 4-velocity information
+        ptr3 = fgets(buf3, MAXLEN, fp3);
+        if(NULL == ptr3) break;
+        nitems_read = sscanf(ptr3, "%lf %lf %lf \n",
+               &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
+        nitems_expected = 3;
+        if(nitems_expected != nitems_read) break;                    
       }
-      while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
+      while(!ferror(fp1) && !ferror(fp2) && !ferror(fp3) && NULL != ptr1 && NULL != ptr2 && NULL != ptr3);
       
       if( nitems_expected != nitems_read || 
-         ferror(fp1) || ferror(fp2) || 
+         ferror(fp1) || ferror(fp2) || ferror(fp3) ||
          (NULL == ptr1 && !feof(fp1)) || 
-         (NULL == ptr2 && !feof(fp2)) ) {
+         (NULL == ptr2 && !feof(fp2)) ||
+         (NULL == ptr3 && !feof(fp3)) ) {
         fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
       }
       fclose(fp1); fp1 = NULL;
       fclose(fp2); fp2 = NULL;
+      fclose(fp3); fp3 = NULL;
       
       if (0 == rank) {
         fprintf(stderr, " done\n");
@@ -1805,6 +1826,113 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
   /* done! */
 }
+
+/* This function takes Utilde 3-velocity and 
+ * transforms it into 4-velocity in modified Kerr-Schild coordinates
+ */
+void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
+{
+  double X[NDIM], r, th, phi, vcon[NDIM], ucon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], old[NDIM];
+  double AA, BB, CC, discr;
+  double alpha, gamma, beta[NDIM], ut;
+  struct of_geom geom;
+  struct of_state q;
+  int i, j, k, m;
+#define USEKS (1)
+  
+  coord(n, ii, jj, zz, CENT, X);
+  bl_coord(X, &r, &th, &phi);
+#if(USEKS)
+  ksgset(n, ii, jj, &geom);
+#else
+  blgset(n, ii, jj, &geom);
+#endif
+  
+  // By definition, U^t tilde = 0
+  vcon[0] = 0.0;  
+  vcon[1] = pr[U1];
+  vcon[2] = pr[U2];
+  vcon[3] = pr[U3];
+  
+  //compute u^t corresponding to the new v^i 
+  //ut_calc_3vel(vcon, &geom, &ut);
+    
+  //for(k = 0; k < NDIM; k++) {
+  //  ucon[k] = ut * vcon[k]; 
+  //}
+  /* now we've got ucon in BL coords */
+  //old[1] = ucon[1];
+  //old[2] = ucon[2];
+  //old[3] = ucon[3];
+  
+#if(USEKS)
+  //already in KS coordinates; no transformation needed
+#else
+  /* transform to Kerr-Schild */
+  /* make transform matrix */
+  DLOOP trans[j][k] = 0.;
+  DLOOPA trans[j][j] = 1.;
+  trans[0][1] = 2.*r / (r*r - 2.*r + a*a);
+  trans[3][1] = a / (r*r - 2.*r + a*a);
+  /* transform ucon */
+  DLOOPA tmp[j] = 0.;
+  DLOOP tmp[j] += trans[j][k] * ucon[k];
+  DLOOPA ucon[j] = tmp[j];
+  /* now we've got ucon in KS coords */
+#endif
+  
+  /* Jacobian transformation from spherical to cartesian coords */
+  dxdr_sph_to_cart(r, th, phi, dxdr);
+  invert_matrix(dxdr, drdx);
+
+  /* transform to KS' coords */
+  dxdxp_func(X, dxdxp);
+  /* dx^\mu/dr^\nu jacobian */
+  invert_matrix(dxdxp, dxpdx);
+  
+  for (i = 0; i<NDIM; i++) {
+    utconp[i] = 0;
+    for (j = 0; j<NDIM; j++){
+      utconp[i] += drdx[i][j] * dxpdx[i][j] * ucon[j];
+    }
+  }
+  /* now solve for v-- we can use the same u^t because
+   * it didn't change under KS -> KS' */
+  get_geometry(n,ii, jj,zz, CENT, &geom);
+  
+  //ucon_to_utcon(uconp, &geom, utconp);
+  
+  pr[U1] = utconp[1];
+  pr[U2] = utconp[2];
+  pr[U3] = utconp[3];
+  //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
+  /* done! */
+}
+
+
+void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM])
+  {
+  	int j;
+	//double Xh[NDIM], Xl[NDIM];
+	//double Vh[NDIM], Vl[NDIM];
+	for(j = 1; j < NDIM; j++) {
+		dxdr[0][j] = 0.0;
+		dxdr[j][0] = 0.0;
+	}
+	dxdr[0][0] = 1.0;
+
+	dxdr[1][1] = cos(th) * sin(phi);
+	dxdr[1][2] = - r * sin(th) * sin(phi);
+	dxdr[1][3] = r * cos(th) * cos(phi);
+
+	dxdr[2][1] = sin(th) * sin(phi);
+	dxdr[2][2] = r * cos(th) * sin(phi);
+	dxdr[2][3] = r * sin(th) * cos(phi);
+
+	dxdr[3][1] = cos(phi);
+	dxdr[3][2] = 0.0;
+	dxdr[3][3] = - r * sin(phi);
+  }
 
 //Transform coordinates to Cartesian
 void sph_to_cart(double X[NDIM], double *r, double *th, double *phi){
