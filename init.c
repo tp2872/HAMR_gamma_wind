@@ -57,6 +57,7 @@
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
 void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
+void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void set_mag(void);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -639,7 +640,7 @@ void init_postmerger()
   int res;
   double *icdata;
   char fname1[] = "PointsToInterpolateHAMR.dat";
-  char fname2[] = "HAMR_AllData.dat";
+  char fname2[] = "HARM_AllData2.dat";
   char fname3[] = "HarmDataUtilde.dat";
   char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2, *ptr3;
   size_t memsize, nitems, nread;
@@ -770,10 +771,10 @@ void init_postmerger()
         //second file, containing data information
         ptr2 = fgets(buf2, MAXLEN, fp2);
         if(NULL == ptr2) break;
-        nitems_read = sscanf(ptr2, "%lf %lf %lf %*d %*d %*d %*d \n",
-                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE));
+        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %*d %*d %*d \n",
+                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT));
                /* &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));*/
-        nitems_expected = 3;
+        nitems_expected = 4;
         if(nitems_expected != nitems_read) break;
         //third file,  containing relative 4-velocity information
         ptr3 = fgets(buf3, MAXLEN, fp3);
@@ -848,7 +849,8 @@ void init_postmerger()
       }
       else {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
-        vconbl_to_utcon(prim, n_ord[n], i, j, z);
+        //vconbl_to_utcon(prim, n_ord[n], i, j, z);
+        utilde_to_ucon(prim, n_ord[n], i, j, z);
       }
       //if (prim[RHO] < 0.01) prim[RHO] = 0.0;
       prim[B1] = 0.;
