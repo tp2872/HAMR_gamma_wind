@@ -140,10 +140,11 @@ void AMR_coord_cart(int n, int *level, int *i, int *j, int *z){
 		*z += cz[y] * pow(1 + REF_3, (*level - y));
 	}
 }
+
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
-	int ci[NDIM], cj[NDIM], cz[NDIM], factor[NDIM], index[N_LEVELS], number[N_LEVELS], y, u, counter, i_counter, j_counter, z_counter;
-	int max_level, coord1, coord2, coord3, size1, size2, size3, i1, i2, i3, temp, s1, s2, s3, increment1, increment2, increment3;
+	int ci[NDIM], cj[NDIM], cz[NDIM], factor[NDIM], index[N_LEVELS], number[N_LEVELS], y, u;
+
 	for (y = 0; y < N_LEVELS; y++){
 		factor[y] = 1;
 		for (u = 0; u < N_LEVELS - y - 1; u++){
@@ -171,64 +172,9 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 	*i = 0;
 	*j = 0;
 	*z = 0;
-	counter = 0;
-	i_counter = 0;
-	j_counter = 0;
-	z_counter = 0;
-	int check[NB_1][NB_2][NB_3];
-	for (i1 = 0; i1 < NB_1; i1++)for (i2 = 0; i2 < NB_2; i2++)for (i3 = 0; i3 < NB_3; i3++)check[i1][i2][i3] = 0;
-	ci[0] = cj[0] = cz[0] = 0;
 	for (y = 0; y <= (*level); y++){
 		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
 		if (y == 0){
-			/*max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
-			for (i1 = max_level; i1 >= 0; i1--){
-				coord1 = ci[0];
-				coord2 = cj[0];
-				coord3 = cz[0];
-				increment1 = MY_MIN(pow(2, i1), NB_1 - coord1 - 1);
-				increment2 = MY_MIN(pow(2, i1), NB_2 - coord2 - 1);
-				increment3 = MY_MIN(pow(2, i1), NB_3 - coord3 - 1);
-
-				if (increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					coord2 += increment2;
-				}
-				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment3 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment3;
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					if (increment2 == pow(2, i1)) coord2 -= increment2;
-					coord3 += increment3;
-				}
-				if (increment3 == pow(2, i1) && increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					coord2 += increment2;
-				}
-				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				ci[0] = coord1;
-				cj[0] = coord2;
-				cz[0] = coord3;
-			}
-			check[ci[0]][cj[0]][cz[0]] += 1;
-			//printf("n, ci, cj, cz, check: %d %d %d %d %d\n", n, ci[0], cj[0], cz[0], check[ci[0]][cj[0]][cz[0]]);
-			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");*/
 			ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
 			cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
 			cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
@@ -243,6 +189,7 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 		*z += cz[y] * pow(1 + REF_3, (*level - y));
 	}
 }
+
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
@@ -590,8 +537,10 @@ void balance_load(void){
 			NODE[n_ord_total_RM[n]] = temp / N_GPU;
 			GPU[n_ord_total_RM[n]] = gpu_offset + (temp - NODE[n_ord_total_RM[n]] * N_GPU);
 			if (rank == NODE[n_ord_total_RM[n]])n_active_local_gpu[GPU[n_ord_total_RM[n]]-gpu_offset]++;
-			if (GPU[n_ord_total_RM[n]] >= 20) fprintf(stderr, "Catastrophic load balancing error 1 \n");
+			if (GPU[n_ord_total_RM[n]] >= 4) fprintf(stderr, "Catastrophic load balancing error 1 \n");
 			if (NODE[n_ord_total_RM[n]] >= numtasks) fprintf(stderr, "Catastrophic load balancing error 2 \n");
+			if (GPU[n_ord_total_RM[n]] <0) fprintf(stderr, "Catastrophic load balancing error 3 \n");
+			if (NODE[n_ord_total_RM[n]] < 0) fprintf(stderr, "Catastrophic load balancing error 4 \n");
 		}
 		for (g = 0; g < N_GPU; g++){
 			n_active_local_max = MY_MAX(n_active_local_max, n_active_local_gpu[g]);
@@ -722,7 +671,6 @@ void balance_load_gpu(void){
 }
 
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
-/*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 void activate_blocks(void){
 	int n, i;
 	n_active = 0;
@@ -741,17 +689,15 @@ void activate_blocks(void){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active_total
 			n_ord_total[n_active_total] = n;
 			n_ord_total_RM[n_active_total] = n;
-            if (block[n][AMR_NODE] >= 0){
-                block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
-                NODE_global[block[n][AMR_NODE]]++;
-            }
+			block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
+			NODE_global[block[n][AMR_NODE]]++;
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;
 		}
 	}
 	#if(N_GPU>1)
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_NODE] >= 0) NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++; NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
+		NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
 	}
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -902,7 +848,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 }
 
 void derefine(int n){
-	int i,j,z,k, n_child;
+	int i,j,z,k, n_child, gpu_local;
 	if (rank == 0) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 	if (block[n][AMR_ACTIVE] != 0) fprintf(stderr, "Error: Trying to derefine active block %d! \n", n);
 
@@ -910,7 +856,7 @@ void derefine(int n){
 	if (block[n][AMR_NODE] == rank){
 		set_arrays(n);
 		set_grid(n);
-
+		gpu_local = block[block[n][AMR_CHILD1]][AMR_GPU];
 		if (block[n][AMR_CHILD1] >= 0){
 			n_child = block[n][AMR_CHILD1];
 			block_average(n, n_child, 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3));
@@ -994,7 +940,7 @@ void derefine(int n){
 	#if(GPU_ENABLED || GPU_DEBUG )
 	if (block[n][AMR_NODE] == rank){
 		if (block[block[n][AMR_CHILD1]][AMR_GPU] == -1 && GPU_ENABLED) fprintf(stderr, "Only positive values allowed for device number! \n");
-		set_arrays_GPU(n, block[block[n][AMR_CHILD1]][AMR_GPU]);
+		set_arrays_GPU(n, gpu_local);
 		GPU_write(n);
 	}
 	#endif
@@ -1414,7 +1360,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1;
 	//MPI_Barrier(mpi_cartcomm);
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]-gpu_offset] > 1){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]-gpu_offset] > MAX_BLOCKS){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -1627,9 +1573,9 @@ void check_refcrit(void){
 		tag = 0;
 
 		/*Only allow refinement for one block per node per step*/
-		for (i = 0; i < MY_MIN(numtasks * N_GPU, NB); i++){
-			NODE_global[i] = 0;
-		}
+		//for (i = 0; i < MY_MIN(numtasks * N_GPU, NB); i++){
+			//NODE_global[i] = 0;
+		//}
 
 		//Count the number of blocks per node and reset tag
 		for (n = 0; n < n_active_total; n++){
@@ -1702,10 +1648,12 @@ void check_refcrit(void){
 		if(rank==0) fprintf(stderr, "Maximum number of blocks exceeded. Please select more nodes or adjust refinement criterion! \n");
 		exit(0);
 	}
-
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (rank == 0)fprintf(stderr,"Hallo1");
 	//First make sure all nodes have the same ref_val
 	if (one_block_refined == 1) synch_refcrit();
-
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (rank == 0)fprintf(stderr,"Hallo2");
 	one_block_derefined = 0;
 	count = 0;
 	gpu_counter = 0;
@@ -1981,17 +1929,14 @@ void rm_order2(void){
 	int counter2 = 0;
 	for (n = 0; n <= n_max; n++){
 		AMR_coord_cart_RM(n, &l, &i, &j, &z); //transform to cartesian grid coordinates
-		if (i >= pow(1 + REF_1, l)*NB_1 || j >= pow(1 + REF_2, l)*NB_2 || z > pow(1 + REF_3, l)*NB_3) n--;
-		else{
-			number = AMR_coord_linear(l, i, j, z); //transform to normal lineair ordering
-			if (block[number][AMR_ACTIVE] == 1){
-				n_ord_total_RM[counter] = number;
-				counter++;
-			}
-			if (block[number][AMR_ACTIVE] == 1 && block[number][AMR_NODE] == rank){
-				n_ord_RM[counter2] = number;
-				counter2++;
-			}
+		number = AMR_coord_linear(l, i, j, z); //transform to normal lineair ordering
+		if (block[number][AMR_ACTIVE] == 1){
+			n_ord_total_RM[counter] = number;
+			counter++;
+		}
+		if (block[number][AMR_ACTIVE] == 1 && block[number][AMR_NODE] == rank){
+			n_ord_RM[counter2] = number;
+			counter2++;
 		}
 	}
 }

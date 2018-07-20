@@ -507,7 +507,7 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 /*Receive boundaries for compute nodes through MPI*/
 void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n, int calc_corr){
 #if (MPI_enable)
-	int flag;
+	int flag, flag2;
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL]){
@@ -515,8 +515,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE2] == 0) MPI_Test(&boundreqs[nl[n]][120], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][120], &Statbound[nl[n]][120]);
+					if (block[n][AMR_IPROBE2] == 0) MPI_Test(&boundreqs[nl[n]][120], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][120], &Statbound[nl[n]][120]);
 					else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 				}
 				if (block[n][AMR_IPROBE2] == 0)unpack_receive1_flux(n, n, block[n][AMR_NBR4], 0, 1, 0, BS_2, 0, BS_3, BS_2, BS_3, receive2_flux, receive2_flux1, NULL, F1, &(Bufferp[nl[n]]), &(Bufferrec2flux[nl[n]]), &(Bufferrec2flux1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr);
@@ -531,8 +531,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR4]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE2_1] == 0) MPI_Test(&boundreqs[nl[n]][121], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][121], &Statbound[nl[n]][121]);
+					if (block[n][AMR_IPROBE2_1] == 0) MPI_Test(&boundreqs[nl[n]][121], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][121], &Statbound[nl[n]][121]);
 					else if (block[n][AMR_IPROBE2_1] != 1) block[n][AMR_IPROBE2_1] = -1;
 				}
 				if (block[n][AMR_IPROBE2_1] == 0)unpack_receive1_flux(n, n, block[block[n][AMR_NBR4]][AMR_CHILD5], 0, 1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3),
@@ -548,8 +548,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR4]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE2_2] == 0) MPI_Test(&boundreqs[nl[n]][122], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][122], &Statbound[nl[n]][122]);
+						if (block[n][AMR_IPROBE2_2] == 0) MPI_Test(&boundreqs[nl[n]][122], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][122], &Statbound[nl[n]][122]);
 						else if (block[n][AMR_IPROBE2_2] != 1) block[n][AMR_IPROBE2_2] = -1;
 					}
 					if (block[n][AMR_IPROBE2_2] == 0)unpack_receive1_flux(n, n, block[block[n][AMR_NBR4]][AMR_CHILD6], 0, 1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3,
@@ -566,8 +566,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE2_3] == 0) MPI_Test(&boundreqs[nl[n]][123], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][123], &Statbound[nl[n]][123]);
+						if (block[n][AMR_IPROBE2_3] == 0) MPI_Test(&boundreqs[nl[n]][123], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][123], &Statbound[nl[n]][123]);
 						else if (block[n][AMR_IPROBE2_3] != 1) block[n][AMR_IPROBE2_3] = -1;
 					}
 					if (block[n][AMR_IPROBE2_3] == 0)unpack_receive1_flux(n, n, block[block[n][AMR_NBR4]][AMR_CHILD7], 0, 1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3),
@@ -584,8 +584,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE2_4] == 0) MPI_Test(&boundreqs[nl[n]][124], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][124], &Statbound[nl[n]][124]);
+						if (block[n][AMR_IPROBE2_4] == 0) MPI_Test(&boundreqs[nl[n]][124], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][124], &Statbound[nl[n]][124]);
 						else if (block[n][AMR_IPROBE2_4] != 1) block[n][AMR_IPROBE2_4] = -1;
 					}
 					if (block[n][AMR_IPROBE2_4] == 0)unpack_receive1_flux(n, n, block[block[n][AMR_NBR4]][AMR_CHILD8], 0, 1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3,
@@ -608,8 +608,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE4] == 0) MPI_Test(&boundreqs[nl[n]][140], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][140], &Statbound[nl[n]][140]);
+					if (block[n][AMR_IPROBE4] == 0) MPI_Test(&boundreqs[nl[n]][140], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][140], &Statbound[nl[n]][140]);
 					else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 				}
 				if (block[n][AMR_IPROBE4] == 0) unpack_receive1_flux(n, n, block[n][AMR_NBR2], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
@@ -626,8 +626,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE4_1] == 0) MPI_Test(&boundreqs[nl[n]][145], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][145], &Statbound[nl[n]][145]);
+					if (block[n][AMR_IPROBE4_1] == 0) MPI_Test(&boundreqs[nl[n]][145], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][145], &Statbound[nl[n]][145]);
 					else if (block[n][AMR_IPROBE4_1] != 1) block[n][AMR_IPROBE4_1] = -1;
 				}
 				if (block[n][AMR_IPROBE4_1] == 0) unpack_receive1_flux(n, n, block[block[n][AMR_NBR2]][AMR_CHILD1], BS_1, BS_1 + 1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3),
@@ -643,8 +643,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE4_2] == 0) MPI_Test(&boundreqs[nl[n]][146], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][146], &Statbound[nl[n]][146]);
+						if (block[n][AMR_IPROBE4_2] == 0) MPI_Test(&boundreqs[nl[n]][146], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][146], &Statbound[nl[n]][146]);
 						else if (block[n][AMR_IPROBE4_2] != 1) block[n][AMR_IPROBE4_2] = -1;
 					}
 					if (block[n][AMR_IPROBE4_2] == 0) unpack_receive1_flux(n, n, block[block[n][AMR_NBR2]][AMR_CHILD2], BS_1, BS_1 + 1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3,
@@ -661,8 +661,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR2]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE4_3] == 0) MPI_Test(&boundreqs[nl[n]][147], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][147], &Statbound[nl[n]][147]);
+						if (block[n][AMR_IPROBE4_3] == 0) MPI_Test(&boundreqs[nl[n]][147], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][147], &Statbound[nl[n]][147]);
 						else if (block[n][AMR_IPROBE4_3] != 1) block[n][AMR_IPROBE4_3] = -1;
 					}
 					if (block[n][AMR_IPROBE4_3] == 0) unpack_receive1_flux(n, n, block[block[n][AMR_NBR2]][AMR_CHILD3], BS_1, BS_1 + 1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3),
@@ -679,8 +679,8 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR2]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE4_4] == 0) MPI_Test(&boundreqs[nl[n]][148], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][148], &Statbound[nl[n]][148]);
+						if (block[n][AMR_IPROBE4_4] == 0) MPI_Test(&boundreqs[nl[n]][148], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][148], &Statbound[nl[n]][148]);
 						else if (block[n][AMR_IPROBE4_4] != 1) block[n][AMR_IPROBE4_4] = -1;
 					}
 					if (block[n][AMR_IPROBE4_4] == 0) unpack_receive1_flux(n, n, block[block[n][AMR_NBR2]][AMR_CHILD4], BS_1, BS_1 + 1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3,
@@ -700,7 +700,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 
 void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n, int calc_corr){
 #if (MPI_enable)
-	int flag;
+	int flag, flag2;
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
 		if (block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL]){
@@ -708,8 +708,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE3] == 0) MPI_Test(&boundreqs[nl[n]][130], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][130], &Statbound[nl[n]][130]);
+					if (block[n][AMR_IPROBE3] == 0) MPI_Test(&boundreqs[nl[n]][130], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][130], &Statbound[nl[n]][130]);
 					else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 				}
 				if (block[n][AMR_IPROBE3] == 0) unpack_receive2_flux(n, n, block[n][AMR_NBR1], 0, BS_1, 0, 1, 0, BS_3,
@@ -726,8 +726,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE3_1] == 0) MPI_Test(&boundreqs[nl[n]][131], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][131], &Statbound[nl[n]][131]);
+					if (block[n][AMR_IPROBE3_1] == 0) MPI_Test(&boundreqs[nl[n]][131], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][131], &Statbound[nl[n]][131]);
 					else if (block[n][AMR_IPROBE3_1] != 1) block[n][AMR_IPROBE3_1] = -1;
 				}
 				if (block[n][AMR_IPROBE3_1] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR1]][AMR_CHILD3], 0, BS_1 / (1 + REF_1), 0, 1, 0, BS_3 / (1 + REF_3),
@@ -743,8 +743,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE3_2] == 0) MPI_Test(&boundreqs[nl[n]][132], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][132], &Statbound[nl[n]][132]);
+						if (block[n][AMR_IPROBE3_2] == 0) MPI_Test(&boundreqs[nl[n]][132], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][132], &Statbound[nl[n]][132]);
 						else if (block[n][AMR_IPROBE3_2] != 1) block[n][AMR_IPROBE3_2] = -1;
 					}
 					if (block[n][AMR_IPROBE3_2] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR1]][AMR_CHILD4], 0, BS_1 / (1 + REF_1), 0, 1, BS_3 / (1 + REF_3), BS_3,
@@ -761,8 +761,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR1]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE3_3] == 0) MPI_Test(&boundreqs[nl[n]][135], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][135], &Statbound[nl[n]][135]);
+						if (block[n][AMR_IPROBE3_3] == 0) MPI_Test(&boundreqs[nl[n]][135], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][135], &Statbound[nl[n]][135]);
 						else if (block[n][AMR_IPROBE3_3] != 1) block[n][AMR_IPROBE3_3] = -1;
 					}
 					if (block[n][AMR_IPROBE3_3] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR1]][AMR_CHILD7], BS_1 / (1 + REF_1), BS_1, 0, 1, 0, BS_3 / (1 + REF_3),
@@ -779,8 +779,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR1]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE3_4] == 0) MPI_Test(&boundreqs[nl[n]][136], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][136], &Statbound[nl[n]][136]);
+						if (block[n][AMR_IPROBE3_4] == 0) MPI_Test(&boundreqs[nl[n]][136], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][136], &Statbound[nl[n]][136]);
 						else if (block[n][AMR_IPROBE3_4] != 1) block[n][AMR_IPROBE3_4] = -1;
 					}
 					if (block[n][AMR_IPROBE3_4] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR1]][AMR_CHILD8], BS_1 / (1 + REF_1), BS_1, 0, 1, BS_3 / (1 + REF_3), BS_3,
@@ -803,8 +803,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE1] == 0) MPI_Test(&boundreqs[nl[n]][110], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][110], &Statbound[nl[n]][110]);
+					if (block[n][AMR_IPROBE1] == 0) MPI_Test(&boundreqs[nl[n]][110], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][110], &Statbound[nl[n]][110]);
 					else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 				}
 				if (block[n][AMR_IPROBE1] == 0) unpack_receive2_flux(n, n, block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
@@ -821,8 +821,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR3]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE1_1] == 0) MPI_Test(&boundreqs[nl[n]][113], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][113], &Statbound[nl[n]][113]);
+					if (block[n][AMR_IPROBE1_1] == 0) MPI_Test(&boundreqs[nl[n]][113], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][113], &Statbound[nl[n]][113]);
 					else if (block[n][AMR_IPROBE1_1] != 1) block[n][AMR_IPROBE1_1] = -1;
 				}
 				if (block[n][AMR_IPROBE1_1] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR3]][AMR_CHILD1], 0, BS_1 / (1 + REF_1), BS_2, BS_2 + 1, 0, BS_3 / (1 + REF_3),
@@ -838,8 +838,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR3]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE1_2] == 0) MPI_Test(&boundreqs[nl[n]][114], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][114], &Statbound[nl[n]][114]);
+						if (block[n][AMR_IPROBE1_2] == 0) MPI_Test(&boundreqs[nl[n]][114], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][114], &Statbound[nl[n]][114]);
 						else if (block[n][AMR_IPROBE1_2] != 1) block[n][AMR_IPROBE1_2] = -1;
 					}
 					if (block[n][AMR_IPROBE1_2] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR3]][AMR_CHILD2], 0, BS_1 / (1 + REF_1), BS_2, BS_2 + 1, BS_3 / (1 + REF_3), BS_3,
@@ -856,8 +856,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE1_3] == 0) MPI_Test(&boundreqs[nl[n]][117], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][117], &Statbound[nl[n]][117]);
+						if (block[n][AMR_IPROBE1_3] == 0) MPI_Test(&boundreqs[nl[n]][117], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][117], &Statbound[nl[n]][117]);
 						else if (block[n][AMR_IPROBE1_3] != 1) block[n][AMR_IPROBE1_3] = -1;
 					}
 					if (block[n][AMR_IPROBE1_3] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR3]][AMR_CHILD5], BS_1 / (1 + REF_1), BS_1, BS_2, BS_2 + 1, 0, BS_3 / (1 + REF_3),
@@ -874,8 +874,8 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE1_4] == 0) MPI_Test(&boundreqs[nl[n]][118], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][118], &Statbound[nl[n]][118]);
+						if (block[n][AMR_IPROBE1_4] == 0) MPI_Test(&boundreqs[nl[n]][118], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][118], &Statbound[nl[n]][118]);
 						else if (block[n][AMR_IPROBE1_4] != 1) block[n][AMR_IPROBE1_4] = -1;
 					}
 					if (block[n][AMR_IPROBE1_4] == 0) unpack_receive2_flux(n, n, block[block[n][AMR_NBR3]][AMR_CHILD6], BS_1 / (1 + REF_1), BS_1, BS_2, BS_2 + 1, BS_3 / (1 + REF_3), BS_3,
@@ -894,7 +894,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 }
 void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], int n, int calc_corr){
 #if (MPI_enable)
-	int flag;
+	int flag, flag2;
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL]){
@@ -902,8 +902,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE5] == 0) MPI_Test(&boundreqs[nl[n]][150], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][150], &Statbound[nl[n]][150]);
+					if (block[n][AMR_IPROBE5] == 0) MPI_Test(&boundreqs[nl[n]][150], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][150], &Statbound[nl[n]][150]);
 					else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 				}
 				if (block[n][AMR_IPROBE5] == 0) unpack_receive3_flux(n, n, block[n][AMR_NBR6], 0, BS_1, 0, BS_2, 0, D3,
@@ -920,8 +920,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR6]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE5_1] == 0) MPI_Test(&boundreqs[nl[n]][151], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][151], &Statbound[nl[n]][151]);
+					if (block[n][AMR_IPROBE5_1] == 0) MPI_Test(&boundreqs[nl[n]][151], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][151], &Statbound[nl[n]][151]);
 					else if (block[n][AMR_IPROBE5_1] != 1) block[n][AMR_IPROBE5_1] = -1;
 				}
 				if (block[n][AMR_IPROBE5_1] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR6]][AMR_CHILD2], 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), 0, D3,
@@ -937,8 +937,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR6]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE5_2] == 0) MPI_Test(&boundreqs[nl[n]][153], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][153], &Statbound[nl[n]][153]);
+						if (block[n][AMR_IPROBE5_2] == 0) MPI_Test(&boundreqs[nl[n]][153], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][153], &Statbound[nl[n]][153]);
 						else if (block[n][AMR_IPROBE5_2] != 1) block[n][AMR_IPROBE5_2] = -1;
 					}
 					if (block[n][AMR_IPROBE5_2] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR6]][AMR_CHILD4], 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, 0, D3,
@@ -955,8 +955,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR6]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE5_3] == 0) MPI_Test(&boundreqs[nl[n]][155], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][155], &Statbound[nl[n]][155]);
+						if (block[n][AMR_IPROBE5_3] == 0) MPI_Test(&boundreqs[nl[n]][155], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][155], &Statbound[nl[n]][155]);
 						else if (block[n][AMR_IPROBE5_3] != 1) block[n][AMR_IPROBE5_3] = -1;
 					}
 					if (block[n][AMR_IPROBE5_3] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR6]][AMR_CHILD6], BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), 0, D3,
@@ -973,8 +973,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR6]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE5_4] == 0) MPI_Test(&boundreqs[nl[n]][157], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][157], &Statbound[nl[n]][157]);
+						if (block[n][AMR_IPROBE5_4] == 0) MPI_Test(&boundreqs[nl[n]][157], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][157], &Statbound[nl[n]][157]);
 						else if (block[n][AMR_IPROBE5_4] != 1) block[n][AMR_IPROBE5_4] = -1;
 					}
 					if (block[n][AMR_IPROBE5_4] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR6]][AMR_CHILD8], BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, 0, D3,
@@ -997,8 +997,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE6] == 0) MPI_Test(&boundreqs[nl[n]][160], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][160], &Statbound[nl[n]][160]);
+					if (block[n][AMR_IPROBE6] == 0) MPI_Test(&boundreqs[nl[n]][160], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][160], &Statbound[nl[n]][160]);
 					else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 				}
 				if (block[n][AMR_IPROBE6] == 0) unpack_receive3_flux(n, n, block[n][AMR_NBR5], 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
@@ -1015,8 +1015,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			if (block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR5]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
 					flag = 0;
-					if (block[n][AMR_IPROBE6_1] == 0) MPI_Test(&boundreqs[nl[n]][162], &flag, &Statbound[nl[n]][0]);
-					if (flag == 1) MPI_Wait(&boundreqs[nl[n]][162], &Statbound[nl[n]][162]);
+					if (block[n][AMR_IPROBE6_1] == 0) MPI_Test(&boundreqs[nl[n]][162], &flag2, &Statbound[nl[n]][0]);
+					if (flag == 0) MPI_Wait(&boundreqs[nl[n]][162], &Statbound[nl[n]][162]);
 					else if (block[n][AMR_IPROBE6_1] != 1) block[n][AMR_IPROBE6_1] = -1;
 				}
 				if (block[n][AMR_IPROBE6_1] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR5]][AMR_CHILD1], 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), BS_3, BS_3 + D3,
@@ -1032,8 +1032,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR5]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE6_2] == 0) MPI_Test(&boundreqs[nl[n]][164], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][164], &Statbound[nl[n]][164]);
+						if (block[n][AMR_IPROBE6_2] == 0) MPI_Test(&boundreqs[nl[n]][164], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][164], &Statbound[nl[n]][164]);
 						else if (block[n][AMR_IPROBE6_2] != 1) block[n][AMR_IPROBE6_2] = -1;
 					}
 					if (block[n][AMR_IPROBE6_2] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR5]][AMR_CHILD3], 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, BS_3, BS_3 + D3,
@@ -1050,8 +1050,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR5]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE6_3] == 0) MPI_Test(&boundreqs[nl[n]][166], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][166], &Statbound[nl[n]][166]);
+						if (block[n][AMR_IPROBE6_3] == 0) MPI_Test(&boundreqs[nl[n]][166], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][166], &Statbound[nl[n]][166]);
 						else if (block[n][AMR_IPROBE6_3] != 1) block[n][AMR_IPROBE6_3] = -1;
 					}
 					if (block[n][AMR_IPROBE6_3] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR5]][AMR_CHILD5], BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), BS_3, BS_3 + D3,
@@ -1068,8 +1068,8 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 				if (block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_NBR5]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
 						flag = 0;
-						if (block[n][AMR_IPROBE6_4] == 0) MPI_Test(&boundreqs[nl[n]][168], &flag, &Statbound[nl[n]][0]);
-						if (flag == 1) MPI_Wait(&boundreqs[nl[n]][168], &Statbound[nl[n]][168]);
+						if (block[n][AMR_IPROBE6_4] == 0) MPI_Test(&boundreqs[nl[n]][168], &flag2, &Statbound[nl[n]][0]);
+						if (flag == 0) MPI_Wait(&boundreqs[nl[n]][168], &Statbound[nl[n]][168]);
 						else if (block[n][AMR_IPROBE6_4] != 1) block[n][AMR_IPROBE6_4] = -1;
 					}
 					if (block[n][AMR_IPROBE6_4] == 0) unpack_receive3_flux(n, n, block[block[n][AMR_NBR5]][AMR_CHILD7], BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, BS_3, BS_3 + D3,
