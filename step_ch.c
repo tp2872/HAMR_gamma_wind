@@ -312,8 +312,15 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			U[B3] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-
+			
+			#if(NEWMAN)
+			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			if (pflag[nl[n]][ind0]) {
+				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			}
+			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			#endif
 
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
@@ -600,11 +607,11 @@ double advance_GPU(void)
 	}
 
 	//read_time_GPU();
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status,temp)
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1){
-		temp = MY_MIN(fluxcalc_GPU(n_ord[n], 1), bdt[nl[n_ord[n]]][1]);
-		#pragma omp critical
-		bdt[nl[n_ord[n]]][1] = MY_MIN(bdt[nl[n_ord[n]]][1], temp);
+		//temp = MY_MIN(fluxcalc_GPU(n_ord[n], 1), bdt[nl[n_ord[n]]][1]);
+		//#pragma omp critical
+		bdt[nl[n_ord[n]]][1] = fluxcalc_GPU(n_ord[n], 1);
 	}	
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if (poststep_p == 0)ndt1 = 1e9;
@@ -634,11 +641,11 @@ double advance_GPU(void)
 	}
 
 	//read_time_GPU();
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status,temp)
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1){
-		temp = MY_MIN(fluxcalc_GPU(n_ord[n], 2), bdt[nl[n_ord[n]]][2]);
-		#pragma omp critical
-		bdt[nl[n_ord[n]]][2] = MY_MIN(bdt[nl[n_ord[n]]][2], temp);
+		//temp = MY_MIN(fluxcalc_GPU(n_ord[n], 2), bdt[nl[n_ord[n]]][2]);
+		//#pragma omp critical
+		bdt[nl[n_ord[n]]][2] = fluxcalc_GPU(n_ord[n], 2);
 	}
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if (poststep_p == 0)ndt2 = 1e9;
@@ -668,11 +675,11 @@ double advance_GPU(void)
 	}
 
 	//read_time_GPU();
-	#pragma omp parallel for schedule(dynamic,1) private(n,status)
+	//#pragma omp parallel for schedule(dynamic,1) private(n,status,temp)
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1){
-		temp = MY_MIN(fluxcalc_GPU(n_ord[n], 3), bdt[nl[n_ord[n]]][3]);
-		#pragma omp critical
-		bdt[nl[n_ord[n]]][3] = MY_MIN(bdt[nl[n_ord[n]]][3], temp);
+		//temp = MY_MIN(fluxcalc_GPU(n_ord[n], 3), bdt[nl[n_ord[n]]][3]);
+		//#pragma omp critical
+		bdt[nl[n_ord[n]]][3] = fluxcalc_GPU(n_ord[n], 3);
 	}
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		if (poststep_p == 0)ndt3 = 1e9;

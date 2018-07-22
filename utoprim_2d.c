@@ -72,6 +72,7 @@ FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[]);
+static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR]);
 static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int));
 static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n);
 static FTYPE x1_of_x0(FTYPE x0);
@@ -672,4 +673,176 @@ END   OF   UTOPRIM_2D.C
 ******************************************************************************/
 
 
+//Newman inversion routine serving as backup for utoprim2d
+int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYPE gdet, FTYPE prim[NPR])
+{
+	FTYPE U_tmp[NPR], prim_tmp[NPR];
+	int i, ret;
+	FTYPE alpha;
 
+	if (U[0] <= 0.) {
+		return(-100);
+	}
+
+	/* First update the primitive B-fields */
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
+
+	/* Set the geometry variables: */
+	alpha = 1.0 / sqrt(-gcon[0][0]);
+
+	/* Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
+	D = alpha * U[RHO] / gdet; //W=ucon[0]*alpha
+	U_tmp[RHO]=D;
+	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
+	#pragma ivdep
+	for (i = UTCON1; i <= UTCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+
+	/* Transform the PRIMITIVE variables into the new system */
+	#pragma ivdep
+	for (i = 0; i < BCON1; i++) {
+		prim_tmp[i] = prim[i];
+	}
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) {
+		prim_tmp[i] = alpha*prim[i];
+	}
+	
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
+
+	/* Transform new primitive variables back if there was no problem : */
+	if (ret == 0) {
+		#pragma ivdep
+		for (i = 0; i < BCON1; i++) {
+			prim[i] = prim_tmp[i];
+		}
+	}
+
+	#if(DOKTOT)
+	prim[KTOT] = U[KTOT] / U[RHO];
+	#endif
+
+	return(ret);
+
+}
+
+static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+{
+	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+	FTYPE rho0, u, w,  gamma, vsq;
+	int i, ;
+
+	// Assume ok initially:
+	retval = 0;
+
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
+	Bcon[0] = 0.;
+	#pragma ivdep
+	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
+
+	lower_g(Bcon, gcov, Bcov);
+	#pragma ivdep
+	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
+	raise_g(Qcov, gcon, Qcon);
+
+	Bsq = 0.;
+	/*#pragma ivdepreduction(+:Bsq)*/
+	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
+
+	QdotB = 0.;
+	//#pragma ivdepreduction(+:QdotB)
+	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
+	QdotBsq = QdotB*QdotB;
+
+	ncov_calc(gcon, ncov);
+	raise_g(ncov, gcon, ncon);
+	Qdotn = Qcon[0] * ncov[0];
+
+	#pragma ivdep
+	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+		
+	Qsq = 0.;
+	//#pragma ivdepreduction(+:Qsq)
+	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
+	Qtsq = Qsq + Qdotn*Qdotn;
+
+	//Start inversion scheme AKA Newman et al
+	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new;
+	int iter = 0;
+	int iter_tot = 0;
+	int set_variables = 0;
+	p_array[0] = (GAMMA - 1.)*prim[UU];
+	p_new = p_array[0];
+	d = 0.5*(Qtsq*Bsq - QdotBsq);
+	if (d < 0.0) return(1);
+	do{
+		set_variables = 0;
+		a = -Qdotn + p_new + 0.5*Bsq;
+		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
+		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+		z = epsilon - Bsq;
+
+		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+		Wsq = 1. / (1. - vsq);
+		w = z * (1. - vsq);
+		gamma = 1. / sqrt(1. - vsq);
+		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+		u = (w - rho0) / GAMMA;
+
+		iter++;
+		iter_tot++;
+		p_array[iter] = (GAMMA - 1.)*u;
+		p_old = p_array[iter - 1];
+		p_new = p_array[iter];
+		if (iter >= 2) {
+			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
+
+			if (R<1. && R>0.) {
+				set_variables = 1;
+				p_new = p_array[iter - 1] + (p_array[iter] - p_array[iter - 1]) / (1. - R);
+				p_old = p_array[iter];
+				iter = 0.;
+				p_array[iter] = p_new;
+
+			}
+		}
+	} while (fabs(p_new - p_old) > NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
+	
+	if (set_variables == 1){
+		a = -Qdotn + p_new + 0.5*Bsq;
+		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
+		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+		z = epsilon - Bsq;
+
+		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+		Wsq = 1. / (1. - vsq);
+		w = z / Wsq;
+		gamma = sqrt(Wsq);
+		rho0 = D / gamma; //Watch out you may need this for a more complicated EOS
+		u = (w - rho0) / GAMMA;
+		p_new = (GAMMA - 1.)*u;
+	}
+	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG || gamma>50. || gamma<1.){
+		return(1);
+	}
+	prim[RHO] = rho0;
+	prim[UU] = u;
+	#pragma ivdep
+	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (z + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / z);
+
+	/* set field components */
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	/* done! */
+	return(0);
+}

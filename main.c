@@ -90,10 +90,10 @@ int main(int argc, char *argv[])
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	first_dump = 0;
-	//diag(INIT_OUT);
+	diag(INIT_OUT);
 
-	DTl = 20.0;
-	//DTd = 25.0;
+	DTl = 100.0;
+	DTd = 100.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t + TREF;
@@ -135,9 +135,9 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
 			#else
-			//close_dump();
-			//close_rdump();
-			//close_gdump();
+			close_dump();
+			close_rdump();
+			close_gdump();
 			balance_load();
 			#if(GPU_ENABLED)
 			balance_load_gpu();
@@ -149,13 +149,13 @@ int main(int argc, char *argv[])
 
 		/* Put out dump file*/
 		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			//diag(DUMP_OUT) ;
+			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			//restart_write(); //do restart dumb simultaneous with log
+			restart_write(); //do restart dumb simultaneous with log
 			tlog +=  DTl;
 		}			
 

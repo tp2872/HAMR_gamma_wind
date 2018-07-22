@@ -46,6 +46,177 @@ __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
 
+__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
+
+
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]){
+
+	double U_tmp[NPR], prim_tmp[NPR];
+	int i, ret;
+	double alpha;
+
+
+	if (U[0] <= 0.) {
+		return(-100);
+	}
+
+	/* First update the primitive B-fields */
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
+
+	/* Set the geometry variables: */
+	alpha = 1.0 / sqrt(-gcon[0]);
+
+	/* Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
+	U_tmp[RHO] = alpha * U[RHO] / gdet; //W=ucon[0]*alpha
+	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
+	for (i = UTCON1; i <= UTCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+	for (i = BCON1; i <= BCON3; i++) {
+		U_tmp[i] = alpha * U[i] / gdet;
+	}
+
+	/* Transform the PRIMITIVE variables into the new system */
+	for (i = 0; i < BCON1; i++) {
+		prim_tmp[i] = prim[i];
+	}
+	for (i = BCON1; i <= BCON3; i++) {
+		prim_tmp[i] = alpha*prim[i];
+	}
+
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
+
+	/* Transform new primitive variables back if there was no problem : */
+	if (ret == 0) {
+		for (i = 0; i < BCON1; i++) {
+			prim[i] = prim_tmp[i];
+		}
+	}
+
+	prim[KTOT] = U[KTOT] / U[RHO];
+
+	return(ret);
+
+}
+
+__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
+{
+	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
+	double rho0, u,  w,  gamma,   vsq;
+	double Bsq, QdotBsq, Qtsq, Qdotn;
+
+	int i;
+
+	// Assume ok initially:
+	retval = 0;
+
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
+	Bcon[0] = 0.;
+	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
+
+	lower(Bcon, gcov, Bcov);
+	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
+	raise(Qcov, gcon, Qcon);
+
+	Bsq = 0.;
+	/*#pragma ivdepreduction(+:Bsq)*/
+	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
+
+	QdotB = 0.;
+	//#pragma ivdepreduction(+:QdotB)
+	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
+	QdotBsq = QdotB*QdotB;
+
+	ncov = -sqrt(-1. / gcon[0]);
+	ncon[0] = gcon[0] * ncov;
+	ncon[1] = gcon[1] * ncov;
+	ncon[2] = gcon[2] * ncov;
+	ncon[3] = gcon[3] * ncov;
+
+	Qdotn = Qcon[0] * ncov;
+
+	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+	
+	Qsq = 0.;
+
+	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
+	Qtsq = Qsq + Qdotn*Qdotn;
+	
+	//Start inversion scheme AKA Newman et al
+	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new;
+	int iter = 0;
+	int iter_tot = 0;
+	int set_variables = 0;
+	p_array[0] = (GAMMA - 1.)*prim[UU];
+	p_new = p_array[0];
+	d = 0.5*(Qtsq*Bsq - QdotBsq);
+	if (d < 0.0) return(1);
+
+	do{
+		set_variables = 0;
+		p_old = p_array[iter];
+		a = -Qdotn + p_new + 0.5*Bsq;
+		if (a < pow(27.*d/4.,1./3.)) return 1;
+		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
+		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+		z = epsilon - Bsq;
+
+		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+		Wsq = 1. / (1. - vsq);
+		w = z * (1. - vsq);
+		gamma = sqrt(Wsq);
+		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+		u = (w - rho0) / GAMMA;
+
+		iter++;
+		iter_tot++;
+		p_array[iter] = (GAMMA - 1.)*u;
+		p_new = p_array[iter];
+		if (iter >= 2) {
+			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
+
+			if (R<1. && R>0.) {
+				set_variables = 1;
+				p_new = p_array[iter - 1] + (p_array[iter] - p_array[iter - 1]) / (1. - R);
+				iter = 0.;
+				p_array[iter] = p_new;
+			}
+		}
+	} while (fabs(p_new - p_old) > 0.01*NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
+
+	if (set_variables == 1){
+		a = -Qdotn + p_new + 0.5*Bsq;
+		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
+		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+		z = epsilon - Bsq;
+
+		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+		Wsq = 1. / (1. - vsq);
+		w = z * (1. - vsq);
+		gamma = sqrt(Wsq);
+		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+		u = (w - rho0) / GAMMA;
+		p_new = (GAMMA - 1.)*u;
+	}
+	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq>=1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG ||gamma>50. || gamma<1.){
+		return(1);
+	}
+
+	prim[RHO] = rho0;
+	prim[UU] = u;
+
+	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (z + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / z);
+
+	/* set field components */
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	/* done! */
+	return(0);
+}
+
 
 __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K)
 {
@@ -1974,7 +2145,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
 	if (k == 1){
 		#if(PPM)
-		double x0, x1, x2, x3, x4, x5, temp[1], result[1];
+		double x1, x2, x3, x4, x5, temp[1], result[1];
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			x1 = p[MY_MAX(k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
@@ -3287,8 +3458,11 @@ __global__ void Utoprim2(double* __restrict__ pi_i, double* pb_i, double* pf_i, 
 		#endif
 		#endif
 		#endif
-	
+		#if(NEWMAN)
+		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pi);
+		#else
 		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pi);
+		#endif
 		if (pflag[global_id]){
 			failimage[global_id]++;
 			#pragma unroll 9	
@@ -3407,6 +3581,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		#if(NEWMAN)
+		if (pflag[global_id]) {
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		}
+		#endif
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			flag = 1;
@@ -3559,7 +3738,14 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#pragma unroll 9
 			PLOOP U[k] = U_prefloor[k] + dU[k];
 
+			#if(NEWMAN)
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[global_id]){
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			}
+			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			#endif
 			if (pflag[global_id]){
 				failimage[global_id]++;
 				#if( DO_FONT_FIX ) 
@@ -3780,14 +3966,18 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 		#endif
 
-		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		#if(NEWMAN)
+		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
 		if (pflag[global_id]){
-			failimage[global_id]++;
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 		}
-
+		#else
+		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		#endif
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
+			failimage[global_id]++;
 			#if DOKTOT
 			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 			#endif
@@ -3927,7 +4117,14 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#pragma unroll 9
 			PLOOP U[k] = U_prefloor[k] + dU[k];
 
+			#if(NEWMAN)
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[global_id]){
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			}
+			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			#endif
 			if (pflag[global_id]){
 				failimage[global_id]++;
 				#if( DO_FONT_FIX ) 
@@ -4080,15 +4277,19 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 			#endif
 			#endif
-
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			#if(NEWMAN)
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
 			if (pflag[global_id]){
-				failimage[global_id]++;
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 			}
+			#else
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			#endif
 
 			//compute the square of fluid frame magnetic field (twice magnetic pressure)
 			#if( DO_FONT_FIX ) 
 			if (pflag[global_id]) {
+				failimage[global_id]++;
 				#if DOKTOT
 				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 				#endif
@@ -4228,7 +4429,14 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				#pragma unroll 9
 				PLOOP U[k] = U_prefloor[k] + dU[k];
 
+				#if(NEWMAN)
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+				if (pflag[global_id]){
+					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+				}
+				#else
 				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+				#endif
 				if (pflag[global_id]){
 					failimage[global_id]++;
 					#if( DO_FONT_FIX ) 
