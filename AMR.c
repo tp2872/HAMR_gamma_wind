@@ -751,7 +751,7 @@ void activate_blocks(void){
 	}
 	#if(N_GPU>1)
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_NODE] >= 0) NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++; NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
+		if (block[n_ord_total[n]][AMR_NODE] >= 0) NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU] - gpu_offset)]++;
 	}
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -902,7 +902,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 }
 
 void derefine(int n){
-	int i,j,z,k, n_child;
+	int i,j,z,k, n_child, node_gpu;
 	if (rank == 0) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 	if (block[n][AMR_ACTIVE] != 0) fprintf(stderr, "Error: Trying to derefine active block %d! \n", n);
 
@@ -910,6 +910,7 @@ void derefine(int n){
 	if (block[n][AMR_NODE] == rank){
 		set_arrays(n);
 		set_grid(n);
+		node_gpu = block[block[n][AMR_CHILD1]][AMR_GPU];
 
 		if (block[n][AMR_CHILD1] >= 0){
 			n_child = block[n][AMR_CHILD1];
@@ -994,7 +995,7 @@ void derefine(int n){
 	#if(GPU_ENABLED || GPU_DEBUG )
 	if (block[n][AMR_NODE] == rank){
 		if (block[block[n][AMR_CHILD1]][AMR_GPU] == -1 && GPU_ENABLED) fprintf(stderr, "Only positive values allowed for device number! \n");
-		set_arrays_GPU(n, block[block[n][AMR_CHILD1]][AMR_GPU]);
+		set_arrays_GPU(n, node_gpu);
 		GPU_write(n);
 	}
 	#endif
@@ -1961,15 +1962,13 @@ void rm_order1(void){
 	nz = NB_3*pow(1 + REF_3, N_LEVELS - 1);
 	for (z = 0; z < nz; z++)for (j = 0; j < nj; j++)for (i = 0; i < ni; i++){
 		for (l = 0; l<N_LEVELS; l++){
-			if (i<NB_1*pow(1 + REF_1, l) && j<NB_2*pow(1 + REF_2, l) && z<NB_3*pow(1 + REF_3, l) && block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1){
-				n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
-				number++;
-				if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
-					n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
-					number_node++;
-				}
-				block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
+			n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
+			number++;
+			if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
+				n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
+				number_node++;
 			}
+			block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
 		}
 	}
 }

@@ -736,10 +736,7 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 {
 	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	FTYPE rho0, u, w,  gamma, vsq;
-	int i, ;
-
-	// Assume ok initially:
-	retval = 0;
+	int i;
 
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
