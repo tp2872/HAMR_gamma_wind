@@ -603,8 +603,8 @@ void balance_load(void){
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_max, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
 		MPI_Allreduce(MPI_IN_PLACE, &n_active_local_min, 1, MPI_INT, MPI_MIN, mpi_cartcomm);
 
-		if (n_active_local_max> MAX_BLOCKS && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
-	} while (n_active_local_max> MAX_BLOCKS && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
+		if ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
+	} while ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
 
 	if (rank == 0 && n_active_local_max > MAX_BLOCKS) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
@@ -679,7 +679,6 @@ void balance_load(void){
 
 	//Now reloadbalance between the GPUs on a single node
 	for (n = 0; n < n_active_total; n++){
-		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
 		if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
 			if (GPU[n_ord_total_RM[n]] != block[n_ord_total_RM[n]][AMR_GPU]){
 				#if(GPU_ENABLED || GPU_DEBUG )
@@ -688,6 +687,7 @@ void balance_load(void){
 				#endif
 			}
 		}
+		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
 	}
 
 	activate_blocks();
@@ -1966,13 +1966,15 @@ void rm_order1(void){
 	nz = NB_3*pow(1 + REF_3, N_LEVELS - 1);
 	for (z = 0; z < nz; z++)for (j = 0; j < nj; j++)for (i = 0; i < ni; i++){
 		for (l = 0; l<N_LEVELS; l++){
-			n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
-			number++;
-			if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
-				n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
-				number_node++;
+			if (i<NB_1*pow(1 + REF_1, l) && j<NB_2*pow(1 + REF_2, l) && z<NB_3*pow(1 + REF_3, l) && block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1){
+				n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
+				number++;
+				if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
+					n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
+					number_node++;
+				}
+				block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
 			}
-			block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
 		}
 	}
 }

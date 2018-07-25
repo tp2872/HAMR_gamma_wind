@@ -13,15 +13,15 @@ Physical Parameters section
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_JET (0)
+#define REFINE_JET (1)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.)
+#define TILTED (1)
+#define TILT_ANGLE (50.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -41,7 +41,7 @@ Physical Parameters section
 #define UUMINLIMIT  (1.e-20)
 #define POWRHO (1.5)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (80.*FLOORFACTOR)
+#define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
 #define UORHOMAX (150.*FLOORFACTOR)
 
@@ -83,17 +83,17 @@ Numerical Parameters section
 #define NB_LOCAL (300)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 2
+#define NB_1 1
+#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 512
-#define BS_2 512
-#define BS_3 1
+#define BS_1 180
+#define BS_2 18
+#define BS_3 30
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 1
+#define N_LEVELS 4
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -111,10 +111,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 64
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -132,7 +132,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 10.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.6)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -162,10 +162,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (0)
+#define TRANS_BOUND (1)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -212,7 +212,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DELTA (3.0)
 
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep*/
-#define DOCYLINDRIFYCOORDS 0
+#define DOCYLINDRIFYCOORDS 1
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
@@ -419,7 +419,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (1)
+#define NEWMAN (0)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

@@ -5,7 +5,7 @@ extern "C" {
 
 void GPU_init(void)
 {
-	int i,j,pos,ranks_per_node;
+	int i,j,ranks_per_node;
 	
 	//Do some checks first
 	if (N_GPU>numdevices){
