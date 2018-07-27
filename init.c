@@ -782,7 +782,8 @@ void init_postmerger()
         nitems_read = sscanf(ptr3, "%lf %lf %lf \n",
                &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
         nitems_expected = 3;
-        if(nitems_expected != nitems_read) break;                    
+        if(nitems_expected != nitems_read) break;
+        
       }
       while(!ferror(fp1) && !ferror(fp2) && !ferror(fp3) && NULL != ptr1 && NULL != ptr2 && NULL != ptr3);
       
@@ -1834,7 +1835,7 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
  */
 void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
 {
-  double X[NDIM], r, th, phi, vcon[NDIM], ucon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], old[NDIM];
+  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], old[NDIM];
   double AA, BB, CC, discr;
   double alpha, gamma, beta[NDIM], ut;
   struct of_geom geom;
@@ -1851,10 +1852,10 @@ void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
 #endif
   
   // By definition, U^t tilde = 0
-  vcon[0] = 0.0;  
-  vcon[1] = pr[U1];
-  vcon[2] = pr[U2];
-  vcon[3] = pr[U3];
+  vtcon[0] = 0.0;
+  vtcon[1] = pr[U1];
+  vtcon[2] = pr[U2];
+  vtcon[3] = pr[U3];
   
   //compute u^t corresponding to the new v^i 
   //ut_calc_3vel(vcon, &geom, &ut);
@@ -1892,21 +1893,31 @@ void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
   
+  // converts the input Utilde_{x,y,z} to Utilde_{r,th,phi}
+  for (i = 0; i<NDIM; i++) {
+    utcon[i] = 0;
+    for (j = 0; j<NDIM; j++){
+      utcon[i] += drdx[i][j] * vtcon[j];
+    }
+  }
+  
+  // converts Utilde_{r,th,phi} from the previous loop into Utilde_{x1,x2,x3}
   for (i = 0; i<NDIM; i++) {
     utconp[i] = 0;
     for (j = 0; j<NDIM; j++){
-      utconp[i] += drdx[i][j] * dxpdx[i][j] * ucon[j];
+      utconp[i] += dxpdx[i][j] * utcon[j];
     }
   }
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
-  get_geometry(n,ii, jj,zz, CENT, &geom);
+  //get_geometry(n,ii, jj,zz, CENT, &geom);
   
   //ucon_to_utcon(uconp, &geom, utconp);
   
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
+  //gamma_calc(pr, &geom, &gamma);
   //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
   /* done! */
 }
@@ -1923,17 +1934,17 @@ void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM])
 	}
 	dxdr[0][0] = 1.0;
 
-	dxdr[1][1] = cos(th) * sin(phi);
-	dxdr[1][2] = - r * sin(th) * sin(phi);
-	dxdr[1][3] = r * cos(th) * cos(phi);
+	dxdr[1][1] = sin(th) * cos(phi);
+	dxdr[1][2] = r * cos(th) * cos(phi);
+	dxdr[1][3] = - r * sin(th) * sin(phi);
 
 	dxdr[2][1] = sin(th) * sin(phi);
 	dxdr[2][2] = r * cos(th) * sin(phi);
 	dxdr[2][3] = r * sin(th) * cos(phi);
 
-	dxdr[3][1] = cos(phi);
-	dxdr[3][2] = 0.0;
-	dxdr[3][3] = - r * sin(phi);
+	dxdr[3][1] = cos(th);
+	dxdr[3][2] = - r * sin(th);
+	dxdr[3][3] = 0.0;
   }
 
 //Transform coordinates to Cartesian
