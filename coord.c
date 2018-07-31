@@ -121,16 +121,16 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
   void (*vofx_function_pointer)(double*, double*);
 
   //choose the type of coordinates depending on the problem at hand
-  #if( WHICHPROBLEM == DISRUPTION_PROBLEM)
+  #if( WHICHPROBLEM == POSTMERGER_PROBLEM)
     vofx_function_pointer = vofx_sjetcoords;
   #else
     vofx_function_pointer = vofx_matthewcoords;
   #endif
   
 	#if(!DOCYLINDRIFYCOORDS)
-    vofx_matthewcoords(X,V);
+    vofx_function_pointer(X,V);
 	#else
-    vofx_cylindrified(X, vofx_matthewcoords, V);
+    vofx_cylindrified(X, vofx_function_pointer, V);
 	#endif
 
 	// avoid singularity at polar axis
@@ -198,10 +198,10 @@ void vofx_sjetcoords( double *X, double *V )
   
   //transverse resolution fraction devoted to different components
   //(sum should be <1)
-  double global_fracdisk = 0.6;
-  double global_fracjet = 0.1;
+  double global_fracdisk = 0.36;
+  double global_fracjet = 0.15;
   
-  double global_jetnu1 = -1.;  //the nu-parameter that determines jet shape
+  double global_jetnu1 = -2.;  //the nu-parameter that determines jet shape
   double global_jetnu2 = 0.75;  //the nu-parameter that determines jet shape
   
   //subtractor, controls the size of the last few cells close to axis:
@@ -214,24 +214,24 @@ void vofx_sjetcoords( double *X, double *V )
   //otherwise, near-uniform near jet axis but less resolution (much) further from it
   //the larger r0grid, the larger the thickness of the jet
   //to resolve
-  double global_r0grid = 10.*Rin;
+  double global_r0grid = Rin;
   
   //distance at which jet part of the grid becomes monopolar
   //should be the same as r0disk to avoid cell crowding at the interface of jet and disk grids
-  double global_r0jet = Rin;
+  double global_r0jet = 40*Rin;
   
   //distance after which the jet grid collimates according to the usual jet formula
   //the larger this distance, the wider is the jet region of the grid
-  double global_rjetend = 5;
+  double global_rjetend = 1e3;
   
   //distance at which disk part of the grid becomes monopolar
   //the larger r0disk, the larger the thickness of the disk
   //to resolve
-  double global_r0disk = Rin+0*global_r0jet;
+  double global_r0disk = 2*Rin;
   
   //distance after which the disk grid collimates to merge with the jet grid
   //should be roughly outer edge of the disk
-  double global_rdiskend = 300.;
+  double global_rdiskend = 1.e7;
 
   
   //for SJETCOORDS
@@ -359,7 +359,6 @@ void set_gridparam(void) {
   
   Rin = 0.87*(1. + sqrt(1. - a*a)) ;  //.98
   Rout = 1e5;
-  
   x1br = log( rbr - R0 );
   
   if( Rout < rbr ) {
@@ -441,9 +440,9 @@ void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
   DLOOPA Xtr[j] = X[j];
 
 #if( WHICHPROBLEM == POSTMERGER_PROBLEM)
-  X0[1] = 3.5;
-  X0[2] = -1. + 1./256.;
-  X0[3] = 0.;
+	X0[1] = 3.0;
+	X0[2] = -1. + 1./256.;
+	X0[3] = 0.;
   Xtr[1] = log( 0.5*( exp(X0[1])+exp(startx[1]) ) );   //always bound to be between startx[1] and X0[1]
 #else
   /*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
