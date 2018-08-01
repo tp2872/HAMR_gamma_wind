@@ -1416,7 +1416,7 @@ void pre_refine(void){
 }
 
 int refine(int n){
-	int i, j, z, k, n_child, i1, j1, z1, n1;
+	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	//MPI_Barrier(mpi_cartcomm);
 	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > 1){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
@@ -1428,7 +1428,8 @@ int refine(int n){
 	}
 
 	if (rank == 0) if (block[n][AMR_ACTIVE] != 1) fprintf(stderr,"Error trying to refine non-active block %d \n", n);
-	
+
+	gpu_local = block[n][AMR_GPU];
 	if (block[n][AMR_NODE] == rank){
 		//Calculate gradients, store in flux array F1, F2, F3
 		#pragma omp parallel private(i, j, z,k)
@@ -1565,7 +1566,7 @@ int refine(int n){
 		if (block[n][AMR_TIMELEVEL] >= 2)block[block[n][i]][AMR_TIMELEVEL] = block[n][AMR_TIMELEVEL] / 2;
 		else reduce_timestep = 1;
 		block[block[n][i]][AMR_NODE] = block[n][AMR_NODE];
-		block[block[n][i]][AMR_GPU] = block[n][AMR_GPU];
+		block[block[n][i]][AMR_GPU] = gpu_local;
 		block[block[n][i]][AMR_ACTIVE] = 1;
 	}
 	block[n][AMR_GPU]= -1;
