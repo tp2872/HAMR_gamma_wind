@@ -195,33 +195,33 @@ void set_arrays_GPU(int n, int device){
 	#if(N3G>0)
 	cudaMalloc(&Buffersend5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1 && !DEREFINE_POLE)
-	cudaMalloc(&Buffersend5_1[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend5_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	if (REF_2)cudaMalloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	if (REF_1)cudaMalloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	if (REF_1 && REF_2)cudaMalloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	cudaMalloc(&Buffersend6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1 && !DEREFINE_POLE)
-	cudaMalloc(&Buffersend6_2[nl[n]], NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_2/(1+REF_2) + 2 * N2G)*sizeof(double));
+	cudaMalloc(&Buffersend6_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	if (REF_2)cudaMalloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	if (REF_1)cudaMalloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	if (REF_1 && REF_2)cudaMalloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	#endif
 	#endif
-	cudaMalloc(&Bufferrec1[nl[n]], (1+REF_1)*(1+REF_3)* NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)*sizeof(double));
-	Bufferrec1_3[nl[n]]= Bufferrec1[nl[n]]; 
-	Bufferrec1_4[nl[n]]= Bufferrec1[nl[n]]+ REF_3*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
-	Bufferrec1_7[nl[n]]= Bufferrec1[nl[n]]+ (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
+	cudaMalloc(&Bufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	Bufferrec1_3[nl[n]] = Bufferrec1[nl[n]];
+	Bufferrec1_4[nl[n]] = Bufferrec1[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	Bufferrec1_7[nl[n]] = Bufferrec1[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	Bufferrec1_8[nl[n]] = Bufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	cudaMalloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	Bufferrec2_1[nl[n]] = Bufferrec2[nl[n]];
 	Bufferrec2_2[nl[n]] = Bufferrec2[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	Bufferrec2_3[nl[n]] = Bufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	Bufferrec2_4[nl[n]] = Bufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	cudaMalloc(&Bufferrec3[nl[n]], (1+REF_1)*(1+REF_3)* NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)*sizeof(double));
-	Bufferrec3_1[nl[n]]= Bufferrec3[nl[n]]; 
-	Bufferrec3_2[nl[n]]= Bufferrec3[nl[n]]+ REF_3*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
-	Bufferrec3_5[nl[n]]= Bufferrec3[nl[n]]+ (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1/ (1+REF_1) + 2 * N1G)*(BS_3/ (1+REF_3) + 2 * N3G)); 
+	cudaMalloc(&Bufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
+	Bufferrec3_1[nl[n]] = Bufferrec3[nl[n]];
+	Bufferrec3_2[nl[n]] = Bufferrec3[nl[n]] + REF_3*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	Bufferrec3_5[nl[n]] = Bufferrec3[nl[n]] + (REF_3 + REF_1)*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	Bufferrec3_6[nl[n]] = Bufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	cudaMalloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	Bufferrec4_5[nl[n]] = Bufferrec4[nl[n]];
@@ -241,49 +241,37 @@ void set_arrays_GPU(int n, int device){
 	Bufferrec6_8[nl[n]] = Bufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
 	#endif
 	#if(PRESTEP || PRESTEP2)
-	cudaMalloc(&tempBufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec1[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	tempBufferrec1_3[nl[n]] = tempBufferrec1[nl[n]];
-	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	#endif
-	cudaMalloc(&tempBufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	#if(N_LEVELS>1)
+	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + REF_3*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1)*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&Bufferrec2[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	tempBufferrec2_1[nl[n]] = tempBufferrec2[nl[n]];
-	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2)*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	#endif
-	cudaMalloc(&tempBufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	#if(N_LEVELS>1)
+	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + REF_3*(NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2)*(NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&tempBufferrec3[nl[n]], (1 + REF_1)*(1 + REF_3)* NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	tempBufferrec3_1[nl[n]] = tempBufferrec3[nl[n]];
-	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	#endif
-	cudaMalloc(&tempBufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3) * 2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
-	#if(N_LEVELS>1)
+	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + REF_3*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1)*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (REF_3 + REF_1 + (REF_3 && REF_1))*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	cudaMalloc(&Bufferrec4[nl[n]], (1 + REF_2)*(1 + REF_3)* NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G)*sizeof(double));
 	tempBufferrec4_5[nl[n]] = tempBufferrec4[nl[n]];
-	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + REF_3*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2)*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(2 * NG * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
-	#endif
+	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + REF_3*(NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2)*(NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
+	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (REF_3 + REF_2 + (REF_3 && REF_2))*(NG * 2 * (NPR + 3)*(BS_2 / (1 + REF_2) + 2 * N2G)*(BS_3 / (1 + REF_3) + 2 * N3G));
 	#if(N3G>0)
-	cudaMalloc(&tempBufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	#if(N_LEVELS>1)
+	cudaMalloc(&tempBufferrec5[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	tempBufferrec5_1[nl[n]] = tempBufferrec5[nl[n]];
-	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + REF_2*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	#endif
-	cudaMalloc(&tempBufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2) * 2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
-	#if(N_LEVELS>1)
+	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + REF_2*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1)*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * 2 * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	cudaMalloc(&tempBufferrec6[nl[n]], (1 + REF_1)*(1 + REF_2)* NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G)*sizeof(double));
 	tempBufferrec6_2[nl[n]] = tempBufferrec6[nl[n]];
-	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + REF_2*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1)*(2 * NG * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(2 * NG * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
-	#endif
+	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + REF_2*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1)*(NG * 2 * (NPR + 3)*(BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
+	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (REF_2 + REF_1 + (REF_2 && REF_1))*(NG * 2 * (NPR + 3) * (BS_1 / (1 + REF_1) + 2 * N1G)*(BS_2 / (1 + REF_2) + 2 * N2G));
 	#endif
 	#endif
 	cudaMalloc(&Buffersend1flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double));

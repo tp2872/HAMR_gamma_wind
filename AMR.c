@@ -648,6 +648,7 @@ void balance_load(void){
 				GPU_finish(n_ord_total_RM[i], 0);
 				#endif
 			}
+			block[n_ord_total_RM[i]][AMR_GPU] = -1;
 		}
 	}
 
