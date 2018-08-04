@@ -13,15 +13,15 @@ Physical Parameters section
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
-#define REFINE_JET (1)
+#define REFINE_JET (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (50.)
+#define TILTED (0)
+#define TILT_ANGLE (0.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -79,21 +79,21 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (28)
-#define NB_LOCAL (300)
+#define MAX_BLOCKS (1600)
+#define NB_LOCAL (1600)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 4
+#define NB_2 12
+#define NB_3 10
 
 /*Set block size in each dimension*/
-#define BS_1 180
-#define BS_2 18
-#define BS_3 30
+#define BS_1 14
+#define BS_2 14
+#define BS_3 14
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 4
+#define N_LEVELS 2
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -162,7 +162,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1)
@@ -293,7 +293,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 110
+#define NV 179
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -403,6 +403,75 @@ MNEMONICS SECTION
 #define AMR_IPROBE6_2 107
 #define AMR_IPROBE6_3 108
 #define AMR_IPROBE6_4 109
+#define AMR_LEVEL1 110
+#define AMR_LEVEL2 111
+#define AMR_LEVEL3 112
+#define AMR_NBR1_3 113
+#define AMR_NBR1_4 114
+#define AMR_NBR1_7 115
+#define AMR_NBR1_8 116
+#define AMR_NBR2_1 117
+#define AMR_NBR2_2 118
+#define AMR_NBR2_3 119
+#define AMR_NBR2_4 120
+#define AMR_NBR3_1 121
+#define AMR_NBR3_2 122
+#define AMR_NBR3_5 123
+#define AMR_NBR3_6 124
+#define AMR_NBR4_5 125
+#define AMR_NBR4_6 126
+#define AMR_NBR4_7 127
+#define AMR_NBR4_8 128
+#define AMR_NBR5_1 129
+#define AMR_NBR5_3 130
+#define AMR_NBR5_5 131
+#define AMR_NBR5_7 132
+#define AMR_NBR6_2 133
+#define AMR_NBR6_4 134
+#define AMR_NBR6_6 135
+#define AMR_NBR6_8 136
+#define AMR_NBR1P 137
+#define AMR_NBR2P 138
+#define AMR_NBR3P 139
+#define AMR_NBR4P 140
+#define AMR_NBR5P 141
+#define AMR_NBR6P 142
+#define AMR_CORN1_1 143
+#define AMR_CORN1_2 144
+#define AMR_CORN2_1 145
+#define AMR_CORN2_2 146
+#define AMR_CORN3_1 147
+#define AMR_CORN3_2 148
+#define AMR_CORN4_1 149
+#define AMR_CORN4_2 150
+#define AMR_CORN5_1 151
+#define AMR_CORN5_2 152
+#define AMR_CORN6_1 153
+#define AMR_CORN6_2 154
+#define AMR_CORN7_1 155
+#define AMR_CORN7_2 156
+#define AMR_CORN8_1 157
+#define AMR_CORN8_2 158
+#define AMR_CORN9_1 159
+#define AMR_CORN9_2 160
+#define AMR_CORN10_1 161
+#define AMR_CORN10_2 162
+#define AMR_CORN11_1 163
+#define AMR_CORN11_2 164
+#define AMR_CORN12_1 165
+#define AMR_CORN12_2 166
+#define AMR_CORN1P 167
+#define AMR_CORN2P 168
+#define AMR_CORN3P 169
+#define AMR_CORN4P 170
+#define AMR_CORN5P 171
+#define AMR_CORN6P 172
+#define AMR_CORN7P 173
+#define AMR_CORN8P 174
+#define AMR_CORN9P 175
+#define AMR_CORN10P 176
+#define AMR_CORN11P 177
+#define AMR_CORN12P 178
 
 /*************************************************************************
 Variable Inversion Section

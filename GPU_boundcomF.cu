@@ -89,13 +89,13 @@ void pack_send3_flux(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, i
 	}
 }
 
-void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	if (gpu == 1){
-		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3)) / ((double)(LOCAL_WORK_SIZE)));
-		int work_size = (j2 - j1) / (1 + REF_2)*(z2 - z1) / (1 + REF_3);
-		 packsendfluxaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
+		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3);
+		 packsendfluxaverage1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, jsize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
 			 cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 }
@@ -106,34 +106,34 @@ void pack_send_flux_average1(int n, int n_rec, int i1, int i2, int j1, int j2, i
 	else{
 		int i, j, z, k;
 		if (first_timestep == 1){
-			for (i = i1; i < i2; i++)for (j = j1; j < j2; j += 1 + REF_2)for (z = z1; z < z2; z += (1 + REF_3)){
-				PLOOP send[nl[n]][NPR*(i - i1) *zsize*jsize + NPR*(j - j1) / (1 + REF_2)*zsize + NPR*(z - z1) / (1 + REF_3) + k]
+			for (i = i1; i < i2; i++)for (j = j1; j < j2; j += 1 + ref_2)for (z = z1; z < z2; z += (1 + ref_3)){
+				PLOOP send[nl[n]][NPR*(i - i1) *zsize*jsize + NPR*(j - j1) / (1 + ref_2)*zsize + NPR*(z - z1) / (1 + ref_3) + k]
 					= 0.25* factor*(F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k]
-					+ F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k]);
+					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
+					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k]
+					+ F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k]);
 			}
 		}
 		else{
-			for (i = i1; i < i2; i++)for (j = j1; j < j2; j += 1 + REF_2) for (z = z1; z < z2; z += (1 + REF_3)){
-				PLOOP send[nl[n]][NPR*(i - i1) *zsize*jsize + NPR*(j - j1) / (1 + REF_2)*zsize + NPR*(z - z1) / (1 + REF_3) + k]
+			for (i = i1; i < i2; i++)for (j = j1; j < j2; j += 1 + ref_2) for (z = z1; z < z2; z += (1 + ref_3)){
+				PLOOP send[nl[n]][NPR*(i - i1) *zsize*jsize + NPR*(j - j1) / (1 + ref_2)*zsize + NPR*(z - z1) / (1 + ref_3) + k]
 					+= 0.25* factor*(F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k]
-					+ F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k]);
+					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
+					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k]
+					+ F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k]);
 			}
 		}
 	}
 }
 
-void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 
 	if (gpu == 1){
-		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3)) / ((double)(LOCAL_WORK_SIZE)));
-		int work_size = (i2 - i1) / (1 + REF_1)*(z2 - z1) / (1 + REF_3);
-		 packsendfluxaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
+		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3);
+		packsendfluxaverage2 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, zsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
 			 cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 }
@@ -144,34 +144,34 @@ void pack_send_flux_average2(int n, int n_rec, int i1, int i2, int j1, int j2, i
 	else{
 		int i, j, z, k;
 		if (first_timestep == 1){
-			for (j = j1; j < j2; j++)for (i = i1; i < i2; i += 1 + REF_1)for (z = z1; z < z2; z += 1 + REF_3){
-				PLOOP send[nl[n]][NPR*(j - j1)*isize*zsize + NPR*(i - i1) / (1 + REF_1)*zsize + NPR*(z - z1) / (1 + REF_3) + k]
+			for (j = j1; j < j2; j++)for (i = i1; i < i2; i += 1 + ref_1)for (z = z1; z < z2; z += 1 + ref_3){
+				PLOOP send[nl[n]][NPR*(j - j1)*isize*zsize + NPR*(i - i1) / (1 + ref_1)*zsize + NPR*(z - z1) / (1 + ref_3) + k]
 					= 0.25*factor*(F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k] +
-					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-					+ F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k]);
+					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k] +
+					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + ref_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+					+ F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + ref_1, j + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k]);
 			}
 		}
 		else{
-			for (j = j1; j < j2; j++)for (i = i1; i < i2; i += 1 + REF_1)for (z = z1; z < z2; z += 1 + REF_3){
-				PLOOP send[nl[n]][NPR*(j - j1)*isize*zsize + NPR*(i - i1) / (1 + REF_1)*zsize + NPR*(z - z1) / (1 + REF_3) + k]
+			for (j = j1; j < j2; j++)for (i = i1; i < i2; i += 1 + ref_1)for (z = z1; z < z2; z += 1 + ref_3){
+				PLOOP send[nl[n]][NPR*(j - j1)*isize*zsize + NPR*(i - i1) / (1 + ref_1)*zsize + NPR*(z - z1) / (1 + ref_3) + k]
 					+= 0.25*factor*(F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k] +
-					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-					+ F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + REF_3 + N3_GPU_offset[n])][k]);
+					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k] +
+					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + ref_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+					+ F2[nl[n]][index_3D(n, i + N1_GPU_offset[n] + ref_1, j + N2_GPU_offset[n], z + ref_3 + N3_GPU_offset[n])][k]);
 			}
 		}
 	}
 }
 
-void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NPR], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 
 	if (gpu == 1){
-		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2)) / ((double)(LOCAL_WORK_SIZE)));
-		int work_size = (i2 - i1) / (1 + REF_1)*(j2 - j1) / (1 + REF_2);
-		 packsendfluxaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size);
+		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
+		int work_size = (i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2);
+		packsendfluxaverage3 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, j1, j2, z1, z2, isize, jsize, Bufferp[0], Bufferboundsend[0], factor, first_timestep, work_size, ref_1, ref_2, ref_3);
 		 if (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n_rec][AMR_TIMELEVEL] - 1 && block[n_rec][AMR_NODE] == block[n][AMR_NODE]){
 			 cudaEventRecord(boundevent[0], commandQueueGPU[nl[n]]);
 		 }
@@ -182,21 +182,21 @@ void pack_send_flux_average3(int n, int n_rec, int i1, int i2, int j1, int j2, i
 	else{
 		int i, j, z, k;
 		if (first_timestep == 1){
-			for (z = z1; z < z2; z++)for (i = i1; i < i2; i += 1 + REF_1)for (j = j1; j < j2; j += 1 + REF_2){
-				PLOOP send[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1) / (1 + REF_1)*jsize + NPR*(j - j1) / (1 + REF_2) + k]
+			for (z = z1; z < z2; z++)for (i = i1; i < i2; i += 1 + ref_1)for (j = j1; j < j2; j += 1 + ref_2){
+				PLOOP send[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1) / (1 + ref_1)*jsize + NPR*(j - j1) / (1 + ref_2) + k]
 					= 0.25*factor*(F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F3[nl[n]][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-					+ F3[nl[n]][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
+					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
+					F3[nl[n]][index_3D(n, i + ref_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+					+ F3[nl[n]][index_3D(n, i + ref_1 + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
 			}
 		}
 		else{
-			for (z = z1; z < z2; z++)for (i = i1; i < i2; i += 1 + REF_1) for (j = j1; j < j2; j += 1 + REF_2){
-				PLOOP send[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1) / (1 + REF_1)*jsize + NPR*(j - j1) / (1 + REF_2) + k]
+			for (z = z1; z < z2; z++)for (i = i1; i < i2; i += 1 + ref_1) for (j = j1; j < j2; j += 1 + ref_2){
+				PLOOP send[nl[n]][NPR*(z - z1)*isize*jsize + NPR*(i - i1) / (1 + ref_1)*jsize + NPR*(j - j1) / (1 + ref_2) + k]
 					+= 0.25*factor*(F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
-					F3[nl[n]][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
-					+ F3[nl[n]][index_3D(n, i + REF_1 + N1_GPU_offset[n], j + REF_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
+					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] +
+					F3[nl[n]][index_3D(n, i + ref_1 + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
+					+ F3[nl[n]][index_3D(n, i + ref_1 + N1_GPU_offset[n], j + ref_2 + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
 			}
 		}
 	}
