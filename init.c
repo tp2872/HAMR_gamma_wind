@@ -632,21 +632,27 @@ void init_postmerger()
   
   /* for ICs */
   double r_unit = 8.07; //conversion factor = (Mbh/Msun)
-  FILE *fp1, *fp2, *fp3;
+  FILE *fp1, *fp2;
   int ind;
   int nitems_read, nitems_expected;
 # define MAXLEN (1024)
   int nvars, nx, ny, nz;
   int res;
   double *icdata;
-  char fname1[] = "PointsToInterpolateHAMR.dat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
-  //char fname2[] = "HARM_AllData2.dat";
-  //char fname3[] = "HarmDataUtilde.dat";
+  char fname1[] = "PointsToInterpolateHAMR_bin_x8";
+  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x8";
   char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2, *ptr3;
   size_t memsize, nitems, nread;
   double prim[NPR];
   int k, ii, jj, kk;
+  
+  // for reading in binary
+  double *temp_array_grid, *temp_array_prims;
+  int file_size_grid, file_size_prims, num_var, index_grid_final;
+  int mult;
+  size_t double_size = sizeof(double);
+  size_t len_grid, len_prims;
+  
   
   /* disk parameters (use fishbone.m to select new solutions) */
   a = BH_SPIN ;  
@@ -681,6 +687,119 @@ void init_postmerger()
   //read ICs from file
   //for this, loop over all MPI processes
   //and let them read the IC data from file, one by one
+  
+# define READBINARY (1)
+  
+#if (READBINARY)
+  for (ind=0; ind<numtasks; ind++) {
+    if (ind == rank) {
+      fp1 = fopen(fname1, "rb");
+      if (NULL == fp1 && 0 == rank) {
+        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname1);
+        exit(1234);
+      }
+      fp2 = fopen(fname2, "rb");
+      if (NULL == fp2 && 0 == rank) {
+        fprintf(stderr, "Could not open file %s for reading, exiting\n", fname2);
+        fclose(fp1);
+        exit(1234);
+      }
+      
+      // reading the first file:
+      // a) allocation of memory for the array
+      // b) reading the array into the memory
+      fseek(fp1, 0L, SEEK_END);
+      file_size_grid = ftell(fp1);
+      num_var = 6;
+      len_grid = file_size_grid/double_size;
+      index_grid_final = len_grid/num_var;
+      
+      // reading the second file:
+      fseek(fp2, 0L, SEEK_END);
+      file_size_prims = ftell(fp2);
+      len_prims = file_size_prims/double_size;
+      
+      memsize = file_size_grid+file_size_prims;
+      icdata = (double *) malloc(memsize);
+      if(NULL == icdata) {
+        fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
+        fclose(fp1);
+        fclose(fp2);
+        exit(1235);
+      }
+      
+      fseek(fp1, 0L, SEEK_SET);
+      fread(&icdata[0], double_size, len_grid, fp1);
+      
+      fseek(fp2, 0L, SEEK_SET);
+      fread(&icdata[len_grid], double_size, len_prims, fp2);
+      
+
+      ext.nx = (int)icdata[1*index_grid_final-1];
+      ext.ny = (int)icdata[2*index_grid_final-1];
+      ext.nz = (int)icdata[3*index_grid_final-1];
+      ext.xmin = icdata[3*index_grid_final];
+      ext.xmax = icdata[4*index_grid_final-1];
+      ext.ymin = icdata[4*index_grid_final];
+      ext.ymax = icdata[5*index_grid_final-1];
+      ext.zmin = icdata[5*index_grid_final];
+      ext.zmax = icdata[6*index_grid_final-1];
+      
+      mult = 8.;
+      ext.nx = ext.nx/mult + 1;
+      ext.ny = ext.ny/mult + 1;
+      ext.nz = ext.nz/mult + 1;
+      
+      ext.xmin/=r_unit;
+      ext.xmax/=r_unit;
+      
+      if (0 == rank) {
+        fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
+                rank,
+                ext.nvars, ext.nx, ext.ny, ext.nz,
+                ext.xmin, ext.xmax,
+                ext.ymin, ext.ymax,
+                ext.zmin, ext.zmax,
+                fname1, fname2);
+        fflush(stderr);
+      }
+      
+      
+      nx = ext.nx;
+      ny = ext.ny;
+      nz = ext.nz;
+      nvars = ext.nvars;
+      nitems = (size_t)nvars*nx*ny*nz;
+       
+      /*
+      memsize = double_size*nitems;
+      
+      if (memsize == file_size_grid+file_size_prims) {
+        fprintf(stderr, "memory allocation size matches the size of the input files ... \n");
+      }
+      else {
+        fprintf(stderr, "memory allocation size DOES NOT match the size of the input files ... Exiting ... \n");
+        exit(1234);
+      }
+      */
+      
+      if(ferror(fp1) || ferror(fp2) ||
+         (NULL == ptr1 && !feof(fp1)) ||
+         (NULL == ptr2 && !feof(fp2)) ) {
+        fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
+      }
+      fclose(fp1); fp1 = NULL;
+      fclose(fp2); fp2 = NULL;
+      
+      if (0 == rank) {
+        fprintf(stderr, " done\n");
+        fflush(stderr);
+      }
+      //now icdata contains the IC information
+    }
+  }
+  
+#else
   for (ind=0; ind<numtasks; ind++) {
     if (ind == rank) {
       fp1 = fopen(fname1, "rb");
@@ -710,8 +829,6 @@ void init_postmerger()
 
       //skip comment lines in the second file
       read_first_line(first_line, MAXLEN, fp2);
-      //skip comment lines in the third file
-      //read_first_line(first_line, MAXLEN, fp3);
       //read_first_line leaves file at the start of the first non-comment line
       
       //account for coordinates counted off from zero
@@ -767,15 +884,6 @@ void init_postmerger()
         if(NULL == ptr2) break;
         nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %*lf %lf %lf %lf \n",
                              &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
-        
-        // Just to check: Keplerian disk ICs
-#if(0)
-        dd(ii,jj,kk,VARVUR) = 0.0;
-        dd(ii,jj,kk,VARVUTHETA) = 0.0;
-        dd(ii,jj,kk,VARVUPHI) = 1./(pow(dd(ii,jj,kk,VARR),1.5)+a);
-#endif
-        // End of the check
-        
         nitems_expected = 7;
         if(nitems_expected != nitems_read) break;
         
@@ -790,7 +898,6 @@ void init_postmerger()
       }
       fclose(fp1); fp1 = NULL;
       fclose(fp2); fp2 = NULL;
-      //fclose(fp3); fp3 = NULL;
       
       if (0 == rank) {
         fprintf(stderr, " done\n");
@@ -799,6 +906,8 @@ void init_postmerger()
       //now icdata contains the IC information
     }
   }
+#endif
+  
 #if (MPI_enable)
   MPI_Barrier(mpi_cartcomm);
 #endif
@@ -822,6 +931,17 @@ void init_postmerger()
       pos_new[2] = th;
       pos_new[3] = phi;
       
+      /*
+       To check the analytical profiles
+       */
+      
+      /*
+      dd(i,j,z,VARRHO) = 1./(r*r*r);
+      dd(i,j,z,VARVUR) = 0.;
+      dd(i,j,z,VARVUTHETA) = 0.;
+      dd(i,j,z,VARVUPHI) = 0.;
+      dd(i,j,z,VARMUDT) = 1.; */
+      
       sth = sin(th) ;
       cth = cos(th) ;
       
@@ -834,6 +954,7 @@ void init_postmerger()
       //res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
       
       /* regions outside stream */
+      
       /*
       if( res || (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
         rho = 1.e-30/(r*r);
@@ -848,8 +969,8 @@ void init_postmerger()
         prim[U1] = ur;
         prim[U2] = uh;
         prim[U3] = up;
-      } */
-      if(1) {
+      }*/
+      if (1) {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
         //vconbl_to_utcon(prim, n_ord[n], i, j, z);
         utilde_to_ucon(prim, n_ord[n], i, j, z);
