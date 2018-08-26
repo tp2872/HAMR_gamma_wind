@@ -243,6 +243,13 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 		*z += cz[y] * pow(1 + REF_3, (*level - y));
 	}
 }
+
+void set_ref(int n, int *ref_1, int *ref_2, int * ref_3){
+	ref_1 = block[n][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+	ref_2 = block[n][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+	ref_3 = block[n][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+}
+
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
