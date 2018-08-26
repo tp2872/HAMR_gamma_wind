@@ -181,7 +181,8 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 	for (y = 0; y <= (*level); y++){
 		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
 		if (y == 0){
-			/*max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
+			#if(Z_ORDER)
+			max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
 			for (i1 = max_level; i1 >= 0; i1--){
 				coord1 = ci[0];
 				coord2 = cj[0];
@@ -228,10 +229,12 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 			}
 			check[ci[0]][cj[0]][cz[0]] += 1;
 			//printf("n, ci, cj, cz, check: %d %d %d %d %d\n", n, ci[0], cj[0], cz[0], check[ci[0]][cj[0]][cz[0]]);
-			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");*/
+			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");
+			#else
 			ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
 			cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
 			cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
+			#endif
 		}
 		else{
 			ci[y] = (index[y] % ((REF_2 + 1)*(REF_1 + 1)) % (REF_1 + 1));
@@ -770,6 +773,11 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 	int i, j, z, k, ic, jc, zc, i_1, i_2, j_1, j_2, z_1, z_2;
 	struct of_geom geom;
 	struct of_state q;
+	int ref_1, ref_2, ref_3;
+
+	ref_1 = block[n][AMR_LEVEL1] - block[n_child][AMR_LEVEL1];
+	ref_2 = block[n][AMR_LEVEL2] - block[n_child][AMR_LEVEL2];
+	ref_3 = block[n][AMR_LEVEL3] - block[n_child][AMR_LEVEL3];
 
 	#pragma omp parallel private(i, j, z, k, ic, jc, zc, i_1, i_2, j_1, j_2, z_1, z_2,q,geom)
 	{
@@ -781,14 +789,14 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 					for (k = 0; k < NPR; k++){
 						p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 							= 0.125 * (
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child], (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child])][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child], (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k] +
-							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1, (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2, (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3)][k]);
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child], (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child], (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child])][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child], (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child] + ref_2, (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child])][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child], (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child], (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child] + ref_3)][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child], (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child] + ref_2, (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child] + ref_3)][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child] + ref_1, (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child], (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child])][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child] + ref_1, (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child] + ref_2, (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child])][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child] + ref_1, (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child], (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child] + ref_3)][k] +
+							p[nl[n_child]][index_3D(n_child, (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child] + ref_1, (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child] + ref_2, (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child] + ref_3)][k]);
 					}
 				}
 			}
@@ -800,12 +808,12 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
 					for (k = 0; k < NPR; k++){
-						i_1 = (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child];
-						i_2 = (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child] + REF_1;
-						j_1 = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
-						j_2 = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child] + REF_2;
-						z_1 = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
-						z_2 = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child] + REF_3;
+						i_1 = (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child];
+						i_2 = (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child] + ref_1;
+						j_1 = (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child];
+						j_2 = (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child] + ref_2;
+						z_1 = (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child];
+						z_2 = (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child] + ref_3;
 
 						get_geometry(n_child, i_1, j_1, z_1, CENT, &geom);
 						get_state(p[nl[n_child]][index_3D(n_child, i_1, j_1, z_1)], &geom, &q);
@@ -859,16 +867,16 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 		for (i = i1; i < i2 + D1; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
-					ic = (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child];
-					jc = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
-					zc = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
+					ic = (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child];
+					jc = (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child];
+					zc = (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child];
 					k = 1;
 					ps[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						= 1. / gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE1] * 0.25*(
 						ps[nl[n_child]][index_3D(n_child, ic, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc)][FACE1] +
-						ps[nl[n_child]][index_3D(n_child, ic, jc + REF_2, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc + REF_2, zc)][FACE1] +
-						ps[nl[n_child]][index_3D(n_child, ic, jc, zc + REF_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc + REF_3)][FACE1] +
-						ps[nl[n_child]][index_3D(n_child, ic, jc + REF_2, zc + REF_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc + REF_2, zc + REF_3)][FACE1]);
+						ps[nl[n_child]][index_3D(n_child, ic, jc + ref_2, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc + ref_2, zc)][FACE1] +
+						ps[nl[n_child]][index_3D(n_child, ic, jc, zc + ref_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc + ref_3)][FACE1] +
+						ps[nl[n_child]][index_3D(n_child, ic, jc + ref_2, zc + ref_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc + ref_2, zc + ref_3)][FACE1]);
 				}
 			}
 		}
@@ -876,16 +884,16 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2 + D2; j++){
 				for (z = z1; z < z2; z++){
-					ic = (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child];
-					jc = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
-					zc = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
+					ic = (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child];
+					jc = (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child];
+					zc = (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child];
 					k = 2;
 					ps[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						= 1. / gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE2] * 0.25*(
 						ps[nl[n_child]][index_3D(n_child, ic, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc)][FACE2] +
-						ps[nl[n_child]][index_3D(n_child, ic + REF_1, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic + REF_1, jc, zc)][FACE2] +
-						ps[nl[n_child]][index_3D(n_child, ic, jc, zc + REF_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc + REF_3)][FACE2] +
-						ps[nl[n_child]][index_3D(n_child, ic + REF_1, jc, zc + REF_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic + REF_1, jc, zc + REF_3)][FACE2]);
+						ps[nl[n_child]][index_3D(n_child, ic + ref_1, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic + ref_1, jc, zc)][FACE2] +
+						ps[nl[n_child]][index_3D(n_child, ic, jc, zc + ref_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc + ref_3)][FACE2] +
+						ps[nl[n_child]][index_3D(n_child, ic + ref_1, jc, zc + ref_3)][k] * gdet[nl[n_child]][index_2D(n_child, ic + ref_1, jc, zc + ref_3)][FACE2]);
 				}
 			}
 		}
@@ -893,16 +901,16 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2 + D3; z++){
-					ic = (i - i1)*(1 + REF_1) + N1_GPU_offset[n_child];
-					jc = (j - j1)*(1 + REF_2) + N2_GPU_offset[n_child];
-					zc = (z - z1)*(1 + REF_3) + N3_GPU_offset[n_child];
+					ic = (i - i1)*(1 + ref_1) + N1_GPU_offset[n_child];
+					jc = (j - j1)*(1 + ref_2) + N2_GPU_offset[n_child];
+					zc = (z - z1)*(1 + ref_3) + N3_GPU_offset[n_child];
 					k = 3;
 					ps[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]
 						= 1. / gdet[nl[n]][index_2D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][FACE3] * 0.25*(
 						ps[nl[n_child]][index_3D(n_child, ic, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc, zc)][FACE3] +
-						ps[nl[n_child]][index_3D(n_child, ic + REF_1, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic + REF_1, jc, zc)][FACE3] +
-						ps[nl[n_child]][index_3D(n_child, ic, jc + REF_2, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc + REF_2, zc)][FACE3] +
-						ps[nl[n_child]][index_3D(n_child, ic + REF_1, jc + REF_2, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic + REF_1, jc + REF_2, zc)][FACE3]);
+						ps[nl[n_child]][index_3D(n_child, ic + ref_1, jc, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic + ref_1, jc, zc)][FACE3] +
+						ps[nl[n_child]][index_3D(n_child, ic, jc + ref_2, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic, jc + ref_2, zc)][FACE3] +
+						ps[nl[n_child]][index_3D(n_child, ic + ref_1, jc + ref_2, zc)][k] * gdet[nl[n_child]][index_2D(n_child, ic + ref_1, jc + ref_2, zc)][FACE3]);
 				}
 			}
 		}
@@ -912,6 +920,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 
 void derefine(int n){
 	int i,j,z,k, n_child;
+	int ref_1, ref_2, ref_3;
 	if (rank == 0) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 	if (block[n][AMR_ACTIVE] != 0) fprintf(stderr, "Error: Trying to derefine active block %d! \n", n);
 
@@ -921,72 +930,96 @@ void derefine(int n){
 		set_arrays(n);
 		set_grid(n);
 
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD1]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD1]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD1]][AMR_LEVEL3];
 		if (block[n][AMR_CHILD1] >= 0){
 			n_child = block[n][AMR_CHILD1];
-			block_average(n, n_child, 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3));
+			block_average(n, n_child, 0, BS_1 / (1 + ref_1), 0, BS_2 / (1 + ref_2), 0, BS_3 / (1 + ref_3));
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD1]);
 			GPU_finish(block[n][AMR_CHILD1], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD2] >= 0 && REF_3 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD2]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD2]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD2]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD2] >= 0 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD2];
-			block_average(n, n_child, 0, BS_1 / (1 + REF_1), 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3);
+			block_average(n, n_child, 0, BS_1 / (1 + ref_1), 0, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), BS_3);
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD2]);
 			GPU_finish(block[n][AMR_CHILD2], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD3] >= 0 && REF_2 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD3]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD3]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD3]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD3] >= 0 && ref_2 == 1){
 			n_child = block[n][AMR_CHILD3];
-			block_average(n, n_child, 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3));
+			block_average(n, n_child, 0, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), BS_2, 0, BS_3 / (1 + ref_3));
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD3]);
 			GPU_finish(block[n][AMR_CHILD3], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD4] >= 0 && REF_2 == 1 && REF_3 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD4]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD4]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD4]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD4] >= 0 && ref_2 == 1 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD4];
-			block_average(n, n_child, 0, BS_1 / (1 + REF_1), BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3);
+			block_average(n, n_child, 0, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), BS_2, BS_3 / (1 + ref_3), BS_3);
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD4]);
 			GPU_finish(block[n][AMR_CHILD4], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD5] >= 0 && REF_1 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD5]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD5]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD5]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD5] >= 0 && ref_1 == 1){
 			n_child = block[n][AMR_CHILD5];
-			block_average(n, n_child, BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), 0, BS_3 / (1 + REF_3));
+			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, 0, BS_2 / (1 + ref_2), 0, BS_3 / (1 + ref_3));
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD5]);
 			GPU_finish(block[n][AMR_CHILD5], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD6] >= 0 && REF_1 == 1 && REF_3 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD6]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD6]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD6]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD6] >= 0 && ref_1 == 1 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD6];
-			block_average(n, n_child, BS_1 / (1 + REF_1), BS_1, 0, BS_2 / (1 + REF_2), BS_3 / (1 + REF_3), BS_3);
+			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, 0, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), BS_3);
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD6]);
 			GPU_finish(block[n][AMR_CHILD6], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD7] >= 0 && REF_1 == 1 && REF_2 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD7]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD7]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD7]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD7] >= 0 && ref_1 == 1 && ref_2 == 1){
 			n_child = block[n][AMR_CHILD7];
-			block_average(n, n_child, BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, 0, BS_3 / (1 + REF_3));
+			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, BS_2 / (1 + ref_2), BS_2, 0, BS_3 / (1 + ref_3));
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD7]);
 			GPU_finish(block[n][AMR_CHILD7], 0);
 			#endif
 		}
 
-		if (block[n][AMR_CHILD8] >= 0 && REF_1 == 1 && REF_2 == 1 && REF_3 == 1){
+		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD8]][AMR_LEVEL1];
+		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD8]][AMR_LEVEL2];
+		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD8]][AMR_LEVEL3];
+		if (block[n][AMR_CHILD8] >= 0 && ref_1 == 1 && ref_2 == 1 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD8];
-			block_average(n, n_child, BS_1 / (1 + REF_1), BS_1, BS_2 / (1 + REF_2), BS_2, BS_3 / (1 + REF_3), BS_3);
+			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, BS_2 / (1 + ref_2), BS_2, BS_3 / (1 + ref_3), BS_3);
 			#if(GPU_ENABLED || GPU_DEBUG )
 			free_arrays(block[n][AMR_CHILD8]);
 			GPU_finish(block[n][AMR_CHILD8], 0);
@@ -1016,72 +1049,78 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 	double U[NPR], U0[NPR], factor[NPR];
 	struct of_geom geom;
 	struct of_state q;
+	int ref_1, ref_2, ref_3;
+
+	ref_1 = block[n_child][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+	ref_2 = block[n_child][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+	ref_3 = block[n_child][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+
 	#pragma omp parallel private(i, j, z, i1, j1, z1, k, i_1, j_1, z_1, i_2, j_2, z_2,geom,q,U,U0,factor)
 	{
 		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(0, BS_1 - 1, 0, BS_2 - 1, 0, BS_3 - 1) {
-			i1 = (i - i % (1 + REF_1)) / (1 + REF_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * REF_1;
-			j1 = (j - j % (1 + REF_2)) / (1 + REF_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * REF_2;
-			z1 = (z - z % (1 + REF_3)) / (1 + REF_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * REF_3;
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 0){
+			i1 = (i - i % (1 + ref_1)) / (1 + ref_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * ref_1;
+			j1 = (j - j % (1 + ref_2)) / (1 + ref_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * ref_2;
+			z1 = (z - z % (1 + ref_3)) / (1 + ref_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * ref_3;
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 0){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 1){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 0){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 1){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 0){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 1){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 0){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] - 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 1){
 				PLOOP{
 					prim[nl[n_child]][index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child])][k] =
-					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
+					prim[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_1 * d1[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_2 * d2[nl[n]][index_3D(n, i1, j1, z1)][k] + 0.25 * ref_3 * d3[nl[n]][index_3D(n, i1, j1, z1)][k];
 				}
 			}
 			//Enforce strict conservation of conservative quantitites during refinement
-			/*if (i % (1 + REF_1) == REF_1 && j % (1 + REF_2) == REF_2 && z % (1 + REF_3) == REF_3){
-				i1 = (i - i % (1 + REF_1)) / (1 + REF_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * REF_1;
-				j1 = (j - j % (1 + REF_2)) / (1 + REF_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * REF_2;
-				z1 = (z - z % (1 + REF_3)) / (1 + REF_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * REF_3;
+			/*if (i % (1 + ref_1) == ref_1 && j % (1 + ref_2) == ref_2 && z % (1 + ref_3) == ref_3){
+				i1 = (i - i % (1 + ref_1)) / (1 + ref_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * ref_1;
+				j1 = (j - j % (1 + ref_2)) / (1 + ref_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * ref_2;
+				z1 = (z - z % (1 + ref_3)) / (1 + ref_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * ref_3;
 
-				i_1 = N1_GPU_offset[n_child] + i - REF_1;
+				i_1 = N1_GPU_offset[n_child] + i - ref_1;
 				i_2 = N1_GPU_offset[n_child] + i;
-				j_1 = N2_GPU_offset[n_child] + j - REF_2;
+				j_1 = N2_GPU_offset[n_child] + j - ref_2;
 				j_2 = N2_GPU_offset[n_child] + j;
-				z_1 = N3_GPU_offset[n_child] + z - REF_3;
+				z_1 = N3_GPU_offset[n_child] + z - ref_3;
 				z_2 = N3_GPU_offset[n_child] + z;
 
 				//Calculate total conserved quantities in new cells
@@ -1137,37 +1176,37 @@ void refine_cell(int n, int n_child, int offset_1, int offset_2, int offset_3, d
 				PLOOP dq[nl[n_child]][index_3D(n_child, i_1, j_1, z_1)][k] *= factor[k];
 				get_geometry(n_child, i_1, j_1, z_1, CENT, &geom);
 				pflag[nl[n_child]][index_3D(n_child, i_1, j_1, z_1)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_1, j_1, z_1)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_1, j_1, z_1)]);
-				if (REF_3 == 1){
+				if (ref_3 == 1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_1, j_1, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_1, j_1, z_2, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_1, j_1, z_2)]=Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_1, j_1, z_2)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_1, j_1, z_2)]);
 				}
-				if (REF_2 == 1){
+				if (ref_2 == 1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_1, j_2, z_1)][k] *= factor[k];
 					get_geometry(n_child, i_1, j_2, z_1, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_1, j_1, z_2)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_1, j_2, z_1)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_1, j_2, z_1)]);
 				}
-				if (REF_2==1 && REF_3 == 1){
+				if (ref_2==1 && ref_3 == 1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_1, j_2, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_1, j_2, z_2, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_1, j_2, z_2)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_1, j_2, z_2)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_1, j_2, z_2)]);
 				}
-				if (REF_1 == 1){
+				if (ref_1 == 1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_2, j_1, z_1)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_1, z_1, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_2, j_1, z_1)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_2, j_1, z_1)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_2, j_1, z_1)]);
 				}
-				if (REF_1 == 1 && REF_3==1){
+				if (ref_1 == 1 && ref_3==1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_2, j_1, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_1, z_2, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_2, j_1, z_2)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_2, j_1, z_2)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_2, j_1, z_2)]);
 				}
-				if (REF_1 == 1 && REF_2 == 1){
+				if (ref_1 == 1 && ref_2 == 1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_2, j_2, z_1)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_2, z_1, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_2, j_2, z_1)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_2, j_2, z_1)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_2, j_2, z_1)]);
 				}
-				if (REF_1 == 1 && REF_2 == 1 && REF_3 == 1){
+				if (ref_1 == 1 && ref_2 == 1 && ref_3 == 1){
 					PLOOP dq[nl[n_child]][index_3D(n_child, i_2, j_2, z_2)][k] *= factor[k];
 					get_geometry(n_child, i_2, j_2, z_2, CENT, &geom);
 					pflag[nl[n_child]][index_3D(n_child, i_2, j_2, z_2)] = Utoprim_2d(dq[nl[n_child]][index_3D(n_child, i_2, j_2, z_2)], geom.gcov, geom.gcon, geom.g, prim[nl[n_child]][index_3D(n_child, i_2, j_2, z_2)]);
@@ -1184,7 +1223,13 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	double b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8;
 	double b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8;
 	int set_1, set_2,set_3,set_4,set_5,set_6;
+	int ref_1, ref_2, ref_3;
 	double *pointer1, *pointer2, *pointer3, *pointer4, *pointer5, *pointer6;
+
+	ref_1 = block[n_child][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+	ref_2 = block[n_child][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+	ref_3 = block[n_child][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+
 	//Use divergence free prolongation to handle boundaries
 	n_rec1 = -1;
 	n_rec2 = -1;
@@ -1231,9 +1276,9 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(0, BS_1 - 1 + D1, 0, BS_2 - 1 + D2, 0, BS_3 - 1 + D3) {
 			//indices in coarse grid depending on offset (input parameter)
-			i1 = (i - i % (1 + REF_1)) / (1 + REF_1);
-			j1 = (j - j % (1 + REF_2)) / (1 + REF_2);
-			z1 = (z - z % (1 + REF_3)) / (1 + REF_3);
+			i1 = (i - i % (1 + ref_1)) / (1 + ref_1);
+			j1 = (j - j % (1 + ref_2)) / (1 + ref_2);
+			z1 = (z - z % (1 + ref_3)) / (1 + ref_3);
 
 			//index of child
 			ind0 = index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
@@ -1244,148 +1289,148 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			b2_1 = b2_2 = b2_3 = b2_4 = b2_5 = b2_6 = b2_7 = b2_8 = 0.;
 			b3_1 = b3_2 = b3_3 = b3_4 = b3_5 = b3_6 = b3_7 = b3_8 = 0.;
 			set_1 = set_2 = set_3 = set_4 = set_5 = set_6 = -1;
-			if ((i == 0 || i == REF_1) && offset_1 == 0 && n_rec2 >= 0){
-				b1_1 = pointer2[j1*(1 + REF_2)*zsize + z1*(1 + REF_3)];
-				b1_2 = pointer2[j1*(1 + REF_2)*zsize + (z1*(1 + REF_3) + REF_3)];
-				b1_3 = pointer2[(j1*(1 + REF_2) + REF_2)*zsize + z1*(1 + REF_3)];
-				b1_4 = pointer2[(j1*(1 + REF_2) + REF_2)*zsize + (z1*(1 + REF_3) + REF_3)];
+			if ((i == 0 || i == ref_1) && offset_1 == 0 && n_rec2 >= 0){
+				b1_1 = pointer2[j1*(1 + ref_2)*zsize + z1*(1 + ref_3)];
+				b1_2 = pointer2[j1*(1 + ref_2)*zsize + (z1*(1 + ref_3) + ref_3)];
+				b1_3 = pointer2[(j1*(1 + ref_2) + ref_2)*zsize + z1*(1 + ref_3)];
+				b1_4 = pointer2[(j1*(1 + ref_2) + ref_2)*zsize + (z1*(1 + ref_3) + ref_3)];
 				set_2 = 1;
 			}
 			else set_2 = -1;
-			if ((i == BS_1 || i == BS_1 - REF_1 || i == BS_1 - (1 + REF_1)) && (offset_1 == 1 || REF_1 == 0) && n_rec4 >= 0){
-				b1_5 = pointer4[j1*(1 + REF_2)*zsize + z1*(1 + REF_3)];
-				b1_6 = pointer4[j1*(1 + REF_2)*zsize + (z1*(1 + REF_3) + REF_3)];
-				b1_7 = pointer4[(j1*(1 + REF_2) + REF_2)*zsize + z1*(1 + REF_3)];
-				b1_8 = pointer4[(j1*(1 + REF_2) + REF_2)*zsize + (z1*(1 + REF_3) + REF_3)];
+			if ((i == BS_1 || i == BS_1 - ref_1 || i == BS_1 - (1 + ref_1)) && (offset_1 == 1 || ref_1 == 0) && n_rec4 >= 0){
+				b1_5 = pointer4[j1*(1 + ref_2)*zsize + z1*(1 + ref_3)];
+				b1_6 = pointer4[j1*(1 + ref_2)*zsize + (z1*(1 + ref_3) + ref_3)];
+				b1_7 = pointer4[(j1*(1 + ref_2) + ref_2)*zsize + z1*(1 + ref_3)];
+				b1_8 = pointer4[(j1*(1 + ref_2) + ref_2)*zsize + (z1*(1 + ref_3) + ref_3)];
 				set_4 = 1;
 			}
 			else set_4 = -1;
 
-			if ((j == 0 || j == REF_2) && offset_2 == 0 && n_rec3 >= 0){
-				b2_1 = pointer3[i1*(1 + REF_1)*zsize + z1*(1 + REF_3)];
-				b2_2 = pointer3[i1*(1 + REF_1)*zsize + (z1*(1 + REF_3) + REF_3)];
-				b2_5 = pointer3[(i1*(1 + REF_1) + REF_1)*zsize + z1*(1 + REF_3)];
-				b2_6 = pointer3[(i1*(1 + REF_1) + REF_1)*zsize + (z1*(1 + REF_3) + REF_3)];
+			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 >= 0){
+				b2_1 = pointer3[i1*(1 + ref_1)*zsize + z1*(1 + ref_3)];
+				b2_2 = pointer3[i1*(1 + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
+				b2_5 = pointer3[(i1*(1 + ref_1) + ref_1)*zsize + z1*(1 + ref_3)];
+				b2_6 = pointer3[(i1*(1 + ref_1) + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
 				set_3 = 1;
 			}
 			else set_3 = -1;
-			if ((j == BS_2 || j == BS_2 - REF_2 || j == BS_2 - (1 + REF_2)) && (offset_2 == 1 || REF_2 == 0) && n_rec1 >= 0){
-				b2_3 = pointer1[i1*(1 + REF_1)*zsize + z1*(1 + REF_3)];
-				b2_4 = pointer1[i1*(1 + REF_1)*zsize + (z1*(1 + REF_3) + REF_3)];
-				b2_7 = pointer1[(i1*(1 + REF_1) + REF_1)*zsize + z1*(1 + REF_3)];
-				b2_8 = pointer1[(i1*(1 + REF_1) + REF_1)*zsize + (z1*(1 + REF_3) + REF_3)];
+			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 >= 0){
+				b2_3 = pointer1[i1*(1 + ref_1)*zsize + z1*(1 + ref_3)];
+				b2_4 = pointer1[i1*(1 + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
+				b2_7 = pointer1[(i1*(1 + ref_1) + ref_1)*zsize + z1*(1 + ref_3)];
+				b2_8 = pointer1[(i1*(1 + ref_1) + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
 				set_1 = 1;
 			}
 			else set_1 = -1;
 
-			if ((z == 0 || z == REF_3) && offset_3 == 0 && n_rec5 >= 0){
-				b3_1 = pointer5[i1*(1 + REF_1)*jsize + j1*(1 + REF_2)];
-				b3_3 = pointer5[i1*(1 + REF_1)*jsize + (j1*(1 + REF_2) + REF_2)];
-				b3_5 = pointer5[(i1*(1 + REF_1) + REF_1)*jsize + j1*(1 + REF_2)];
-				b3_7 = pointer5[(i1*(1 + REF_1) + REF_1)*jsize + (j1*(1 + REF_2) + REF_2)];
+			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 >= 0){
+				b3_1 = pointer5[i1*(1 + ref_1)*jsize + j1*(1 + ref_2)];
+				b3_3 = pointer5[i1*(1 + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
+				b3_5 = pointer5[(i1*(1 + ref_1) + ref_1)*jsize + j1*(1 + ref_2)];
+				b3_7 = pointer5[(i1*(1 + ref_1) + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
 				set_5 = 1;
 			}
 			else set_5 = -1;
-			if ((z == BS_3 || z == BS_3 - REF_3 || z == BS_3 - (1 + REF_3)) && (offset_3 == 1 || REF_3 == 0) && n_rec6 >= 0){
-				b3_2 = pointer6[i1*(1 + REF_1)*jsize + j1*(1 + REF_2)];
-				b3_4 = pointer6[i1*(1 + REF_1)*jsize + (j1*(1 + REF_2) + REF_2)];
-				b3_6 = pointer6[(i1*(1 + REF_1) + REF_1)*jsize + j1*(1 + REF_2)];
-				b3_8 = pointer6[(i1*(1 + REF_1) + REF_1)*jsize + (j1*(1 + REF_2) + REF_2)];
+			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 >= 0){
+				b3_2 = pointer6[i1*(1 + ref_1)*jsize + j1*(1 + ref_2)];
+				b3_4 = pointer6[i1*(1 + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
+				b3_6 = pointer6[(i1*(1 + ref_1) + ref_1)*jsize + j1*(1 + ref_2)];
+				b3_8 = pointer6[(i1*(1 + ref_1) + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
 				set_6 = 1;
 			}
 			else set_6 = -1;
 
-			i1 = (i - i % (1 + REF_1)) / (1 + REF_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * REF_1 - (i == BS_1 && (offset_1 == 1 || REF_1 == 0));
-			j1 = (j - j % (1 + REF_2)) / (1 + REF_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * REF_2 - (j == BS_2 && (offset_2 == 1 || REF_2 == 0));
-			z1 = (z - z % (1 + REF_3)) / (1 + REF_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * REF_3 - (z == BS_3 && (offset_3 == 1 || REF_3 == 0));
+			i1 = (i - i % (1 + ref_1)) / (1 + ref_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * ref_1 - (i == BS_1 && (offset_1 == 1 || ref_1 == 0));
+			j1 = (j - j % (1 + ref_2)) / (1 + ref_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * ref_2 - (j == BS_2 && (offset_2 == 1 || ref_2 == 0));
+			z1 = (z - z % (1 + ref_3)) / (1 + ref_3) + N3_GPU_offset[n] + offset_3*BS_3 / 2 * ref_3 - (z == BS_3 && (offset_3 == 1 || ref_3 == 0));
 
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 0){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || REF_1 == 0)), -0.25*REF_2, -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || ref_1 == 0)), -0.25*ref_2, -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*REF_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || REF_2 == 0)), -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*ref_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || ref_2 == 0)), -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*REF_1, -0.25*REF_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || REF_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*ref_1, -0.25*ref_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || ref_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
 
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 1){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || REF_1 == 0)), -0.25*REF_2, 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || ref_1 == 0)), -0.25*ref_2, 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*REF_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || REF_2 == 0)), 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*ref_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || ref_2 == 0)), 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*REF_1, -0.25*REF_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*ref_1, -0.25*ref_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 0){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || REF_1 == 0)), 0.25*REF_2, -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || ref_1 == 0)), 0.25*ref_2, -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*REF_1, 0.0, -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*ref_1, 0.0, -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*REF_1, 0.25*REF_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || REF_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*ref_1, 0.25*ref_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || ref_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-			if (i % (1 + REF_1) == 0 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 0 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 1){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || REF_1 == 0)), 0.25*REF_2, 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, -0.5 + (double)(i == BS_1 && (offset_1 == 1 || ref_1 == 0)), 0.25*ref_2, 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*REF_1, 0.0, 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, -0.25*ref_1, 0.0, 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*REF_1, 0.25*REF_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, -0.25*ref_1, 0.25*ref_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 0){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, -0.25*REF_2, -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, -0.25*ref_2, -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*REF_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || REF_2 == 0)), -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*ref_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || ref_2 == 0)), -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*REF_1, -0.25*REF_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || REF_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*ref_1, -0.25*ref_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || ref_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 0 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 0 && z % (1 + ref_3) == 1){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, -0.25*REF_2, 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, -0.25*ref_2, 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*REF_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || REF_2 == 0)), 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*ref_1, -0.5 + (double)(j == BS_2 && (offset_2 == 1 || ref_2 == 0)), 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*REF_1, -0.25*REF_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*ref_1, -0.25*ref_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 0){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 0){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, 0.25*REF_2, -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, 0.25*ref_2, -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*REF_1, 0.0, -0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*ref_1, 0.0, -0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*REF_1, 0.25*REF_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || REF_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*ref_1, 0.25*ref_2, -0.5 + (double)(z == BS_3 && (offset_3 == 1 || ref_3 == 0)), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
-			if (i % (1 + REF_1) == 1 && j % (1 + REF_2) == 1 && z % (1 + REF_3) == 1){
+			if (i % (1 + ref_1) == 1 && j % (1 + ref_2) == 1 && z % (1 + ref_3) == 1){
 				pb[nl[n_child]][ind0][1] =
-					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, 0.25*REF_2, 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE1] * B1_prolong(n, i1, j1, z1, 0.0, 0.25*ref_2, 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][2] =
-					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*REF_1, 0.0, 0.25*REF_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE2] * B2_prolong(n, i1, j1, z1, 0.25*ref_1, 0.0, 0.25*ref_3, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 				pb[nl[n_child]][ind0][3] =
-					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*REF_1, 0.25*REF_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+					1. / gdet[nl[n_child]][ind2][FACE3] * B3_prolong(n, i1, j1, z1, 0.25*ref_1, 0.25*ref_2, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 					b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 			}
 		}
@@ -1424,6 +1469,7 @@ void pre_refine(void){
 
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
+	int ref_1, ref_2, ref_3;
 	//MPI_Barrier(mpi_cartcomm);
 	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
@@ -1444,15 +1490,14 @@ int refine(int n){
 			#pragma omp for collapse(2) schedule(dynamic)
 			ZSLOOP3D(-D1, BS_1 - 1 + D1, -D2, BS_2 - 1 + D2, -D3, BS_3 - 1 + D3) {
 				PLOOP{
-					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n] - REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n] + REF_1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - REF_2, z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + REF_2, z + N3_GPU_offset[n])][k]);
+					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n] - 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n] + 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
+					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - 1, z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 1, z + N3_GPU_offset[n])][k]);
 					#if(N3>1)
-					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - REF_3)][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + REF_3)][k]);
+					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - 1)][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 1)][k]);
 					#endif
 				}
 			}
 		}
-
 		if (block[n][AMR_CHILD1] >= 0){
 			set_arrays(block[n][AMR_CHILD1]);
 			set_grid(block[n][AMR_CHILD1]);
@@ -1467,7 +1512,8 @@ int refine(int n){
 			#endif
 		}
 
-		if (block[n][AMR_CHILD2] >= 0 && REF_3 == 1){
+		ref_3 = block[block[n][AMR_CHILD2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_CHILD2] >= 0 && ref_3 == 1){
 			set_arrays(block[n][AMR_CHILD2]);
 			set_grid(block[n][AMR_CHILD2]);
 			n_child = block[n][AMR_CHILD2];
@@ -1480,7 +1526,9 @@ int refine(int n){
 			GPU_write(block[n][AMR_CHILD2]);
 			#endif
 		}
-		if (block[n][AMR_CHILD3] >= 0 && REF_2 == 1){
+
+		ref_2 = block[block[n][AMR_CHILD3]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_CHILD3] >= 0 && ref_2 == 1){
 			set_arrays(block[n][AMR_CHILD3]);
 			set_grid(block[n][AMR_CHILD3]);
 			n_child = block[n][AMR_CHILD3];
@@ -1493,7 +1541,10 @@ int refine(int n){
 			GPU_write(block[n][AMR_CHILD3]);
 			#endif
 		}
-		if (block[n][AMR_CHILD4] >= 0 && REF_2 == 1 && REF_3 == 1){
+
+		ref_2 = block[block[n][AMR_CHILD4]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD4]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_CHILD4] >= 0 && ref_2 == 1 && ref_3 == 1){
 			set_arrays(block[n][AMR_CHILD4]);
 			set_grid(block[n][AMR_CHILD4]);
 			n_child = block[n][AMR_CHILD4];
@@ -1507,7 +1558,8 @@ int refine(int n){
 			#endif
 		}
 
-		if (block[n][AMR_CHILD5] >= 0 && REF_1 == 1){
+		ref_1 = block[block[n][AMR_CHILD5]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_CHILD5] >= 0 && ref_1 == 1){
 			set_arrays(block[n][AMR_CHILD5]);
 			set_grid(block[n][AMR_CHILD5]);
 			n_child = block[n][AMR_CHILD5];
@@ -1520,7 +1572,10 @@ int refine(int n){
 			GPU_write(block[n][AMR_CHILD5]);
 			#endif
 		}
-		if (block[n][AMR_CHILD6] >= 0 && REF_1 == 1 && REF_3 == 1){
+
+		ref_1 = block[block[n][AMR_CHILD6]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_3 = block[block[n][AMR_CHILD6]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_CHILD6] >= 0 && ref_1 == 1 && ref_3 == 1){
 			set_arrays(block[n][AMR_CHILD6]);
 			set_grid(block[n][AMR_CHILD6]);
 			n_child = block[n][AMR_CHILD6];
@@ -1533,7 +1588,10 @@ int refine(int n){
 			GPU_write(block[n][AMR_CHILD6]);
 			#endif
 		}
-		if (block[n][AMR_CHILD7] >= 0 && REF_1 == 1 && REF_2 == 1){
+
+		ref_1 = block[block[n][AMR_CHILD7]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD7]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_CHILD7] >= 0 && ref_1 == 1 && ref_2 == 1){
 			set_arrays(block[n][AMR_CHILD7]);
 			set_grid(block[n][AMR_CHILD7]);
 			n_child = block[n][AMR_CHILD7];
@@ -1546,7 +1604,11 @@ int refine(int n){
 			GPU_write(block[n][AMR_CHILD7]);
 			#endif
 		}
-		if (block[n][AMR_CHILD8] >= 0 && REF_1 == 1 && REF_2 == 1 && REF_3 == 1){
+
+		ref_1 = block[block[n][AMR_CHILD8]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD8]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD8]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_CHILD8] >= 0 && ref_1 == 1 && ref_2 == 1 && ref_3 == 1){
 			set_arrays(block[n][AMR_CHILD8]);
 			set_grid(block[n][AMR_CHILD8]);
 			n_child = block[n][AMR_CHILD8];
