@@ -120,7 +120,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR2P]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
 				if (cond1) pack_send_average1(n, block[n][AMR_NBR2P], BS_1 - (1 + ref_1) * N1G, BS_1, -2*D2, BS_2 + 2*D2, -2*D3, BS_3 + 2*D3,
 					(BS_2 + 2 * N2G) / (1 + ref_2), (BS_3 + 2 * N3G) / (1 + ref_3), send2, prim,ps, &(Bufferp[nl[n]]), &(Bufferps[nl[n]]),
-					&(Buffersend2[nl[n]]), &(boundevent1[nl[n]][20]), &(boundevent2[nl[n]][20]), ref_1, ref_2, ref_3);
+					&(Buffersend2[nl[n]]), &(boundevent1[nl[n]][20]), &(boundevent2[nl[n]][20]));
 				if (block[block[n][AMR_NBR2P]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (block[block[n][AMR_NBR2P]][AMR_NBR4_5] == n){
@@ -273,7 +273,7 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR4P]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
 				if (cond1) pack_send_average1(n, block[n][AMR_NBR4P], 0, (1 + ref_1)*N1G, -2*D2, (BS_2 + 2*D2), -2*D3, (BS_3 + 2*D3),
 					(BS_2 + 2 * N2G) / (1 + ref_2), (BS_3 + 2 * N3G) / (1 + ref_3), send4, prim,ps, &(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4[nl[n]]),
-					&(boundevent1[nl[n]][40]), &(boundevent2[nl[n]][40]), ref_1, ref_2, ref_3);
+					&(boundevent1[nl[n]][40]), &(boundevent2[nl[n]][40]));
 				if (block[block[n][AMR_NBR4P]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (block[block[n][AMR_NBR4P]][AMR_NBR2_1] == n){
@@ -444,7 +444,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR3P]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
 					if (cond1) pack_send_average2(n, block[n][AMR_NBR3P], -2*D1, (BS_1 + 2*D1), (BS_2 - (1 + ref_2) * N2G), BS_2, -2*D3, (BS_3 + 2*D3),
 						(BS_1 + 2 * N1G) / (1 + ref_1), (BS_3 + 2 * N3G) / (1 + ref_3), send3, prim, ps, &(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3[nl[n]]),
-						&(boundevent1[nl[n]][30]), &(boundevent2[nl[n]][30]), ref_1, ref_2, ref_3);
+						&(boundevent1[nl[n]][30]), &(boundevent2[nl[n]][30]));
 					if (block[block[n][AMR_NBR3P]][AMR_NODE] != block[n][AMR_NODE]){
 						if (gpu == 1){
 							if (block[block[n][AMR_NBR3P]][AMR_NBR1_3] == n){
@@ -609,7 +609,7 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR1P]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
 					if (cond1) pack_send_average2(n, block[n][AMR_NBR1P], -2*D1, BS_1 + 2*D1, 0, (1 + ref_2) * N2G, -2*D3, BS_3 + 2*D3,
 						(BS_1 + 2 * N1G) / (1 + ref_1), (BS_3 + 2 * N3G) / (1 + ref_3), send1, prim, ps, &(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1[nl[n]]),
-						&(boundevent1[nl[n]][10]), &(boundevent2[nl[n]][10]), ref_1, ref_2, ref_3);
+						&(boundevent1[nl[n]][10]), &(boundevent2[nl[n]][10]));
 					if (block[block[n][AMR_NBR1P]][AMR_NODE] != block[n][AMR_NODE]){
 						if (gpu == 1){
 							if (block[block[n][AMR_NBR1P]][AMR_NBR3_1] == n){
@@ -770,7 +770,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR5P]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
 				if (cond1) pack_send_average3(n, block[n][AMR_NBR5P], -2*D1, (BS_1 + 2*D1), -2*D2, (BS_2 + 2*D2), BS_3 - (1 + ref_3) * N3G, BS_3,
 					(BS_1 + 2 * N1G) / (1 + ref_1), (BS_2 + 2 * N2G) / (1 + ref_2), send5, prim,ps, &(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5[nl[n]]),
-					&(boundevent1[nl[n]][50]), &(boundevent2[nl[n]][50]), ref_1, ref_2, ref_3);
+					&(boundevent1[nl[n]][50]), &(boundevent2[nl[n]][50]));
 				if (block[block[n][AMR_NBR5P]][AMR_NODE] != block[n][AMR_NODE]){
 
 					if (gpu == 1){
@@ -924,7 +924,7 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR6P]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
 				if (cond1) pack_send_average3(n, block[n][AMR_NBR6P], -2*D1, (BS_1 + 2*D1), -2*D2, (BS_2 + 2*D2), 0, (1 + ref_3) * N3G,
 					(BS_1 + 2 * N1G) / (1 + ref_1), (BS_2 + 2 * N2G) / (1 + ref_2), send6, prim,ps, &(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6[nl[n]]),
-					&(boundevent1[nl[n]][60]), &(boundevent2[nl[n]][60]), ref_1, ref_2, ref_3);
+					&(boundevent1[nl[n]][60]), &(boundevent2[nl[n]][60]));
 				if (block[block[n][AMR_NBR6P]][AMR_NODE] != block[n][AMR_NODE]){
 					if (gpu == 1){
 						if (block[block[n][AMR_NBR6P]][AMR_NBR5_1] == n){

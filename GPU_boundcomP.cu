@@ -103,7 +103,10 @@ void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 }
 
 void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, 
-	double **Bufferboundsend, cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int ref_1, int ref_2, int ref_3){
+	double **Bufferboundsend, cudaEvent_t *boundevent, cudaEvent_t *boundevent2){
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3);
@@ -156,7 +159,10 @@ void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 }
 
 void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, 
-	cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int ref_1, int ref_2, int ref_3){
+	cudaEvent_t *boundevent, cudaEvent_t *boundevent2){
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3);
@@ -209,7 +215,10 @@ void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 }
 
 void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferps, double **Bufferboundsend, 
-	cudaEvent_t *boundevent, cudaEvent_t *boundevent2, int ref_1, int ref_2, int ref_3){
+	cudaEvent_t *boundevent, cudaEvent_t *boundevent2){
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	 if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2);
