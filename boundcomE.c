@@ -2575,8 +2575,6 @@ void E2_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 void E3_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int n, int calc_corr){
 	int ref_3;
 #if (MPI_enable)
-	int n_print = block[AMR_coord_linear(0, 0, 0, 0)][AMR_CORN2D_1];
-
 	//positive X1
 	if (block[n][AMR_CORN1] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
 		if (block[block[n][AMR_CORN1]][AMR_ACTIVE] == 1 && (block[n][AMR_CORN1D] == block[n][AMR_CORN1] || (block[n][AMR_CORN1D] == -100 && block[block[n][AMR_CORN1]][AMR_TIMELEVEL]<block[n][AMR_TIMELEVEL]))){

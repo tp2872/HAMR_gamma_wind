@@ -496,13 +496,13 @@ void alloc_bounds_GPU(int n){
 	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
 	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
 	#endif
-	gpuAlloc(&Bufferrec1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec4E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec1E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec2E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec3E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec4E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
 	#if(N3G>0)
-	gpuAlloc(&Bufferrec5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	gpuAlloc(&Bufferrec6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
+	gpuAlloc(&Bufferrec5E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
+	gpuAlloc(&Bufferrec6E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
 	#endif
 	Bufferrec1_3E1[nl[n]] = Bufferrec1E1[nl[n]];
 	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + ref3_3*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
