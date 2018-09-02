@@ -1370,14 +1370,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN9_1] >= 0) ref_1 = block[block[n][AMR_CORN9_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_1] == block[block[n][AMR_CORN9]][AMR_CHILD3] || block[n][AMR_CORN9D_1] == -100) && block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn11_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][311]);
+			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_1] == block[n][AMR_CORN9_1] || block[n][AMR_CORN9D_1] == -100) && block[block[n][AMR_CORN9_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN9_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn11_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9_1]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN9_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][311]);
 			}
 			if (block[n][AMR_CORN9_2] >= 0) ref_1 = block[block[n][AMR_CORN9_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_2] == block[block[n][AMR_CORN9]][AMR_CHILD7] || block[n][AMR_CORN9D_2] == -100) && block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn11_6[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][361]);
+			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_2] == block[n][AMR_CORN9_2] || block[n][AMR_CORN9D_2] == -100) && block[block[n][AMR_CORN9_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN9_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn11_6[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9_2]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN9_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][361]);
 			}
 		}
 		else{
@@ -1387,14 +1387,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN9_1] >= 0) ref_1 = block[block[n][AMR_CORN9_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_1] == block[block[n][AMR_CORN9]][AMR_CHILD3] || block[n][AMR_CORN9D_1] == -100) && block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn11_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][311]);
+			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_1] == block[n][AMR_CORN9_1] || block[n][AMR_CORN9D_1] == -100) && block[block[n][AMR_CORN9_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN9_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn11_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9_1]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN9_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][311]);
 			}
 			if (block[n][AMR_CORN9_2] >= 0) ref_1 = block[block[n][AMR_CORN9_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_2] == block[block[n][AMR_CORN9]][AMR_CHILD7] || block[n][AMR_CORN9D_2] == -100) && block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn11_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][361]);
+			if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1 && (block[n][AMR_CORN9D_2] == block[n][AMR_CORN9_2] || block[n][AMR_CORN9D_2] == -100) && block[block[n][AMR_CORN9_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN9_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn11_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9_2]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN9_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][361]);
 			}
 		}
 		if (block[block[n][AMR_CORN9]][AMR_PARENT] >= 0 && (block[n][AMR_CORN9D] == n || block[n][AMR_CORN9D] == -100)){
@@ -1438,14 +1438,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN10_1] >= 0) ref_1 = block[block[n][AMR_CORN10_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_1] == block[block[n][AMR_CORN10]][AMR_CHILD1] || block[n][AMR_CORN10D_1] == -100) && block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn12_4[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][312]);
+			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_1] == block[n][AMR_CORN10_1] || block[n][AMR_CORN10D_1] == -100) && block[block[n][AMR_CORN10_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN10_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn12_4[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10_1]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN10_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][312]);
 			}
 			if (block[n][AMR_CORN10_2] >= 0) ref_1 = block[block[n][AMR_CORN10_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_2] == block[block[n][AMR_CORN10]][AMR_CHILD5] || block[n][AMR_CORN10D_2] == -100) && block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn12_8[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][362]);
+			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_2] == block[n][AMR_CORN10_2] || block[n][AMR_CORN10D_2] == -100) && block[block[n][AMR_CORN10_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN10_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn12_8[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10_2]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN10_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][362]);
 			}
 		}
 		else{
@@ -1455,14 +1455,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN10_1] >= 0) ref_1 = block[block[n][AMR_CORN10_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_1] == block[block[n][AMR_CORN10]][AMR_CHILD1] || block[n][AMR_CORN10D_1] == -100) && block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn12_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][312]);
+			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_1] == block[n][AMR_CORN10_1] || block[n][AMR_CORN10D_1] == -100) && block[block[n][AMR_CORN10_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN10_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn12_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10_1]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN10_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][312]);
 			}
 			if (block[n][AMR_CORN10_2] >= 0) ref_1 = block[block[n][AMR_CORN10_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_2] == block[block[n][AMR_CORN10]][AMR_CHILD5] || block[n][AMR_CORN10D_2] == -100) && block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn12_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][362]);
+			if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1 && (block[n][AMR_CORN10D_2] == block[n][AMR_CORN10_2] || block[n][AMR_CORN10D_2] == -100) && block[block[n][AMR_CORN10_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN10_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn12_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10_2]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN10_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][362]);
 			}
 		}
 		if (block[block[n][AMR_CORN10]][AMR_PARENT] >= 0 && (block[n][AMR_CORN10D] == n || block[n][AMR_CORN10D] == -100)){
@@ -1506,14 +1506,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN11_1] >= 0) ref_1 = block[block[n][AMR_CORN11_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_1] == block[block[n][AMR_CORN11]][AMR_CHILD2] || block[n][AMR_CORN11D_1] == -100) && block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn9_3[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][309]);
+			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_1] == block[n][AMR_CORN11_1] || block[n][AMR_CORN11D_1] == -100) && block[block[n][AMR_CORN11_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN11_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn9_3[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11_1]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN11_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][309]);
 			}
 			if (block[n][AMR_CORN11_2] >= 0) ref_1 = block[block[n][AMR_CORN11_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_2] == block[block[n][AMR_CORN11]][AMR_CHILD6] || block[n][AMR_CORN11D_2] == -100) && block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn9_7[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][359]);
+			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_2] == block[n][AMR_CORN11_2] || block[n][AMR_CORN11D_2] == -100) && block[block[n][AMR_CORN11_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN11_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn9_7[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11_2]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN11_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][359]);
 			}
 		}
 		else{
@@ -1523,14 +1523,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN11_1] >= 0) ref_1 = block[block[n][AMR_CORN11_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_1] == block[block[n][AMR_CORN11]][AMR_CHILD2] || block[n][AMR_CORN11D_1] == -100) && block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn9_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][309]);
+			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_1] == block[n][AMR_CORN11_1] || block[n][AMR_CORN11D_1] == -100) && block[block[n][AMR_CORN11_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN11_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn9_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11_1]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN11_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][309]);
 			}
 			if (block[n][AMR_CORN11_2] >= 0) ref_1 = block[block[n][AMR_CORN11_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_2] == block[block[n][AMR_CORN11]][AMR_CHILD6] || block[n][AMR_CORN11D_2] == -100) && block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn9_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][359]);
+			if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1 && (block[n][AMR_CORN11D_2] == block[n][AMR_CORN11_2] || block[n][AMR_CORN11D_2] == -100) && block[block[n][AMR_CORN11_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN11_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn9_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11_2]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN11_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][359]);
 			}
 		}
 		if (block[block[n][AMR_CORN11]][AMR_PARENT] >= 0 && (block[n][AMR_CORN11D] == n || block[n][AMR_CORN11D] == -100)){
@@ -1574,14 +1574,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN12_1] >= 0) ref_1 = block[block[n][AMR_CORN12_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_1] == block[block[n][AMR_CORN12]][AMR_CHILD4] || block[n][AMR_CORN12D_1] == -100) && block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn10_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][310]);
+			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_1] == block[n][AMR_CORN12_1] || block[n][AMR_CORN12D_1] == -100) && block[block[n][AMR_CORN12_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN12_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn10_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12_1]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN12_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][310]);
 			}
 			if (block[n][AMR_CORN12_2] >= 0) ref_1 = block[block[n][AMR_CORN12_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_2] == block[block[n][AMR_CORN12]][AMR_CHILD8] || block[n][AMR_CORN12D_2] == -100) && block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE1corn10_5[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][360]);
+			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_2] == block[n][AMR_CORN12_2] || block[n][AMR_CORN12D_2] == -100) && block[block[n][AMR_CORN12_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN12_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE1corn10_5[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12_2]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN12_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][360]);
 			}
 		}
 		else{
@@ -1591,14 +1591,14 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN12_1] >= 0) ref_1 = block[block[n][AMR_CORN12_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_1] == block[block[n][AMR_CORN12]][AMR_CHILD4] || block[n][AMR_CORN12D_1] == -100) && block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn10_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][310]);
+			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_1] == block[n][AMR_CORN12_1] || block[n][AMR_CORN12D_1] == -100) && block[block[n][AMR_CORN12_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN12_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn10_1[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12_1]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN12_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][310]);
 			}
 			if (block[n][AMR_CORN12_2] >= 0) ref_1 = block[block[n][AMR_CORN12_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_2] == block[block[n][AMR_CORN12]][AMR_CHILD8] || block[n][AMR_CORN12D_2] == -100) && block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E1_corn10_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][360]);
+			if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && (block[n][AMR_CORN12D_2] == block[n][AMR_CORN12_2] || block[n][AMR_CORN12D_2] == -100) && block[block[n][AMR_CORN12_2]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN12_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E1_corn10_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12_2]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN12_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][360]);
 			}
 		}
 		if (block[block[n][AMR_CORN12]][AMR_PARENT] >= 0 && (block[n][AMR_CORN12D] == n || block[n][AMR_CORN12D] == -100)){
@@ -1646,14 +1646,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN5_1] >= 0) ref_2 = block[block[n][AMR_CORN5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_1] == block[block[n][AMR_CORN5]][AMR_CHILD2] || block[n][AMR_CORN5D_1] == -100) && block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn7_5[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][307]);
+			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_1] == block[n][AMR_CORN5_1] || block[n][AMR_CORN5D_1] == -100) && block[block[n][AMR_CORN5_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN5_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn7_5[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5_1]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN5_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][307]);
 			}
 			if (block[n][AMR_CORN5_2] >= 0) ref_2 = block[block[n][AMR_CORN5_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_2] == block[block[n][AMR_CORN5]][AMR_CHILD4] || block[n][AMR_CORN5D_2] == -100) && block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn7_7[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][357]);
+			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_2] == block[n][AMR_CORN5_2] || block[n][AMR_CORN5D_2] == -100) && block[block[n][AMR_CORN5_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN5_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn7_7[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5_2]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN5_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][357]);
 			}
 		}
 		else{
@@ -1663,14 +1663,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN5_1] >= 0) ref_2 = block[block[n][AMR_CORN5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_1] == block[block[n][AMR_CORN5]][AMR_CHILD2] || block[n][AMR_CORN5D_1] == -100) && block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn7_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][307]);
+			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_1] == block[n][AMR_CORN5_1] || block[n][AMR_CORN5D_1] == -100) && block[block[n][AMR_CORN5_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN5_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn7_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5_1]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN5_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][307]);
 			}
 			if (block[n][AMR_CORN5_2] >= 0) ref_2 = block[block[n][AMR_CORN5_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_2] == block[block[n][AMR_CORN5]][AMR_CHILD4] || block[n][AMR_CORN5D_2] == -100) && block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn7_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][357]);
+			if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1 && (block[n][AMR_CORN5D_2] == block[n][AMR_CORN5_2] || block[n][AMR_CORN5D_2] == -100) && block[block[n][AMR_CORN5_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN5_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn7_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5_2]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN5_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][357]);
 			}
 		}
 		if (block[block[n][AMR_CORN5]][AMR_PARENT] >= 0 && (block[n][AMR_CORN5D] == n || block[n][AMR_CORN5D] == -100)){
@@ -1714,14 +1714,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN6_1] >= 0) ref_2 = block[block[n][AMR_CORN6_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_1] == block[block[n][AMR_CORN6]][AMR_CHILD1] || block[n][AMR_CORN6D_1] == -100) && block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn8_6[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][308]);
+			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_1] == block[n][AMR_CORN6_1] || block[n][AMR_CORN6D_1] == -100) && block[block[n][AMR_CORN6_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN6_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn8_6[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6_1]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN6_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][308]);
 			}
 			if (block[n][AMR_CORN6_2] >= 0) ref_2 = block[block[n][AMR_CORN6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_2] == block[block[n][AMR_CORN6]][AMR_CHILD3] || block[n][AMR_CORN6D_2] == -100) && block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn8_8[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][358]);
+			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_2] == block[n][AMR_CORN6_2] || block[n][AMR_CORN6D_2] == -100) && block[block[n][AMR_CORN6_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN6_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn8_8[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6_2]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN6_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][358]);
 			}
 		}
 		else{
@@ -1731,14 +1731,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN6_1] >= 0) ref_2 = block[block[n][AMR_CORN6_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_1] == block[block[n][AMR_CORN6]][AMR_CHILD1] || block[n][AMR_CORN6D_1] == -100) && block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn8_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][308]);
+			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_1] == block[n][AMR_CORN6_1] || block[n][AMR_CORN6D_1] == -100) && block[block[n][AMR_CORN6_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN6_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn8_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6_1]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN6_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][308]);
 			}
 			if (block[n][AMR_CORN6_2] >= 0) ref_2 = block[block[n][AMR_CORN6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_2] == block[block[n][AMR_CORN6]][AMR_CHILD3] || block[n][AMR_CORN6D_2] == -100) && block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn8_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][358]);
+			if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1 && (block[n][AMR_CORN6D_2] == block[n][AMR_CORN6_2] || block[n][AMR_CORN6D_2] == -100) && block[block[n][AMR_CORN6_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN6_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn8_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6_2]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN6_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][358]);
 			}
 		}
 		if (block[block[n][AMR_CORN6]][AMR_PARENT] >= 0 && (block[n][AMR_CORN6D] == n || block[n][AMR_CORN6D] == -100)){
@@ -1782,14 +1782,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN7_1] >= 0) ref_2 = block[block[n][AMR_CORN7_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_1] == block[block[n][AMR_CORN7]][AMR_CHILD5] || block[n][AMR_CORN7D_1] == -100) && block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn5_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][305]);
+			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_1] == block[n][AMR_CORN7_1] || block[n][AMR_CORN7D_1] == -100) && block[block[n][AMR_CORN7_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN7_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn5_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN7_1]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN7_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][305]);
 			}
 			if (block[n][AMR_CORN7_2] >= 0) ref_2 = block[block[n][AMR_CORN7_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_2] == block[block[n][AMR_CORN7]][AMR_CHILD7] || block[n][AMR_CORN7D_2] == -100) && block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn5_4[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][355]);
+			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_2] == block[n][AMR_CORN7_2] || block[n][AMR_CORN7D_2] == -100) && block[block[n][AMR_CORN7_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN7_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn5_4[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN7_2]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN7_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][355]);
 			}
 		}
 		else{
@@ -1799,14 +1799,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN7_1] >= 0) ref_2 = block[block[n][AMR_CORN7_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_1] == block[block[n][AMR_CORN7]][AMR_CHILD5] || block[n][AMR_CORN7D_1] == -100) && block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn5_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][305]);
+			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_1] == block[n][AMR_CORN7_1] || block[n][AMR_CORN7D_1] == -100) && block[block[n][AMR_CORN7_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN7_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn5_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN7_1]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN7_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][305]);
 			}
 			if (block[n][AMR_CORN7_2] >= 0) ref_2 = block[block[n][AMR_CORN7_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_2] == block[block[n][AMR_CORN7]][AMR_CHILD7] || block[n][AMR_CORN7D_2] == -100) && block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn5_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][355]);
+			if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1 && (block[n][AMR_CORN7D_2] == block[n][AMR_CORN7_2] || block[n][AMR_CORN7D_2] == -100) && block[block[n][AMR_CORN7_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN7_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn5_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN7_2]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN7_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][355]);
 			}
 		}
 
@@ -1851,14 +1851,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN8_1] >= 0) ref_2 = block[block[n][AMR_CORN8_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_1] == block[block[n][AMR_CORN8]][AMR_CHILD6] || block[n][AMR_CORN8D_1] == -100) && block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn6_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][306]);
+			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_1] == block[n][AMR_CORN8_1] || block[n][AMR_CORN8D_1] == -100) && block[block[n][AMR_CORN8_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN8_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn6_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8_1]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN8_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][306]);
 			}
 			if (block[n][AMR_CORN8_2] >= 0) ref_2 = block[block[n][AMR_CORN8_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_2] == block[block[n][AMR_CORN8]][AMR_CHILD8] || block[n][AMR_CORN8D_2] == -100) && block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE2corn6_3[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][356]);
+			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_2] == block[n][AMR_CORN8_2] || block[n][AMR_CORN8D_2] == -100) && block[block[n][AMR_CORN8_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN8_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE2corn6_3[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8_2]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN8_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][356]);
 			}
 		}
 		else{
@@ -1868,14 +1868,14 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN8_1] >= 0) ref_2 = block[block[n][AMR_CORN8_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_1] == block[block[n][AMR_CORN8]][AMR_CHILD6] || block[n][AMR_CORN8D_1] == -100) && block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn6_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][306]);
+			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_1] == block[n][AMR_CORN8_1] || block[n][AMR_CORN8D_1] == -100) && block[block[n][AMR_CORN8_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN8_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn6_1[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8_1]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN8_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][306]);
 			}
 			if (block[n][AMR_CORN8_2] >= 0) ref_2 = block[block[n][AMR_CORN8_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_2] == block[block[n][AMR_CORN8]][AMR_CHILD8] || block[n][AMR_CORN8D_2] == -100) && block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E2_corn6_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][356]);
+			if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1 && (block[n][AMR_CORN8D_2] == block[n][AMR_CORN8_2] || block[n][AMR_CORN8D_2] == -100) && block[block[n][AMR_CORN8_2]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN8_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E2_corn6_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8_2]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN8_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][356]);
 			}
 		}
 		if (block[block[n][AMR_CORN8]][AMR_PARENT] >= 0 && (block[n][AMR_CORN8D] == n || block[n][AMR_CORN8D] == -100)){
@@ -1923,14 +1923,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN1_1] >= 0) ref_3 = block[block[n][AMR_CORN1_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_1] == block[block[n][AMR_CORN1]][AMR_CHILD3] || block[n][AMR_CORN1D_1] == -100) && block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn3_5[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][303]);
+			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_1] == block[n][AMR_CORN1_1] || block[n][AMR_CORN1D_1] == -100) && block[block[n][AMR_CORN1_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN1_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn3_5[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1_1]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN1_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][303]);
 			}
 			if (block[n][AMR_CORN1_2] >= 0) ref_3 = block[block[n][AMR_CORN1_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_2] == block[block[n][AMR_CORN1]][AMR_CHILD4] || block[n][AMR_CORN1D_2] == -100) && block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn3_6[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][353]);
+			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_2] == block[n][AMR_CORN1_2] || block[n][AMR_CORN1D_2] == -100) && block[block[n][AMR_CORN1_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN1_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn3_6[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1_2]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN1_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][353]);
 			}
 		}
 		else{
@@ -1940,14 +1940,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN1_1] >= 0) ref_3 = block[block[n][AMR_CORN1_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_1] == block[block[n][AMR_CORN1]][AMR_CHILD3] || block[n][AMR_CORN1D_1] == -100) && block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn3_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][303]);
+			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_1] == block[n][AMR_CORN1_1] || block[n][AMR_CORN1D_1] == -100) && block[block[n][AMR_CORN1_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN1_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn3_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1_1]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN1_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][303]);
 			}
 			if (block[n][AMR_CORN1_2] >= 0) ref_3 = block[block[n][AMR_CORN1_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_2] == block[block[n][AMR_CORN1]][AMR_CHILD4] || block[n][AMR_CORN1D_2] == -100) && block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn3_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][353]);
+			if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1 && (block[n][AMR_CORN1D_2] == block[n][AMR_CORN1_2] || block[n][AMR_CORN1D_2] == -100) && block[block[n][AMR_CORN1_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN1_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn3_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1_2]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN1_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][353]);
 			}
 		}
 		if (block[block[n][AMR_CORN1]][AMR_PARENT] >= 0 && (block[n][AMR_CORN1D] == n || block[n][AMR_CORN1D] == -100)){
@@ -1991,14 +1991,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN2_1] >= 0) ref_3 = block[block[n][AMR_CORN2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_1] == block[block[n][AMR_CORN2]][AMR_CHILD1] || block[n][AMR_CORN2D_1] == -100) && block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn4_7[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][304]);
+			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_1] == block[n][AMR_CORN2_1] || block[n][AMR_CORN2D_1] == -100) && block[block[n][AMR_CORN2_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN2_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn4_7[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2_1]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN2_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][304]);
 			}
 			if (block[n][AMR_CORN2_2] >= 0) ref_3 = block[block[n][AMR_CORN2_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_2] == block[block[n][AMR_CORN2]][AMR_CHILD2] || block[n][AMR_CORN2D_2] == -100) && block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn4_8[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][354]);
+			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_2] == block[n][AMR_CORN2_2] || block[n][AMR_CORN2D_2] == -100) && block[block[n][AMR_CORN2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN2_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn4_8[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2_2]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN2_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][354]);
 			}
 		}
 		else{
@@ -2008,14 +2008,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN2_1] >= 0) ref_3 = block[block[n][AMR_CORN2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_1] == block[block[n][AMR_CORN2]][AMR_CHILD1] || block[n][AMR_CORN2D_1] == -100) && block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn4_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][304]);
+			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_1] == block[n][AMR_CORN2_1] || block[n][AMR_CORN2D_1] == -100) && block[block[n][AMR_CORN2_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN2_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn4_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2_1]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN2_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][304]);
 			}
 			if (block[n][AMR_CORN2_2] >= 0) ref_3 = block[block[n][AMR_CORN2_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_2] == block[block[n][AMR_CORN2]][AMR_CHILD2] || block[n][AMR_CORN2D_2] == -100) && block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn4_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][354]);
+			if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1 && (block[n][AMR_CORN2D_2] == block[n][AMR_CORN2_2] || block[n][AMR_CORN2D_2] == -100) && block[block[n][AMR_CORN2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN2_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn4_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2_2]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN2_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][354]);
 			}
 		}
 		if (block[block[n][AMR_CORN2]][AMR_PARENT] >= 0 && (block[n][AMR_CORN2D] == n || block[n][AMR_CORN2D] == -100)){
@@ -2059,14 +2059,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN3_1] >= 0) ref_3 = block[block[n][AMR_CORN3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_1] == block[block[n][AMR_CORN3]][AMR_CHILD5] || block[n][AMR_CORN3D_1] == -100) && block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn1_3[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][301]);
+			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_1] == block[n][AMR_CORN3_1] || block[n][AMR_CORN3D_1] == -100) && block[block[n][AMR_CORN3_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN3_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn1_3[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3_1]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN3_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][301]);
 			}
 			if (block[n][AMR_CORN3_2] >= 0) ref_3 = block[block[n][AMR_CORN3_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_2] == block[block[n][AMR_CORN3]][AMR_CHILD6] || block[n][AMR_CORN3D_2] == -100) && block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn1_4[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][351]);
+			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_2] == block[n][AMR_CORN3_2] || block[n][AMR_CORN3D_2] == -100) && block[block[n][AMR_CORN3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN3_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn1_4[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3_2]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN3_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][351]);
 			}
 		}
 		else{
@@ -2076,14 +2076,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN3_1] >= 0) ref_3 = block[block[n][AMR_CORN3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_1] == block[block[n][AMR_CORN3]][AMR_CHILD5] || block[n][AMR_CORN3D_1] == -100) && block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn1_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][301]);
+			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_1] == block[n][AMR_CORN3_1] || block[n][AMR_CORN3D_1] == -100) && block[block[n][AMR_CORN3_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN3_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn1_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3_1]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN3_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][301]);
 			}
 			if (block[n][AMR_CORN3_2] >= 0) ref_3 = block[block[n][AMR_CORN3_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_2] == block[block[n][AMR_CORN3]][AMR_CHILD6] || block[n][AMR_CORN3D_2] == -100) && block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn1_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][351]);
+			if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1 && (block[n][AMR_CORN3D_2] == block[n][AMR_CORN3_2] || block[n][AMR_CORN3D_2] == -100) && block[block[n][AMR_CORN3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN3_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn1_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3_2]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN3_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][351]);
 			}
 		}
 		if (block[block[n][AMR_CORN3]][AMR_PARENT] >= 0 && (block[n][AMR_CORN3D] == n || block[n][AMR_CORN3D] == -100)){
@@ -2127,14 +2127,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN4_1] >= 0) ref_3 = block[block[n][AMR_CORN4_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_1] == block[block[n][AMR_CORN4]][AMR_CHILD7] || block[n][AMR_CORN4D_1] == -100) && block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn2_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][302]);
+			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_1] == block[n][AMR_CORN4_1] || block[n][AMR_CORN4D_1] == -100) && block[block[n][AMR_CORN4_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN4_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn2_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4_1]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN4_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][302]);
 			}
 			if (block[n][AMR_CORN4_2] >= 0) ref_3 = block[block[n][AMR_CORN4_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_2] == block[block[n][AMR_CORN4]][AMR_CHILD8] || block[n][AMR_CORN4D_2] == -100) && block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&BufferrecE3corn2_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][352]);
+			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_2] == block[n][AMR_CORN4_2] || block[n][AMR_CORN4D_2] == -100) && block[block[n][AMR_CORN4_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN4_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&BufferrecE3corn2_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4_2]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN4_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][352]);
 			}
 		}
 		else{
@@ -2144,14 +2144,14 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				}
 			}
 			if (block[n][AMR_CORN4_1] >= 0) ref_3 = block[block[n][AMR_CORN4_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_1] == block[block[n][AMR_CORN4]][AMR_CHILD7] || block[n][AMR_CORN4D_1] == -100) && block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn2_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][302]);
+			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_1] == block[n][AMR_CORN4_1] || block[n][AMR_CORN4D_1] == -100) && block[block[n][AMR_CORN4_1]][AMR_NODE] != block[n][AMR_NODE]
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN4_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4_1]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn2_1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4_1]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN4_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][302]);
 			}
 			if (block[n][AMR_CORN4_2] >= 0) ref_3 = block[block[n][AMR_CORN4_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_2] == block[block[n][AMR_CORN4]][AMR_CHILD8] || block[n][AMR_CORN4D_2] == -100) && block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
-				&& block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
-				rc += MPI_Irecv(&receive_E3_corn2_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][352]);
+			if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1 && (block[n][AMR_CORN4D_2] == block[n][AMR_CORN4_2] || block[n][AMR_CORN4D_2] == -100) && block[block[n][AMR_CORN4_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
+				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN4_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4_2]][AMR_TIMELEVEL] - 1){
+				rc += MPI_Irecv(&receive_E3_corn2_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4_2]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN4_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][352]);
 			}
 		}
 		if (block[block[n][AMR_CORN4]][AMR_PARENT] >= 0 && (block[n][AMR_CORN4D] == n || block[n][AMR_CORN4D] == -100)){
@@ -2198,31 +2198,31 @@ void E1_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN9]][AMR_REFINED] == 1){
 			ref_1 = block[block[n][AMR_CORN9_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			//receive from finer grid
-			if (block[n][AMR_CORN9D_1] == block[block[n][AMR_CORN9]][AMR_CHILD3] || block[n][AMR_CORN9D_1] == -100){
-				if (block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN9D_1] == block[n][AMR_CORN9_1] || block[n][AMR_CORN9D_1] == -100){
+				if (block[block[n][AMR_CORN9_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN9_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][311], &Statbound[nl[n]][311]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN9]][AMR_CHILD3], 0, (BS_1) / (1 + ref_1), 0, BS_3, receive_E1_corn11_1, tempreceive_E1_corn11_1, receive_E1_corn11_12, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN9_1], 0, (BS_1) / (1 + ref_1), 0, BS_3, receive_E1_corn11_1, tempreceive_E1_corn11_1, receive_E1_corn11_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn11_2[nl[n]]), &(tempBufferrecE1corn11_2[nl[n]]), &(BufferrecE1corn11_22[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN9]][AMR_CHILD3], block[block[n][AMR_CORN9]][AMR_CHILD3], 0, (BS_1) / (1 + ref_1), 0, BS_3, send_E1_corn11, receive_E1_corn11_1, receive_E1_corn11_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn11[nl[block[block[n][AMR_CORN9]][AMR_CHILD3]]]), &(BufferrecE1corn11_2[nl[n]]), &(BufferrecE1corn11_22[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN9]][AMR_CHILD3]]][311]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN9_1], block[n][AMR_CORN9_1], 0, (BS_1) / (1 + ref_1), 0, BS_3, send_E1_corn11, receive_E1_corn11_1, receive_E1_corn11_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn11[nl[block[n][AMR_CORN9_1]]]), &(BufferrecE1corn11_2[nl[n]]), &(BufferrecE1corn11_22[nl[n]]), &(boundevent[nl[block[n][AMR_CORN9_1]]][311]), calc_corr);
 				}
 			}
 			ref_1 = block[block[n][AMR_CORN9_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (ref_1 == 1 && (block[n][AMR_CORN9D_2] == block[block[n][AMR_CORN9]][AMR_CHILD7] || block[n][AMR_CORN9D_2] == -100)){
-				if (block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
+			if (ref_1 == 1 && (block[n][AMR_CORN9D_2] == block[n][AMR_CORN9_2] || block[n][AMR_CORN9D_2] == -100)){
+				if (block[block[n][AMR_CORN9_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN9_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][361], &Statbound[nl[n]][361]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN9]][AMR_CHILD7], BS_1 / (1 + ref_1), BS_1, 0, BS_3, receive_E1_corn11_2, tempreceive_E1_corn11_2, receive_E1_corn11_22, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN9_2], BS_1 / (1 + ref_1), BS_1, 0, BS_3, receive_E1_corn11_2, tempreceive_E1_corn11_2, receive_E1_corn11_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn11_6[nl[n]]), &(tempBufferrecE1corn11_6[nl[n]]), &(BufferrecE1corn11_62[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN9]][AMR_CHILD7], block[block[n][AMR_CORN9]][AMR_CHILD7], BS_1 / (1 + ref_1), BS_1, 0, BS_3, send_E1_corn11, receive_E1_corn11_2, receive_E1_corn11_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn11[nl[block[block[n][AMR_CORN9]][AMR_CHILD7]]]), &(BufferrecE1corn11_6[nl[n]]), &(BufferrecE1corn11_62[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN9]][AMR_CHILD7]]][311]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN9_2], block[n][AMR_CORN9_2], BS_1 / (1 + ref_1), BS_1, 0, BS_3, send_E1_corn11, receive_E1_corn11_2, receive_E1_corn11_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn11[nl[block[n][AMR_CORN9_2]]]), &(BufferrecE1corn11_6[nl[n]]), &(BufferrecE1corn11_62[nl[n]]), &(boundevent[nl[block[n][AMR_CORN9_2]]][311]), calc_corr);
 				}
 			}
 		}
@@ -2246,31 +2246,31 @@ void E1_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN10]][AMR_REFINED] == 1){
 			ref_1 = block[block[n][AMR_CORN10_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			//receive from finer grid
-			if (block[n][AMR_CORN10D_1] == block[block[n][AMR_CORN10]][AMR_CHILD1] || block[n][AMR_CORN10D_1] == -100){
-				if (block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN10D_1] == block[n][AMR_CORN10_1] || block[n][AMR_CORN10D_1] == -100){
+				if (block[block[n][AMR_CORN10_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN10_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][312], &Statbound[nl[n]][312]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN10]][AMR_CHILD1], 0, (BS_1) / (1 + ref_1), BS_2, BS_3, receive_E1_corn12_1, tempreceive_E1_corn12_1, receive_E1_corn12_12, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN10_1], 0, (BS_1) / (1 + ref_1), BS_2, BS_3, receive_E1_corn12_1, tempreceive_E1_corn12_1, receive_E1_corn12_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn12_4[nl[n]]), &(tempBufferrecE1corn12_4[nl[n]]), &(BufferrecE1corn12_42[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN10]][AMR_CHILD1], block[block[n][AMR_CORN10]][AMR_CHILD1], 0, (BS_1) / (1 + ref_1), BS_2, BS_3, send_E1_corn12, receive_E1_corn12_1, receive_E1_corn12_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn12[nl[block[block[n][AMR_CORN10]][AMR_CHILD1]]]), &(BufferrecE1corn12_4[nl[n]]), &(BufferrecE1corn12_42[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN10]][AMR_CHILD1]]][312]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN10_1], block[n][AMR_CORN10_1], 0, (BS_1) / (1 + ref_1), BS_2, BS_3, send_E1_corn12, receive_E1_corn12_1, receive_E1_corn12_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn12[nl[block[n][AMR_CORN10_1]]]), &(BufferrecE1corn12_4[nl[n]]), &(BufferrecE1corn12_42[nl[n]]), &(boundevent[nl[block[n][AMR_CORN10_1]]][312]), calc_corr);
 				}
 			}
 			ref_1 = block[block[n][AMR_CORN10_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (ref_1 == 1 && (block[n][AMR_CORN10D_2] == block[block[n][AMR_CORN10]][AMR_CHILD5] || block[n][AMR_CORN10D_2] == -100)){
-				if (block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
+			if (ref_1 == 1 && (block[n][AMR_CORN10D_2] == block[n][AMR_CORN10_2] || block[n][AMR_CORN10D_2] == -100)){
+				if (block[block[n][AMR_CORN10_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN10_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][362], &Statbound[nl[n]][362]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN10]][AMR_CHILD5], BS_1 / (1 + ref_1), BS_1, BS_2, BS_3, receive_E1_corn12_2, tempreceive_E1_corn12_2, receive_E1_corn12_22, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN10_2], BS_1 / (1 + ref_1), BS_1, BS_2, BS_3, receive_E1_corn12_2, tempreceive_E1_corn12_2, receive_E1_corn12_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn12_8[nl[n]]), &(tempBufferrecE1corn12_8[nl[n]]), &(BufferrecE1corn12_82[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN10]][AMR_CHILD5], block[block[n][AMR_CORN10]][AMR_CHILD5], BS_1 / (1 + ref_1), BS_1, BS_2, BS_3, send_E1_corn12, receive_E1_corn12_2, receive_E1_corn12_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn12[nl[block[block[n][AMR_CORN10]][AMR_CHILD5]]]), &(BufferrecE1corn12_8[nl[n]]), &(BufferrecE1corn12_82[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN10]][AMR_CHILD5]]][312]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN10_2], block[n][AMR_CORN10_2], BS_1 / (1 + ref_1), BS_1, BS_2, BS_3, send_E1_corn12, receive_E1_corn12_2, receive_E1_corn12_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn12[nl[block[n][AMR_CORN10_2]]]), &(BufferrecE1corn12_8[nl[n]]), &(BufferrecE1corn12_82[nl[n]]), &(boundevent[nl[block[n][AMR_CORN10_2]]][312]), calc_corr);
 				}
 			}
 		}
@@ -2294,31 +2294,31 @@ void E1_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN11]][AMR_REFINED] == 1){
 			ref_1 = block[block[n][AMR_CORN11_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			//receive from finer grid
-			if (block[n][AMR_CORN11D_1] == block[block[n][AMR_CORN11]][AMR_CHILD2] || block[n][AMR_CORN11D_1] == -100){
-				if (block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN11D_1] == block[n][AMR_CORN11_1] || block[n][AMR_CORN11D_1] == -100){
+				if (block[block[n][AMR_CORN11_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN11_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][309], &Statbound[nl[n]][309]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN11]][AMR_CHILD2], 0, (BS_1) / (1 + ref_1), BS_2, 0, receive_E1_corn9_1, tempreceive_E1_corn9_1, receive_E1_corn9_12, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN11_1], 0, (BS_1) / (1 + ref_1), BS_2, 0, receive_E1_corn9_1, tempreceive_E1_corn9_1, receive_E1_corn9_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn9_3[nl[n]]), &(tempBufferrecE1corn9_3[nl[n]]), &(BufferrecE1corn9_32[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN11]][AMR_CHILD2], block[block[n][AMR_CORN11]][AMR_CHILD2], 0, (BS_1) / (1 + ref_1), BS_2, 0, send_E1_corn9, receive_E1_corn9_1, receive_E1_corn9_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn9[nl[block[block[n][AMR_CORN11]][AMR_CHILD2]]]), &(BufferrecE1corn9_3[nl[n]]), &(BufferrecE1corn9_32[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN11]][AMR_CHILD2]]][309]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN11_1], block[n][AMR_CORN11_1], 0, (BS_1) / (1 + ref_1), BS_2, 0, send_E1_corn9, receive_E1_corn9_1, receive_E1_corn9_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn9[nl[block[n][AMR_CORN11_1]]]), &(BufferrecE1corn9_3[nl[n]]), &(BufferrecE1corn9_32[nl[n]]), &(boundevent[nl[block[n][AMR_CORN11_1]]][309]), calc_corr);
 				}
 			}
 			ref_1 = block[block[n][AMR_CORN11_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (ref_1 == 1 && (block[n][AMR_CORN11D_2] == block[block[n][AMR_CORN11]][AMR_CHILD6] || block[n][AMR_CORN11D_2] == -100)){
-				if (block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
+			if (ref_1 == 1 && (block[n][AMR_CORN11D_2] == block[n][AMR_CORN11_2] || block[n][AMR_CORN11D_2] == -100)){
+				if (block[block[n][AMR_CORN11_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN11_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][359], &Statbound[nl[n]][359]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN11]][AMR_CHILD6], BS_1 / (1 + ref_1), BS_1, BS_2, 0, receive_E1_corn9_2, tempreceive_E1_corn9_2, receive_E1_corn9_22, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN11_2], BS_1 / (1 + ref_1), BS_1, BS_2, 0, receive_E1_corn9_2, tempreceive_E1_corn9_2, receive_E1_corn9_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn9_7[nl[n]]), &(tempBufferrecE1corn9_7[nl[n]]), &(BufferrecE1corn9_72[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN11]][AMR_CHILD6], block[block[n][AMR_CORN11]][AMR_CHILD6], BS_1 / (1 + ref_1), BS_1, BS_2, 0, send_E1_corn9, receive_E1_corn9_2, receive_E1_corn9_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn9[nl[block[block[n][AMR_CORN11]][AMR_CHILD6]]]), &(BufferrecE1corn9_7[nl[n]]), &(BufferrecE1corn9_72[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN11]][AMR_CHILD6]]][309]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN11_2], block[n][AMR_CORN11_2], BS_1 / (1 + ref_1), BS_1, BS_2, 0, send_E1_corn9, receive_E1_corn9_2, receive_E1_corn9_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn9[nl[block[n][AMR_CORN11_2]]]), &(BufferrecE1corn9_7[nl[n]]), &(BufferrecE1corn9_72[nl[n]]), &(boundevent[nl[block[n][AMR_CORN11_2]]][309]), calc_corr);
 				}
 			}
 		}
@@ -2341,31 +2341,31 @@ void E1_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN12]][AMR_REFINED] == 1 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
 			ref_1 = block[block[n][AMR_CORN12_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 			//receive from finer grid
-			if (block[n][AMR_CORN12D_1] == block[block[n][AMR_CORN12]][AMR_CHILD4] || block[n][AMR_CORN12D_1] == -100){
-				if (block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN12D_1] == block[n][AMR_CORN12_1] || block[n][AMR_CORN12D_1] == -100){
+				if (block[block[n][AMR_CORN12_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN12_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][310], &Statbound[nl[n]][310]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN12]][AMR_CHILD4], 0, (BS_1) / (1 + ref_1), 0, 0, receive_E1_corn10_1, tempreceive_E1_corn10_1, receive_E1_corn10_12, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN12_1], 0, (BS_1) / (1 + ref_1), 0, 0, receive_E1_corn10_1, tempreceive_E1_corn10_1, receive_E1_corn10_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn10_1[nl[n]]), &(tempBufferrecE1corn10_1[nl[n]]), &(BufferrecE1corn10_12[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN12]][AMR_CHILD4], block[block[n][AMR_CORN12]][AMR_CHILD4], 0, (BS_1) / (1 + ref_1), 0, 0, send_E1_corn10, receive_E1_corn10_1, receive_E1_corn10_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn10[nl[block[block[n][AMR_CORN12]][AMR_CHILD4]]]), &(BufferrecE1corn10_1[nl[n]]), &(BufferrecE1corn10_12[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN12]][AMR_CHILD4]]][310]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN12_1], block[n][AMR_CORN12_1], 0, (BS_1) / (1 + ref_1), 0, 0, send_E1_corn10, receive_E1_corn10_1, receive_E1_corn10_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn10[nl[block[n][AMR_CORN12_1]]]), &(BufferrecE1corn10_1[nl[n]]), &(BufferrecE1corn10_12[nl[n]]), &(boundevent[nl[block[n][AMR_CORN12_1]]][310]), calc_corr);
 				}
 			}
 			ref_1 = block[block[n][AMR_CORN12_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-			if (ref_1 == 1 && (block[n][AMR_CORN12D_2] == block[block[n][AMR_CORN12]][AMR_CHILD8] || block[n][AMR_CORN12D_2] == -100)){
-				if (block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
+			if (ref_1 == 1 && (block[n][AMR_CORN12D_2] == block[n][AMR_CORN12_2] || block[n][AMR_CORN12D_2] == -100)){
+				if (block[block[n][AMR_CORN12_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN12_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][360], &Statbound[nl[n]][360]);
 					}
-					unpack_receive_E1_corn(n, n, block[block[n][AMR_CORN12]][AMR_CHILD8], BS_1 / (1 + ref_1), BS_1, 0, 0, receive_E1_corn10_2, tempreceive_E1_corn10_2, receive_E1_corn10_22, E,
+					unpack_receive_E1_corn(n, n, block[n][AMR_CORN12_2], BS_1 / (1 + ref_1), BS_1, 0, 0, receive_E1_corn10_2, tempreceive_E1_corn10_2, receive_E1_corn10_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE1corn10_5[nl[n]]), &(tempBufferrecE1corn10_5[nl[n]]), &(BufferrecE1corn10_52[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E1_corn(n, block[block[n][AMR_CORN12]][AMR_CHILD8], block[block[n][AMR_CORN12]][AMR_CHILD8], BS_1 / (1 + ref_1), BS_1, 0, 0, send_E1_corn10, receive_E1_corn10_2, receive_E1_corn10_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE1corn10[nl[block[block[n][AMR_CORN12]][AMR_CHILD8]]]), &(BufferrecE1corn10_5[nl[n]]), &(BufferrecE1corn10_52[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN12]][AMR_CHILD8]]][310]), calc_corr);
+					unpack_receive_E1_corn(n, block[n][AMR_CORN12_2], block[n][AMR_CORN12_2], BS_1 / (1 + ref_1), BS_1, 0, 0, send_E1_corn10, receive_E1_corn10_2, receive_E1_corn10_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE1corn10[nl[block[n][AMR_CORN12_2]]]), &(BufferrecE1corn10_5[nl[n]]), &(BufferrecE1corn10_52[nl[n]]), &(boundevent[nl[block[n][AMR_CORN12_2]]][310]), calc_corr);
 				}
 			}
 		}
@@ -2396,31 +2396,31 @@ void E2_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN5]][AMR_REFINED] == 1){
 			ref_2 = block[block[n][AMR_CORN5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			//receive from finer grid
-			if (block[n][AMR_CORN5D_1] == block[block[n][AMR_CORN5]][AMR_CHILD2] || block[n][AMR_CORN5D_1] == -100){
-				if (block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN5D_1] == block[n][AMR_CORN5_1] || block[n][AMR_CORN5D_1] == -100){
+				if (block[block[n][AMR_CORN5_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN5_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][307], &Statbound[nl[n]][307]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN5]][AMR_CHILD2], BS_1, 0, (BS_2) / (1 + ref_2), 0, receive_E2_corn7_1, tempreceive_E2_corn7_1, receive_E2_corn7_12, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN5_1], BS_1, 0, (BS_2) / (1 + ref_2), 0, receive_E2_corn7_1, tempreceive_E2_corn7_1, receive_E2_corn7_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn7_5[nl[n]]), &(tempBufferrecE2corn7_5[nl[n]]), &(BufferrecE2corn7_52[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN5]][AMR_CHILD2], block[block[n][AMR_CORN5]][AMR_CHILD2], BS_1, 0, (BS_2) / (1 + ref_2), 0, send_E2_corn7, receive_E2_corn7_1, receive_E2_corn7_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn7[nl[block[block[n][AMR_CORN5]][AMR_CHILD2]]]), &(BufferrecE2corn7_5[nl[n]]), &(BufferrecE2corn7_52[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN5]][AMR_CHILD2]]][307]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN5_1], block[n][AMR_CORN5_1], BS_1, 0, (BS_2) / (1 + ref_2), 0, send_E2_corn7, receive_E2_corn7_1, receive_E2_corn7_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn7[nl[block[n][AMR_CORN5_1]]]), &(BufferrecE2corn7_5[nl[n]]), &(BufferrecE2corn7_52[nl[n]]), &(boundevent[nl[block[n][AMR_CORN5_1]]][307]), calc_corr);
 				}
 			}
 			ref_2 = block[block[n][AMR_CORN5_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (ref_2 == 1 && (block[n][AMR_CORN5D_2] == block[block[n][AMR_CORN5]][AMR_CHILD4] || block[n][AMR_CORN5D_2] == -100)){
-				if (block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
+			if (ref_2 == 1 && (block[n][AMR_CORN5D_2] == block[n][AMR_CORN5_2] || block[n][AMR_CORN5D_2] == -100)){
+				if (block[block[n][AMR_CORN5_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN5_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][357], &Statbound[nl[n]][357]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN5]][AMR_CHILD4], BS_1, BS_2 / (1 + ref_2), BS_2, 0, receive_E2_corn7_2, tempreceive_E2_corn7_2, receive_E2_corn7_22, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN5_2], BS_1, BS_2 / (1 + ref_2), BS_2, 0, receive_E2_corn7_2, tempreceive_E2_corn7_2, receive_E2_corn7_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn7_7[nl[n]]), &(tempBufferrecE2corn7_7[nl[n]]), &(BufferrecE2corn7_72[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN5]][AMR_CHILD4], block[block[n][AMR_CORN5]][AMR_CHILD4], BS_1, BS_2 / (1 + ref_2), BS_2, 0, send_E2_corn7, receive_E2_corn7_2, receive_E2_corn7_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn7[nl[block[block[n][AMR_CORN5]][AMR_CHILD4]]]), &(BufferrecE2corn7_7[nl[n]]), &(BufferrecE2corn7_72[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN5]][AMR_CHILD4]]][307]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN5_2], block[n][AMR_CORN5_2], BS_1, BS_2 / (1 + ref_2), BS_2, 0, send_E2_corn7, receive_E2_corn7_2, receive_E2_corn7_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn7[nl[block[n][AMR_CORN5_2]]]), &(BufferrecE2corn7_7[nl[n]]), &(BufferrecE2corn7_72[nl[n]]), &(boundevent[nl[block[n][AMR_CORN5_2]]][307]), calc_corr);
 				}
 			}
 		}
@@ -2444,31 +2444,31 @@ void E2_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN6]][AMR_REFINED] == 1){
 			ref_2 = block[block[n][AMR_CORN6_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			//receive from finer grid
-			if (block[n][AMR_CORN6D_1] == block[block[n][AMR_CORN6]][AMR_CHILD1] || block[n][AMR_CORN6D_1] == -100){
-				if (block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN6D_1] == block[n][AMR_CORN6_1] || block[n][AMR_CORN6D_1] == -100){
+				if (block[block[n][AMR_CORN6_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN6_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][308], &Statbound[nl[n]][308]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN6]][AMR_CHILD1], BS_1, 0, (BS_2) / (1 + ref_2), BS_3, receive_E2_corn8_1, tempreceive_E2_corn8_1, receive_E2_corn8_12, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN6_1], BS_1, 0, (BS_2) / (1 + ref_2), BS_3, receive_E2_corn8_1, tempreceive_E2_corn8_1, receive_E2_corn8_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn8_6[nl[n]]), &(tempBufferrecE2corn8_6[nl[n]]), &(BufferrecE2corn8_62[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN6]][AMR_CHILD1], block[block[n][AMR_CORN6]][AMR_CHILD1], BS_1, 0, (BS_2) / (1 + ref_2), BS_3, send_E2_corn8, receive_E2_corn8_1, receive_E2_corn8_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn8[nl[block[block[n][AMR_CORN6]][AMR_CHILD1]]]), &(BufferrecE2corn8_6[nl[n]]), &(BufferrecE2corn8_62[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN6]][AMR_CHILD1]]][308]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN6_1], block[n][AMR_CORN6_1], BS_1, 0, (BS_2) / (1 + ref_2), BS_3, send_E2_corn8, receive_E2_corn8_1, receive_E2_corn8_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn8[nl[block[n][AMR_CORN6_1]]]), &(BufferrecE2corn8_6[nl[n]]), &(BufferrecE2corn8_62[nl[n]]), &(boundevent[nl[block[n][AMR_CORN6_1]]][308]), calc_corr);
 				}
 			}
 			ref_2 = block[block[n][AMR_CORN6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (ref_2 == 1 && (block[n][AMR_CORN6D_2] == block[block[n][AMR_CORN6]][AMR_CHILD3] || block[n][AMR_CORN6D_2] == -100)){
-				if (block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
+			if (ref_2 == 1 && (block[n][AMR_CORN6D_2] == block[n][AMR_CORN6_2] || block[n][AMR_CORN6D_2] == -100)){
+				if (block[block[n][AMR_CORN6_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN6_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][358], &Statbound[nl[n]][358]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN6]][AMR_CHILD3], BS_1, BS_2 / (1 + ref_2), BS_2, BS_3, receive_E2_corn8_2, tempreceive_E2_corn8_2, receive_E2_corn8_22, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN6_2], BS_1, BS_2 / (1 + ref_2), BS_2, BS_3, receive_E2_corn8_2, tempreceive_E2_corn8_2, receive_E2_corn8_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn8_8[nl[n]]), &(tempBufferrecE2corn8_8[nl[n]]), &(BufferrecE2corn8_82[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN6]][AMR_CHILD3], block[block[n][AMR_CORN6]][AMR_CHILD3], BS_1, BS_2 / (1 + ref_2), BS_2, BS_3, send_E2_corn8, receive_E2_corn8_2, receive_E2_corn8_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn8[nl[block[block[n][AMR_CORN6]][AMR_CHILD3]]]), &(BufferrecE2corn8_8[nl[n]]), &(BufferrecE2corn8_82[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN6]][AMR_CHILD3]]][308]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN6_2], block[n][AMR_CORN6_2], BS_1, BS_2 / (1 + ref_2), BS_2, BS_3, send_E2_corn8, receive_E2_corn8_2, receive_E2_corn8_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn8[nl[block[n][AMR_CORN6_2]]]), &(BufferrecE2corn8_8[nl[n]]), &(BufferrecE2corn8_82[nl[n]]), &(boundevent[nl[block[n][AMR_CORN6_2]]][308]), calc_corr);
 				}
 			}
 		}
@@ -2492,31 +2492,31 @@ void E2_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN7]][AMR_REFINED] == 1){
 			ref_2 = block[block[n][AMR_CORN7_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			//receive from finer grid
-			if (block[n][AMR_CORN7D_1] == block[block[n][AMR_CORN7]][AMR_CHILD5] || block[n][AMR_CORN7D_1] == -100){
-				if (block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN7D_1] == block[n][AMR_CORN7_1] || block[n][AMR_CORN7D_1] == -100){
+				if (block[block[n][AMR_CORN7_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN7_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][305], &Statbound[nl[n]][305]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN7]][AMR_CHILD5], 0, 0, (BS_2) / (1 + ref_2), BS_3, receive_E2_corn5_1, tempreceive_E2_corn5_1, receive_E2_corn5_12, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN7_1], 0, 0, (BS_2) / (1 + ref_2), BS_3, receive_E2_corn5_1, tempreceive_E2_corn5_1, receive_E2_corn5_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn5_2[nl[n]]), &(tempBufferrecE2corn5_2[nl[n]]), &(BufferrecE2corn5_22[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN7]][AMR_CHILD5], block[block[n][AMR_CORN7]][AMR_CHILD5], 0, 0, (BS_2) / (1 + ref_2), BS_3, send_E2_corn5, receive_E2_corn5_1, receive_E2_corn5_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn5[nl[block[block[n][AMR_CORN7]][AMR_CHILD5]]]), &(BufferrecE2corn5_2[nl[n]]), &(BufferrecE2corn5_22[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN7]][AMR_CHILD5]]][305]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN7_1], block[n][AMR_CORN7_1], 0, 0, (BS_2) / (1 + ref_2), BS_3, send_E2_corn5, receive_E2_corn5_1, receive_E2_corn5_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn5[nl[block[n][AMR_CORN7_1]]]), &(BufferrecE2corn5_2[nl[n]]), &(BufferrecE2corn5_22[nl[n]]), &(boundevent[nl[block[n][AMR_CORN7_1]]][305]), calc_corr);
 				}
 			}
 			ref_2 = block[block[n][AMR_CORN7_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (ref_2 == 1 && (block[n][AMR_CORN7D_2] == block[block[n][AMR_CORN7]][AMR_CHILD7] || block[n][AMR_CORN7D_2] == -100)){
-				if (block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
+			if (ref_2 == 1 && (block[n][AMR_CORN7D_2] == block[n][AMR_CORN7_2] || block[n][AMR_CORN7D_2] == -100)){
+				if (block[block[n][AMR_CORN7_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN7_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][355], &Statbound[nl[n]][355]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN7]][AMR_CHILD7], 0, BS_2 / (1 + ref_2), BS_2, BS_3, receive_E2_corn5_2, tempreceive_E2_corn5_2, receive_E2_corn5_22, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN7_2], 0, BS_2 / (1 + ref_2), BS_2, BS_3, receive_E2_corn5_2, tempreceive_E2_corn5_2, receive_E2_corn5_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn5_4[nl[n]]), &(tempBufferrecE2corn5_4[nl[n]]), &(BufferrecE2corn5_42[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN7]][AMR_CHILD7], block[block[n][AMR_CORN7]][AMR_CHILD7], 0, BS_2 / (1 + ref_2), BS_2, BS_3, send_E2_corn5, receive_E2_corn5_2, receive_E2_corn5_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn5[nl[block[block[n][AMR_CORN7]][AMR_CHILD7]]]), &(BufferrecE2corn5_4[nl[n]]), &(BufferrecE2corn5_42[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN7]][AMR_CHILD7]]][305]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN7_2], block[n][AMR_CORN7_2], 0, BS_2 / (1 + ref_2), BS_2, BS_3, send_E2_corn5, receive_E2_corn5_2, receive_E2_corn5_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn5[nl[block[n][AMR_CORN7_2]]]), &(BufferrecE2corn5_4[nl[n]]), &(BufferrecE2corn5_42[nl[n]]), &(boundevent[nl[block[n][AMR_CORN7_2]]][305]), calc_corr);
 				}
 			}
 		}
@@ -2539,31 +2539,31 @@ void E2_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN8]][AMR_REFINED] == 1){
 			ref_2 = block[block[n][AMR_CORN8_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 			//receive from finer grid
-			if (block[n][AMR_CORN8D_1] == block[block[n][AMR_CORN8]][AMR_CHILD6] || block[n][AMR_CORN8D_1] == -100){
-				if (block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN8D_1] == block[n][AMR_CORN8_1] || block[n][AMR_CORN8D_1] == -100){
+				if (block[block[n][AMR_CORN8_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN8_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][306], &Statbound[nl[n]][306]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN8]][AMR_CHILD6], 0, 0, (BS_2) / (1 + ref_2), 0, receive_E2_corn6_1, tempreceive_E2_corn6_1, receive_E2_corn6_12, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN8_1], 0, 0, (BS_2) / (1 + ref_2), 0, receive_E2_corn6_1, tempreceive_E2_corn6_1, receive_E2_corn6_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn6_1[nl[n]]), &(tempBufferrecE2corn6_1[nl[n]]), &(BufferrecE2corn6_12[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN8]][AMR_CHILD6], block[block[n][AMR_CORN8]][AMR_CHILD6], 0, 0, (BS_2) / (1 + ref_2), 0, send_E2_corn6, receive_E2_corn6_1, receive_E2_corn6_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn6[nl[block[block[n][AMR_CORN8]][AMR_CHILD6]]]), &(BufferrecE2corn6_1[nl[n]]), &(BufferrecE2corn6_12[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN8]][AMR_CHILD6]]][306]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN8_1], block[n][AMR_CORN8_1], 0, 0, (BS_2) / (1 + ref_2), 0, send_E2_corn6, receive_E2_corn6_1, receive_E2_corn6_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn6[nl[block[n][AMR_CORN8_1]]]), &(BufferrecE2corn6_1[nl[n]]), &(BufferrecE2corn6_12[nl[n]]), &(boundevent[nl[block[n][AMR_CORN8_1]]][306]), calc_corr);
 				}
 			}
 			ref_2 = block[block[n][AMR_CORN8_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-			if (ref_2 == 1 && (block[n][AMR_CORN8D_2] == block[block[n][AMR_CORN8]][AMR_CHILD8] || block[n][AMR_CORN8D_2] == -100)){
-				if (block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
+			if (ref_2 == 1 && (block[n][AMR_CORN8D_2] == block[n][AMR_CORN8_2] || block[n][AMR_CORN8D_2] == -100)){
+				if (block[block[n][AMR_CORN8_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN8_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][356], &Statbound[nl[n]][356]);
 					}
-					unpack_receive_E2_corn(n, n, block[block[n][AMR_CORN8]][AMR_CHILD8], 0, BS_2 / (1 + ref_2), BS_2, 0, receive_E2_corn6_2, tempreceive_E2_corn6_2, receive_E2_corn6_22, E,
+					unpack_receive_E2_corn(n, n, block[n][AMR_CORN8_2], 0, BS_2 / (1 + ref_2), BS_2, 0, receive_E2_corn6_2, tempreceive_E2_corn6_2, receive_E2_corn6_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE2corn6_3[nl[n]]), &(tempBufferrecE2corn6_3[nl[n]]), &(BufferrecE2corn6_32[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E2_corn(n, block[block[n][AMR_CORN8]][AMR_CHILD8], block[block[n][AMR_CORN8]][AMR_CHILD8], 0, BS_2 / (1 + ref_2), BS_2, 0, send_E2_corn6, receive_E2_corn6_2, receive_E2_corn6_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE2corn6[nl[block[block[n][AMR_CORN8]][AMR_CHILD8]]]), &(BufferrecE2corn6_3[nl[n]]), &(BufferrecE2corn6_32[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN8]][AMR_CHILD8]]][306]), calc_corr);
+					unpack_receive_E2_corn(n, block[n][AMR_CORN8_2], block[n][AMR_CORN8_2], 0, BS_2 / (1 + ref_2), BS_2, 0, send_E2_corn6, receive_E2_corn6_2, receive_E2_corn6_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE2corn6[nl[block[n][AMR_CORN8_2]]]), &(BufferrecE2corn6_3[nl[n]]), &(BufferrecE2corn6_32[nl[n]]), &(boundevent[nl[block[n][AMR_CORN8_2]]][306]), calc_corr);
 				}
 			}
 		}
@@ -2595,31 +2595,31 @@ void E3_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		}
 		if (block[block[n][AMR_CORN1]][AMR_REFINED] == 1){
 			ref_3 = block[block[n][AMR_CORN1_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (block[n][AMR_CORN1D_1] == block[block[n][AMR_CORN1]][AMR_CHILD3] || block[n][AMR_CORN1D_1] == -100){
-				if (block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_CHILD3]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN1D_1] == block[n][AMR_CORN1_1] || block[n][AMR_CORN1D_1] == -100){
+				if (block[block[n][AMR_CORN1_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN1_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][303], &Statbound[nl[n]][303]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN1]][AMR_CHILD3], BS_1, 0, 0, (BS_3) / (1 + ref_3), receive_E3_corn3_1, tempreceive_E3_corn3_1, receive_E3_corn3_12, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN1_1], BS_1, 0, 0, (BS_3) / (1 + ref_3), receive_E3_corn3_1, tempreceive_E3_corn3_1, receive_E3_corn3_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn3_5[nl[n]]), &(tempBufferrecE3corn3_5[nl[n]]), &(BufferrecE3corn3_52[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN1]][AMR_CHILD3], block[block[n][AMR_CORN1]][AMR_CHILD3], BS_1, 0, 0, (BS_3) / (1 + ref_3), send_E3_corn3, receive_E3_corn3_1, receive_E3_corn3_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn3[nl[block[block[n][AMR_CORN1]][AMR_CHILD3]]]), &(BufferrecE3corn3_5[nl[n]]), &(BufferrecE3corn3_52[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN1]][AMR_CHILD3]]][303]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN1_1], block[n][AMR_CORN1_1], BS_1, 0, 0, (BS_3) / (1 + ref_3), send_E3_corn3, receive_E3_corn3_1, receive_E3_corn3_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn3[nl[block[n][AMR_CORN1_1]]]), &(BufferrecE3corn3_5[nl[n]]), &(BufferrecE3corn3_52[nl[n]]), &(boundevent[nl[block[n][AMR_CORN1_1]]][303]), calc_corr);
 				}
 			}
 			ref_3 = block[block[n][AMR_CORN1_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (ref_3 == 1 && (block[n][AMR_CORN1D_2] == block[block[n][AMR_CORN1]][AMR_CHILD4] || block[n][AMR_CORN1D_2] == -100)){
-				if (block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_CHILD4]][AMR_TIMELEVEL] - 1){
+			if (ref_3 == 1 && (block[n][AMR_CORN1D_2] == block[n][AMR_CORN1_2] || block[n][AMR_CORN1D_2] == -100)){
+				if (block[block[n][AMR_CORN1_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN1_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][353], &Statbound[nl[n]][353]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN1]][AMR_CHILD4], BS_1, 0, BS_3 / (1 + ref_3), BS_3, receive_E3_corn3_2, tempreceive_E3_corn3_2, receive_E3_corn3_22, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN1_2], BS_1, 0, BS_3 / (1 + ref_3), BS_3, receive_E3_corn3_2, tempreceive_E3_corn3_2, receive_E3_corn3_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn3_6[nl[n]]), &(tempBufferrecE3corn3_6[nl[n]]), &(BufferrecE3corn3_62[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN1]][AMR_CHILD4], block[block[n][AMR_CORN1]][AMR_CHILD4], BS_1, 0, BS_3 / (1 + ref_3), BS_3, send_E3_corn3, receive_E3_corn3_2, receive_E3_corn3_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn3[nl[block[block[n][AMR_CORN1]][AMR_CHILD4]]]), &(BufferrecE3corn3_6[nl[n]]), &(BufferrecE3corn3_62[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN1]][AMR_CHILD4]]][303]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN1_2], block[n][AMR_CORN1_2], BS_1, 0, BS_3 / (1 + ref_3), BS_3, send_E3_corn3, receive_E3_corn3_2, receive_E3_corn3_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn3[nl[block[n][AMR_CORN1_2]]]), &(BufferrecE3corn3_6[nl[n]]), &(BufferrecE3corn3_62[nl[n]]), &(boundevent[nl[block[n][AMR_CORN1_2]]][303]), calc_corr);
 				}
 			}
 		}
@@ -2643,31 +2643,31 @@ void E3_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN2]][AMR_REFINED] == 1){
 			ref_3 = block[block[n][AMR_CORN2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 			//receive from finer grid
-			if (block[n][AMR_CORN2D_1] == block[block[n][AMR_CORN2]][AMR_CHILD1] || block[n][AMR_CORN2D_1] == -100){
-				if (block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_CHILD1]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN2D_1] == block[n][AMR_CORN2_1] || block[n][AMR_CORN2D_1] == -100){
+				if (block[block[n][AMR_CORN2_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN2_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][304], &Statbound[nl[n]][304]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN2]][AMR_CHILD1], BS_1, BS_2, 0, (BS_3) / (1 + ref_3), receive_E3_corn4_1, tempreceive_E3_corn4_1, receive_E3_corn4_12, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN2_1], BS_1, BS_2, 0, (BS_3) / (1 + ref_3), receive_E3_corn4_1, tempreceive_E3_corn4_1, receive_E3_corn4_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn4_7[nl[n]]), &(tempBufferrecE3corn4_7[nl[n]]), &(BufferrecE3corn4_72[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN2]][AMR_CHILD1], block[block[n][AMR_CORN2]][AMR_CHILD1], BS_1, BS_2, 0, (BS_3) / (1 + ref_3), send_E3_corn4, receive_E3_corn4_1, receive_E3_corn4_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn4[nl[block[block[n][AMR_CORN2]][AMR_CHILD1]]]), &(BufferrecE3corn4_7[nl[n]]), &(BufferrecE3corn4_72[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN2]][AMR_CHILD1]]][304]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN2_1], block[n][AMR_CORN2_1], BS_1, BS_2, 0, (BS_3) / (1 + ref_3), send_E3_corn4, receive_E3_corn4_1, receive_E3_corn4_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn4[nl[block[n][AMR_CORN2_1]]]), &(BufferrecE3corn4_7[nl[n]]), &(BufferrecE3corn4_72[nl[n]]), &(boundevent[nl[block[n][AMR_CORN2_1]]][304]), calc_corr);
 				}
 			}
 			ref_3 = block[block[n][AMR_CORN2_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (ref_3 == 1 && (block[n][AMR_CORN2D_2] == block[block[n][AMR_CORN2]][AMR_CHILD2] || block[n][AMR_CORN2D_2] == -100)){
-				if (block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_CHILD2]][AMR_TIMELEVEL] - 1){
+			if (ref_3 == 1 && (block[n][AMR_CORN2D_2] == block[n][AMR_CORN2_2] || block[n][AMR_CORN2D_2] == -100)){
+				if (block[block[n][AMR_CORN2_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN2_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][354], &Statbound[nl[n]][354]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN2]][AMR_CHILD2], BS_1, BS_2, BS_3 / (1 + ref_3), BS_3, receive_E3_corn4_2, tempreceive_E3_corn4_2, receive_E3_corn4_22, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN2_2], BS_1, BS_2, BS_3 / (1 + ref_3), BS_3, receive_E3_corn4_2, tempreceive_E3_corn4_2, receive_E3_corn4_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn4_8[nl[n]]), &(tempBufferrecE3corn4_8[nl[n]]), &(BufferrecE3corn4_82[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN2]][AMR_CHILD2], block[block[n][AMR_CORN2]][AMR_CHILD2], BS_1, BS_2, BS_3 / (1 + ref_3), BS_3, send_E3_corn4, receive_E3_corn4_2, receive_E3_corn4_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn4[nl[block[block[n][AMR_CORN2]][AMR_CHILD2]]]), &(BufferrecE3corn4_8[nl[n]]), &(BufferrecE3corn4_82[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN2]][AMR_CHILD2]]][304]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN2_2], block[n][AMR_CORN2_2], BS_1, BS_2, BS_3 / (1 + ref_3), BS_3, send_E3_corn4, receive_E3_corn4_2, receive_E3_corn4_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn4[nl[block[n][AMR_CORN2_2]]]), &(BufferrecE3corn4_8[nl[n]]), &(BufferrecE3corn4_82[nl[n]]), &(boundevent[nl[block[n][AMR_CORN2_2]]][304]), calc_corr);
 				}
 			}
 		}
@@ -2692,31 +2692,31 @@ void E3_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN3]][AMR_REFINED] == 1){
 			ref_3 = block[block[n][AMR_CORN3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 			//receive from finer grid
-			if (block[n][AMR_CORN3D_1] == block[block[n][AMR_CORN3]][AMR_CHILD5] || block[n][AMR_CORN3D_1] == -100){
-				if (block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_CHILD5]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN3D_1] == block[n][AMR_CORN3_1] || block[n][AMR_CORN3D_1] == -100){
+				if (block[block[n][AMR_CORN3_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN3_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][301], &Statbound[nl[n]][301]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN3]][AMR_CHILD5], 0, BS_2, 0, (BS_3) / (1 + ref_3), receive_E3_corn1_1, tempreceive_E3_corn1_1, receive_E3_corn1_12, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN3_1], 0, BS_2, 0, (BS_3) / (1 + ref_3), receive_E3_corn1_1, tempreceive_E3_corn1_1, receive_E3_corn1_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn1_3[nl[n]]), &(tempBufferrecE3corn1_3[nl[n]]), &(BufferrecE3corn1_32[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN3]][AMR_CHILD5], block[block[n][AMR_CORN3]][AMR_CHILD5], 0, BS_2, 0, (BS_3) / (1 + ref_3), send_E3_corn1, receive_E3_corn1_1, receive_E3_corn1_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn1[nl[block[block[n][AMR_CORN3]][AMR_CHILD5]]]), &(BufferrecE3corn1_3[nl[n]]), &(BufferrecE3corn1_32[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN3]][AMR_CHILD5]]][301]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN3_1], block[n][AMR_CORN3_1], 0, BS_2, 0, (BS_3) / (1 + ref_3), send_E3_corn1, receive_E3_corn1_1, receive_E3_corn1_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn1[nl[block[n][AMR_CORN3_1]]]), &(BufferrecE3corn1_3[nl[n]]), &(BufferrecE3corn1_32[nl[n]]), &(boundevent[nl[block[n][AMR_CORN3_1]]][301]), calc_corr);
 				}
 			}
 			ref_3 = block[block[n][AMR_CORN3_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (ref_3 == 1 && (block[n][AMR_CORN3D_2] == block[block[n][AMR_CORN3]][AMR_CHILD6] || block[n][AMR_CORN3D_2] == -100)){
-				if (block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_CHILD6]][AMR_TIMELEVEL] - 1){
+			if (ref_3 == 1 && (block[n][AMR_CORN3D_2] == block[n][AMR_CORN3_2] || block[n][AMR_CORN3D_2] == -100)){
+				if (block[block[n][AMR_CORN3_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN3_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][351], &Statbound[nl[n]][351]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN3]][AMR_CHILD6], 0, BS_2, BS_3 / (1 + ref_3), BS_3, receive_E3_corn1_2, tempreceive_E3_corn1_2, receive_E3_corn1_22, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN3_2], 0, BS_2, BS_3 / (1 + ref_3), BS_3, receive_E3_corn1_2, tempreceive_E3_corn1_2, receive_E3_corn1_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn1_4[nl[n]]), &(tempBufferrecE3corn1_4[nl[n]]), &(BufferrecE3corn1_42[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN3]][AMR_CHILD6], block[block[n][AMR_CORN3]][AMR_CHILD6], 0, BS_2, BS_3 / (1 + ref_3), BS_3, send_E3_corn1, receive_E3_corn1_2, receive_E3_corn1_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn1[nl[block[block[n][AMR_CORN3]][AMR_CHILD6]]]), &(BufferrecE3corn1_4[nl[n]]), &(BufferrecE3corn1_42[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN3]][AMR_CHILD6]]][301]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN3_2], block[n][AMR_CORN3_2], 0, BS_2, BS_3 / (1 + ref_3), BS_3, send_E3_corn1, receive_E3_corn1_2, receive_E3_corn1_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn1[nl[block[n][AMR_CORN3_2]]]), &(BufferrecE3corn1_4[nl[n]]), &(BufferrecE3corn1_42[nl[n]]), &(boundevent[nl[block[n][AMR_CORN3_2]]][301]), calc_corr);
 				}
 			}
 		}
@@ -2739,31 +2739,31 @@ void E3_receive_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOC
 		if (block[block[n][AMR_CORN4]][AMR_REFINED] == 1){
 			ref_3 = block[block[n][AMR_CORN4_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 			//receive from finer grid
-			if (block[n][AMR_CORN4D_1] == block[block[n][AMR_CORN4]][AMR_CHILD7] || block[n][AMR_CORN4D_1] == -100){
-				if (block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_CHILD7]][AMR_TIMELEVEL] - 1){
+			if (block[n][AMR_CORN4D_1] == block[n][AMR_CORN4_1] || block[n][AMR_CORN4D_1] == -100){
+				if (block[block[n][AMR_CORN4_1]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN4_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4_1]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][302], &Statbound[nl[n]][302]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN4]][AMR_CHILD7], 0, 0, 0, BS_3 / (1 + ref_3), receive_E3_corn2_1, tempreceive_E3_corn2_1, receive_E3_corn2_12, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN4_1], 0, 0, 0, BS_3 / (1 + ref_3), receive_E3_corn2_1, tempreceive_E3_corn2_1, receive_E3_corn2_12, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn2_1[nl[n]]), &(tempBufferrecE3corn2_1[nl[n]]), &(BufferrecE3corn2_12[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN4]][AMR_CHILD7], block[block[n][AMR_CORN4]][AMR_CHILD7], 0, 0, 0, BS_3 / (1 + ref_3), send_E3_corn2, receive_E3_corn2_1, receive_E3_corn2_12, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn2[nl[block[block[n][AMR_CORN4]][AMR_CHILD7]]]), &(BufferrecE3corn2_1[nl[n]]), &(BufferrecE3corn2_12[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN4]][AMR_CHILD7]]][302]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN4_1], block[n][AMR_CORN4_1], 0, 0, 0, BS_3 / (1 + ref_3), send_E3_corn2, receive_E3_corn2_1, receive_E3_corn2_12, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn2[nl[block[n][AMR_CORN4_1]]]), &(BufferrecE3corn2_1[nl[n]]), &(BufferrecE3corn2_12[nl[n]]), &(boundevent[nl[block[n][AMR_CORN4_1]]][302]), calc_corr);
 				}
 			}
 			ref_3 = block[block[n][AMR_CORN4_2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-			if (ref_3 == 1 && (block[n][AMR_CORN4D_2] == block[block[n][AMR_CORN4]][AMR_CHILD8] || block[n][AMR_CORN4D_2] == -100)){
-				if (block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_NODE] != block[n][AMR_NODE]){
-					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_CHILD8]][AMR_TIMELEVEL] - 1){
+			if (ref_3 == 1 && (block[n][AMR_CORN4D_2] == block[n][AMR_CORN4_2] || block[n][AMR_CORN4D_2] == -100)){
+				if (block[block[n][AMR_CORN4_2]][AMR_NODE] != block[n][AMR_NODE]){
+					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_CORN4_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4_2]][AMR_TIMELEVEL] - 1){
 						MPI_Wait(&boundreqs[nl[n]][352], &Statbound[nl[n]][352]);
 					}
-					unpack_receive_E3_corn(n, n, block[block[n][AMR_CORN4]][AMR_CHILD8], 0, 0, BS_3 / (1 + ref_3), BS_3, receive_E3_corn2_2, tempreceive_E3_corn2_2, receive_E3_corn2_22, E,
+					unpack_receive_E3_corn(n, n, block[n][AMR_CORN4_2], 0, 0, BS_3 / (1 + ref_3), BS_3, receive_E3_corn2_2, tempreceive_E3_corn2_2, receive_E3_corn2_22, E,
 						&(Bufferp[nl[n]]), &(BufferrecE3corn2_2[nl[n]]), &(tempBufferrecE3corn2_2[nl[n]]), &(BufferrecE3corn2_22[nl[n]]), NULL, calc_corr);
 				}
 				else{
-					unpack_receive_E3_corn(n, block[block[n][AMR_CORN4]][AMR_CHILD8], block[block[n][AMR_CORN4]][AMR_CHILD8], 0, 0, BS_3 / (1 + ref_3), BS_3, send_E3_corn2, receive_E3_corn2_2, receive_E3_corn2_22, E,
-						&(Bufferp[nl[n]]), &(BuffersendE3corn2[nl[block[block[n][AMR_CORN4]][AMR_CHILD8]]]), &(BufferrecE3corn2_2[nl[n]]), &(BufferrecE3corn2_22[nl[n]]), &(boundevent[nl[block[block[n][AMR_CORN4]][AMR_CHILD8]]][302]), calc_corr);
+					unpack_receive_E3_corn(n, block[n][AMR_CORN4_2], block[n][AMR_CORN4_2], 0, 0, BS_3 / (1 + ref_3), BS_3, send_E3_corn2, receive_E3_corn2_2, receive_E3_corn2_22, E,
+						&(Bufferp[nl[n]]), &(BuffersendE3corn2[nl[block[n][AMR_CORN4_2]]]), &(BufferrecE3corn2_2[nl[n]]), &(BufferrecE3corn2_22[nl[n]]), &(boundevent[nl[block[n][AMR_CORN4_2]]][302]), calc_corr);
 				}
 			}
 		}

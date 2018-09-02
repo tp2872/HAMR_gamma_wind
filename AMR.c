@@ -457,6 +457,93 @@ void set_AMR(void){
 		if (j - 1 < 0) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
 		block[n][AMR_CORN12] = AMR_coord_linear(level, i, j1, z1);
+
+		//Set NBR children
+		block[n][AMR_NBR1_3] = block[block[n][AMR_NBR1]][AMR_CHILD3];
+		block[n][AMR_NBR1_4] = block[block[n][AMR_NBR1]][AMR_CHILD4];
+		block[n][AMR_NBR1_7] = block[block[n][AMR_NBR1]][AMR_CHILD7];
+		block[n][AMR_NBR1_8] = block[block[n][AMR_NBR1]][AMR_CHILD8];
+
+		block[n][AMR_NBR2_1] = block[block[n][AMR_NBR2]][AMR_CHILD1];
+		block[n][AMR_NBR2_2] = block[block[n][AMR_NBR2]][AMR_CHILD2];
+		block[n][AMR_NBR2_3] = block[block[n][AMR_NBR2]][AMR_CHILD3];
+		block[n][AMR_NBR2_4] = block[block[n][AMR_NBR2]][AMR_CHILD4];
+
+		block[n][AMR_NBR3_1] = block[block[n][AMR_NBR3]][AMR_CHILD1];
+		block[n][AMR_NBR3_2] = block[block[n][AMR_NBR3]][AMR_CHILD2];
+		block[n][AMR_NBR3_5] = block[block[n][AMR_NBR3]][AMR_CHILD5];
+		block[n][AMR_NBR3_6] = block[block[n][AMR_NBR3]][AMR_CHILD6];
+
+		block[n][AMR_NBR4_5] = block[block[n][AMR_NBR4]][AMR_CHILD5];
+		block[n][AMR_NBR4_6] = block[block[n][AMR_NBR4]][AMR_CHILD6];
+		block[n][AMR_NBR4_7] = block[block[n][AMR_NBR4]][AMR_CHILD7];
+		block[n][AMR_NBR4_8] = block[block[n][AMR_NBR4]][AMR_CHILD8];
+
+		block[n][AMR_NBR5_1] = block[block[n][AMR_NBR5]][AMR_CHILD1];
+		block[n][AMR_NBR5_3] = block[block[n][AMR_NBR5]][AMR_CHILD3];
+		block[n][AMR_NBR5_5] = block[block[n][AMR_NBR5]][AMR_CHILD5];
+		block[n][AMR_NBR5_7] = block[block[n][AMR_NBR5]][AMR_CHILD7];
+
+		block[n][AMR_NBR6_2] = block[block[n][AMR_NBR6]][AMR_CHILD2];
+		block[n][AMR_NBR6_4] = block[block[n][AMR_NBR6]][AMR_CHILD4];
+		block[n][AMR_NBR6_6] = block[block[n][AMR_NBR6]][AMR_CHILD6];
+		block[n][AMR_NBR6_8] = block[block[n][AMR_NBR6]][AMR_CHILD8];
+
+		//Set corn children
+		block[n][AMR_CORN1_1] = block[block[n][AMR_CORN1]][AMR_CHILD3];
+		block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
+		block[n][AMR_CORN2_1] = block[block[n][AMR_CORN2]][AMR_CHILD1];
+		block[n][AMR_CORN2_2] = block[block[n][AMR_CORN2]][AMR_CHILD2];
+		block[n][AMR_CORN3_1] = block[block[n][AMR_CORN3]][AMR_CHILD5];
+		block[n][AMR_CORN3_2] = block[block[n][AMR_CORN3]][AMR_CHILD6];
+		block[n][AMR_CORN4_1] = block[block[n][AMR_CORN4]][AMR_CHILD7];
+		block[n][AMR_CORN4_2] = block[block[n][AMR_CORN4]][AMR_CHILD8];
+
+		block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
+		block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
+		block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
+		block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
+		block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
+		block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
+		block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
+		block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
+
+		block[n][AMR_CORN9_1] = block[block[n][AMR_CORN9]][AMR_CHILD3];
+		block[n][AMR_CORN9_2] = block[block[n][AMR_CORN9]][AMR_CHILD7];
+		block[n][AMR_CORN10_1] = block[block[n][AMR_CORN10]][AMR_CHILD1];
+		block[n][AMR_CORN10_2] = block[block[n][AMR_CORN10]][AMR_CHILD5];
+		block[n][AMR_CORN11_1] = block[block[n][AMR_CORN11]][AMR_CHILD2];
+		block[n][AMR_CORN11_2] = block[block[n][AMR_CORN11]][AMR_CHILD6];
+		block[n][AMR_CORN12_1] = block[block[n][AMR_CORN12]][AMR_CHILD4];
+		block[n][AMR_CORN12_2] = block[block[n][AMR_CORN12]][AMR_CHILD8];
+
+		//Set NBR parent
+		block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
+		block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
+		block[n][AMR_NBR3P] = block[block[n][AMR_NBR3]][AMR_PARENT];
+		block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
+		block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
+		block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
+
+		//Set corn parent
+		block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
+		block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
+		block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
+		block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
+		block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
+		block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
+		block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
+		block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
+		block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
+		block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
+		block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
+		block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
+
+		//Set NBR level
+		block[n][AMR_LEVEL1] = block[n][AMR_LEVEL];
+		block[n][AMR_LEVEL2] = block[n][AMR_LEVEL];
+		block[n][AMR_LEVEL3] = block[n][AMR_LEVEL];
+
 	}
 
 	//Set offsets and size of blocks
@@ -1678,7 +1765,7 @@ int check_nesting(int n){
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
-	int n, task, i,j,z,k, l, level, number;
+	int n, task, i,j,z,k, l, level, number, ref_3;
 	int node, n_send, gpu_choice, gpu_counter;
 	double  rho_rec;
 	double(*temp_ps[NB])[NDIM];
@@ -1816,7 +1903,8 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_3)*(1 + REF_2)*(1 + REF_1) - 1){
-					for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - REF_3)){
+					ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+					for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
 						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 						if (block[n_send][AMR_NODE] != node){
 							NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
@@ -1835,7 +1923,8 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				//Send block using non-blocking send
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - REF_3)){
+				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
 						rc = 0;
@@ -1856,7 +1945,8 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				//Send block using non-blocking send
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - REF_3)){
+				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
 						rc = 0;
@@ -1881,7 +1971,8 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - REF_3)){
+				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
 					//Then use MPI_wait to clean up data that has been sent
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
@@ -1904,7 +1995,8 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				node = block[n_ord_total[n]][AMR_NODE];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - REF_3)){
+				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
 					//Then initialize sent data on receiving node
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
@@ -1943,7 +2035,8 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				node = block[n_ord_total[n]][AMR_NODE];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - REF_3)){
+				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					block[n_send][AMR_NODE] = node;
 				}
