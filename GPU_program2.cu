@@ -678,7 +678,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg[NPR + 3], dq1[NPR + 3], dq2[NPR + 3], dq3[NPR + 3];
-	double receive_local[(NPR + 3)*NG*(1 + 2 * ref_2)*(1 + 2 * ref_3)];
+	double receive_local[(NPR + 3)*NG*(1 + 2 * REF_2)*(1 + 2 * REF_3)];
 	int ii1, ij1, iz1;
 
 	if (global_id < work_size){
@@ -826,7 +826,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg[NPR + 3], dq1[NPR + 3], dq2[NPR + 3], dq3[NPR + 3];
-	double receive_local[(NPR + 3)*NG*(1 + 2 * ref_1)*(1 + 2 * ref_3)];
+	double receive_local[(NPR + 3)*NG*(1 + 2 * REF_1)*(1 + 2 * REF_3)];
 	int ii1, ij1, iz1;
 
 	if (global_id < work_size){
@@ -972,7 +972,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg[NPR + 3], dq1[NPR + 3], dq2[NPR + 3], dq3[NPR + 3];
-	double receive_local[(NPR + 3)*NG*(1 + 2 * ref_1)*(1 + 2 * ref_2)];
+	double receive_local[(NPR + 3)*NG*(1 + 2 * REF_1)*(1 + 2 * REF_2)];
 	int ii1, ij1, iz1;
 
 	if (global_id < work_size){

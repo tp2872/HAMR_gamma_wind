@@ -247,10 +247,10 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 	}
 }
 
-void set_ref(int n, int *ref_1, int *ref_2, int * ref_3){
-	ref_1 = block[n][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-	ref_2 = block[n][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-	ref_3 = block[n][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
+	ref_1[0] = block[n_rec][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+	ref_2[0] = block[n_rec][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+	ref_3[0] = block[n_rec][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 }
 
 //Sets the AMR hierarchy
@@ -342,22 +342,22 @@ void set_AMR(void){
 		block[n][AMR_NBR4] = AMR_coord_linear(level, i1, j, z);
 
 		if (z + 1 > z_max && PERIODIC3 == 1) z1 = 0;
-		else if (z + 1 > z_max && PERIODIC3 == 0 ) z1 = -1;
+		else if (z + 1 > z_max && PERIODIC3 == 0) z1 = -1;
 		else z1 = z + 1;
 		block[n][AMR_NBR5] = AMR_coord_linear(level, i, j, z1);
 
-		if (z - 1 < 0 && PERIODIC3 == 1 ) z1 = z_max;
+		if (z - 1 < 0 && PERIODIC3 == 1) z1 = z_max;
 		else z1 = z - 1;
 		block[n][AMR_NBR6] = AMR_coord_linear(level, i, j, z1);
-		
+
 		block[n][AMR_POLE] = 0; //If there are no transmissive boundary conditions no special treatment of the pole is necessary
-		
+
 		//Find the neighbours in the case we have transmissive boundary conditions at the pole
-		#if (TRANS_BOUND)
+#if (TRANS_BOUND)
 		//if (NB_3 % 2 != 0 && rank==0) fprintf(stderr, "Number of blocks in the third dimension is not an even number. This is incompatible with TRANS_BOUND");
 
 		//First tell the code if you are dealing with a pole at theta=0 (1) or at theta=Pi (2)
-		if (j == 0 ){
+		if (j == 0){
 			block[n][AMR_POLE] += 1;
 			block[n][AMR_NBR1] = AMR_coord_linear(level, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
 		}
@@ -365,8 +365,8 @@ void set_AMR(void){
 			block[n][AMR_POLE] += 2;
 			block[n][AMR_NBR3] = AMR_coord_linear(level, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
 		}
-		#endif
-	
+#endif
+
 		//Find corners of block assuming only third dimension is periodic
 		//x-y plane
 		if (i + 1 > i_max || j - 1 < 0){
@@ -386,8 +386,8 @@ void set_AMR(void){
 			j1 = j + 1;
 		}
 		block[n][AMR_CORN2] = AMR_coord_linear(level, i1, j1, z);
-		
-		if (i - 1 < 0|| j + 1 > j_max){
+
+		if (i - 1 < 0 || j + 1 > j_max){
 			j1 = -1; i1 = -1;
 		}
 		else{
@@ -404,7 +404,7 @@ void set_AMR(void){
 			j1 = j - 1;
 		}
 		block[n][AMR_CORN4] = AMR_coord_linear(level, i1, j1, z);
-		
+
 		//x-z plane
 		i1 = i + 1;
 		z1 = z - 1;
@@ -417,7 +417,7 @@ void set_AMR(void){
 		if (i + 1 > i_max) i1 = -1;
 		if (z + 1 > z_max) z1 = 0;
 		block[n][AMR_CORN6] = AMR_coord_linear(level, i1, j, z1);
-		
+
 		i1 = i - 1;
 		z1 = z + 1;
 		if (i - 1 < 0) i1 = -1;
@@ -430,7 +430,7 @@ void set_AMR(void){
 		if (i - 1 < 0) i1 = -1;
 		if (z - 1 < 0) z1 = z_max;
 		block[n][AMR_CORN8] = AMR_coord_linear(level, i1, j, z1);
-		
+
 		//y-z plane
 		j1 = j - 1;
 		z1 = z + 1;
@@ -444,7 +444,7 @@ void set_AMR(void){
 		if (z + 1 > z_max) z1 = 0;
 		block[n][AMR_CORN10] = AMR_coord_linear(level, i, j1, z1);
 
-		
+
 		j1 = j + 1;
 		z1 = z - 1;
 		if (j + 1 > j_max) j1 = -1;
@@ -457,95 +457,107 @@ void set_AMR(void){
 		if (j - 1 < 0) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
 		block[n][AMR_CORN12] = AMR_coord_linear(level, i, j1, z1);
+	}
+
+	//Set 2-way grid to negative
+	for (n = 0; n <= n_max; n++) for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) block[n][i] = -1;
+	
+	//Set 2-way grid hierarchy
+	for (n = 0; n <= n_max; n++){
 
 		//Set NBR children
-		block[n][AMR_NBR1_3] = block[block[n][AMR_NBR1]][AMR_CHILD3];
-		block[n][AMR_NBR1_4] = block[block[n][AMR_NBR1]][AMR_CHILD4];
-		block[n][AMR_NBR1_7] = block[block[n][AMR_NBR1]][AMR_CHILD7];
-		block[n][AMR_NBR1_8] = block[block[n][AMR_NBR1]][AMR_CHILD8];
-
-		block[n][AMR_NBR2_1] = block[block[n][AMR_NBR2]][AMR_CHILD1];
-		block[n][AMR_NBR2_2] = block[block[n][AMR_NBR2]][AMR_CHILD2];
-		block[n][AMR_NBR2_3] = block[block[n][AMR_NBR2]][AMR_CHILD3];
-		block[n][AMR_NBR2_4] = block[block[n][AMR_NBR2]][AMR_CHILD4];
-
-		block[n][AMR_NBR3_1] = block[block[n][AMR_NBR3]][AMR_CHILD1];
-		block[n][AMR_NBR3_2] = block[block[n][AMR_NBR3]][AMR_CHILD2];
-		block[n][AMR_NBR3_5] = block[block[n][AMR_NBR3]][AMR_CHILD5];
-		block[n][AMR_NBR3_6] = block[block[n][AMR_NBR3]][AMR_CHILD6];
-
-		block[n][AMR_NBR4_5] = block[block[n][AMR_NBR4]][AMR_CHILD5];
-		block[n][AMR_NBR4_6] = block[block[n][AMR_NBR4]][AMR_CHILD6];
-		block[n][AMR_NBR4_7] = block[block[n][AMR_NBR4]][AMR_CHILD7];
-		block[n][AMR_NBR4_8] = block[block[n][AMR_NBR4]][AMR_CHILD8];
-
-		block[n][AMR_NBR5_1] = block[block[n][AMR_NBR5]][AMR_CHILD1];
-		block[n][AMR_NBR5_3] = block[block[n][AMR_NBR5]][AMR_CHILD3];
-		block[n][AMR_NBR5_5] = block[block[n][AMR_NBR5]][AMR_CHILD5];
-		block[n][AMR_NBR5_7] = block[block[n][AMR_NBR5]][AMR_CHILD7];
-
-		block[n][AMR_NBR6_2] = block[block[n][AMR_NBR6]][AMR_CHILD2];
-		block[n][AMR_NBR6_4] = block[block[n][AMR_NBR6]][AMR_CHILD4];
-		block[n][AMR_NBR6_6] = block[block[n][AMR_NBR6]][AMR_CHILD6];
-		block[n][AMR_NBR6_8] = block[block[n][AMR_NBR6]][AMR_CHILD8];
+		if (block[n][AMR_NBR1] >= 0){
+			block[n][AMR_NBR1_3] = block[block[n][AMR_NBR1]][AMR_CHILD3];
+			block[n][AMR_NBR1_4] = block[block[n][AMR_NBR1]][AMR_CHILD4];
+			block[n][AMR_NBR1_7] = block[block[n][AMR_NBR1]][AMR_CHILD7];
+			block[n][AMR_NBR1_8] = block[block[n][AMR_NBR1]][AMR_CHILD8];
+		}
+		if (block[n][AMR_NBR2] >= 0){
+			block[n][AMR_NBR2_1] = block[block[n][AMR_NBR2]][AMR_CHILD1];
+			block[n][AMR_NBR2_2] = block[block[n][AMR_NBR2]][AMR_CHILD2];
+			block[n][AMR_NBR2_3] = block[block[n][AMR_NBR2]][AMR_CHILD3];
+			block[n][AMR_NBR2_4] = block[block[n][AMR_NBR2]][AMR_CHILD4];
+		}
+		if (block[n][AMR_NBR3] >= 0){
+			block[n][AMR_NBR3_1] = block[block[n][AMR_NBR3]][AMR_CHILD1];
+			block[n][AMR_NBR3_2] = block[block[n][AMR_NBR3]][AMR_CHILD2];
+			block[n][AMR_NBR3_5] = block[block[n][AMR_NBR3]][AMR_CHILD5];
+			block[n][AMR_NBR3_6] = block[block[n][AMR_NBR3]][AMR_CHILD6];
+		}
+		if (block[n][AMR_NBR4] >= 0){
+			block[n][AMR_NBR4_5] = block[block[n][AMR_NBR4]][AMR_CHILD5];
+			block[n][AMR_NBR4_6] = block[block[n][AMR_NBR4]][AMR_CHILD6];
+			block[n][AMR_NBR4_7] = block[block[n][AMR_NBR4]][AMR_CHILD7];
+			block[n][AMR_NBR4_8] = block[block[n][AMR_NBR4]][AMR_CHILD8];
+		}
+		if (block[n][AMR_NBR5] >= 0){
+			block[n][AMR_NBR5_1] = block[block[n][AMR_NBR5]][AMR_CHILD1];
+			block[n][AMR_NBR5_3] = block[block[n][AMR_NBR5]][AMR_CHILD3];
+			block[n][AMR_NBR5_5] = block[block[n][AMR_NBR5]][AMR_CHILD5];
+			block[n][AMR_NBR5_7] = block[block[n][AMR_NBR5]][AMR_CHILD7];
+		}
+		if (block[n][AMR_NBR6] >= 0){
+			block[n][AMR_NBR6_2] = block[block[n][AMR_NBR6]][AMR_CHILD2];
+			block[n][AMR_NBR6_4] = block[block[n][AMR_NBR6]][AMR_CHILD4];
+			block[n][AMR_NBR6_6] = block[block[n][AMR_NBR6]][AMR_CHILD6];
+			block[n][AMR_NBR6_8] = block[block[n][AMR_NBR6]][AMR_CHILD8];
+		}
 
 		//Set corn children
-		block[n][AMR_CORN1_1] = block[block[n][AMR_CORN1]][AMR_CHILD3];
-		block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
-		block[n][AMR_CORN2_1] = block[block[n][AMR_CORN2]][AMR_CHILD1];
-		block[n][AMR_CORN2_2] = block[block[n][AMR_CORN2]][AMR_CHILD2];
-		block[n][AMR_CORN3_1] = block[block[n][AMR_CORN3]][AMR_CHILD5];
-		block[n][AMR_CORN3_2] = block[block[n][AMR_CORN3]][AMR_CHILD6];
-		block[n][AMR_CORN4_1] = block[block[n][AMR_CORN4]][AMR_CHILD7];
-		block[n][AMR_CORN4_2] = block[block[n][AMR_CORN4]][AMR_CHILD8];
+		if (block[n][AMR_CORN1] >= 0) block[n][AMR_CORN1_1] = block[block[n][AMR_CORN1]][AMR_CHILD3];
+		if (block[n][AMR_CORN1] >= 0) block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
+		if (block[n][AMR_CORN2] >= 0) block[n][AMR_CORN2_1] = block[block[n][AMR_CORN2]][AMR_CHILD1];
+		if (block[n][AMR_CORN2] >= 0) block[n][AMR_CORN2_2] = block[block[n][AMR_CORN2]][AMR_CHILD2];
+		if (block[n][AMR_CORN3] >= 0) block[n][AMR_CORN3_1] = block[block[n][AMR_CORN3]][AMR_CHILD5];
+		if (block[n][AMR_CORN3] >= 0) block[n][AMR_CORN3_2] = block[block[n][AMR_CORN3]][AMR_CHILD6];
+		if (block[n][AMR_CORN4] >= 0) block[n][AMR_CORN4_1] = block[block[n][AMR_CORN4]][AMR_CHILD7];
+		if (block[n][AMR_CORN4] >= 0) block[n][AMR_CORN4_2] = block[block[n][AMR_CORN4]][AMR_CHILD8];
 
-		block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
-		block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
-		block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
-		block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
-		block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
-		block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
-		block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
-		block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
+		if (block[n][AMR_CORN5] >= 0) block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
+		if (block[n][AMR_CORN5] >= 0) block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
+		if (block[n][AMR_CORN6] >= 0) block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
+		if (block[n][AMR_CORN6] >= 0) block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
+		if (block[n][AMR_CORN7] >= 0) block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
+		if (block[n][AMR_CORN7] >= 0) block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
+		if (block[n][AMR_CORN8] >= 0) block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
+		if (block[n][AMR_CORN8] >= 0) block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
 
-		block[n][AMR_CORN9_1] = block[block[n][AMR_CORN9]][AMR_CHILD3];
-		block[n][AMR_CORN9_2] = block[block[n][AMR_CORN9]][AMR_CHILD7];
-		block[n][AMR_CORN10_1] = block[block[n][AMR_CORN10]][AMR_CHILD1];
-		block[n][AMR_CORN10_2] = block[block[n][AMR_CORN10]][AMR_CHILD5];
-		block[n][AMR_CORN11_1] = block[block[n][AMR_CORN11]][AMR_CHILD2];
-		block[n][AMR_CORN11_2] = block[block[n][AMR_CORN11]][AMR_CHILD6];
-		block[n][AMR_CORN12_1] = block[block[n][AMR_CORN12]][AMR_CHILD4];
-		block[n][AMR_CORN12_2] = block[block[n][AMR_CORN12]][AMR_CHILD8];
+		if (block[n][AMR_CORN9] >= 0) block[n][AMR_CORN9_1] = block[block[n][AMR_CORN9]][AMR_CHILD3];
+		if (block[n][AMR_CORN9] >= 0) block[n][AMR_CORN9_2] = block[block[n][AMR_CORN9]][AMR_CHILD7];
+		if (block[n][AMR_CORN10] >= 0) block[n][AMR_CORN10_1] = block[block[n][AMR_CORN10]][AMR_CHILD1];
+		if (block[n][AMR_CORN10] >= 0) block[n][AMR_CORN10_2] = block[block[n][AMR_CORN10]][AMR_CHILD5];
+		if (block[n][AMR_CORN11] >= 0) block[n][AMR_CORN11_1] = block[block[n][AMR_CORN11]][AMR_CHILD2];
+		if (block[n][AMR_CORN11] >= 0) block[n][AMR_CORN11_2] = block[block[n][AMR_CORN11]][AMR_CHILD6];
+		if (block[n][AMR_CORN12] >= 0) block[n][AMR_CORN12_1] = block[block[n][AMR_CORN12]][AMR_CHILD4];
+		if (block[n][AMR_CORN12] >= 0) block[n][AMR_CORN12_2] = block[block[n][AMR_CORN12]][AMR_CHILD8];
 
 		//Set NBR parent
-		block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
-		block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
-		block[n][AMR_NBR3P] = block[block[n][AMR_NBR3]][AMR_PARENT];
-		block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
-		block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
-		block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
+		if (block[n][AMR_NBR1] >= 0)block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
+		if (block[n][AMR_NBR2] >= 0)block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
+		if (block[n][AMR_NBR3] >= 0)block[n][AMR_NBR3P] = block[block[n][AMR_NBR3]][AMR_PARENT];
+		if (block[n][AMR_NBR4] >= 0)block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
+		if (block[n][AMR_NBR5] >= 0)block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
+		if (block[n][AMR_NBR6] >= 0)block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
 
 		//Set corn parent
-		block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
-		block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
-		block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
-		block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
-		block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
-		block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
-		block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
-		block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
-		block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
-		block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
-		block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
-		block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
+		if (block[n][AMR_CORN1] >= 0)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
+		if (block[n][AMR_CORN2] >= 0)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
+		if (block[n][AMR_CORN3] >= 0)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
+		if (block[n][AMR_CORN4] >= 0)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
+		if (block[n][AMR_CORN5] >= 0)block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
+		if (block[n][AMR_CORN6] >= 0)block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
+		if (block[n][AMR_CORN7] >= 0)block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
+		if (block[n][AMR_CORN8] >= 0)block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
+		if (block[n][AMR_CORN9] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
+		if (block[n][AMR_CORN10] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
+		if (block[n][AMR_CORN11] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
+		if (block[n][AMR_CORN12] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
 
 		//Set NBR level
 		block[n][AMR_LEVEL1] = block[n][AMR_LEVEL];
 		block[n][AMR_LEVEL2] = block[n][AMR_LEVEL];
 		block[n][AMR_LEVEL3] = block[n][AMR_LEVEL];
-
 	}
-
 	//Set offsets and size of blocks
 	for (n = 0; n <= n_max; n++){
 		N1_GPU_offset[n] = block[n][AMR_COORD1] * BS_1;

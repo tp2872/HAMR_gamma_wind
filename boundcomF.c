@@ -29,22 +29,22 @@ void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&Bufferrec4flux[nl[n]][0], NPR * BS_3 * BS_2, MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][140]);
 				}
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec4_5flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_1]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][145]);
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] - 1 && ref_3 == 1){
 				rc += MPI_Irecv(&Bufferrec4_6flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_2]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][146]);
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] - 1 && ref_2 == 1){
 				rc += MPI_Irecv(&Bufferrec4_7flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_3]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][147]);
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] - 1 && ref_2 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&Bufferrec4_8flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_4]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][148]);
@@ -56,22 +56,22 @@ void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&receive4_flux[nl[n]][0], NPR * BS_3 * BS_2, MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][140]);
 				}
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive4_5flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_1]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][145]);
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] - 1 && ref_3 == 1){
 				rc += MPI_Irecv(&receive4_6flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_2]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][146]);
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] - 1 && ref_2 == 1){
 				rc += MPI_Irecv(&receive4_7flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_3]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][147]);
 			}
-			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] - 1 && ref_2 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&receive4_8flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_4]][AMR_NODE], ((14 * NB_LOCAL + block[block[n][AMR_NBR2_4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][148]);
@@ -122,22 +122,22 @@ void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&Bufferrec2flux[nl[n]][0], NPR * BS_3 * BS_2, MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][120]);
 				}
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec2_1flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_5]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][121]);
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec2_2flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_6]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][122]);
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec2_3flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_7]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_7]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][123]);
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] - 1 && ref_2 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&Bufferrec2_4flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_8]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_8]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][124]);
@@ -149,22 +149,22 @@ void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&receive2_flux[nl[n]][0], NPR * BS_3 * BS_2, MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][120]);
 				}
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive2_1flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_5]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][121]);
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive2_2flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_6]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][122]);
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive2_3flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_7]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_7]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][123]);
 			}
-			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] - 1 && ref_2 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&receive2_4flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_8]][AMR_NODE], ((12 * NB_LOCAL + block[block[n][AMR_NBR4_8]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][124]);
@@ -221,22 +221,22 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&Bufferrec1flux[nl[n]][0], NPR * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][110]);
 				}
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec1_3flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][113]);
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] - 1 && ref_3 == 1){
 				rc += MPI_Irecv(&Bufferrec1_4flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_2]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][114]);
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] - 1 && ref_1 == 1){
 				rc += MPI_Irecv(&Bufferrec1_7flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_5]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][117]);
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&Bufferrec1_8flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][118]);
@@ -248,22 +248,22 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&receive1_flux[nl[n]][0], NPR * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][110]);
 				}
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive1_3flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][113]);
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] - 1 && ref_3 == 1){
 				rc += MPI_Irecv(&receive1_4flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_2]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][114]);
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] - 1 && ref_1 == 1){
 				rc += MPI_Irecv(&receive1_7flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_5]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][117]);
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&receive1_8flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], ((11 * NB_LOCAL + block[block[n][AMR_NBR3_6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][118]);
@@ -314,22 +314,22 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&Bufferrec3flux[nl[n]][0], NPR * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][130]);
 				}
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec3_1flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][131]);
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec3_2flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_4]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][132]);
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec3_5flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_7]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_7]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][135]);
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&Bufferrec3_6flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_8]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][136]);
@@ -341,22 +341,22 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&receive3_flux[nl[n]][0], NPR * BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][130]);
 				}
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive3_1flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][131]);
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive3_2flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_4]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][132]);
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive3_5flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_7]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_7]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][135]);
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_3 == 1){
 				rc += MPI_Irecv(&receive3_6flux[nl[n]][0], NPR*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], ((13 * NB_LOCAL + block[block[n][AMR_NBR1_8]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][136]);
@@ -412,22 +412,22 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&Bufferrec6flux[nl[n]][0], NPR * BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][160]);
 				}
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec6_2flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_1]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][162]);
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] - 1 && ref_2 == 1){
 				rc += MPI_Irecv(&Bufferrec6_4flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_3]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][164]);
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] - 1 && ref_1 == 1){
 				rc += MPI_Irecv(&Bufferrec6_6flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_5]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][166]);
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_2 == 1){
 				rc += MPI_Irecv(&Bufferrec6_8flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_7]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_7]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][168]);
@@ -439,22 +439,22 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&receive6_flux[nl[n]][0], NPR * BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][160]);
 				}
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive6_2flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_1]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_1]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][162]);
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] - 1 && ref_2 == 1){
 				rc += MPI_Irecv(&receive6_4flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_3]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_3]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][164]);
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] - 1 && ref_1 == 1){
 				rc += MPI_Irecv(&receive6_6flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_5]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_5]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][166]);
 			}
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_2 == 1){
 				rc += MPI_Irecv(&receive6_8flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_7]][AMR_NODE], ((16 * NB_LOCAL + block[block[n][AMR_NBR5_7]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][168]);
@@ -505,22 +505,22 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&Bufferrec5flux[nl[n]][0], NPR * BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][150]);
 				}
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&Bufferrec5_1flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_2]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][151]);
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] - 1 && ref_2 == 1){
 				rc += MPI_Irecv(&Bufferrec5_3flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_4]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][153]);
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] - 1 && ref_1 == 1){
 				rc += MPI_Irecv(&Bufferrec5_5flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_6]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][155]);
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_2 == 1){
 				rc += MPI_Irecv(&Bufferrec5_7flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_8]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_8]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][157]);
@@ -532,22 +532,22 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 					rc += MPI_Irecv(&receive5_flux[nl[n]][0], NPR * BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][150]);
 				}
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] - 1){
 				rc += MPI_Irecv(&receive5_1flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_2]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_2]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][151]);
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] - 1 && ref_2 == 1){
 				rc += MPI_Irecv(&receive5_3flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_4]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_4]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][153]);
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] - 1 && ref_1 == 1){
 				rc += MPI_Irecv(&receive5_5flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_6]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_6]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][155]);
 			}
-			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
 			if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE]
 				&& block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] - 1 && ref_1 == 1 && ref_2 == 1){
 				rc += MPI_Irecv(&receive5_7flux[nl[n]][0], NPR*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_8]][AMR_NODE], ((15 * NB_LOCAL + block[block[n][AMR_NBR6_8]][AMR_NUMBER]) % MPI_TAG_MAX), mpi_cartcomm, &boundreqs[nl[n]][157]);
@@ -602,7 +602,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			}
 		}
 		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
-			set_ref(block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] - 1){
@@ -620,7 +620,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_flux, receive2_1flux1, receive2_1flux2, F1,
 					&(Bufferp[nl[n]]), &(Buffersend2flux[nl[block[n][AMR_NBR4_5]]]), &(Bufferrec2_1flux1[nl[n]]), &(Bufferrec2_1flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR4_5]]][120]), calc_corr);
 			}
-			set_ref(block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
 				if (block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] - 1){
@@ -639,7 +639,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend2flux[nl[block[n][AMR_NBR4_6]]]), &(Bufferrec2_2flux1[nl[n]]), &(Bufferrec2_2flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR4_6]]][120]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1){
 				if (block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] - 1){
@@ -658,7 +658,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend2flux[nl[block[n][AMR_NBR4_7]]]), &(Bufferrec2_3flux1[nl[n]]), &(Bufferrec2_3flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR4_7]]][120]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1 && ref_3 == 1){
 				if (block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] - 1){
@@ -701,7 +701,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			}
 		}
 		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
-			set_ref(block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] - 1){
@@ -719,7 +719,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_flux, receive4_5flux1, receive4_5flux2, F1,
 					&(Bufferp[nl[n]]), &(Buffersend4flux[nl[block[n][AMR_NBR2_1]]]), &(Bufferrec4_5flux1[nl[n]]), &(Bufferrec4_5flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR2_1]]][140]), calc_corr);
 			}
-			set_ref(block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
 				if (block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] - 1){
@@ -738,7 +738,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend4flux[nl[block[n][AMR_NBR2_2]]]), &(Bufferrec4_6flux1[nl[n]]), &(Bufferrec4_6flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR2_2]]][140]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1){
 				if (block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] - 1){
@@ -757,7 +757,7 @@ void flux_rec1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend4flux[nl[block[n][AMR_NBR2_3]]]), &(Bufferrec4_7flux1[nl[n]]), &(Bufferrec4_7flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR2_3]]][140]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1 && ref_3 == 1){
 				if (block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] - 1){
@@ -806,7 +806,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			}
 		}
 		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1){
-			set_ref(block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] - 1){
@@ -824,7 +824,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_flux, receive3_1flux1, receive3_1flux2, F2,
 					&(Bufferp[nl[n]]), &(Buffersend3flux[nl[block[n][AMR_NBR1_3]]]), &(Bufferrec3_1flux1[nl[n]]), &(Bufferrec3_1flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR1_3]]][130]), calc_corr);
 			}
-			set_ref(block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
 				if (block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] - 1){
@@ -843,7 +843,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend3flux[nl[block[n][AMR_NBR1_4]]]), &(Bufferrec3_2flux1[nl[n]]), &(Bufferrec3_2flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR1_4]]][130]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1){
 				if (block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] - 1){
@@ -862,7 +862,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend3flux[nl[block[n][AMR_NBR1_7]]]), &(Bufferrec3_5flux1[nl[n]]), &(Bufferrec3_5flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR1_7]]][130]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1 && ref_3 == 1){
 				if (block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] - 1){
@@ -905,7 +905,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			}
 		}
 		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1){
-			set_ref(block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] - 1){
@@ -923,7 +923,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_flux, receive1_3flux1, receive1_3flux2, F2,
 					&(Bufferp[nl[n]]), &(Buffersend1flux[nl[block[n][AMR_NBR3_1]]]), &(Bufferrec1_3flux1[nl[n]]), &(Bufferrec1_3flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR3_1]]][110]), calc_corr);
 			}
-			set_ref(block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
 				if (block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] - 1){
@@ -942,7 +942,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend1flux[nl[block[n][AMR_NBR3_2]]]), &(Bufferrec1_4flux1[nl[n]]), &(Bufferrec1_4flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR3_2]]][110]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1){
 				if (block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] - 1){
@@ -961,7 +961,7 @@ void flux_rec2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend1flux[nl[block[n][AMR_NBR3_5]]]), &(Bufferrec1_7flux1[nl[n]]), &(Bufferrec1_7flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR3_5]]][110]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1 && ref_3 == 1){
 				if (block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] - 1){
@@ -1009,7 +1009,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			}
 		}
 		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
-			set_ref(block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] - 1){
@@ -1027,7 +1027,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_flux, receive5_1flux1, receive5_1flux2, F3,
 					&(Bufferp[nl[n]]), &(Buffersend5flux[nl[block[n][AMR_NBR6_2]]]), &(Bufferrec5_1flux1[nl[n]]), &(Bufferrec5_1flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR6_2]]][150]), calc_corr);
 			}
-			set_ref(block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1){
 				if (block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] - 1){
@@ -1046,7 +1046,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend5flux[nl[block[n][AMR_NBR6_4]]]), &(Bufferrec5_3flux1[nl[n]]), &(Bufferrec5_3flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR6_4]]][150]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1){
 				if (block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] - 1){
@@ -1065,7 +1065,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend5flux[nl[block[n][AMR_NBR6_6]]]), &(Bufferrec5_5flux1[nl[n]]), &(Bufferrec5_5flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR6_6]]][150]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1 && ref_2 == 1){
 				if (block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] - 1){
@@ -1108,7 +1108,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 			}
 		}
 		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
-			set_ref(block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] - 1){
@@ -1126,7 +1126,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_flux, receive6_2flux1, receive6_2flux2, F3,
 					&(Bufferp[nl[n]]), &(Buffersend6flux[nl[block[n][AMR_NBR5_1]]]), &(Bufferrec6_2flux1[nl[n]]), &(Bufferrec6_2flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR5_1]]][160]), calc_corr);
 			}
-			set_ref(block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1){
 				if (block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] - 1){
@@ -1145,7 +1145,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend6flux[nl[block[n][AMR_NBR5_3]]]), &(Bufferrec6_4flux1[nl[n]]), &(Bufferrec6_4flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR5_3]]][160]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1){
 				if (block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] - 1){
@@ -1164,7 +1164,7 @@ void flux_rec3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL], 
 						&(Bufferp[nl[n]]), &(Buffersend6flux[nl[block[n][AMR_NBR5_5]]]), &(Bufferrec6_6flux1[nl[n]]), &(Bufferrec6_6flux2[nl[n]]), &(boundevent[nl[block[n][AMR_NBR5_5]]][160]), calc_corr);
 				}
 			}
-			set_ref(block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+			set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
 			if (ref_1 == 1 && ref_2 == 1){
 				if (block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE]){
 					if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] - 1){
