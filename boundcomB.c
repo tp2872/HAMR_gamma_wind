@@ -205,7 +205,7 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR2P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average1(n, BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
-					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[n]]), &(boundevent[nl[n]][520]), ref_1, ref_2, ref_3);
+					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[n]]), &(boundevent[nl[n]][520]), REF_1, REF_2, REF_3);
 				if (block[block[n][AMR_NBR2P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send2_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_NBR2P]][AMR_NODE], (42* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -247,7 +247,7 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR4P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average1(n, 0, 1, 0, BS_2, 0, BS_3,
-					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundevent[nl[n]][540]), ref_1, ref_2, ref_3);
+					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundevent[nl[n]][540]), REF_1, REF_2, REF_3);
 				if (block[block[n][AMR_NBR4P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send4_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_NBR4P]][AMR_NODE], (44* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -310,7 +310,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
-					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][530]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][530]), REF_1, REF_2, REF_3);
 				if (block[block[n][AMR_NBR3P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send3_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR3P]][AMR_NODE], (43* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -369,7 +369,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average2(n, 0, BS_1, 0, 1, 0, BS_3,
-					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]), REF_1, REF_2, REF_3);
 				if (block[block[n][AMR_NBR1P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR1P]][AMR_NODE], (41* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -413,7 +413,7 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR5P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average3(n, 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
-					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[n]]), &(boundevent[nl[n]][550]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[n]]), &(boundevent[nl[n]][550]), REF_1, REF_2, REF_3);
 				if (block[block[n][AMR_NBR5P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send5_fine[nl[n]][0], NDIM*(BS_2) / (1 + ref_2)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR5P]][AMR_NODE], (45* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -454,7 +454,7 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR6P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average3(n, 0, BS_1, 0, BS_2, 0, D3,
-					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundevent[nl[n]][560]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundevent[nl[n]][560]), REF_1, REF_2, REF_3);
 				if (block[block[n][AMR_NBR6P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send6_fine[nl[n]][0], NDIM*(BS_2) / (1 + ref_2)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR6P]][AMR_NODE], (46* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);

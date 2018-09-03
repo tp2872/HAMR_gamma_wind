@@ -131,9 +131,12 @@ void pack_send3_E(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int 
 	}
 }
 
-void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	int first_timestep = (block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]);
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1) / (1 + ref_2)*(z2 - z1) / (1 + ref_3);
@@ -181,9 +184,12 @@ void pack_send_E_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 		}
 	}
 }
-void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(z2 - z1) / (1 + ref_3);
@@ -224,9 +230,12 @@ void pack_send_E_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int 
 	}
 }
 
-void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_E_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1)*(j2 - j1) / (1 + ref_2);
@@ -715,9 +724,10 @@ void pack_send_E3_corn(int n, int n_rec, int i, int j, int z1, int z2, double *s
 	}
 }
 
-void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1){
+void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
+	int ref_1 = block[n][AMR_LEVEL1] - block[n_rec][AMR_LEVEL1];
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((i2 - i1) / (1 + ref_1)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (i2 - i1) / (1 + ref_1);
@@ -750,10 +760,10 @@ void pack_send_E1_corn_course(int n, int n_rec, int i1, int i2, int j, int z, do
 	}
 }
 
-void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_2){
+void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
-
+	int ref_2 = block[n][AMR_LEVEL2] - block[n_rec][AMR_LEVEL2];
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((j2 - j1) / (1 + ref_2)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (j2 - j1) / (1 + ref_2);
@@ -786,9 +796,10 @@ void pack_send_E2_corn_course(int n, int n_rec, int i, int j1, int j2, int z, do
 	}
 }
 
-void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_3){
+void pack_send_E3_corn_course(int n, int n_rec, int i, int j, int z1, int z2, double *send[NB_LOCAL], double(*restrict E[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
 	double factor = dt*(double)block[n][AMR_TIMELEVEL];
 	int first_timestep = block[n][AMR_NSTEP] % (2 * block[n_rec][AMR_TIMELEVEL]) == 2 * block[n][AMR_TIMELEVEL] - 1 || block[n_rec][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL];
+	int ref_3 = block[n][AMR_LEVEL3] - block[n_rec][AMR_LEVEL3];
 	if (gpu == 1){
 		int nr_workgroups_bound = (int)ceil((double)((z2 - z1) / (1 + ref_3)) / ((double)(LOCAL_WORK_SIZE)));
 		int work_size = (z2 - z1) / (1 + ref_3);

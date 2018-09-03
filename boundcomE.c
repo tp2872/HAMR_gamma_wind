@@ -85,7 +85,7 @@ void E_send1(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 				//send to coarser grid
 				pack_send_E_average1(n, block[n][AMR_NBR2P], BS_1, BS_1 + D1, 0, BS_2 + 2 * D2, 0, BS_3 + 2 * D3,
 					(BS_2 + 2 * D2) / (1 + ref_2), (BS_3 + 2 * D3) / (1 + ref_3), send2_E, E,
-					&(Bufferp[nl[n]]), &(Buffersend2E[nl[n]]), &(boundevent[nl[n]][220]), ref_1, ref_2, ref_3);
+					&(Bufferp[nl[n]]), &(Buffersend2E[nl[n]]), &(boundevent[nl[n]][220]));
 				if (block[block[n][AMR_NBR2P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][220],0);
@@ -179,7 +179,7 @@ void E_send1(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 				//send to coarser grid
 				pack_send_E_average1(n, block[n][AMR_NBR4P], 0, 1, 0, BS_2 + 2 * D2, 0, BS_3 + 2 * D3,
 					(BS_2 + 2 * D2) / (1 + ref_2), (BS_3 + 2 * D3) / (1 + ref_3), send4_E, E,
-					&(Bufferp[nl[n]]), &(Buffersend4E[nl[n]]), &(boundevent[nl[n]][240]), ref_1, ref_2, ref_3);
+					&(Bufferp[nl[n]]), &(Buffersend4E[nl[n]]), &(boundevent[nl[n]][240]));
 				if (block[block[n][AMR_NBR4P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][240],0);
@@ -279,7 +279,7 @@ void E_send2(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 				//send to coarser grid
 				pack_send_E_average2(n, block[n][AMR_NBR3P], 0, BS_1 + 2 * D1, BS_2, BS_2 + 1, 0, BS_3 + 2 * D3,
 					(BS_1 + 2 * D1) / (1 + ref_1), (BS_3 + 2 * D3) / (1 + ref_3), send3_E, E,
-					&(Bufferp[nl[n]]), &(Buffersend3E[nl[n]]), &(boundevent[nl[n]][230]), ref_1, ref_2, ref_3);
+					&(Bufferp[nl[n]]), &(Buffersend3E[nl[n]]), &(boundevent[nl[n]][230]));
 				if (block[block[n][AMR_NBR3P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][230],0);
@@ -373,7 +373,7 @@ void E_send2(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 				//send to coarser grid
 				pack_send_E_average2(n, block[n][AMR_NBR1P], 0, BS_1 + 2 * D1, 0, 1, 0, BS_3 + 2 * D3,
 					(BS_1 + 2 * D1) / (1 + ref_1), (BS_3 + 2 * D3) / (1 + ref_3), send1_E, E,
-					&(Bufferp[nl[n]]), &(Buffersend1E[nl[n]]), &(boundevent[nl[n]][210]), ref_1, ref_2, ref_3);
+					&(Bufferp[nl[n]]), &(Buffersend1E[nl[n]]), &(boundevent[nl[n]][210]));
 				if (block[block[n][AMR_NBR1P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][210],0);
@@ -476,7 +476,7 @@ void E_send3(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 				//send to coarser grid
 				pack_send_E_average3(n, block[n][AMR_NBR5P], 0, BS_1 + 2 * D1, 0, BS_2 + 2 * D2, BS_3, BS_3 + D3,
 					(BS_1 + 2 * D1) / (1 + ref_1), (BS_2 + 2 * D2) / (1 + ref_2), send5_E, E,
-					&(Bufferp[nl[n]]), &(Buffersend5E[nl[n]]), &(boundevent[nl[n]][250]), ref_1, ref_2, ref_3);
+					&(Bufferp[nl[n]]), &(Buffersend5E[nl[n]]), &(boundevent[nl[n]][250]));
 				if (block[block[n][AMR_NBR5P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][250],0);
@@ -574,7 +574,7 @@ void E_send3(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 				//send to coarser grid
 				pack_send_E_average3(n, block[n][AMR_NBR6P], 0, BS_1 + 2 * D1, 0, BS_2 + 2 * D2, 0, D3,
 					(BS_1 + 2 * D1) / (1 + ref_1), (BS_2 + 2 * D2) / (1 + ref_2), send6_E, E,
-					&(Bufferp[nl[n]]), &(Buffersend6E[nl[n]]), &(boundevent[nl[n]][260]), ref_1, ref_2, ref_3);
+					&(Bufferp[nl[n]]), &(Buffersend6E[nl[n]]), &(boundevent[nl[n]][260]));
 				if (block[block[n][AMR_NBR6P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][260],0);
