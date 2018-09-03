@@ -1397,19 +1397,19 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E1_corn11_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9_2]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN9_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][361]);
 			}
 		}
-		if (block[block[n][AMR_CORN9]][AMR_PARENT] >= 0 && (block[n][AMR_CORN9D] == n || block[n][AMR_CORN9D] == -100)){
-			if (block[block[block[n][AMR_CORN9]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN9] == block[block[n][AMR_CORN9]][AMR_PARENT]){
+		if (block[n][AMR_CORN9P] >= 0 && (block[n][AMR_CORN9D] == n || block[n][AMR_CORN9D] == -100)){
+			if (block[block[n][AMR_CORN9P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN9] == block[n][AMR_CORN9P]){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN9P]][AMR_LEVEL1];
 				//send to coarser grid
-				pack_send_E1_corn_course(n, block[block[n][AMR_CORN9]][AMR_PARENT], 0, BS_1 + 2 * D1, 0, BS_3, send_E1_corn9, E,
+				pack_send_E1_corn_course(n, block[n][AMR_CORN9P], 0, BS_1 + 2 * D1, 0, BS_3, send_E1_corn9, E,
 					&(Bufferp[nl[n]]), &(BuffersendE1corn9[nl[n]]), &(boundevent[nl[n]][309]));
-				if (block[block[block[n][AMR_CORN9]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN9]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN9]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN9P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN9P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN9P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][309],0);
-						rc += MPI_Isend(&BuffersendE1corn9[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN9]][AMR_PARENT]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE1corn9[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9P]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E1_corn9[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN9]][AMR_PARENT]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E1_corn9[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN9P]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1465,19 +1465,19 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E1_corn12_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10_2]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN10_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][362]);
 			}
 		}
-		if (block[block[n][AMR_CORN10]][AMR_PARENT] >= 0 && (block[n][AMR_CORN10D] == n || block[n][AMR_CORN10D] == -100)){
-			if (block[block[block[n][AMR_CORN10]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN10] == block[block[n][AMR_CORN10]][AMR_PARENT]){
+		if (block[n][AMR_CORN10P] >= 0 && (block[n][AMR_CORN10D] == n || block[n][AMR_CORN10D] == -100)){
+			if (block[block[n][AMR_CORN10P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN10] == block[n][AMR_CORN10P]){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN10P]][AMR_LEVEL1];
 				//send to coarser grid
-				pack_send_E1_corn_course(n, block[block[n][AMR_CORN10]][AMR_PARENT], 0, BS_1 + 2 * D1, BS_2, BS_3, send_E1_corn10, E,
+				pack_send_E1_corn_course(n, block[n][AMR_CORN10P], 0, BS_1 + 2 * D1, BS_2, BS_3, send_E1_corn10, E,
 					&(Bufferp[nl[n]]), &(BuffersendE1corn10[nl[n]]), &(boundevent[nl[n]][310]));
-				if (block[block[block[n][AMR_CORN10]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN10]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN10]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN10P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN10P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN10P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][310],0);
-						rc += MPI_Isend(&BuffersendE1corn10[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN10]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE1corn10[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10P]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E1_corn10[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN10]][AMR_PARENT]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E1_corn10[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN10P]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1533,19 +1533,19 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E1_corn9_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11_2]][AMR_NODE], (9 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN11_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][359]);
 			}
 		}
-		if (block[block[n][AMR_CORN11]][AMR_PARENT] >= 0 && (block[n][AMR_CORN11D] == n || block[n][AMR_CORN11D] == -100)){
-			if (block[block[block[n][AMR_CORN11]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN11] == block[block[n][AMR_CORN11]][AMR_PARENT]){
+		if (block[n][AMR_CORN11P] >= 0 && (block[n][AMR_CORN11D] == n || block[n][AMR_CORN11D] == -100)){
+			if (block[block[n][AMR_CORN11P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN11] == block[n][AMR_CORN11P]){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN11P]][AMR_LEVEL1];
 				//send to coarser grid
-				pack_send_E1_corn_course(n, block[block[n][AMR_CORN11]][AMR_PARENT], 0, BS_1 + 2 * D1, BS_2, 0, send_E1_corn11, E,
+				pack_send_E1_corn_course(n, block[n][AMR_CORN11P], 0, BS_1 + 2 * D1, BS_2, 0, send_E1_corn11, E,
 					&(Bufferp[nl[n]]), &(BuffersendE1corn11[nl[n]]), &(boundevent[nl[n]][311]));
-				if (block[block[block[n][AMR_CORN11]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN11]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN11]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN11P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN11P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN11P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][311],0);
-						rc += MPI_Isend(&BuffersendE1corn11[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN11]][AMR_PARENT]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE1corn11[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11P]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E1_corn11[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN11]][AMR_PARENT]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E1_corn11[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN11P]][AMR_NODE], (11 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1601,19 +1601,19 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E1_corn10_2[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12_2]][AMR_NODE], (10 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN12_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][360]);
 			}
 		}
-		if (block[block[n][AMR_CORN12]][AMR_PARENT] >= 0 && (block[n][AMR_CORN12D] == n || block[n][AMR_CORN12D] == -100)){
-			if (block[block[block[n][AMR_CORN12]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN12] == block[block[n][AMR_CORN12]][AMR_PARENT]){
+		if (block[n][AMR_CORN12P] >= 0 && (block[n][AMR_CORN12D] == n || block[n][AMR_CORN12D] == -100)){
+			if (block[block[n][AMR_CORN12P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN12] == block[n][AMR_CORN12P]){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN12P]][AMR_LEVEL1];
 				//send to coarser grid
-				pack_send_E1_corn_course(n, block[block[n][AMR_CORN12]][AMR_PARENT], 0, BS_1 + 2 * D1, 0, 0, send_E1_corn12, E,
+				pack_send_E1_corn_course(n, block[n][AMR_CORN12P], 0, BS_1 + 2 * D1, 0, 0, send_E1_corn12, E,
 					&(Bufferp[nl[n]]), &(BuffersendE1corn12[nl[n]]), &(boundevent[nl[n]][312]));
-				if (block[block[block[n][AMR_CORN12]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN12]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN12]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN12P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN12P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN12P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][312],0);
-						rc += MPI_Isend(&BuffersendE1corn12[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN12]][AMR_PARENT]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE1corn12[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12P]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E1_corn12[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[block[n][AMR_CORN12]][AMR_PARENT]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E1_corn12[nl[n]][0], (BS_1 + 2 * D1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_CORN12P]][AMR_NODE], (12 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1673,19 +1673,19 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E2_corn7_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5_2]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN5_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][357]);
 			}
 		}
-		if (block[block[n][AMR_CORN5]][AMR_PARENT] >= 0 && (block[n][AMR_CORN5D] == n || block[n][AMR_CORN5D] == -100)){
-			if (block[block[block[n][AMR_CORN5]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN5] == block[block[n][AMR_CORN5]][AMR_PARENT]){
+		if (block[n][AMR_CORN5P] >= 0 && (block[n][AMR_CORN5D] == n || block[n][AMR_CORN5D] == -100)){
+			if (block[block[n][AMR_CORN5P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN5] == block[n][AMR_CORN5P]){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN5P]][AMR_LEVEL2];
 				//send to coarser grid
-				pack_send_E2_corn_course(n, block[block[n][AMR_CORN5]][AMR_PARENT], BS_1, 0, BS_2 + 2 * D2, 0, send_E2_corn5, E,
+				pack_send_E2_corn_course(n, block[n][AMR_CORN5P], BS_1, 0, BS_2 + 2 * D2, 0, send_E2_corn5, E,
 					&(Bufferp[nl[n]]), &(BuffersendE2corn5[nl[n]]), &(boundevent[nl[n]][305]));
-				if (block[block[block[n][AMR_CORN5]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN5]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN5]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN5P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN5P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN5P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][305],0);
-						rc += MPI_Isend(&BuffersendE2corn5[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN5]][AMR_PARENT]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE2corn5[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5P]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E2_corn5[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN5]][AMR_PARENT]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E2_corn5[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN5P]][AMR_NODE], (5 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1741,19 +1741,19 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E2_corn8_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6_2]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN6_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][358]);
 			}
 		}
-		if (block[block[n][AMR_CORN6]][AMR_PARENT] >= 0 && (block[n][AMR_CORN6D] == n || block[n][AMR_CORN6D] == -100)){
-			if (block[block[block[n][AMR_CORN6]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN6] == block[block[n][AMR_CORN6]][AMR_PARENT]){
+		if (block[n][AMR_CORN6P] >= 0 && (block[n][AMR_CORN6D] == n || block[n][AMR_CORN6D] == -100)){
+			if (block[block[n][AMR_CORN6P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN6] == block[n][AMR_CORN6P]){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN6P]][AMR_LEVEL2];
 				//send to coarser grid
-				pack_send_E2_corn_course(n, block[block[n][AMR_CORN6]][AMR_PARENT], BS_1, 0, BS_2 + 2 * D2, BS_3, send_E2_corn6, E,
+				pack_send_E2_corn_course(n, block[n][AMR_CORN6P], BS_1, 0, BS_2 + 2 * D2, BS_3, send_E2_corn6, E,
 					&(Bufferp[nl[n]]), &(BuffersendE2corn6[nl[n]]), &(boundevent[nl[n]][306]));
-				if (block[block[block[n][AMR_CORN6]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN6]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN6]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN6P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN6P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN6P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][306],0);
-						rc += MPI_Isend(&BuffersendE2corn6[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN6]][AMR_PARENT]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE2corn6[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6P]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E2_corn6[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN6]][AMR_PARENT]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E2_corn6[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN6P]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1810,19 +1810,19 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 
-		if (block[block[n][AMR_CORN7]][AMR_PARENT] >= 0 && (block[n][AMR_CORN7D] == n || block[n][AMR_CORN7D] == -100)){
-			if (block[block[block[n][AMR_CORN7]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN7] == block[block[n][AMR_CORN7]][AMR_PARENT]){
+		if (block[n][AMR_CORN7P] >= 0 && (block[n][AMR_CORN7D] == n || block[n][AMR_CORN7D] == -100)){
+			if (block[block[n][AMR_CORN7P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN7] == block[n][AMR_CORN7P]){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN7P]][AMR_LEVEL2];
 				//send to coarser grid
-				pack_send_E2_corn_course(n, block[block[n][AMR_CORN7]][AMR_PARENT], 0, 0, BS_2 + 2 * D2, BS_3, send_E2_corn7, E,
+				pack_send_E2_corn_course(n, block[n][AMR_CORN7P], 0, 0, BS_2 + 2 * D2, BS_3, send_E2_corn7, E,
 					&(Bufferp[nl[n]]), &(BuffersendE2corn7[nl[n]]), &(boundevent[nl[n]][307]));
-				if (block[block[block[n][AMR_CORN7]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN7]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN7]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN7P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN7P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN7P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][307],0);
-						rc += MPI_Isend(&BuffersendE2corn7[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN7]][AMR_PARENT]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE2corn7[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN7P]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E2_corn7[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN7]][AMR_PARENT]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E2_corn7[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN7P]][AMR_NODE], (7 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1878,19 +1878,19 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E2_corn6_2[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8_2]][AMR_NODE], (6 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN8_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][356]);
 			}
 		}
-		if (block[block[n][AMR_CORN8]][AMR_PARENT] >= 0 && (block[n][AMR_CORN8D] == n || block[n][AMR_CORN8D] == -100)){
-			if (block[block[block[n][AMR_CORN8]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN8] == block[block[n][AMR_CORN8]][AMR_PARENT]){
+		if (block[n][AMR_CORN8P] >= 0 && (block[n][AMR_CORN8D] == n || block[n][AMR_CORN8D] == -100)){
+			if (block[block[n][AMR_CORN8P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN8] == block[n][AMR_CORN8P]){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN8P]][AMR_LEVEL2];
 				//send to coarser grid
-				pack_send_E2_corn_course(n, block[block[n][AMR_CORN8]][AMR_PARENT], 0, 0, BS_2 + 2 * D2, 0, send_E2_corn8, E,
+				pack_send_E2_corn_course(n, block[n][AMR_CORN8P], 0, 0, BS_2 + 2 * D2, 0, send_E2_corn8, E,
 					&(Bufferp[nl[n]]), &(BuffersendE2corn8[nl[n]]), &(boundevent[nl[n]][308]));
-				if (block[block[block[n][AMR_CORN8]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN8]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN8]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN8P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN8P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN8P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][308],0);
-						rc += MPI_Isend(&BuffersendE2corn8[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN8]][AMR_PARENT]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE2corn8[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8P]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E2_corn8[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[block[n][AMR_CORN8]][AMR_PARENT]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E2_corn8[nl[n]][0], (BS_2 + 2 * D2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_CORN8P]][AMR_NODE], (8 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -1950,19 +1950,19 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E3_corn3_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1_2]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN1_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][353]);
 			}
 		}
-		if (block[block[n][AMR_CORN1]][AMR_PARENT] >= 0 && (block[n][AMR_CORN1D] == n || block[n][AMR_CORN1D] == -100)){
-			if (block[block[block[n][AMR_CORN1]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN1] == block[block[n][AMR_CORN1]][AMR_PARENT]){
+		if (block[n][AMR_CORN1P] >= 0 && (block[n][AMR_CORN1D] == n || block[n][AMR_CORN1D] == -100)){
+			if (block[block[n][AMR_CORN1P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN1] == block[n][AMR_CORN1P]){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN1P]][AMR_LEVEL3];
 				//send to coarser grid
-				pack_send_E3_corn_course(n, block[block[n][AMR_CORN1]][AMR_PARENT], BS_1, 0, 0, BS_3 + 2 * D3, send_E3_corn1, E,
+				pack_send_E3_corn_course(n, block[n][AMR_CORN1P], BS_1, 0, 0, BS_3 + 2 * D3, send_E3_corn1, E,
 					&(Bufferp[nl[n]]), &(BuffersendE3corn1[nl[n]]), &(boundevent[nl[n]][301]));
-				if (block[block[block[n][AMR_CORN1]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN1]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN1]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN1P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN1P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN1P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][301],0);
-						rc += MPI_Isend(&BuffersendE3corn1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN1]][AMR_PARENT]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE3corn1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1P]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E3_corn1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN1]][AMR_PARENT]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E3_corn1[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN1P]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -2018,19 +2018,19 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E3_corn4_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2_2]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN2_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][354]);
 			}
 		}
-		if (block[block[n][AMR_CORN2]][AMR_PARENT] >= 0 && (block[n][AMR_CORN2D] == n || block[n][AMR_CORN2D] == -100)){
-			if (block[block[block[n][AMR_CORN2]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN2] == block[block[n][AMR_CORN2]][AMR_PARENT]){
+		if (block[n][AMR_CORN2P] >= 0 && (block[n][AMR_CORN2D] == n || block[n][AMR_CORN2D] == -100)){
+			if (block[block[n][AMR_CORN2P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN2] == block[n][AMR_CORN2P]){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN2P]][AMR_LEVEL3];
 				//send to coarser grid
-				pack_send_E3_corn_course(n, block[block[n][AMR_CORN2]][AMR_PARENT], BS_1, BS_2, 0, BS_3 + 2 * D3, send_E3_corn2, E,
+				pack_send_E3_corn_course(n, block[n][AMR_CORN2P], BS_1, BS_2, 0, BS_3 + 2 * D3, send_E3_corn2, E,
 					&(Bufferp[nl[n]]), &(BuffersendE3corn2[nl[n]]), &(boundevent[nl[n]][302]));
-				if (block[block[block[n][AMR_CORN2]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN2]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN2]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN2P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN2P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN2P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][302],0);
-						rc += MPI_Isend(&BuffersendE3corn2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN2]][AMR_PARENT]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE3corn2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2P]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E3_corn2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN2]][AMR_PARENT]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E3_corn2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN2P]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -2086,19 +2086,19 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E3_corn1_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3_2]][AMR_NODE], (1 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN3_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][351]);
 			}
 		}
-		if (block[block[n][AMR_CORN3]][AMR_PARENT] >= 0 && (block[n][AMR_CORN3D] == n || block[n][AMR_CORN3D] == -100)){
-			if (block[block[block[n][AMR_CORN3]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN3] == block[block[n][AMR_CORN3]][AMR_PARENT]){
+		if (block[n][AMR_CORN3P] >= 0 && (block[n][AMR_CORN3D] == n || block[n][AMR_CORN3D] == -100)){
+			if (block[block[n][AMR_CORN3P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN3] == block[n][AMR_CORN3P]){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN3P]][AMR_LEVEL3];
 				//send to coarser grid
-				pack_send_E3_corn_course(n, block[block[n][AMR_CORN3]][AMR_PARENT], 0, BS_2, 0, BS_3 + 2 * D3, send_E3_corn3, E,
+				pack_send_E3_corn_course(n, block[n][AMR_CORN3P], 0, BS_2, 0, BS_3 + 2 * D3, send_E3_corn3, E,
 					&(Bufferp[nl[n]]), &(BuffersendE3corn3[nl[n]]), &(boundevent[nl[n]][303]));
-				if (block[block[block[n][AMR_CORN3]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN3]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN3]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN3P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN3P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN3P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][303],0);
-						rc += MPI_Isend(&BuffersendE3corn3[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN3]][AMR_PARENT]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE3corn3[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3P]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E3_corn3[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN3]][AMR_PARENT]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E3_corn3[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN3P]][AMR_NODE], (3 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
@@ -2154,19 +2154,19 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 				rc += MPI_Irecv(&receive_E3_corn2_2[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4_2]][AMR_NODE], (2 * NB_LOCAL + 50 * NB_LOCAL + block[block[n][AMR_CORN4_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][352]);
 			}
 		}
-		if (block[block[n][AMR_CORN4]][AMR_PARENT] >= 0 && (block[n][AMR_CORN4D] == n || block[n][AMR_CORN4D] == -100)){
-			if (block[block[block[n][AMR_CORN4]][AMR_PARENT]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN4] == block[block[n][AMR_CORN4]][AMR_PARENT]){
+		if (block[n][AMR_CORN4P] >= 0 && (block[n][AMR_CORN4D] == n || block[n][AMR_CORN4D] == -100)){
+			if (block[block[n][AMR_CORN4P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN4] == block[n][AMR_CORN4P]){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN4P]][AMR_LEVEL3];
 				//send to coarser grid
-				pack_send_E3_corn_course(n, block[block[n][AMR_CORN4]][AMR_PARENT], 0, 0, 0, BS_3 + 2 * D3, send_E3_corn4, E,
+				pack_send_E3_corn_course(n, block[n][AMR_CORN4P], 0, 0, 0, BS_3 + 2 * D3, send_E3_corn4, E,
 					&(Bufferp[nl[n]]), &(BuffersendE3corn4[nl[n]]), &(boundevent[nl[n]][304]));
-				if (block[block[block[n][AMR_CORN4]][AMR_PARENT]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[block[n][AMR_CORN4]][AMR_PARENT]][AMR_TIMELEVEL]) == 2 * block[block[block[n][AMR_CORN4]][AMR_PARENT]][AMR_TIMELEVEL] - 1){
+				if (block[block[n][AMR_CORN4P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_CORN4P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_CORN4P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][304],0);
-						rc += MPI_Isend(&BuffersendE3corn4[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN4]][AMR_PARENT]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&BuffersendE3corn4[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4P]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					else{
-						rc += MPI_Isend(&send_E3_corn4[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[block[n][AMR_CORN4]][AMR_PARENT]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
+						rc += MPI_Isend(&send_E3_corn4[nl[n]][0], (BS_3 + 2 * D3) / (1 + ref_3), MPI_DOUBLE, block[block[n][AMR_CORN4P]][AMR_NODE], (4 * NB_LOCAL + 50 * NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					}
 					MPI_Request_free(&req[nl[n]]);
 				}
