@@ -84,7 +84,7 @@ void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR2P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_flux_average1(n, block[n][AMR_NBR2P], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_flux, F1, &(Bufferp[nl[n]]), &(Buffersend2flux[nl[n]]),
-					&(boundevent[nl[n]][120]), ref_1, ref_2, ref_3);
+					&(boundevent[nl[n]][120]));
 				if (block[block[n][AMR_NBR2P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][120],0);
@@ -177,7 +177,7 @@ void flux_send1(double(*restrict F1[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR4P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_flux_average1(n, block[n][AMR_NBR4P], 0, 1, 0, BS_2, 0, BS_3, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_flux, F1, &(Bufferp[nl[n]]), &(Buffersend4flux[nl[n]]),
-					&(boundevent[nl[n]][140]), ref_1, ref_2, ref_3);
+					&(boundevent[nl[n]][140]));
 				if (block[block[n][AMR_NBR4P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][140],0);
@@ -276,7 +276,7 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_flux_average2(n, block[n][AMR_NBR3P], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3, BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_flux, F2, &(Bufferp[nl[n]]), &(Buffersend3flux[nl[n]]),
-					&(boundevent[nl[n]][130]), ref_1, ref_2, ref_3);
+					&(boundevent[nl[n]][130]));
 				if (block[block[n][AMR_NBR3P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][130],0);
@@ -369,7 +369,7 @@ void flux_send2(double(*restrict F2[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_flux_average2(n, block[n][AMR_NBR1P], 0, BS_1, 0, 1, 0, BS_3, BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_flux, F2, &(Bufferp[nl[n]]), &(Buffersend1flux[nl[n]]),
-					&(boundevent[nl[n]][110]), ref_1, ref_2, ref_3);
+					&(boundevent[nl[n]][110]));
 				if (block[block[n][AMR_NBR1P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][110],0);
@@ -467,7 +467,7 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR5P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_flux_average3(n, block[n][AMR_NBR5P], 0, BS_1, 0, BS_2, BS_3, BS_3 + 1, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_flux, F3, &(Bufferp[nl[n]]), &(Buffersend5flux[nl[n]]),
-					&(boundevent[nl[n]][150]), ref_1, ref_2, ref_3);
+					&(boundevent[nl[n]][150]));
 				if (block[block[n][AMR_NBR5P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][150],0);
@@ -560,7 +560,7 @@ void flux_send3(double(*restrict F3[NB_LOCAL])[NPR], double * Bufferp[NB_LOCAL],
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR6P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_flux_average3(n, block[n][AMR_NBR6P], 0, BS_1, 0, BS_2, 0, 1, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_flux, F3, &(Bufferp[nl[n]]), &(Buffersend6flux[nl[n]]),
-					&(boundevent[nl[n]][160]), ref_1, ref_2, ref_3);
+					&(boundevent[nl[n]][160]));
 				if (block[block[n][AMR_NBR6P]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6P]][AMR_TIMELEVEL] - 1){
 					if (gpu == 1){
 						cudaStreamSynchronize(commandQueueGPU[nl[n]]); //cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][160],0);
