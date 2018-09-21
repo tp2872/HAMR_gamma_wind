@@ -1347,15 +1347,15 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	if (offset_2 == 1 && offset_3 == 0 && block[n][AMR_NBR4] >= 0 && block[block[n][AMR_NBR4]][AMR_REFINED] == 1){ pointer2 = receive2_3[nl[n]]; n_rec2 = 1; }
 	if (offset_2 == 1 && offset_3 == 1 && block[n][AMR_NBR4] >= 0 && block[block[n][AMR_NBR4]][AMR_REFINED] == 1){ pointer2 = receive2_4[nl[n]]; n_rec2 = 1; }
 
-	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1){ pointer3 = receive3_1[nl[n]]; n_rec3 = 1; }
-	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1){ pointer3 = receive3_2[nl[n]]; n_rec3 = 1; }
-	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1){ pointer3 = receive3_5[nl[n]]; n_rec3 = 1; }
-	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1){ pointer3 = receive3_6[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_1[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_2[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_5[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_6[nl[n]]; n_rec3 = 1; }
 
-	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1){ pointer1 = receive1_3[nl[n]]; n_rec1 = 1; }
-	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1){ pointer1 = receive1_4[nl[n]]; n_rec1 = 1; }
-	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1){ pointer1 = receive1_7[nl[n]]; n_rec1 = 1; }
-	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1){ pointer1 = receive1_8[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_3[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_4[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_7[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_8[nl[n]]; n_rec1 = 1; }
 
 	if (offset_1 == 0 && offset_2 == 0 && block[n][AMR_NBR6] >= 0 && block[block[n][AMR_NBR6]][AMR_REFINED] == 1){ pointer5 = receive5_1[nl[n]]; n_rec5 = 1; }
 	if (offset_1 == 0 && offset_2 == 1 && block[n][AMR_NBR6] >= 0 && block[block[n][AMR_NBR6]][AMR_REFINED] == 1){ pointer5 = receive5_3[nl[n]]; n_rec5 = 1; }
