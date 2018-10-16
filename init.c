@@ -386,7 +386,7 @@ void init_torus()
 	rmax = 12.;
     l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
-	beta = 100. ;
+	beta = 1e20 ;
 
 	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -649,7 +649,8 @@ void init_postmerger()
   // for reading in binary
   double *temp_array_grid, *temp_array_prims;
   int file_size_grid, file_size_prims, num_var, index_grid_final;
-  int mult;
+  //This mult variable must be the same as xmult in the name of the IC files
+  int mult = 8;
   size_t double_size = sizeof(double);
   size_t len_grid, len_prims;
   
@@ -733,7 +734,6 @@ void init_postmerger()
       
       fseek(fp2, 0L, SEEK_SET);
       fread(&icdata[len_grid], double_size, len_prims, fp2);
-      
 
       ext.nx = (int)icdata[1*index_grid_final-1];
       ext.ny = (int)icdata[2*index_grid_final-1];
@@ -744,14 +744,18 @@ void init_postmerger()
       ext.ymax = icdata[5*index_grid_final-1];
       ext.zmin = icdata[5*index_grid_final];
       ext.zmax = icdata[6*index_grid_final-1];
-      
-      mult = 8.;
+      m
       ext.nx = ext.nx/mult + 1;
       ext.ny = ext.ny/mult + 1;
       ext.nz = ext.nz/mult + 1;
       
       ext.xmin/=r_unit;
       ext.xmax/=r_unit;
+      
+      int ix;
+      for(ix=3*index_grid_final;ix<4*index_grid_final;ix++){
+        icdata[ix] /= r_unit;
+      }
       
       if (0 == rank) {
         fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
@@ -970,7 +974,7 @@ void init_postmerger()
         prim[U2] = uh;
         prim[U3] = up;
       }*/
-      if (1) {
+      if(1) {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
         //vconbl_to_utcon(prim, n_ord[n], i, j, z);
         utilde_to_ucon(prim, n_ord[n], i, j, z);
@@ -1508,7 +1512,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 1., umax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 10.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 1e20, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
