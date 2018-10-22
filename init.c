@@ -57,7 +57,8 @@
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
 void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
-void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz);
+void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz);
+void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_geom *geom, double *utcon);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
 void set_mag(void);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -599,10 +600,11 @@ void init_torus()
 #define VARP 7
 #define VARYE 8
 #define VARMUDT 9
-#define VARVUR 10
-#define VARVUTHETA 11
-#define VARVUPHI 12
-#define NVARS 13
+#define VARUDPHI 10 // Added udphi to adjust Utilde^phi
+#define VARVUR 11
+#define VARVUTHETA 12
+#define VARVUPHI 13
+#define NVARS 14
 
 void init_postmerger()
 {
@@ -639,18 +641,19 @@ void init_postmerger()
   int nvars, nx, ny, nz;
   int res;
   double *icdata;
-  char fname1[] = "PointsToInterpolateHAMR_bin_x8";
-  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x8";
-  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2, *ptr3;
+  char fname1[] = "PointsToInterpolateHAMR_bin.bdat";
+  char fname2[] = "HARM_DataWithMap_27Jul2018_bin.bdat";
+  char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
   size_t memsize, nitems, nread;
   double prim[NPR];
   int k, ii, jj, kk;
+  double udphi;
   
   // for reading in binary
   double *temp_array_grid, *temp_array_prims;
   int file_size_grid, file_size_prims, num_var, index_grid_final;
   //This mult variable must be the same as xmult in the name of the IC files
-  int mult = 8;
+  int mult = 1;
   size_t double_size = sizeof(double);
   size_t len_grid, len_prims;
   
@@ -689,7 +692,7 @@ void init_postmerger()
   //for this, loop over all MPI processes
   //and let them read the IC data from file, one by one
   
-# define READBINARY (1)
+#define READBINARY (1)
   
 #if (READBINARY)
   for (ind=0; ind<numtasks; ind++) {
@@ -744,7 +747,7 @@ void init_postmerger()
       ext.ymax = icdata[5*index_grid_final-1];
       ext.zmin = icdata[5*index_grid_final];
       ext.zmax = icdata[6*index_grid_final-1];
-      m
+      
       ext.nx = ext.nx/mult + 1;
       ext.ny = ext.ny/mult + 1;
       ext.nz = ext.nz/mult + 1;
@@ -954,6 +957,7 @@ void init_postmerger()
       prim[U1] = dd(i,j,z,VARVUR);
       prim[U2] = dd(i,j,z,VARVUTHETA);
       prim[U3] = dd(i,j,z,VARVUPHI);
+      udphi = dd(i,j,z,VARUDPHI)/r_unit;
       
       //res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
       
@@ -977,7 +981,7 @@ void init_postmerger()
       if(1) {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
         //vconbl_to_utcon(prim, n_ord[n], i, j, z);
-        utilde_to_ucon(prim, n_ord[n], i, j, z);
+        utilde_to_ucon(prim, udphi, n_ord[n], i, j, z);
       }
       //if (prim[RHO] < 0.01) prim[RHO] = 0.0;
       prim[B1] = 0.;
@@ -1959,14 +1963,14 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
 /* This function takes Utilde 3-velocity and 
  * transforms it into 4-velocity in modified Kerr-Schild coordinates
  */
-void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
+void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
 {
-  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], old[NDIM];
-  double AA, BB, CC, discr;
+  double X[NDIM], r, th, phi, vtcon[NDIM], utcon[NDIM], trans[NDIM][NDIM], tmp[NDIM], dxdr[NDIM][NDIM], drdx[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], uconp[NDIM], utconp[NDIM], utconp_new[NDIM];
+  double AA, BB, CC, discr, udphi_new, err, err_tol;
   double alpha, gamma, beta[NDIM], ut;
   struct of_geom geom;
   struct of_state q;
-  int i, j, k, m;
+  int i, j, k, m, max_iter;
 #define USEKS (1)
   
   coord(n, ii, jj, zz, CENT, X);
@@ -2019,16 +2023,18 @@ void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
   
-  // converts the input Utilde_{x,y,z} to Utilde_{r,th,phi}
-  for (i = 0; i<NDIM; i++) {
+  // converts the input Utilde^{x,y,z} to Utilde^{r,th,phi}
+  utcon[0] = 0.0;
+  for (i = 1; i<NDIM; i++) {
     utcon[i] = 0;
     for (j = 0; j<NDIM; j++){
       utcon[i] += drdx[i][j] * vtcon[j];
     }
   }
   
-  // converts Utilde_{r,th,phi} from the previous loop into Utilde_{x1,x2,x3}
-  for (i = 0; i<NDIM; i++) {
+  // converts Utilde^{r,th,phi} from the previous loop into Utilde^{x1,x2,x3}
+  utconp[0] = 0.0;
+  for (i = 1; i<NDIM; i++) {
     utconp[i] = 0;
     for (j = 0; j<NDIM; j++){
       utconp[i] += dxpdx[i][j] * utcon[j];
@@ -2036,18 +2042,59 @@ void utilde_to_ucon(double *pr, int n, int ii, int jj, int zz)
   }
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
-  //get_geometry(n,ii, jj,zz, CENT, &geom);
   
+  // This calculates Utilde^{phi} given u_{phi}. Iterations are required because the relation between them is not linear.
+  
+  get_geometry(n,ii, jj,zz, CENT, &geom);
+  max_iter = 50;
+  err_tol = 1.0E-4;
+  for (i = 0; i < max_iter; i++) {
+    udphi_to_utuphi(utconp, udphi, &udphi_new, &geom, utconp_new);
+    DLOOPA utconp[j] = utconp_new[j];
+    err = fabs(2 * (udphi_new - udphi)/(udphi + udphi_new + 1.0E-7));
+    if (err <= err_tol) break;
+    udphi = udphi_new;
+  }
   //ucon_to_utcon(uconp, &geom, utconp);
   
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
-  //gamma_calc(pr, &geom, &gamma);
+  gamma_calc(pr, &geom, &gamma);
   //fprintf(stderr, "(%d, %d, %d) Ratio 1: %f Ratio 2: %f Ratio 3: %f \n", ii, jj, zz, utconp[1], utconp[2] / old[2], utconp[3]/old[3]);
   /* done! */
 }
 
+// This function calculates Utilde^{phi} from Utilde_{phi}
+void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_geom *geom, double *utcon)
+{
+  double alpha, beta[NDIM], gamma, gamma_new, AA, BB; //, A, B, C, D, E, F u_minus, u_plus;
+  int j, k;
+  
+  /* now solve for v-- we can use the same u^t because
+   * it didn't change under KS -> KS' */
+  alpha = 1. / sqrt(-geom->gcon[0][0]);
+  SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
+  gamma = alpha*ucon[0];
+  
+  utcon[0] = 0;
+  SLOOPA utcon[j] = ucon[j];
+
+  SLOOPA utcon[3] = - geom->gcov[3][j] * beta[j] * gamma / alpha;
+  utcon[3] += geom->gcov[3][0] * gamma / alpha + udphi - (geom->gcov[3][1] * ucon[1] + geom->gcov[3][2] * ucon[2]);
+  utcon[3] /= (geom->gcov[3][3]);
+
+  // Update udphi
+  
+  AA = - geom->gcov[0][0] * geom->gcon[0][0];
+  BB = 0.0;
+  SLOOP AA += geom->gcov[j][k] * beta[j] * beta[k] / (alpha * alpha);
+  SLOOP BB += 2 * geom->gcov[j][k] * utcon[j] * beta[k] / alpha;
+  gamma_new = BB / (1 + AA);
+  
+  *udphi_new = geom->gcov[3][0] * gamma_new / alpha;
+  SLOOPA *udphi_new += geom->gcov[3][j] * (utcon[j] - gamma_new * beta[j] / alpha);
+}
 
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM])
   {
