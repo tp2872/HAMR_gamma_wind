@@ -8,8 +8,9 @@ void test_AMR(void){
 }
 
 int AMR_coord_linear(int level, int i, int j, int z){
-	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n;
-	
+	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n=0;
+	int non_active = 0; //If i, j and z are not active due to variations in REF_3
+
 	if (i < 0 || j < 0 || z < 0){
 		n = -1;
 		return n;
@@ -44,6 +45,11 @@ int AMR_coord_linear(int level, int i, int j, int z){
 		n += index[u] * factor[u]+1;
 	}
 	#endif
+
+	if (non_active){
+		return -1;
+	}
+
 
 	return n;
 }
