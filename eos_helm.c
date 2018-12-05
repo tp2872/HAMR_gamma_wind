@@ -107,7 +107,7 @@ void eos_init (
     fclose(fp);
     
     tstp  = (11.0e0 - eos_tlo)/(double)(EOSJMAX-1);
-    eos_tstpi = 1.0e0/t
+	eos_tstpi = 1.0e0 / t;
     dstp  = (11.0e0 - eos_dlo)/(double)(EOSIMAX-1);
     eos_dstpi = 1.0e0/dstp;
     for (j=0; j<EOSJMAX; j++) eos_t[j] = pow(10.0e0, (eos_tlo + j*tstp));
@@ -133,11 +133,11 @@ void eos_init (
 
 void eos_helm(
                 double btemp, double den, double abar, double zbar, double *pr, double *eps,
-                double eos_f[EOSIMAX][EOSJMAX], double eos_fd[EOSIMAX][EOSJMAX], double eos_ft[EOSIMAX][EOSJMAX], double eos_fdd[EOSIMAX][EOSJMAX], double eos_ftt[EOSIMAX][EOSJMAX],
-                double eos_fdt[EOSIMAX][EOSJMAX], double eos_fddt[EOSIMAX][EOSJMAX], double eos_fdtt[EOSIMAX][EOSJMAX], double eos_fddtt[EOSIMAX][EOSJMAX],
-                double eos_dpdf[EOSIMAX][EOSJMAX], double eos_dpdfd[EOSIMAX][EOSJMAX], double eos_dpdft[EOSIMAX][EOSJMAX], double eos_dpdfdt[EOSIMAX][EOSJMAX],
-                double eos_ef[EOSIMAX][EOSJMAX], double eos_efd[EOSIMAX][EOSJMAX], double eos_eft[EOSIMAX][EOSJMAX], double eos_efdt[EOSIMAX][EOSJMAX],
-                double eos_xf[EOSIMAX][EOSJMAX], double eos_xfd[EOSIMAX][EOSJMAX], double eos_xft[EOSIMAX][EOSJMAX], double eos_xfdt[EOSIMAX][EOSJMAX],
+				double eos_f[EOSIMAX*EOSJMAX], double eos_fd[EOSIMAX*EOSJMAX], double eos_ft[EOSIMAX*EOSJMAX], double eos_fdd[EOSIMAX*EOSJMAX], double eos_ftt[EOSIMAX*EOSJMAX],
+				double eos_fdt[EOSIMAX*EOSJMAX], double eos_fddt[EOSIMAX*EOSJMAX], double eos_fdtt[EOSIMAX*EOSJMAX], double eos_fddtt[EOSIMAX*EOSJMAX],
+				double eos_dpdf[EOSIMAX*EOSJMAX], double eos_dpdfd[EOSIMAX*EOSJMAX], double eos_dpdft[EOSIMAX*EOSJMAX], double eos_dpdfdt[EOSIMAX*EOSJMAX],
+				double eos_ef[EOSIMAX*EOSJMAX], double eos_efd[EOSIMAX*EOSJMAX], double eos_eft[EOSIMAX*EOSJMAX], double eos_efdt[EOSIMAX*EOSJMAX],
+				double eos_xf[EOSIMAX*EOSJMAX], double eos_xfd[EOSIMAX*EOSJMAX], double eos_xft[EOSIMAX*EOSJMAX], double eos_xfdt[EOSIMAX*EOSJMAX],
                 double eos_t[EOSJMAX], double eos_d[EOSIMAX], double eos_dd[EOSIMAX], double eos_ddSqr[EOSIMAX], double eos_ddInv[EOSIMAX],
                 double eos_ddSqrInv[EOSIMAX], double eos_dt[EOSJMAX], double eos_dtSqr[EOSJMAX], double eos_dtInv[EOSJMAX], double eos_dtSqrInv[EOSJMAX]
                 )
@@ -221,16 +221,23 @@ void eos_helm(
 	#define esqu (qe * qe)
 
     // For the uniform background coulomb correction
-    double  a1 = -0.898004e0,b1 = 0.96786e0,c1 = 0.220703e0,d1cc = -0.86097e0,e1cc = 2.5269e0,a2 = 0.29561e0, b2 = 1.9885e0,c2 = 0.288675e0;
+	#define a1 (-0.898004e0)
+	#define b1 (0.96786e0) 
+	#define c1 (0.220703e0) 
+	#define d1cc (-0.86097e0) 
+	#define e1cc (2.5269e0) 
+	#define a2 (0.29561e0) 
+	#define b2 (1.9885e0) 
+	#define c2 (0.288675e0)
     
     // For Newton-Raphson
-    double eos_smallt = 1.0e-10;
-    double eos_tol = 1.0e-8;
-    int eos_maxNewton = 50;
-    double eos_coulombMult = 1.0;
+	#define eos_smallt (1.0e-10)
+	#define eos_tol (1.0e-8)
+	#define eos_maxNewton (50)
+	#define eos_coulombMult (1.0)
     
-    int eos_coulombAbort = 1;
-    int eos_forceConstantInput = 0;
+	#define eos_coulombAbort (1)
+	#define eos_forceConstantInput (0)
 
     // ------------------------------------------------------------------------------
 
@@ -239,10 +246,8 @@ void eos_helm(
     bAprox13t = 0;
 
 	// execution
-
     ytot1  = 1.0e0/abar;
     ye     = ytot1 * zbar;
-
 
     //  frequent combinations
     deni    = 1.0e0/den;
@@ -250,7 +255,6 @@ void eos_helm(
     kt      = kerg * btemp;
     ktinv   = 1.0e0/kt;
     kavoy   = kergavo * ytot1;
-
 
     //  radiation section:
     prad    = asoli3 * btemp * btemp * btemp * btemp;
@@ -261,6 +265,7 @@ void eos_helm(
     erad    = 3.0e0 * x1;
     deraddd = -erad*deni;
     deraddt = 4.0e0 * erad * tempi;
+
     //  Calhoun next two lines
     deradda = 0.0e0;
     deraddz = 0.0e0;
@@ -268,7 +273,6 @@ void eos_helm(
     srad    = (x1 + erad)*tempi;
     dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
     dsraddt = (dpraddt*deni + deraddt - srad)*tempi;
-
 
     //  ion section:
     dxnidd  = avo * ytot1;
@@ -355,59 +359,59 @@ void eos_helm(
     mxt = 1.0e0 - xt;
     mxd = 1.0e0 - xd;
 
-    //  the density and temperature basis functions
-    si0t =   psi0(xt);
-    si1t =   psi1(xt)*eos_dt[jat];
-    si2t =   psi2(xt)*eos_dtSqr[jat];
+	//  the density and temperature basis functions
+	si0t = psi0(xt);
+	si1t = psi1(xt)*eos_dt[jat];
+	si2t = psi2(xt)*eos_dtSqr[jat];
 
-    si0mt =  psi0(mxt);
-    si1mt = -psi1(mxt)*eos_dt[jat];
-    si2mt =  psi2(mxt)*eos_dtSqr[jat];
+	si0mt = psi0(mxt);
+	si1mt = -psi1(mxt)*eos_dt[jat];
+	si2mt = psi2(mxt)*eos_dtSqr[jat];
 
-    si0d =   psi0(xd);
-    si1d =   psi1(xd)*eos_dd[iat];
-    si2d =   psi2(xd)*eos_ddSqr[iat];
+	si0d = psi0(xd);
+	si1d = psi1(xd)*eos_dd[iat];
+	si2d = psi2(xd)*eos_ddSqr[iat];
 
-    si0md =  psi0(mxd);
-    si1md = -psi1(mxd)*eos_dd[iat];
-    si2md =  psi2(mxd)*eos_ddSqr[iat];
-
-    // the first derivatives of the basis functions
-    dsi0t =   dpsi0(xt)*eos_dtInv[jat];
-    dsi1t =   dpsi1(xt);
-    dsi2t =   dpsi2(xt)*eos_dt[jat];
-
-    dsi0mt = -dpsi0(mxt)*eos_dtInv[jat];
-    dsi1mt =  dpsi1(mxt);
-    dsi2mt = -dpsi2(mxt)*eos_dt[jat];
-
-    dsi0d =   dpsi0(xd)*eos_ddInv[iat];
-    dsi1d =   dpsi1(xd);
-    dsi2d =   dpsi2(xd)*eos_dd[iat];
-
-    dsi0md = -dpsi0(mxd)*eos_ddInv[iat];
-    dsi1md =  dpsi1(mxd);
-    dsi2md = -dpsi2(mxd)*eos_dd[iat];
-
-    // the second derivatives of the basis functions
-    ddsi0t =   ddpsi0(xt)*eos_dtSqrInv[jat];
-    ddsi1t =   ddpsi1(xt)*eos_dtInv[jat];
-    ddsi2t =   ddpsi2(xt);
-
-    ddsi0mt =  ddpsi0(mxt)*eos_dtSqrInv[jat];
-    ddsi1mt = -ddpsi1(mxt)*eos_dtInv[jat];
-    ddsi2mt =  ddpsi2(mxt);
+	si0md = psi0(mxd);
+	si1md = -psi1(mxd)*eos_dd[iat];
+	si2md = psi2(mxd)*eos_ddSqr[iat];
 
     // the free energy
     free  = h5(si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt,si0d,   si1d,   si2d,   si0md,   si1md,   si2md, fi);
 
+	// the first derivatives of the basis functions
+	dsi0d = dpsi0(xd)*eos_ddInv[iat];
+	dsi1d = dpsi1(xd);
+	dsi2d = dpsi2(xd)*eos_dd[iat];
+
+	dsi0md = -dpsi0(mxd)*eos_ddInv[iat];
+	dsi1md = dpsi1(mxd);
+	dsi2md = -dpsi2(mxd)*eos_dd[iat];
+
     // derivative with respect to density
     df_d  = h5(si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt,dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md, fi);
+
+	// the first derivatives of the basis functions
+	dsi0t = dpsi0(xt)*eos_dtInv[jat];
+	dsi1t = dpsi1(xt);
+	dsi2t = dpsi2(xt)*eos_dt[jat];
+
+	dsi0mt = -dpsi0(mxt)*eos_dtInv[jat];
+	dsi1mt = dpsi1(mxt);
+	dsi2mt = -dpsi2(mxt)*eos_dt[jat];
 
     // derivative with respect to temperature
     df_t = h5(dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt,si0d,   si1d,   si2d,   si0md,   si1md,   si2md, fi);
 
-    // second derivative with respect to temperature
+	// the second derivatives of the basis functions
+	ddsi0t = ddpsi0(xt)*eos_dtSqrInv[jat];
+	ddsi1t = ddpsi1(xt)*eos_dtInv[jat];
+	ddsi2t = ddpsi2(xt);
+	ddsi0mt = ddpsi0(mxt)*eos_dtSqrInv[jat];
+	ddsi1mt = -ddpsi1(mxt)*eos_dtInv[jat];
+	ddsi2mt = ddpsi2(mxt);
+
+	// second derivative with respect to temperature
     df_tt = h5(ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt,si0d,   si1d,   si2d,   si0md,   si1md,   si2md, fi);
 
     //  second derivative with respect to temperature and density
@@ -513,7 +517,7 @@ void eos_helm(
     //  uniform background corrections & only the needed parts for speed
     //  plasg is the plasma coupling parameter
     //  split up calculations below -- they all used to depend upon a redefined z
-    z1        = forth * pi;
+	#define z1 (forth * pi)
     s1        = z1 * xni;
     dsdd      = z1 * dxnidd;
     lami      = 1.0e0/pow(s1, third);
@@ -584,11 +588,8 @@ void eos_helm(
        dscouldt = s3 * plasgdt;
     }
 
-    s4 = prad + pion + pele;
-    x6 = s4 + pcoul*eos_coulombMult;
-
     // assume that NaN always compares as false in an inequality
-    if ( !(x6 > 0.0) ) {
+	if (!(prad + pion + pele + pcoul*eos_coulombMult > 0.0)) {
         printf('[eos_helm] Negative total pressure.\n');
         printf("%s %e %e\n", ' values: dens,temp: ',den,btemp);
         printf("%s %e %e\n", ' values: abar,zbar: ',abar,zbar);
@@ -600,8 +601,8 @@ void eos_helm(
             printf("%s\n", '[eos_helm] ERROR: abar is negative.');
         }
 
-        if ( s4 > 0.0 ) {
-            printf("%s %e %e\n", ' nonpositive P caused by coulomb correction: Pnocoul,Pwithcoul: ',s4,x6);
+		if (prad + pion + pele > 0.0) {
+			printf("%s %e %e\n", ' nonpositive P caused by coulomb correction: Pnocoul,Pwithcoul: ', prad + pion + pele, prad + pion + pele + pcoul*eos_coulombMult);
 
             if (eos_coulombMult > 0.0) {
                 printf('  set runtime parameter eos_coulombMult to zero if plasma Coulomb corrections not important\n');
@@ -615,45 +616,33 @@ void eos_helm(
             }
         }
         else {
-            printf("Prad %e\nPion %e\nPele %e\nPcoul %e\nPtot %e\ndf_d %e\n", prad, pion, pele, pcoul*eos_coulombMult, x6, df_d);
+			printf("Prad %e\nPion %e\nPele %e\nPcoul %e\nPtot %e\ndf_d %e\n", prad, pion, pele, pcoul*eos_coulombMult, prad + pion + pele + pcoul*eos_coulombMult, df_d);
             printf('[eos_helm] ERROR: negative total pressure.\n');
         }
 
     }
 
-    pcoul    = pcoul * local_coulombMult;
-    dpcouldd = dpcouldd * local_coulombMult;
-    dpcouldt = dpcouldt * local_coulombMult;
+	*pr = prad + pion + pele + pcoul * local_coulombMult;
+	*ener = erad + eion + eele + ecoul * local_coulombMult;
+	*entr = srad + sion + sele + scoul * local_coulombMult;
 
-    ecoul    = ecoul * local_coulombMult;
-    decouldd = decouldd * local_coulombMult;
-    decouldt = decouldt * local_coulombMult;
+	dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult;
+	dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult;
 
-    scoul    = scoul * local_coulombMult;
-    dscouldd = dscouldd * local_coulombMult;
-    dscouldt = dscouldt * local_coulombMult;
+	denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult;
+	denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult;
 
-    pres    = prad    + pion    + pele   + pcoul;
-    ener    = erad    + eion    + eele   + ecoul;
-    entr    = srad    + sion    + sele   + scoul;
-
-    dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd;
-    dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt;
-
-    denerdd = deraddd + deiondd + deepdd + decouldd;
-    denerdt = deraddt + deiondt + deepdt + decouldt;
-
-    dentrdd = dsraddd + dsiondd + dsepdd + dscouldd;
-    dentrdt = dsraddt + dsiondt + dsepdt + dscouldt;
+	dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * local_coulombMult;
+	dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * local_coulombMult;
 
     //  form gamma_1
-    presi = 1.0e0/pres;
-    chit  = btemp*presi * dpresdt;
-    chid  = dpresdd * den*presi;
-    x7     = pres * deni * chit/(btemp * denerdt);
-    gamc  = chit*x7 + chid;
-    cv    = denerdt;
-    cp    = cv*gamc/chid;
+    //presi = 1.0e0/pres;
+    //chit  = btemp*presi * dpresdt;
+    //chid  = dpresdd * den*presi;
+    //x7     = pres * deni * chit/(btemp * denerdt);
+    //gamc  = chit*x7 + chid;
+    //cv    = denerdt;
+    //cp    = cv*gamc/chid;
 
     //  store the output -- note that many of these are not used by the calling program!
     // ptotRow(j)   = pres;   //used by Eos as EOS_PRES = PRES_VAR
@@ -686,8 +675,6 @@ void eos_helm(
     // cvRow(j)     = cv;      // EOS_CV
     // cpRow(j)     = cp;      // EOS_CP
 
-	*pr = pres;
-	*eps = ener;
     return;
 }
 
