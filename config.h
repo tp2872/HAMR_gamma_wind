@@ -182,7 +182,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1)
-
+#if(TRANS_BOUND && NB_3%2!=0)
+#undef TRANS_BOUND
+#define TRANS_BOUND (0)
+#endif
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
 
@@ -533,6 +536,89 @@ Variable Inversion Section
 /*Set dimensions for Utoprim routines*/
 #define NEWT_DIM_2 2
 #define NEWT_DIM_1 1
+
+/*************************************************************************
+Section with EOS constants
+*************************************************************************/
+#define EOSIMAX (211)
+#define EOSJMAX (71)
+#define eos_tlo (4.0)
+#define eos_dlo (-10.0)
+#define MAXLEN (1024)
+
+// becomes true if variables for Aprox13t network are set
+#define bAprox13t (0) 
+
+#define eos_coulombMult (1)
+#define eos_coulombAbort (1)
+
+// from eos_helmConstData
+#define pi (3.1415926535897932384e0)
+#define avo (6.0221367e23)
+#define kerg (1.380658e-16)
+#define kev (8.617385e-5)
+#define amu (1.6605402e-24)
+#define avoinv (1.0e0 / avo)
+#define kergavo (kerg * avo)
+#define c (2.99792458e10)
+#define h (6.6260755e-27)
+#define ssol (5.67051e-5)
+#define asol (4.0e0 * ssol / c)
+#define asoli3 (asol / 3.0e0)
+#define sioncon ((2.0e0 * pi * amu * kerg) / (h * h))
+
+#define third (1.0e0/3.0e0)
+#define forth (4.0e0/3.0e0)
+#define qe (4.8032068e-10) 
+#define esqu (qe * qe)
+
+//For the uniform background coulomb correction
+#define a1 (-0.898004e0)
+#define b1 (0.96786e0) 
+#define c1 (0.220703e0) 
+#define d1cc (-0.86097e0) 
+#define e1cc (2.5269e0) 
+#define a2 (0.29561e0) 
+#define b2 (1.9885e0) 
+#define c2 (0.288675e0)
+#define third (1.0e0/3.0e0)
+#define forth (4.0e0/3.0e0)
+
+// For the uniform background coulomb correction
+#define a1 (-0.898004e0)
+#define b1 (0.96786e0) 
+#define c1 (0.220703e0) 
+#define d1cc (-0.86097e0) 
+#define e1cc (2.5269e0) 
+#define a2 (0.29561e0) 
+#define b2 (1.9885e0) 
+#define c2 (0.288675e0)
+
+// ***********Beginning of statement function declarations **********
+// quintic hermite polynomial statement functions
+// psi0 and its derivatives
+#define psi0(zFunc) (zFunc*zFunc*zFunc * ( zFunc * (-6.0e0*zFunc + 15.0e0) -10.0e0) + 1.0e0)
+#define dpsi0(zFunc) (zFunc*zFunc * ( zFunc * (-30.0e0*zFunc + 60.0e0) - 30.0e0))
+#define ddpsi0(zFunc) (zFunc* ( zFunc*( -120.0e0*zFunc + 180.0e0) -60.0e0))
+
+// psi1 and its derivatives
+#define psi1(zFunc) (( zFunc*zFunc * ( zFunc * (-3.0e0*zFunc + 8.0e0) - 6.0e0) + 1.0e0))
+#define dpsi1(zFunc) (zFunc*zFunc * ( zFunc * (-15.0e0*zFunc + 32.0e0) - 18.0e0) +1.0e0)
+#define ddpsi1(zFunc) (zFunc * (zFunc * (-60.0e0*zFunc + 96.0e0) -36.0e0))
+
+// psi2  and its derivatives
+#define psi2(zFunc) (0.5e0*zFunc*zFunc*( zFunc* ( zFunc * (-zFunc + 3.0e0) - 3.0e0) + 1.0e0))
+#define dpsi2(zFunc) (0.5e0*zFunc*( zFunc*(zFunc*(-5.0e0*zFunc + 12.0e0) - 9.0e0) + 2.0e0))
+#define ddpsi2(zFunc) (0.5e0*(zFunc*( zFunc * (-20.0e0*zFunc + 36.0e0) - 18.0e0) + 2.0e0))
+
+#define h5(w0t, w1t, w2t, w0mt, w1mt, w2mt, w0d, w1d, w2d, w0md, w1md, w2md, fi) (fi[0]  *w0d*w0t   + fi[1]  *w0md*w0t  + fi[2]  *w0d*w0mt  + fi[3]  *w0md*w0mt + fi[4]  *w0d*w1t   + fi[5]  *w0md*w1t + fi[6]  *w0d*w1mt  + fi[7]  *w0md*w1mt + fi[8]  *w0d*w2t   + fi[9] *w0md*w2t + fi[10] *w0d*w2mt  + fi[11] *w0md*w2mt + fi[12] *w1d*w0t   + fi[13] *w1md*w0t + fi[14] *w1d*w0mt  + fi[15] *w1md*w0mt  + fi[16] *w2d*w0t   + fi[17] *w2md*w0t + fi[18] *w2d*w0mt  + fi[19] *w2md*w0mt + fi[20] *w1d*w1t   + fi[21] *w1md*w1t + fi[22] *w1d*w1mt  + fi[23] *w1md*w1mt + fi[24] *w2d*w1t   + fi[25] *w2md*w1t + fi[26] *w2d*w1mt  + fi[27] *w2md*w1mt + fi[28] *w1d*w2t   + fi[29] *w1md*w2t + fi[30] *w1d*w2mt  + fi[31] *w1md*w2mt + fi[32] *w2d*w2t   + fi[33] *w2md*w2t + fi[34] *w2d*w2mt  + fi[35] *w2md*w2mt)
+
+//  cubic hermite polynomial statement functions
+//  psi0 & derivatives
+#define xpsi0(zFunc) (zFunc * zFunc * (2.0e0*zFunc - 3.0e0) + 1.0)
+
+//  psi1 & derivatives
+#define xpsi1(zFunc) (zFunc * ( zFunc * (zFunc - 2.0e0) + 1.0e0))
 
 /*************************************************************************
 Section with derived quantities

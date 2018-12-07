@@ -90,6 +90,33 @@ extern double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict dU_s[NB_LOCAL])[NPR];
 
+/*EOS CPU arrays*/
+extern double eos_f[EOSIMAX*EOSJMAX];
+extern double eos_fd[EOSIMAX*EOSJMAX];
+extern double eos_ft[EOSIMAX*EOSJMAX];
+extern double eos_fdd[EOSIMAX*EOSJMAX];
+extern double eos_ftt[EOSIMAX*EOSJMAX];
+extern double eos_fdt[EOSIMAX*EOSJMAX];
+extern double eos_fddt[EOSIMAX*EOSJMAX];
+extern double eos_fdtt[EOSIMAX*EOSJMAX];
+extern double eos_fddtt[EOSIMAX*EOSJMAX];
+extern double eos_dpdf[EOSIMAX*EOSJMAX];
+extern double eos_dpdfd[EOSIMAX*EOSJMAX];
+extern double eos_dpdft[EOSIMAX*EOSJMAX];
+extern double eos_dpdfdt[EOSIMAX*EOSJMAX];
+extern double eos_ef[EOSIMAX*EOSJMAX];
+extern double eos_efd[EOSIMAX*EOSJMAX];
+extern double eos_eft[EOSIMAX*EOSJMAX];
+extern double eos_efdt[EOSIMAX*EOSJMAX];
+extern double eos_xf[EOSIMAX*EOSJMAX];
+extern double eos_xfd[EOSIMAX*EOSJMAX];
+extern double eos_xft[EOSIMAX*EOSJMAX];
+extern double eos_xfdt[EOSIMAX*EOSJMAX];
+extern double eos_t[EOSJMAX];
+extern double eos_d[EOSIMAX];
+extern double eos_dd[EOSIMAX];
+extern double eos_dt[EOSJMAX];
+
 /*GPU transfer arrays*/
 extern double *F1_1[NB_LOCAL];
 extern double *F2_1[NB_LOCAL];
@@ -1141,7 +1168,10 @@ void ctop_to_utop(double ctop[NDIM], double cmax[NDIM]);
 void primtoflux_FT(double * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, double restrict flux[NPR]);
 void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js, double  restrict *vmax, double restrict *vmin, int n, int a, int b, int c);
 
-
-
+//EOS related
+void eos_init(void);
+void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd);
+void test_eos(void);
+void eos_helm(double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr);
 
 

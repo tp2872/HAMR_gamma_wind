@@ -79,6 +79,33 @@ double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
 
+/*EOS CPU arrays*/
+double eos_f[EOSIMAX*EOSJMAX];
+double eos_fd[EOSIMAX*EOSJMAX];
+double eos_ft[EOSIMAX*EOSJMAX];
+double eos_fdd[EOSIMAX*EOSJMAX];
+double eos_ftt[EOSIMAX*EOSJMAX];
+double eos_fdt[EOSIMAX*EOSJMAX];
+double eos_fddt[EOSIMAX*EOSJMAX];
+double eos_fdtt[EOSIMAX*EOSJMAX];
+double eos_fddtt[EOSIMAX*EOSJMAX];
+double eos_dpdf[EOSIMAX*EOSJMAX];
+double eos_dpdfd[EOSIMAX*EOSJMAX];
+double eos_dpdft[EOSIMAX*EOSJMAX];
+double eos_dpdfdt[EOSIMAX*EOSJMAX];
+double eos_ef[EOSIMAX*EOSJMAX];
+double eos_efd[EOSIMAX*EOSJMAX];
+double eos_eft[EOSIMAX*EOSJMAX];
+double eos_efdt[EOSIMAX*EOSJMAX];
+double eos_xf[EOSIMAX*EOSJMAX];
+double eos_xfd[EOSIMAX*EOSJMAX];
+double eos_xft[EOSIMAX*EOSJMAX];
+double eos_xfdt[EOSIMAX*EOSJMAX];
+double eos_t[EOSJMAX];
+double eos_d[EOSIMAX];
+double eos_dd[EOSIMAX];
+double eos_dt[EOSJMAX];
+
 /*GPU arrays*/
 double *F1_1[NB_LOCAL];
 double *F2_1[NB_LOCAL];
