@@ -55,12 +55,12 @@ void eos_init (void) {
     
     fclose(fp);
     
-    tstp  = (11.0e0 - eos_tlo)/(double)(EOSJMAX-1);
-	eos_tstpi = 1.0e0 / t;
-    dstp  = (11.0e0 - eos_dlo)/(double)(EOSIMAX-1);
-    eos_dstpi = 1.0e0/dstp;
-    for (j=0; j<EOSJMAX; j++) eos_t[j] = pow(10.0e0, (eos_tlo + j*tstp));
-    for (i=0; i<EOSIMAX; i++) eos_d[i] = pow(10.0e0, (eos_dlo + i*dstp));
+    tstp  = (11.0 - eos_tlo)/(double)(EOSJMAX-1);
+	eos_tstpi = 1.0 / t;
+    dstp  = (11.0 - eos_dlo)/(double)(EOSIMAX-1);
+    eos_dstpi = 1.0/dstp;
+    for (j=0; j<EOSJMAX; j++) eos_t[j] = pow(10.0, (eos_tlo + j*tstp));
+    for (i=0; i<EOSIMAX; i++) eos_d[i] = pow(10.0, (eos_dlo + i*dstp));
     
     //..store the temperature and density differences and their inverses
     for (i=0; i<EOSIMAX-1; i++) eos_dd[i]   = eos_d[i+1] - eos_d[i];
@@ -69,7 +69,13 @@ void eos_init (void) {
     return;
 }
 
-void eos_helm(double btemp, double den, double abar, double zbar, double *pres, double *ener,double *entr)
+void eos_copy_gpu(void) {
+
+
+}
+
+
+void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener,double *entr)
 {
     // Local variables
     double ytot1, ye, local_coulombMult;
@@ -78,14 +84,13 @@ void eos_helm(double btemp, double den, double abar, double zbar, double *pres, 
 	double sion, dsiondd, dsiondt;
 	double pele, dpepdd, dpepdt, eele, deepdd, deepdt;
 	double sele, dsepdd, dsepdt;
-	double pres, dpresdd, dpresdt, ener, denerdt;
-	double entr;
+	double dpresdd, dpresdt, denerdt;
 	double presi, chit, chid, gamc, kavoy;
     double cv, cp, etaele, xnefer,denerdd, dentrdd ,dentrdt;
 
     // For the interpolations
     double free,df_d,df_t,df_dd,df_tt,df_dt;
-    double h3e, h3x;
+    //double h3e, h3x;
 	double zFunc, z0, z1, z2, z3, z4, z5, z6, din;
 
     // For the coulomb corrections
@@ -94,33 +99,21 @@ void eos_helm(double btemp, double den, double abar, double zbar, double *pres, 
     // Added by Calhoun for calculations for the Aprox13t network
     double  deradda,dxnida,dpionda,deionda,dsepda,deepda,decoulda,dsda,dsdda,lamida,plasgda,denerda,deraddz,deiondz,deepdz,decouldz,dsepdz,plasgdz,denerdz;
 
-	//  electron-positron section:
-	//  enter the table with ye*den, no checks of the input
-	din = zbar / abar*den;
-	
-	//  frequent combinations
-	ytot1 = 1.0e0 / abar;
-	ye = ytot1 * zbar;
-	deni = 1.0e0 / den;
-	tempi = 1.0e0 / btemp;
 	kt = kerg * btemp;
-	ktinv = 1.0e0 / kt;
-
-    //  uniform background corrections & only the needed parts for speed
-    //  plasg is the plasma coupling parameter
-    //  split up calculations below -- they all used to depend upon a redefined z
-	s1 = 4.0 / 3.0*pi * xni;
-	lami = 1.0e0 / pow(s1, third);
-	inv_lami = 1.0e0 / lami;
-	plasg = zbar*zbar*esqu*ktinv*inv_lami;
+	ktinv = 1.0 / kt;
 
 	#if (bAprox13t)
-	dsda = 4.0 / 3.0*pi * dxnida;          //Calhoun
+	dsda = 4.0 / 3.0*M_PI * dxnida;          //Calhoun
 	lamida   = z2 * dsda / s1;      //Calhoun
 	plasgda  = z3 * lamida;         //Calhoun
 	plasgdz  = 2.0 * plasg/zbar;   //Calhoun
 	#endif
 
+	//frequent combinations
+	din = zbar / abar*den;
+	ytot1 = 1.0 / abar;
+	ye = ytot1 * zbar;
+	
 	//Look up the desired quantities in the eos table
 	interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd);
 
@@ -129,34 +122,44 @@ void eos_helm(double btemp, double den, double abar, double zbar, double *pres, 
 	pele = x3 * df_d;
 	sele = -df_t * ye;
 	eele = ye * free + btemp * sele;
+	dxnidd = avo * ytot1;
 	xni = dxnidd * den;
 	pion = xni * kt;
 
+	//  uniform background corrections & only the needed parts for speed
+	//  plasg is the plasma coupling parameter
+	//  split up calculations below -- they all used to depend upon a redefined z
+	s1 = 4.0 / 3.0*M_PI * xni;
+	lami = 1.0 / pow(s1, third);
+	inv_lami = 1.0 / lami;
+	plasg = zbar*zbar*esqu*ktinv*inv_lami;
+
     //yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+	deni = 1.0 / den;
+	tempi = 1.0 / btemp;
 	if (plasg >= 1.0) {
-		x4 = pow(plasg, 0.25e0);
-		z4 = c1 / x4;
-		dxnidd = avo * ytot1;
-		ecoul = dxnidd * kt * (a1*plasg + b1*x4 + z4 + d1cc);
+		x4 = pow(plasg, 0.25);
+		z4 = eos_c1 / x4;
+		ecoul = dxnidd * kt * (eos_a1*plasg + eos_b1*x4 + z4 + d1cc);
 		pcoul = third * den * ecoul;
 		kavoy = kergavo * ytot1;
-		scoul = -kavoy*(3.0e0*b1*x4 - 5.0e0*z4 + d1cc*(log(plasg) - 1.0e0) - e1cc);
+		scoul = -kavoy*(3.0*eos_b1*x4 - 5.0*z4 + d1cc*(log(plasg) - 1.0) - e1cc);
     }
     //yakovlev & shalybkov 1989 equations 102, 103, 104
 	else if (plasg < 1.0) {
 		x5 = plasg * sqrt(plasg);
-		y3 = pow(plasg, b2);
-		z5 = c2 * x5 - third * a2 * y3;
+		y3 = pow(plasg, eos_b2);
+		z5 = eos_c2 * x5 - third * eos_a2 * y3;
 		pcoul = -pion * z5;
-		ecoul = 3.0e0 * pcoul * deni;
+		ecoul = 3.0 * pcoul * deni;
 		kavoy = kergavo * ytot1;
-		scoul = -kavoy*(c2*x5 - a2*(b2 - 1.0e0) / b2*y3);
+		scoul = -kavoy*(eos_c2*x5 - eos_a2*(eos_b2 - 1.0) / eos_b2*y3);
     }
 
 	//  radiation section:
 	prad = asoli3 * btemp * btemp * btemp * btemp;
 	x1 = prad * deni;
-	erad = 3.0e0 * x1;
+	erad = 3.0 * x1;
 	srad = (x1 + erad)*tempi;
 	
 	// Set the coulomb multiplier to a local value -- we might change it only within this call
@@ -198,148 +201,151 @@ void eos_helm(double btemp, double den, double abar, double zbar, double *pres, 
 	#if (bAprox13t)
 	dxnida = -xni*ytot1; //Calhoun
 	dpionda = dxnida * kt; //Calhoun
-	deionda = 1.5e0 * dpionda*deni;  //Calhoun
-	deiondz = 0.0e0; //Calhoun
+	deionda = 1.5 * dpionda*deni;  //Calhoun
+	deiondz = 0.0; //Calhoun
 	#endif
 
 	//  sackur-tetrode equation for the ion entropy of
 	//  a single ideal gas characterized by abar
 	*pres = prad + pion + pele + pcoul * local_coulombMult;
-	eion = 1.5e0 * pion * deni;
+	eion = 1.5 * pion * deni;
 	*ener = erad + eion + eele + ecoul * local_coulombMult;
 	sion = (pion*deni + eion)*tempi + kavoy*log(pow(abar, 2.5) * deni*avoinv *pow(sioncon * btemp, 1.5));
 	*entr = srad + sion + sele + scoul * local_coulombMult;
 	
-	//Calculate pressure derivatives
-	dpraddt = 4.0e0 * prad * tempi;
-	dpraddd = 0.0e0;
-	dpiondd = avo * ytot1 * kt;
-	dpiondt = xni * kerg;
-	dpepdt = x3 * df_dt;
-	//yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-	if (plasg >= 1.0) {
-		plasg_inv = 1.0e0 / plasg;
-		y1 = dxnidd * kt * (a1 + 0.25e0*plasg_inv*(b1*x4 - z4));
-		dsdd = 4.0 / 3.0*pi * dxnidd;
-		lamidd = -third * lami / s1 * dsdd;
-		plasgdd = -plasg * inv_lami * lamidd;
-		plasgdt = -plasg * ktinv * kerg;
-		decouldd = y1 * plasgdd;
-		decouldt = y1 * plasgdt + ecoul * tempi;
-		dpcouldd = third * (ecoul + den * decouldd);
-		dpcouldt = third * den  * decouldt;
+	if (calc_derivatives){
+		//Calculate pressure derivatives
+		dpraddt = 4.0 * prad * tempi;
+		dpraddd = 0.0;
+		dpiondd = avo * ytot1 * kt;
+		dpiondt = xni * kerg;
+		dpepdt = x3 * df_dt;
+
+		//yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+		if (plasg >= 1.0) {
+			plasg_inv = 1.0 / plasg;
+			y1 = dxnidd * kt * (eos_a1 + 0.25*plasg_inv*(eos_b1*x4 - z4));
+			dsdd = 4.0 / 3.0*M_PI * dxnidd;
+			lamidd = -third * lami / s1 * dsdd;
+			plasgdd = -plasg * inv_lami * lamidd;
+			plasgdt = -plasg * ktinv * kerg;
+			decouldd = y1 * plasgdd;
+			decouldt = y1 * plasgdt + ecoul * tempi;
+			dpcouldd = third * (ecoul + den * decouldd);
+			dpcouldt = third * den  * decouldt;
+		}
+		//yakovlev & shalybkov 1989 equations 102, 103, 104
+		else if (plasg < 1.0) {
+			plasg_inv = 1.0 / plasg;
+			s2 = (1.5*eos_c2*x5 - third*eos_a2*eos_b2*y3)*plasg_inv;
+			dxnidd = avo * ytot1;
+			dsdd = 4.0 / 3.0*M_PI * dxnidd;
+			lamidd = -third * lami / s1 * dsdd;
+			plasgdd = -plasg * inv_lami * lamidd;
+			plasgdt = -plasg * ktinv * kerg;
+			dpcouldd = -dpiondd*z5 - pion*s2*plasgdd;
+			dpcouldt = -dpiondt*z5 - pion*s2*plasgdt;
+			decouldd = 3.0*dpcouldd*deni - ecoul*deni;
+			decouldt = 3.0*dpcouldt*deni;
+		}
+		dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult; //pressure derivative vs density and density
+		dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; //pressure derivative vs density and time
+
+		//Calculate energy derivatives
+		deiondd = (1.5 * dpiondd - eion)*deni;
+		deraddd = -erad*deni;
+		deraddt = 4.0 * erad * tempi;
+		dsepdt = -df_tt * ye;
+		dsepdd = -df_dt * ye * ye;
+		deepdt = btemp * dsepdt;
+		deepdd = ye*ye*df_d + btemp*dsepdd;
+		#if (bAprox13t)
+		//  Calhoun next two lines
+		deradda = 0.0;
+		deraddz = 0.0;
+		#endif
+		denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult; //energy derivative vs density and density
+		deiondt = 0.0;
+		denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs density and time
+
+		//Calculate entropy derivatives
+		dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
+		dsraddt = (dpraddt*deni + deraddt - srad)*tempi;
+		dsiondd = (dpiondd*deni - pion*deni*deni + deiondd)*tempi - kavoy * deni;
+		dsiondt = (dpiondt*deni + deiondt)*tempi - (pion*deni + eion) * tempi*tempi + 1.5 * kavoy * tempi;
+		//yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+		if (plasg >= 1.0) {
+			y2 = -kavoy*plasg_inv*(0.75*eos_b1*x4 + 1.25*z4 + d1cc);
+			dscouldd = y2 * plasgdd;
+			dscouldt = y2 * plasgdt;
+		}
+		//yakovlev & shalybkov 1989 equations 102, 103, 104
+		else if (plasg < 1.0) {
+			s3 = -kavoy*plasg_inv*(1.5*eos_c2*x5 - eos_a2*(eos_b2 - 1.0)*y3);
+			dscouldd = s3 * plasgdd;
+			dscouldt = s3 * plasgdt;
+		}
+		dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * local_coulombMult;//entropy derivative vs density and density
+		dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * local_coulombMult;//entropy derivative vs density and time
+
+		//  form gamma_1
+		//presi = 1.0/pres;
+		//chit  = btemp*presi * dpresdt;
+		//chid  = dpresdd * den*presi;
+		//x7     = pres * deni * chit/(btemp * denerdt);
+		//gamc  = chit*x7 + chid;
+		//cv    = denerdt;
+		//cp    = cv*gamc/chid;
+
+		//  store the output -- note that many of these are not used by the calling program!
+		// ptotRow(j)   = pres;   //used by Eos as EOS_PRES = PRES_VAR
+		// etotRow(j)   = ener;   //used by Eos as EOS_EINT = EINT_VAR
+		// stotRow(j)   = entr;   //this is entropy, used by Eos as EOS_ENTR (masked)
+
+		// dpdRow(j)    = dpresdd;  // used as EOS_DPD
+		// dptRow(j)    = dpresdt;  // used as EOS_DPT ALWAYS used by MODE_DENS_PRES in Eos.F90
+		//
+		// dedRow(j)    = denerdd;  // used as EOS_DED
+		// detRow(j)    = denerdt;  // used as EOS_DET  ALWAYS used by MODE_DENS_EI in Eos.F90
+		//
+		// if (bAprox13t) {
+		//		dsepda = ytot1 * (ye * df_dt * din - sele); //Calhoun
+		//		dsepdz = -ytot1 * (ye * df_dt * den + df_t); //Calhoun
+		//		deepda = -ye * ytot1 * (free + df_d * din) + btemp * dsepda; //Calhoun
+		//		deepdz = ytot1* (free + ye * df_d * den) + btemp * dsepdz; //Calhoun
+		//     denerda = deradda + deionda + deepda + decoulda;  //Calhoun
+		//     denerdz = deraddz + deiondz + deepdz + decouldz;  //Calhoun
+		//     deaRow(j)    = denerda;  //Calhoun EOS_DEA
+		//     dezRow(j)    = denerdz;  //Calhoun EOS_DEZ
+		// }
+		//
+		// dsdRow(j)    = dentrdd;  // used as EOS_DSD
+		// dstRow(j)    = dentrdt;  // used as EOS_DST
+		//
+		// pelRow(j)   = pele;     // used as EOS_PEL
+		//
+		// neRow(j)    = xnefer;   // used as EOS_NE
+		// etaRow(j) = etaele;     // used as EOS_ETA
+		//
+		// gamcRow(j)   = gamc;    // used as EOS_GAMC = GAMC_VAR
+		//
+		// cvRow(j)     = cv;      // EOS_CV
+		// cpRow(j)     = cp;      // EOS_CP
 	}
-	//yakovlev & shalybkov 1989 equations 102, 103, 104
-	else if (plasg < 1.0) {
-		plasg_inv = 1.0e0 / plasg;
-		s2 = (1.5e0*c2*x5 - third*a2*b2*y3)*plasg_inv;
-		dxnidd = avo * ytot1;
-		dsdd = 4.0 / 3.0*pi * dxnidd;
-		lamidd = -third * lami / s1 * dsdd;
-		plasgdd = -plasg * inv_lami * lamidd;
-		plasgdt = -plasg * ktinv * kerg;
-		dpcouldd = -dpiondd*z5 - pion*s2*plasgdd;
-		dpcouldt = -dpiondt*z5 - pion*s2*plasgdt;
-		decouldd = 3.0e0*dpcouldd*deni - ecoul*deni;
-		decouldt = 3.0e0*dpcouldt*deni;
-	}
-	dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult; //pressure derivative vs density and density
-	dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; //pressure derivative vs density and time
-
-	//Calculate energy derivatives
-	deiondd = (1.5e0 * dpiondd - eion)*deni;
-	deraddd = -erad*deni;
-	deraddt = 4.0e0 * erad * tempi;
-	dsepdt = -df_tt * ye;
-	dsepdd = -df_dt * ye * ye;
-	deepdt = btemp * dsepdt;
-	deepdd = ye*ye*df_d + btemp*dsepdd;
-	#if (bAprox13t)
-	//  Calhoun next two lines
-	deradda = 0.0e0;
-	deraddz = 0.0e0;
-	#endif
-	denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult; //energy derivative vs density and density
-	denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs density and time
-	
-	//Calculate entropy derivatives
-	dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
-	dsraddt = (dpraddt*deni + deraddt - srad)*tempi;
-	dsiondd = (dpiondd*deni - pion*deni*deni + deiondd)*tempi - kavoy * deni;
-	dsiondt = (dpiondt*deni + deiondt)*tempi - (pion*deni + eion) * tempi*tempi + 1.5e0 * kavoy * tempi;
-	//yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-	if (plasg >= 1.0) {
-		y2 = -kavoy*plasg_inv*(0.75e0*b1*x4 + 1.25e0*z4 + d1cc);
-		dscouldd = y2 * plasgdd;
-		dscouldt = y2 * plasgdt;
-	}
-	//yakovlev & shalybkov 1989 equations 102, 103, 104
-	else if (plasg < 1.0) {
-		s3 = -kavoy*plasg_inv*(1.5e0*c2*x5 - a2*(b2 - 1.0e0)*y3);
-		dscouldd = s3 * plasgdd;
-		dscouldt = s3 * plasgdt;
-	}
-	dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * local_coulombMult;//entropy derivative vs density and density
-	dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * local_coulombMult;//entropy derivative vs density and time
-
-    //  form gamma_1
-    //presi = 1.0e0/pres;
-    //chit  = btemp*presi * dpresdt;
-    //chid  = dpresdd * den*presi;
-    //x7     = pres * deni * chit/(btemp * denerdt);
-    //gamc  = chit*x7 + chid;
-    //cv    = denerdt;
-    //cp    = cv*gamc/chid;
-
-    //  store the output -- note that many of these are not used by the calling program!
-    // ptotRow(j)   = pres;   //used by Eos as EOS_PRES = PRES_VAR
-    // etotRow(j)   = ener;   //used by Eos as EOS_EINT = EINT_VAR
-    // stotRow(j)   = entr;   //this is entropy, used by Eos as EOS_ENTR (masked)
-
-    // dpdRow(j)    = dpresdd;  // used as EOS_DPD
-    // dptRow(j)    = dpresdt;  // used as EOS_DPT ALWAYS used by MODE_DENS_PRES in Eos.F90
-    //
-    // dedRow(j)    = denerdd;  // used as EOS_DED
-    // detRow(j)    = denerdt;  // used as EOS_DET  ALWAYS used by MODE_DENS_EI in Eos.F90
-    //
-    // if (bAprox13t) {
-	//		dsepda = ytot1 * (ye * df_dt * din - sele); //Calhoun
-	//		dsepdz = -ytot1 * (ye * df_dt * den + df_t); //Calhoun
-	//		deepda = -ye * ytot1 * (free + df_d * din) + btemp * dsepda; //Calhoun
-	//		deepdz = ytot1* (free + ye * df_d * den) + btemp * dsepdz; //Calhoun
-    //     denerda = deradda + deionda + deepda + decoulda;  //Calhoun
-    //     denerdz = deraddz + deiondz + deepdz + decouldz;  //Calhoun
-    //     deaRow(j)    = denerda;  //Calhoun EOS_DEA
-    //     dezRow(j)    = denerdz;  //Calhoun EOS_DEZ
-    // }
-    //
-    // dsdRow(j)    = dentrdd;  // used as EOS_DSD
-    // dstRow(j)    = dentrdt;  // used as EOS_DST
-    //
-    // pelRow(j)   = pele;     // used as EOS_PEL
-    //
-    // neRow(j)    = xnefer;   // used as EOS_NE
-    // etaRow(j) = etaele;     // used as EOS_ETA
-    //
-    // gamcRow(j)   = gamc;    // used as EOS_GAMC = GAMC_VAR
-    //
-    // cvRow(j)     = cv;      // EOS_CV
-    // cpRow(j)     = cp;      // EOS_CP
-
     return;
 }
 
 void test_eos(void) { 
 	double btemp=2.0e8, den=1.0e7;
 	double abar=1.0, zbar=1.0;
-	double pr, ener, entr;
+	double pres, ener, entr;
 //    int ix,jx;
 
     // Reading the table and writing into arrays
-    eos_init(eos_f, eos_fd, eos_ft, eos_fdd, eos_ftt,eos_fdt, eos_fddt, eos_fdtt, eos_fddtt,eos_dpdf, eos_dpdfd, eos_dpdft, eos_dpdfdt,eos_ef, eos_efd, eos_eft, eos_efdt,eos_xf, eos_xfd, eos_xft, eos_xfdt,eos_t, eos_d, eos_dd, eos_dt);  
-    eos_helm(btemp, den, abar, zbar, &pr, &ener, &entr, eos_f, eos_fd, eos_ft, eos_fdd, eos_ftt,eos_fdt, eos_fddt, eos_fdtt, eos_fddtt,eos_dpdf, eos_dpdfd, eos_dpdft, eos_dpdfdt,eos_ef, eos_efd, eos_eft, eos_efdt,eos_xf, eos_xfd, eos_xft, eos_xfdt,eos_t, eos_d, eos_dd, eos_dt);
+    eos_init();  
+	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr);
     
-    printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pr, ener, entr);
+    printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pres, ener, entr);
 //    for (ix=-10;ix<12;ix++){
 //        den = pow(10.0, ix);
 //        for (jx=4;jx<12;jx++){
@@ -359,9 +365,9 @@ void interp_eostable(double den, double btemp, double din, double ye, double *fr
 	double dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt;
 
 	//  hash locate this temperature and density
-	jat = (int)((log10(btemp) - eos_tlo)*(double)(EOSJMAX - 1) / (11.0e0 - eos_tlo)) + 1;
+	jat = (int)((log10(btemp) - eos_tlo)*(double)(EOSJMAX - 1) / (11.0 - eos_tlo)) + 1;
 	jat = max(1, min(jat, EOSJMAX - 1)) - 1;
-	iat = (int)((log10(din) - eos_dlo)*(double)(EOSIMAX - 1) / (11.0e0 - eos_dlo)) + 1;
+	iat = (int)((log10(din) - eos_dlo)*(double)(EOSIMAX - 1) / (11.0 - eos_dlo)) + 1;
 	iat = max(1, min(iat, EOSIMAX - 1)) - 1;
 
 	//  access the table locations only once
@@ -403,10 +409,10 @@ void interp_eostable(double den, double btemp, double din, double ye, double *fr
 	fi[35] = eos_fddtt[(iat + 1)*EOSJMAX + (jat + 1)];
 
 	//  various differences
-	xt = max((btemp - eos_t[jat]) / eos_dt[jat], 0.0e0);
-	xd = max((din - eos_d[iat]) / eos_dd[iat], 0.0e0);
-	mxt = 1.0e0 - xt;
-	mxd = 1.0e0 - xd;
+	xt = max((btemp - eos_t[jat]) / eos_dt[jat], 0.0);
+	xd = max((din - eos_d[iat]) / eos_dd[iat], 0.0);
+	mxt = 1.0 - xt;
+	mxd = 1.0 - xd;
 
 	//  the density and temperature basis functions
 	si0t = psi0(xt);
@@ -496,7 +502,7 @@ void interp_eostable(double den, double btemp, double din, double ye, double *fr
 	//      si0d,   si1d,   si0md,   si1md,
 	//      eos_dpdf, eos_dpdft, eos_dpdfd, eos_dpdfdt);
 
-	*dpepdd = max(ye * (*dpepdd), 0.0e0);
+	*dpepdd = max(ye * (*dpepdd), 0.0);
 
 	//  electron chemical potential etaele
 	/*etaele = eos_ef[(iat)*EOSJMAX + jat] * si0d*si0t + eos_ef[(iat + 1)*EOSJMAX + jat] * si0md*si0t

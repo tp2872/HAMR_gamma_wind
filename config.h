@@ -553,46 +553,35 @@ Section with EOS constants
 #define eos_coulombAbort (1)
 
 // from eos_helmConstData
-#define pi (3.1415926535897932384e0)
 #define avo (6.0221367e23)
 #define kerg (1.380658e-16)
 #define kev (8.617385e-5)
 #define amu (1.6605402e-24)
 #define avoinv (1.0e0 / avo)
 #define kergavo (kerg * avo)
-#define c (2.99792458e10)
-#define h (6.6260755e-27)
+#define c_light (2.99792458e10)
+#define h_planck (6.6260755e-27)
 #define ssol (5.67051e-5)
-#define asol (4.0e0 * ssol / c)
+#define asol (4.0e0 * ssol / c_light)
 #define asoli3 (asol / 3.0e0)
-#define sioncon ((2.0e0 * pi * amu * kerg) / (h * h))
+#define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
 
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
-#define qe (4.8032068e-10) 
-#define esqu (qe * qe)
+#define eos_qe (4.8032068e-10) 
+#define esqu (eos_qe * eos_qe)
 
 //For the uniform background coulomb correction
-#define a1 (-0.898004e0)
-#define b1 (0.96786e0) 
-#define c1 (0.220703e0) 
+#define eos_a1 (-0.898004e0)
+#define eos_b1 (0.96786e0) 
+#define eos_c1 (0.220703e0) 
 #define d1cc (-0.86097e0) 
 #define e1cc (2.5269e0) 
-#define a2 (0.29561e0) 
-#define b2 (1.9885e0) 
-#define c2 (0.288675e0)
+#define eos_a2 (0.29561e0) 
+#define eos_b2 (1.9885e0) 
+#define eos_c2 (0.288675e0)
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
-
-// For the uniform background coulomb correction
-#define a1 (-0.898004e0)
-#define b1 (0.96786e0) 
-#define c1 (0.220703e0) 
-#define d1cc (-0.86097e0) 
-#define e1cc (2.5269e0) 
-#define a2 (0.29561e0) 
-#define b2 (1.9885e0) 
-#define c2 (0.288675e0)
 
 // ***********Beginning of statement function declarations **********
 // quintic hermite polynomial statement functions

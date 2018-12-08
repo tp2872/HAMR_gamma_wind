@@ -65,13 +65,13 @@ int main(int argc, char *argv[])
 	clock_t begin2;
 	nstep = 0;
 	defcon = 1.;
-
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
 	set_AMR();
+	test_eos();
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
