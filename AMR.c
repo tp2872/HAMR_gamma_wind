@@ -3,255 +3,145 @@
 int AMR_coord_linear_RM(int level, int i, int j, int z);
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
 void rm_order2(void);
+void AMR_set_coord(void);
 
 void test_AMR(void){
 }
 
 int AMR_coord_linear(int level, int i, int j, int z){
-	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n=0;
-	int non_active = 0; //If i, j and z are not active due to variations in REF_3
-
-	if (i < 0 || j < 0 || z < 0){
-		n = -1;
-		return n;
-	}
-	
-	for (y = 0; y < N_LEVELS; y++){
-		factor[y] = 1;
-		for (u = 0; u < N_LEVELS - y - 1; u++){
-			factor[y] = factor[y] * pow(2, REF_1 + REF_2 + REF_3) + 1;
-		}
-	}
-	#if(REVERSE_ORDERING)
-	index[0] = ((z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level) * NB_2*NB_1 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_1
-		+ (i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level));
-	n = index[0] * factor[0];
-	for (u = level; u > 0; u--){
-		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
-		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
-		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
-		index[u] = coord[3] * (1 + REF_2)*(1 + REF_1) + coord[2] * (1 + REF_1) + coord[1]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
-		n += index[u] * factor[u] + 1;
-	}
-	#else
-	index[0] = ((i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level) * NB_2*NB_3 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_3
-		+ (z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level));
-	n = index[0] * factor[0];
-	for (u = level; u > 0; u--){
-		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
-		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
-		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
-		index[u] = coord[1] * (1 + REF_2)*(1 + REF_3) + coord[2] * (1 + REF_3) + coord[3]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
-		n += index[u] * factor[u]+1;
-	}
-	#endif
-
-	if (non_active){
-		return -1;
-	}
-
+	int index, n;
+	index = (int)(i * NB_3*(int)pow(1 + REF_3, level) * NB_2*pow(1 + REF_2, level) + j * NB_3*pow(1 + REF_3, level) + z);
+	n = lin_coord[level][index];
 
 	return n;
 }
 
 int AMR_coord_linear_RM(int level, int i, int j, int z){
-	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n;
+	int index, n;
+	index = (int)(i * NB_3*(int)pow(1 + REF_3, level) * NB_2*pow(1 + REF_2, level) + j * NB_3*pow(1 + REF_3, level) + z);
+	n = lin_coord_RM[level][index];
 
-	if (i < 0 || j < 0 || z < 0){
-		n = -1;
-		return n;
-	}
-
-	for (y = 0; y < N_LEVELS; y++){
-		factor[y] = 1;
-		for (u = 0; u < N_LEVELS - y - 1; u++){
-			factor[y] = factor[y] * pow(2, REF_1 + REF_2 + REF_3) + 1;
-		}
-	}
-
-	index[0] = ((z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level) * NB_2*NB_1 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_1
-		+ (i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level));
-	n = index[0] * factor[0];
-	for (u = level; u > 0; u--){
-		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
-		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
-		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
-		index[u] = coord[3] * (1 + REF_2)*(1 + REF_1) + coord[2] * (1 + REF_1) + coord[1]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
-		n += index[u] * factor[u] + 1;
-	}
 	return n;
 }
 
-
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_coord_cart(int n, int *level, int *i, int *j, int *z){
-	int ci[NDIM], cj[NDIM], cz[NDIM], factor[NDIM], index[N_LEVELS], number[N_LEVELS], y, u;
-
-	for (y = 0; y < N_LEVELS; y++){
-		factor[y] = 1;
-		for (u = 0; u < N_LEVELS - y - 1; u++){
-			factor[y] = factor[y] * pow(2, REF_1 + REF_2 + REF_3) + 1;
-		}
-	}
-
-	for (y = 0; y < N_LEVELS; y++){
-		number[y] = n-y;
-		for (u = 0; u < y; u++){
-			number[y] = number[y]%factor[u];
-		}
-		*level = y;
-		if (number[y]%factor[y] == 0){
-			break;
-		}
-	}
-	for (y = 0; y <= (*level); y++){
-		number[y] = n-(*level);
-		for (u = 0; u < y; u++){
-			number[y] = number[y] % factor[u];
-		}
-	}
-	//fprintf(stderr, "Factor: %d \n", factor[0]);
-	*i = 0;
-	*j = 0;
-	*z = 0;
-	for (y = 0; y <= (*level); y++){
-		#if(REVERSE_ORDERING)
-		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
-		if (y == 0){
-			ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
-			cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
-			cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
-		}
-		else{
-			ci[y] = (index[y] % ((REF_2 + 1)*(REF_1 + 1)) % (REF_1 + 1));
-			cj[y] = ((index[y] - ci[y]) % ((REF_2 + 1)*(REF_1 + 1)) / (REF_1 + 1));
-			cz[y] = (index[y] - (cj[y] * (REF_1 + 1) + ci[y])) / ((REF_2 + 1)*(REF_1 + 1));	
-		}
-		#else
-		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
-		if (y == 0){
-			cz[y] = (index[y] % (NB_2*NB_3) % NB_3);
-			cj[y] = ((index[y] - cz[y]) % (NB_2*NB_3) / NB_3);
-			ci[y] = (index[y] - (cj[y] * NB_3 + cz[y])) / (NB_2*NB_3);
-		}
-		else{
-			cz[y] = (index[y] % ((REF_2 + 1)*(REF_3 + 1)) % (REF_3 + 1));
-			cj[y] = ((index[y] - cz[y]) % ((REF_2 + 1)*(REF_3 + 1)) / (REF_3 + 1));
-			ci[y] = (index[y] - (cj[y] * (REF_3 + 1) + cz[y])) / ((REF_2 + 1)*(REF_3 + 1));
-		}
-		#endif
-
-		*i += ci[y] * pow(1 + REF_1, (*level - y));
-		*j += cj[y] * pow(1 + REF_2, (*level - y));
-		*z += cz[y] * pow(1 + REF_3, (*level - y));
-	}
+	*level = block[n][AMR_LEVEL];
+	*i = block[n][AMR_COORD1];
+	*j = block[n][AMR_COORD2];
+	*z = block[n][AMR_COORD3];
 }
+
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
-	int ci[NDIM], cj[NDIM], cz[NDIM], factor[NDIM], index[N_LEVELS], number[N_LEVELS], y, u, counter, i_counter, j_counter, z_counter;
-	int max_level, coord1, coord2, coord3, size1, size2, size3, i1, i2, i3, temp, s1, s2, s3, increment1, increment2, increment3;
-	for (y = 0; y < N_LEVELS; y++){
-		factor[y] = 1;
-		for (u = 0; u < N_LEVELS - y - 1; u++){
-			factor[y] = factor[y] * pow(2, REF_1 + REF_2 + REF_3) + 1;
-		}
-	}
+	*level = block[n][AMR_LEVEL];
+	*i = block[n][AMR_COORD1];
+	*j = block[n][AMR_COORD2];
+	*z = block[n][AMR_COORD3];
+}
 
-	for (y = 0; y < N_LEVELS; y++){
-		number[y] = n - y;
-		for (u = 0; u < y; u++){
-			number[y] = number[y] % factor[u];
-		}
-		*level = y;
-		if (number[y] % factor[y] == 0){
-			break;
-		}
-	}
-	for (y = 0; y <= (*level); y++){
-		number[y] = n - (*level);
-		for (u = 0; u < y; u++){
-			number[y] = number[y] % factor[u];
-		}
-	}
-	//fprintf(stderr, "Factor: %d \n", factor[0]);
-	*i = 0;
-	*j = 0;
-	*z = 0;
-	counter = 0;
-	i_counter = 0;
-	j_counter = 0;
-	z_counter = 0;
-	int check[NB_1][NB_2][NB_3];
-	for (i1 = 0; i1 < NB_1; i1++)for (i2 = 0; i2 < NB_2; i2++)for (i3 = 0; i3 < NB_3; i3++)check[i1][i2][i3] = 0;
-	ci[0] = cj[0] = cz[0] = 0;
-	for (y = 0; y <= (*level); y++){
-		index[y] = (number[y] - number[y] % factor[y]) / factor[y];
-		if (y == 0){
-			#if(Z_ORDER)
-			max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
-			for (i1 = max_level; i1 >= 0; i1--){
-				coord1 = ci[0];
-				coord2 = cj[0];
-				coord3 = cz[0];
-				increment1 = MY_MIN(pow(2, i1), NB_1 - coord1 - 1);
-				increment2 = MY_MIN(pow(2, i1), NB_2 - coord2 - 1);
-				increment3 = MY_MIN(pow(2, i1), NB_3 - coord3 - 1);
+//Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
+void AMR_set_coord(void){
+	int n, l, l_1D, l_3D, L_1DMAX, lc, i[N_LEVELS], j[N_LEVELS], z[N_LEVELS], keep_while, keep_looping, index;
 
-				if (increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					coord2 += increment2;
-				}
-				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment3 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment3;
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					if (increment2 == pow(2, i1)) coord2 -= increment2;
-					coord3 += increment3;
-				}
-				if (increment3 == pow(2, i1) && increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					coord2 += increment2;
-				}
-				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && increment1 == pow(2, i1) && index[0] >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					index[0] -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				ci[0] = coord1;
-				cj[0] = coord2;
-				cz[0] = coord3;
-			}
-			check[ci[0]][cj[0]][cz[0]] += 1;
-			//printf("n, ci, cj, cz, check: %d %d %d %d %d\n", n, ci[0], cj[0], cz[0], check[ci[0]][cj[0]][cz[0]]);
-			if (check[ci[0]][cj[0]][cz[0]] != 1 || ci[0] >= NB_1 || cj[0] >= NB_2 || cz[0] >= NB_3 || ci[0] < 0 || cj[0] < 0 || cz[0] < 0) printf("Error encountered during generating z-order! \n");
-			#else
-			ci[y] = (index[y] % (NB_2*NB_1) % NB_1);
-			cj[y] = ((index[y] - ci[y]) % (NB_2*NB_1) / NB_1);
-			cz[y] = (index[y] - (cj[y] * NB_1 + ci[y])) / (NB_2*NB_1);
-			#endif
+	//Initialize counters
+	for (l = 0; l < N_LEVELS; l++) i[l] = j[l] = z[l] = 0;
+	l_1D = l_3D = l = 0;
+	n = 0;
+	keep_while = 1;
+	while (keep_while){
+		//Set level based on values from last iteration
+		block[n][AMR_LEVEL1] = l_3D;
+		block[n][AMR_LEVEL2] = l_3D;
+		block[n][AMR_LEVEL3] = l_1D + l_3D;
+		l = l_1D + l_3D;
+		block[n][AMR_LEVEL] = l;
+	
+		if (!(N_LEVELS_1D == 0 || (NB_2 == 6 != 0 && N_LEVELS_1D == 1) || (NB_2 == 12 != 0 && N_LEVELS_1D == 2) || (NB_2 == 24 != 0 && N_LEVELS_1D == 3) || (NB_2 == 48 != 0 && N_LEVELS_1D == 4) || (NB_2 == 96 != 0 && N_LEVELS_1D == 5))){
+			if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
+			exit(0);
+		}
+
+		if (j[0] < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j[0] + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j[0]) + 1.0) / log(2.)), N_LEVELS_1D);
+
+		//Set coordinates based on values from last iteration
+		block[n][AMR_COORD1] = block[n][AMR_COORD2] = block[n][AMR_COORD3] = 0;
+		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD1] += i[lc] * pow(1 + (lc >= L_1DMAX)*REF_1, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
+		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD2] += j[lc] * pow(1 + (lc >= L_1DMAX)*REF_2, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
+		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, block[n][AMR_LEVEL] - lc);
+		
+		//Store in array such that one can recover linear coordinate based on 4D coordinate
+		index = (int)(block[n][AMR_COORD1] * NB_3*(int)pow(1 + REF_3, l) * NB_2*pow(1 + REF_2, l) + block[n][AMR_COORD2] * NB_3*pow(1 + REF_3, l) + block[n][AMR_COORD3]);
+		lin_coord[l][index] = n;
+		lin_coord_RM[l][index] = n;
+
+		//if (index >= NB_1*pow(1 + REF_1*(l >= N_LEVELS_1D), l - N_LEVELS_1D)*NB_2*pow(1 + REF_2, l)*NB_3*pow(1 + REF_3, l)){
+		//	fprintf(stderr, "lin_coord array not properly allocated! %d %d \n", l_3D, l - N_LEVELS_1D);
+		//	fprintf(stderr, "NB: %d N_LEVELS %d \n", NB, N_LEVELS);
+
+			fprintf(stderr, "n1: %d level: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+		//	exit(0);
+		//}
+		//if(l==0 || l==1)
+
+		n_max = n;
+		if (l == N_LEVELS_3D - 1 && block[n][AMR_COORD1] == NB_1*pow(1 + REF_1, l) - 1 && block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, l) - 1 && block[n][AMR_COORD3] == NB_3*pow(1 + REF_3, l) - 1) break;
+		
+		//Advance linear index by 1
+		if (l < N_LEVELS_3D+L_1DMAX-1){	
+			l++;
+			i[l] = j[l] = z[l] = 0;
+			if (l_1D < L_1DMAX) l_1D++;
+			else l_3D++;
 		}
 		else{
-			ci[y] = (index[y] % ((REF_2 + 1)*(REF_1 + 1)) % (REF_1 + 1));
-			cj[y] = ((index[y] - ci[y]) % ((REF_2 + 1)*(REF_1 + 1)) / (REF_1 + 1));
-			cz[y] = (index[y] - (cj[y] * (REF_1 + 1) + ci[y])) / ((REF_2 + 1)*(REF_1 + 1));
+			do{
+				keep_looping = 0;
+				//At 0-th level use row-major ordering with z fastest running index
+				if (l == 0){
+					z[l]++;
+					if (z[l] == NB_3){
+						z[l] = 0;
+						j[l]++;
+					}
+					if (j[l] == NB_2){
+						j[l] = 0;
+						i[l]++;
+					}
+					if (i[l] == NB_1){
+						fprintf(stderr, "Catastrophic error in grid mapping! \n");
+						exit(0);
+					}
+				}
+				else{
+					z[l]++;
+					if (z[l] == 1 + REF_3){
+						z[l] = 0;
+						j[l]++;
+					}
+					if (j[l] == 1 + (l > L_1DMAX)*REF_2){
+						j[l] = 0;
+						i[l]++;
+					}
+					if (i[l] == 1 + (l > L_1DMAX)*REF_1){
+						l--;
+						if (l<0){
+							fprintf(stderr, "Negative level in grid mapping! \n");
+							exit(0);
+						}
+						if (l_3D > 0) l_3D--;
+						else l_1D--;
+						keep_looping = 1;
+					}
+				}
+			} while (keep_looping);
 		}
-		*i += ci[y] * pow(1 + REF_1, (*level - y));
-		*j += cj[y] * pow(1 + REF_2, (*level - y));
-		*z += cz[y] * pow(1 + REF_3, (*level - y));
+	
+		n++;
 	}
 }
+
 
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 	ref_1[0] = block[n_rec][AMR_LEVEL1] - block[n][AMR_LEVEL1];
@@ -261,34 +151,39 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 
 //Sets the AMR hierarchy
 void set_AMR(void){
-	int n, n_parent, n_child[9], n_nbr[21], level, i, j, z, i1, j1, z1,
+	int n, n_parent, n_child[9], n_nbr[21], level, level1, level2, level3, i, j, z, l, i1, j1, z1,
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind;
 	int y, rem, node = 0;
 	block = (int(*)[NV])calloc(NB, sizeof(int[NV]));
 	max_levels = 0;
 
-	//find maximum block number
-	n_max=AMR_coord_linear(N_LEVELS - 1, pow(REF_1 + 1, N_LEVELS - 1)*NB_1 - 1, pow(REF_2 + 1, N_LEVELS - 1)*NB_2 - 1, pow(REF_3 + 1, N_LEVELS - 1)*NB_3 - 1);
-
+	//Set memory flag to unallocated
 	for (i = 0; i < NB_LOCAL; i++){
 		mem_spot[i] = -1;
 		mem_spot_gpu[i] = -1;
 	}
 
+	//Create array for linear coordinates
+	for (l = 0; l < N_LEVELS; l++){
+		lin_coord[l] = (int *)calloc(NB_1*pow(1 + REF_1, l)*NB_2*pow(1 + REF_2,l)*NB_3*pow(1 + REF_3, l), sizeof(int));
+		lin_coord_RM[l] = (int *)calloc(NB_1*pow(1 + REF_1, l)*NB_2*pow(1 + REF_2, l)*NB_3*pow(1 + REF_3, l), sizeof(int));
+	}
+
+	AMR_set_coord();
+	printf("test %d %d \n", n_max, NB - 1);
+	if (n_max != NB - 1){
+		fprintf(stderr, "n_max: %d and NB: %d do not match! \n", n_max, NB);
+		exit(0);
+	}
+
  	//Set all 'one-time'parameters of all blocks (refined and unrefined)
 	for (n = 0; n <= n_max; n++){
-
-		//Find level and coordinates of the respective block
-		AMR_coord_cart(n, &level, &i, &j, &z);
-		block[n][AMR_LEVEL] = level;
-		block[n][AMR_COORD1] = i;
-		block[n][AMR_COORD2] = j;
-		block[n][AMR_COORD3] = z;
-
 		//Set maximum coordinates
-		i_max = NB_1*pow(1 + REF_1, level) - 1;
-		j_max = NB_2*pow(1 + REF_2, level) - 1;
-		z_max = NB_3*pow(1 + REF_3, level) - 1;
+		i_max = NB_1*pow(1 + REF_1, level1) - 1;
+		j_max = NB_2*pow(1 + REF_2, level2) - 1;
+		z_max = NB_3*pow(1 + REF_3, level3) - 1;
+
+		printf("n1: %d n2: %d l: %d c1: %d c2: %d c3: %d \n", n, 1, block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 
 		//Find parent of block
 		if (block[n][AMR_LEVEL] == 0) block[n][AMR_PARENT] = -1; //-1 means no parent
@@ -1343,35 +1238,35 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	n_rec5 = -1;
 	n_rec6 = -1;
 
-	if (offset_2 == 0 && offset_3 == 0 && block[n][AMR_NBR2] >= 0 && block[block[n][AMR_NBR2]][AMR_REFINED] == 1){ pointer4 = receive4_5[nl[n]]; n_rec4 = 1; }
-	if (offset_2 == 0 && offset_3 == 1 && block[n][AMR_NBR2] >= 0 && block[block[n][AMR_NBR2]][AMR_REFINED] == 1){ pointer4 = receive4_6[nl[n]]; n_rec4 = 1; }
-	if (offset_2 == 1 && offset_3 == 0 && block[n][AMR_NBR2] >= 0 && block[block[n][AMR_NBR2]][AMR_REFINED] == 1){ pointer4 = receive4_7[nl[n]]; n_rec4 = 1; }
-	if (offset_2 == 1 && offset_3 == 1 && block[n][AMR_NBR2] >= 0 && block[block[n][AMR_NBR2]][AMR_REFINED] == 1){ pointer4 = receive4_8[nl[n]]; n_rec4 = 1; }
+	if (offset_2 == 0 && offset_3 == 0 && block[n][AMR_NBR2] >= 0 && block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){ pointer4 = receive4_5[nl[n]]; n_rec4 = 1; }
+	if (offset_2 == 0 && offset_3 == 1 && block[n][AMR_NBR2] >= 0 && block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){ pointer4 = receive4_6[nl[n]]; n_rec4 = 1; }
+	if (offset_2 == 1 && offset_3 == 0 && block[n][AMR_NBR2] >= 0 && block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){ pointer4 = receive4_7[nl[n]]; n_rec4 = 1; }
+	if (offset_2 == 1 && offset_3 == 1 && block[n][AMR_NBR2] >= 0 && block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){ pointer4 = receive4_8[nl[n]]; n_rec4 = 1; }
 
-	if (offset_2 == 0 && offset_3 == 0 && block[n][AMR_NBR4] >= 0 && block[block[n][AMR_NBR4]][AMR_REFINED] == 1){ pointer2 = receive2_1[nl[n]]; n_rec2 = 1; }
-	if (offset_2 == 0 && offset_3 == 1 && block[n][AMR_NBR4] >= 0 && block[block[n][AMR_NBR4]][AMR_REFINED] == 1){ pointer2 = receive2_2[nl[n]]; n_rec2 = 1; }
-	if (offset_2 == 1 && offset_3 == 0 && block[n][AMR_NBR4] >= 0 && block[block[n][AMR_NBR4]][AMR_REFINED] == 1){ pointer2 = receive2_3[nl[n]]; n_rec2 = 1; }
-	if (offset_2 == 1 && offset_3 == 1 && block[n][AMR_NBR4] >= 0 && block[block[n][AMR_NBR4]][AMR_REFINED] == 1){ pointer2 = receive2_4[nl[n]]; n_rec2 = 1; }
+	if (offset_2 == 0 && offset_3 == 0 && block[n][AMR_NBR4] >= 0 && block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){ pointer2 = receive2_1[nl[n]]; n_rec2 = 1; }
+	if (offset_2 == 0 && offset_3 == 1 && block[n][AMR_NBR4] >= 0 && block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){ pointer2 = receive2_2[nl[n]]; n_rec2 = 1; }
+	if (offset_2 == 1 && offset_3 == 0 && block[n][AMR_NBR4] >= 0 && block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){ pointer2 = receive2_3[nl[n]]; n_rec2 = 1; }
+	if (offset_2 == 1 && offset_3 == 1 && block[n][AMR_NBR4] >= 0 && block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){ pointer2 = receive2_4[nl[n]]; n_rec2 = 1; }
 
-	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_1[nl[n]]; n_rec3 = 1; }
-	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_2[nl[n]]; n_rec3 = 1; }
-	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_5[nl[n]]; n_rec3 = 1; }
-	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_6[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_1[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_2[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_5[nl[n]]; n_rec3 = 1; }
+	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_6[nl[n]]; n_rec3 = 1; }
 
-	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_3[nl[n]]; n_rec1 = 1; }
-	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_4[nl[n]]; n_rec1 = 1; }
-	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_7[nl[n]]; n_rec1 = 1; }
-	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_8[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 0 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_3[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 0 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_4[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 1 && offset_3 == 0 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_7[nl[n]]; n_rec1 = 1; }
+	if (offset_1 == 1 && offset_3 == 1 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_8[nl[n]]; n_rec1 = 1; }
 
-	if (offset_1 == 0 && offset_2 == 0 && block[n][AMR_NBR6] >= 0 && block[block[n][AMR_NBR6]][AMR_REFINED] == 1){ pointer5 = receive5_1[nl[n]]; n_rec5 = 1; }
-	if (offset_1 == 0 && offset_2 == 1 && block[n][AMR_NBR6] >= 0 && block[block[n][AMR_NBR6]][AMR_REFINED] == 1){ pointer5 = receive5_3[nl[n]]; n_rec5 = 1; }
-	if (offset_1 == 1 && offset_2 == 0 && block[n][AMR_NBR6] >= 0 && block[block[n][AMR_NBR6]][AMR_REFINED] == 1){ pointer5 = receive5_5[nl[n]]; n_rec5 = 1; }
-	if (offset_1 == 1 && offset_2 == 1 && block[n][AMR_NBR6] >= 0 && block[block[n][AMR_NBR6]][AMR_REFINED] == 1){ pointer5 = receive5_7[nl[n]]; n_rec5 = 1; }
+	if (offset_1 == 0 && offset_2 == 0 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){ pointer5 = receive5_1[nl[n]]; n_rec5 = 1; }
+	if (offset_1 == 0 && offset_2 == 1 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){ pointer5 = receive5_3[nl[n]]; n_rec5 = 1; }
+	if (offset_1 == 1 && offset_2 == 0 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){ pointer5 = receive5_5[nl[n]]; n_rec5 = 1; }
+	if (offset_1 == 1 && offset_2 == 1 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){ pointer5 = receive5_7[nl[n]]; n_rec5 = 1; }
 
-	if (offset_1 == 0 && offset_2 == 0 && block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_REFINED] == 1){ pointer6 = receive6_2[nl[n]]; n_rec6 = 1; }
-	if (offset_1 == 0 && offset_2 == 1 && block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_REFINED] == 1){ pointer6 = receive6_4[nl[n]]; n_rec6 = 1; }
-	if (offset_1 == 1 && offset_2 == 0 && block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_REFINED] == 1){ pointer6 = receive6_6[nl[n]]; n_rec6 = 1; }
-	if (offset_1 == 1 && offset_2 == 1 && block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_REFINED] == 1){ pointer6 = receive6_8[nl[n]]; n_rec6 = 1; }
+	if (offset_1 == 0 && offset_2 == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){ pointer6 = receive6_2[nl[n]]; n_rec6 = 1; }
+	if (offset_1 == 0 && offset_2 == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){ pointer6 = receive6_4[nl[n]]; n_rec6 = 1; }
+	if (offset_1 == 1 && offset_2 == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){ pointer6 = receive6_6[nl[n]]; n_rec6 = 1; }
+	if (offset_1 == 1 && offset_2 == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){ pointer6 = receive6_8[nl[n]]; n_rec6 = 1; }
 	
 	isize = BS_1;
 	jsize = BS_2;

@@ -58,9 +58,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 0
+#define GPU_ENABLED 1
 #define GPU_DEBUG 0
-#define CPU_OPENMP 1
+#define CPU_OPENMP 0
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -84,8 +84,8 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
-#define NB_3 4
+#define NB_2 12
+#define NB_3 2
 
 /*Set block size in each dimension*/
 #define BS_1 26
@@ -93,7 +93,7 @@ Numerical Parameters section
 #define BS_3 26
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS 2
+#define N_LEVELS_3D 2
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -104,13 +104,13 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
 
 //Use Z-order at 0-level for load balancing
-#define Z_ORDER 1
+#define Z_ORDER 0
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
@@ -539,6 +539,22 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
+/*Based on derefinement level near pole set total number of AMR levels*/
+#if(NB_2==6 && DEREFINE_POLE)
+#define N_LEVELS_1D 1
+#elif(NB_2 == 12 && DEREFINE_POLE)
+#define N_LEVELS_1D 2
+#elif(NB_2 == 24 && DEREFINE_POLE)
+#define N_LEVELS_1D 3
+#elif(NB_2 == 48 && DEREFINE_POLE)
+#define N_LEVELS_1D 4
+#elif(NB_2 == 96 && DEREFINE_POLE)
+#define N_LEVELS_1D 5
+#else
+#define N_LEVELS_1D 0
+#endif
+#define N_LEVELS (N_LEVELS_1D+N_LEVELS_3D)
+
 /*Calculate number of AMR blocks for different refinement levels and configurations*/
 #if(REF_3+REF_2+REF_1==2)
 #if (N_LEVELS==1)
@@ -553,16 +569,29 @@ Section with derived quantities
 #define NB (NB_1*NB_2*NB_3*(4*(4*(4*(4+1)+1)+1)+1))
 #endif
 #elif(REF_3+REF_2+REF_1==3)
-#if (N_LEVELS==1)
-#define NB (NB_1*NB_2*NB_3)
-#elif(N_LEVELS==2)
-#define NB (NB_1*NB_2*NB_3*(8+1))
-#elif(N_LEVELS==3)
-#define NB (NB_1*NB_2*NB_3*(8*(8+1)+1))
-#elif(N_LEVELS==4)
-#define NB (NB_1*NB_2*NB_3*(8*(8*(8+1)+1)+1))
-#elif(N_LEVELS==5)
-#define NB (NB_1*NB_2*NB_3*(8*(8*(8*(8+1)+1)+1)+1))
+#if (N_LEVELS_3D==1)
+#define FACTOR (1)
+#elif(N_LEVELS_3D==2)
+#define FACTOR (8+1)
+#elif(N_LEVELS_3D==3)
+#define FACTOR (8*8+8+1)
+#elif(N_LEVELS_3D==4)
+#define FACTOR (8*8*8+8*8+8+1)
+#elif(N_LEVELS_3D==5)
+#define FACTOR (8*8*8*8+8*8*8+8*8+8+1)
+#endif
+#if (N_LEVELS_1D==0)
+#define NB (NB_1*NB_2*NB_3*FACTOR)
+#elif (N_LEVELS_1D==1)
+#define NB (NB_1*NB_3*(2*4*FACTOR+2*FACTOR+4))
+#elif(N_LEVELS_1D==2)
+#define NB (NB_1*NB_3*((4*8*FACTOR)+(2*2*FACTOR+2*8)+(2*FACTOR+10)))
+#elif(N_LEVELS_1D==3)
+#define NB (NB_1*NB_3*((8*16*FACTOR)+(4*4*FACTOR+4*16)+(2*2*FACTOR+2*20)+(2*FACTOR+22)))
+#elif(N_LEVELS_1D==4)
+#define NB (NB_1*NB_3*((16*32*FACTOR)+(8*8*FACTOR+8*32)+(4*4*FACTOR+4*40)+(2*2*FACTOR+2*44)+(2*FACTOR+46)))
+#elif(N_LEVELS_1D==5)
+#define NB (NB_1*NB_3*((32*64*FACTOR)+(16*16*FACTOR+16*64)+(8*8*FACTOR+8*80)+(4*4*FACTOR+4*88)+(2*2*FACTOR+2*92)+(2*FACTOR+94)))
 #endif
 #elif(REF_3+REF_2+REF_1==1)
 #if (N_LEVELS==1)

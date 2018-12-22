@@ -790,6 +790,8 @@ extern int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
 extern int(*block)[NV];
+extern int *lin_coord[N_LEVELS];
+extern int *lin_coord_RM[N_LEVELS];
 extern double ref_val[MY_MAX(NB, 40000)];
 extern int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 extern int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL];

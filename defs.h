@@ -761,6 +761,8 @@ int first_dump, first_rdump, first_gdump;
 
 /*AMR parameters*/
 int(*block)[NV];
+int *lin_coord[N_LEVELS];
+int *lin_coord_RM[N_LEVELS];
 double ref_val[MY_MAX(NB, 40000)];
 int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB];
 int n_active, n_active_total, n_max;

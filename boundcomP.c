@@ -26,8 +26,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && (nstep%block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && (nstep%block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send2_1 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR2_1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -47,8 +47,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send2_2 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR2_2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -68,8 +68,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send2_3 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR2_3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -89,8 +89,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && ref_2 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && ref_2 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send2_4 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR2_4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -179,8 +179,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && (nstep%block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && (nstep%block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send4_5 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR4_5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -200,8 +200,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send4_6 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR4_6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -221,8 +221,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send4_7 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR4_7]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -242,8 +242,8 @@ void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && ref_2 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && ref_2 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] == block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send4_8 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] && block[n][AMR_NSTEP]%block[block[n][AMR_NBR4_8]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -350,8 +350,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			}
 		}
 		if (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1){
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (nstep%block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && (nstep%block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send3_1 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR3_1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -371,8 +371,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					if (cond1) MPI_Request_free(&req[nl[n]]);
 				}
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send3_2 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR3_2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -392,8 +392,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					if (cond1) MPI_Request_free(&req[nl[n]]);
 				}
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send3_5 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR3_5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -413,8 +413,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					if (cond1) MPI_Request_free(&req[nl[n]]);
 				}
 			}
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && ref_1 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send3_6 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR3_6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -515,8 +515,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			}
 		}
 		if (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2){
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (nstep%block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && (nstep%block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send1_3 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR1_3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -536,8 +536,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					if (cond1) MPI_Request_free(&req[nl[n]]);
 				}
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send1_4 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR1_4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -557,8 +557,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					if (cond1) MPI_Request_free(&req[nl[n]]);
 				}
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send1_7 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR1_7]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -578,8 +578,8 @@ void bound_send2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					if (cond1) MPI_Request_free(&req[nl[n]]);
 				}
 			}
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && ref_1 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_3 == 1 && (nstep%block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] == block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 				//send1_8 to finer grid
 				cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 				cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR1_8]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -676,8 +676,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && (nstep%block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
-			if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && (nstep%block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+			if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			//send5_1 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR5_1]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -697,8 +697,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send5_3 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR5_3]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -718,8 +718,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send5_5 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR5_5]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -739,8 +739,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && ref_1 == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] == block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send5_7 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR5_7]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -830,8 +830,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && (nstep%block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && (nstep%block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send6_2 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR6_2]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -851,8 +851,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send6_4 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR6_4]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -872,8 +872,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && ref_1 == 1 && (nstep%block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send6_6 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR6_6]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -893,8 +893,8 @@ void bound_send3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				if (cond1) MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && ref_1 == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_2 == 1 && (nstep%block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] == block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] - 1 || nstep == -1 || prestep == 1)){
 			//send6_8 to finer grid
 			cond1 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] > block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] && nstep%block[n][AMR_TIMELEVEL] == 0));
 			cond2 = (prestep == 0 || (prestep == 1 && block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] && block[n][AMR_NSTEP] % block[block[n][AMR_NBR6_8]][AMR_TIMELEVEL] == block[n][AMR_TIMELEVEL] - 1));
@@ -991,7 +991,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			}
 		}
 
-		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
@@ -1168,7 +1168,7 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 					&(Bufferp[nl[n]]), &(Buffersend4[nl[block[n][AMR_NBR2]]]), &(tempBufferrec4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2]]][40]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2]][AMR_TIMELEVEL]);
 			}
 		}
-		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
@@ -1363,7 +1363,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			}
 		}
 		else if (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2){
-			if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1){
+			if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1){
 				set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 				//receive from finer grid
 				if (block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
@@ -1554,7 +1554,7 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 			}
 		}
 		else if (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1){
-			if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1){
+			if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1){
 				set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 				//receive from finer grid
 				if (block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
@@ -1736,7 +1736,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 					&(Bufferp[nl[n]]), &(Buffersend5[nl[block[n][AMR_NBR6]]]), &(tempBufferrec5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6]]][50]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6]][AMR_TIMELEVEL]);
 			}
 		}
-		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
@@ -1912,7 +1912,7 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 					&(Bufferp[nl[n]]), &(Buffersend6[nl[block[n][AMR_NBR5]]]), &(tempBufferrec6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5]]][60]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5]][AMR_TIMELEVEL]);
 			}
 		}
-		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){

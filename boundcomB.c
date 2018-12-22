@@ -182,20 +182,20 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				rc += MPI_Irecv(&receive4_fine[nl[n]][0], NDIM * (BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR2]][AMR_NODE], (44* NB_LOCAL + block[block[n][AMR_NBR2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][540]);
 			}
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive4_5fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_1]][AMR_NODE], (44* NB_LOCAL + block[block[n][AMR_NBR2_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][545]);
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive4_6fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_2]][AMR_NODE], (44* NB_LOCAL + block[block[n][AMR_NBR2_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][546]);
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive4_7fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_3]][AMR_NODE], (44* NB_LOCAL + block[block[n][AMR_NBR2_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][547]);
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive4_8fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR2_4]][AMR_NODE], (44* NB_LOCAL + block[block[n][AMR_NBR2_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][548]);
 		}
 		if (block[n][AMR_NBR2P] >= 0){
@@ -224,20 +224,20 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive2_1fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_5]][AMR_NODE], (42* NB_LOCAL + block[block[n][AMR_NBR4_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][521]);
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive2_2fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_6]][AMR_NODE], (42* NB_LOCAL + block[block[n][AMR_NBR4_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][522]);
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive2_3fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_7]][AMR_NODE], (42* NB_LOCAL + block[block[n][AMR_NBR4_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][523]);
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE]&& ref_2 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE]&& ref_2 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive2_4fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_2 / (1 + ref_2)), MPI_DOUBLE, block[block[n][AMR_NBR4_8]][AMR_NODE], (42* NB_LOCAL + block[block[n][AMR_NBR4_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][524]);
 		}
 		if (block[n][AMR_NBR4P] >= 0){
@@ -286,20 +286,20 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				}
 			}
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive1_3fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], (41* NB_LOCAL + block[block[n][AMR_NBR3_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][513]);
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive1_4fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_2]][AMR_NODE], (41* NB_LOCAL + block[block[n][AMR_NBR3_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][514]);
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE]&& ref_1 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE]&& ref_1 == 1){
 			rc += MPI_Irecv(&receive1_7fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_5]][AMR_NODE], (41* NB_LOCAL + block[block[n][AMR_NBR3_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][517]);
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive1_8fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], (41* NB_LOCAL + block[block[n][AMR_NBR3_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][518]);
 		}
 		
@@ -346,20 +346,20 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				}
 			}
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive3_1fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], (43* NB_LOCAL + block[block[n][AMR_NBR1_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][531]);
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1 ){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1 ){
 			rc += MPI_Irecv(&receive3_2fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_4]][AMR_NODE], (43* NB_LOCAL + block[block[n][AMR_NBR1_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][532]);
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 ){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 ){
 			rc += MPI_Irecv(&receive3_5fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_7]][AMR_NODE], (43* NB_LOCAL + block[block[n][AMR_NBR1_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][535]);
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive3_6fine[nl[n]][0], NDIM*(BS_3 / (1 + ref_3))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], (43* NB_LOCAL + block[block[n][AMR_NBR1_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][536]);
 		}
 		if (block[n][AMR_NBR1P] >= 0 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
@@ -390,20 +390,20 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				rc += MPI_Irecv(&receive6_fine[nl[n]][0], NDIM * BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR5]][AMR_NODE], (46 * NB_LOCAL + block[block[n][AMR_NBR5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][560]);
 			}
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive6_2fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_1]][AMR_NODE], (46* NB_LOCAL + block[block[n][AMR_NBR5_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][562]);
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive6_4fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_3]][AMR_NODE], (46* NB_LOCAL + block[block[n][AMR_NBR5_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][564]);
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			rc += MPI_Irecv(&receive6_6fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_5]][AMR_NODE], (46* NB_LOCAL + block[block[n][AMR_NBR5_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][566]);
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
 			rc += MPI_Irecv(&receive6_8fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR5_7]][AMR_NODE], (46* NB_LOCAL + block[block[n][AMR_NBR5_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][568]);
 		}
 		if (block[n][AMR_NBR5P] >= 0){
@@ -431,20 +431,20 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				MPI_Request_free(&req[nl[n]]);
 			}
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive5_1fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_2]][AMR_NODE], (45* NB_LOCAL + block[block[n][AMR_NBR6_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][551]);
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive5_3fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_4]][AMR_NODE], (45* NB_LOCAL + block[block[n][AMR_NBR6_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][553]);
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			rc += MPI_Irecv(&receive5_5fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_6]][AMR_NODE], (45* NB_LOCAL + block[block[n][AMR_NBR6_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][555]);
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
 			rc += MPI_Irecv(&receive5_7fine[nl[n]][0], NDIM*(BS_2 / (1 + ref_2))*(BS_1 / (1 + ref_1)), MPI_DOUBLE, block[block[n][AMR_NBR6_8]][AMR_NODE], (45* NB_LOCAL + block[block[n][AMR_NBR6_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][557]);
 		}
 		if (block[n][AMR_NBR6P] >= 0){
@@ -473,7 +473,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 #if (MPI_enable)
 	//positive X1
 	if (block[n][AMR_NBR4] >= 0){
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
@@ -538,7 +538,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 					BS_2, BS_3, send4_fine, F1, 0, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2]]]), &(boundevent[nl[block[n][AMR_NBR2]]][540]));
 			}		
 		}	
-		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
@@ -613,7 +613,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			
 			}
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){
 			set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
@@ -693,7 +693,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 			}
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){
 			set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
@@ -750,7 +750,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 #if (MPI_enable)
 	//Positive X3
 	if (block[n][AMR_NBR6] >= 0){
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
@@ -815,7 +815,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 					BS_1, BS_2, send6_fine, F3, 0, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5]]]), &(boundevent[nl[block[n][AMR_NBR5]]][560]));
 			}
 		}
-		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){
 			set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			//receive from finer grid
 			if (block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
@@ -877,20 +877,20 @@ void Bp_send1(double(*restrict F1[NB_LOCAL])[NDIM], int n){
 	//Exchange boundary cells for MPI threads
 	//Positive X1
 	if (block[n][AMR_NBR2] >= 0){
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive4_5[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR2_1]][AMR_NODE], (34* NB_LOCAL + block[block[n][AMR_NBR2_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][100]);
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive4_6[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR2_2]][AMR_NODE], (34* NB_LOCAL + block[block[n][AMR_NBR2_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][101]);
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive4_7[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR2_3]][AMR_NODE], (34* NB_LOCAL + block[block[n][AMR_NBR2_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][102]);
 		}
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive4_8[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR2_4]][AMR_NODE], (34* NB_LOCAL + block[block[n][AMR_NBR2_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][103]);
 		}
 		if (block[n][AMR_NBR2P] >= 0){
@@ -908,20 +908,20 @@ void Bp_send1(double(*restrict F1[NB_LOCAL])[NDIM], int n){
 
 	//Negative X1
 	if (block[n][AMR_NBR4] >= 0){
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive2_1[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR4_5]][AMR_NODE], (32* NB_LOCAL + block[block[n][AMR_NBR4_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][104]);
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive2_2[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR4_6]][AMR_NODE], (32* NB_LOCAL + block[block[n][AMR_NBR4_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][105]);
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive2_3[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR4_7]][AMR_NODE], (32* NB_LOCAL + block[block[n][AMR_NBR4_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][106]);
 		}
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive2_4[nl[n]][0], NDIM*(BS_3)*(BS_2), MPI_DOUBLE, block[block[n][AMR_NBR4_8]][AMR_NODE], (32* NB_LOCAL + block[block[n][AMR_NBR4_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][107]);
 		}
 		if (block[n][AMR_NBR4P] >= 0){
@@ -946,20 +946,20 @@ void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 	//Exchange boundary cells for MPI threads
 	//Positive X2
 	if (block[n][AMR_NBR3] >= 0){
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive1_3[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR3_1]][AMR_NODE], (31* NB_LOCAL + block[block[n][AMR_NBR3_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][108]);
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive1_4[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR3_2]][AMR_NODE], (31* NB_LOCAL + block[block[n][AMR_NBR3_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][109]);
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			rc += MPI_Irecv(&receive1_7[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR3_5]][AMR_NODE], (31* NB_LOCAL + block[block[n][AMR_NBR3_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][110]);
 		}
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive1_8[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR3_6]][AMR_NODE], (31* NB_LOCAL + block[block[n][AMR_NBR3_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][111]);
 		}
 
@@ -978,20 +978,20 @@ void Bp_send2(double(*restrict F2[NB_LOCAL])[NDIM], int n){
 
 	//Negative X2
 	if (block[n][AMR_NBR1] >= 0){
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive3_1[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR1_3]][AMR_NODE], (33* NB_LOCAL + block[block[n][AMR_NBR1_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][112]);
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			rc += MPI_Irecv(&receive3_2[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR1_4]][AMR_NODE], (33* NB_LOCAL + block[block[n][AMR_NBR1_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][113]);
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			rc += MPI_Irecv(&receive3_5[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR1_7]][AMR_NODE], (33* NB_LOCAL + block[block[n][AMR_NBR1_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][114]);
 		}
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
 			rc += MPI_Irecv(&receive3_6[nl[n]][0], NDIM*(BS_3)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR1_8]][AMR_NODE], (33* NB_LOCAL + block[block[n][AMR_NBR1_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][115]);
 		}
 
@@ -1016,20 +1016,20 @@ void Bp_send3(double(*restrict F3[NB_LOCAL])[NDIM], int n){
 	int z;
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive6_2[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR5_1]][AMR_NODE], (36* NB_LOCAL + block[block[n][AMR_NBR5_1]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][116]);
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive6_4[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR5_3]][AMR_NODE], (36* NB_LOCAL + block[block[n][AMR_NBR5_3]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][117]);
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			rc += MPI_Irecv(&receive6_6[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR5_5]][AMR_NODE], (36* NB_LOCAL + block[block[n][AMR_NBR5_5]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][118]);
 		}
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
 			rc += MPI_Irecv(&receive6_8[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR5_7]][AMR_NODE], (36* NB_LOCAL + block[block[n][AMR_NBR5_7]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][119]);
 		}
 
@@ -1048,20 +1048,20 @@ void Bp_send3(double(*restrict F3[NB_LOCAL])[NDIM], int n){
 
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
 			rc += MPI_Irecv(&receive5_1[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR6_2]][AMR_NODE], (35 * NB_LOCAL + block[block[n][AMR_NBR6_2]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][120]);
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			rc += MPI_Irecv(&receive5_3[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR6_4]][AMR_NODE], (35 * NB_LOCAL + block[block[n][AMR_NBR6_4]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][121]);
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			rc += MPI_Irecv(&receive5_5[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR6_6]][AMR_NODE], (35 * NB_LOCAL + block[block[n][AMR_NBR6_6]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][122]);
 		}
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
 			rc += MPI_Irecv(&receive5_7[nl[n]][0], NDIM*(BS_2)*(BS_1), MPI_DOUBLE, block[block[n][AMR_NBR6_8]][AMR_NODE], (35 * NB_LOCAL + block[block[n][AMR_NBR6_8]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n]][123]);
 		}
 
@@ -1087,41 +1087,41 @@ void Bp_rec1(int n){
 	//Exchange boundary cells for MPI threads
 	//Positive X1
 	if (block[n][AMR_NBR2] >= 0){
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_1]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][100], &Statbound[nl[n]][100]);
 		}
-		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive4_5[nl[n]][i] = send4[nl[block[n][AMR_NBR2_1]]][i];
 			}
 		}
 
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][101], &Statbound[nl[n]][101]);
 		}
-		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && ref_3 == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive4_6[nl[n]][i] = send4[nl[block[n][AMR_NBR2_2]]][i];
 			}
 		}
 
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			MPI_Wait(&boundreqs[nl[n]][102], &Statbound[nl[n]][102]);
 		}
-		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && ref_2 == 1){
+		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && ref_2 == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive4_7[nl[n]][i] = send4[nl[block[n][AMR_NBR2_3]]][i];
 			}
 		}
 
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][103], &Statbound[nl[n]][103]);
 		}
-		else if (block[block[n][AMR_NBR2]][AMR_REFINED] == 1 && ref_2 == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && ref_2 == 1 && ref_3 == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive4_8[nl[n]][i] = send4[nl[block[n][AMR_NBR2_4]]][i];
 			}
@@ -1130,41 +1130,41 @@ void Bp_rec1(int n){
 
 	//Negative X1
 	if (block[n][AMR_NBR4] >= 0){
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_5]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][104], &Statbound[nl[n]][104]);
 		}
-		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive2_1[nl[n]][i] = send2[nl[block[n][AMR_NBR4_5]]][i];
 			}
 		}
 
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_6]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][105], &Statbound[nl[n]][105]);
 		}
-		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && ref_3 == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive2_2[nl[n]][i] = send2[nl[block[n][AMR_NBR4_6]]][i];
 			}
 		}
 
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_7]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			MPI_Wait(&boundreqs[nl[n]][106], &Statbound[nl[n]][106]);
 		}
-		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && ref_2 == 1){
+		else if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && ref_2 == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive2_3[nl[n]][i] = send2[nl[block[n][AMR_NBR4_7]]][i];
 			}
 		}
 
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4_8]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1 && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][107], &Statbound[nl[n]][107]);
 		}
-		else if (block[block[n][AMR_NBR4]][AMR_REFINED] == 1 && ref_2 == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1 && ref_2 == 1 && ref_3 == 1){
 			for (i = 0; i < NDIM*(BS_3)*(BS_2); i++){
 				receive2_4[nl[n]][i] = send2[nl[block[n][AMR_NBR4_8]]][i];
 			}
@@ -1177,41 +1177,41 @@ void Bp_rec2(int n){
 	int j;
 	//Positive X2
 	if (block[n][AMR_NBR3] >= 0){
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_1]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][108], &Statbound[nl[n]][108]);
 		}
-		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive1_3[nl[n]][j] = send1[nl[block[n][AMR_NBR3_1]]][j];
 			}
 		}
 
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_2]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][109], &Statbound[nl[n]][109]);
 		}
-		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && ref_3 == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive1_4[nl[n]][j] = send1[nl[block[n][AMR_NBR3_2]]][j];
 			}
 		}
 
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			MPI_Wait(&boundreqs[nl[n]][110], &Statbound[nl[n]][110]);
 		}
-		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && ref_1 == 1){
+		else if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && ref_1 == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive1_7[nl[n]][j] = send1[nl[block[n][AMR_NBR3_5]]][j];
 			}
 		}
 
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][111], &Statbound[nl[n]][111]);
 		}
-		else if (block[block[n][AMR_NBR3]][AMR_REFINED] == 1 && ref_1 == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_3 == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive1_8[nl[n]][j] = send1[nl[block[n][AMR_NBR3_6]]][j];
 			}
@@ -1220,41 +1220,41 @@ void Bp_rec2(int n){
 
 	//Negative X2
 	if (block[n][AMR_NBR1] >= 0){
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_3]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][112], &Statbound[nl[n]][112]);
 		}
-		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive3_1[nl[n]][j] = send3[nl[block[n][AMR_NBR1_3]]][j];
 			}
 		}
 
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_4]][AMR_NODE] != block[n][AMR_NODE] && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][113], &Statbound[nl[n]][113]);
 		}
-		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && ref_3 == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive3_2[nl[n]][j] = send3[nl[block[n][AMR_NBR1_4]]][j];
 			}
 		}
 
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			MPI_Wait(&boundreqs[nl[n]][114], &Statbound[nl[n]][114]);
 		}
-		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && ref_1 == 1){
+		else if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && ref_1 == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive3_5[nl[n]][j] = send3[nl[block[n][AMR_NBR1_7]]][j];
 			}
 		}
 
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_3 == 1){
 			MPI_Wait(&boundreqs[nl[n]][115], &Statbound[nl[n]][115]);
 		}
-		else if (block[block[n][AMR_NBR1]][AMR_REFINED] == 1 && ref_1 == 1 && ref_3 == 1){
+		else if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_3 == 1){
 			for (j = 0; j < NDIM*(BS_3)*(BS_1); j++){
 				receive3_6[nl[n]][j] = send3[nl[block[n][AMR_NBR1_8]]][j];
 			}
@@ -1267,41 +1267,41 @@ void Bp_rec3(int n){
 	int z;
 	//Positive X3
 	if (block[n][AMR_NBR5] >= 0){
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_1]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][116], &Statbound[nl[n]][116]);
 		}
-		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive6_2[nl[n]][z] = send6[nl[block[n][AMR_NBR5_1]]][z];
 			}
 		}
 
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_3]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			MPI_Wait(&boundreqs[nl[n]][117], &Statbound[nl[n]][117]);
 		}
-		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && ref_2 == 1){
+		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && ref_2 == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive6_4[nl[n]][z] = send6[nl[block[n][AMR_NBR5_3]]][z];
 			}
 		}
 
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_5]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			MPI_Wait(&boundreqs[nl[n]][118], &Statbound[nl[n]][118]);
 		}
-		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && ref_1 == 1){
+		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && ref_1 == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive6_6[nl[n]][z] = send6[nl[block[n][AMR_NBR5_5]]][z];
 			}
 		}
 
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5_7]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
 			MPI_Wait(&boundreqs[nl[n]][119], &Statbound[nl[n]][119]);
 		}
-		else if (block[block[n][AMR_NBR5]][AMR_REFINED] == 1 && ref_1 == 1 && ref_2 == 1){
+		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_2 == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive6_8[nl[n]][z] = send6[nl[block[n][AMR_NBR5_7]]][z];
 			}
@@ -1310,41 +1310,41 @@ void Bp_rec3(int n){
 
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_2]][AMR_NODE] != block[n][AMR_NODE]){
 			MPI_Wait(&boundreqs[nl[n]][120], &Statbound[nl[n]][120]);
 		}
-		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1){
+		else if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive5_1[nl[n]][z] = send5[nl[block[n][AMR_NBR6_2]]][z];
 			}
 		}
 
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_4]][AMR_NODE] != block[n][AMR_NODE] && ref_2 == 1){
 			MPI_Wait(&boundreqs[nl[n]][121], &Statbound[nl[n]][121]);
 		}
-		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && ref_2 == 1){
+		else if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && ref_2 == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive5_3[nl[n]][z] = send5[nl[block[n][AMR_NBR6_4]]][z];
 			}
 		}
 
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_6]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1){
 			MPI_Wait(&boundreqs[nl[n]][122], &Statbound[nl[n]][122]);
 		}
-		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && ref_1 == 1){
+		else if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && ref_1 == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive5_5[nl[n]][z] = send5[nl[block[n][AMR_NBR6_6]]][z];
 			}
 		}
 
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
-		if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1)set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
+		if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6_8]][AMR_NODE] != block[n][AMR_NODE] && ref_1 == 1 && ref_2 == 1){
 			MPI_Wait(&boundreqs[nl[n]][123], &Statbound[nl[n]][123]);
 		}
-		else if (block[block[n][AMR_NBR6]][AMR_REFINED] == 1 && ref_1 == 1 && ref_2 == 1){
+		else if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && ref_1 == 1 && ref_2 == 1){
 			for (z = 0; z < NDIM*(BS_2)*(BS_1); z++){
 				receive5_7[nl[n]][z] = send5[nl[block[n][AMR_NBR6_8]]][z];
 			}
