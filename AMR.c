@@ -11,23 +11,32 @@ void test_AMR(void){
 
 int AMR_coord_linear(int l, int i, int j, int z){
 	int index, n, offset, L_1DMAX, b2;
-	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
-	offset = N_LEVELS_1D - L_1DMAX;
-	index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
-	n = lin_coord[l + offset][index];
-
+	if (l<0 || b2<0 || i<0 || j<0 || z<0){
+		n = -1;
+	}
+	else{
+		if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
+		offset = N_LEVELS_1D - L_1DMAX;
+		index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
+		n = lin_coord[l + offset][index];
+	}
 	return n;
 }
 
 int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
-	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
-	offset = N_LEVELS_1D - L_1DMAX;
-	index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
-	n = lin_coord[l + offset][index];
-
+	
+	if (l<0 || b2<0 || i<0 || j<0 ||z<0){
+		n = -1;
+	}
+	else{
+		if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
+		offset = N_LEVELS_1D - L_1DMAX;
+		index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
+		n = lin_coord[l + offset][index];
+	}
 	return n;
 }
 
@@ -83,8 +92,8 @@ void AMR_set_coord(void){
 
 		//Set coordinates based on values from last iteration
 		block[n][AMR_COORD1] = block[n][AMR_COORD2] = block[n][AMR_COORD3] = 0;
-		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD1] += i[lc] * pow(1 + (lc >= L_1DMAX)*REF_1, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
-		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD2] += j[lc] * pow(1 + (lc >= L_1DMAX)*REF_2, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
+		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD1] += i[lc] * pow(1 + (block[n][AMR_LEVEL] >= L_1DMAX)*REF_1, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
+		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD2] += j[lc] * pow(1 + (block[n][AMR_LEVEL] >= L_1DMAX)*REF_2, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
 		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, block[n][AMR_LEVEL] - lc);
 		
 		//Store in array such that one can recover linear coordinate based on 4D coordinate
@@ -93,7 +102,7 @@ void AMR_set_coord(void){
 		lin_coord[l + offset][index] = n;
 		lin_coord_RM[l + offset][index] = n;
 
-		fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0) fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 
 		//Break out of loop if maximum block number reached and set n_max
 		if (l == N_LEVELS_3D - 1 && block[n][AMR_COORD1] == NB_1*pow(1 + REF_1, l) - 1 && block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, l) - 1 && block[n][AMR_COORD3] == NB_3*pow(1 + REF_3, l) - 1){
@@ -165,9 +174,9 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 //Sets the AMR hierarchy
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1,
-		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3;
+		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag;
 	int y, rem, node = 0;
-	block = (int(*)[NV])calloc(NB, sizeof(int[NV]));
+	block = (int(*)[NV])calloc(NB+1, sizeof(int[NV]));
 	max_levels = 0;
 
 	//Set memory flag to unallocated
@@ -193,11 +202,6 @@ void set_AMR(void){
 
  	//Find parent for all blocks(refined and unrefined)
 	for (n = 0; n <= n_max; n++){
-		//Set maximum coordinates
-		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
-		j_max = NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1;
-		z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
-
 		//Find parent of block
 		if (block[n][AMR_LEVEL] == 0) block[n][AMR_PARENT] = -1; //-1 means no parent
 		else{
@@ -224,12 +228,20 @@ void set_AMR(void){
 			z_parent = (block[n][AMR_COORD3] - block[n][AMR_COORD3] % (1 + ref_3)) / (1 + ref_3);
 			j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			block[n][AMR_PARENT] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0, i_parent, j_parent, z_parent);
+			//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+			//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[block[n][AMR_PARENT]][AMR_LEVEL], block[block[n][AMR_PARENT]][AMR_LEVEL1], block[block[n][AMR_PARENT]][AMR_LEVEL2], block[block[n][AMR_PARENT]][AMR_LEVEL3], block[block[n][AMR_PARENT]][AMR_COORD1], block[block[n][AMR_PARENT]][AMR_COORD2], block[block[n][AMR_PARENT]][AMR_COORD3]);
+
 		}
 	}
 
 	//Find children of block, -1 means no children
 	for (n = 0; n <= n_max; n++){
-		if (block[n][AMR_LEVEL] == N_LEVELS - 1){
+		//Calculate the maximum level of the block at the given location
+		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+
+		if (block[n][AMR_LEVEL] == N_LEVELS_3D + L_1DMAX-1){
 			block[n][AMR_CHILD1] = -1;
 			block[n][AMR_CHILD2] = -1;
 			block[n][AMR_CHILD3] = -1;
@@ -240,12 +252,13 @@ void set_AMR(void){
 			block[n][AMR_CHILD8] = -1;
 		}
 		else{
-			if (block[n][AMR_LEVEL] < N_LEVELS_1D){
+			
+			if (block[n][AMR_LEVEL] < L_1DMAX){
 				new_level1 = block[n][AMR_LEVEL1];
 				new_level2 = block[n][AMR_LEVEL2];
 				new_level3 = block[n][AMR_LEVEL3] + REF_3;
 			}
-			else if (block[n][AMR_LEVEL] >= N_LEVELS_1D){
+			else if (block[n][AMR_LEVEL] >= L_1DMAX){
 				new_level1 = block[n][AMR_LEVEL1] + REF_1;
 				new_level2 = block[n][AMR_LEVEL2] + REF_2;
 				new_level3 = block[n][AMR_LEVEL3] + REF_3;
@@ -257,7 +270,6 @@ void set_AMR(void){
 			ref_1 = new_level1 - block[n][AMR_LEVEL1];
 			ref_2 = new_level2 - block[n][AMR_LEVEL2];
 			ref_3 = new_level3 - block[n][AMR_LEVEL3];
-			j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
 			block[n][AMR_CHILD1] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3] * (1 + ref_3));
 			block[n][AMR_CHILD2] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3] * (1 + ref_3) + ref_3);
 			block[n][AMR_CHILD3] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3] * (1 + ref_3));
@@ -266,56 +278,114 @@ void set_AMR(void){
 			block[n][AMR_CHILD6] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1) + ref_1, block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3] * (1 + ref_3) + ref_3);
 			block[n][AMR_CHILD7] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1) + ref_1, block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3] * (1 + ref_3));
 			block[n][AMR_CHILD8] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1) + ref_1, block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3] * (1 + ref_3) + ref_3);
+			//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+			//int test = AMR_CHILD1;
+			//fprintf(stderr, "NB: %d n_child: %d j0: %d ref_1: %d ref_2: %d ref_3: %d L_1DMAX: %d \n", NB, block[n][test], j0, ref_1,ref_2,ref_3, L_1DMAX);
+			//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[block[n][test]][AMR_LEVEL], block[block[n][test]][AMR_LEVEL1], block[block[n][test]][AMR_LEVEL2], block[block[n][test]][AMR_LEVEL3], block[block[n][test]][AMR_COORD1], block[block[n][test]][AMR_COORD2], block[block[n][test]][AMR_COORD3]);		
 		}
 	}
 
 	//Find neighbours of block
 	for (n = 0; n <= n_max; n++){
-		if (j - 1 < 0 && PERIODIC2 == 1) j1 = j_max;
-		else j1 = j - 1;
-		block[n][AMR_NBR1] = AMR_coord_linear(level, i, j1, z);
+		//Set maximum coordinates
+		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
+		j_max = NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1;
+		z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
 
+		i = block[n][AMR_COORD1];
+		j = block[n][AMR_COORD2];
+		z = block[n][AMR_COORD3];
+		level = block[n][AMR_LEVEL];
+
+		//Calculate the maximum level of the block at the given location
+		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+
+		//First dimension is trivial
 		if (i + 1 > i_max && PERIODIC1 == 1) i1 = 0;
 		else if (i + 1 > i_max && PERIODIC1 == 0) i1 = -1;
 		else i1 = i + 1;
-		block[n][AMR_NBR2] = AMR_coord_linear(level, i1, j, z);
+		block[n][AMR_NBR2] = AMR_coord_linear2(level, j0, i1, j, z);
+
+		if (i - 1 < 0 && PERIODIC1 == 1) i1 = i_max;
+		else i1 = i - 1;
+		block[n][AMR_NBR4] = AMR_coord_linear2(level, j0, i1, j, z);
+
+		//Third dimension is trivial
+		if (z + 1 > z_max && PERIODIC3 == 1) z1 = 0;
+		else if (z + 1 > z_max && PERIODIC3 == 0) z1 = -1;
+		else z1 = z + 1;
+		block[n][AMR_NBR5] = AMR_coord_linear2(level, j0, i, j, z1);
+
+		if (z - 1 < 0 && PERIODIC3 == 1) z1 = z_max;
+		else z1 = z - 1;
+		block[n][AMR_NBR6] = AMR_coord_linear2(level, j0, i, j, z1);
+
+		//Second dimension is not trivial
+		if (j - 1 < 0 && PERIODIC2 == 1) j1 = j_max;
+		else j1 = j - 1;
+		flag = 0;
+		for (l = 0; l < MY_MIN(level, N_LEVELS_1D); l++){
+			jbound=pow(1 + REF_2, l); 
+			if ((j == jbound * pow(1 + REF_2, block[n][AMR_LEVEL2])) || (j == (NB_2  - jbound) * pow(1 + REF_2, block[n][AMR_LEVEL2]))){
+				block[n][AMR_NBR1] = NB;
+				//if(i==0 && z==0)fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+				flag = 1;
+				break;
+			}
+
+		}
+		if (flag==0) block[n][AMR_NBR1] = AMR_coord_linear2(level, j0, i, j1, z);
 
 		if (j + 1 > j_max && PERIODIC2 == 1) j1 = 0;
 		else if (j + 1 > j_max && PERIODIC2 == 0) j1 = -1;
 		else j1 = j + 1;
-		block[n][AMR_NBR3] = AMR_coord_linear(level, i, j1, z);
+		flag = 0;
+		for (l = 0; l < MY_MIN(level, N_LEVELS_1D); l++){
+			jbound = pow(1 + REF_2, l);
+			if (j == ((NB_2 - jbound)* pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) || (j == jbound* pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1)){
+				block[n][AMR_NBR3] = NB;
+				//if (i == 0 && z == 0)fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+				flag = 1;
+				break;
+			}
+		}
+		if (flag == 0) block[n][AMR_NBR3] = AMR_coord_linear2(level, j0, i, j1, z);
 
-		if (i - 1 < 0 && PERIODIC1 == 1) i1 = i_max;
-		else i1 = i - 1;
-		block[n][AMR_NBR4] = AMR_coord_linear(level, i1, j, z);
-
-		if (z + 1 > z_max && PERIODIC3 == 1) z1 = 0;
-		else if (z + 1 > z_max && PERIODIC3 == 0) z1 = -1;
-		else z1 = z + 1;
-		block[n][AMR_NBR5] = AMR_coord_linear(level, i, j, z1);
-
-		if (z - 1 < 0 && PERIODIC3 == 1) z1 = z_max;
-		else z1 = z - 1;
-		block[n][AMR_NBR6] = AMR_coord_linear(level, i, j, z1);
-
-		block[n][AMR_POLE] = 0; //If there are no transmissive boundary conditions no special treatment of the pole is necessary
-
-		//Find the neighbours in the case we have transmissive boundary conditions at the pole
-#if (TRANS_BOUND)
+		//Set transmissive pole
+		block[n][AMR_POLE] = 0; 
+		#if (TRANS_BOUND)
 		//if (NB_3 % 2 != 0 && rank==0) fprintf(stderr, "Number of blocks in the third dimension is not an even number. This is incompatible with TRANS_BOUND");
-
-		//First tell the code if you are dealing with a pole at theta=0 (1) or at theta=Pi (2)
+		//Find the neighbours in the case we have transmissive boundary conditions at the pole
 		if (j == 0){
 			block[n][AMR_POLE] += 1;
-			block[n][AMR_NBR1] = AMR_coord_linear(level, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
+			block[n][AMR_NBR1] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
 		}
 		if (j == j_max){
 			block[n][AMR_POLE] += 2;
-			block[n][AMR_NBR3] = AMR_coord_linear(level, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
+			block[n][AMR_NBR3] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
 		}
-#endif
+		#endif
+	}
+		
+	//Find corners of block assuming only third dimension is periodic
+	for (n = 0; n <= n_max; n++){
+		//Set maximum coordinates
+		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
+		j_max = NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1;
+		z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
 
-		//Find corners of block assuming only third dimension is periodic
+		i = block[n][AMR_COORD1];
+		j = block[n][AMR_COORD2];
+		z = block[n][AMR_COORD3];
+		level = block[n][AMR_LEVEL];
+
+		//Calculate the maximum level of the block at the given location
+		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+
 		//x-y plane
 		if (i + 1 > i_max || j - 1 < 0){
 			j1 = -1; i1 = -1;
@@ -324,7 +394,8 @@ void set_AMR(void){
 			i1 = i + 1;
 			j1 = j - 1;
 		}
-		block[n][AMR_CORN1] = AMR_coord_linear(level, i1, j1, z);
+		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN1] = NB;
+		else block[n][AMR_CORN1] = AMR_coord_linear2(level, j0, i1, j1, z);
 
 		if (i + 1 > i_max || j + 1 > j_max){
 			j1 = -1; i1 = -1;
@@ -333,7 +404,8 @@ void set_AMR(void){
 			i1 = i + 1;
 			j1 = j + 1;
 		}
-		block[n][AMR_CORN2] = AMR_coord_linear(level, i1, j1, z);
+		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN2] = NB;
+		else block[n][AMR_CORN2] = AMR_coord_linear2(level, j0, i1, j1, z);
 
 		if (i - 1 < 0 || j + 1 > j_max){
 			j1 = -1; i1 = -1;
@@ -342,7 +414,8 @@ void set_AMR(void){
 			i1 = i - 1;
 			j1 = j + 1;
 		}
-		block[n][AMR_CORN3] = AMR_coord_linear(level, i1, j1, z);
+		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN3] = NB;
+		else block[n][AMR_CORN3] = AMR_coord_linear2(level, j0, i1, j1, z);
 
 		if (i - 1 < 0 || j - 1 < 0){
 			j1 = -1; i1 = -1;
@@ -351,60 +424,63 @@ void set_AMR(void){
 			i1 = i - 1;
 			j1 = j - 1;
 		}
-		block[n][AMR_CORN4] = AMR_coord_linear(level, i1, j1, z);
+		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN4] = NB;
+		else block[n][AMR_CORN4] = AMR_coord_linear2(level, j0, i1, j1, z);
 
 		//x-z plane
 		i1 = i + 1;
 		z1 = z - 1;
 		if (i + 1 > i_max) i1 = -1;
 		if (z - 1 < 0) z1 = z_max;
-		block[n][AMR_CORN5] = AMR_coord_linear(level, i1, j, z1);
+		block[n][AMR_CORN5] = AMR_coord_linear2(level, j0, i1, j, z1);
 
 		i1 = i + 1;
 		z1 = z + 1;
 		if (i + 1 > i_max) i1 = -1;
 		if (z + 1 > z_max) z1 = 0;
-		block[n][AMR_CORN6] = AMR_coord_linear(level, i1, j, z1);
+		block[n][AMR_CORN6] = AMR_coord_linear2(level, j0, i1, j, z1);
 
 		i1 = i - 1;
 		z1 = z + 1;
 		if (i - 1 < 0) i1 = -1;
 		if (z + 1 > z_max) z1 = 0;
-		block[n][AMR_CORN7] = AMR_coord_linear(level, i1, j, z1);
+		block[n][AMR_CORN7] = AMR_coord_linear2(level, j0, i1, j, z1);
 
 
 		i1 = i - 1;
 		z1 = z - 1;
 		if (i - 1 < 0) i1 = -1;
 		if (z - 1 < 0) z1 = z_max;
-		block[n][AMR_CORN8] = AMR_coord_linear(level, i1, j, z1);
+		block[n][AMR_CORN8] = AMR_coord_linear2(level, j0, i1, j, z1);
 
 		//y-z plane
 		j1 = j - 1;
 		z1 = z + 1;
 		if (j - 1 < 0) j1 = -1;
 		if (z + 1 > z_max) z1 = 0;
-		block[n][AMR_CORN9] = AMR_coord_linear(level, i, j1, z1);
+		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN9] = NB;
+		else block[n][AMR_CORN9] = AMR_coord_linear2(level, j0, i, j1, z1);
 
 		j1 = j + 1;
 		z1 = z + 1;
 		if (j + 1 > j_max) j1 = -1;
 		if (z + 1 > z_max) z1 = 0;
-		block[n][AMR_CORN10] = AMR_coord_linear(level, i, j1, z1);
-
+		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN10] = NB;
+		else block[n][AMR_CORN10] = AMR_coord_linear2(level, j0, i, j1, z1);
 
 		j1 = j + 1;
 		z1 = z - 1;
 		if (j + 1 > j_max) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
-		block[n][AMR_CORN11] = AMR_coord_linear(level, i, j1, z1);
-
+		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN11] = NB;
+		else block[n][AMR_CORN11] = AMR_coord_linear2(level, j0, i, j1, z1);
 
 		j1 = j - 1;
 		z1 = z - 1;
 		if (j - 1 < 0) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
-		block[n][AMR_CORN12] = AMR_coord_linear(level, i, j1, z1);
+		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN12] = NB;
+		else block[n][AMR_CORN12] = AMR_coord_linear2(level, j0, i, j1, z1);
 	}
 
 	//Set 2-way grid to negative
