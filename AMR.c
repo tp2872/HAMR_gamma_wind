@@ -2062,7 +2062,15 @@ int check_nesting(int n){
 		if (block[n][i] >= 0 && block[block[n][i]][AMR_ACTIVE] == 1){
 			if (!refine(block[n][i])) flag = 0;
 		}
+	}	
+
+	//Refine around pole
+	if (block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1){
+		if (rank==0) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
+		for (z = 0; z < NB_2*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++) block[AMR_coord_linear2(block[n][AMR_LEVEL], block[n][AMR_COORD2]/pow(1 + REF_2, block[n][AMR_LEVEL2]), block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3])][AMR_TAG] = 1;
+		flag = 0;
 	}
+
 	return flag;
 }
 
@@ -2080,7 +2088,7 @@ void check_refcrit(void){
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	if (max_levels == 0) max_levels = N_LEVELS;
+	if (max_levels == 0) max_levels = N_LEVELS_3D;
 	int tag, count, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	
@@ -2106,6 +2114,7 @@ void check_refcrit(void){
 		//Count the number of blocks per node and reset tag
 		for (n = 0; n < n_active_total; n++){
 			block[n_ord_total[n]][AMR_TAG] = 0;
+			NODE_global[block[n_ord_total[n]][AMR_NODE]]++;
 		}
 
 		/*First make sure all nodes have the same ref_val*/
@@ -2113,13 +2122,13 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-			if (ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF && block[n_ord_total[n]][AMR_LEVEL] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 
 				//Refine one level less near black hole
-				level = block[n_ord_total[n]][AMR_LEVEL];
+				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				if (block[n_ord_total[n]][AMR_LEVEL] == max_levels - 2 && block[n_ord_total[n]][AMR_COORD1] == 0){
+				if (block[n_ord_total[n]][AMR_LEVEL1] == max_levels - 2 && block[n_ord_total[n]][AMR_COORD1] == 0){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
@@ -2133,7 +2142,7 @@ void check_refcrit(void){
 				#endif
 
 				//Do not refine around both poles
-				number = 0;
+				/*number = 0;
 				if (block[n_ord_total[n]][AMR_LEVEL2] == 0) number = 0;
 				else if (block[n_ord_total[n]][AMR_LEVEL2] == 1) number = 2;
 				else if (block[n_ord_total[n]][AMR_LEVEL2] == 2) number = 6;
@@ -2144,7 +2153,7 @@ void check_refcrit(void){
 				if (REF_2 == 0) number = level;
 				if ((block[n_ord_total[n]][AMR_COORD2] <= number || block[n_ord_total[n]][AMR_COORD2] >= NB_2*pow(1 + REF_2, level) - number - 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
-				}
+				}*/
 
 				if (block[n_ord_total[n]][AMR_TAG] == 1){
 					if (one_block_refined == 0){
@@ -2203,6 +2212,16 @@ void check_refcrit(void){
 					if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_TAG] >= 1){
 						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
 					}
+				}
+			}
+		}
+
+		//Do not derefine block around pole
+		for (n = 0; n < n_active_total; n++){
+			if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
+				for (z = 0; z < NB_2*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++){
+					block[AMR_coord_linear2(block[n_ord_total[n]][AMR_LEVEL], block[n][AMR_COORD2]
+					/ pow(1 + REF_2, block[n_ord_total[n]][AMR_LEVEL2]), block[n_ord_total[n]][AMR_COORD1], block[n_ord_total[n]][AMR_COORD2], block[n_ord_total[n]][AMR_COORD3])][AMR_TAG] = 2;
 				}
 			}
 		}
