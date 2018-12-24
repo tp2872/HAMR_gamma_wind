@@ -1398,7 +1398,7 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN9P] >= 0 && (block[n][AMR_CORN9D] == n || block[n][AMR_CORN9D] == -100)){
-			if (block[block[n][AMR_CORN9P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN9] == block[n][AMR_CORN9P]){
+			if (block[block[n][AMR_CORN9P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD2] % (1 + REF_2) == 0 && block[n][AMR_COORD3] % (1 + REF_3) == REF_3)){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN9P]][AMR_LEVEL1];
 				//send to coarser grid
 				pack_send_E1_corn_course(n, block[n][AMR_CORN9P], 0, BS_1 + 2 * D1, 0, BS_3, send_E1_corn9, E,
@@ -1466,7 +1466,7 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN10P] >= 0 && (block[n][AMR_CORN10D] == n || block[n][AMR_CORN10D] == -100)){
-			if (block[block[n][AMR_CORN10P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN10] == block[n][AMR_CORN10P]){
+			if (block[block[n][AMR_CORN10P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD2] % (1 + REF_2) == REF_2 && block[n][AMR_COORD3] % (1 + REF_3) == REF_3)){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN10P]][AMR_LEVEL1];
 				//send to coarser grid
 				pack_send_E1_corn_course(n, block[n][AMR_CORN10P], 0, BS_1 + 2 * D1, BS_2, BS_3, send_E1_corn10, E,
@@ -1534,7 +1534,7 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN11P] >= 0 && (block[n][AMR_CORN11D] == n || block[n][AMR_CORN11D] == -100)){
-			if (block[block[n][AMR_CORN11P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN11] == block[n][AMR_CORN11P]){
+			if (block[block[n][AMR_CORN11P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD2] % (1 + REF_2) == REF_2 && block[n][AMR_COORD3] % (1 + REF_3) == 0)){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN11P]][AMR_LEVEL1];
 				//send to coarser grid
 				pack_send_E1_corn_course(n, block[n][AMR_CORN11P], 0, BS_1 + 2 * D1, BS_2, 0, send_E1_corn11, E,
@@ -1602,7 +1602,7 @@ void E1_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN12P] >= 0 && (block[n][AMR_CORN12D] == n || block[n][AMR_CORN12D] == -100)){
-			if (block[block[n][AMR_CORN12P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN12] == block[n][AMR_CORN12P]){
+			if (block[block[n][AMR_CORN12P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD2] % (1 + REF_2) == 0 && block[n][AMR_COORD3] % (1 + REF_3) == 0)){
 				ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN12P]][AMR_LEVEL1];
 				//send to coarser grid
 				pack_send_E1_corn_course(n, block[n][AMR_CORN12P], 0, BS_1 + 2 * D1, 0, 0, send_E1_corn12, E,
@@ -1674,7 +1674,7 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN5P] >= 0 && (block[n][AMR_CORN5D] == n || block[n][AMR_CORN5D] == -100)){
-			if (block[block[n][AMR_CORN5P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN5] == block[n][AMR_CORN5P]){
+			if (block[block[n][AMR_CORN5P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == REF_1 && block[n][AMR_COORD3] % (1 + REF_3) == 0)){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN5P]][AMR_LEVEL2];
 				//send to coarser grid
 				pack_send_E2_corn_course(n, block[n][AMR_CORN5P], BS_1, 0, BS_2 + 2 * D2, 0, send_E2_corn5, E,
@@ -1742,7 +1742,7 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN6P] >= 0 && (block[n][AMR_CORN6D] == n || block[n][AMR_CORN6D] == -100)){
-			if (block[block[n][AMR_CORN6P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN6] == block[n][AMR_CORN6P]){
+			if (block[block[n][AMR_CORN6P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == REF_1 && block[n][AMR_COORD3] % (1 + REF_3) == REF_3)){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN6P]][AMR_LEVEL2];
 				//send to coarser grid
 				pack_send_E2_corn_course(n, block[n][AMR_CORN6P], BS_1, 0, BS_2 + 2 * D2, BS_3, send_E2_corn6, E,
@@ -1811,7 +1811,7 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 		}
 
 		if (block[n][AMR_CORN7P] >= 0 && (block[n][AMR_CORN7D] == n || block[n][AMR_CORN7D] == -100)){
-			if (block[block[n][AMR_CORN7P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN7] == block[n][AMR_CORN7P]){
+			if (block[block[n][AMR_CORN7P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == 0 && block[n][AMR_COORD3] % (1 + REF_3) == REF_3)){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN7P]][AMR_LEVEL2];
 				//send to coarser grid
 				pack_send_E2_corn_course(n, block[n][AMR_CORN7P], 0, 0, BS_2 + 2 * D2, BS_3, send_E2_corn7, E,
@@ -1879,7 +1879,7 @@ void E2_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN8P] >= 0 && (block[n][AMR_CORN8D] == n || block[n][AMR_CORN8D] == -100)){
-			if (block[block[n][AMR_CORN8P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN8] == block[n][AMR_CORN8P]){
+			if (block[block[n][AMR_CORN8P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == 0 && block[n][AMR_COORD3] % (1 + REF_3) == 0)){
 				ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CORN8P]][AMR_LEVEL2];
 				//send to coarser grid
 				pack_send_E2_corn_course(n, block[n][AMR_CORN8P], 0, 0, BS_2 + 2 * D2, 0, send_E2_corn8, E,
@@ -1951,7 +1951,7 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN1P] >= 0 && (block[n][AMR_CORN1D] == n || block[n][AMR_CORN1D] == -100)){
-			if (block[block[n][AMR_CORN1P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN1] == block[n][AMR_CORN1P]){
+			if (block[block[n][AMR_CORN1P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == REF_1 && block[n][AMR_COORD2] % (1 + REF_2) == 0)){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN1P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_E3_corn_course(n, block[n][AMR_CORN1P], BS_1, 0, 0, BS_3 + 2 * D3, send_E3_corn1, E,
@@ -2019,7 +2019,7 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN2P] >= 0 && (block[n][AMR_CORN2D] == n || block[n][AMR_CORN2D] == -100)){
-			if (block[block[n][AMR_CORN2P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN2] == block[n][AMR_CORN2P]){
+			if (block[block[n][AMR_CORN2P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == REF_1 && block[n][AMR_COORD2] % (1 + REF_2) == REF_2)){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN2P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_E3_corn_course(n, block[n][AMR_CORN2P], BS_1, BS_2, 0, BS_3 + 2 * D3, send_E3_corn2, E,
@@ -2087,7 +2087,7 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN3P] >= 0 && (block[n][AMR_CORN3D] == n || block[n][AMR_CORN3D] == -100)){
-			if (block[block[n][AMR_CORN3P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN3] == block[n][AMR_CORN3P]){
+			if (block[block[n][AMR_CORN3P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == 0 && block[n][AMR_COORD2] % (1 + REF_2) == REF_2)){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN3P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_E3_corn_course(n, block[n][AMR_CORN3P], 0, BS_2, 0, BS_3 + 2 * D3, send_E3_corn3, E,
@@ -2155,7 +2155,7 @@ void E3_send_corn(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL]
 			}
 		}
 		if (block[n][AMR_CORN4P] >= 0 && (block[n][AMR_CORN4D] == n || block[n][AMR_CORN4D] == -100)){
-			if (block[block[n][AMR_CORN4P]][AMR_ACTIVE] == 1 && block[block[n][AMR_PARENT]][AMR_CORN4] == block[n][AMR_CORN4P]){
+			if (block[block[n][AMR_CORN4P]][AMR_ACTIVE] == 1 && (block[n][AMR_COORD1] % (1 + REF_1) == 0 && block[n][AMR_COORD2] % (1 + REF_2) == 0)){
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CORN4P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_E3_corn_course(n, block[n][AMR_CORN4P], 0, 0, 0, BS_3 + 2 * D3, send_E3_corn4, E,

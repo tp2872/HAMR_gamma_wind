@@ -4,39 +4,58 @@ int AMR_coord_linear_RM(int level, int i, int j, int z);
 void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z);
 void rm_order2(void);
 void AMR_set_coord(void);
-int AMR_coord_linear2(int l, int b2, int i, int j, int z);
 
 void test_AMR(void){
 }
 
 int AMR_coord_linear(int l, int i, int j, int z){
-	int index, n, offset, L_1DMAX, b2;
-	if (l<0 || b2<0 || i<0 || j<0 || z<0){
+	int index, n, offset, L_1DMAX;
+	int b2 = j;
+	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
+	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
+
+	if (l != 0){
+		fprintf(stderr, "This function only works at the 0-th level for 3D AMR. Please check and disable this comment if not applicable! \n");
+		exit(0);
+	}
+
+	if (l<0 || b2<0 || i<0 || j<0 || z<0 || i >= NB_1*pow(1 + (l>L_1DMAX)*REF_1, l - L_1DMAX) || j >= NB_2*pow(1 + (l>L_1DMAX)*REF_2, l - L_1DMAX) || z >= NB_3*pow(1 + REF_1, l)){
 		n = -1;
 	}
 	else{
-		if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
 		offset = N_LEVELS_1D - L_1DMAX;
 		index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
 		n = lin_coord[l + offset][index];
+		if (block[n][AMR_LEVEL] != l || block[n][AMR_COORD1] != i || block[n][AMR_COORD2] != j || block[n][AMR_COORD3] != z){
+			fprintf(stderr, "Could not find the right linear coordinate, input incorrect! \n");
+			fprintf(stderr, "Incorrect values are l: %d j0: %d i: %d j: %d z: %d \n", l, b2, i, j, z);
+			exit(0);
+		}
 	}
+
 	return n;
 }
 
 int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
-	
-	if (l<0 || b2<0 || i<0 || j<0 ||z<0){
+
+	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
+	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
+
+	if (l<0 || b2<0 || i<0 || j<0 || z<0 || i >= NB_1*pow(1 + (l>L_1DMAX)*REF_1, l - L_1DMAX) || j >= NB_2*pow(1 + (l>L_1DMAX)*REF_2, l - L_1DMAX) || z >= NB_3*pow(1 + REF_1, l)){
 		n = -1;
 	}
 	else{
-		if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
 		offset = N_LEVELS_1D - L_1DMAX;
 		index = (int)(i * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + j * NB_3*pow(1 + REF_3, l + offset) + z);
 		n = lin_coord[l + offset][index];
+		if (block[n][AMR_LEVEL] != l || block[n][AMR_COORD1] != i || block[n][AMR_COORD2] != j || block[n][AMR_COORD3] != z){
+			fprintf(stderr, "Could not find the right linear coordinate, input incorrect! \n");
+			fprintf(stderr, "Incorrect values are l: %d j0: %d i: %d j: %d z: %d \n", l, b2, i, j, z);
+			exit(0);
+		}
 	}
+
 	return n;
 }
 
@@ -176,7 +195,16 @@ void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1,
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag;
 	int y, rem, node = 0;
+
+	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps
 	block = (int(*)[NV])calloc(NB+1, sizeof(int[NV]));
+	for (l = 0; l < N_LEVELS_3D; l++){
+		E_avg1[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1+REF_1, l)*NB_3*pow(1+REF_3,l), sizeof(double[BS_1 + 2 * N1G]));
+		E_avg2[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
+		E_avg1_new[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
+		E_avg2_new[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
+
+	}
 	max_levels = 0;
 
 	//Set memory flag to unallocated
@@ -330,13 +358,12 @@ void set_AMR(void){
 			jbound=pow(1 + REF_2, l); 
 			if ((j == jbound * pow(1 + REF_2, block[n][AMR_LEVEL2])) || (j == (NB_2  - jbound) * pow(1 + REF_2, block[n][AMR_LEVEL2]))){
 				block[n][AMR_NBR1] = NB;
-				//if(i==0 && z==0)fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 				flag = 1;
 				break;
 			}
 
 		}
-		if (flag==0) block[n][AMR_NBR1] = AMR_coord_linear2(level, j0, i, j1, z);
+		if (flag == 0) block[n][AMR_NBR1] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z);
 
 		if (j + 1 > j_max && PERIODIC2 == 1) j1 = 0;
 		else if (j + 1 > j_max && PERIODIC2 == 0) j1 = -1;
@@ -351,7 +378,7 @@ void set_AMR(void){
 				break;
 			}
 		}
-		if (flag == 0) block[n][AMR_NBR3] = AMR_coord_linear2(level, j0, i, j1, z);
+		if (flag == 0) block[n][AMR_NBR3] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z);
 
 		//Set transmissive pole
 		block[n][AMR_POLE] = 0; 
@@ -395,7 +422,7 @@ void set_AMR(void){
 			j1 = j - 1;
 		}
 		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN1] = NB;
-		else block[n][AMR_CORN1] = AMR_coord_linear2(level, j0, i1, j1, z);
+		else block[n][AMR_CORN1] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		if (i + 1 > i_max || j + 1 > j_max){
 			j1 = -1; i1 = -1;
@@ -405,7 +432,7 @@ void set_AMR(void){
 			j1 = j + 1;
 		}
 		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN2] = NB;
-		else block[n][AMR_CORN2] = AMR_coord_linear2(level, j0, i1, j1, z);
+		else block[n][AMR_CORN2] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		if (i - 1 < 0 || j + 1 > j_max){
 			j1 = -1; i1 = -1;
@@ -415,7 +442,7 @@ void set_AMR(void){
 			j1 = j + 1;
 		}
 		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN3] = NB;
-		else block[n][AMR_CORN3] = AMR_coord_linear2(level, j0, i1, j1, z);
+		else block[n][AMR_CORN3] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		if (i - 1 < 0 || j - 1 < 0){
 			j1 = -1; i1 = -1;
@@ -425,7 +452,7 @@ void set_AMR(void){
 			j1 = j - 1;
 		}
 		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN4] = NB;
-		else block[n][AMR_CORN4] = AMR_coord_linear2(level, j0, i1, j1, z);
+		else block[n][AMR_CORN4] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//x-z plane
 		i1 = i + 1;
@@ -459,28 +486,28 @@ void set_AMR(void){
 		if (j - 1 < 0) j1 = -1;
 		if (z + 1 > z_max) z1 = 0;
 		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN9] = NB;
-		else block[n][AMR_CORN9] = AMR_coord_linear2(level, j0, i, j1, z1);
+		else block[n][AMR_CORN9] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		j1 = j + 1;
 		z1 = z + 1;
 		if (j + 1 > j_max) j1 = -1;
 		if (z + 1 > z_max) z1 = 0;
 		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN10] = NB;
-		else block[n][AMR_CORN10] = AMR_coord_linear2(level, j0, i, j1, z1);
+		else block[n][AMR_CORN10] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		j1 = j + 1;
 		z1 = z - 1;
 		if (j + 1 > j_max) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
 		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN11] = NB;
-		else block[n][AMR_CORN11] = AMR_coord_linear2(level, j0, i, j1, z1);
+		else block[n][AMR_CORN11] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		j1 = j - 1;
 		z1 = z - 1;
 		if (j - 1 < 0) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
 		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN12] = NB;
-		else block[n][AMR_CORN12] = AMR_coord_linear2(level, j0, i, j1, z1);
+		else block[n][AMR_CORN12] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 	}
 
 	//Set 2-way grid to negative
@@ -488,13 +515,39 @@ void set_AMR(void){
 	
 	//Set 2-way grid hierarchy
 	for (n = 0; n <= n_max; n++){
+		//Calculate the maximum level of the block at the given location
+		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//Set NBR children
 		if (block[n][AMR_NBR1] >= 0){
-			block[n][AMR_NBR1_3] = block[block[n][AMR_NBR1]][AMR_CHILD3];
-			block[n][AMR_NBR1_4] = block[block[n][AMR_NBR1]][AMR_CHILD4];
-			block[n][AMR_NBR1_7] = block[block[n][AMR_NBR1]][AMR_CHILD7];
-			block[n][AMR_NBR1_8] = block[block[n][AMR_NBR1]][AMR_CHILD8];
+			if (block[n][AMR_NBR1] != NB){
+				block[n][AMR_NBR1_3] = block[block[n][AMR_NBR1]][AMR_CHILD3];
+				block[n][AMR_NBR1_4] = block[block[n][AMR_NBR1]][AMR_CHILD4];
+				block[n][AMR_NBR1_7] = block[block[n][AMR_NBR1]][AMR_CHILD7];
+				block[n][AMR_NBR1_8] = block[block[n][AMR_NBR1]][AMR_CHILD8];
+			}
+			else{
+				//Difference in REF_1, REF_2
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
+					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
+						block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL], j0 - 1, block[n][AMR_COORD1] * (1 + REF_1), block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
+						block[n][AMR_NBR1_4] = block[n][AMR_NBR1_3];
+						block[n][AMR_NBR1_7] = AMR_coord_linear2(block[n][AMR_LEVEL], j0 - 1, block[n][AMR_COORD1] * (1 + REF_1) + REF_1, block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
+						block[n][AMR_NBR1_8] = block[n][AMR_NBR1_7];
+					}
+				}
+				else{ //Difference in REF_3
+					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+					block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] * (1 + REF_3));
+					block[n][AMR_NBR1_4] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] * (1 + REF_3) + 1);
+					block[n][AMR_NBR1_7] = block[n][AMR_NBR1_3];
+					block[n][AMR_NBR1_8] = block[n][AMR_NBR1_4];
+					//int test = block[n][AMR_NBR1_3];
+					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+				}
+			}
 		}
 		if (block[n][AMR_NBR2] >= 0){
 			block[n][AMR_NBR2_1] = block[block[n][AMR_NBR2]][AMR_CHILD1];
@@ -503,10 +556,32 @@ void set_AMR(void){
 			block[n][AMR_NBR2_4] = block[block[n][AMR_NBR2]][AMR_CHILD4];
 		}
 		if (block[n][AMR_NBR3] >= 0){
-			block[n][AMR_NBR3_1] = block[block[n][AMR_NBR3]][AMR_CHILD1];
-			block[n][AMR_NBR3_2] = block[block[n][AMR_NBR3]][AMR_CHILD2];
-			block[n][AMR_NBR3_5] = block[block[n][AMR_NBR3]][AMR_CHILD5];
-			block[n][AMR_NBR3_6] = block[block[n][AMR_NBR3]][AMR_CHILD6];
+			if (block[n][AMR_NBR3] != NB){
+				block[n][AMR_NBR3_1] = block[block[n][AMR_NBR3]][AMR_CHILD1];
+				block[n][AMR_NBR3_2] = block[block[n][AMR_NBR3]][AMR_CHILD2];
+				block[n][AMR_NBR3_5] = block[block[n][AMR_NBR3]][AMR_CHILD5];
+				block[n][AMR_NBR3_6] = block[block[n][AMR_NBR3]][AMR_CHILD6];
+			}
+			else{
+				//Difference in REF_3
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
+					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+					block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] * (1 + REF_3));
+					block[n][AMR_NBR3_2] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] * (1 + REF_3) + 1);
+					block[n][AMR_NBR3_5] = block[n][AMR_NBR3_1];
+					block[n][AMR_NBR3_6] = block[n][AMR_NBR3_2];
+					//int test = block[n][AMR_NBR3_1];
+					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+				}
+				else{ //Difference in REF_1, REF_2
+					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
+						block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL], j0 + 1, block[n][AMR_COORD1] * (1 + REF_1), (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
+						block[n][AMR_NBR3_2] = block[n][AMR_NBR3_1];
+						block[n][AMR_NBR3_5] = AMR_coord_linear2(block[n][AMR_LEVEL], j0 + 1, block[n][AMR_COORD1] * (1 + REF_1) + REF_1, (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
+						block[n][AMR_NBR3_6] = block[n][AMR_NBR3_5];
+					}
+				}
+			}
 		}
 		if (block[n][AMR_NBR4] >= 0){
 			block[n][AMR_NBR4_5] = block[block[n][AMR_NBR4]][AMR_CHILD5];
@@ -526,62 +601,260 @@ void set_AMR(void){
 			block[n][AMR_NBR6_6] = block[block[n][AMR_NBR6]][AMR_CHILD6];
 			block[n][AMR_NBR6_8] = block[block[n][AMR_NBR6]][AMR_CHILD8];
 		}
-
-		//Set corn children
-		if (block[n][AMR_CORN1] >= 0) block[n][AMR_CORN1_1] = block[block[n][AMR_CORN1]][AMR_CHILD3];
-		if (block[n][AMR_CORN1] >= 0) block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
-		if (block[n][AMR_CORN2] >= 0) block[n][AMR_CORN2_1] = block[block[n][AMR_CORN2]][AMR_CHILD1];
-		if (block[n][AMR_CORN2] >= 0) block[n][AMR_CORN2_2] = block[block[n][AMR_CORN2]][AMR_CHILD2];
-		if (block[n][AMR_CORN3] >= 0) block[n][AMR_CORN3_1] = block[block[n][AMR_CORN3]][AMR_CHILD5];
-		if (block[n][AMR_CORN3] >= 0) block[n][AMR_CORN3_2] = block[block[n][AMR_CORN3]][AMR_CHILD6];
-		if (block[n][AMR_CORN4] >= 0) block[n][AMR_CORN4_1] = block[block[n][AMR_CORN4]][AMR_CHILD7];
-		if (block[n][AMR_CORN4] >= 0) block[n][AMR_CORN4_2] = block[block[n][AMR_CORN4]][AMR_CHILD8];
-
-		if (block[n][AMR_CORN5] >= 0) block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
-		if (block[n][AMR_CORN5] >= 0) block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
-		if (block[n][AMR_CORN6] >= 0) block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
-		if (block[n][AMR_CORN6] >= 0) block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
-		if (block[n][AMR_CORN7] >= 0) block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
-		if (block[n][AMR_CORN7] >= 0) block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
-		if (block[n][AMR_CORN8] >= 0) block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
-		if (block[n][AMR_CORN8] >= 0) block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
-
-		if (block[n][AMR_CORN9] >= 0) block[n][AMR_CORN9_1] = block[block[n][AMR_CORN9]][AMR_CHILD3];
-		if (block[n][AMR_CORN9] >= 0) block[n][AMR_CORN9_2] = block[block[n][AMR_CORN9]][AMR_CHILD7];
-		if (block[n][AMR_CORN10] >= 0) block[n][AMR_CORN10_1] = block[block[n][AMR_CORN10]][AMR_CHILD1];
-		if (block[n][AMR_CORN10] >= 0) block[n][AMR_CORN10_2] = block[block[n][AMR_CORN10]][AMR_CHILD5];
-		if (block[n][AMR_CORN11] >= 0) block[n][AMR_CORN11_1] = block[block[n][AMR_CORN11]][AMR_CHILD2];
-		if (block[n][AMR_CORN11] >= 0) block[n][AMR_CORN11_2] = block[block[n][AMR_CORN11]][AMR_CHILD6];
-		if (block[n][AMR_CORN12] >= 0) block[n][AMR_CORN12_1] = block[block[n][AMR_CORN12]][AMR_CHILD4];
-		if (block[n][AMR_CORN12] >= 0) block[n][AMR_CORN12_2] = block[block[n][AMR_CORN12]][AMR_CHILD8];
-
-		//Set NBR parent
-		if (block[n][AMR_NBR1] >= 0)block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
-		if (block[n][AMR_NBR2] >= 0)block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
-		if (block[n][AMR_NBR3] >= 0)block[n][AMR_NBR3P] = block[block[n][AMR_NBR3]][AMR_PARENT];
-		if (block[n][AMR_NBR4] >= 0)block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
-		if (block[n][AMR_NBR5] >= 0)block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
-		if (block[n][AMR_NBR6] >= 0)block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
-
-		//Set corn parent
-		if (block[n][AMR_CORN1] >= 0)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
-		if (block[n][AMR_CORN2] >= 0)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
-		if (block[n][AMR_CORN3] >= 0)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
-		if (block[n][AMR_CORN4] >= 0)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
-		if (block[n][AMR_CORN5] >= 0)block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
-		if (block[n][AMR_CORN6] >= 0)block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
-		if (block[n][AMR_CORN7] >= 0)block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
-		if (block[n][AMR_CORN8] >= 0)block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
-		if (block[n][AMR_CORN9] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
-		if (block[n][AMR_CORN10] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
-		if (block[n][AMR_CORN11] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
-		if (block[n][AMR_CORN12] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
-
-		//Set NBR level
-		block[n][AMR_LEVEL1] = block[n][AMR_LEVEL];
-		block[n][AMR_LEVEL2] = block[n][AMR_LEVEL];
-		block[n][AMR_LEVEL3] = block[n][AMR_LEVEL];
 	}
+
+	//Set corn children
+	for (n = 0; n <= n_max; n++){
+		if (block[n][AMR_CORN1] >= 0){
+			if (block[n][AMR_CORN1] != NB){
+				block[n][AMR_CORN1_1] = block[block[n][AMR_CORN1]][AMR_CHILD3];
+				block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
+			}
+			else{
+				if (block[n][AMR_NBR1_7]>=0) block[n][AMR_CORN1_1] = block[block[n][AMR_NBR1_7]][AMR_NBR2];
+				if (block[n][AMR_NBR1_8] >= 0) block[n][AMR_CORN1_2] = block[block[n][AMR_NBR1_8]][AMR_NBR2];
+			}
+		}
+		if (block[n][AMR_CORN2] >= 0){
+			if (block[n][AMR_CORN2] != NB){
+				block[n][AMR_CORN2_1] = block[block[n][AMR_CORN2]][AMR_CHILD1];
+				block[n][AMR_CORN2_2] = block[block[n][AMR_CORN2]][AMR_CHILD2];
+			}
+			else{
+				if (block[n][AMR_NBR3_5] >= 0) block[n][AMR_CORN2_1] = block[block[n][AMR_NBR3_5]][AMR_NBR2];
+				if (block[n][AMR_NBR3_6] >= 0) block[n][AMR_CORN2_2] = block[block[n][AMR_NBR3_6]][AMR_NBR2];
+			}
+		}
+		if (block[n][AMR_CORN3] >= 0){
+			if (block[n][AMR_CORN3] != NB){
+				block[n][AMR_CORN3_1] = block[block[n][AMR_CORN3]][AMR_CHILD5];
+				block[n][AMR_CORN3_2] = block[block[n][AMR_CORN3]][AMR_CHILD6];
+			}
+			else{
+				if (block[n][AMR_NBR3_1] >= 0) block[n][AMR_CORN3_1] = block[block[n][AMR_NBR3_1]][AMR_NBR4];
+				if (block[n][AMR_NBR3_2] >= 0) block[n][AMR_CORN3_2] = block[block[n][AMR_NBR3_2]][AMR_NBR4];
+			}
+		}
+		if (block[n][AMR_CORN4] >= 0){
+			if (block[n][AMR_CORN4] != NB){
+				block[n][AMR_CORN4_1] = block[block[n][AMR_CORN4]][AMR_CHILD7];
+				block[n][AMR_CORN4_2] = block[block[n][AMR_CORN4]][AMR_CHILD8];
+			}
+			else{
+				if (block[n][AMR_NBR1_3] >= 0) block[n][AMR_CORN4_1] = block[block[n][AMR_NBR1_3]][AMR_NBR4];
+				if (block[n][AMR_NBR1_4] >= 0) block[n][AMR_CORN4_2] = block[block[n][AMR_NBR1_4]][AMR_NBR4];
+			}
+		}
+
+		if (block[n][AMR_CORN5] >= 0){
+			block[n][AMR_CORN5_1] = block[block[n][AMR_CORN5]][AMR_CHILD2];
+			block[n][AMR_CORN5_2] = block[block[n][AMR_CORN5]][AMR_CHILD4];
+		}
+		if (block[n][AMR_CORN6] >= 0){
+			block[n][AMR_CORN6_1] = block[block[n][AMR_CORN6]][AMR_CHILD1];
+			block[n][AMR_CORN6_2] = block[block[n][AMR_CORN6]][AMR_CHILD3];
+		}
+		if (block[n][AMR_CORN7] >= 0){
+			block[n][AMR_CORN7_1] = block[block[n][AMR_CORN7]][AMR_CHILD5];
+			block[n][AMR_CORN7_2] = block[block[n][AMR_CORN7]][AMR_CHILD7];
+		}
+		if (block[n][AMR_CORN8] >= 0){
+			block[n][AMR_CORN8_1] = block[block[n][AMR_CORN8]][AMR_CHILD6];
+			block[n][AMR_CORN8_2] = block[block[n][AMR_CORN8]][AMR_CHILD8];
+		}
+
+		if (block[n][AMR_CORN9] >= 0){
+			if (block[n][AMR_CORN9] != NB){
+				block[n][AMR_CORN9_1] = block[block[n][AMR_CORN9]][AMR_CHILD3];
+				block[n][AMR_CORN9_2] = block[block[n][AMR_CORN9]][AMR_CHILD7];
+			}
+			else{
+				if (block[n][AMR_NBR1_4] >= 0) block[n][AMR_CORN9_1] = block[block[n][AMR_NBR1_4]][AMR_NBR5];
+				if (block[n][AMR_NBR1_8] >= 0) block[n][AMR_CORN9_2] = block[block[n][AMR_NBR1_8]][AMR_NBR5];
+			}
+		}
+		if (block[n][AMR_CORN10] >= 0){
+			if (block[n][AMR_CORN10] != NB){
+				block[n][AMR_CORN10_1] = block[block[n][AMR_CORN10]][AMR_CHILD1];
+				block[n][AMR_CORN10_2] = block[block[n][AMR_CORN10]][AMR_CHILD5];
+			}
+			else{
+				if (block[n][AMR_NBR3_2] >= 0) block[n][AMR_CORN10_1] = block[block[n][AMR_NBR3_2]][AMR_NBR5];
+				if (block[n][AMR_NBR3_6] >= 0) block[n][AMR_CORN10_2] = block[block[n][AMR_NBR3_6]][AMR_NBR5];
+			}
+		}
+		if (block[n][AMR_CORN11] >= 0){
+			if (block[n][AMR_CORN11] != NB){
+				block[n][AMR_CORN11_1] = block[block[n][AMR_CORN11]][AMR_CHILD2];
+				block[n][AMR_CORN11_2] = block[block[n][AMR_CORN11]][AMR_CHILD6];
+			}
+			else{
+				if (block[n][AMR_NBR3_1] >= 0) block[n][AMR_CORN11_1] = block[block[n][AMR_NBR3_1]][AMR_NBR6];
+				if (block[n][AMR_NBR3_5] >= 0) block[n][AMR_CORN11_2] = block[block[n][AMR_NBR3_5]][AMR_NBR6];
+			}
+		}
+		if (block[n][AMR_CORN12] >= 0){
+			if (block[n][AMR_CORN12] != NB){
+				block[n][AMR_CORN12_1] = block[block[n][AMR_CORN12]][AMR_CHILD4];
+				block[n][AMR_CORN12_2] = block[block[n][AMR_CORN12]][AMR_CHILD8];
+			}
+			else{
+				if (block[n][AMR_NBR1_3] >= 0) block[n][AMR_CORN12_1] = block[block[n][AMR_NBR1_3]][AMR_NBR6];
+				if (block[n][AMR_NBR1_7] >= 0) block[n][AMR_CORN12_2] = block[block[n][AMR_NBR1_7]][AMR_NBR6];
+			}
+		}
+	}
+
+	//Set NBR parent
+	for (n = 0; n <= n_max; n++){
+		//Calculate the maximum level of the block at the given location
+		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+
+		if (block[n][AMR_NBR1] >= 0){
+			if (block[n][AMR_NBR1] != NB) block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
+				}
+				else{
+					block[n][AMR_NBR1P] = block[block[n][AMR_NBR1_3]][AMR_PARENT];
+				}
+			}
+		}
+		if (block[n][AMR_NBR2] >= 0){
+			block[n][AMR_NBR2P] = block[block[n][AMR_NBR2]][AMR_PARENT];
+		}
+		if (block[n][AMR_NBR3] >= 0){
+			if (block[n][AMR_NBR3] != NB){
+				block[n][AMR_NBR3P] = block[block[n][AMR_NBR3]][AMR_PARENT];
+			}
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
+					block[n][AMR_NBR3P] = block[block[n][AMR_NBR3_1]][AMR_PARENT];
+				}
+				else{ //Difference in REF_3
+					block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
+				}
+			}
+		}
+		if (block[n][AMR_NBR4] >= 0){
+			block[n][AMR_NBR4P] = block[block[n][AMR_NBR4]][AMR_PARENT];
+		}
+		if (block[n][AMR_NBR5] >= 0){
+			block[n][AMR_NBR5P] = block[block[n][AMR_NBR5]][AMR_PARENT];
+		}
+		if (block[n][AMR_NBR6] >= 0){
+			block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
+		}
+	}
+
+	//Set corn parent
+	for (n = 0; n <= n_max; n++){
+		//Calculate the maximum level of the block at the given location
+		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+
+		if (block[n][AMR_CORN1] >= 0){
+			if (block[n][AMR_CORN1] != NB)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
+				}
+				else{
+					if (block[n][AMR_CORN1_1] >= 0)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1_1]][AMR_PARENT];
+				}
+			}
+		}
+		if (block[n][AMR_CORN2] >= 0){
+			if (block[n][AMR_CORN2] != NB)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					if (block[n][AMR_CORN2_1] >= 0)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2_1]][AMR_PARENT];
+				}
+				else{
+					block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
+				}
+			}
+		}
+		if (block[n][AMR_CORN3] >= 0){
+			if (block[n][AMR_CORN3] != NB)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					if (block[n][AMR_CORN3_1] >= 0)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3_1]][AMR_PARENT];
+				}
+				else{
+					block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
+				}
+			}
+		}
+		if (block[n][AMR_CORN4] >= 0){
+			if (block[n][AMR_CORN4] != NB)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
+				}
+				else{
+					if (block[n][AMR_CORN4_1] >= 0)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4_1]][AMR_PARENT];
+				}
+			}
+		}
+		if (block[n][AMR_CORN5] >= 0){
+			block[n][AMR_CORN5P] = block[block[n][AMR_CORN5]][AMR_PARENT];
+		}
+		if (block[n][AMR_CORN6] >= 0){
+			block[n][AMR_CORN6P] = block[block[n][AMR_CORN6]][AMR_PARENT];
+		}
+		if (block[n][AMR_CORN7] >= 0){
+			block[n][AMR_CORN7P] = block[block[n][AMR_CORN7]][AMR_PARENT];
+		}
+		if (block[n][AMR_CORN8] >= 0){
+			block[n][AMR_CORN8P] = block[block[n][AMR_CORN8]][AMR_PARENT];
+		}
+		if (block[n][AMR_CORN9] >= 0){
+			if (block[n][AMR_CORN9] != NB)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3) + REF_3);
+				}
+				else{
+					if (block[n][AMR_CORN9_1] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9_1]][AMR_PARENT];
+				}
+			}
+		}
+		if (block[n][AMR_CORN10] >= 0){
+			if (block[n][AMR_CORN10] != NB)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
+				}
+				else{
+					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3) + REF_3);
+				}
+			}
+		}
+		if (block[n][AMR_CORN11] >= 0){
+			if (block[n][AMR_CORN11] != NB)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
+				}
+				else{
+					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3) - REF_3);
+				}
+			}
+		}
+		if (block[n][AMR_CORN12] >= 0){
+			if (block[n][AMR_CORN12] != NB)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
+			else{
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3) - REF_3);
+				}
+				else{
+					if (block[n][AMR_CORN12_1] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12_1]][AMR_PARENT];
+				}
+			}
+		}
+	}
+
 	//Set offsets and size of blocks
 	for (n = 0; n <= n_max; n++){
 		N1_GPU_offset[n] = block[n][AMR_COORD1] * BS_1;
@@ -640,7 +913,7 @@ void balance_load(void){
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps, count_gpu[N_GPU];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	#if(DEREFINE_POLE)
+	#if(DEREFINE_POLE && N_LEVELS_3D==1)
 	rm_order1();
 	#else
 	rm_order2();
@@ -1850,24 +2123,24 @@ void check_refcrit(void){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
-				if (block[n_ord_total[n]][AMR_COORD1] <= 0 && level==0) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 2 && level == 1) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 6 && level == 2) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 14 && level == 3) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 30 && level == 4) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 62 && level == 5) block[n_ord_total[n]][AMR_TAG] = 0;
-				else if (block[n_ord_total[n]][AMR_COORD1] <= 126 && level == 6) block[n_ord_total[n]][AMR_TAG] = 0;
+				if (block[n_ord_total[n]][AMR_COORD1] <= 0 && block[n_ord_total[n]][AMR_LEVEL1]==0) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 2 && block[n_ord_total[n]][AMR_LEVEL1] == 1) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 6 && block[n_ord_total[n]][AMR_LEVEL1] == 2) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 14 && block[n_ord_total[n]][AMR_LEVEL1] == 3) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 30 && block[n_ord_total[n]][AMR_LEVEL1] == 4) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 62 && block[n_ord_total[n]][AMR_LEVEL1] == 5) block[n_ord_total[n]][AMR_TAG] = 0;
+				else if (block[n_ord_total[n]][AMR_COORD1] <= 126 && block[n_ord_total[n]][AMR_LEVEL1] == 6) block[n_ord_total[n]][AMR_TAG] = 0;
 				#endif
 
 				//Do not refine around both poles
 				number = 0;
-				if (level == 0) number = 0;
-				else if (level == 1) number = 2;
-				else if (level == 2) number = 6;
-				else if (level == 3) number = 14;
-				else if (level == 4) number = 30;
-				else if (level == 5) number = 62;
-				else if (level == 6) number = 126;
+				if (block[n_ord_total[n]][AMR_LEVEL2] == 0) number = 0;
+				else if (block[n_ord_total[n]][AMR_LEVEL2] == 1) number = 2;
+				else if (block[n_ord_total[n]][AMR_LEVEL2] == 2) number = 6;
+				else if (block[n_ord_total[n]][AMR_LEVEL2] == 3) number = 14;
+				else if (block[n_ord_total[n]][AMR_LEVEL2] == 4) number = 30;
+				else if (block[n_ord_total[n]][AMR_LEVEL2] == 5) number = 62;
+				else if (block[n_ord_total[n]][AMR_LEVEL2] == 6) number = 126;
 				if (REF_2 == 0) number = level;
 				if ((block[n_ord_total[n]][AMR_COORD2] <= number || block[n_ord_total[n]][AMR_COORD2] >= NB_2*pow(1 + REF_2, level) - number - 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
@@ -1913,7 +2186,7 @@ void check_refcrit(void){
 		tag = 0;
 		for (n = 0; n < n_active_total; n++){
 			//derefine
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][AMR_LEVEL] > 0){
+			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][AMR_LEVEL1] > 0){
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = -1; //Tag for derefinement
 
 				for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
@@ -2138,7 +2411,7 @@ int derefine_pole(void){
 		nz = NB_3*pow(1 + REF_3, l);
 		for (i = 0; i < ni; i++)for (j = pow(2, l); j < nj - (pow(2, l)); j++)for (z = 0; z < nz; z++){
 			if ((double)pow(2, l) < 0.25*NB_2){
-				if (!refine(AMR_coord_linear(l, i, j, z))){
+				if (!refine(AMR_coord_linear2(l,j, i, j, z))){
 					if (rank == 0) fprintf(stderr, "Maximum number of blocks exceeded. Please select more nodes or adjust refinement criterion! \n");
 					exit(0);
 				}
@@ -2186,7 +2459,7 @@ void rm_order2(void){
 	int counter2 = 0;
 	for (n = 0; n <= n_max; n++){
 		AMR_coord_cart_RM(n, &l, &i, &j, &z); //transform to cartesian grid coordinates
-		number = AMR_coord_linear(l, i, j, z); //transform to normal lineair ordering
+		number = AMR_coord_linear2(l,j/pow(1+REF_2,block[n][AMR_LEVEL2]), i, j, z); //transform to normal lineair ordering
 		if (block[number][AMR_ACTIVE] == 1){
 			n_ord_total_RM[counter] = number;
 			counter++;

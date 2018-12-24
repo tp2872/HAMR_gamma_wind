@@ -171,6 +171,8 @@ int restart_read(void)
 	return 1;
 }
 
+
+//Used to upscale old grid with 3 levels of AMR, to new grid with 4 levels of AMR
 void restart_read_grid(void)
 {
 	int n, k;
