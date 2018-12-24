@@ -277,7 +277,7 @@ double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 					}
 
 					#if(STAGGERED)
-					if ((dir == 2) && ((j == 0 && (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) || (j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL])) && (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)))){
+					if ((dir == 2) && ((j == 0 && (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) || (j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2])) && (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)))){
 						p_r[B1] = 0.;
 						p_l[B1] = 0.;
 					}

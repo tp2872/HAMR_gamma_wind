@@ -178,21 +178,21 @@ void E_average(void){
 		nj = NB_2*pow(1 + REF_2, l);
 		nz = NB_3*pow(1 + REF_3, l);
 		for (i = 0; i < ni; i++){
-			if (block[AMR_coord_linear2(0, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
+			if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				if (l > 0){
 					fprintf(stderr, "Catastrophic error in E_average! Higher level refinement around pole not yet fully implemented \n");
 					exit(0);
 				}
-				if ((nstep % (block[AMR_coord_linear2(0, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(0, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(0, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
+				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
 					for (u = 0; u < numtasks; u++){
 						send_tag2[l][u] = 0;
 						for (z = 0; z < nz; z++){
-							number = AMR_coord_linear2(0, NB_2 - 1, i, nj - 1, z);
+							number = AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z);
 							if (block[number][AMR_NODE] == u) send_tag2[l][u] = 1;
 						}
 					}
 					for (z = 0; z < nz; z++){
-						number = AMR_coord_linear2(0, NB_2 - 1, i, nj - 1, z);
+						number = AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z);
 						if (block[number][AMR_NODE] != rank && send_tag2[l][rank] == 1){
 							rc = MPI_Irecv(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[l][i*nz + z]);
 						}

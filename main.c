@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
 		//Refine every TREF
 		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			#if(!DEREFINE_POLE && N_LEVELS!=1)
+			#if(!DEREFINE_POLE && N_LEVELS_3D==1)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
 			#else
@@ -375,19 +375,31 @@ void alloc_bounds_CPU(int n){
 	ref3_1s = REF_3; ref3_2s = REF_3; ref3_3s = REF_3; ref3_4s = REF_3;
 
 	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
-		ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref1_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref1_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref2_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref2_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref2_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref2_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		ref3_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		ref3_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR5_1] >= 0) ref1_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR6_2] >= 0) ref1_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR2_1] >= 0) ref2_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR4_5] >= 0) ref2_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR5_1] >= 0) ref2_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR6_2] >= 0) ref2_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR2_1] >= 0) ref3_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR4_5] >= 0) ref3_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 	}
+	ref1_1s = ref1_1;
+	ref1_3s = ref1_3;
+	ref1_5s = ref1_5;
+	ref1_6s = ref1_6;
+	ref2_2s = ref2_2;
+	ref2_4s = ref2_4;
+	ref2_5s = ref2_5;
+	ref2_6s = ref2_6;
+	ref3_1s = ref3_1;
+	ref3_2s = ref3_2;
+	ref3_3s = ref3_3;
+	ref3_4s = ref3_4;
 
 	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
@@ -401,7 +413,7 @@ void alloc_bounds_CPU(int n){
 	if (block[n][AMR_NBR2P] >= 0)ref3_2s = MY_MIN(ref3_2, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR2P]][AMR_LEVEL3]);
 	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
 	if (block[n][AMR_NBR4P] >= 0)ref3_4s = MY_MIN(ref3_4, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR4P]][AMR_LEVEL3]);
-
+	if (n == 0) fprintf(stderr, ": %d %d\n",ref1_3s, ref3_3s);
 	send1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
 	send3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
@@ -978,19 +990,32 @@ void free_bound_cpu(int n){
 	ref3_1s = REF_3; ref3_2s = REF_3; ref3_3s = REF_3; ref3_4s = REF_3;
 
 	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
-		ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref1_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref1_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref2_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref2_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref2_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref2_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		ref3_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		ref3_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR5_1] >= 0) ref1_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR6_2] >= 0) ref1_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR2_1] >= 0) ref2_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR4_5] >= 0) ref2_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR5_1] >= 0) ref2_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR6_2] >= 0) ref2_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR2_1] >= 0) ref3_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR4_5] >= 0) ref3_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 	}
+
+	ref1_1s = ref1_1;
+	ref1_3s = ref1_3;
+	ref1_5s = ref1_5;
+	ref1_6s = ref1_6;
+	ref2_2s = ref2_2;
+	ref2_4s = ref2_4;
+	ref2_5s = ref2_5;
+	ref2_6s = ref2_6;
+	ref3_1s = ref3_1;
+	ref3_2s = ref3_2;
+	ref3_3s = ref3_3;
+	ref3_4s = ref3_4;
 
 	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
@@ -1015,30 +1040,30 @@ void free_bound_cpu(int n){
 	#endif
 	#if(N_LEVELS>1)
 	free(send1_3[nl[n]]);
-	if (ref3_1)free(send1_4[nl[n]]);
-	if (ref1_1)free(send1_7[nl[n]]);
-	if (ref3_1 && ref1_1)free(send1_8[nl[n]]);
+	if (ref3_1s)free(send1_4[nl[n]]);
+	if (ref1_1s)free(send1_7[nl[n]]);
+	if (ref3_1s && ref1_1s)free(send1_8[nl[n]]);
 	free(send2_1[nl[n]]);
-	if (ref3_2)free(send2_2[nl[n]]);
-	if (ref2_2)free(send2_3[nl[n]]);
-	if (ref3_3 && ref2_2)free(send2_4[nl[n]]);
+	if (ref3_2s)free(send2_2[nl[n]]);
+	if (ref2_2s)free(send2_3[nl[n]]);
+	if (ref3_3s && ref2_2s)free(send2_4[nl[n]]);
 	free(send3_1[nl[n]]);
-	if (ref3_3)free(send3_2[nl[n]]);
-	if (ref1_3)free(send3_5[nl[n]]);
-	if (ref3_3 && ref1_3)free(send3_6[nl[n]]);
+	if (ref3_3s)free(send3_2[nl[n]]);
+	if (ref1_3s)free(send3_5[nl[n]]);
+	if (ref3_3s && ref1_3s)free(send3_6[nl[n]]);
 	free(send4_5[nl[n]]);
-	if (ref3_4)free(send4_6[nl[n]]);
-	if (ref2_4)free(send4_7[nl[n]]);
-	if (ref3_4 && ref2_4)free(send4_8[nl[n]]);
+	if (ref3_4s)free(send4_6[nl[n]]);
+	if (ref2_4s)free(send4_7[nl[n]]);
+	if (ref3_4s && ref2_4s)free(send4_8[nl[n]]);
 	#if(N3G>0)
 	free(send5_1[nl[n]]);
-	if (ref2_5)free(send5_3[nl[n]]);
-	if (ref1_5)free(send5_5[nl[n]]);
-	if (ref2_5 && ref1_5)free(send5_7[nl[n]]);
+	if (ref2_5s)free(send5_3[nl[n]]);
+	if (ref1_5s)free(send5_5[nl[n]]);
+	if (ref2_5s && ref1_5s)free(send5_7[nl[n]]);
 	free(send6_2[nl[n]]);
-	if (ref2_6)free(send6_4[nl[n]]);
-	if (ref1_6)free(send6_6[nl[n]]);
-	if (ref2_6 && ref1_6)free(send6_8[nl[n]]);
+	if (ref2_6s)free(send6_4[nl[n]]);
+	if (ref1_6s)free(send6_6[nl[n]]);
+	if (ref2_6s && ref1_6s)free(send6_8[nl[n]]);
 	#endif
 	#endif
 	free(receive1[nl[n]]);

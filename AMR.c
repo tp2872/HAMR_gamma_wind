@@ -421,7 +421,7 @@ void set_AMR(void){
 			i1 = i + 1;
 			j1 = j - 1;
 		}
-		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN1] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR2] >= 0) block[n][AMR_CORN1] = NB;
 		else block[n][AMR_CORN1] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		if (i + 1 > i_max || j + 1 > j_max){
@@ -431,7 +431,7 @@ void set_AMR(void){
 			i1 = i + 1;
 			j1 = j + 1;
 		}
-		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN2] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR2] >= 0) block[n][AMR_CORN2] = NB;
 		else block[n][AMR_CORN2] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		if (i - 1 < 0 || j + 1 > j_max){
@@ -441,7 +441,7 @@ void set_AMR(void){
 			i1 = i - 1;
 			j1 = j + 1;
 		}
-		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN3] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR4] >= 0) block[n][AMR_CORN3] = NB;
 		else block[n][AMR_CORN3] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		if (i - 1 < 0 || j - 1 < 0){
@@ -451,7 +451,7 @@ void set_AMR(void){
 			i1 = i - 1;
 			j1 = j - 1;
 		}
-		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN4] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR4] >= 0) block[n][AMR_CORN4] = NB;
 		else block[n][AMR_CORN4] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//x-z plane
@@ -485,28 +485,28 @@ void set_AMR(void){
 		z1 = z + 1;
 		if (j - 1 < 0) j1 = -1;
 		if (z + 1 > z_max) z1 = 0;
-		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN9] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR5] >= 0) block[n][AMR_CORN9] = NB;
 		else block[n][AMR_CORN9] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		j1 = j + 1;
 		z1 = z + 1;
 		if (j + 1 > j_max) j1 = -1;
 		if (z + 1 > z_max) z1 = 0;
-		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN10] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR5] >= 0) block[n][AMR_CORN10] = NB;
 		else block[n][AMR_CORN10] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		j1 = j + 1;
 		z1 = z - 1;
 		if (j + 1 > j_max) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
-		if (block[n][AMR_NBR3] == NB) block[n][AMR_CORN11] = NB;
+		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR6] >= 0) block[n][AMR_CORN11] = NB;
 		else block[n][AMR_CORN11] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
 		j1 = j - 1;
 		z1 = z - 1;
 		if (j - 1 < 0) j1 = -1;
 		if (z - 1 < 0) z1 = z_max;
-		if (block[n][AMR_NBR1] == NB) block[n][AMR_CORN12] = NB;
+		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR6] >= 0) block[n][AMR_CORN12] = NB;
 		else block[n][AMR_CORN12] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 	}
 
@@ -611,7 +611,7 @@ void set_AMR(void){
 				block[n][AMR_CORN1_2] = block[block[n][AMR_CORN1]][AMR_CHILD4];
 			}
 			else{
-				if (block[n][AMR_NBR1_7]>=0) block[n][AMR_CORN1_1] = block[block[n][AMR_NBR1_7]][AMR_NBR2];
+				if (block[n][AMR_NBR1_7] >= 0) block[n][AMR_CORN1_1] = block[block[n][AMR_NBR1_7]][AMR_NBR2];
 				if (block[n][AMR_NBR1_8] >= 0) block[n][AMR_CORN1_2] = block[block[n][AMR_NBR1_8]][AMR_NBR2];
 			}
 		}
@@ -2058,9 +2058,9 @@ void post_refine(void){
 int check_nesting(int n){
 	int i,z;
 	int flag = 1;
-	for (i = AMR_NBR1; i <= AMR_CORN12; i++){
-		if (block[n][i] >= 0 && block[block[n][i]][AMR_PARENT] >= 0 && block[block[block[n][i]][AMR_PARENT]][AMR_ACTIVE] == 1){
-			if (!refine(block[block[n][i]][AMR_PARENT])) flag = 0;
+	for (i = AMR_NBR1P; i <= AMR_CORN12P; i++){
+		if (block[n][i] >= 0 && block[block[n][i]][AMR_ACTIVE] == 1){
+			if (!refine(block[n][i])) flag = 0;
 		}
 	}
 	return flag;
@@ -2393,21 +2393,23 @@ void check_refcrit(void){
 //This function derefines in phi near the pole
 int derefine_pole(void){
 	int i, j, z, l, ni, nj, nz, u;
-	if (REF_3 != 1 || REF_1 == 1 || REF_2 == 1){
-		if(rank==0)fprintf(stderr, "Error! Derefinement near the pole works only for REF_1=0, REF_2=0, REF_3=1 \n");
+	//if (REF_3 != 1 || REF_1 == 1 || REF_2 == 1){
+		//if(rank==0)fprintf(stderr, "Error! Derefinement near the pole works only for REF_1=0, REF_2=0, REF_3=1 \n");
+		//exit(20);
+		//return -1;
+	//}
+	if(rank==0)fprintf(stderr, "Derefining in phy by %d levels! \n", N_LEVELS_1D);
+
+	if (NB_2 != 6 && NB_2 != 12 && NB_2 != 24 && NB_2 != 48 && NB_2 != 96){
+		if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
 		exit(20);
 		return -1;
 	}
-	if (NB_2 % 6 != 0){
-		if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24,48 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
-		exit(20);
-		return -1;
-	}
-	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
-	for (l = 0; l < N_LEVELS - 1; l++){
+	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS_1D - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
+	for (l = 0; l < N_LEVELS_1D; l++){
 		pre_refine();
-		ni = NB_1*pow(1 + REF_1, l);
-		nj = NB_2*pow(1 + REF_2, l);
+		ni = NB_1*pow(1 + REF_1, 0);
+		nj = NB_2*pow(1 + REF_2, 0);
 		nz = NB_3*pow(1 + REF_3, l);
 		for (i = 0; i < ni; i++)for (j = pow(2, l); j < nj - (pow(2, l)); j++)for (z = 0; z < nz; z++){
 			if ((double)pow(2, l) < 0.25*NB_2){

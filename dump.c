@@ -268,7 +268,7 @@ void gdump_grid(FILE *fp)
 		int NB_print = NB;
 		fwrite(&NB_print, int_size, 1, fp);
 		for (n = 0; n <= n_max; n++){
-			for (k = 0; k < 36; k++){ //SASMARK: why is 36 hard-coded?
+			for (k = 0; k < NV; k++){ //SASMARK: why is 36 hard-coded?
 				fwrite(&(block[n][k]), int_size, 1, fp);
 			}
 		}

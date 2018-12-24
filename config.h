@@ -58,9 +58,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 1
+#define GPU_ENABLED 0
 #define GPU_DEBUG 0
-#define CPU_OPENMP 0
+#define CPU_OPENMP 1
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -88,9 +88,9 @@ Numerical Parameters section
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 26
-#define BS_2 26
-#define BS_3 26
+#define BS_1 8
+#define BS_2 8
+#define BS_3 8
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 2
@@ -104,7 +104,7 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
@@ -433,36 +433,36 @@ MNEMONICS SECTION
 #define AMR_NBR6_4 134
 #define AMR_NBR6_6 135
 #define AMR_NBR6_8 136
-#define AMR_NBR1P 137
-#define AMR_NBR2P 138
-#define AMR_NBR3P 139
-#define AMR_NBR4P 140
-#define AMR_NBR5P 141
-#define AMR_NBR6P 142
-#define AMR_CORN1_1 143
-#define AMR_CORN1_2 144
-#define AMR_CORN2_1 145
-#define AMR_CORN2_2 146
-#define AMR_CORN3_1 147
-#define AMR_CORN3_2 148
-#define AMR_CORN4_1 149
-#define AMR_CORN4_2 150
-#define AMR_CORN5_1 151
-#define AMR_CORN5_2 152
-#define AMR_CORN6_1 153
-#define AMR_CORN6_2 154
-#define AMR_CORN7_1 155
-#define AMR_CORN7_2 156
-#define AMR_CORN8_1 157
-#define AMR_CORN8_2 158
-#define AMR_CORN9_1 159
-#define AMR_CORN9_2 160
-#define AMR_CORN10_1 161
-#define AMR_CORN10_2 162
-#define AMR_CORN11_1 163
-#define AMR_CORN11_2 164
-#define AMR_CORN12_1 165
-#define AMR_CORN12_2 166
+#define AMR_CORN1_1 137
+#define AMR_CORN1_2 138
+#define AMR_CORN2_1 139
+#define AMR_CORN2_2 140
+#define AMR_CORN3_1 141
+#define AMR_CORN3_2 142
+#define AMR_CORN4_1 143
+#define AMR_CORN4_2 144
+#define AMR_CORN5_1 145
+#define AMR_CORN5_2 146
+#define AMR_CORN6_1 147
+#define AMR_CORN6_2 148
+#define AMR_CORN7_1 149
+#define AMR_CORN7_2 150
+#define AMR_CORN8_1 151
+#define AMR_CORN8_2 152
+#define AMR_CORN9_1 153
+#define AMR_CORN9_2 154
+#define AMR_CORN10_1 155
+#define AMR_CORN10_2 156
+#define AMR_CORN11_1 157
+#define AMR_CORN11_2 158
+#define AMR_CORN12_1 159
+#define AMR_CORN12_2 160
+#define AMR_NBR1P 161
+#define AMR_NBR2P 162
+#define AMR_NBR3P 163
+#define AMR_NBR4P 164
+#define AMR_NBR5P 165
+#define AMR_NBR6P 166
 #define AMR_CORN1P 167
 #define AMR_CORN2P 168
 #define AMR_CORN3P 169

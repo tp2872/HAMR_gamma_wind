@@ -70,8 +70,8 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 	X[0] = 0.0;
 	int j_local = j;
 	if (j < 0) j_local = -j - 1;
-	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL]) - 1 - j;
-	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2) j_local = j;
+	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j;
+	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && loc == FACE2) j_local = j;
 	if (loc == FACE1) {
 		X[1] = startx[1] + i*dx[nl[n]][1];
 		X[2] = startx[2] + (j_local + 0.5)*dx[nl[n]][2];
@@ -103,7 +103,7 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 		X[2] = -X[2];
 		X[2] = X[2] - 1;
 	}
-	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL]) && loc == FACE2){
+	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && loc == FACE2){
 	}
 	else if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL])){
 		X[2] = X[2] + 1;
