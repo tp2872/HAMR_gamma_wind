@@ -405,7 +405,7 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 					ps[nl[n]][index_3D(n, i, -1, z)][k] = ps[nl[n]][index_3D(n, i, 0, z)][k];
 					ps[nl[n]][index_3D(n, i, -2, z)][k] = ps[nl[n]][index_3D(n, i, 1, z)][k];
 					#if(N2G==3)
-					ps[nl[n]][index_3D(n, -3, j, z)][k] = ps[nl[n]][index_3D(n, i, 2, z)][k];
+					ps[nl[n]][index_3D(n, i, -3, z)][k] = ps[nl[n]][index_3D(n, i, 2, z)][k];
 					#endif
 					#endif			
 					#endif

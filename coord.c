@@ -209,14 +209,14 @@ void set_points(int n)
 	startx[2] = -1.+1.*(1.-fractheta) ;
 	startx[3] = 0.;
 	if(Rout<=RTRANS){
-		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
 	else{
 		dx[nl[n]][1] = ((Rout - RTRANS + Xtrans *RADEXP*exp(pow(Xtrans, RADEXP))*pow(Xtrans, -1. + RADEXP)) / (RADEXP*exp(pow(Xtrans, RADEXP))*
-			pow(Xtrans, -1. + RADEXP)) - pow(log(Rin), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+			pow(Xtrans, -1. + RADEXP)) - pow(log(Rin), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
-	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
-	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
+	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
+	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

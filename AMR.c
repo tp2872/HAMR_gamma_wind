@@ -913,11 +913,7 @@ void balance_load(void){
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps, count_gpu[N_GPU];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	#if(DEREFINE_POLE && N_LEVELS_3D==1)
-	rm_order1();
-	#else
 	rm_order2();
-	#endif
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
 	if (numtasks_local > NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
 	do{

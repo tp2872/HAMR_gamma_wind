@@ -58,9 +58,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 0
+#define GPU_ENABLED 1
 #define GPU_DEBUG 0
-#define CPU_OPENMP 1
+#define CPU_OPENMP 0
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -84,16 +84,16 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 12
+#define NB_2 6
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 8
-#define BS_2 8
-#define BS_3 8
+#define BS_1 20
+#define BS_2 20
+#define BS_3 20
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -104,7 +104,7 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
