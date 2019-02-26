@@ -2720,7 +2720,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
+			emf[1 * (ksize)+global_id] = 0.0;
 		}
 	}
 }

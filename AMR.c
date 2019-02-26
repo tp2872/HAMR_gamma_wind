@@ -38,7 +38,6 @@ int AMR_coord_linear(int l, int i, int j, int z){
 
 int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
-
 	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
 	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
 
@@ -747,9 +746,9 @@ void set_AMR(void){
 			block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
 		}
 	}
-
 	//Set corn parent
 	for (n = 0; n <= n_max; n++){
+		z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]-1) - 1;
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
 
@@ -813,7 +812,9 @@ void set_AMR(void){
 			if (block[n][AMR_CORN9] != NB)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, (block[n][AMR_COORD3] + REF_3)/ (1 + REF_3));
+					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
+					if (z > z_max && PERIODIC3 == 1) z = 0;
+					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
 					if (block[n][AMR_CORN9_1] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9_1]][AMR_PARENT];
@@ -823,11 +824,13 @@ void set_AMR(void){
 		if (block[n][AMR_CORN10] >= 0){
 			if (block[n][AMR_CORN10] != NB)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
 			else{
-				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
+				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3	
 					if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
 				}
 				else{
-					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, (block[n][AMR_COORD3] + REF_3) / (1 + REF_3));
+					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
+					if (z > z_max && PERIODIC3 == 1) z = 0;
+					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
 		}
@@ -838,7 +841,9 @@ void set_AMR(void){
 					if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
 				}
 				else{
-					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, (block[n][AMR_COORD3] - REF_3) / (1 + REF_3));
+					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
+					if (z < 0 && PERIODIC3 == 1) z = z_max;
+					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
 		}
@@ -846,7 +851,9 @@ void set_AMR(void){
 			if (block[n][AMR_CORN12] != NB)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, (block[n][AMR_COORD3] - REF_3) / (1 + REF_3));
+					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
+					if (z < 0 && PERIODIC3 == 1) z = z_max;
+					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
 					if (block[n][AMR_CORN12_1] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12_1]][AMR_PARENT];
@@ -2127,7 +2134,7 @@ int check_nesting(int n){
 	//Refine around pole
 	if (block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1){
 		if (rank==0) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
-		for (z = 0; z < NB_2*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++) block[AMR_coord_linear2(block[n][AMR_LEVEL], block[n][AMR_COORD2]/pow(1 + REF_2, block[n][AMR_LEVEL2]), block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3])][AMR_TAG] = 1;
+		for (z = 0; z < NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++) block[AMR_coord_linear2(block[n][AMR_LEVEL], block[n][AMR_COORD2]/pow(1 + REF_2, block[n][AMR_LEVEL2]), block[n][AMR_COORD1], block[n][AMR_COORD2], z)][AMR_TAG] = 1;
 		flag = 0;
 	}
 
@@ -2137,7 +2144,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.2 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 1.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
