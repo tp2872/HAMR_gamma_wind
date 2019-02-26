@@ -991,3 +991,13 @@ void set_corners(void){
 	}
 #endif
 }
+/*
+void check_corners(void){
+	int n;
+	for (n = 0; n < n_active_total; n++){
+		if (block[n_ord_total[n]][AMR_NBR1] >= 0 && block[block[n_ord_total[n]][AMR_NBR1]][AMR_ACTIVE] == 1){
+			if ()
+
+		}
+	}
+}*/

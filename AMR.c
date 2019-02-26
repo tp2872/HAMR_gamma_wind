@@ -842,7 +842,7 @@ void set_AMR(void){
 				}
 				else{
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
-					if (z < 0 && PERIODIC3 == 1) z = z_max;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
 					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
@@ -852,7 +852,7 @@ void set_AMR(void){
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
-					if (z < 0 && PERIODIC3 == 1) z = z_max;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
 					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{

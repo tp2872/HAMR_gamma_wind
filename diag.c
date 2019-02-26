@@ -68,7 +68,12 @@ void diag(int call_code)
 					zmax = z*pow(1 + REF_3, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					divbmax = divb;
 				}
-				//if(divb>0.0001)fprintf(stderr, "divb (%d,%d,%d): %f \n", i, j, z, divb);
+				//if (divb > 0.0001){
+					//fprintf(stderr, "divb (level: %d, level1: %d, level2: %d, level3: %d, coord1: %d, coord2: %d, coord3: %d) at (%d,%d,%d): %f \n", block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
+					//fprintf(stderr, "n: %d Corn10_1: %d Corn10_2: %d Corn10P: %d Corn12_1: %d Corn12_2: %d Corn12P: %d  \n", n_ord[n], block[n_ord[n]][AMR_CORN10_1], block[n_ord[n]][AMR_CORN10_2], block[n_ord[n]][AMR_CORN10P], block[n_ord[n]][AMR_CORN12_1], block[n_ord[n]][AMR_CORN12_2], block[n_ord[n]][AMR_CORN12P]);
+				//}
+				//int test = block[n][AMR_NBR3_1];
+				//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 			}
 		}
 		#if (MPI_enable)
