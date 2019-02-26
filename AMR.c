@@ -2412,13 +2412,13 @@ void check_refcrit(void){
 							free(temp_p[n_send]);
 							free(temp_ps[n_send]);
 							#if(GPU_ENABLED || GPU_DEBUG )
-							/*if (mem_spot_gpu[nl[n_send]] != -1) gpu_choice = mem_spot_gpu[nl[n_send]];
+							if (mem_spot_gpu[nl[n_send]] != -1) gpu_choice = mem_spot_gpu[nl[n_send]];
 							else {
 								gpu_choice = gpu_counter%N_GPU;
 								gpu_counter++;
 							}
 							set_arrays_GPU(n_send, gpu_choice);
-							GPU_write(n_send);*/
+							GPU_write(n_send);
 							#endif
 						}
 					}
