@@ -1943,11 +1943,11 @@ int refine(int n){
 		NODE_global[block[n][AMR_NODE] * N_GPU + block[n][AMR_GPU]] += (1 + REF_1)*(1 + REF_2)*(1 + REF_3) - 1;
 	}
 
-	if (rank == 0) if (block[n][AMR_ACTIVE] != 1) fprintf(stderr,"Error trying to refine non-active block %d \n", n);
-
-	gpu_local = block[n][AMR_GPU];
-	if (block[n][AMR_NODE] == rank){
-		//Calculate gradients, store in flux array F1, F2, F3
+	if (block[n][AMR_ACTIVE] == 0 && rank == 0) fprintf(stderr, "Watch out: trying to refine non-active block %d \n", n);
+	if (block[n][AMR_ACTIVE] == 1){
+		gpu_local = block[n][AMR_GPU];
+		if (block[n][AMR_NODE] == rank){
+			//Calculate gradients, store in flux array F1, F2, F3
 		#pragma omp parallel private(i, j, z,k)
 		{
 			#pragma omp for collapse(2) schedule(dynamic)
@@ -2085,25 +2085,26 @@ int refine(int n){
 			#endif
 		}
 
-	//Clean up memory of parent block
-	free_arrays(n);
-	#if(GPU_ENABLED || GPU_DEBUG )
-	GPU_finish(n, 0);
-	#endif
-}
-	//MPI_Barrier(mpi_cartcomm);
-	//Take note that block becomes refined
-	for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
-		block[block[n][i]][AMR_TIMELEVEL] = block[n][AMR_TIMELEVEL];
-		if (block[n][AMR_TIMELEVEL] >= 2)block[block[n][i]][AMR_TIMELEVEL] = block[n][AMR_TIMELEVEL] / 2;
-		else reduce_timestep = 1;
-		block[block[n][i]][AMR_NODE] = block[n][AMR_NODE];
-		block[block[n][i]][AMR_GPU] = gpu_local;
-		block[block[n][i]][AMR_ACTIVE] = 1;
+		//Clean up memory of parent block
+		free_arrays(n);
+		#if(GPU_ENABLED || GPU_DEBUG )
+		GPU_finish(n, 0);
+		#endif
+		}
+		//MPI_Barrier(mpi_cartcomm);
+		//Take note that block becomes refined
+		for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
+			block[block[n][i]][AMR_TIMELEVEL] = block[n][AMR_TIMELEVEL];
+			if (block[n][AMR_TIMELEVEL] >= 2)block[block[n][i]][AMR_TIMELEVEL] = block[n][AMR_TIMELEVEL] / 2;
+			else reduce_timestep = 1;
+			block[block[n][i]][AMR_NODE] = block[n][AMR_NODE];
+			block[block[n][i]][AMR_GPU] = gpu_local;
+			block[block[n][i]][AMR_ACTIVE] = 1;
+		}
+		block[n][AMR_GPU] = -1;
+		block[n][AMR_ACTIVE] = 0;
+		block[n][AMR_TIMELEVEL] = 1;
 	}
-	block[n][AMR_GPU]= -1;
-	block[n][AMR_ACTIVE] = 0;
-	block[n][AMR_TIMELEVEL] = 1;
 	return 1;
 }
 
@@ -2127,15 +2128,22 @@ int check_nesting(int n){
 	int flag = 1;
 	for (i = AMR_NBR1P; i <= AMR_CORN12P; i++){
 		if (block[n][i] >= 0 && block[block[n][i]][AMR_ACTIVE] == 1){
-			if (!refine(block[n][i])) flag = 0;
+			if (!refine(block[n][i])){
+				flag = 0;
+			}
 		}
 	}	
 
 	//Refine around pole
-	if (block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1){
-		if (rank==0) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
-		for (z = 0; z < NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++) block[AMR_coord_linear2(block[n][AMR_LEVEL], block[n][AMR_COORD2]/pow(1 + REF_2, block[n][AMR_LEVEL2]), block[n][AMR_COORD1], block[n][AMR_COORD2], z)][AMR_TAG] = 1;
-		flag = 0;
+	if (block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && flag == 1){
+		block[n][AMR_TAG] = 1;
+		if (rank == 0) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
+		if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5]][AMR_TAG]!=1){
+			block[block[n][AMR_NBR5]][AMR_TAG] = 1;
+			if (!refine(block[n][AMR_NBR5])){
+				flag = 0;
+			}
+		}
 	}
 
 	return flag;
@@ -2189,9 +2197,11 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
-				block[n_ord_total[n]][AMR_TAG] = 1;
 
+
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+				block[n_ord_total[n]][AMR_TAG] = 1;
+				
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
@@ -2222,7 +2232,7 @@ void check_refcrit(void){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}*/
 
-				if (block[n_ord_total[n]][AMR_TAG] == 1){
+				if (block[n_ord_total[n]][AMR_TAG] >= 1){
 					if (one_block_refined == 0){
 						pre_refine();
 						one_block_refined = 1;
@@ -2287,8 +2297,8 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
 				for (z = 0; z < NB_2*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++){
-					block[AMR_coord_linear2(block[n_ord_total[n]][AMR_LEVEL], block[n][AMR_COORD2]
-					/ pow(1 + REF_2, block[n_ord_total[n]][AMR_LEVEL2]), block[n_ord_total[n]][AMR_COORD1], block[n_ord_total[n]][AMR_COORD2], block[n_ord_total[n]][AMR_COORD3])][AMR_TAG] = 2;
+					block[AMR_coord_linear2(block[n_ord_total[n]][AMR_LEVEL], block[n_ord_total[n]][AMR_COORD2]
+					/ pow(1 + REF_2, block[n_ord_total[n]][AMR_LEVEL2]), block[n_ord_total[n]][AMR_COORD1], block[n_ord_total[n]][AMR_COORD2], z)][AMR_TAG] = 2;
 				}
 			}
 		}
@@ -2484,7 +2494,7 @@ int derefine_pole(void){
 		//exit(20);
 		//return -1;
 	//}
-	if(rank==0)fprintf(stderr, "Derefining in phy by %d levels! \n", N_LEVELS_1D);
+	if(rank==0)fprintf(stderr, "Derefining in phi by %d levels! \n", N_LEVELS_1D);
 
 	if (NB_2 != 6 && NB_2 != 12 && NB_2 != 24 && NB_2 != 48 && NB_2 != 96){
 		if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4 levels of derefinement near the pole! \n");
