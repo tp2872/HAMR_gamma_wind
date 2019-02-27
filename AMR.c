@@ -84,18 +84,17 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_set_coord(void){
-	int n, l, l_1D, l_3D, L_1DMAX, lc, i[N_LEVELS], j[N_LEVELS], z[N_LEVELS], keep_while, keep_looping, index, offset;
+	int n, l, l_1D, l_3D, L_1DMAX, lc, i[N_LEVELS], j[N_LEVELS], z[N_LEVELS], keep_looping, index, offset;
 
 	//Initialize counters
 	for (l = 0; l < N_LEVELS; l++) i[l] = j[l] = z[l] = 0;
 	l_1D = l_3D = l = 0;
 	n = 0;
-	keep_while = 1;
-	while (keep_while){
+	while (1){
 		//Set level based on values from last iteration
 		block[n][AMR_LEVEL1] = l_3D;
 		block[n][AMR_LEVEL2] = l_3D;
-		block[n][AMR_LEVEL3] = l_1D + l_3D;
+		block[n][AMR_LEVEL3] = (l_1D + l_3D);
 		l = l_1D + l_3D;
 		block[n][AMR_LEVEL] = l;
 	
@@ -112,8 +111,20 @@ void AMR_set_coord(void){
 		block[n][AMR_COORD1] = block[n][AMR_COORD2] = block[n][AMR_COORD3] = 0;
 		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD1] += i[lc] * pow(1 + (block[n][AMR_LEVEL] >= L_1DMAX)*REF_1, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
 		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD2] += j[lc] * pow(1 + (block[n][AMR_LEVEL] >= L_1DMAX)*REF_2, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
-		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, block[n][AMR_LEVEL] - lc);
-		
+		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++){
+			if (block[n][AMR_COORD2]/pow(1+REF_2,block[n][AMR_LEVEL2]) == 0){
+				block[n][AMR_LEVEL3] = ceil(log(block[n][AMR_COORD2] + 1) / log(2.))*REF_3;
+				block[n][AMR_COORD3] += z[lc] * (int)pow(1 + REF_3, block[n][AMR_LEVEL3] - lc);
+			}
+			else if (block[n][AMR_COORD2]/pow(1 + REF_2, block[n][AMR_LEVEL2]) == NB_2 - 1){
+				block[n][AMR_LEVEL3] = ceil(log(NB_2 - block[n][AMR_COORD2]) / log(2.))*REF_3;
+				block[n][AMR_COORD3] += z[lc] * (int)pow(1 + REF_3, block[n][AMR_LEVEL3] - lc);
+			}
+			else{
+				block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, block[n][AMR_LEVEL] - lc);
+			}
+		}
+
 		//Store in array such that one can recover linear coordinate based on 4D coordinate
 		offset = N_LEVELS_1D - L_1DMAX;
 		index = (int)(block[n][AMR_COORD1] * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + block[n][AMR_COORD2] * NB_3*pow(1 + REF_3, l + offset) + block[n][AMR_COORD3]);
@@ -123,7 +134,7 @@ void AMR_set_coord(void){
 		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0) fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 
 		//Break out of loop if maximum block number reached and set n_max
-		if (l == N_LEVELS_3D - 1 && block[n][AMR_COORD1] == NB_1*pow(1 + REF_1, l) - 1 && block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, l) - 1 && block[n][AMR_COORD3] == NB_3*pow(1 + REF_3, l) - 1){
+		if (l == N_LEVELS_3D - 1 && block[n][AMR_COORD1] == NB_1*pow(1 + REF_1, l) - 1 && block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, l) - 1 && block[n][AMR_COORD3] == NB_3 - 1){
 			n_max = n;
 			break;
 		}
@@ -156,7 +167,7 @@ void AMR_set_coord(void){
 				}
 				else{
 					z[l]++;
-					if (z[l] == 1 + REF_3){
+					if (z[l] == 1 + REF_3*(block[n][AMR_COORD2] != 0 && block[n][AMR_COORD2] != NB_2*pow(1+REF_2, block[n][AMR_LEVEL2]) - 1)){
 						z[l] = 0;
 						j[l]++;
 					}
@@ -2197,9 +2208,9 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
+//|| (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)
 
-
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
 				//Refine one level less near black hole
