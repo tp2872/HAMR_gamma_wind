@@ -112,13 +112,13 @@ void AMR_set_coord(void){
 		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD1] += i[lc] * pow(1 + (block[n][AMR_LEVEL] >= L_1DMAX)*REF_1, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
 		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++)	block[n][AMR_COORD2] += j[lc] * pow(1 + (block[n][AMR_LEVEL] >= L_1DMAX)*REF_2, block[n][AMR_LEVEL] - MY_MAX(lc, L_1DMAX));
 		for (lc = 0; lc <= block[n][AMR_LEVEL]; lc++){
-			if (block[n][AMR_COORD2]/pow(1+REF_2,block[n][AMR_LEVEL2]) == 0){
+			if (block[n][AMR_COORD2]/(int)pow(1+REF_2,block[n][AMR_LEVEL2]) == 0 && DEREFINE_POLE){
 				block[n][AMR_LEVEL3] = ceil(log(block[n][AMR_COORD2] + 1) / log(2.))*REF_3;
-				block[n][AMR_COORD3] += z[lc] * (int)pow(1 + REF_3, block[n][AMR_LEVEL3] - lc);
+				block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, MY_MIN(block[n][AMR_LEVEL] - lc, block[n][AMR_LEVEL3]));
 			}
-			else if (block[n][AMR_COORD2]/pow(1 + REF_2, block[n][AMR_LEVEL2]) == NB_2 - 1){
-				block[n][AMR_LEVEL3] = ceil(log(NB_2 - block[n][AMR_COORD2]) / log(2.))*REF_3;
-				block[n][AMR_COORD3] += z[lc] * (int)pow(1 + REF_3, block[n][AMR_LEVEL3] - lc);
+			else if (block[n][AMR_COORD2] / (int)pow(1 + REF_2, block[n][AMR_LEVEL2]) == (NB_2 - 1) && DEREFINE_POLE){
+				block[n][AMR_LEVEL3] = ceil(log(NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - block[n][AMR_COORD2]) / log(2.))*REF_3;
+				block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, MY_MIN(block[n][AMR_LEVEL] - lc, block[n][AMR_LEVEL3]));
 			}
 			else{
 				block[n][AMR_COORD3] += z[lc] * pow(1 + REF_3, block[n][AMR_LEVEL] - lc);
@@ -128,13 +128,14 @@ void AMR_set_coord(void){
 		//Store in array such that one can recover linear coordinate based on 4D coordinate
 		offset = N_LEVELS_1D - L_1DMAX;
 		index = (int)(block[n][AMR_COORD1] * NB_3*(int)pow(1 + REF_3, l + offset) * NB_2*pow(1 + REF_2*((l + offset) > N_LEVELS_1D), l - N_LEVELS_1D + offset) + block[n][AMR_COORD2] * NB_3*pow(1 + REF_3, l + offset) + block[n][AMR_COORD3]);
+		if (lin_coord[l + offset][index] != 0) fprintf(stderr, "Failure in setting grid! \n");
 		lin_coord[l + offset][index] = n;
 		lin_coord_RM[l + offset][index] = n;
 
-		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0) fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+		//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 
 		//Break out of loop if maximum block number reached and set n_max
-		if (l == N_LEVELS_3D - 1 && block[n][AMR_COORD1] == NB_1*pow(1 + REF_1, l) - 1 && block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, l) - 1 && block[n][AMR_COORD3] == NB_3 - 1){
+		if (l == N_LEVELS_3D - 1 && block[n][AMR_COORD1] == NB_1*pow(1 + REF_1, l) - 1 && block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, l) - 1 && block[n][AMR_COORD3] == NB_3*pow(1 + REF_3*(!DEREFINE_POLE), l) - 1){
 			n_max = n;
 			break;
 		}
@@ -167,7 +168,7 @@ void AMR_set_coord(void){
 				}
 				else{
 					z[l]++;
-					if (z[l] == 1 + REF_3*(block[n][AMR_COORD2] != 0 && block[n][AMR_COORD2] != NB_2*pow(1+REF_2, block[n][AMR_LEVEL2]) - 1)){
+					if (z[l] == 1 + REF_3*((block[n][AMR_COORD2] >= pow(1 + REF_2, block[n][AMR_LEVEL2] - l) && block[n][AMR_COORD2] < NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - pow(1 + REF_2, block[n][AMR_LEVEL2] - l)) || !DEREFINE_POLE)){
 						z[l] = 0;
 						j[l]++;
 					}
@@ -304,6 +305,7 @@ void set_AMR(void){
 				fprintf(stderr, "Something went wrong when setting children for each block! \n");
 				exit(0);
 			}
+
 			ref_1 = new_level1 - block[n][AMR_LEVEL1];
 			ref_2 = new_level2 - block[n][AMR_LEVEL2];
 			ref_3 = new_level3 - block[n][AMR_LEVEL3];
@@ -385,21 +387,25 @@ void set_AMR(void){
 		if (j - 1 < 0 && PERIODIC2 == 1) j1 = j_max;
 		else j1 = j - 1;
 		flag = 0;
-		for (l = 0; l < MY_MIN(level, N_LEVELS_1D); l++){
-			jbound=pow(1 + REF_2, l); 
-			if ((j == jbound * pow(1 + REF_2, block[n][AMR_LEVEL2])) || (j == (NB_2  - jbound) * pow(1 + REF_2, block[n][AMR_LEVEL2]))){
-				block[n][AMR_NBR1] = NB;
-				flag = 1;
-				break;
-			}
-
-		}
-		for (l = 1; l < N_LEVELS_3D; l++) {
-			if (block[n][AMR_LEVEL2] >= l) {
-				if ((j == pow(1 + REF_2, block[n][AMR_LEVEL2] - l)) || (j == (NB_2* pow(1 + REF_2, block[n][AMR_LEVEL2]) - pow(1 + REF_2, block[n][AMR_LEVEL2] - l)))) {
+		block[n][AMR_TAG1] = 0;
+		if (DEREFINE_POLE){
+			for (l = 0; l < MY_MIN(level, N_LEVELS_1D); l++){
+				jbound = pow(1 + REF_2, l);
+				if ((j == jbound * pow(1 + REF_2, block[n][AMR_LEVEL2])) || (j == (NB_2 - jbound) * pow(1 + REF_2, block[n][AMR_LEVEL2]))){
 					block[n][AMR_NBR1] = NB;
 					flag = 1;
 					break;
+				}
+
+			}
+			for (l = 1; l < N_LEVELS_3D; l++) {
+				if (block[n][AMR_LEVEL2] >= l) {
+					if ((j == pow(1 + REF_2, block[n][AMR_LEVEL2] - l)) || (j == (NB_2* pow(1 + REF_2, block[n][AMR_LEVEL2]) - pow(1 + REF_2, block[n][AMR_LEVEL2] - l)))) {
+						block[n][AMR_NBR1] = NB;
+						block[n][AMR_TAG1] = 1;
+						flag = 1;
+						break;
+					}
 				}
 			}
 		}
@@ -409,25 +415,31 @@ void set_AMR(void){
 		else if (j + 1 > j_max && PERIODIC2 == 0) j1 = -1;
 		else j1 = j + 1;
 		flag = 0;
-		for (l = 0; l < MY_MIN(level, N_LEVELS_1D); l++){
-			jbound = pow(1 + REF_2, l);
-			if (j == ((NB_2 - jbound)* pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) || (j == jbound* pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1)){
-				block[n][AMR_NBR3] = NB;
-				//if (i == 0 && z == 0)fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
-				flag = 1;
-				break;
-			}
-		}
-		for (l = 1; l < N_LEVELS_3D; l++) {
-			if (block[n][AMR_LEVEL2] >= l) {
-				if ((j == pow(1 + REF_2, block[n][AMR_LEVEL2] - l)-1) || (j == (NB_2* pow(1 + REF_2, block[n][AMR_LEVEL2]) - pow(1 + REF_2, block[n][AMR_LEVEL2] - l) - 1))) {
+		block[n][AMR_TAG3] = 0;
+		if (DEREFINE_POLE){
+			for (l = 0; l < MY_MIN(level, N_LEVELS_1D); l++){
+				jbound = pow(1 + REF_2, l);
+				if (j == ((NB_2 - jbound)* pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) || (j == jbound* pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1)){
 					block[n][AMR_NBR3] = NB;
 					flag = 1;
 					break;
 				}
 			}
+			for (l = 1; l < N_LEVELS_3D; l++) {
+				if (block[n][AMR_LEVEL2] >= l) {
+					if ((j == pow(1 + REF_2, block[n][AMR_LEVEL2] - l) - 1) || (j == (NB_2* pow(1 + REF_2, block[n][AMR_LEVEL2]) - pow(1 + REF_2, block[n][AMR_LEVEL2] - l) - 1))) {
+						block[n][AMR_NBR3] = NB;
+						block[n][AMR_TAG3] = 3;
+						flag = 1;
+						break;
+					}
+				}
+			}
 		}
 		if (flag == 0) block[n][AMR_NBR3] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z);
+
+		//if (block[n][AMR_TAG1]==1)fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+
 
 		//Set transmissive pole
 		block[n][AMR_POLE] = 0; 
@@ -443,8 +455,9 @@ void set_AMR(void){
 			block[n][AMR_NBR3] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
 		}
 		#endif
+
 	}
-		
+
 	//Find corners of block assuming only third dimension is periodic
 	for (n = 0; n <= n_max; n++){
 		//Set maximum coordinates
@@ -561,7 +574,7 @@ void set_AMR(void){
 
 	//Set 2-way grid to negative
 	for (n = 0; n <= n_max; n++) for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) block[n][i] = -1;
-	
+
 	//Set 2-way grid hierarchy
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
@@ -580,17 +593,19 @@ void set_AMR(void){
 			else{
 				//Difference in REF_1, REF_2
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
-					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
-						block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL], MY_MAX(j0 - 1,0), block[n][AMR_COORD1] * (1 + REF_1), block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
+					if (block[n][AMR_LEVEL1] + (block[n][AMR_TAG1] == 1)< N_LEVELS_3D - 1){
+						//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+						block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] * (1 + REF_1), block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
 						block[n][AMR_NBR1_4] = block[n][AMR_NBR1_3];
-						block[n][AMR_NBR1_7] = AMR_coord_linear2(block[n][AMR_LEVEL], MY_MAX(j0 - 1, 0), block[n][AMR_COORD1] * (1 + REF_1) + REF_1, block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
+						block[n][AMR_NBR1_7] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] * (1 + REF_1) + REF_1, block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
 						block[n][AMR_NBR1_8] = block[n][AMR_NBR1_7];
 					}
 				}
 				else{ //Difference in REF_3
+					//fprintf(stderr, "n2: %d tag: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_TAG1], block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
-					block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, MY_MAX(j0 - 1, 0), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] * (1 + REF_3));
-					block[n][AMR_NBR1_4] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, MY_MAX(j0 - 1, 0), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] * (1 + REF_3) + 1);
+					block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] * (1 + REF_3));
+					block[n][AMR_NBR1_4] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] * (1 + REF_3) + 1);
 					block[n][AMR_NBR1_7] = block[n][AMR_NBR1_3];
 					block[n][AMR_NBR1_8] = block[n][AMR_NBR1_4];
 					//int test = block[n][AMR_NBR1_3];
@@ -615,18 +630,18 @@ void set_AMR(void){
 				//Difference in REF_3
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
 					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
-					block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] * (1 + REF_3));
-					block[n][AMR_NBR3_2] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] * (1 + REF_3) + 1);
+					block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] * (1 + REF_3));
+					block[n][AMR_NBR3_2] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] * (1 + REF_3) + 1);
 					block[n][AMR_NBR3_5] = block[n][AMR_NBR3_1];
 					block[n][AMR_NBR3_6] = block[n][AMR_NBR3_2];
 					//int test = block[n][AMR_NBR3_1];
 					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 				}
 				else{ //Difference in REF_1, REF_2
-					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
-						block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL], MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1] * (1 + REF_1), (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
+					if (block[n][AMR_LEVEL1] + (block[n][AMR_TAG3] == 3) < N_LEVELS_3D - 1){
+						block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] * (1 + REF_1), (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
 						block[n][AMR_NBR3_2] = block[n][AMR_NBR3_1];
-						block[n][AMR_NBR3_5] = AMR_coord_linear2(block[n][AMR_LEVEL], MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1] * (1 + REF_1) + REF_1, (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
+						block[n][AMR_NBR3_5] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] * (1 + REF_1) + REF_1, (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
 						block[n][AMR_NBR3_6] = block[n][AMR_NBR3_5];
 					}
 				}
@@ -758,15 +773,17 @@ void set_AMR(void){
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
+		//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d tag: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_TAG1]);
 
 		if (block[n][AMR_NBR1] >= 0){
 			if (block[n][AMR_NBR1] != NB) block[n][AMR_NBR1P] = block[block[n][AMR_NBR1]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, MY_MAX(j0 - 1, 0), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
+					block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 				else{
-					block[n][AMR_NBR1P] = block[block[n][AMR_NBR1_3]][AMR_PARENT];
+					//block[n][AMR_NBR1P] = block[block[n][AMR_NBR1_3]][AMR_PARENT];
+					block[n][AMR_NBR1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 			}
 		}
@@ -779,10 +796,11 @@ void set_AMR(void){
 			}
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
-					block[n][AMR_NBR3P] = block[block[n][AMR_NBR3_1]][AMR_PARENT];
+					//block[n][AMR_NBR3P] = block[block[n][AMR_NBR3_1]][AMR_PARENT];
+					block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 				else{ //Difference in REF_3
-					block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
+					block[n][AMR_NBR3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 			}
 		}
@@ -796,6 +814,7 @@ void set_AMR(void){
 			block[n][AMR_NBR6P] = block[block[n][AMR_NBR6]][AMR_PARENT];
 		}
 	}
+
 	//Set corn parent
 	for (n = 0; n <= n_max; n++){
 		z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]-1) - 1;
@@ -806,10 +825,11 @@ void set_AMR(void){
 			if (block[n][AMR_CORN1] != NB)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, MY_MAX(j0 - 1, 0), block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
+					block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 				else{
-					if (block[n][AMR_CORN1_1] >= 0)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN1_1] >= 0)block[n][AMR_CORN1P] = block[block[n][AMR_CORN1_1]][AMR_PARENT];
+					block[n][AMR_CORN1P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), (block[n][AMR_COORD1] + 1) / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 			}
 		}
@@ -817,10 +837,11 @@ void set_AMR(void){
 			if (block[n][AMR_CORN2] != NB)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					if (block[n][AMR_CORN2_1] >= 0)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN2_1] >= 0)block[n][AMR_CORN2P] = block[block[n][AMR_CORN2_1]][AMR_PARENT];
+					block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), (block[n][AMR_COORD1] + 1) / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 				else{
-					block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
+					block[n][AMR_CORN2P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] + 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 			}
 		}
@@ -828,10 +849,11 @@ void set_AMR(void){
 			if (block[n][AMR_CORN3] != NB)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					if (block[n][AMR_CORN3_1] >= 0)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN3_1] >= 0)block[n][AMR_CORN3P] = block[block[n][AMR_CORN3_1]][AMR_PARENT];
+					block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), (block[n][AMR_COORD1] - 1) / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 				else{
-					block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, MY_MIN(j0 + 1, NB_2 - 1), block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
+					block[n][AMR_CORN3P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] + 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 			}
 		}
@@ -839,10 +861,11 @@ void set_AMR(void){
 			if (block[n][AMR_CORN4] != NB)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, MY_MAX(j0 - 1, 0), block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
+					block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] - 1, block[n][AMR_COORD2] - 1, block[n][AMR_COORD3] / (1 + REF_3));
 				}
 				else{
-					if (block[n][AMR_CORN4_1] >= 0)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN4_1] >= 0)block[n][AMR_CORN4P] = block[block[n][AMR_CORN4_1]][AMR_PARENT];
+					block[n][AMR_CORN4P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), (block[n][AMR_COORD1] - 1) / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), block[n][AMR_COORD3]);
 				}
 			}
 		}
@@ -860,14 +883,17 @@ void set_AMR(void){
 		}
 		if (block[n][AMR_CORN9] >= 0){
 			if (block[n][AMR_CORN9] != NB)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9]][AMR_PARENT];
-			else{
+			else{		
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
 					if (z > z_max && PERIODIC3 == 1) z = 0;
-					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
+					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
-					if (block[n][AMR_CORN9_1] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN9_1] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9_1]][AMR_PARENT];
+					z = (block[n][AMR_COORD3] + REF_3);
+					if (z > z_max * (1+REF_3) && PERIODIC3 == 1) z = 0;
+					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}
 		}
@@ -875,12 +901,15 @@ void set_AMR(void){
 			if (block[n][AMR_CORN10] != NB)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3	
-					if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
+					z = (block[n][AMR_COORD3] + REF_3);
+					if (z > z_max * (1 + REF_3) && PERIODIC3 == 1) z = 0;
+					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), z);
 				}
 				else{
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
 					if (z > z_max && PERIODIC3 == 1) z = 0;
-					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
+					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
 		}
@@ -888,12 +917,15 @@ void set_AMR(void){
 			if (block[n][AMR_CORN11] != NB)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11]][AMR_PARENT];
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
-					if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
+					z = (block[n][AMR_COORD3] - REF_3);
+					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max *(1 + REF_3);
+					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), z);
 				}
 				else{
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
 					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
-					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 + 1, block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
+					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
 			}
 		}
@@ -903,10 +935,13 @@ void set_AMR(void){
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
 					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
-					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - 1, j0 - 1, block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
+					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
-					if (block[n][AMR_CORN12_1] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12_1]][AMR_PARENT];
+					//if (block[n][AMR_CORN12_1] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12_1]][AMR_PARENT];
+					z = (block[n][AMR_COORD3] - REF_3);
+					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max *(1 + REF_3);
+					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}
 		}
@@ -2320,6 +2355,7 @@ void check_refcrit(void){
 	do{
 		count++;
 		tag = 0;
+
 		for (n = 0; n < n_active_total; n++){
 			//derefine
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][AMR_LEVEL1] > 0){
@@ -2345,10 +2381,10 @@ void check_refcrit(void){
 
 		//Do not derefine block around pole
 		for (n = 0; n < n_active_total; n++){
-			if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
-				for (z = 0; z < NB_2*pow(1 + REF_3, block[n][AMR_LEVEL3]); z++){
-					block[AMR_coord_linear2(block[n_ord_total[n]][AMR_LEVEL], block[n_ord_total[n]][AMR_COORD2]
-					/ pow(1 + REF_2, block[n_ord_total[n]][AMR_LEVEL2]), block[n_ord_total[n]][AMR_COORD1], block[n_ord_total[n]][AMR_COORD2], z)][AMR_TAG] = 2;
+			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
+				for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
+					block[AMR_coord_linear2(block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2]
+						/ pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]), block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD1], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2], z)][AMR_TAG] = 2;
 				}
 			}
 		}
@@ -2394,6 +2430,7 @@ void check_refcrit(void){
 				}
 			}
 		}
+
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Receive blocks
 		for (n = 0; n < n_active_total; n++){
@@ -2445,6 +2482,7 @@ void check_refcrit(void){
 				}
 			}
 		}
+		fprintf(stderr, "test15\n");
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Allocate arrays on receiving side
 		for (n = 0; n < n_active_total; n++){
@@ -2500,7 +2538,7 @@ void check_refcrit(void){
 
 				//Then derefine and set corresponding tag and timelevel
 				one_block_derefined = 1;
-				derefine(block[n_ord_total[n]][AMR_PARENT]);
+				//derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
@@ -2508,6 +2546,7 @@ void check_refcrit(void){
 		if (one_block_derefined == 1)post_refine();
 
 		balance_load();
+
 		#if(GPU_ENABLED)
 		balance_load_gpu();
 		#endif
@@ -2607,7 +2646,7 @@ void rm_order2(void){
 	int counter2 = 0;
 	for (n = 0; n <= n_max; n++){
 		AMR_coord_cart_RM(n, &l, &i, &j, &z); //transform to cartesian grid coordinates
-		number = AMR_coord_linear2(l,j/pow(1+REF_2,block[n][AMR_LEVEL2]), i, j, z); //transform to normal lineair ordering
+		number = AMR_coord_linear2(l,j/(int)pow(1+REF_2,block[n][AMR_LEVEL2]), i, j, z); //transform to normal lineair ordering
 		if (block[number][AMR_ACTIVE] == 1){
 			n_ord_total_RM[counter] = number;
 			counter++;

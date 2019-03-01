@@ -58,9 +58,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 0
+#define GPU_ENABLED 1
 #define GPU_DEBUG 0
-#define CPU_OPENMP 1
+#define CPU_OPENMP 0
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -84,16 +84,16 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 6
+#define NB_2 12
 #define NB_3 2
 
 /*Set block size in each dimension*/
 #define BS_1 20
-#define BS_2 20
-#define BS_3 20
+#define BS_2 10
+#define BS_3 10
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 3
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -296,7 +296,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 179
+#define NV 181
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -475,6 +475,8 @@ MNEMONICS SECTION
 #define AMR_CORN10P 176
 #define AMR_CORN11P 177
 #define AMR_CORN12P 178
+#define AMR_TAG1 179
+#define AMR_TAG3 180
 
 /*************************************************************************
 Variable Inversion Section
@@ -570,28 +572,33 @@ Section with derived quantities
 #endif
 #elif(REF_3+REF_2+REF_1==3)
 #if (N_LEVELS_3D==1)
-#define FACTOR (1)
+#define FACTOR1 (1)
+#define FACTOR2 (1)
 #elif(N_LEVELS_3D==2)
-#define FACTOR (8+1)
+#define FACTOR1 (8+1)
+#define FACTOR2 ((6)+1)
 #elif(N_LEVELS_3D==3)
-#define FACTOR (8*8+8+1)
+#define FACTOR1 (8*8+8+1)
+#define FACTOR2 ((4*8+2*6)+6+1)
 #elif(N_LEVELS_3D==4)
-#define FACTOR (8*8*8+8*8+8+1)
+#define FACTOR1 (8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8+2*(4*8+2*6))+4*8+2*6+6+1)
 #elif(N_LEVELS_3D==5)
-#define FACTOR (8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR1 (8*8*8*8+8*8*8+8*8+8+1)
+#define FACTOR2 ((4*8*8*8+2*(4*8*8+2*(4*8+2*6)))+4*8*8+2*(4*8+2*6)+4*8+2*6+6+1)
 #endif
 #if (N_LEVELS_1D==0)
-#define NB (NB_1*NB_2*NB_3*FACTOR)
+#define NB (NB_1*NB_2*NB_3*FACTOR1)
 #elif (N_LEVELS_1D==1)
-#define NB (NB_1*NB_3*(2*4*FACTOR+2*(FACTOR-2*REF_3)+4))
+#define NB (NB_1*NB_3*(2*4*FACTOR1+2*(FACTOR2)+4))
 #elif(N_LEVELS_1D==2)
-#define NB (NB_1*NB_3*((4*8*FACTOR)+(2*2*FACTOR+2*8)+(2*(FACTOR-2*REF_3)+10)))
+#define NB (NB_1*NB_3*((4*8*FACTOR1)+(2*2*FACTOR1+2*8)+(2*(FACTOR2)+10)))
 #elif(N_LEVELS_1D==3)
-#define NB (NB_1*NB_3*((8*16*FACTOR)+(4*4*FACTOR+4*16)+(2*2*FACTOR+2*20)+(2*(FACTOR-2*REF_3)+22)))
+#define NB (NB_1*NB_3*((8*16*FACTOR1)+(4*4*FACTOR1+4*16)+(2*2*FACTOR1+2*20)+(2*(FACTOR2)+22)))
 #elif(N_LEVELS_1D==4)
-#define NB (NB_1*NB_3*((16*32*FACTOR)+(8*8*FACTOR+8*32)+(4*4*FACTOR+4*40)+(2*2*FACTOR+2*44)+(2*(FACTOR-2*REF_3)+46)))
+#define NB (NB_1*NB_3*((16*32*FACTOR1)+(8*8*FACTOR1+8*32)+(4*4*FACTOR1+4*40)+(2*2*FACTOR1+2*44)+(2*(FACTOR2)+46)))
 #elif(N_LEVELS_1D==5)
-#define NB (NB_1*NB_3*((32*64*FACTOR)+(16*16*FACTOR+16*64)+(8*8*FACTOR+8*80)+(4*4*FACTOR+4*88)+(2*2*FACTOR+2*92)+(2*(FACTOR-2*REF_3)+94)))
+#define NB (NB_1*NB_3*((32*64*FACTOR1)+(16*16*FACTOR1+16*64)+(8*8*FACTOR1+8*80)+(4*4*FACTOR1+4*88)+(2*2*FACTOR1+2*92)+(2*(FACTOR2)+94)))
 #endif
 #elif(REF_3+REF_2+REF_1==1)
 #if (N_LEVELS==1)
