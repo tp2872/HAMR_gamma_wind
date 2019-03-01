@@ -301,20 +301,24 @@ void dump_block(MPI_File *fp, int n)
 	int i, j, z, k;
 	struct of_geom geom;
 	struct of_state q;
+    long int array_offset, i3D;
 
 	#pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom,q)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 0] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 1] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
+        array_offset = (i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP;
+        i3D = index_3D(n, i, j, z);
+        
+		array[nl[n]][array_offset + 0] = (float)p[nl[n]][i3D][RHO];
+		array[nl[n]][array_offset + 1] = (float)p[nl[n]][i3D][UU];
 
 		get_geometry(n, i, j, z, CENT, &geom);
 		get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 
-		for (k = 0; k < NDIM; k++) array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (k + 2)] = (float)q.ucon[k];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 6] = (float)p[nl[n]][index_3D(n, i, j, z)][5];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 7] = (float)p[nl[n]][index_3D(n, i, j, z)][6];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 8] = (float)p[nl[n]][index_3D(n, i, j, z)][7];
-        array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 9] = (float)p[nl[n]][index_3D(n, i, j, z)][9];
+		for (k = 0; k < NDIM; k++) array[nl[n]][array_offset + (k + 2)] = (float)q.ucon[k];
+		array[nl[n]][array_offset + 6] = (float)p[nl[n]][i3D][B1];
+		array[nl[n]][array_offset + 7] = (float)p[nl[n]][i3D][B2];
+		array[nl[n]][array_offset + 8] = (float)p[nl[n]][i3D][B3];
+        array[nl[n]][array_offset + 9] = (float)p[nl[n]][i3D][TAU];
 
 	}
 	#if(PARALLEL_IO)
