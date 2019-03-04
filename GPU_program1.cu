@@ -2941,7 +2941,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	#endif
 
 	if (icurr >= imin[0] && jcurr >= jmin[0] && zcurr >= zmin[0] && icurr<imax[0] && jcurr<jmax[0]  && zcurr<zmax[0] && k==1){
-		psf[global_id] = psi[global_id - zoffset];
+		psf[global_id] = psi[global_id];
 		for (u = 0; u < zsize; u++){
 			psf[global_id] += -Dt / ((double)zsize*dx_2)*(E_corn[3 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] - E_corn[3 * ksize + global_id - zoffset + u]) / gdet_GPU[index1-NSY*(zoffset-u)];
 		}
@@ -2950,7 +2950,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 		#endif
 	}
 	if (icurr >= imin[1] && jcurr >= jmin[1] && zcurr >= zmin[1] && icurr<imax[1] && jcurr<jmax[1] && zcurr<zmax[1] && k == 1){
-		psf[1 * ksize + global_id] = psi[1 * ksize + global_id - zoffset];
+		psf[1 * ksize + global_id] = psi[1 * ksize + global_id];
 		for (u = 0; u < zsize; u++){
 			psf[1 * ksize + global_id] += Dt / ((double)zsize*dx_1)*(E_corn[3 * ksize + global_id + isize - zoffset + u] - E_corn[3 * ksize + global_id - zoffset + u]) / gdet_GPU[index2 - NSY*(zoffset - u)];
 		}
@@ -2960,7 +2960,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	}
 	if (icurr >= imin[2] && jcurr >= jmin[2] && zcurr >= zmin[2] && icurr<imax[2] && jcurr<jmax[2] && zcurr<zmax[2] && k == 1){
 		#if(N3G>0)
-		psf[2 * ksize + global_id] = psi[2 * ksize + global_id - zoffset] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize - zoffset] - E_corn[2 * ksize + global_id - zoffset]) / gdet_GPU[index3 - NSY*(zoffset)];
+		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize - zoffset] - E_corn[2 * ksize + global_id - zoffset]) / gdet_GPU[index3 - NSY*(zoffset)];
 		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset] - E_corn[1 * ksize + global_id - zoffset]) / gdet_GPU[index3 - NSY*(zoffset)];
 		#endif
 	}
