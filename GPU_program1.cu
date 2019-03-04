@@ -2043,7 +2043,7 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 	return(dot(q.bcon, q.bcov));
 }
 
-__global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int poststep_p)
+__global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int poststep_p, int POLE_1, int POLE_2)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
@@ -2136,62 +2136,92 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-
+	int zsize = 1, zlevel = 0, zoffset = 0, z1, z2, z3, z4, z5;
+	double x1, x2, x3, x4, x5;
+	double temp, result;
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	if (zcurr == N3G - D3) {
+		z1 = zcurr - 2 * zdel;
+		z2 = zcurr - 1 * zdel;
+		z3 = zcurr;
+		z4 = zcurr + 1 * zdel*zsize;
+		z5 = zcurr + 2 * zdel*zsize;
+	}
+	else if (zcurr - zoffset == N3G) {
+		z1 = zcurr - zoffset - 2 * zdel;
+		z2 = zcurr - zoffset - 1 * zdel;
+		z3 = zcurr - zoffset;
+		z4 = zcurr - zoffset + 1 * zdel*zsize;
+		z5 = zcurr - zoffset + 2 * zdel*zsize;
+	}
+	else if (zcurr - zoffset == N3G + zdel*zsize) {
+		z1 = zcurr - zoffset - 1 * zdel*zsize - 1 * zdel;
+		z2 = zcurr - zoffset - 1 * zdel*zsize;
+		z3 = zcurr - zoffset;
+		z4 = zcurr - zoffset + 1 * zdel*zsize;
+		z5 = zcurr - zoffset + 2 * zdel*zsize;
+	}
+	else if (zcurr == BS_3 + N3G) {
+		z1 = zcurr - 2 * zdel*zsize;
+		z2 = zcurr - 1 * zdel*zsize;
+		z3 = zcurr;
+		z4 = zcurr + 1 * zdel;
+		z5 = zcurr + 2 * zdel;
+	}
+	else if (zcurr - zoffset == BS_3 + N3G - zdel*zsize) {
+		z1 = zcurr - zoffset - 2 * zdel*zsize;
+		z2 = zcurr - zoffset - 1 * zdel*zsize;
+		z3 = zcurr - zoffset;
+		z4 = zcurr - zoffset + zdel*zsize;
+		z5 = zcurr - zoffset + zdel*zsize + 1 * zdel;
+	}
+	else if (zcurr - zoffset == BS_3 + N3G - 2 * zdel*zsize) {
+		z1 = zcurr - zoffset - 2 * zdel*zsize;
+		z2 = zcurr - zoffset - 1 * zdel*zsize;
+		z3 = zcurr - zoffset;
+		z4 = zcurr - zoffset + 1 * zdel*zsize;
+		z5 = zcurr - zoffset + 2 * zdel*zsize;
+	}
+	else{
+		z1 = zcurr - zoffset - 2 * zdel*zsize;
+		z2 = zcurr - zoffset - 1 * zdel*zsize;
+		z3 = zcurr - zoffset;
+		z4 = zcurr - zoffset + 1 * zdel*zsize;
+		z5 = zcurr - zoffset + 2 * zdel*zsize;
+	}
+
 	if (k == 1){
 		#if(PPM)
-		double x1, x2, x3, x4, x5, temp[1], result[1];
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x1 = p[MY_MAX(k*(ksize)+global_id - 2 * zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel,0)];
-			x2 = p[MY_MAX(k*(ksize)+global_id - 1 * zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel,0)];
-			x3 = p[k*(ksize)+global_id];
-			x4 = p[MY_MIN(k*(ksize)+global_id + 1 * zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			x5 = p[MY_MIN(k*(ksize)+global_id + 2 * zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)+fix_mem1))];
-			para(x1, x2, x3, x4, x5, result, temp);
-			dq1[k*(ksize)+global_id] = result[0];
-			dq2[k*(ksize)+global_id] = temp[0];
-		}
-		#elif(LEER)
-		double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
-		double CFL = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XL);
-		double CBL = (V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
-			(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(dir - 1)*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-		for (k = 0; k<NPR; k++){
-			double d_C = (p[k*ksize + global_id] - p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-			double d_L = (p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - p[k*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
-				(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]);
-			if (d_L*d_C <= 0.){
-				dq1[k*(ksize)+global_id] = p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
-			}
-			else{
-				dq1[k*(ksize)+global_id] = p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] + (d_XL*d_L*d_C*(CFL*d_L + CBL*d_C)) / (d_L*d_L + (CFL + CBL - 2.)*d_C*d_L + d_C*d_C);
-			}
-		}
-		double d_XL = V[(dir - 1)*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)];
-		double d_XR = V[(3 + (dir - 1))*ksize + global_id] - V[(dir - 1)*ksize + global_id];
-		double CFL = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XL);
-		double CBL = (V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id - 2 * (dir == 1)*isize - 2 * (dir == 2)*jsize - 2 * (dir == 3)]) /
-			(V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)] - V[(dir - 1)*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-		double CFR = (V[(3 + (dir - 1))*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id])
-			/ (V[(dir - 1)*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id]);
-		double CBR = (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (d_XR);
-		for (k = 0; k<NPR; k++){
-			double d_C = (p[k*ksize + global_id] - p[k*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]) / (V[(3 + (dir - 1))*ksize + global_id] - V[(3 + (dir - 1))*ksize + global_id - (dir == 1)*isize - (dir == 2)*jsize - (dir == 3)]);
-			double d_R = (p[k*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - p[k*ksize + global_id]) / (V[(3 + (dir - 1))*ksize + global_id + (dir == 1)*isize + (dir == 2)*jsize + (dir == 3)] - V[(3 + (dir - 1))*ksize + global_id]);
-			if (d_R*d_C <= 0.){
-				dq2[k*(ksize)+global_id] = p[k*ksize + global_id];
-			}
-			else{
-				dq2[k*(ksize)+global_id] = p[k*ksize + global_id] - (d_XR*d_R*d_C*(CFL*d_R + CBL*d_C)) / (d_R*d_R + (CFL + CBL - 2.)*d_C*d_R + d_C*d_C);
-			}
+			x1 = p[MY_MAX(k*(ksize)+global_id - zcurr + z1 - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
+			x2 = p[MY_MAX(k*(ksize)+global_id - zcurr + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x3 = p[k*(ksize)+global_id - zcurr + z3];
+			x4 = p[MY_MIN(k*(ksize)+global_id - zcurr + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x5 = p[MY_MIN(k*(ksize)+global_id - zcurr + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			para(x1, x2, x3, x4, x5, &result, &temp);
+			dq1[k*(ksize)+global_id] = result;
+			dq2[k*(ksize)+global_id] = temp;
 		}
 		#else
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			dq1[k*(ksize)+global_id] = slope_lim(p[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel], p[k*(ksize)+global_id], p[k*(ksize)+global_id + idel*isize + jdel*(BS_3 + 2 * N3G) + zdel], 0);
+			x2 = p[MY_MAX(k*(ksize)+global_id - zcurr + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x3 = p[k*(ksize)+global_id - zcurr + z3];
+			x4 = p[MY_MIN(k*(ksize)+global_id - zcurr + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			temp=0.5*slope_lim(x2, x3, x4, 0)
+			dq1[k*(ksize)+global_id] = x3-temp;
+			dq2[k*(ksize)+global_id] = x3+temp;
 		}
 		#endif
 	}
@@ -2311,23 +2341,24 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3; }
+
+	int zsize = 1, zlevel = 0, zoffset = 0;
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
-		#if(PPM || LEER)
 		for (k = 0; k < NPR; k++){
-			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
+			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zoffset*zdel - zsize*zdel];
 		}
-		#else
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
-			#if AMD
-			p[k] = fma(0.5, dq1[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel], pv[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel]);
-			#else
-			p[k] = pv[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel] + 0.5*dq1[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
-			#endif
-		}
-		#endif
+	
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
 			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
@@ -2349,21 +2380,11 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l, gam);
 		//vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
 
-		#if(PPM || LEER)
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++){
 			p[k] = dq1[k*(ksize)+global_id];
 		}
-		#else
-		#pragma unroll 9
-		for (k = 0; k< NPR; k++){
-			#if AMD
-			p[k] = fma(-0.5, dq1[k*(ksize)+global_id], pv[k*(ksize)+global_id]);
-			#else
-			p[k] = pv[k*(ksize)+global_id] - 0.5*dq1[k*(ksize)+global_id];
-			#endif
-		}
-		#endif
+
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
 			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
@@ -2389,13 +2410,13 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			#if(HLLF)
-			F[k*(ksize)+global_id] = (cmax*temp1[k] +cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+			F[k*(ksize)+global_id] = (cmax*temp1[k] + cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
 			#else
 			F[k*(ksize)+global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
 			#endif
 		}
 
-		local_dtij[local_id] = factor / ctop;
+		local_dtij[local_id] = factor*(double)(zsize) / ctop;
 	}
 	if (calc_time == 1){
 		__syncthreads();
@@ -2720,13 +2741,13 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = 0.0;
+			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
 		}
 	}
 }
 
 __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
-	const  double* __restrict__  E_corn, double Dt, int poststep_p)
+	const  double* __restrict__  E_corn, double Dt, int poststep_p, int POLE_1, int POLE_2)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0, i, imin[3], jmin[3], zmin[3], imax[3], jmax[3], zmax[3];
@@ -2900,6 +2921,15 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int zsize = 1, zlevel=0, zoffset=0, u;
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
 	#if(NSY)
 	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
 	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
@@ -2911,21 +2941,27 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	#endif
 
 	if (icurr >= imin[0] && jcurr >= jmin[0] && zcurr >= zmin[0] && icurr<imax[0] && jcurr<jmax[0]  && zcurr<zmax[0] && k==1){
-		psf[global_id] = psi[global_id] - Dt / dx_2*(E_corn[3 * ksize + global_id + (BS_3 + 2 * N3G)] - E_corn[3 * ksize + global_id]) / gdet_GPU[index1];;
+		psf[global_id] = psi[global_id - zoffset];
+		for (u = 0; u < zsize; u++){
+			psf[global_id] += -Dt / ((double)zsize*dx_2)*(E_corn[3 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] - E_corn[3 * ksize + global_id - zoffset + u]) / gdet_GPU[index1-NSY*(zoffset-u)];
+		}
 		#if(N3G>0)
-		psf[global_id] += Dt / dx_3*(E_corn[2 * ksize + global_id + D3] - E_corn[2 * ksize + global_id]) / gdet_GPU[index1];;
+		psf[global_id] += Dt / ((double)zsize*dx_3)*(E_corn[2 * ksize + global_id - zoffset + D3*zsize] - E_corn[2 * ksize + global_id - zoffset]) / gdet_GPU[index1 - NSY*(zoffset)];
 		#endif
 	}
 	if (icurr >= imin[1] && jcurr >= jmin[1] && zcurr >= zmin[1] && icurr<imax[1] && jcurr<jmax[1] && zcurr<zmax[1] && k == 1){
-		psf[1 * ksize + global_id] = psi[1 * ksize + global_id] + Dt / dx_1*(E_corn[3 * ksize + global_id + isize] - E_corn[3 * ksize + global_id]) / gdet_GPU[index2];;
+		psf[1 * ksize + global_id] = psi[1 * ksize + global_id - zoffset];
+		for (u = 0; u < zsize; u++){
+			psf[1 * ksize + global_id] += Dt / ((double)zsize*dx_1)*(E_corn[3 * ksize + global_id + isize - zoffset + u] - E_corn[3 * ksize + global_id - zoffset + u]) / gdet_GPU[index2 - NSY*(zoffset - u)];
+		}
 		#if(N3G>0)
-		psf[1 * ksize + global_id] += -Dt / dx_3*(E_corn[1 * ksize + global_id + D3] - E_corn[1 * ksize + global_id]) / gdet_GPU[index2];;
+		psf[1 * ksize + global_id] += -Dt / ((double)zsize*dx_3)*(E_corn[1 * ksize + global_id - zoffset + D3*zsize] - E_corn[1 * ksize + global_id - zoffset]) / gdet_GPU[index2 - NSY*(zoffset)];
 		#endif
 	}
 	if (icurr >= imin[2] && jcurr >= jmin[2] && zcurr >= zmin[2] && icurr<imax[2] && jcurr<jmax[2] && zcurr<zmax[2] && k == 1){
 		#if(N3G>0)
-		psf[2 * ksize + global_id] = psi[2 * ksize + global_id] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize] - E_corn[2 * ksize + global_id]) / gdet_GPU[index3];;
-		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G)] - E_corn[1 * ksize + global_id]) / gdet_GPU[index3];
+		psf[2 * ksize + global_id] = psi[2 * ksize + global_id - zoffset] - Dt / dx_1*(E_corn[2 * ksize + global_id + isize - zoffset] - E_corn[2 * ksize + global_id - zoffset]) / gdet_GPU[index3 - NSY*(zoffset)];
+		psf[2 * ksize + global_id] += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset] - E_corn[1 * ksize + global_id - zoffset]) / gdet_GPU[index3 - NSY*(zoffset)];
 		#endif
 	}
 }
@@ -3797,7 +3833,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
-	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p)
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int poststep_p, int POLE_1, int POLE_2)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
@@ -3889,7 +3925,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-
 	struct of_geom geom;
 	struct of_state q;
 	int  dofloor = 0, m;
@@ -3898,12 +3933,22 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	double pf[NPR], pf_prefloor[NPR], dU[NPR], U[NPR];
 	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+	int zsize = 1, zlevel = 0, zoffset = 0, u;
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
 
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		if (full_step == 0){
-			for (k = 0; k<NPR; k++){
-				pf[k] = pi_i[k*(ksize)+global_id];
+			for (k = 0; k < NPR; k++){
+				for (u = 0; u < zsize; u++){
+					pf[k] += (1.0/((double)zsize))*pi_i[k*(ksize)+global_id-zoffset+u];
+				}
 			}
 			get_state(pf, &geom, &q);
 			primtoU(pf, &q, &geom, U, gam);
@@ -3927,14 +3972,16 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		}
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			#if( N1G > 0 )
-			U[k] -= Dt*(F1[k*(ksize)+global_id + isize] - F1[k*(ksize)+global_id]) / dx_1;
-			#endif
-			#if( N2G > 0 )
-			U[k] -= Dt*(F2[k*(ksize)+global_id + (BS_3 + 2 * N3G)] - F2[k*(ksize)+global_id]) / dx_2;
-			#endif
+			for (u = 0; u < zsize; u++){
+				#if( N1G > 0 )
+				U[k] -= Dt*(F1[k*(ksize)+global_id + isize - zoffset + u] - F1[k*(ksize)+global_id - zoffset + u]) / (dx_1*(double)zsize);
+				#endif
+				#if( N2G > 0 )
+				U[k] -= Dt*(F2[k*(ksize)+global_id + (BS_3 + 2 * N3G) - zoffset + u] - F2[k*(ksize)+global_id - zoffset + u]) / (dx_2*(double)zsize);
+				#endif
+			}
 			#if( N3G > 0 )
-			U[k] -= Dt*(F3[k*(ksize)+global_id + 1] - F3[k*(ksize)+global_id]) / dx_3;
+			U[k] -= Dt*(F3[k*(ksize)+global_id - zoffset + zsize] - F3[k*(ksize)+global_id - zoffset]) / (dx_3*(double)zsize);
 			#endif
 		}
 
@@ -3947,18 +3994,22 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		#if(NSY)
 		#if(STAGGERED)
-		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
-		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr]) / 2.0;
+		U[B1] = (psf[0 * ksize + global_id - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+		U[B2] = (psf[1 * ksize + global_id - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
 		#if(N3G>0)
-		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + D3)]) / 2.0;
+		U[B3] = (psf[2 * ksize + global_id - zoffset] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset] + psf[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr - zoffset + zsize * D3)]) / 2.0;
 		#endif
 		#endif
 		#else
 		#if(STAGGERED)
-		U[B1] = (psf[0 * ksize + global_id] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
-		U[B2] = (psf[1 * ksize + global_id] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G)] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / 2.0;
+		U[B1] = 0.0;
+		U[B2] = 0.0;
+		for (u = 0; u < zsize; u++){
+			U[B1] += (psf[0 * ksize + global_id - zoffset + u] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_2 + 2 * N2G) + jcurr]) / (2.0*(double)zsize);
+			U[B2] += (psf[1 * ksize + global_id - zoffset + u] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + D2)]) / (2.0*(double)zsize);
+		}
 		#if(N3G>0)
-		U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		U[B3] = (psf[2 * ksize + global_id - zoffset] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 		#endif
 		#endif
 		#endif
@@ -4274,6 +4325,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			U[B3] = (psf[2 * ksize + global_id] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr] + psf[2 * ksize + global_id + D3] * gdet[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr]) / 2.0;
 			#endif
 			#endif
+
 			#if(NEWMAN)
 			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
 			if (pflag[global_id]){

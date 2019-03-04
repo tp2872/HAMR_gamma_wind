@@ -83,17 +83,17 @@ Numerical Parameters section
 #define NB_LOCAL (1600)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 12
-#define NB_3 2
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 20
-#define BS_2 10
-#define BS_3 10
+#define BS_1 128
+#define BS_2 128
+#define BS_3 128
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 3
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
 #define REF_1 1
@@ -104,7 +104,10 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
+
+/*Number of internal derefinement levels*/
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
@@ -215,7 +218,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DELTA (3.0)
 
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep*/
-#define DOCYLINDRIFYCOORDS 1
+#define DOCYLINDRIFYCOORDS (0)
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
@@ -493,7 +496,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (0)
+#define NEWMAN (1)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

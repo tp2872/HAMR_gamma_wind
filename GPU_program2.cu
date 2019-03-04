@@ -72,6 +72,7 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
+
 	if (global_id < work_size){
 		for (k = 0; k < NPR; k++){
 			//#pragma unroll NG
@@ -79,6 +80,7 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 				send[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			}
 		}
+		
 		#if(STAGGERED)
 		for (j = j1; j <j2; j++){
 			send[(NPR + 0)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] 
@@ -92,7 +94,7 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	}
 }
 
-__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, double *  pv, double *  ps, double *  send, const  double* __restrict__ gdet_GPU, int work_size)
+__global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int isize2, int jsize2, double *  pv, double *  ps, double *  send, const  double* __restrict__ gdet_GPU, int work_size, int POLE_1, int POLE_2)
 {
 	int z, k;
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
@@ -106,14 +108,33 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int zsize = 1, zlevel = 0, u;
 
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	#endif
 	if (global_id < work_size){
-		for (k = 0; k < NPR; k++){
-			//#pragma unroll NG
-			for (z = z1; z < z2; z++){
-				send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+		if (z1 < BS_3 / 2){
+			for (k = 0; k < NPR; k++){
+				//#pragma unroll NG
+				for (z = z1; z < z2; z++){
+					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z*zsize + N3G)];
+				}
 			}
 		}
+		else{
+			for (k = 0; k < NPR; k++){
+				//#pragma unroll NG
+				for (z = z1; z < z2; z++){
+					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z*zsize + N3G)];
+
+					//send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + BS_3 + N3G - D3 - (BS_3 - D3 - z)*zsize];
+				}
+			}
+		}
+
 		#if(STAGGERED)
 		for (z = z1; z <z2; z++){
 			send[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] 
