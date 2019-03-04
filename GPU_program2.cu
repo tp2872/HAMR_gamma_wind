@@ -128,9 +128,7 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 			for (k = 0; k < NPR; k++){
 				//#pragma unroll NG
 				for (z = z1; z < z2; z++){
-					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z*zsize + N3G)];
-
-					//send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + BS_3 + N3G - D3 - (BS_3 - D3 - z)*zsize];
+					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + BS_3 + N3G - D3 - (BS_3 - D3 - z)*zsize];
 				}
 			}
 		}

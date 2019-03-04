@@ -2351,12 +2351,11 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
 
-
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
 		for (k = 0; k < NPR; k++){
-			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zoffset*zdel - zsize*zdel];
+			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zcurr + MY_MAX(zcurr - zoffset*zdel - zsize*zdel,N3G-1)];
 		}
 	
 		#if(STAGGERED)
@@ -3946,6 +3945,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 		if (full_step == 0){
 			for (k = 0; k < NPR; k++){
+				pf[k] = 0.0;
 				for (u = 0; u < zsize; u++){
 					pf[k] += (1.0/((double)zsize))*pi_i[k*(ksize)+global_id-zoffset+u];
 				}
