@@ -2144,8 +2144,8 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
@@ -2338,18 +2338,18 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	struct of_geom geom;
 	struct of_state state;
 	local_dtij[local_id] = 1.e9;
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
-	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3; }
-
 	int zsize = 1, zlevel = 0, zoffset = 0;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
+
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
+	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3*((double)zsize); }
 
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
@@ -2361,7 +2361,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
 			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
-				p[k] = ps[(k - B1)*(ksize)+global_id];
+				p[k] = ps[(k - B1)*(ksize)+global_id - zoffset*zdel];
 			}
 
 			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
@@ -2387,7 +2387,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
 			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
-				p[k] = ps[(k - B1)*(ksize)+global_id];
+				p[k] = ps[(k - B1)*(ksize)+global_id - zoffset*zdel];
 			}
 			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
 				#if AMD
@@ -2415,7 +2415,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#endif
 		}
 
-		local_dtij[local_id] = factor*(double)(zsize) / ctop;
+		local_dtij[local_id] = factor / ctop;
 	}
 	if (calc_time == 1){
 		__syncthreads();
@@ -2923,8 +2923,8 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	int zsize = 1, zlevel=0, zoffset=0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
@@ -3935,8 +3935,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	int zsize = 1, zlevel = 0, zoffset = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
@@ -3962,9 +3962,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			for (k = 0; k<NPR; k++){
 				U[k] = storage2[k*(ksize)+global_id];
 			}
-			#pragma unroll 9	
-			for (k = 0; k<NPR; k++){
-				pf[k] = pb_i[k*(ksize)+global_id];
+			for (k = 0; k < NPR; k++){
+				pf[k] = 0.0;
+				for (u = 0; u < zsize; u++){
+					pf[k] += (1.0 / ((double)zsize))*pb_i[k*(ksize)+global_id - zoffset + u];
+				}
 			}
 			if (full_step == 1){
 				get_state(pf, &geom, &q);

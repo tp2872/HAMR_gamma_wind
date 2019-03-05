@@ -84,12 +84,12 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 1
-#define NB_2 1
+#define NB_2 4
 #define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 128
-#define BS_2 128
+#define BS_2 32
 #define BS_3 128
 
 /*Set the maximum number of refinement levels*/

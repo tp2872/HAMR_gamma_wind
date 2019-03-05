@@ -111,10 +111,11 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	int zsize = 1, zlevel = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	#endif
+
 	if (global_id < work_size){
 		if (z1 < BS_3 / 2){
 			for (k = 0; k < NPR; k++){

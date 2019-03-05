@@ -68,6 +68,7 @@ void diag(int call_code)
 					zmax = z*pow(1 + REF_3, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					divbmax = divb;
 				}
+
 				//if (divb > 0.0001){
 					//fprintf(stderr, "divb (level: %d, level1: %d, level2: %d, level3: %d, coord1: %d, coord2: %d, coord3: %d) at (%d,%d,%d): %f \n", block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
 					//fprintf(stderr, "n: %d Corn10_1: %d Corn10_2: %d Corn10P: %d Corn12_1: %d Corn12_2: %d Corn12P: %d  \n", n_ord[n], block[n_ord[n]][AMR_CORN10_1], block[n_ord[n]][AMR_CORN10_2], block[n_ord[n]][AMR_CORN10P], block[n_ord[n]][AMR_CORN12_1], block[n_ord[n]][AMR_CORN12_2], block[n_ord[n]][AMR_CORN12P]);
@@ -173,7 +174,14 @@ double divb_calc(int n, int i, int j, int z){
 	int dj = (N2 > 1);
 	int dz = (N3 > 1);
 	double divb;
-	
+	int zsize = 1, zoffset = 0, zlevel = 0;
+
+	#if(N_LEVELS_1D_INT>0 && D3>10)
+	if (block[n][AMR_POLE] == 1 && j < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (j + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (block[n][AMR_POLE] == 2 && j >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (j)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	zoffset = (z) % zsize;
+	#endif
 	/* Constrained transport defn */
 	#if(STAGGERED)
 	divb = fabs(
@@ -191,8 +199,8 @@ double divb_calc(int n, int i, int j, int z){
 		#endif
 		#if(N3>1)
 		+ 0.25*(
-		+ps[nl[n]][index_3D(n, i, j, z + dz)][3] * gdet[nl[n]][index_2D(n, i, j, z + dz)][FACE3]
-		- ps[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3]
+		+ps[nl[n]][index_3D(n, i, j, z - zoffset + dz * zsize)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + dz * zsize)][FACE3]
+		- ps[nl[n]][index_3D(n, i, j, z - zoffset)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset)][FACE3]
 		) / dx[nl[n]][3]
 		#endif
 	);
