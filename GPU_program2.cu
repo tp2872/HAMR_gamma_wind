@@ -111,8 +111,8 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	int zsize = 1, zlevel = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	//if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	#endif
 
@@ -129,7 +129,7 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 			for (k = 0; k < NPR; k++){
 				//#pragma unroll NG
 				for (z = z1; z < z2; z++){
-					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + BS_3 + N3G - D3 - (BS_3 - D3 - z)*zsize];
+					send[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + BS_3 + N3G - D3*zsize - (BS_3 - D3 - z)*zsize];
 				}
 			}
 		}
