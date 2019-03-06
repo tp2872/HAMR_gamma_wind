@@ -2745,12 +2745,12 @@ void average_grid(void){
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	for (n = 0; n < n_active; n++){
-		//#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u)
+		#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u)
 		for (i = N1_GPU_offset[n_ord[n]]; i < N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j < N2_GPU_offset[n_ord[n]] + BS_2; j++){
+			zlevel = 0;
 			if ((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j < N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(j - N2_GPU_offset[n_ord[n]]) + D2))) / log(2.)), N_LEVELS_1D_INT);
 			if ((block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3) && j >= N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n_ord[n]], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
 			zsize = (int)pow(2.0, (double)zlevel);
-
 			for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z += zsize){
 				PLOOP temp[k] = 0.0;
 				for (u = 0; u < zsize; u++) PLOOP temp[k] += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][k] / ((double)zsize);

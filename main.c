@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 		derefine_pole();
 		#endif
 	}
-	#if(N_LEVELS_1D_INT>10 && D3>0)
+	#if(N_LEVELS_1D_INT>0 && D3>0)
 	average_grid();
 	#endif
 
