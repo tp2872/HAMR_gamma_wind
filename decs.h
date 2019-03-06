@@ -935,6 +935,7 @@ void LU_substitution(double A[][NDIM], double B[], int permute[]);
 //AMR Related
 void MPI_initialize(int argc, char *argv[]);
 void activate_blocks(void);
+void average_grid(void);
 void set_corners(void);
 void set_communicator(void);
 void pre_refine(void);

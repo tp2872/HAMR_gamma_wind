@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 {
 	double tdump, tlog;
 	int nfailed = 0;
-	int i, j,z, u, n;
+	int i, j, z, u, n;
 	double r, th, phi, X[NDIM];
 	clock_t begin2;
 	nstep = 0;
@@ -79,6 +79,9 @@ int main(int argc, char *argv[])
 		derefine_pole();
 		#endif
 	}
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	average_grid();
+	#endif
 
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )

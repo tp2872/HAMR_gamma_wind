@@ -1043,6 +1043,16 @@ void set_AMR(void){
 		}
 	}
 
+	if (BS_2 / (int)pow(2, N_LEVELS_1D_INT)<4 || BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
+		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
+		exit(0);
+	}
+
+	if (BS_2 % (int)pow(2, N_LEVELS_1D_INT) != 0 || BS_3 % (int)pow(2, N_LEVELS_1D_INT) != 0){
+		if (rank == 0) fprintf(stderr, "Grid not power of 2 of internal derefinment levels! \n");
+		exit(0);
+	}
+
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
 	#if(READ_OLD)
@@ -2721,4 +2731,48 @@ void synch_refcrit(void){
 //Calculates RAM requirements in bytes (conservatively)
 double calc_mem(int n_blocks){
 	return n_blocks*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * 1000;
+}
+
+//Averages grid in blocks near pole in case of internal derefinement
+void average_grid(void){
+	int n, i, j, z, k, u;
+	int zsize = 1, zlevel = 0;
+	double temp[NPR];
+
+	//Average primitive and staggered grid variables
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	#endif
+	for (n = 0; n < n_active; n++){
+		//#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u)
+		for (i = N1_GPU_offset[n_ord[n]]; i < N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j < N2_GPU_offset[n_ord[n]] + BS_2; j++){
+			if ((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j < N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / ((j - N2_GPU_offset[n_ord[n]]) + D2))) / log(2.)), N_LEVELS_1D_INT);
+			if ((block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3) && j >= N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (j - N2_GPU_offset[n_ord[n]])))) / log(2.)), N_LEVELS_1D_INT);
+			zsize = (int)pow(2.0, (double)zlevel);
+
+			for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z += zsize){
+				PLOOP temp[k] = 0.0;
+				for (u = 0; u < zsize; u++) PLOOP temp[k] += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][k] / ((double)zsize);
+				for (u = 0; u < zsize; u++) PLOOP p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][k] = temp[k];
+
+				#if(STAGGERED)
+				temp[1] = 0.0;
+				for (u = 0; u < zsize; u++) temp[1] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1]) / ((double)zsize);
+				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] = temp[1];
+
+				temp[2] = 0.0;
+				for (u = 0; u < zsize; u++) temp[2] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2]) / ((double)zsize);
+				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] = temp[2];
+
+				temp[3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE3]) / (2.0*gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3]);
+				for (u = 1; u < zsize; u++)ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = temp[3];
+				#endif
+			}
+		}
+	}
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	#endif
+	#endif
 }

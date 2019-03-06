@@ -173,37 +173,32 @@ double divb_calc(int n, int i, int j, int z){
 	int di = (N1 > 1);
 	int dj = (N2 > 1);
 	int dz = (N3 > 1);
-	double divb;
-	int zsize = 1, zoffset = 0, zlevel = 0;
+	double divb=0.0;
+	int zsize = 1, zoffset = 0, zlevel = 0, u;
 
-	#if(N_LEVELS_1D_INT>0 && D3>10)
-	if (block[n][AMR_POLE] == 1 && j < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (j + D2))) / log(2.)), N_LEVELS_1D_INT);
-	if (block[n][AMR_POLE] == 2 && j >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (j)))) / log(2.)), N_LEVELS_1D_INT);
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / ((j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (j - N2_GPU_offset[n])))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
-	zoffset = (z) % zsize;
+	zoffset = (z - N3_GPU_offset[n]) % zsize;
 	#endif
+
 	/* Constrained transport defn */
 	#if(STAGGERED)
-	divb = fabs(
-		#if(N1>1)
-		0.25*(
-		+ps[nl[n]][index_3D(n, i + di, j, z)][1] * gdet[nl[n]][index_2D(n, i + di, j, z)][FACE1]
-		- ps[nl[n]][index_3D(n, i, j, z)][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1]
-		) / dx[nl[n]][1]
-		#endif
-		#if(N2>1)
-		+ 0.25*(
-		+ps[nl[n]][index_3D(n, i, j + dj, z)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z)][FACE2]
-		- ps[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2]
-		) / dx[nl[n]][2]
-		#endif
-		#if(N3>1)
-		+ 0.25*(
-		+ps[nl[n]][index_3D(n, i, j, z - zoffset + dz * zsize)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + dz * zsize)][FACE3]
-		- ps[nl[n]][index_3D(n, i, j, z - zoffset)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset)][FACE3]
-		) / dx[nl[n]][3]
-		#endif
-	);
+	#if(N1>1)
+	for (u = 0; u < zsize; u++){
+		divb += 0.25*(ps[nl[n]][index_3D(n, i + di, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i + di, j, z - zoffset + u)][FACE1] - ps[nl[n]][index_3D(n, i, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE1]) / ((double)(zsize)*dx[nl[n]][1]);
+	}
+	#endif
+	#if(N2>1)
+	for (u = 0; u < zsize; u++){
+		divb += 0.25*(ps[nl[n]][index_3D(n, i, j + dj, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z - zoffset + u)][FACE2] - ps[nl[n]][index_3D(n, i, j, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE2]) / ((double)(zsize)*dx[nl[n]][2]);
+	}
+	#endif
+	#if(N3>1)
+	divb += 0.25*(ps[nl[n]][index_3D(n, i, j, z - zoffset + dz * zsize)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + dz * zsize)][FACE3] - ps[nl[n]][index_3D(n, i, j, z - zoffset)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset)][FACE3]) / ((double)(zsize)*dx[nl[n]][3]);
+	#endif
+	divb = fabs(divb);
 	#else
 	/* Flux-ct defn */
 	divb = fabs(
