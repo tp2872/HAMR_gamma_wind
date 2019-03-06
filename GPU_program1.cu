@@ -2206,10 +2206,10 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			x5 = p[MY_MIN(k*(ksize)+global_id + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			para(x1, x2, x3, x4, x5, &result, &temp);
 			
-			if (zoffset != 0 && zsize>1) dq1[k*(ksize)+global_id] = p[k*(ksize)+global_id];
+			if (zoffset != 0 && zsize>1 && zdel) dq1[k*(ksize)+global_id] = p[k*(ksize)+global_id];
 			else dq1[k*(ksize)+global_id] = result;
 			
-			if (zoffset != zsize - 1 && zsize>1)  dq2[k*(ksize)+global_id] = p[k*(ksize)+global_id];
+			if (zoffset != zsize - 1 && zsize>1 && zdel)  dq2[k*(ksize)+global_id] = p[k*(ksize)+global_id];
 			else dq2[k*(ksize)+global_id] = temp;
 		}
 		#else
