@@ -2143,7 +2143,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(N_LEVELS_1D_INT>10 && D3>0)
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
@@ -2339,7 +2339,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	local_dtij[local_id] = 1.e9;
 	int zsize = 1, zlevel = 0, zoffset = 0;
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(N_LEVELS_1D_INT>10 && D3>0)
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
@@ -2354,7 +2354,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
 		for (k = 0; k < NPR; k++){
-			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zcurr];
+			p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
 		}
 	
 		#if(STAGGERED)
@@ -2921,7 +2921,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int zsize = 1, zlevel=0, zoffset=0, u;
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(N_LEVELS_1D_INT>10 && D3>0)
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
@@ -2955,10 +2955,10 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 		#endif
 	}
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(N_LEVELS_1D_INT>10 && D3>0)
 	zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
-	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - D2 - N2G)))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (2*D2 + BS_2 - (jcurr + D2 - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
@@ -3942,7 +3942,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
 	int zsize = 1, zlevel = 0, zoffset = 0, u;
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(N_LEVELS_1D_INT>10 && D3>0)
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (jcurr - N2G + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - (jcurr - N2G)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
