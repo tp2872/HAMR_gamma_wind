@@ -3948,7 +3948,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	struct of_state q;
 	int  dofloor = 0, m;
 	double r, uuscal, rhoscal, rhoflr, uuflr;
-	double f, gamma, bsq;
+	double f, gamma, bsq, phi;
 	double pf[NPR], pf_prefloor[NPR], dU[NPR], U[NPR];
 	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
@@ -3969,6 +3969,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				for (u = 0; u < zsize; u++){
 					pf[k] += (1.0/((double)zsize))*pi_i[k*(ksize)+global_id-zoffset+u];
 				}
+			}
+			if (jcurr == N2G){
+				zsize = BS_2;
 			}
 			get_state(pf, &geom, &q);
 			primtoU(pf, &q, &geom, U, gam);
@@ -3992,6 +3995,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				get_state(pf, &geom, &q);
 			}
 		}
+		
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			for (u = 0; u < zsize; u++){
@@ -4006,7 +4010,18 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			U[k] -= Dt*(F3[k*(ksize)+global_id - zoffset + zsize] - F3[k*(ksize)+global_id - zoffset]) / (dx_3*(double)zsize);
 			#endif
 		}
-
+		if (jcurr == N2G){
+			#if( N3G > 0 )
+			for (u = 0; u < BS_3; u+=zsize){
+				phi = (((double)u) / ((double)BS_3))*2.0*M_PI;
+				U[RHO] -= Dt*(F2[RHO*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
+				U[UU] -= Dt*(F2[UU*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
+				U[U1] -= Dt*(F2[U1*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
+				U[U2] -= Dt*(F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[2][2])*cos(phi) - F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[3][3]) * sin(phi));
+				U[U3] -= Dt*(F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[2][2])*sin(phi) + F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[3][3]) * cos(phi));
+				U[KTOT] -= Dt*(F2[KTOT*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
+			#endif
+		}
 		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
 
 		#pragma unroll 9	
@@ -4035,7 +4050,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 		#endif
 		#endif
-
+		
 		#if(NEWMAN)
 		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
 		if (pflag[global_id]){

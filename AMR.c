@@ -1043,7 +1043,7 @@ void set_AMR(void){
 		}
 	}
 
-	if (BS_2 / (int)pow(2, N_LEVELS_1D_INT)<4 || BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
+	if (BS_2 / (int)pow(2, N_LEVELS_1D_INT)<2 || BS_3 / (int)pow(2, N_LEVELS_1D_INT)<NG){
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
 		exit(0);
 	}
