@@ -242,6 +242,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
 #define DOCYLINDRIFYCOORDS (1)
 
+/* enable nuclear physics */
+#define DONUCLEAR 0
+
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
 
@@ -273,6 +276,13 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
+#if( DONUCLEAR )
+#define RHONP     (9)
+#define RHOALPHA  (10)
+#define RHOFLOOR  (11)
+#define YE        (12)
+#define AMB       (13)
+#endif
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -641,7 +651,12 @@ Section with derived quantities
 #define D3 (N3>1)
 
 /*Set variable numbers*/
+
+#if(DONUCLEAR)
+#define NPR        (13+DOKTOT)       /* number of primitive variables */
+#else
 #define NPR        (8+DOKTOT)        /* number of primitive variables */
+#endif
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */

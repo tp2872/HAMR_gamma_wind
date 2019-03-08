@@ -641,8 +641,9 @@ void init_postmerger()
   int nvars, nx, ny, nz;
   int res;
   double *icdata;
-  char fname1[] = "PointsToInterpolateHAMR_bin.bdat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018_bin.bdat";
+  char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
+  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";
+  int mult = 4;
   char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
   size_t memsize, nitems, nread;
   double prim[NPR];
@@ -652,8 +653,6 @@ void init_postmerger()
   // for reading in binary
   double *temp_array_grid, *temp_array_prims;
   int file_size_grid, file_size_prims, num_var, index_grid_final;
-  //This mult variable must be the same as xmult in the name of the IC files
-  int mult = 1;
   size_t double_size = sizeof(double);
   size_t len_grid, len_prims;
   
@@ -933,21 +932,10 @@ void init_postmerger()
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       coord(n_ord[n], i, j, z, CENT, X);
-      bl_coord(X,&r,&th, &phi) ;
+      bl_coord(X,&r,&th, &phi);
       pos_new[1] = r;
       pos_new[2] = th;
       pos_new[3] = phi;
-      
-      /*
-       To check the analytical profiles
-       */
-      
-      /*
-      dd(i,j,z,VARRHO) = 1./(r*r*r);
-      dd(i,j,z,VARVUR) = 0.;
-      dd(i,j,z,VARVUTHETA) = 0.;
-      dd(i,j,z,VARVUPHI) = 0.;
-      dd(i,j,z,VARMUDT) = 1.; */
       
       sth = sin(th) ;
       cth = cos(th) ;
@@ -964,7 +952,7 @@ void init_postmerger()
       /* regions outside stream */
       
       /*
-      if( res || (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
+      if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
         rho = 1.e-30/(r*r);
         u = 1.e-31/(r*r*r*r);
         
@@ -2040,21 +2028,26 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
       utconp[i] += dxpdx[i][j] * utcon[j];
     }
   }
+  
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
   
   // This calculates Utilde^{phi} given u_{phi}. Iterations are required because the relation between them is not linear.
   
   get_geometry(n,ii, jj,zz, CENT, &geom);
-  max_iter = 50;
-  err_tol = 1.0E-4;
-  for (i = 0; i < max_iter; i++) {
-    udphi_to_utuphi(utconp, udphi, &udphi_new, &geom, utconp_new);
-    DLOOPA utconp[j] = utconp_new[j];
-    err = fabs(2 * (udphi_new - udphi)/(udphi + udphi_new + 1.0E-7));
-    if (err <= err_tol) break;
-    udphi = udphi_new;
-  }
+  
+// Commented out this part of the code that modifies utconp by matching udphi's
+//
+//  max_iter = 50;
+//  err_tol = 1.0E-4;
+//  for (i = 0; i < max_iter; i++) {
+//    udphi_to_utuphi(utconp, udphi, &udphi_new, &geom, utconp_new);
+//    DLOOPA utconp[j] = utconp_new[j];
+//    err = fabs(2 * (udphi_new - udphi)/(udphi + udphi_new + 1.0E-7));
+//    if (err <= err_tol) break;
+//    udphi = udphi_new;
+//  }
+  
   //ucon_to_utcon(uconp, &geom, utconp);
   
   pr[U1] = utconp[1];
