@@ -318,7 +318,13 @@ void dump_block(MPI_File *fp, int n)
 		array[nl[n]][array_offset + 6] = (float)p[nl[n]][i3D][B1];
 		array[nl[n]][array_offset + 7] = (float)p[nl[n]][i3D][B2];
 		array[nl[n]][array_offset + 8] = (float)p[nl[n]][i3D][B3];
-        array[nl[n]][array_offset + 9] = (float)p[nl[n]][i3D][TAU];
+#if (DONUCLEAR)
+        array[nl[n]][array_offset + 9] = (float)p[nl[n]][i3D][RHONP];
+        array[nl[n]][array_offset + 10] = (float)p[nl[n]][i3D][RHOALPHA];
+        array[nl[n]][array_offset + 11] = (float)p[nl[n]][i3D][RHOFLOOR];
+        array[nl[n]][array_offset + 12] = (float)p[nl[n]][i3D][YE];
+        array[nl[n]][array_offset + 13] = (float)p[nl[n]][i3D][AMB];
+#endif
 
 	}
 	#if(PARALLEL_IO)
