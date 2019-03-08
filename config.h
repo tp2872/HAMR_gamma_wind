@@ -651,12 +651,12 @@ Section with derived quantities
 #define D3 (N3>1)
 
 /*Set variable numbers*/
-
 #if(DONUCLEAR)
 #define NPR        (13+DOKTOT)       /* number of primitive variables */
 #else
 #define NPR        (8+DOKTOT)        /* number of primitive variables */
 #endif
+#define NPRDUMP    (NPR)
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
