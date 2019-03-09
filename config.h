@@ -20,8 +20,8 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.)
+#define TILTED (1)
+#define TILT_ANGLE (50.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -107,7 +107,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (4)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0

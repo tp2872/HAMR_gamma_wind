@@ -2198,15 +2198,41 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	if (k == 1){
 		#if(PPM)
 		#pragma unroll 9	
-		for (k = 0; k<NPR; k++){
-			x1 = p[MY_MAX(k*(ksize)+global_id + z1 - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
-			x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
-			x3 = p[k*(ksize)+global_id + z3];
-			x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			x5 = p[MY_MIN(k*(ksize)+global_id + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			para(x1, x2, x3, x4, x5, &result, &temp);		
-			dq1[k*(ksize)+global_id] = result;
-			dq2[k*(ksize)+global_id] = temp;
+		if (POLE_1 == 1 && jcurr == N2G && dir ==2){
+			for (k = 0; k < NPR; k++){
+				x1 = p[MY_MAX(k*(ksize)+global_id + z1 - 3 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
+				x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 2 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+				x3 = p[k*(ksize)+global_id + z3];
+				x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+				x5 = p[MY_MIN(k*(ksize)+global_id + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+				para(x1, x2, x3, x4, x5, &result, &temp);
+				dq1[k*(ksize)+global_id] = result;
+				dq2[k*(ksize)+global_id] = temp;
+			}
+		}
+		else if (POLE_1 == 1 && jcurr == N2G+1 && dir == 2){
+			for (k = 0; k < NPR; k++){
+				x1 = p[MY_MAX(k*(ksize)+global_id + z1 - 3 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
+				x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+				x3 = p[k*(ksize)+global_id + z3];
+				x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+				x5 = p[MY_MIN(k*(ksize)+global_id + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+				para(x1, x2, x3, x4, x5, &result, &temp);
+				dq1[k*(ksize)+global_id] = result;
+				dq2[k*(ksize)+global_id] = temp;
+			}
+		}
+		else{
+			for (k = 0; k < NPR; k++){
+				x1 = p[MY_MAX(k*(ksize)+global_id + z1 - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
+				x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+				x3 = p[k*(ksize)+global_id + z3];
+				x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+				x5 = p[MY_MIN(k*(ksize)+global_id + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+				para(x1, x2, x3, x4, x5, &result, &temp);
+				dq1[k*(ksize)+global_id] = result;
+				dq2[k*(ksize)+global_id] = temp;
+			}
 		}
 		#else
 		#pragma unroll 9	
@@ -3949,10 +3975,10 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	int  dofloor = 0, m;
 	double r, uuscal, rhoscal, rhoflr, uuflr;
 	double f, gamma, bsq, phi;
-	double pf[NPR], pf_prefloor[NPR], dU[NPR], U[NPR];
+	double pf[NPR], pf_prefloor[NPR], dU[NPR], U[NPR], U_temp[NPR], tempx, tempy;
 	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
-	int zsize = 1, zlevel = 0, zoffset = 0, u;
+	int zsize = 1, zlevel = 0, zoffset = 0, u, npole;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
@@ -3960,6 +3986,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
+	npole = BS_3;
 
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
@@ -3975,9 +4002,47 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			}
 			get_state(pf, &geom, &q);
 			primtoU(pf, &q, &geom, U, gam);
+	
 			#pragma unroll 9	
 			for (k = 0; k<NPR; k++){
 				storage2[k*(ksize)+global_id] = U[k];
+			}
+
+			source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+			#pragma unroll 9	
+			for (k = 0; k< NPR; k++){
+				U[k] += Dt*(dU[k]);
+			}
+
+			if (jcurr == N2G && POLE_1 == 1){
+				//get_geometry(icurr, jcurr+1, zcurr, FACE2, &geom, gcov, gcon, gdet);
+
+				tempx = 0.0;
+				tempy = 0.0;
+				for (k = 0; k < NPR; k++)  U[k] = 0.0;
+				for (u = 0; u < BS_3; u += 1){
+					phi = (((double)u) / ((double)BS_3))*2.0*M_PI;
+					for (k = 0; k< NPR; k++)pf[k] = pi_i[k*(ksize)+global_id - zcurr + N3G + u];
+					get_state(pf, &geom, &q);
+
+					primtoU(pf, &q, &geom, U_temp, gam);
+					source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+					for (k = 0; k< NPR; k++) U_temp[k] += Dt*(dU[k]);
+					U[RHO] += U_temp[RHO]/((double)npole);
+					U[UU] += U_temp[UU] / ((double)npole);
+					U[U1] += U_temp[U1] / ((double)npole);
+					//U[U2] += U_temp[U2] / ((double)npole);
+					//U[U3] += U_temp[U3] / ((double)npole);
+					tempx += ((U_temp[U2] * sqrt(geom.gcon[7])*cos(phi) - U_temp[U3] * sqrt(geom.gcon[9]) * sin(phi))) / ((double)npole);
+					tempy += ((U_temp[U2] * sqrt(geom.gcon[7])*sin(phi) + U_temp[U3] * sqrt(geom.gcon[9]) * cos(phi))) / ((double)npole);
+					U[KTOT] += U_temp[KTOT] / ((double)npole);
+				}
+				for (k = 0; k < NPR; k++){
+					pf[k] = 0.0;
+					for (u = 0; u < zsize; u++){
+						pf[k] += (1.0 / ((double)zsize))*pi_i[k*(ksize)+global_id - zoffset + u];
+					}
+				}
 			}
 		}
 		else{
@@ -3991,42 +4056,89 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0 / ((double)zsize))*pb_i[k*(ksize)+global_id - zoffset + u];
 				}
 			}
+
 			if (full_step == 1){
 				get_state(pf, &geom, &q);
 			}
+			source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+			#pragma unroll 9	
+			for (k = 0; k< NPR; k++){
+				U[k] += Dt*(dU[k]);
+			}
+
+			if (jcurr == N2G && POLE_1 == 1){
+				//get_geometry(icurr, jcurr+1, zcurr, FACE2, &geom, gcov, gcon, gdet);
+
+				tempx = 0.0;
+				tempy = 0.0;
+				for (k = 0; k < NPR; k++) U[k] = 0.0;
+				for (u = 0; u < BS_3; u += 1){
+					phi = (((double)u) / ((double)BS_3))*2.0*M_PI;
+					for (k = 0; k<NPR; k++) U_temp[k] = storage2[k*(ksize)+global_id - zcurr + N3G + u];
+					for (k = 0; k< NPR; k++)pf[k] = pb_i[k*(ksize)+global_id - zcurr + N3G + u];
+					get_state(pf, &geom, &q);
+					source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+					for (k = 0; k< NPR; k++) U_temp[k] += Dt*(dU[k]);
+					U[RHO] += U_temp[RHO] / ((double)npole);
+					U[UU] += U_temp[UU] / ((double)npole);
+					U[U1] += U_temp[U1] / ((double)npole);
+					//U[U2] += U_temp[U2] / ((double)npole);
+					//U[U3] += U_temp[U3] / ((double)npole);
+					tempx += ((U_temp[U2] * sqrt(geom.gcon[7])*cos(phi) - U_temp[U3] * sqrt(geom.gcon[9]) * sin(phi))) / ((double)npole);
+					tempy += ((U_temp[U2] * sqrt(geom.gcon[7])*sin(phi) + U_temp[U3] * sqrt(geom.gcon[9]) * cos(phi))) / ((double)npole);
+					U[KTOT] += U_temp[KTOT] / ((double)npole);
+				}
+			}
+			for (k = 0; k < NPR; k++){
+				pf[k] = 0.0;
+				for (u = 0; u < zsize; u++){
+					pf[k] += (1.0 / ((double)zsize))*pb_i[k*(ksize)+global_id - zoffset + u];
+				}
+			}
 		}
-		
-		#pragma unroll 9	
-		for (k = 0; k<NPR; k++){
-			for (u = 0; u < zsize; u++){
-				#if( N1G > 0 )
-				U[k] -= Dt*(F1[k*(ksize)+global_id + isize - zoffset + u] - F1[k*(ksize)+global_id - zoffset + u]) / (dx_1*(double)zsize);
-				#endif
-				#if( N2G > 0 )
-				U[k] -= Dt*(F2[k*(ksize)+global_id + (BS_3 + 2 * N3G) - zoffset + u] - F2[k*(ksize)+global_id - zoffset + u]) / (dx_2*(double)zsize);
+			
+		if (jcurr == N2G && POLE_1 == 1){
+			get_geometry(icurr, jcurr+1, zcurr, FACE2, &geom, gcov, gcon, gdet);
+
+			for (u = 0; u < BS_3; u += 1){
+				phi = (((double)u) / ((double)BS_3))*2.0*M_PI;
+				U[RHO] -= (Dt*F2[RHO*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)]) / (dx_2*(double)npole);
+				U[UU] -= (Dt*F2[UU*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)]) / (dx_2*(double)npole);
+				U[U1] -= (Dt*F2[U1*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)]) / (dx_2*(double)npole);
+				//U[U2] -= (Dt*F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)]) / (dx_2*(double)npole);
+				//U[U3] -= (Dt*F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)]) / (dx_2*(double)npole);
+				tempx -= (Dt*(F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)] * sqrt(geom.gcon[7])*cos(phi) - F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)] * sqrt(geom.gcon[9]) * sin(phi))) / (dx_2*(double)npole);
+				tempy -= (Dt*(F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)] * sqrt(geom.gcon[7])*sin(phi) + F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)] * sqrt(geom.gcon[9]) * cos(phi))) / (dx_2*(double)npole);
+				U[KTOT] -= (Dt*(F2[KTOT*(ksize)+global_id + (BS_3 + 2 * N3G) - zcurr + (N3G + u)])) / (dx_2*(double)npole);
+			}
+
+			get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+			for (u = 0; u < BS_3; u += 1){
+				U[RHO] -= Dt*(F1[RHO*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[RHO*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole);
+				U[UU] -= Dt*(F1[UU*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[UU*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole);
+				U[U1] -= Dt*(F1[U1*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U1*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole);
+				//U[U2] -= Dt*(F1[U2*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U2*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole);
+				//U[U3] -= Dt*(F1[U3*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U3*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole);
+				tempx -= Dt*(F1[U2*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U2*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole) * sqrt(geom.gcon[7])*cos(phi) - Dt*(F1[U3*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U3*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole) * sqrt(geom.gcon[9])*sin(phi);
+				tempx -= Dt*(F1[U2*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U2*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole) * sqrt(geom.gcon[7])*sin(phi) + Dt*(F1[U3*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[U3*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole) * sqrt(geom.gcon[9])*cos(phi);
+				U[KTOT] -= Dt*(F1[KTOT*(ksize)+global_id + isize - zcurr + (N3G + u)] - F1[KTOT*(ksize)+global_id - zcurr + (N3G + u)]) / (dx_1*(double)npole);
+			}
+
+			phi = (((double)(zcurr - N3G - zoffset + zsize / 2)) / ((double)BS_3))*2.0*M_PI;
+			U[U2] = (tempx*cos(phi) + tempy*sin(phi)) / sqrt(geom.gcon[7]);
+			U[U3] = (-tempx*sin(phi) + tempy*cos(phi)) / sqrt(geom.gcon[9]);
+		}
+		else{
+			#pragma unroll 9	
+			for (k = 0; k < NPR; k++){
+				for (u = 0; u < zsize; u++){
+					U[k] -= Dt*(F1[k*(ksize)+global_id + isize - zoffset + u] - F1[k*(ksize)+global_id - zoffset + u]) / (dx_1*(double)zsize);
+					U[k] -= Dt*(F2[k*(ksize)+global_id + (BS_3 + 2 * N3G) - zoffset + u] - F2[k*(ksize)+global_id - zoffset + u]) / (dx_2*(double)zsize);
+				}
+				#if(N3G > 0)
+				U[k] -= Dt*(F3[k*(ksize)+global_id - zoffset + zsize] - F3[k*(ksize)+global_id - zoffset]) / (dx_3*(double)zsize);
 				#endif
 			}
-			#if( N3G > 0 )
-			U[k] -= Dt*(F3[k*(ksize)+global_id - zoffset + zsize] - F3[k*(ksize)+global_id - zoffset]) / (dx_3*(double)zsize);
-			#endif
-		}
-		if (jcurr == N2G){
-			#if( N3G > 0 )
-			for (u = 0; u < BS_3; u+=zsize){
-				phi = (((double)u) / ((double)BS_3))*2.0*M_PI;
-				U[RHO] -= Dt*(F2[RHO*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
-				U[UU] -= Dt*(F2[UU*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
-				U[U1] -= Dt*(F2[U1*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
-				U[U2] -= Dt*(F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[2][2])*cos(phi) - F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[3][3]) * sin(phi));
-				U[U3] -= Dt*(F2[U2*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[2][2])*sin(phi) + F2[U3*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u)] * sqrt(geom.gcov[3][3]) * cos(phi));
-				U[KTOT] -= Dt*(F2[KTOT*(ksize)+global_id + (BS_3 + 2 * N3G) + (N3G + u]));
-			#endif
-		}
-		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
-
-		#pragma unroll 9	
-		for (k = 0; k< NPR; k++){
-			U[k] += Dt*(dU[k]);
 		}
 
 		#if(NSY)
