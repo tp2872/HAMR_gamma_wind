@@ -593,7 +593,7 @@ void init_torus()
 	}
 	bound_prim(p, 1);
 
-	//set_mag();
+	set_mag();
 
 	#if( DO_FONT_FIX ) 
 	set_Katm();

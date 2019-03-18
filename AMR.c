@@ -1043,7 +1043,7 @@ void set_AMR(void){
 		}
 	}
 
-	if (BS_2 / (int)pow(2, N_LEVELS_1D_INT)<2 || BS_3 / (int)pow(2, N_LEVELS_1D_INT)<NG){
+	if (BS_2 / (int)pow(2, N_LEVELS_1D_INT)<4 || BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
 		exit(0);
 	}
@@ -2252,7 +2252,7 @@ int check_nesting(int n){
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
-	int n, task, i,j,z,k, l, level, number, ref_3;
+	int n, task, i,j,z,k, l, level, number, ref_1, ref_2, ref_3, i1, i2, i3;
 	int node, n_send, gpu_choice, gpu_counter;
 	double  rho_rec;
 	double(*temp_ps[NB])[NDIM];
@@ -2373,7 +2373,7 @@ void check_refcrit(void){
 
 				for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
 					if (block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_REFINED] == 1)block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //If one of the children of the parent block is refined
-					if (ref_val[block[block[n_ord_total[n]][AMR_PARENT]][i]] > 0.5*REFINEMENT_CUTOFF) block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //Except if one of the children does satisfy the refinement criterion
+					if (ref_val[block[block[n_ord_total[n]][AMR_PARENT]][i]] > 100.0*REFINEMENT_CUTOFF) block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //Except if one of the children does satisfy the refinement criterion
 				}
 			}
 		}
@@ -2403,9 +2403,12 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_3)*(1 + REF_2)*(1 + REF_1) - 1){
-					ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-					for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
+				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
+				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
+				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
+				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + ref_1)*(1 + ref_2)*(1 + ref_1) - 1){				
+					for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+						i = i1 * 4 + i2 * 2 + i3;
 						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 						if (block[n_send][AMR_NODE] != node){
 							NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
@@ -2424,8 +2427,11 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				//Send block using non-blocking send
+				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
+				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
+				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+					i = i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
 						rc = 0;
@@ -2447,8 +2453,11 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				//Send block using non-blocking send
+				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
+				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
+				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+					i = i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
 						rc = 0;
@@ -2473,8 +2482,11 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
+				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
+				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
+				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+					i = i1 * 4 + i2 * 2 + i3;
 					//Then use MPI_wait to clean up data that has been sent
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
@@ -2498,8 +2510,11 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				node = block[n_ord_total[n]][AMR_NODE];
+				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
+				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
+				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+					i = i1 * 4 + i2 * 2 + i3;
 					//Then initialize sent data on receiving node
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
@@ -2538,8 +2553,11 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				node = block[n_ord_total[n]][AMR_NODE];
+				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
+				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i = AMR_CHILD1; i <= AMR_CHILD8; i += (2 - ref_3)){
+				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+					i = i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					block[n_send][AMR_NODE] = node;
 				}
@@ -2548,7 +2566,7 @@ void check_refcrit(void){
 
 				//Then derefine and set corresponding tag and timelevel
 				one_block_derefined = 1;
-				//derefine(block[n_ord_total[n]][AMR_PARENT]);
+				derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
