@@ -817,7 +817,6 @@ void set_AMR(void){
 
 	//Set corn parent
 	for (n = 0; n <= n_max; n++){
-		z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]-1) - 1;
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
 
@@ -886,13 +885,15 @@ void set_AMR(void){
 			else{		
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
 					if (z > z_max && PERIODIC3 == 1) z = 0;
 					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
 					//if (block[n][AMR_CORN9_1] >= 0)block[n][AMR_CORN9P] = block[block[n][AMR_CORN9_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] + REF_3);
-					if (z > z_max * (1+REF_3) && PERIODIC3 == 1) z = 0;
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
+					if (z > z_max && PERIODIC3 == 1) z = 0;
 					block[n][AMR_CORN9P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}
@@ -903,11 +904,13 @@ void set_AMR(void){
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3	
 					//if (block[n][AMR_CORN10_1] >= 0)block[n][AMR_CORN10P] = block[block[n][AMR_CORN10_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] + REF_3);
-					if (z > z_max * (1 + REF_3) && PERIODIC3 == 1) z = 0;
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
+					if (z > z_max && PERIODIC3 == 1) z = 0;
 					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), z);
 				}
 				else{
 					z = (block[n][AMR_COORD3] + REF_3) / (1 + REF_3);
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
 					if (z > z_max && PERIODIC3 == 1) z = 0;
 					block[n][AMR_CORN10P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
@@ -919,11 +922,13 @@ void set_AMR(void){
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					//if (block[n][AMR_CORN11_1] >= 0)block[n][AMR_CORN11P] = block[block[n][AMR_CORN11_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] - REF_3);
-					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max *(1 + REF_3);
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
 					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] + 1) / (1 + REF_2), z);
 				}
 				else{
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
 					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
 					block[n][AMR_CORN11P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG3] != 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1], block[n][AMR_COORD2] + 1, z);
 				}
@@ -934,13 +939,15 @@ void set_AMR(void){
 			else{
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){ //Difference in REF_3
 					z = (block[n][AMR_COORD3] - REF_3) / (1 + REF_3);
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3] - 1) - 1;
 					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
 					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] != 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1], block[n][AMR_COORD2] - 1, z);
 				}
 				else{
 					//if (block[n][AMR_CORN12_1] >= 0)block[n][AMR_CORN12P] = block[block[n][AMR_CORN12_1]][AMR_PARENT];
 					z = (block[n][AMR_COORD3] - REF_3);
-					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max *(1 + REF_3);
+					z_max = NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) - 1;
+					if (block[n][AMR_COORD3] - REF_3 < 0 && PERIODIC3 == 1) z = z_max;
 					block[n][AMR_CORN12P] = AMR_coord_linear2(block[n][AMR_LEVEL] - (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] / (1 + REF_1), (block[n][AMR_COORD2] - 1) / (1 + REF_2), z);
 				}
 			}
@@ -1015,7 +1022,10 @@ void set_AMR(void){
 	for (n = 0; n <= n_max; n++){
 		N1_GPU_offset[n] = block[n][AMR_COORD1] * BS_1;
 		N2_GPU_offset[n] = block[n][AMR_COORD2] * BS_2;
-		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;
+		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;	
+		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD2] <= 1  && block[n][AMR_LEVEL] == 1)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+		//int test = block[n][AMR_NBR1_3];
+		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD2] <= 1 && block[n][AMR_LEVEL] == 1)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	}
 
 	for (n = 0; n <= n_max; n++){
@@ -1333,9 +1343,9 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 	struct of_state q;
 	int ref_1, ref_2, ref_3;
 
-	ref_1 = block[n][AMR_LEVEL1] - block[n_child][AMR_LEVEL1];
-	ref_2 = block[n][AMR_LEVEL2] - block[n_child][AMR_LEVEL2];
-	ref_3 = block[n][AMR_LEVEL3] - block[n_child][AMR_LEVEL3];
+	ref_1 = block[n_child][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+	ref_2 = block[n_child][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+	ref_3 = block[n_child][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 
 	#pragma omp parallel private(i, j, z, k, ic, jc, zc, i_1, i_2, j_1, j_2, z_1, z_2,q,geom)
 	{
@@ -1488,9 +1498,9 @@ void derefine(int n){
 		set_arrays(n);
 		set_grid(n);
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD1]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD1]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD1]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD1] >= 0){
 			n_child = block[n][AMR_CHILD1];
 			block_average(n, n_child, 0, BS_1 / (1 + ref_1), 0, BS_2 / (1 + ref_2), 0, BS_3 / (1 + ref_3));
@@ -1500,9 +1510,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD2]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD2]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD2]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD2] >= 0 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD2];
 			block_average(n, n_child, 0, BS_1 / (1 + ref_1), 0, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), BS_3);
@@ -1512,9 +1522,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD3]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD3]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD3]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD3]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD3] >= 0 && ref_2 == 1){
 			n_child = block[n][AMR_CHILD3];
 			block_average(n, n_child, 0, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), BS_2, 0, BS_3 / (1 + ref_3));
@@ -1524,9 +1534,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD4]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD4]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD4]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD4]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD4]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD4]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD4] >= 0 && ref_2 == 1 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD4];
 			block_average(n, n_child, 0, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), BS_2, BS_3 / (1 + ref_3), BS_3);
@@ -1536,9 +1546,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD5]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD5]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD5]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD5]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD5] >= 0 && ref_1 == 1){
 			n_child = block[n][AMR_CHILD5];
 			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, 0, BS_2 / (1 + ref_2), 0, BS_3 / (1 + ref_3));
@@ -1548,9 +1558,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD6]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD6]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD6]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD6]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD6]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD6]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD6] >= 0 && ref_1 == 1 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD6];
 			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, 0, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), BS_3);
@@ -1560,9 +1570,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD7]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD7]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD7]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD7]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD7]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD7]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD7] >= 0 && ref_1 == 1 && ref_2 == 1){
 			n_child = block[n][AMR_CHILD7];
 			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, BS_2 / (1 + ref_2), BS_2, 0, BS_3 / (1 + ref_3));
@@ -1572,9 +1582,9 @@ void derefine(int n){
 			#endif
 		}
 
-		ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CHILD8]][AMR_LEVEL1];
-		ref_2 = block[n][AMR_LEVEL2] - block[block[n][AMR_CHILD8]][AMR_LEVEL2];
-		ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_CHILD8]][AMR_LEVEL3];
+		ref_1 = block[block[n][AMR_CHILD8]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD8]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		ref_3 = block[block[n][AMR_CHILD8]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_CHILD8] >= 0 && ref_1 == 1 && ref_2 == 1 && ref_3 == 1){
 			n_child = block[n][AMR_CHILD8];
 			block_average(n, n_child, BS_1 / (1 + ref_1), BS_1, BS_2 / (1 + ref_2), BS_2, BS_3 / (1 + ref_3), BS_3);
@@ -1595,10 +1605,11 @@ void derefine(int n){
 
 	#if(GPU_ENABLED || GPU_DEBUG )
 	if (block[n][AMR_NODE] == rank){
-		if (block[block[n][AMR_CHILD1]][AMR_GPU] == -1 && GPU_ENABLED) fprintf(stderr, "Only positive values allowed for device number! \n");
+		if (block[n][AMR_GPU] == -1 && GPU_ENABLED) fprintf(stderr, "Only positive values allowed for device number! \n");
 		set_arrays_GPU(n, block[n][AMR_GPU]);
 		GPU_write(n);
 	}
+
 	#endif
 }
 
@@ -1784,10 +1795,6 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	int ref_1, ref_2, ref_3;
 	double *pointer1, *pointer2, *pointer3, *pointer4, *pointer5, *pointer6;
 
-	ref_1 = block[n_child][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-	ref_2 = block[n_child][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-	ref_3 = block[n_child][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-
 	//Use divergence free prolongation to handle boundaries
 	n_rec1 = -1;
 	n_rec2 = -1;
@@ -1829,15 +1836,10 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	isize = BS_1;
 	jsize = BS_2;
 	zsize = BS_3;
-	#pragma omp parallel private(i, j, z, i1, j1, z1, k, ind0, ind2,b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8,set_1, set_2,set_3,set_4,set_5,set_6)
+	#pragma omp parallel private(i, j, z, i1, j1, z1, k, ind0, ind2,b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8,set_1, set_2,set_3,set_4,set_5,set_6, ref_1, ref_2, ref_3)
 	{
-	#pragma omp for collapse(2) schedule(dynamic)
+		#pragma omp for collapse(2) schedule(dynamic)
 		ZSLOOP3D(0, BS_1 - 1 + D1, 0, BS_2 - 1 + D2, 0, BS_3 - 1 + D3) {
-			//indices in coarse grid depending on offset (input parameter)
-			i1 = (i - i % (1 + ref_1)) / (1 + ref_1);
-			j1 = (j - j % (1 + ref_2)) / (1 + ref_2);
-			z1 = (z - z % (1 + ref_3)) / (1 + ref_3);
-
 			//index of child
 			ind0 = index_3D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
 			ind2 = index_2D(n_child, i + N1_GPU_offset[n_child], j + N2_GPU_offset[n_child], z + N3_GPU_offset[n_child]);
@@ -1847,6 +1849,14 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			b2_1 = b2_2 = b2_3 = b2_4 = b2_5 = b2_6 = b2_7 = b2_8 = 0.;
 			b3_1 = b3_2 = b3_3 = b3_4 = b3_5 = b3_6 = b3_7 = b3_8 = 0.;
 			set_1 = set_2 = set_3 = set_4 = set_5 = set_6 = -1;
+
+			//transform index of child (i,j,z) to index of parent block (i1,j1,z1)
+			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
+			i1 = (i - i % (1 + ref_1)) / (1 + ref_1);
+			j1 = (j - j % (1 + ref_2)) / (1 + ref_2);
+			z1 = (z - z % (1 + ref_3)) / (1 + ref_3);
+
+			set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 			if ((i == 0 || i == ref_1) && offset_1 == 0 && n_rec2 >= 0){
 				b1_1 = pointer2[j1*(1 + ref_2)*zsize + z1*(1 + ref_3)];
 				b1_2 = pointer2[j1*(1 + ref_2)*zsize + (z1*(1 + ref_3) + ref_3)];
@@ -1855,6 +1865,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 				set_2 = 1;
 			}
 			else set_2 = -1;
+			set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 			if ((i == BS_1 || i == BS_1 - ref_1 || i == BS_1 - (1 + ref_1)) && (offset_1 == 1 || ref_1 == 0) && n_rec4 >= 0){
 				b1_5 = pointer4[j1*(1 + ref_2)*zsize + z1*(1 + ref_3)];
 				b1_6 = pointer4[j1*(1 + ref_2)*zsize + (z1*(1 + ref_3) + ref_3)];
@@ -1864,6 +1875,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_4 = -1;
 
+			set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 >= 0){
 				b2_1 = pointer3[i1*(1 + ref_1)*zsize + z1*(1 + ref_3)];
 				b2_2 = pointer3[i1*(1 + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
@@ -1872,6 +1884,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 				set_3 = 1;
 			}
 			else set_3 = -1;
+			set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 >= 0){
 				b2_3 = pointer1[i1*(1 + ref_1)*zsize + z1*(1 + ref_3)];
 				b2_4 = pointer1[i1*(1 + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
@@ -1881,6 +1894,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_1 = -1;
 
+			set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 >= 0){
 				b3_1 = pointer5[i1*(1 + ref_1)*jsize + j1*(1 + ref_2)];
 				b3_3 = pointer5[i1*(1 + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
@@ -1889,6 +1903,8 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 				set_5 = 1;
 			}
 			else set_5 = -1;
+			set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+
 			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 >= 0){
 				b3_2 = pointer6[i1*(1 + ref_1)*jsize + j1*(1 + ref_2)];
 				b3_4 = pointer6[i1*(1 + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
@@ -1897,6 +1913,8 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 				set_6 = 1;
 			}
 			else set_6 = -1;
+
+			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
 
 			i1 = (i - i % (1 + ref_1)) / (1 + ref_1) + N1_GPU_offset[n] + offset_1*BS_1 / 2 * ref_1 - (i == BS_1 && (offset_1 == 1 || ref_1 == 0));
 			j1 = (j - j % (1 + ref_2)) / (1 + ref_2) + N2_GPU_offset[n] + offset_2*BS_2 / 2 * ref_2 - (j == BS_2 && (offset_2 == 1 || ref_2 == 0));
@@ -2056,6 +2074,7 @@ int refine(int n){
 				}
 			}
 		}
+
 		if (block[n][AMR_CHILD1] >= 0){
 			set_arrays(block[n][AMR_CHILD1]);
 			set_grid(block[n][AMR_CHILD1]);
@@ -2247,7 +2266,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 1.0 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 100.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2292,9 +2311,9 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-//|| (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)
+//
 
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
 				//Refine one level less near black hole
@@ -2373,7 +2392,7 @@ void check_refcrit(void){
 
 				for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
 					if (block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_REFINED] == 1)block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //If one of the children of the parent block is refined
-					if (ref_val[block[block[n_ord_total[n]][AMR_PARENT]][i]] > 100.0*REFINEMENT_CUTOFF) block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //Except if one of the children does satisfy the refinement criterion
+					if (ref_val[block[block[n_ord_total[n]][AMR_PARENT]][i]] > 0.5*REFINEMENT_CUTOFF) block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //Except if one of the children does satisfy the refinement criterion
 				}
 			}
 		}
@@ -2408,7 +2427,7 @@ void check_refcrit(void){
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
 				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + ref_1)*(1 + ref_2)*(1 + ref_1) - 1){				
 					for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
-						i = i1 * 4 + i2 * 2 + i3;
+						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 						if (block[n_send][AMR_NODE] != node){
 							NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
@@ -2431,7 +2450,7 @@ void check_refcrit(void){
 				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
 				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
-					i = i1 * 4 + i2 * 2 + i3;
+					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
 						rc = 0;
@@ -2457,7 +2476,7 @@ void check_refcrit(void){
 				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
 				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
-					i = i1 * 4 + i2 * 2 + i3;
+					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
 						rc = 0;
@@ -2486,7 +2505,7 @@ void check_refcrit(void){
 				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
 				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
-					i = i1 * 4 + i2 * 2 + i3;
+					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					//Then use MPI_wait to clean up data that has been sent
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
@@ -2504,7 +2523,6 @@ void check_refcrit(void){
 				}
 			}
 		}
-		fprintf(stderr, "test15\n");
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Allocate arrays on receiving side
 		for (n = 0; n < n_active_total; n++){
@@ -2514,7 +2532,7 @@ void check_refcrit(void){
 				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
 				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
-					i = i1 * 4 + i2 * 2 + i3;
+					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					//Then initialize sent data on receiving node
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					if (block[n_send][AMR_NODE] != node){
@@ -2557,7 +2575,7 @@ void check_refcrit(void){
 				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
 				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
 				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
-					i = i1 * 4 + i2 * 2 + i3;
+					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					block[n_send][AMR_NODE] = node;
 				}
@@ -2566,7 +2584,7 @@ void check_refcrit(void){
 
 				//Then derefine and set corresponding tag and timelevel
 				one_block_derefined = 1;
-				derefine(block[n_ord_total[n]][AMR_PARENT]);
+				//derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
@@ -2636,6 +2654,7 @@ int derefine_pole(void){
 		post_refine();
 		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
 	}
+
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();

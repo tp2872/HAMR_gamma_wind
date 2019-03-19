@@ -67,7 +67,6 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 
 	rc = 0;
 	gpu = 0;
-
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_send1(p, ps, Bufferp_1, Bufferps_1, n_ord[n], 0);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_send1(ph, psh, Bufferph_1, Bufferpsh_1, n_ord[n], 0);
@@ -108,6 +107,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 			set_iprobe(1, &flag);
 		} while (flag);
 	}
+
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
 	#if(TRANS_BOUND && NB_3==1)

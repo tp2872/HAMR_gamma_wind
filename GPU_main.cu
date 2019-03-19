@@ -203,44 +203,23 @@ void alloc_bounds_GPU(int n){
 	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
 		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR5_1] >= 0) ref1_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR6_2] >= 0) ref1_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR2_1] >= 0) ref2_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_NBR4_5] >= 0) ref2_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_NBR5_1] >= 0) ref2_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_NBR6_2] >= 0) ref2_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_NBR2_1] >= 0) ref3_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_NBR4_5] >= 0) ref3_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 	}
-
 	ref1_1s = ref1_1;
 	ref1_3s = ref1_3;
-	ref1_5s = ref1_5;
-	ref1_6s = ref1_6;
-	ref2_2s = ref2_2;
-	ref2_4s = ref2_4;
-	ref2_5s = ref2_5;
-	ref2_6s = ref2_6;
 	ref3_1s = ref3_1;
-	ref3_2s = ref3_2;
 	ref3_3s = ref3_3;
-	ref3_4s = ref3_4;
 
 	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR5P] >= 0)ref1_5s = MY_MIN(ref1_5, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR5P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR6P] >= 0)ref1_6s = MY_MIN(ref1_6, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR6P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR2P] >= 0)ref2_2s = MY_MIN(ref2_2, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR2P]][AMR_LEVEL2]);
-	if (block[n][AMR_NBR4P] >= 0)ref2_4s = MY_MIN(ref2_4, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR4P]][AMR_LEVEL2]);
-	if (block[n][AMR_NBR5P] >= 0)ref2_5s = MY_MIN(ref2_5, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR5P]][AMR_LEVEL2]);
-	if (block[n][AMR_NBR6P] >= 0)ref2_6s = MY_MIN(ref2_6, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR6P]][AMR_LEVEL2]);
 	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR2P] >= 0)ref3_2s = MY_MIN(ref3_2, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR2P]][AMR_LEVEL3]);
 	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR4P] >= 0)ref3_4s = MY_MIN(ref3_4, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR4P]][AMR_LEVEL3]);
-	
+	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL]) - 1) && DEREFINE_POLE){
+		ref3_2s = 0;
+		ref3_4s = 0;
+	}
+
 	gpuAlloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend1_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
@@ -1011,7 +990,7 @@ void GPU_consttransport_bound(void){
 	
 	gpu = 1;
 	#if(TRANS_BOUND)
-	E_average();
+	//E_average();
 	#endif
 	set_iprobe(0, &flag);
 
@@ -1747,43 +1726,22 @@ void free_bound_gpu(int n){
 	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
 		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR5_1] >= 0) ref1_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR6_2] >= 0) ref1_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR2_1] >= 0) ref2_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_NBR4_5] >= 0) ref2_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_NBR5_1] >= 0) ref2_5 = block[block[n][AMR_NBR5_1]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_NBR6_2] >= 0) ref2_6 = block[block[n][AMR_NBR6_2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_NBR2_1] >= 0) ref3_2 = block[block[n][AMR_NBR2_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_NBR4_5] >= 0) ref3_4 = block[block[n][AMR_NBR4_5]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 	}
-
 	ref1_1s = ref1_1;
 	ref1_3s = ref1_3;
-	ref1_5s = ref1_5;
-	ref1_6s = ref1_6;
-	ref2_2s = ref2_2;
-	ref2_4s = ref2_4;
-	ref2_5s = ref2_5;
-	ref2_6s = ref2_6;
 	ref3_1s = ref3_1;
-	ref3_2s = ref3_2;
 	ref3_3s = ref3_3;
-	ref3_4s = ref3_4;
 
 	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR5P] >= 0)ref1_5s = MY_MIN(ref1_5, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR5P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR6P] >= 0)ref1_6s = MY_MIN(ref1_6, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR6P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR2P] >= 0)ref2_2s = MY_MIN(ref2_2, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR2P]][AMR_LEVEL2]);
-	if (block[n][AMR_NBR4P] >= 0)ref2_4s = MY_MIN(ref2_4, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR4P]][AMR_LEVEL2]);
-	if (block[n][AMR_NBR5P] >= 0)ref2_5s = MY_MIN(ref2_5, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR5P]][AMR_LEVEL2]);
-	if (block[n][AMR_NBR6P] >= 0)ref2_6s = MY_MIN(ref2_6, block[n][AMR_LEVEL2] - block[block[n][AMR_NBR6P]][AMR_LEVEL2]);
 	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR2P] >= 0)ref3_2s = MY_MIN(ref3_2, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR2P]][AMR_LEVEL3]);
 	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR4P] >= 0)ref3_4s = MY_MIN(ref3_4, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR4P]][AMR_LEVEL3]);
+	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL])-1) && DEREFINE_POLE){
+		ref3_2s = 0;
+		ref3_4s = 0;
+	}
 
 	//status += gpuFree(NULL_POINTER[nl[n]]);
 	status += gpuFree(Buffersend1[nl[n]]);

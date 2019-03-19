@@ -138,10 +138,6 @@ void E_average(void){
 		nz = NB_3*pow(1 + REF_3, l);
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
-				if (l > 0){
-					fprintf(stderr, "Catastrophic error in E_average! Higher level refinement around pole not yet fully implemented \n");
-					exit(0);
-				}
 				//Which nodes have an active block around a slice in phi for a given i
 				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
 					//#pragma omp parallel for schedule(dynamic,1) private(number, u)
@@ -179,10 +175,6 @@ void E_average(void){
 		nz = NB_3*pow(1 + REF_3, l);
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
-				if (l > 0){
-					fprintf(stderr, "Catastrophic error in E_average! Higher level refinement around pole not yet fully implemented \n");
-					exit(0);
-				}
 				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
 					for (u = 0; u < numtasks; u++){
 						send_tag2[l][u] = 0;

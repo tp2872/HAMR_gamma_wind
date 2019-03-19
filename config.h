@@ -20,8 +20,8 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (0.)
+#define TILTED (1)
+#define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
