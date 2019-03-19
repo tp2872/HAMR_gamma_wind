@@ -990,7 +990,7 @@ void GPU_consttransport_bound(void){
 	
 	gpu = 1;
 	#if(TRANS_BOUND)
-	//E_average();
+	E_average();
 	#endif
 	set_iprobe(0, &flag);
 

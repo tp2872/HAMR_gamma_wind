@@ -135,7 +135,7 @@ void E_average(void){
 	for (l = 0; l < N_LEVELS_3D; l++){
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3*pow(1 + REF_3, l);
+		nz = NB_3;
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				//Which nodes have an active block around a slice in phi for a given i
@@ -172,7 +172,7 @@ void E_average(void){
 	for (l = 0; l < N_LEVELS_3D; l++){
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3*pow(1 + REF_3, l);
+		nz = NB_3;
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
@@ -207,7 +207,7 @@ void E_average(void){
 	for (l = 0; l < N_LEVELS_3D; l++){
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3*pow(1 + REF_3, l);
+		nz = NB_3;
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
@@ -233,7 +233,7 @@ void E_average(void){
 	for (l = 0; l < N_LEVELS_3D; l++){
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3*pow(1 + REF_3, l);
+		nz = NB_3;
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, NB_2-1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
@@ -258,7 +258,7 @@ void E_average(void){
 
 	//Average the first component of the E_field for both poles
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1){
-		nz = NB_3*pow(1 + REF_3, block[n_ord[n]][AMR_LEVEL3]);
+		nz = NB_3;
 		if (block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
 			z_max = nz;
 			for (z = 0; z < z_max; z++){
