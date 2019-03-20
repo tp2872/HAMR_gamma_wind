@@ -145,9 +145,8 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferV[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	#endif
 	cudaMalloc(&Bufferradius[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
-	#if(PPM || LEER)
 	cudaMalloc(&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
-	#endif
+
 	#if(PRESTEP_P || N_LEVELS_1D_INT>0)
 	cudaMalloc(&Bufferstorage2[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
 	cudaMalloc(&Bufferstorage3[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
@@ -454,73 +453,73 @@ void alloc_bounds_GPU(int n){
 	gpuAlloc(&Buffersend5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
 	gpuAlloc(&Buffersend6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
 	#endif
-	gpuAlloc(&Bufferrec1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec4E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec1E[nl[n]], (1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec2E[nl[n]], (1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec3E[nl[n]], (1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec4E[nl[n]], (1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * D3)*sizeof(double));
 	#if(N3G>0)
-	gpuAlloc(&Bufferrec5E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	gpuAlloc(&Bufferrec6E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
+	gpuAlloc(&Bufferrec5E[nl[n]], (1 + ref2_6)*(1 + ref1_6) * 2 * (BS_1 / (1 + ref2_6) + 2 * D1)*(BS_2 / (1 + ref1_6) + 2 * D2)*sizeof(double));
+	gpuAlloc(&Bufferrec6E[nl[n]], (1 + ref2_5)*(1 + ref1_5) * 2 * (BS_1 / (1 + ref2_5) + 2 * D1)*(BS_2 / (1 + ref1_5) + 2 * D2)*sizeof(double));
 	#endif
 	Bufferrec1_3E[nl[n]] = Bufferrec1E[nl[n]];
-	Bufferrec1_4E[nl[n]] = Bufferrec1E[nl[n]] + ref3_3*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
-	Bufferrec1_7E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
-	Bufferrec1_8E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
+	Bufferrec1_4E[nl[n]] = Bufferrec1E[nl[n]] + ref3_3*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_7E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_8E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
 	Bufferrec2_1E[nl[n]] = Bufferrec2E[nl[n]];
-	Bufferrec2_2E[nl[n]] = Bufferrec2E[nl[n]] + ref3_4*(2 * ((BS_2 + 2 * D2) / (1 + ref2_4))*((BS_3 + 2 * D3) / (1 + ref3_4)));
-	Bufferrec2_3E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_4))*((BS_3 + 2 * D3) / (1 + ref3_4)));
-	Bufferrec2_4E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_4))*((BS_3 + 2 * D3) / (1 + ref3_4)));
+	Bufferrec2_2E[nl[n]] = Bufferrec2E[nl[n]] + ref3_4*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_3E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_4E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
 	Bufferrec3_1E[nl[n]] = Bufferrec3E[nl[n]];
-	Bufferrec3_2E[nl[n]] = Bufferrec3E[nl[n]] + ref3_1*(2 * ((BS_1 + 2 * D1) / (1 + ref1_1))*((BS_3 + 2 * D3) / (1 + ref3_1)));
-	Bufferrec3_5E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 + 2 * D1) / (1 + ref1_1))*((BS_3 + 2 * D3) / (1 + ref3_1)));
-	Bufferrec3_6E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 + 2 * D1) / (1 + ref1_1))*((BS_3 + 2 * D3) / (1 + ref3_1)));
+	Bufferrec3_2E[nl[n]] = Bufferrec3E[nl[n]] + ref3_1*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_5E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_6E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
 	Bufferrec4_5E[nl[n]] = Bufferrec4E[nl[n]];
-	Bufferrec4_6E[nl[n]] = Bufferrec4E[nl[n]] + ref3_2*(2 * ((BS_2 + 2 * D2) / (1 + ref2_2))*((BS_3 + 2 * D3) / (1 + ref3_2)));
-	Bufferrec4_7E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_2))*((BS_3 + 2 * D3) / (1 + ref3_2)));
-	Bufferrec4_8E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_2))*((BS_3 + 2 * D3) / (1 + ref3_2)));
+	Bufferrec4_6E[nl[n]] = Bufferrec4E[nl[n]] + ref3_2*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_7E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_8E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
 	#if(N3G>0)
 	Bufferrec5_1E[nl[n]] = Bufferrec5E[nl[n]];
-	Bufferrec5_3E[nl[n]] = Bufferrec5E[nl[n]] + ref1_6*(2 * ((BS_2 + 2 * D2) / (1 + ref2_6))*((BS_1 + 2 * D1) / (1 + ref1_6)));
-	Bufferrec5_5E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_6))*((BS_1 + 2 * D1) / (1 + ref1_6)));
-	Bufferrec5_7E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_6))*((BS_1 + 2 * D1) / (1 + ref1_6)));
+	Bufferrec5_3E[nl[n]] = Bufferrec5E[nl[n]] + ref1_6*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_5E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_7E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
 	Bufferrec6_2E[nl[n]] = Bufferrec6E[nl[n]];
-	Bufferrec6_4E[nl[n]] = Bufferrec6E[nl[n]] + ref1_5*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
-	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
-	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
+	Bufferrec6_4E[nl[n]] = Bufferrec6E[nl[n]] + ref1_5*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
 	#endif
-	gpuAlloc(&Bufferrec1E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec2E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec3E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
-	gpuAlloc(&Bufferrec4E1[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec1E1[nl[n]], (1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec2E1[nl[n]], (1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec3E1[nl[n]], (1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3)*sizeof(double));
+	gpuAlloc(&Bufferrec4E1[nl[n]], (1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * D3)*sizeof(double));
 	#if(N3G>0)
-	gpuAlloc(&Bufferrec5E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
-	gpuAlloc(&Bufferrec6E1[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_2 + 2 * D2)*sizeof(double));
+	gpuAlloc(&Bufferrec5E1[nl[n]], (1 + ref2_6)*(1 + ref1_6) * 2 * (BS_1 / (1 + ref2_6) + 2 * D1)*(BS_2 / (1 + ref1_6) + 2 * D2)*sizeof(double));
+	gpuAlloc(&Bufferrec6E1[nl[n]], (1 + ref2_5)*(1 + ref1_5) * 2 * (BS_1 / (1 + ref2_5) + 2 * D1)*(BS_2 / (1 + ref1_5) + 2 * D2)*sizeof(double));
 	#endif
 	Bufferrec1_3E1[nl[n]] = Bufferrec1E1[nl[n]];
-	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + ref3_3*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
-	Bufferrec1_7E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
-	Bufferrec1_8E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 + 2 * D1) / (1 + ref1_3))*((BS_3 + 2 * D3) / (1 + ref3_3)));
+	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + ref3_3*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_7E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_8E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
 	Bufferrec2_1E1[nl[n]] = Bufferrec2E1[nl[n]];
-	Bufferrec2_2E1[nl[n]] = Bufferrec2E1[nl[n]] + ref3_4*(2 * ((BS_2 + 2 * D2) / (1 + ref2_4))*((BS_3 + 2 * D3) / (1 + ref3_4)));
-	Bufferrec2_3E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_4))*((BS_3 + 2 * D3) / (1 + ref3_4)));
-	Bufferrec2_4E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_4))*((BS_3 + 2 * D3) / (1 + ref3_4)));
+	Bufferrec2_2E1[nl[n]] = Bufferrec2E1[nl[n]] + ref3_4*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_3E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_4E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
 	Bufferrec3_1E1[nl[n]] = Bufferrec3E1[nl[n]];
-	Bufferrec3_2E1[nl[n]] = Bufferrec3E1[nl[n]] + ref3_1*(2 * ((BS_1 + 2 * D1) / (1 + ref1_1))*((BS_3 + 2 * D3) / (1 + ref3_1)));
-	Bufferrec3_5E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 + 2 * D1) / (1 + ref1_1))*((BS_3 + 2 * D3) / (1 + ref3_1)));
-	Bufferrec3_6E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 + 2 * D1) / (1 + ref1_1))*((BS_3 + 2 * D3) / (1 + ref3_1)));
+	Bufferrec3_2E1[nl[n]] = Bufferrec3E1[nl[n]] + ref3_1*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_5E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_6E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
 	Bufferrec4_5E1[nl[n]] = Bufferrec4E1[nl[n]];
-	Bufferrec4_6E1[nl[n]] = Bufferrec4E1[nl[n]] + ref3_2*(2 * ((BS_2 + 2 * D2) / (1 + ref2_2))*((BS_3 + 2 * D3) / (1 + ref3_2)));
-	Bufferrec4_7E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_2))*((BS_3 + 2 * D3) / (1 + ref3_2)));
-	Bufferrec4_8E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_2))*((BS_3 + 2 * D3) / (1 + ref3_2)));
+	Bufferrec4_6E1[nl[n]] = Bufferrec4E1[nl[n]] + ref3_2*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_7E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_8E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
 	#if(N3G>0)
 	Bufferrec5_1E1[nl[n]] = Bufferrec5E1[nl[n]];
-	Bufferrec5_3E1[nl[n]] = Bufferrec5E1[nl[n]] + ref1_6*(2 * ((BS_2 + 2 * D2) / (1 + ref2_6))*((BS_1 + 2 * D1) / (1 + ref1_6)));
-	Bufferrec5_5E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_6))*((BS_1 + 2 * D1) / (1 + ref1_6)));
-	Bufferrec5_7E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_6))*((BS_1 + 2 * D1) / (1 + ref1_6)));
+	Bufferrec5_3E1[nl[n]] = Bufferrec5E1[nl[n]] + ref1_6*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_5E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_7E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
 	Bufferrec6_2E1[nl[n]] = Bufferrec6E1[nl[n]];
-	Bufferrec6_4E1[nl[n]] = Bufferrec6E1[nl[n]] + ref1_5*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
-	Bufferrec6_6E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
-	Bufferrec6_8E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 + 2 * D2) / (1 + ref2_5))*((BS_1 + 2 * D1) / (1 + ref1_5)));
+	Bufferrec6_4E1[nl[n]] = Bufferrec6E1[nl[n]] + ref1_5*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_6E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_8E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
 	#endif
 	#if(N_LEVELS>1)
 	gpuAlloc(&Bufferrec1_3E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_3) *(BS_3 + 2 * D3) / (1 + ref3_3) *sizeof(double));
@@ -1679,9 +1678,7 @@ void GPU_finish(int n, int force_delete)
 	status += cudaFree(BufferV[nl[n]]);
 	#endif
 	status += cudaFree(Bufferradius[nl[n]]);
-	#if(PPM || LEER)
 	status += cudaFree(Bufferstorage1[nl[n]]);
-	#endif
 	#if(PRESTEP_P|| N_LEVELS_1D_INT>0)
 	status += cudaFree(Bufferstorage2[nl[n]]);
 	status += cudaFree(Bufferstorage3[nl[n]]);

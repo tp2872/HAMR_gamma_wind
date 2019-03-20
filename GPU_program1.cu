@@ -2214,7 +2214,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
 			x3 = p[k*(ksize)+global_id + z3];
 			x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			temp=0.5*slope_lim(x2, x3, x4, 0)
+			temp=0.5*slope_lim(x2, x3, x4, 0);
 			dq1[k*(ksize)+global_id] = x3-temp;
 			dq2[k*(ksize)+global_id] = x3+temp;
 		}

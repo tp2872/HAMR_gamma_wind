@@ -1862,7 +1862,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			j1 = (j - j % (1 + ref_2)) / (1 + ref_2);
 			z1 = (z - z % (1 + ref_3)) / (1 + ref_3);
 
-			if ((i == 0 || i == ref_1) && offset_1 == 0 && n_rec2 == 10){
+			if ((i == 0 || i == ref_1) && offset_1 == 0 && n_rec2 == 1){
 				set_ref(n, block[n][AMR_NBR4_5], &ref_1, &ref_2, &ref_3);
 				//if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
 				//if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -1876,7 +1876,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_2 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((i == BS_1 || i == BS_1 - ref_1 || i == BS_1 - (1 + ref_1)) && (offset_1 == 1 || ref_1 == 0) && n_rec4 == 10){
+			if ((i == BS_1 || i == BS_1 - ref_1 || i == BS_1 - (1 + ref_1)) && (offset_1 == 1 || ref_1 == 0) && n_rec4 == 1){
 				set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 				//if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
 				//if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -1891,7 +1891,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			else set_4 = -1;
 
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 == 10){
+			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 == 1){
 				set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -1905,7 +1905,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_3 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 == 10){
+			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 == 1){
 				set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -1920,7 +1920,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			else set_1 = -1;
 
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 == 10){
+			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 == 1){
 				set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 			//	if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 			//	if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
@@ -1934,7 +1934,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_5 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 == 10){
+			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 == 1){
 				set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 			//	if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 			//	if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
@@ -2299,7 +2299,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 1.0 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 10000.0 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2344,9 +2344,9 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-//(block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)
+//
 
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 ) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
 				//Refine one level less near black hole

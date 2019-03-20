@@ -21,7 +21,7 @@ Physical Parameters section
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (0.)
+#define TILT_ANGLE (45.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -85,12 +85,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 6
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 24
 #define BS_2 24
-#define BS_3 24
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 2
