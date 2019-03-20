@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	diag(INIT_OUT);
 
 	DTl = 50.0;
-	DTd = 50.0;
+	DTd = 0.0001;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t + TREF;
