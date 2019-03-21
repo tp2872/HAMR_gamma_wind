@@ -1000,15 +1000,6 @@ void set_corners(void){
 		}
 	}
 #endif
-	int test = AMR_coord_linear2(1, 3, 3, 6, 1);
-	//fprintf(stderr, "\n n1: %d timelevel: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_TIMELEVEL], block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	test = block[test][AMR_CORN10D];
-	//fprintf(stderr, "Child n1: %d timelevel: %dlevel: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_TIMELEVEL], block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	test = AMR_coord_linear2(1, 3, 3, 7, 1);
-	//fprintf(stderr, "n1: %d timelevel: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_TIMELEVEL], block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	test = block[test][AMR_CORN9D];
-	//fprintf(stderr, "Child n1: %d timelevel: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_TIMELEVEL], block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-
 }
 /*
 void check_corners(void){
