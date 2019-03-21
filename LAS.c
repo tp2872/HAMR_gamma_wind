@@ -397,8 +397,8 @@ void set_corners(void){
 					counter1_2 += 10000;
 					counter1 = 100000;
 					block[n_ord_total[n]][AMR_CORN1D] = -2;
-					counter1_1 -= block[block[n_ord_total[n]][AMR_NBR1_7]][AMR_TIMELEVEL];
-					counter1_2 -= block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_TIMELEVEL];
+					counter1_1 -= (block[block[n_ord_total[n]][AMR_NBR1_7]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR1_7]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR1_7]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR1_7]][AMR_LEVEL3]));
+					counter1_2 -= (block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_LEVEL3]));
 
 					if (counter1_1 > counter0_1) block[n_ord_total[n]][AMR_CORN1D_1] = block[n_ord_total[n]][AMR_NBR1_7];
 					if (counter1_2 > counter0_2) block[n_ord_total[n]][AMR_CORN1D_2] = block[n_ord_total[n]][AMR_NBR1_8];
@@ -415,8 +415,8 @@ void set_corners(void){
 					counter2_2 += 10000;
 					counter2 = 100000;
 					block[n_ord_total[n]][AMR_CORN1D] = -2;
-					counter2_1 -= block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_TIMELEVEL];
-					counter2_2 -= block[block[n_ord_total[n]][AMR_NBR2_2]][AMR_TIMELEVEL];
+					counter2_1 -= (block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_LEVEL3]));
+					counter2_2 -= (block[block[n_ord_total[n]][AMR_NBR2_2]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR2_2]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR2_2]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR2_2]][AMR_LEVEL3]));
 					if (counter2_1 > counter1_1) block[n_ord_total[n]][AMR_CORN1D_1] = block[n_ord_total[n]][AMR_NBR2_1];
 					if (counter2_2 > counter1_2) block[n_ord_total[n]][AMR_CORN1D_2] = block[n_ord_total[n]][AMR_NBR2_2];
 				}
@@ -432,8 +432,8 @@ void set_corners(void){
 					counter3_2 += 10000;
 					counter3 = 100000;
 					block[n_ord_total[n]][AMR_CORN1D] = -2;
-					counter3_1 -= block[block[n_ord_total[n]][AMR_CORN1_1]][AMR_TIMELEVEL];
-					counter3_2 -= block[block[n_ord_total[n]][AMR_CORN1_2]][AMR_TIMELEVEL];
+					counter3_1 -= (block[block[n_ord_total[n]][AMR_CORN1_1]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_CORN1_1]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_CORN1_1]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_CORN1_1]][AMR_LEVEL3]));
+					counter3_2 -= (block[block[n_ord_total[n]][AMR_CORN1_2]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_CORN1_2]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_CORN1_2]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_CORN1_2]][AMR_LEVEL3]));
 
 					if ((counter3_1 > counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN1D_1] =block[n_ord_total[n]][AMR_CORN1_1];
 					if ((counter3_2 > counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN1D_2] =block[n_ord_total[n]][AMR_CORN1_2];
@@ -615,11 +615,11 @@ void set_corners(void){
 					counter1_2 += 10000;
 					counter1 = 100000;
 					block[n_ord_total[n]][AMR_CORN5D] = -2;
-					counter1_1 -= block[block[n_ord_total[n]][AMR_NBR6_6]][AMR_TIMELEVEL];
-					counter1_2 -= block[block[n_ord_total[n]][AMR_NBR6_8]][AMR_TIMELEVEL];
+					counter1_1 -= (block[block[n_ord_total[n]][AMR_NBR6_6]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR6_6]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR6_6]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR6_6]][AMR_LEVEL3]));
+					counter1_2 -= (block[block[n_ord_total[n]][AMR_NBR6_8]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR6_8]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR6_8]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR6_8]][AMR_LEVEL3]));
 
-					if (counter1_1 > counter0_1) block[n_ord_total[n]][AMR_CORN5D_1] = block[n_ord_total[n]][AMR_NBR6_6];
-					if (counter1_2 > counter0_2) block[n_ord_total[n]][AMR_CORN5D_2] = block[n_ord_total[n]][AMR_NBR6_8];
+					if (counter1_1 >= counter0_1) block[n_ord_total[n]][AMR_CORN5D_1] = block[n_ord_total[n]][AMR_NBR6_6];
+					if (counter1_2 >= counter0_2) block[n_ord_total[n]][AMR_CORN5D_2] = block[n_ord_total[n]][AMR_NBR6_8];
 				}
 			}
 
@@ -633,8 +633,8 @@ void set_corners(void){
 					counter2_2 += 10000;
 					counter2 = 100000;
 					block[n_ord_total[n]][AMR_CORN5D] = -2;
-					counter2_1 -= block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_TIMELEVEL];
-					counter2_2 -= block[block[n_ord_total[n]][AMR_NBR2_3]][AMR_TIMELEVEL];
+					counter2_1 -= (block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR2_1]][AMR_LEVEL3]));
+					counter2_2 -= (block[block[n_ord_total[n]][AMR_NBR2_3]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR2_3]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR2_3]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR2_3]][AMR_LEVEL3]));
 					if (counter2_1 > counter1_1) block[n_ord_total[n]][AMR_CORN5D_1] = block[n_ord_total[n]][AMR_NBR2_1];
 					if (counter2_2 > counter1_2) block[n_ord_total[n]][AMR_CORN5D_2] = block[n_ord_total[n]][AMR_NBR2_3];
 				}
@@ -650,11 +650,11 @@ void set_corners(void){
 					counter3_2 += 10000;
 					counter3 = 100000;
 					block[n_ord_total[n]][AMR_CORN5D] = -2;
-					counter3_1 -= block[block[n_ord_total[n]][AMR_CORN5_1]][AMR_TIMELEVEL];
-					counter3_2 -= block[block[n_ord_total[n]][AMR_CORN5_2]][AMR_TIMELEVEL];
+					counter3_1 -= (block[block[n_ord_total[n]][AMR_CORN5_1]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_CORN5_1]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_CORN5_1]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_CORN5_1]][AMR_LEVEL3]));
+					counter3_2 -= (block[block[n_ord_total[n]][AMR_CORN5_2]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_CORN5_2]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_CORN5_2]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_CORN5_2]][AMR_LEVEL3]));
 
-					if ((counter3_1 > counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN5D_1] =block[n_ord_total[n]][AMR_CORN5_1];
-					if ((counter3_2 > counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN5D_2] =block[n_ord_total[n]][AMR_CORN5_2];
+					if ((counter3_1 >= counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN5D_1] =block[n_ord_total[n]][AMR_CORN5_1];
+					if ((counter3_2 >= counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN5D_2] =block[n_ord_total[n]][AMR_CORN5_2];
 				}
 			}
 		}
@@ -825,8 +825,8 @@ void set_corners(void){
 					counter1_2 += 10000;
 					counter1 = 100000;
 					block[n_ord_total[n]][AMR_CORN9D] = -2;
-					counter1_1 -= block[block[n_ord_total[n]][AMR_NBR1_4]][AMR_TIMELEVEL];
-					counter1_2 -= block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_TIMELEVEL];
+					counter1_1 -= (block[block[n_ord_total[n]][AMR_NBR1_4]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR1_4]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR1_4]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR1_4]][AMR_LEVEL3]));
+					counter1_2 -= (block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR1_8]][AMR_LEVEL3]));
 
 					if (counter1_1 > counter0_1) block[n_ord_total[n]][AMR_CORN9D_1] = block[n_ord_total[n]][AMR_NBR1_4];
 					if (counter1_2 > counter0_2) block[n_ord_total[n]][AMR_CORN9D_2] = block[n_ord_total[n]][AMR_NBR1_8];
@@ -843,8 +843,8 @@ void set_corners(void){
 					counter2_2 += 10000;
 					counter2 = 100000;
 					block[n_ord_total[n]][AMR_CORN9D] = -2;
-					counter2_1 -= block[block[n_ord_total[n]][AMR_NBR5_1]][AMR_TIMELEVEL];
-					counter2_2 -= block[block[n_ord_total[n]][AMR_NBR5_5]][AMR_TIMELEVEL];
+					counter2_1 -= (block[block[n_ord_total[n]][AMR_NBR5_1]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR5_1]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR5_1]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR5_1]][AMR_LEVEL3]));
+					counter2_2 -= (block[block[n_ord_total[n]][AMR_NBR5_5]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_NBR5_5]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_NBR5_5]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_NBR5_5]][AMR_LEVEL3]));
 					if (counter2_1 > counter1_1) block[n_ord_total[n]][AMR_CORN9D_1] = block[n_ord_total[n]][AMR_NBR5_1];
 					if (counter2_2 > counter1_2) block[n_ord_total[n]][AMR_CORN9D_2] = block[n_ord_total[n]][AMR_NBR5_5];
 				}
@@ -860,8 +860,8 @@ void set_corners(void){
 					counter3_2 += 10000;
 					counter3 = 100000;
 					block[n_ord_total[n]][AMR_CORN9D] = -2;
-					counter3_1 -= block[block[n_ord_total[n]][AMR_CORN9_1]][AMR_TIMELEVEL];
-					counter3_2 -= block[block[n_ord_total[n]][AMR_CORN9_2]][AMR_TIMELEVEL];
+					counter3_1 -= (block[block[n_ord_total[n]][AMR_CORN9_1]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_CORN9_1]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_CORN9_1]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_CORN9_1]][AMR_LEVEL3]));
+					counter3_2 -= (block[block[n_ord_total[n]][AMR_CORN9_2]][AMR_TIMELEVEL] - 2 *AMR_MAXTIMELEVEL * (block[block[n_ord_total[n]][AMR_CORN9_2]][AMR_LEVEL1] + block[block[n_ord_total[n]][AMR_CORN9_2]][AMR_LEVEL2] + block[block[n_ord_total[n]][AMR_CORN9_2]][AMR_LEVEL3]));
 
 					if ((counter3_1 > counter2_1) && (counter3_1>counter1_1)) block[n_ord_total[n]][AMR_CORN9D_1] =block[n_ord_total[n]][AMR_CORN9_1];
 					if ((counter3_2 > counter2_2) && (counter3_2>counter1_2)) block[n_ord_total[n]][AMR_CORN9D_2] =block[n_ord_total[n]][AMR_CORN9_2];
@@ -1001,6 +1001,7 @@ void set_corners(void){
 	}
 #endif
 }
+
 /*
 void check_corners(void){
 	int n;
