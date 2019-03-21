@@ -69,7 +69,7 @@ void diag(int call_code)
 					divbmax = divb;
 				}
 
-				if (divb > 0.00000000001){
+				if (divb > 0.0001){
 					fprintf(stderr, "n: %d divb (level: %d, level1: %d, level2: %d, level3: %d, coord1: %d, coord2: %d, coord3: %d) at (%d,%d,%d): %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
 					//fprintf(stderr, "n: %d Corn10_1: %d Corn10_2: %d Corn10P: %d Corn12_1: %d Corn12_2: %d Corn12P: %d  \n", n_ord[n], block[n_ord[n]][AMR_CORN10_1], block[n_ord[n]][AMR_CORN10_2], block[n_ord[n]][AMR_CORN10P], block[n_ord[n]][AMR_CORN12_1], block[n_ord[n]][AMR_CORN12_2], block[n_ord[n]][AMR_CORN12P]);
 				}
