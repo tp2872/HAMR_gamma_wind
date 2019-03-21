@@ -69,7 +69,7 @@ void diag(int call_code)
 					divbmax = divb;
 				}
 
-				if (divb > 0.0000000001){
+				if (divb > 0.00000000001){
 					fprintf(stderr, "n: %d divb (level: %d, level1: %d, level2: %d, level3: %d, coord1: %d, coord2: %d, coord3: %d) at (%d,%d,%d): %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
 					//fprintf(stderr, "n: %d Corn10_1: %d Corn10_2: %d Corn10P: %d Corn12_1: %d Corn12_2: %d Corn12P: %d  \n", n_ord[n], block[n_ord[n]][AMR_CORN10_1], block[n_ord[n]][AMR_CORN10_2], block[n_ord[n]][AMR_CORN10P], block[n_ord[n]][AMR_CORN12_1], block[n_ord[n]][AMR_CORN12_2], block[n_ord[n]][AMR_CORN12P]);
 				}
@@ -78,7 +78,7 @@ void diag(int call_code)
 			}
 		}
 		
-		int test = AMR_coord_linear2(1, 0, 3, 1, 0);
+	/*	int test = AMR_coord_linear2(1, 0, 3, 1, 0);
 		fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 		test = block[test][AMR_NBR3P];
 		fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
@@ -95,7 +95,7 @@ void diag(int call_code)
 		fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 		test = block[test][AMR_NBR3P];
 		fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-
+		*/
 		#if (MPI_enable)
 		MPI_Barrier(mpi_cartcomm);
 		double divbmax_local = divbmax;
