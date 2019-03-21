@@ -1042,6 +1042,9 @@ void set_mag(void){
 				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
 				//rotate_vector(V, pos_new, &r, &th, &phi, tilt);
 				//coord_transform(V, n_ord[n], i, j, z);
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = V[1];
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
+				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];

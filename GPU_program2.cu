@@ -46,12 +46,9 @@ __global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int js
 		}
 		#if(STAGGERED)
 		for (i = i1; i <i2; i++){
-			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+(i + N1G + (i1>N1G))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] 
-				* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1>N1G))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-			send[(NPR + 1)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] 
-				* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-			send[(NPR + 2)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] 
-				* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+(i + N1G + (i1>N1G))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			send[(NPR + 1)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+			send[(NPR + 2)*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 		}
 		#endif
 	}
@@ -83,12 +80,9 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 		
 		#if(STAGGERED)
 		for (j = j1; j <j2; j++){
-			send[(NPR + 0)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] 
-				* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-			send[(NPR + 1)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+icurr*isize + (j + N2G + (j1>N2G))*(BS_3 + 2 * N3G) + zcurr] 
-				* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1>N2G))*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-			send[(NPR + 2)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] 
-				* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+			send[(NPR + 0)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			send[(NPR + 1)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[1 * (ksize)+icurr*isize + (j + N2G + (j1>N2G))*(BS_3 + 2 * N3G) + zcurr];
+			send[(NPR + 2)*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 		}
 		#endif
 	}
@@ -136,12 +130,9 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 
 		#if(STAGGERED)
 		for (z = z1; z <z2; z++){
-			send[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] 
-				* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-			send[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] 
-				* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-			send[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G))] 
-				* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1>N3G)) * NSY];
+			send[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			send[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+			send[(NPR + 2)*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G))];
 		}
 		#endif
 	}
@@ -175,34 +166,22 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 		#if(STAGGERED)
 		for (i = i1; i <i2; i += 1 + ref_1){
 			send[(NPR + 0)*jsize2*zsize2*(i2 - i1) / (1 + ref_1) + (i - i1) / (1 + ref_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] =
-				0.25*(ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + ref_1))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + ref_1))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY] +
-			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + ref_1))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1>N1G)*(1 + ref_1))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY]);
+				0.25*(ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] +
+				ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] +
+				ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (zcurr)] +
+				ps[0 * (ksize)+(i + N1G + (i1>N1G)*(1 + ref_1))*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (zcurr + ref_3)]);
 
 			send[(NPR + 1)*jsize2*zsize2*(i2 - i1) / (1 + ref_1) + (i - i1) / (1 + ref_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] =
-				0.25*(ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[1 * (ksize)+(i + N1G)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY] +
-			ps[1 * (ksize)+(i + N1G + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[1 * (ksize)+(i + N1G + ref_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY]);
+				0.25*(ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] +
+				ps[1 * (ksize)+(i + N1G)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] +
+				ps[1 * (ksize)+(i + N1G + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] +
+				ps[1 * (ksize)+(i + N1G + ref_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (zcurr + ref_3)]);
 
 			send[(NPR + 2)*jsize2*zsize2*(i2 - i1) / (1 + ref_1) + (i - i1) / (1 + ref_1)*jsize2*zsize2 + (jcurr - j1 - N2G) / (1 + ref_2)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] =
-				0.25*(ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[2 * (ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[2 * (ksize)+(i + N1G + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[2 * (ksize)+(i + N1G + ref_1)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY]);
+				0.25*(ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] +
+				ps[2 * (ksize)+(i + N1G)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + zcurr] +
+				ps[2 * (ksize)+(i + N1G + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + (zcurr)] +
+				ps[2 * (ksize)+(i + N1G + ref_1)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (zcurr)]);
 		}
 		#endif
 	}
@@ -236,34 +215,22 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 		#if(STAGGERED)
 		for (j = j1; j <j2; j += 1 + ref_2){
 			send[(NPR + 0)*isize2*zsize2*(j2 - j1) / (1 + ref_2) + (j - j1) / (1 + ref_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] =
-				0.25*(ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr * NSY)] +
-			ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY] +
-			ps[0 * (ksize)+(icurr)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr * NSY)] +
-			ps[0 * (ksize)+(icurr)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY]);
+				0.25*(ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] +
+				ps[0 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr + ref_3)] +
+				ps[0 * (ksize)+(icurr)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + (zcurr)] +
+				ps[0 * (ksize)+(icurr)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + (zcurr + ref_3)]);
 
 			send[(NPR + 1)*isize2*zsize2*(j2 - j1) / (1 + ref_2) + (j - j1) / (1 + ref_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] =
-				0.25*(ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1>N2G)*(1 + ref_2))*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1>N2G)*(1 + ref_2))*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY] +
-			ps[1 * (ksize)+(icurr + ref_1)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1>N2G)*(1 + ref_2))*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[1 * (ksize)+(icurr + ref_1)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr + ref_3)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1>N2G)*(1 + ref_2))*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr + ref_3) * NSY]);
+				0.25*(ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + zcurr] +
+				ps[1 * (ksize)+(icurr)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr + ref_3)] +
+				ps[1 * (ksize)+(icurr + ref_1)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr)] +
+				ps[1 * (ksize)+(icurr + ref_1)*isize + (j + N2G + (j1>N2G)*(1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr + ref_3)]);
 
 			send[(NPR + 2)*isize2*zsize2*(j2 - j1) / (1 + ref_2) + (j - j1) / (1 + ref_2)*isize2*zsize2 + (icurr - i1 - N1G) / (1 + ref_1)*zsize2 + (zcurr - z1 - N3G) / (1 + ref_3)] =
-				0.25*(ps[2 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[2 * (ksize)+(icurr)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + zcurr] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[2 * (ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY] +
-			ps[2 * (ksize)+(icurr + ref_1)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + (zcurr)] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (zcurr) * NSY]);
+				0.25*(ps[2 * (ksize)+(icurr)*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] + 
+				ps[2 * (ksize)+(icurr)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + zcurr]  + 
+				ps[2 * (ksize)+(icurr + ref_1)*isize + (j + N2G)*(BS_3 + 2 * N3G) + (zcurr)] + 
+				ps[2 * (ksize)+(icurr + ref_1)*isize + (j + N2G + ref_2)*(BS_3 + 2 * N3G) + (zcurr)]);
 		}
 		#endif
 	}
@@ -297,34 +264,22 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 		#if(STAGGERED)
 		for (z = z1; z <z2; z += 1 + ref_3){
 			send[(NPR + 0)*isize2*jsize2*(z2 - z1) / (1 + ref_3) + (z - z1) / (1 + ref_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] =
-				0.25*(ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] +
-			ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + ref_3) * NSY] +
-			ps[0 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] +
-			ps[0 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] 
-			* gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + ref_3) * NSY]);
+				0.25*(ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] +
+				ps[0 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] +
+				ps[0 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + z + N3G] +
+				ps[0 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] );
 
 			send[(NPR + 1)*isize2*jsize2*(z2 - z1) / (1 + ref_3) + (z - z1) / (1 + ref_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] =
-				0.25*(ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G]
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G)  * NSY] +
-			ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + ref_3) * NSY] +
-			ps[1 * (ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] +
-			ps[1 * (ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] 
-			* gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + ref_3) * NSY]);
+				0.25*(ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] +
+				ps[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + ref_3)] +
+				ps[1 * (ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + z + N3G] +
+				ps[1 * (ksize)+(icurr + ref_1)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + ref_3)]);
 
 			send[(NPR + 2)*isize2*jsize2*(z2 - z1) / (1 + ref_3) + (z - z1) / (1 + ref_3)*isize2*jsize2 + (icurr - i1 - N1G) / (1 + ref_1)*jsize2 + (jcurr - j1 - N2G) / (1 + ref_2)] =
-				0.25*(ps[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1>N3G)*(1 + ref_3)) * NSY] +
-			ps[2 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1>N3G)*(1 + ref_3)) * NSY] +
-			ps[2 * (ksize)+(icurr + ref_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1>N3G)*(1 + ref_3)) * NSY] +
-			ps[2 * (ksize)+(icurr + ref_1)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] 
-			* gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr + ref_1)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (jcurr + ref_2)*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1>N3G)*(1 + ref_3)) * NSY]);
+				0.25*(ps[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] +
+				ps[2 * (ksize)+(icurr)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] +
+				ps[2 * (ksize)+(icurr + ref_1)*isize + (jcurr)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))] +
+				ps[2 * (ksize)+(icurr + ref_1)*isize + (jcurr + ref_2)*(BS_3 + 2 * N3G) + (z + N3G + (z1>N3G)*(1 + ref_3))]);
 		}
 		#endif
 	}
@@ -396,12 +351,10 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 			for (i = i1; i < i2; i++){
 				if (jcurr>N2G && jcurr<BS_2 + N2G) ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
-					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(1 + NPR + NPR + 3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))])/
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3+2*N3G)*NSY+!NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3+2*N3G)*NSY+!NSY) + zcurr * NSY];
+					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(1 + NPR + NPR + 3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
 				if (jcurr>N2G && jcurr<BS_2 + N2G) psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 				if (zcurr>N3G && zcurr<BS_3 + N3G) ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
-					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(2 + NPR + NPR + 3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))])/
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3+2*N3G)*NSY+!NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3+2*N3G)*NSY+!NSY) + zcurr * NSY];
+					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(2 + NPR + NPR + 3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
 				if (zcurr>N3G && zcurr < BS_3 + N3G) psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 			}
 			#endif
@@ -419,21 +372,14 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 			#if(STAGGERED)
 			for (i = i1; i <i2; i++){
 				//if ((jcurr<N2G || jcurr >= BS_2 + N2G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
-				//	ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-				//		gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1<0))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY]; 
-				//	psh[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-				//		gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G + (i1<0))*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY]; 
+				//	ps[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+				//	psh[0 * (ksize)+(i + N1G + (i1<0))*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 				//}
-				//else psh[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-				//	gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+				//else psh[0 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 			}
 			#endif
 		}
@@ -507,12 +453,10 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 				}
 				for (j = j1; j < j2; j++){
 					if (icurr>N1G && icurr<BS_1 + N1G)ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
-						((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(0 + NPR + NPR + 3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))])/
-						gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3+2*N3G)*NSY+!NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3+2*N3G)*NSY+!NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+						((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(0 + NPR + NPR + 3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
 					if (icurr>N1G && icurr<BS_1 + N1G)psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 					if (zcurr>N3G && zcurr<BS_3 + N3G)ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
-						((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(2 + NPR + NPR + 3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))])/
-						gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3+2*N3G)*NSY+!NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3+2*N3G)*NSY+!NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+						((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(2 + NPR + NPR + 3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
 					if (zcurr>N3G && zcurr<BS_3 + N3G)psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 				}
 				#endif
@@ -528,22 +472,15 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 					}
 				}
 				for (j = j1; j <j2; j++){
-					ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-						gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
-					psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-						gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
+					ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+					psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 					//if ((icurr<N1G || icurr >= BS_1 + N1G || zcurr<N3G || zcurr >= BS_3 + N3G) && update_staggered == 1){
-					//	ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					//		gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1<0))*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
-					//	psh[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					//		gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G + (j1<0))*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
+					//	ps[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+					//	psh[1 * (ksize)+icurr*isize + (j + N2G + (j1<0))*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 					//}
-					//else psh[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					//	gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
-					ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-						gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
-					psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-						gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
+					//else psh[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(1 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+					ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+					psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 				}
 			}
 		}
@@ -559,14 +496,10 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 			#if(STAGGERED)
 			for (j = j1; j <j2; j++){
-				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
-				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
-				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];			
-				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
+				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] ;
+				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
+				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];			
+				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = -receive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 			}
 			#endif
 		}
@@ -639,12 +572,10 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 			for (z = z1; z < z2; z++){
 				if (icurr>N1G && icurr<BS_1 + N1G)ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (tempreceive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] +
-					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(NPR + 0 + NPR + 3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))])/
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3+2*N3G)*NSY+!NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3+2*N3G)*NSY+!NSY) + jcurr*((BS_3+2*N3G)*NSY+!NSY) + (z + N3G) * NSY];
+					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(NPR + 0 + NPR + 3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))]);
 				if (icurr>N1G && icurr<BS_1 + N1G)psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 				if (jcurr>N2G && jcurr<BS_2 + N2G)ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (tempreceive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] +
-					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(NPR + 1 + NPR + 3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))])/
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3+2*N3G)*NSY+!NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3+2*N3G)*NSY+!NSY) + jcurr*((BS_3+2*N3G)*NSY+!NSY) + (z + N3G) * NSY];
+					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(NPR + 1 + NPR + 3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))]);
 				if (jcurr>N2G && jcurr<BS_2 + N2G)psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 			}
 			#endif
@@ -661,22 +592,15 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 			#if(STAGGERED)
 			for (z = z1; z <z2; z++){
-				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
+				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];
+				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(0 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];
+				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];
+				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(1 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];
 				//if ((icurr<N1G || icurr >= BS_1 + N1G || jcurr<N2G || jcurr >= BS_2 + N2G) && update_staggered == 1){
-				//	ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-				//		gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1<0)) * NSY];
-				//	psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-				//		gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G + (z1<0)) * NSY];
+				//	ps[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];
+				//	psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G + (z1<0))] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];
 				//}
-				//else psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] /
-				//	gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (icurr)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G)* NSY];			
+				//else psh[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[(2 + NPR)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))];			
 			}
 			#endif
 		}
@@ -766,10 +690,10 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 					avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 					avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 					if (ii == 0){
-						dq1[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + 0 * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ref_1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
+						dq1[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii+1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
 					}
 					else{
-						dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + 0 * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ref_1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[k]);
+						dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[k]);
 					}
 				}
 				dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij - ref_2)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij + ref_2)*(1 + 2 * ref_3) + (iz)]);
@@ -779,53 +703,47 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 				dq1[(k + NPR)] = 0.0;
 				if (ref_1){
 					avg[(k + NPR)] = 0.25*(psim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3))] +
-						psim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3))])
-						*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+						psim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3))]);
 					avg[(k + NPR)] += 0.25*(psim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 1))] +
-						psim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 1))])
-						*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+						psim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 1))]);
 					if (ii == 0){
-						dq1[(k + NPR)] = slope_lim(avg[(k + NPR)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + 0 * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ref_1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
+						dq1[(k + NPR)] = slope_lim(avg[(k + NPR)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii+1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
 					}
 					else{
-						dq1[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + 0 * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ref_1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[(k + NPR)]);
+						dq1[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii-1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[(k + NPR)]);
 					}
 				}
 				dq2[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij - ref_2)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij + ref_2)*(1 + 2 * ref_3) + (iz)]);
 				dq3[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)]);
 			}
-
-			//dq1[k]=dq2[k]=dq3[k]=0.;
+			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 			for (k = 0; k < NPR; k++){
 				p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[k] * ref_1 + 0.25*(double)(js)*dq2[k] * ref_2 + 0.25*(double)(zs)*dq3[k] * ref_3;
 				ph[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[k] * ref_1 + 0.25*(double)(js)*dq2[k] * ref_2 + 0.25*(double)(zs)*dq3[k] * ref_3;
 			}
+			//for (k = 0; k < NPR+3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 
 			#if(STAGGERED)
 			if (js == 1){
-				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ((ij)+ref_2)*(1 + 2 * ref_3) + (iz)]) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(is)*dq1[B2] * ref_1 + 0.25*(double)(zs)*dq3[B2] * ref_3; 
-				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ((ij)+ref_2)*(1 + 2 * ref_3) + (iz)]) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(is)*dq1[B2] * ref_1 + 0.25*(double)(zs)*dq3[B2] * ref_3;
+				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ((ij)+ref_2)*(1 + 2 * ref_3) + (iz)])
+					+ 0.25*(double)(is)*dq1[B2] * ref_1 + 0.25*(double)(zs)*dq3[B2] * ref_3; 
+				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ((ij)+ref_2)*(1 + 2 * ref_3) + (iz)])
+					+ 0.25*(double)(is)*dq1[B2] * ref_1 + 0.25*(double)(zs)*dq3[B2] * ref_3;
 			}
 			else{
-				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 1] * ref_1 + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 1] * ref_1 + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 1] * ref_1 + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3);
+				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 1] * ref_1 + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3);
 			}
 
 			if (zs == 1){
-				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + 2 * ref_3)]) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(is)*dq1[B3] * ref_1 + 0.25*(double)(js)*dq2[B3] * ref_2;
-				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + 2 * ref_3)]) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(is)*dq1[B3] * ref_1 + 0.25*(double)(js)*dq2[B3] * ref_2;
+				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)])
+					+ 0.25*(double)(is)*dq1[B3] * ref_1 + 0.25*(double)(js)*dq2[B3] * ref_2;
+				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)])
+					+ 0.25*(double)(is)*dq1[B3] * ref_1 + 0.25*(double)(js)*dq2[B3] * ref_2;
 			}
 			else{
-				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 2] * ref_1 + 0.25*(double)(js)*dq2[NPR + 2] * ref_2) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 2] * ref_1 + 0.25*(double)(js)*dq2[NPR + 2] * ref_2) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + (i + N1G)*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 2] * ref_1 + 0.25*(double)(js)*dq2[NPR + 2] * ref_2);
+				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)] + 0.25*(double)(is)*dq1[NPR + 2] * ref_1 + 0.25*(double)(js)*dq2[NPR + 2] * ref_2);
 			}
 			#endif
 		}
@@ -916,10 +834,10 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 					avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 					avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 					if (ij == 0){
-						dq2[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ref_2*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
+						dq2[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)* (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij+1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
 					}
 					else{
-						dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ref_2*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[k]);
+						dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij-1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[k]);
 					}
 				}
 				dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii - ref_1)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + (iz)]);
@@ -929,51 +847,46 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				dq2[(NPR + k)] = 0.0;
 				if (ref_2){
 					avg[NPR + k] = 0.25*(psim[k * (ksize)+(icurr - icurr % (1 + ref_1))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3))] +
-						psim[k * (ksize)+(icurr - icurr % (1 + ref_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3))])
-						*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
+						psim[k * (ksize)+(icurr - icurr % (1 + ref_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3))]);
 					avg[NPR + k] += 0.25*(psim[k * (ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 2))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 0))] +
-						psim[k * (ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 2))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 0))])
-						*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr*NSY];
+						psim[k * (ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 2))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 0))]);
 					if (ij == 0){
-						dq2[NPR + k] = slope_lim(avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ref_2*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
+						dq2[NPR + k] = slope_lim(avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij+1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
 					}
 					else{
-						dq2[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ref_2*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[(NPR + k)]);
+						dq2[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij-1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[(NPR + k)]);
 					}
 				}
 				dq1[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii - ref_1)*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + (iz)]);
 				dq3[(NPR + k)] =  slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz + ref_3)]);
 			}			
-			//dq1[k] = dq2[k] = dq3[k] = 0.;
+			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 			for (k = 0; k < NPR; k++){
 				p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(is)*dq1[k] * ref_1 + 0.25*(double)(js)*dq2[k] * ref_2 + 0.25*(double)(zs)*dq3[k] * ref_3;
 				ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(is)*dq1[k] * ref_1 + 0.25*(double)(js)*dq2[k] * ref_2 + 0.25*(double)(zs)*dq3[k] * ref_3;
 			}
+			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 
 			#if(STAGGERED)		
 			if (is == 1){
-				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + iz]) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(js)*dq2[B1] * ref_2 + 0.25*(double)(zs)*dq3[B1] * ref_3;
-				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + iz]) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(js)*dq2[B1] * ref_2 + 0.25*(double)(zs)*dq3[B1] * ref_3;
+				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + iz]) 
+				    + 0.25*(double)(js)*dq2[B1] * ref_2 + 0.25*(double)(zs)*dq3[B1] * ref_3;
+				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + iz]) 
+					+ 0.25*(double)(js)*dq2[B1] * ref_2 + 0.25*(double)(zs)*dq3[B1] * ref_3;
 			}
 			else{
-				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR] * ref_2 + 0.25*(double)(zs)*dq3[NPR] * ref_3) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR] * ref_2 + 0.25*(double)(zs)*dq3[NPR] * ref_3) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+				ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR] * ref_2 + 0.25*(double)(zs)*dq3[NPR] * ref_3);
+				psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR] * ref_2 + 0.25*(double)(zs)*dq3[NPR] * ref_3);
 			}
 			if (zs == 1){
-				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz + ref_3)]) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(js)*dq2[B3] * ref_2 + 0.25*(double)(is)*dq1[B3] * ref_1;
-				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz + ref_3)]) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY] + 0.25*(double)(js)*dq2[B3] * ref_2 + 0.25*(double)(is)*dq1[B3] * ref_1;
+				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz + ref_3)]) 
+					+ 0.25*(double)(js)*dq2[B3] * ref_2 + 0.25*(double)(is)*dq1[B3] * ref_1;
+				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.5*(receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz + ref_3)]) 
+					+ 0.25*(double)(js)*dq2[B3] * ref_2 + 0.25*(double)(is)*dq1[B3] * ref_1;
 			}
 			else{
-				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR + 2] * ref_2 + 0.25*(double)(is)*dq1[NPR + 2] * ref_1) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + (j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
-				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR + 2] * ref_2 + 0.25*(double)(is)*dq1[NPR + 2] * ref_1) /
-					gdet_GPU[FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) +(j + N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + zcurr * NSY];
+				ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR + 2] * ref_2 + 0.25*(double)(is)*dq1[NPR + 2] * ref_1);
+				psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (receive_local[(NPR + 2)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + iz] + 0.25*(double)(js)*dq2[NPR + 2] * ref_2 + 0.25*(double)(is)*dq1[NPR + 2] * ref_1);
 			}
 #endif
 		}
@@ -1062,10 +975,10 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 					avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 					avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 					if (iz == 0){
-						dq3[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + ref_3*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
+						dq3[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz+1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
 					}
 					else{
-						dq3[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + ref_3*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[k]);
+						dq3[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz-1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[k]);
 					}
 				}
 				dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii - ref_1)*(1 + 2 * ref_2) + (ij)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + (ij)]);
@@ -1076,22 +989,20 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 				dq3[(NPR + k)] = 0.0;
 				if (ref_3){
 					avg[NPR + k] = 0.25*(psim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] +
-						psim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))])
-						*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
+						psim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 					avg[NPR + k] += 0.25*(psim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 0))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] +
-						psim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 0))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))])
-						*gdet_GPU[(k + 2 * (k == 2))*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
+						psim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 0))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 					if (iz == 0){
-						dq3[NPR + k] = slope_lim(avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + ref_3*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
+						dq3[NPR + k] = slope_lim(avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz+1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
 					}
 					else{
-						dq3[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + 0 * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + ref_3*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[NPR + k]);
+						dq3[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz-1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[NPR + k]);
 					}
 				}
 				dq1[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii - ref_1)*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij]);
 				dq2[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij - ref_2)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij + ref_2)]);
 			}
-				//dq1[k] = dq2[k] = dq3[k] = 0.;
+			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 			for (k = 0; k < NPR; k++){
 				p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(is)*dq1[k] * ref_1 + 0.25*(double)(js)*dq2[k] * ref_2 + 0.25*(double)(zs)*dq3[k] * ref_3;
 				ph[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(is)*dq1[k] * ref_1 + 0.25*(double)(js)*dq2[k] * ref_2 + 0.25*(double)(zs)*dq3[k] * ref_3;
@@ -1099,29 +1010,25 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 
 			#if(STAGGERED)
 			if (is == 1){
-				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij]) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] + 0.25*(double)(zs)*dq3[B1] * ref_3 + 0.25*(double)(js)*dq2[B1] * ref_2;
-				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij]) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] + 0.25*(double)(zs)*dq3[B1] * ref_3 + 0.25*(double)(js)*dq2[B1] * ref_2;
+				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij])
+					+ 0.25*(double)(zs)*dq3[B1] * ref_3 + 0.25*(double)(js)*dq2[B1] * ref_2;
+				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij])
+				    + 0.25*(double)(zs)*dq3[B1] * ref_3 + 0.25*(double)(js)*dq2[B1] * ref_2;
 			}
 			else{
-				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 0] * ref_3 + 0.25*(double)(js)*dq2[NPR + 0] * ref_2) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 0] * ref_3 + 0.25*(double)(js)*dq2[NPR + 0] * ref_2) /
-					gdet_GPU[FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
+				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 0] * ref_3 + 0.25*(double)(js)*dq2[NPR + 0] * ref_2);
+				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 0)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 0] * ref_3 + 0.25*(double)(js)*dq2[NPR + 0] * ref_2);
 			}
 			
 			if (js == 1){
-				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + (ij + ref_2)]) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] + 0.25*(double)(zs)*dq3[B2] * ref_3 + 0.25*(double)(is)*dq1[B2] * ref_1;
-				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + (ij + ref_2)]) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY] + 0.25*(double)(zs)*dq3[B2] * ref_3 + 0.25*(double)(is)*dq1[B2] * ref_1;
+				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + (ij + ref_2)])
+					 + 0.25*(double)(zs)*dq3[B2] * ref_3 + 0.25*(double)(is)*dq1[B2] * ref_1;
+				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = 0.5*(receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + (ij + ref_2)])
+					 + 0.25*(double)(zs)*dq3[B2] * ref_3 + 0.25*(double)(is)*dq1[B2] * ref_1;
 			}
 			else{
-				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3 + 0.25*(double)(is)*dq1[NPR + 1] * ref_1) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
-				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3 + 0.25*(double)(is)*dq1[NPR + 1] * ref_1) /
-					gdet_GPU[FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)*((BS_3 + 2 * N3G)*NSY + !NSY) + fix_mem2) + icurr*(BS_2 + 2 * N2G)*((BS_3 + 2 * N3G)*NSY + !NSY) + jcurr*((BS_3 + 2 * N3G)*NSY + !NSY) + (z + N3G) * NSY];
+				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3 + 0.25*(double)(is)*dq1[NPR + 1] * ref_1);
+				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (receive_local[(NPR + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij] + 0.25*(double)(zs)*dq3[NPR + 1] * ref_3 + 0.25*(double)(is)*dq1[NPR + 1] * ref_1);
 			}
 			#endif
 		}

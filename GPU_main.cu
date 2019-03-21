@@ -54,7 +54,7 @@ void set_arrays_GPU(int n, int device){
 	int i;
 
 	if (mem_spot_gpu[nl[n]] == device){
-		block[n][AMR_GPU] = device;
+		block[n][AMR_GPU] = device;	
 		alloc_bounds_GPU(n);
 		return;
 	}
