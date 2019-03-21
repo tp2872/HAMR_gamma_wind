@@ -102,7 +102,7 @@ void E_send1(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 
 	//Negative X1
 	if (block[n][AMR_NBR4] >= 0){
-		if (block[block[n][AMR_NBR4]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4]][AMR_TIMELEVEL] >= block[n][AMR_TIMELEVEL]){
+		if (block[block[n][AMR_NBR4]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR4]][AMR_TIMELEVEL] > block[n][AMR_TIMELEVEL]){
 			pack_send1_E(n, block[n][AMR_NBR4], 0, 1, 0, BS_2 + 2 * D2, 0, BS_3 + 2 * D3, (BS_2 + 2 * D2), (BS_3 + 2 * D3), send4_E, E, &(Bufferp[nl[n]]), &(Buffersend4E[nl[n]]),
 				&(boundevent[nl[n]][240]));
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR4]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR4]][AMR_TIMELEVEL] - 1){
@@ -202,7 +202,7 @@ void E_send2(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 	//Exchange boundary cells for MPI threads
 	//Positive X2
 	if (block[n][AMR_NBR3] >= 0 && block[n][AMR_POLE] != 2 && block[n][AMR_POLE] != 3){
-		if (block[block[n][AMR_NBR3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3]][AMR_TIMELEVEL] >= block[n][AMR_TIMELEVEL]){
+		if (block[block[n][AMR_NBR3]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR3]][AMR_TIMELEVEL] > block[n][AMR_TIMELEVEL]){
 			pack_send2_E(n, block[n][AMR_NBR3], 0, BS_1 + 2 * D1, BS_2, BS_2 + 1, 0, BS_3 + 2 * D3, (BS_1 + 2 * D1), (BS_3 + 2 * D3), send3_E, E, &(Bufferp[nl[n]]), &(Buffersend3E[nl[n]]),
 				&(boundevent[nl[n]][230]));
 			if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR3]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR3]][AMR_TIMELEVEL] - 1){
@@ -493,7 +493,7 @@ void E_send3(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int
 
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
-		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6]][AMR_TIMELEVEL] >= block[n][AMR_TIMELEVEL]){
+		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR6]][AMR_TIMELEVEL] > block[n][AMR_TIMELEVEL]){
 			pack_send3_E(n, block[n][AMR_NBR6], 0, BS_1 + 2 * D1, 0, BS_2 + 2 * D2, 0, D3, (BS_1 + 2 * D1), (BS_2 + 2 * D2), send6_E, E, &(Bufferp[nl[n]]), &(Buffersend6E[nl[n]]),
 				&(boundevent[nl[n]][260]));
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE] && block[n][AMR_NSTEP] % (2 * block[block[n][AMR_NBR6]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR6]][AMR_TIMELEVEL] - 1){
@@ -609,18 +609,18 @@ void E_rec1(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 				}
 				if (block[n][AMR_IPROBE2] == 0) unpack_receive1_E(n, n, block[n][AMR_NBR4], 0, 1, 0, BS_2, 0, BS_3, BS_2 + 2 * D2, BS_3 + 2 * D3, receive2_E, receive2_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Bufferrec2E[nl[n]]), &(Bufferrec2E1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr,
-					3 - (3 * (block[n][AMR_CORN4D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN4D] != block[n][AMR_NBR4] && block[n][AMR_CORN4D] != n)*(block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN4D] != -100) - 3 * (block[n][AMR_CORN4D] == -100),
-					-2 + (3 * (block[n][AMR_CORN3D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN3D] != block[n][AMR_NBR4] && block[n][AMR_CORN3D] != n)* (block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN3D] != -100) + 3 * (block[n][AMR_CORN3D] == -100),
-					3 - (3 * (block[n][AMR_CORN8D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN8D] != block[n][AMR_NBR4] && block[n][AMR_CORN8D] != n)*(block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN8D] != -100) - 3 * (block[n][AMR_CORN8D] == -100),
-					-2 + (3 * (block[n][AMR_CORN7D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN7D] != block[n][AMR_NBR4] && block[n][AMR_CORN7D] != n)* (block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN7D] != -100) + 3 * (block[n][AMR_CORN7D] == -100));
+					!(block[n][AMR_CORN4D] == block[n][AMR_NBR4] || block[n][AMR_CORN4D] == -100),
+					(block[n][AMR_CORN3D] == block[n][AMR_NBR4] || block[n][AMR_CORN3D] == -100),
+					!(block[n][AMR_CORN8D] == block[n][AMR_NBR4] || block[n][AMR_CORN8D] == -100),
+					(block[n][AMR_CORN7D] == block[n][AMR_NBR4] || block[n][AMR_CORN7D] == -100));
 			}
 			else{
 				if (block[n][AMR_IPROBE2] == 0) unpack_receive1_E(n, block[n][AMR_NBR4], block[n][AMR_NBR4], 0, 1, 0, BS_2, 0, BS_3, BS_2 + 2 * D2, BS_3 + 2 * D3, send2_E, receive2_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Buffersend2E[nl[block[n][AMR_NBR4]]]), &(Bufferrec2E1[nl[n]]), &(NULL_POINTER[nl[n]]), &(boundevent[nl[block[n][AMR_NBR4]]][220]), calc_corr,
-					3 - (3 * (block[n][AMR_CORN4D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN4D] != block[n][AMR_NBR4] && block[n][AMR_CORN4D] != n)*(block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN4D] != -100) - 3 * (block[n][AMR_CORN4D] == -100),
-					-2 + (3 * (block[n][AMR_CORN3D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN3D] != block[n][AMR_NBR4] && block[n][AMR_CORN3D] != n)* (block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN3D] != -100) + 3 * (block[n][AMR_CORN3D] == -100),
-					3 - (3 * (block[n][AMR_CORN8D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN8D] != block[n][AMR_NBR4] && block[n][AMR_CORN8D] != n)*(block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN8D] != -100) - 3 * (block[n][AMR_CORN8D] == -100),
-					-2 + (3 * (block[n][AMR_CORN7D] == block[n][AMR_NBR4]) + 2 * (block[n][AMR_CORN7D] != block[n][AMR_NBR4] && block[n][AMR_CORN7D] != n)* (block[block[n][AMR_NBR4]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN7D] != -100) + 3 * (block[n][AMR_CORN7D] == -100));
+					!(block[n][AMR_CORN4D] == block[n][AMR_NBR4] || block[n][AMR_CORN4D] == -100),
+					(block[n][AMR_CORN3D] == block[n][AMR_NBR4] || block[n][AMR_CORN3D] == -100),
+					!(block[n][AMR_CORN8D] == block[n][AMR_NBR4] || block[n][AMR_CORN8D] == -100),
+					(block[n][AMR_CORN7D] == block[n][AMR_NBR4] || block[n][AMR_CORN7D] == -100));
 			}
 		}
 		else if (block[n][AMR_NBR4_5]>=0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1){
@@ -720,7 +720,7 @@ void E_rec1(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 
 	//Negative X1
 	if (block[n][AMR_NBR2] >= 0){
-		if (block[block[n][AMR_NBR2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
+		if (block[block[n][AMR_NBR2]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL]){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR2]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR2]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR2]][AMR_TIMELEVEL] - 1){
@@ -731,19 +731,19 @@ void E_rec1(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 				}
 				if (block[n][AMR_IPROBE4] == 0) unpack_receive1_E(n, n, block[n][AMR_NBR2], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
 					BS_2 + 2 * D2, BS_3 + 2 * D3, receive4_E, receive4_E1, NULL, E, &(Bufferp[nl[n]]), &(Bufferrec4E[nl[n]]), &(Bufferrec4E1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr,
-					3 - (3 * (block[n][AMR_CORN1D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN1D] != block[n][AMR_NBR2] && block[n][AMR_CORN1D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN1D] != -100) - 3 * (block[n][AMR_CORN1D] == -100),
-					-2 + (3 * (block[n][AMR_CORN2D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN2D] != block[n][AMR_NBR2] && block[n][AMR_CORN2D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN2D] != -100) + 3 * (block[n][AMR_CORN2D] == -100),
-					3 - (3 * (block[n][AMR_CORN5D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN5D] != block[n][AMR_NBR2] && block[n][AMR_CORN5D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN5D] != -100) - 3 * (block[n][AMR_CORN5D] == -100),
-					-2 + (3 * (block[n][AMR_CORN6D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN6D] != block[n][AMR_NBR2] && block[n][AMR_CORN6D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN6D] != -100) + 3 * (block[n][AMR_CORN6D] == -100));
+					!(block[n][AMR_CORN1D] == block[n][AMR_NBR2] || block[n][AMR_CORN1D] == -100),
+					(block[n][AMR_CORN2D] == block[n][AMR_NBR2] || block[n][AMR_CORN2D] == -100),
+					!(block[n][AMR_CORN5D] == block[n][AMR_NBR2] || block[n][AMR_CORN5D] == -100),
+					(block[n][AMR_CORN6D] == block[n][AMR_NBR2] || block[n][AMR_CORN6D] == -100));
 			}
 			else{
 				if (block[n][AMR_IPROBE4] == 0) unpack_receive1_E(n, block[n][AMR_NBR2], block[n][AMR_NBR2], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
 					BS_2 + 2 * D2, BS_3 + 2 * D3, send4_E, receive4_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Buffersend4E[nl[block[n][AMR_NBR2]]]), &(Bufferrec4E1[nl[n]]), &(NULL_POINTER[nl[n]]), &(boundevent[nl[block[n][AMR_NBR2]]][240]), calc_corr,
-					3 - (3 * (block[n][AMR_CORN1D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN1D] != block[n][AMR_NBR2] && block[n][AMR_CORN1D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN1D] != -100) - 3 * (block[n][AMR_CORN1D] == -100),
-					-2 + (3 * (block[n][AMR_CORN2D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN2D] != block[n][AMR_NBR2] && block[n][AMR_CORN2D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN2D] != -100) + 3 * (block[n][AMR_CORN2D] == -100),
-					3 - (3 * (block[n][AMR_CORN5D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN5D] != block[n][AMR_NBR2] && block[n][AMR_CORN5D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN5D] != -100) - 3 * (block[n][AMR_CORN5D] == -100),
-					-2 + (3 * (block[n][AMR_CORN6D] == block[n][AMR_NBR2]) + 2 * (block[n][AMR_CORN6D] != block[n][AMR_NBR2] && block[n][AMR_CORN6D] != n)*(block[block[n][AMR_NBR2]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN6D] != -100) + 3 * (block[n][AMR_CORN6D] == -100));
+					!(block[n][AMR_CORN1D] == block[n][AMR_NBR2] || block[n][AMR_CORN1D] == -100),
+					(block[n][AMR_CORN2D] == block[n][AMR_NBR2] || block[n][AMR_CORN2D] == -100),
+					!(block[n][AMR_CORN5D] == block[n][AMR_NBR2] || block[n][AMR_CORN5D] == -100),
+					(block[n][AMR_CORN6D] == block[n][AMR_NBR2] || block[n][AMR_CORN6D] == -100));
 			}
 		}
 		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){
@@ -849,7 +849,7 @@ void E_rec2(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 	int flag;
 	//Positive X2
 	if (block[n][AMR_NBR1] >= 0 && block[n][AMR_POLE] != 1 && block[n][AMR_POLE] != 3){
-		if (block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
+		if (block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR1]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL]){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR1]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR1]][AMR_TIMELEVEL] - 1){
@@ -860,19 +860,19 @@ void E_rec2(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 				}
 				if (block[n][AMR_IPROBE3] == 0) unpack_receive2_E(n, n, block[n][AMR_NBR1], 0, BS_1, 0, 1, 0, BS_3,
 					BS_1 + 2 * D1, BS_3 + 2 * D3, receive3_E, receive3_E1, NULL, E, &(Bufferp[nl[n]]), &(Bufferrec3E[nl[n]]), &(Bufferrec3E1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr,
-					3 - (3 * (block[n][AMR_CORN4D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN4D] != block[n][AMR_NBR1] && block[n][AMR_CORN4D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN4D] != -100) - 3 * (block[n][AMR_CORN4D] == -100),
-					-2 + (3 * (block[n][AMR_CORN1D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN1D] != block[n][AMR_NBR1] && block[n][AMR_CORN1D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN1D] != -100) + 3 * (block[n][AMR_CORN1D] == -100),
-					3 - (3 * (block[n][AMR_CORN12D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN12D] != block[n][AMR_NBR1] && block[n][AMR_CORN12D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN12D] != -100) - 3 * (block[n][AMR_CORN12D] == -100),
-					-2 + (3 * (block[n][AMR_CORN9D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN9D] != block[n][AMR_NBR1] && block[n][AMR_CORN9D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN9D] != -100) + 3 * (block[n][AMR_CORN9D] == -100));
+					!(block[n][AMR_CORN4D] == block[n][AMR_NBR1] || block[n][AMR_CORN4D] == -100),
+					(block[n][AMR_CORN1D] == block[n][AMR_NBR1] || block[n][AMR_CORN1D] == -100),
+					!(block[n][AMR_CORN12D] == block[n][AMR_NBR1] || block[n][AMR_CORN12D] == -100),
+					(block[n][AMR_CORN9D] == block[n][AMR_NBR1] || block[n][AMR_CORN9D] == -100));
 			}
 			else{
 				if (block[n][AMR_IPROBE3] == 0) unpack_receive2_E(n, block[n][AMR_NBR1], block[n][AMR_NBR1], 0, BS_1, 0, 1, 0, BS_3,
 					BS_1 + 2 * D1, BS_3 + 2 * D3, send3_E, receive3_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Buffersend3E[nl[block[n][AMR_NBR1]]]), &(Bufferrec3E1[nl[n]]), &(NULL_POINTER[nl[n]]), &(boundevent[nl[block[n][AMR_NBR1]]][230]), calc_corr,
-					3 - (3 * (block[n][AMR_CORN4D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN4D] != block[n][AMR_NBR1] && block[n][AMR_CORN4D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN4D] != -100) - 3 * (block[n][AMR_CORN4D] == -100),
-					-2 + (3 * (block[n][AMR_CORN1D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN1D] != block[n][AMR_NBR1] && block[n][AMR_CORN1D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN1D] != -100) + 3 * (block[n][AMR_CORN1D] == -100),
-					3 - (3 * (block[n][AMR_CORN12D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN12D] != block[n][AMR_NBR1] && block[n][AMR_CORN12D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN12D] != -100) - 3 * (block[n][AMR_CORN12D] == -100),
-					-2 + (3 * (block[n][AMR_CORN9D] == block[n][AMR_NBR1]) + 2 * (block[n][AMR_CORN9D] != block[n][AMR_NBR1] && block[n][AMR_CORN9D] != n)*(block[block[n][AMR_NBR1]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN9D] != -100) + 3 * (block[n][AMR_CORN9D] == -100));
+					!(block[n][AMR_CORN4D] == block[n][AMR_NBR1] || block[n][AMR_CORN4D] == -100),
+					(block[n][AMR_CORN1D] == block[n][AMR_NBR1] || block[n][AMR_CORN1D] == -100),
+					!(block[n][AMR_CORN12D] == block[n][AMR_NBR1] || block[n][AMR_CORN12D] == -100),
+					(block[n][AMR_CORN9D] == block[n][AMR_NBR1] || block[n][AMR_CORN9D] == -100));
 			}
 		}
 		else if (block[n][AMR_NBR1_3]>=0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1){
@@ -983,19 +983,19 @@ void E_rec2(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 				}
 				if (block[n][AMR_IPROBE1] == 0) unpack_receive2_E(n, n, block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
 					BS_1 + 2 * D1, BS_3 + 2 * D3, receive1_E, receive1_E1, NULL, E, &(Bufferp[nl[n]]), &(Bufferrec1E[nl[n]]), &(Bufferrec1E1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr,
-					3 - (3 * (block[n][AMR_CORN3D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN3D] != block[n][AMR_NBR3] && block[n][AMR_CORN3D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN3D] != -100) - 3 * (block[n][AMR_CORN3D] == -100),
-					-2 + (3 * (block[n][AMR_CORN2D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN2D] != block[n][AMR_NBR3] && block[n][AMR_CORN2D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN2D] != -100) + 3 * (block[n][AMR_CORN2D] == -100),
-					3 - (3 * (block[n][AMR_CORN11D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN11D] != block[n][AMR_NBR3] && block[n][AMR_CORN11D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN11D] != -100) - 3 * (block[n][AMR_CORN11D] == -100),
-					-2 + (3 * (block[n][AMR_CORN10D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN10D] != block[n][AMR_NBR3] && block[n][AMR_CORN10D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN10D] != -100) + 3 * (block[n][AMR_CORN10D] == -100));
+					!(block[n][AMR_CORN3D] == block[n][AMR_NBR3] || block[n][AMR_CORN3D] == -100),
+					(block[n][AMR_CORN2D] == block[n][AMR_NBR3] || block[n][AMR_CORN2D] == -100),
+					!(block[n][AMR_CORN11D] == block[n][AMR_NBR3] || block[n][AMR_CORN11D] == -100),
+					(block[n][AMR_CORN10D] == block[n][AMR_NBR3] || block[n][AMR_CORN10D] == -100));
 			}
 			else{
 				if (block[n][AMR_IPROBE1] == 0) unpack_receive2_E(n, block[n][AMR_NBR3], block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
 					BS_1 + 2 * D1, BS_3 + 2 * D3, send1_E, receive1_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Buffersend1E[nl[block[n][AMR_NBR3]]]), &(Bufferrec1E1[nl[n]]), &(NULL_POINTER[nl[n]]), &(boundevent[nl[block[n][AMR_NBR3]]][210]), calc_corr,
-					3 - (3 * (block[n][AMR_CORN3D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN3D] != block[n][AMR_NBR3] && block[n][AMR_CORN3D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN3D] != -100) - 3 * (block[n][AMR_CORN3D] == -100),
-					-2 + (3 * (block[n][AMR_CORN2D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN2D] != block[n][AMR_NBR3] && block[n][AMR_CORN2D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN2D] != -100) + 3 * (block[n][AMR_CORN2D] == -100),
-					3 - (3 * (block[n][AMR_CORN11D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN11D] != block[n][AMR_NBR3] && block[n][AMR_CORN11D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN11D] != -100) - 3 * (block[n][AMR_CORN11D] == -100),
-					-2 + (3 * (block[n][AMR_CORN10D] == block[n][AMR_NBR3]) + 2 * (block[n][AMR_CORN10D] != block[n][AMR_NBR3] && block[n][AMR_CORN10D] != n)*(block[block[n][AMR_NBR3]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN10D] != -100) + 3 * (block[n][AMR_CORN10D] == -100));
+					!(block[n][AMR_CORN3D] == block[n][AMR_NBR3] || block[n][AMR_CORN3D] == -100),
+					(block[n][AMR_CORN2D] == block[n][AMR_NBR3] || block[n][AMR_CORN2D] == -100),
+					!(block[n][AMR_CORN11D] == block[n][AMR_NBR3] || block[n][AMR_CORN11D] == -100),
+					(block[n][AMR_CORN10D] == block[n][AMR_NBR3] || block[n][AMR_CORN10D] == -100));
 			}
 		}
 		else if (block[n][AMR_NBR3_1]>=0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1){
@@ -1111,19 +1111,19 @@ void E_rec3(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 				}
 				if (block[n][AMR_IPROBE5] == 0) unpack_receive3_E(n, n, block[n][AMR_NBR6], 0, BS_1, 0, BS_2, 0, D3,
 					BS_1 + 2 * D1, BS_2 + 2 * D2, receive5_E, receive5_E1, NULL, E, &(Bufferp[nl[n]]), &(Bufferrec5E[nl[n]]), &(Bufferrec5E1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr,
-					3 - (3 * (block[n][AMR_CORN12D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN12D] != block[n][AMR_NBR6] && block[n][AMR_CORN12D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN12D] != -100) - 3 * (block[n][AMR_CORN12D] == -100),
-					-2 + (3 * (block[n][AMR_CORN11D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN11D] != block[n][AMR_NBR6] && block[n][AMR_CORN11D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN11D] != -100) + 3 * (block[n][AMR_CORN11D] == -100),
-					3 - (3 * (block[n][AMR_CORN8D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN8D] != block[n][AMR_NBR6] && block[n][AMR_CORN8D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN8D] != -100) - 3 * (block[n][AMR_CORN8D] == -100),
-					-2 + (3 * (block[n][AMR_CORN5D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN5D] != block[n][AMR_NBR6] && block[n][AMR_CORN5D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN5D] != -100) + 3 * (block[n][AMR_CORN5D] == -100));
+					!(block[n][AMR_CORN12D] == block[n][AMR_NBR6] || block[n][AMR_CORN12D] == -100),
+					(block[n][AMR_CORN11D] == block[n][AMR_NBR6] || block[n][AMR_CORN11D] == -100),
+					!(block[n][AMR_CORN8D] == block[n][AMR_NBR6] || block[n][AMR_CORN8D] == -100),
+					(block[n][AMR_CORN5D] == block[n][AMR_NBR6] || block[n][AMR_CORN5D] == -100));
 			}
 			else{
 				if (block[n][AMR_IPROBE5] == 0) unpack_receive3_E(n, block[n][AMR_NBR6], block[n][AMR_NBR6], 0, BS_1, 0, BS_2, 0, D3,
 					BS_1 + 2 * D1, BS_2 + 2 * D2, send5_E, receive5_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Buffersend5E[nl[block[n][AMR_NBR6]]]), &(Bufferrec5E1[nl[n]]), &(Bufferrec5E1[nl[n]]), &(boundevent[nl[block[n][AMR_NBR6]]][250]), calc_corr,
-					3 - (3 * (block[n][AMR_CORN12D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN12D] != block[n][AMR_NBR6] && block[n][AMR_CORN12D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN12D] != -100) - 3 * (block[n][AMR_CORN12D] == -100),
-					-2 + (3 * (block[n][AMR_CORN11D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN11D] != block[n][AMR_NBR6] && block[n][AMR_CORN11D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN11D] != -100) + 3 * (block[n][AMR_CORN11D] == -100),
-					3 - (3 * (block[n][AMR_CORN8D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN8D] != block[n][AMR_NBR6] && block[n][AMR_CORN8D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN8D] != -100) - 3 * (block[n][AMR_CORN8D] == -100),
-					-2 + (3 * (block[n][AMR_CORN5D] == block[n][AMR_NBR6]) + 2 * (block[n][AMR_CORN5D] != block[n][AMR_NBR6] && block[n][AMR_CORN5D] != n)*(block[block[n][AMR_NBR6]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN5D] != -100) + 3 * (block[n][AMR_CORN5D] == -100));
+					!(block[n][AMR_CORN12D] == block[n][AMR_NBR6] || block[n][AMR_CORN12D] == -100),
+					(block[n][AMR_CORN11D] == block[n][AMR_NBR6] || block[n][AMR_CORN11D] == -100),
+					!(block[n][AMR_CORN8D] == block[n][AMR_NBR6] || block[n][AMR_CORN8D] == -100),
+					(block[n][AMR_CORN5D] == block[n][AMR_NBR6] || block[n][AMR_CORN5D] == -100));
 			}
 		}
 		else if (block[n][AMR_NBR6_2]>=0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1){
@@ -1223,7 +1223,7 @@ void E_rec3(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 
 	//Negative X3
 	if (block[n][AMR_NBR5] >= 0){
-		if (block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5]][AMR_TIMELEVEL] <= block[n][AMR_TIMELEVEL]){
+		if (block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL]){
 			//receive from same level grid
 			if (block[block[n][AMR_NBR5]][AMR_NODE] != block[n][AMR_NODE]){
 				if ((calc_corr == 1 || calc_corr == 5) && nstep % (2 * block[block[n][AMR_NBR5]][AMR_TIMELEVEL]) == 2 * block[block[n][AMR_NBR5]][AMR_TIMELEVEL] - 1){
@@ -1234,19 +1234,19 @@ void E_rec3(double(*restrict E[NB_LOCAL])[NDIM], double *Bufferp[NB_LOCAL], int 
 				}
 				if (block[n][AMR_IPROBE6] == 0) 	unpack_receive3_E(n, n, block[n][AMR_NBR5], 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
 					BS_1 + 2 * D1, BS_2 + 2 * D2, receive6_E, receive6_E1, NULL, E, &(Bufferp[nl[n]]), &(Bufferrec6E[nl[n]]), &(Bufferrec6E1[nl[n]]), &(NULL_POINTER[nl[n]]), NULL, calc_corr,
-					3 - (3 * (block[n][AMR_CORN9D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN9D] != block[n][AMR_NBR5] && block[n][AMR_CORN9D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN9D] != -100) - 3 * (block[n][AMR_CORN9D] == -100),
-					-2 + (3 * (block[n][AMR_CORN10D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN10D] != block[n][AMR_NBR5] && block[n][AMR_CORN10D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN10D] != -100) + 3 * (block[n][AMR_CORN10D] == -100),
-					3 - (3 * (block[n][AMR_CORN7D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN7D] != block[n][AMR_NBR5] && block[n][AMR_CORN7D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN7D] != -100) - 3 * (block[n][AMR_CORN7D] == -100),
-					-2 + (3 * (block[n][AMR_CORN6D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN6D] != block[n][AMR_NBR5] && block[n][AMR_CORN6D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN6D] != -100) + 3 * (block[n][AMR_CORN6D] == -100));
+					!(block[n][AMR_CORN9D] == block[n][AMR_NBR5] || block[n][AMR_CORN9D] == -100),
+					(block[n][AMR_CORN10D] == block[n][AMR_NBR5] || block[n][AMR_CORN10D] == -100),
+					!(block[n][AMR_CORN7D] == block[n][AMR_NBR5] || block[n][AMR_CORN7D] == -100),
+					(block[n][AMR_CORN6D] == block[n][AMR_NBR5] || block[n][AMR_CORN6D] == -100));
 			}
 			else{
 				if (block[n][AMR_IPROBE6] == 0) unpack_receive3_E(n, block[n][AMR_NBR5], block[n][AMR_NBR5], 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
 					BS_1 + 2 * D1, BS_2 + 2 * D2, send6_E, receive6_E1, NULL, E,
 					&(Bufferp[nl[n]]), &(Buffersend6E[nl[block[n][AMR_NBR5]]]), &(Bufferrec6E1[nl[n]]), &(NULL_POINTER[nl[n]]), &(boundevent[nl[block[n][AMR_NBR5]]][260]), calc_corr,
-					3 - (3 * (block[n][AMR_CORN9D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN9D] != block[n][AMR_NBR5] && block[n][AMR_CORN9D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN9D] != -100) - 3 * (block[n][AMR_CORN9D] == -100),
-					-2 + (3 * (block[n][AMR_CORN10D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN10D] != block[n][AMR_NBR5] && block[n][AMR_CORN10D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN10D] != -100) + 3 * (block[n][AMR_CORN10D] == -100),
-					3 - (3 * (block[n][AMR_CORN7D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN7D] != block[n][AMR_NBR5] && block[n][AMR_CORN7D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN7D] != -100) - 3 * (block[n][AMR_CORN7D] == -100),
-					-2 + (3 * (block[n][AMR_CORN6D] == block[n][AMR_NBR5]) + 2 * (block[n][AMR_CORN6D] != block[n][AMR_NBR5] && block[n][AMR_CORN6D] != n)*(block[block[n][AMR_NBR5]][AMR_TIMELEVEL] < block[n][AMR_TIMELEVEL])) * (block[n][AMR_CORN6D] != -100) + 3 * (block[n][AMR_CORN6D] == -100));
+					!(block[n][AMR_CORN9D] == block[n][AMR_NBR5] || block[n][AMR_CORN9D] == -100),
+					(block[n][AMR_CORN10D] == block[n][AMR_NBR5] || block[n][AMR_CORN10D] == -100),
+					!(block[n][AMR_CORN7D] == block[n][AMR_NBR5] || block[n][AMR_CORN7D] == -100),
+					(block[n][AMR_CORN6D] == block[n][AMR_NBR5] || block[n][AMR_CORN6D] == -100));
 			}
 		}
 		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){
