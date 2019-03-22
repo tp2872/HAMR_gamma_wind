@@ -468,11 +468,13 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				if (i == -3) is = -2;
 				else if (i == -2) is = -1;
 				else if (i == -1) is = 1;
+				else fprintf(stderr, "Error receivecoursse1! \n");
 			}
 			if(i>0){
 				if (i == BS_1) is = -1;
 				else if (i == BS_1 + 1) is = 1;
 				else if (i == BS_1 + 2) is = 2;
+				else fprintf(stderr, "Error receivecoursse1! \n");
 			}
 			js = (((j - j1) % (1 + ref_2) == 0) ? (-1) : (1));
 			zs = (((z - z1) % (1 + ref_3) == 0) ? (-1) : (1));
@@ -580,11 +582,13 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				if (j == -3) js = -2;
 				else if (j == -2) js = -1;
 				else if (j == -1) js = 1;
+				else fprintf(stderr, "Error receivecoursse2! \n");
 			}
 			if(j>0){
 				if (j == BS_2) js = -1;
 				else if (j == BS_2 + 1) js = 1;
 				else if (j == BS_2 + 2) js = 2;
+				else fprintf(stderr, "Error receivecoursse2! \n");
 			}			
 			zs = (((z - z1) % (1 + ref_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR; k++){
@@ -691,11 +695,13 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 				if (z == -3) zs = -2;
 				else if (z == -2) zs = -1;
 				else if (z == -1) zs = 1;
+				else fprintf(stderr, "Error receivecoursse3! \n");
 			}
 			if (z>0){
 				if (z == BS_3) zs = -1;
 				else if (z == BS_3 + 1) zs = 1;
 				else if (z == BS_3 + 2) zs = 2;
+				else fprintf(stderr, "Error receivecoursse3! \n");
 			}
 			for (k = 0; k < NPR; k++){
 				dq3[k] = 0.0;
