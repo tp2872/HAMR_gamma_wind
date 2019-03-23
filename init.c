@@ -1042,9 +1042,6 @@ void set_mag(void){
 				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
 				//rotate_vector(V, pos_new, &r, &th, &phi, tilt);
 				//coord_transform(V, n_ord[n], i, j, z);
-				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = V[1];
-				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
-				ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
@@ -1054,13 +1051,13 @@ void set_mag(void){
 	}
 
 	#if (TILTED)
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
+	//for (n = 0; n < n_active; n++){
+		//ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
 			//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z - D3)][1]);
 			//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z - D3)][2]);
 			//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j - D2, z)][3]);
-		}
-	}
+		//}
+	//}
 	#endif
 
 	/* now differentiate to find cell-centered B,

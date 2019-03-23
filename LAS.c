@@ -59,7 +59,7 @@ void set_timelevel(void){
 	for (l = 0; l < N_LEVELS_3D; l++){
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3*pow(1 + REF_3, l);
+		nz = NB_3;
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				min_j[i] = 10000;

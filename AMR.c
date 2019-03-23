@@ -205,7 +205,7 @@ void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 void set_AMR(void){
 	int n, n_parent, n_child[9], n_nbr[21], level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1,
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag;
-	int y, rem, node = 0;
+	int y;
 
 	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps
 	block = (int(*)[NV])calloc(NB+1, sizeof(int[NV]));
@@ -240,6 +240,7 @@ void set_AMR(void){
 	}
 
  	//Find parent for all blocks(refined and unrefined)
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Find parent of block
 		if (block[n][AMR_LEVEL] == 0) block[n][AMR_PARENT] = -1; //-1 means no parent
@@ -274,6 +275,7 @@ void set_AMR(void){
 	}
 
 	//Find children of block, -1 means no children
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -347,6 +349,7 @@ void set_AMR(void){
 	}
 
 	//Find neighbours of block
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Set maximum coordinates
 		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
@@ -459,6 +462,7 @@ void set_AMR(void){
 	}
 
 	//Find corners of block assuming only third dimension is periodic
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Set maximum coordinates
 		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
@@ -573,9 +577,13 @@ void set_AMR(void){
 	}
 
 	//Set 2-way grid to negative
-	for (n = 0; n <= n_max; n++) for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) block[n][i] = -1;
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	for (n = 0; n <= n_max; n++){
+		for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) block[n][i] = -1;
+	}
 
 	//Set 2-way grid hierarchy
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -668,6 +676,7 @@ void set_AMR(void){
 	}
 
 	//Set corn children
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_CORN1] >= 0){
 			if (block[n][AMR_CORN1] != NB){
@@ -770,6 +779,7 @@ void set_AMR(void){
 	}
 
 	//Set NBR parent
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -816,6 +826,7 @@ void set_AMR(void){
 	}
 
 	//Set corn parent
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -955,6 +966,7 @@ void set_AMR(void){
 	}
 
 	//Reset fake parent corners
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_CORN1P] >= 0){
 			ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN1P]][AMR_LEVEL1];
@@ -1018,16 +1030,14 @@ void set_AMR(void){
 		}
 	}
 
-	//Set offsets and size of blocks
+	//Set offsets and size of blocks#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		N1_GPU_offset[n] = block[n][AMR_COORD1] * BS_1;
 		N2_GPU_offset[n] = block[n][AMR_COORD2] * BS_2;
 		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;	
-		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD2] <= 1  && block[n][AMR_LEVEL] == 1)fprintf(stderr, "Orig: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
-		//int test = block[n][AMR_NBR1_3];
-		//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD2] <= 1 && block[n][AMR_LEVEL] == 1)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	}
 
+	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		set_points(n);
 
@@ -2350,8 +2360,6 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-//
-
 			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 2 && block[n_ord_total[n]][AMR_COORD2] == NB_2 - 1 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
@@ -2370,20 +2378,6 @@ void check_refcrit(void){
 				else if (block[n_ord_total[n]][AMR_COORD1] <= 62 && block[n_ord_total[n]][AMR_LEVEL1] == 5) block[n_ord_total[n]][AMR_TAG] = 0;
 				else if (block[n_ord_total[n]][AMR_COORD1] <= 126 && block[n_ord_total[n]][AMR_LEVEL1] == 6) block[n_ord_total[n]][AMR_TAG] = 0;
 				#endif
-
-				//Do not refine around both poles
-				/*number = 0;
-				if (block[n_ord_total[n]][AMR_LEVEL2] == 0) number = 0;
-				else if (block[n_ord_total[n]][AMR_LEVEL2] == 1) number = 2;
-				else if (block[n_ord_total[n]][AMR_LEVEL2] == 2) number = 6;
-				else if (block[n_ord_total[n]][AMR_LEVEL2] == 3) number = 14;
-				else if (block[n_ord_total[n]][AMR_LEVEL2] == 4) number = 30;
-				else if (block[n_ord_total[n]][AMR_LEVEL2] == 5) number = 62;
-				else if (block[n_ord_total[n]][AMR_LEVEL2] == 6) number = 126;
-				if (REF_2 == 0) number = level;
-				if ((block[n_ord_total[n]][AMR_COORD2] <= number || block[n_ord_total[n]][AMR_COORD2] >= NB_2*pow(1 + REF_2, level) - number - 1)){
-					block[n_ord_total[n]][AMR_TAG] = 0;
-				}*/
 
 				if (block[n_ord_total[n]][AMR_TAG] >= 1){
 					if (one_block_refined == 0){

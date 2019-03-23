@@ -738,7 +738,6 @@ extern int reduce_timestep;
 extern int nthreads,numdevices;
 extern int gpu, gpu_offset;
 extern int status;
-extern int poststep_p;
 
 /* output parameters */
 extern double DTd;
@@ -987,7 +986,6 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	, int n_rec1, int n_rec2, int n_rec3, int n_rec4, int n_rec5, int n_rec6);
 
 //Boundary transfer related
-void prestep_receive_bound(void);
 void set_iprobe(int mode, int * flag);
 void bound_send1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int n, int prestep);
 void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], double * Bufferps[NB_LOCAL], int bound_force, int n);

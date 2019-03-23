@@ -107,7 +107,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (2)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
 #define TIMESTEP_JET 0
@@ -123,13 +123,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
 #define PRESTEP2 0
-
-/*Preevolve primitive variables for Summit*/
-#define PRESTEP_P 0
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0

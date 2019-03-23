@@ -904,7 +904,7 @@ void free_arrays(int n){
 			if (mem_spot_gpu[i] == block[n][AMR_GPU] && GPU_ENABLED==1) count_gpu++;
 		}
 	}
-	if (count_gpu < (n_active_total / (numtasks*N_GPU)) || count_node < (n_active_total / numtasks)){
+	if (count_gpu < (MAX_BLOCKS/ (N_GPU)) || count_node < MAX_BLOCKS){
 		mem_spot[nl[n]] = 0;
 		free_bound_cpu(n);
 		return;
@@ -958,40 +958,6 @@ void free_arrays(int n){
 }
 
 void free_bound_cpu(int n){
-	int ref1_1, ref1_3, ref1_5, ref1_6;
-	int ref2_2, ref2_4, ref2_5, ref2_6;
-	int ref3_1, ref3_2, ref3_3, ref3_4;
-	int ref1_1s, ref1_3s, ref1_5s, ref1_6s;
-	int ref2_2s, ref2_4s, ref2_5s, ref2_6s;
-	int ref3_1s, ref3_2s, ref3_3s, ref3_4s;
-
-	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
-	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
-	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
-	ref1_1s = REF_1; ref1_3s = REF_1; ref1_5s = REF_1; ref1_6s = REF_1;
-	ref2_2s = REF_2; ref2_4s = REF_2; ref2_5s = REF_2; ref2_6s = REF_2;
-	ref3_1s = REF_3; ref3_2s = REF_3; ref3_3s = REF_3; ref3_4s = REF_3;
-
-	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
-		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-	}
-	ref1_1s = ref1_1;
-	ref1_3s = ref1_3;
-	ref3_1s = ref3_1;
-	ref3_3s = ref3_3;
-
-	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL]) - 1) && DEREFINE_POLE){
-		ref3_2s = 0;
-		ref3_4s = 0;
-	}
-
 	free(send1[nl[n]]);
 	free(send2[nl[n]]);
 	free(send3[nl[n]]);
