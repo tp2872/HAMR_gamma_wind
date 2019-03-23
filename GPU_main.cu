@@ -222,45 +222,45 @@ void alloc_bounds_GPU(int n){
 	gpuAlloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend1_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_1s, ref3_1))gpuAlloc(&Buffersend1_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref1_1s, ref1_1))gpuAlloc(&Buffersend1_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_1s, ref3_1) && MY_MAX(ref1_1s, ref1_1))gpuAlloc(&Buffersend1_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend1_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend1_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend1_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G)*sizeof(double));
 	#endif
 	gpuAlloc(&Buffersend2[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend2_1[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_2s, ref3_2))gpuAlloc(&Buffersend2_2[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref2_2s, ref2_2))gpuAlloc(&Buffersend2_3[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_2s, ref3_2) && MY_MAX(ref2_2s, ref2_2))gpuAlloc(&Buffersend2_4[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend2_2[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend2_3[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend2_4[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G)*sizeof(double));
 	#endif
 	gpuAlloc(&Buffersend3[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend3_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_3s, ref3_3))gpuAlloc(&Buffersend3_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref1_3s, ref1_3))gpuAlloc(&Buffersend3_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_3s, ref3_3) && MY_MAX(ref1_3s, ref1_3))gpuAlloc(&Buffersend3_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend3_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend3_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend3_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G)*sizeof(double));
 	#endif
 	gpuAlloc(&Buffersend4[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend4_5[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_4s, ref3_4))gpuAlloc(&Buffersend4_6[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref2_4s, ref2_4))gpuAlloc(&Buffersend4_7[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
-	if (MY_MAX(ref3_4s, ref3_4) && MY_MAX(ref2_4s, ref2_4))gpuAlloc(&Buffersend4_8[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend4_6[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend4_7[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
+	gpuAlloc(&Buffersend4_8[nl[n]], NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G)*sizeof(double));
 	#endif
 	#if(N3G>0)
 	gpuAlloc(&Buffersend5[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend5_1[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
-	if (MY_MAX(ref2_5s, ref2_5))gpuAlloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
-	if (MY_MAX(ref1_5s, ref1_5))gpuAlloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
-	if (MY_MAX(ref2_5s, ref2_5) && MY_MAX(ref1_5s, ref1_5))gpuAlloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
+	gpuAlloc(&Buffersend5_3[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
+	gpuAlloc(&Buffersend5_5[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
+	gpuAlloc(&Buffersend5_7[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_5s) + 2 * N1G)*(BS_2 / (1 + ref2_5s) + 2 * N2G)*sizeof(double));
 	#endif
 	gpuAlloc(&Buffersend6[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*sizeof(double));
 	#if(N_LEVELS>1)
 	gpuAlloc(&Buffersend6_2[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
-	if (MY_MAX(ref2_6s, ref2_6))gpuAlloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
-	if (MY_MAX(ref1_6s, ref1_6))gpuAlloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
-	if (MY_MAX(ref2_6s, ref2_6) && MY_MAX(ref1_6s, ref1_6))gpuAlloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
+	gpuAlloc(&Buffersend6_4[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
+	gpuAlloc(&Buffersend6_6[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
+	gpuAlloc(&Buffersend6_8[nl[n]], NG * (NPR + 3)*(BS_1 / (1 + ref1_6s) + 2 * N1G)*(BS_2 / (1 + ref2_6s) + 2 * N2G)*sizeof(double));
 	#endif
 	#endif
 	gpuAlloc(&Bufferrec1[nl[n]], (1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G)*sizeof(double));
@@ -407,35 +407,35 @@ void alloc_bounds_GPU(int n){
 	#endif
 	#if(N_LEVELS>1)
 	gpuAlloc(&Bufferrec1_3flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
-	if (ref3_3)gpuAlloc(&Bufferrec1_4flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
-	if (ref1_3)gpuAlloc(&Bufferrec1_7flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
-	if (ref1_3 && ref3_3)gpuAlloc(&Bufferrec1_8flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
+	gpuAlloc(&Bufferrec1_4flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
+	gpuAlloc(&Bufferrec1_7flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
+	gpuAlloc(&Bufferrec1_8flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3))*sizeof(double));
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	gpuAlloc(&Bufferrec2_1flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4))*sizeof(double));
-	if (ref3_4)gpuAlloc(&Bufferrec2_2flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4))*sizeof(double));
-	if (ref2_4)gpuAlloc(&Bufferrec2_3flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4))*sizeof(double));
-	if (ref2_4 && ref3_4)gpuAlloc(&Bufferrec2_4flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4))*sizeof(double));
+	gpuAlloc(&Bufferrec2_1flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s))*sizeof(double));
+	gpuAlloc(&Bufferrec2_2flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s))*sizeof(double));
+	gpuAlloc(&Bufferrec2_3flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s))*sizeof(double));
+	gpuAlloc(&Bufferrec2_4flux2[nl[n]], NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s))*sizeof(double));
 	#endif
 	gpuAlloc(&Bufferrec3_1flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
-	if (ref3_1)gpuAlloc(&Bufferrec3_2flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
-	if (ref1_1)gpuAlloc(&Bufferrec3_5flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
-	if (ref1_1 && ref3_1)gpuAlloc(&Bufferrec3_6flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
+	gpuAlloc(&Bufferrec3_2flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
+	gpuAlloc(&Bufferrec3_5flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
+	gpuAlloc(&Bufferrec3_6flux2[nl[n]], NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1))*sizeof(double));
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	gpuAlloc(&Bufferrec4_5flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2))*sizeof(double));
-	if (ref3_2)gpuAlloc(&Bufferrec4_6flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2))*sizeof(double));
-	if (ref2_2)gpuAlloc(&Bufferrec4_7flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2))*sizeof(double));
-	if (ref2_2 && ref3_2)gpuAlloc(&Bufferrec4_8flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2))*sizeof(double));
+	gpuAlloc(&Bufferrec4_5flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s))*sizeof(double));
+	gpuAlloc(&Bufferrec4_6flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s))*sizeof(double));
+	gpuAlloc(&Bufferrec4_7flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s))*sizeof(double));
+	gpuAlloc(&Bufferrec4_8flux2[nl[n]], NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s))*sizeof(double));
 	#endif
 	#if(N3G>0)
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	gpuAlloc(&Bufferrec5_1flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
-	if (ref2_6)gpuAlloc(&Bufferrec5_3flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
-	if (ref1_6)gpuAlloc(&Bufferrec5_5flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
-	if (ref1_6 && ref2_6)gpuAlloc(&Bufferrec5_7flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
+	gpuAlloc(&Bufferrec5_3flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
+	gpuAlloc(&Bufferrec5_5flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
+	gpuAlloc(&Bufferrec5_7flux2[nl[n]], NPR*(BS_1 / (1 + ref1_6))*(BS_2 / (1 + ref2_6))*sizeof(double));
 	gpuAlloc(&Bufferrec6_2flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
-	if (ref2_5)gpuAlloc(&Bufferrec6_4flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
-	if (ref1_5)gpuAlloc(&Bufferrec6_6flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
-	if (ref1_5 && ref2_5)gpuAlloc(&Bufferrec6_8flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
+	gpuAlloc(&Bufferrec6_4flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
+	gpuAlloc(&Bufferrec6_6flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
+	gpuAlloc(&Bufferrec6_8flux2[nl[n]], NPR*(BS_1 / (1 + ref1_5))*(BS_2 / (1 + ref2_5))*sizeof(double));
 	#endif
 	#endif
 	#endif
@@ -527,20 +527,20 @@ void alloc_bounds_GPU(int n){
 	if (ref1_3)gpuAlloc(&Bufferrec1_7E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_3) *(BS_3 + 2 * D3) / (1 + ref3_3) *sizeof(double));
 	if (ref1_3 && ref3_3)gpuAlloc(&Bufferrec1_8E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_3) *(BS_3 + 2 * D3) / (1 + ref3_3) *sizeof(double));
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	gpuAlloc(&Bufferrec2_1E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4) *(BS_3 + 2 * D3) / (1 + ref3_4) *sizeof(double));
-	if (ref3_4)gpuAlloc(&Bufferrec2_2E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4) *(BS_3 + 2 * D3) / (1 + ref3_4) *sizeof(double));
-	if (ref2_4)gpuAlloc(&Bufferrec2_3E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4) *(BS_3 + 2 * D3) / (1 + ref3_4) *sizeof(double));
-	if (ref2_4 && ref3_4)gpuAlloc(&Bufferrec2_4E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4) *(BS_3 + 2 * D3) / (1 + ref3_4) *sizeof(double));
+	gpuAlloc(&Bufferrec2_1E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4s) *(BS_3 + 2 * D3) / (1 + ref3_4s) *sizeof(double));
+	if (MY_MAX(ref3_4, ref3_4s))gpuAlloc(&Bufferrec2_2E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4s) *(BS_3 + 2 * D3) / (1 + ref3_4s) *sizeof(double));
+	if (MY_MAX(ref2_4, ref2_4s))gpuAlloc(&Bufferrec2_3E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4s) *(BS_3 + 2 * D3) / (1 + ref3_4s) *sizeof(double));
+	if (MY_MAX(ref2_4, ref2_4s) && MY_MAX(ref3_4, ref3_4s))gpuAlloc(&Bufferrec2_4E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_4s) *(BS_3 + 2 * D3) / (1 + ref3_4s) *sizeof(double));
 	#endif
 	gpuAlloc(&Bufferrec3_1E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_1) *(BS_3 + 2 * D3) / (1 + ref3_1) *sizeof(double));
 	if (ref3_1)gpuAlloc(&Bufferrec3_2E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_1) *(BS_3 + 2 * D3) / (1 + ref3_1) *sizeof(double));
 	if (ref1_1)gpuAlloc(&Bufferrec3_5E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_1) *(BS_3 + 2 * D3) / (1 + ref3_1) *sizeof(double));
 	if (ref1_1 && ref3_1)gpuAlloc(&Bufferrec3_6E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_1) *(BS_3 + 2 * D3) / (1 + ref3_1) *sizeof(double));
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	gpuAlloc(&Bufferrec4_5E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2) *(BS_3 + 2 * D3) / (1 + ref3_2) *sizeof(double));
-	if (ref3_2)gpuAlloc(&Bufferrec4_6E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2) *(BS_3 + 2 * D3) / (1 + ref3_2) *sizeof(double));
-	if (ref2_2)gpuAlloc(&Bufferrec4_7E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2) *(BS_3 + 2 * D3) / (1 + ref3_2) *sizeof(double));
-	if (ref2_2 && ref3_2)gpuAlloc(&Bufferrec4_8E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2) *(BS_3 + 2 * D3) / (1 + ref3_2) *sizeof(double));
+	gpuAlloc(&Bufferrec4_5E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2s) *(BS_3 + 2 * D3) / (1 + ref3_2s) *sizeof(double));
+	if (MY_MAX(ref3_2,ref3_2s))gpuAlloc(&Bufferrec4_6E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2s) *(BS_3 + 2 * D3) / (1 + ref3_2s) *sizeof(double));
+	if (MY_MAX(ref2_2,ref2_2s))gpuAlloc(&Bufferrec4_7E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2s) *(BS_3 + 2 * D3) / (1 + ref3_2s) *sizeof(double));
+	if (MY_MAX(ref2_2,ref2_2s) && MY_MAX(ref3_2,ref3_2s))gpuAlloc(&Bufferrec4_8E2[nl[n]], 2 * (BS_2 + 2 * D2) / (1 + ref2_2s) *(BS_3 + 2 * D3) / (1 + ref3_2s) *sizeof(double));
 	#endif
 	#if(N3G>0)
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
@@ -989,7 +989,7 @@ void GPU_consttransport_bound(void){
 	
 	gpu = 1;
 	#if(TRANS_BOUND)
-	E_average();
+	//E_average();
 	#endif
 	set_iprobe(0, &flag);
 
@@ -1744,45 +1744,45 @@ void free_bound_gpu(int n){
 	status += gpuFree(Buffersend1[nl[n]]);
 	#if(N_LEVELS>1)
 	status += gpuFree(Buffersend1_3[nl[n]]);
-	if (MY_MAX(ref3_1s, ref3_1))status += gpuFree(Buffersend1_4[nl[n]]);
-	if (MY_MAX(ref1_1s, ref1_1))status += gpuFree(Buffersend1_7[nl[n]]);
-	if (MY_MAX(ref3_1s, ref3_1) && MY_MAX(ref1_1s, ref1_1))status += gpuFree(Buffersend1_8[nl[n]]);
+	status += gpuFree(Buffersend1_4[nl[n]]);
+	status += gpuFree(Buffersend1_7[nl[n]]);
+	status += gpuFree(Buffersend1_8[nl[n]]);
 	#endif
 	status += gpuFree(Buffersend2[nl[n]]);
 	#if(N_LEVELS>1)
 	status += gpuFree(Buffersend2_1[nl[n]]);
-	if (MY_MAX(ref3_2s, ref3_2))status += gpuFree(Buffersend2_2[nl[n]]);
-	if (MY_MAX(ref2_2s, ref2_2))status += gpuFree(Buffersend2_3[nl[n]]);
-	if (MY_MAX(ref3_2s, ref3_2) && MY_MAX(ref2_2s, ref2_2))status += gpuFree(Buffersend2_4[nl[n]]);
+	status += gpuFree(Buffersend2_2[nl[n]]);
+	status += gpuFree(Buffersend2_3[nl[n]]);
+	status += gpuFree(Buffersend2_4[nl[n]]);
 	#endif
 	status += gpuFree(Buffersend3[nl[n]]);
 	#if(N_LEVELS>1)
 	status += gpuFree(Buffersend3_1[nl[n]]);
-	if (MY_MAX(ref3_3s, ref3_3))status += gpuFree(Buffersend3_2[nl[n]]);
-	if (MY_MAX(ref1_3s, ref1_3))status += gpuFree(Buffersend3_5[nl[n]]);
-	if (MY_MAX(ref3_3s, ref3_3) && MY_MAX(ref1_3s, ref1_3))status += gpuFree(Buffersend3_6[nl[n]]);
+	status += gpuFree(Buffersend3_2[nl[n]]);
+	status += gpuFree(Buffersend3_5[nl[n]]);
+	status += gpuFree(Buffersend3_6[nl[n]]);
 	#endif
 	status += gpuFree(Buffersend4[nl[n]]);
 	#if(N_LEVELS>1)
 	status += gpuFree(Buffersend4_5[nl[n]]);
-	if (MY_MAX(ref3_4s, ref3_4))status += gpuFree(Buffersend4_6[nl[n]]);
-	if (MY_MAX(ref2_4s, ref2_4))status += gpuFree(Buffersend4_7[nl[n]]);
-	if (MY_MAX(ref3_4s, ref3_4) && MY_MAX(ref2_4s, ref2_4))status += gpuFree(Buffersend4_8[nl[n]]);
+	status += gpuFree(Buffersend4_6[nl[n]]);
+	status += gpuFree(Buffersend4_7[nl[n]]);
+	status += gpuFree(Buffersend4_8[nl[n]]);
 	#endif
 	#if(N3G>0)
 	status += gpuFree(Buffersend5[nl[n]]);
 	#if(N_LEVELS>1)
 	status += gpuFree(Buffersend5_1[nl[n]]);
-	if (MY_MAX(ref2_5s, ref2_5))status += gpuFree(Buffersend5_3[nl[n]]);
-	if (MY_MAX(ref1_5s, ref1_5))status += gpuFree(Buffersend5_5[nl[n]]);
-	if (MY_MAX(ref2_5s, ref2_5) && MY_MAX(ref1_5s, ref1_5))status += gpuFree(Buffersend5_7[nl[n]]);
+	status += gpuFree(Buffersend5_3[nl[n]]);
+	status += gpuFree(Buffersend5_5[nl[n]]);
+	status += gpuFree(Buffersend5_7[nl[n]]);
 	#endif
 	status += gpuFree(Buffersend6[nl[n]]);
 	#if(N_LEVELS>1)
 	status += gpuFree(Buffersend6_2[nl[n]]);
-	if (MY_MAX(ref2_6s, ref2_6))status += gpuFree(Buffersend6_4[nl[n]]);
-	if (MY_MAX(ref1_6s, ref1_6))status += gpuFree(Buffersend6_6[nl[n]]);
-	if (MY_MAX(ref2_6s, ref2_6) && MY_MAX(ref1_6s, ref1_6))status += gpuFree(Buffersend6_8[nl[n]]);
+	status += gpuFree(Buffersend6_4[nl[n]]);
+	status += gpuFree(Buffersend6_6[nl[n]]);
+	status += gpuFree(Buffersend6_8[nl[n]]);
 	#endif
 	#endif
 	status += gpuFree(Bufferrec1[nl[n]]);
@@ -1830,35 +1830,35 @@ void free_bound_gpu(int n){
 	#endif
 	status += gpuFree(Bufferrec1_3flux2[nl[n]]);
 	#if(N_LEVELS>1)
-	if (ref3_3)status += gpuFree(Bufferrec1_4flux2[nl[n]]);
-	if (ref1_3)status += gpuFree(Bufferrec1_7flux2[nl[n]]);
-	if (ref3_3 && ref1_3)status += gpuFree(Bufferrec1_8flux2[nl[n]]);
+	status += gpuFree(Bufferrec1_4flux2[nl[n]]);
+	status += gpuFree(Bufferrec1_7flux2[nl[n]]);
+	status += gpuFree(Bufferrec1_8flux2[nl[n]]);
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	status += gpuFree(Bufferrec2_1flux2[nl[n]]);
-	if (ref3_4)status += gpuFree(Bufferrec2_2flux2[nl[n]]);
-	if (ref2_4)status += gpuFree(Bufferrec2_3flux2[nl[n]]);
-	if (ref3_4 && ref2_4)status += gpuFree(Bufferrec2_4flux2[nl[n]]);
+	status += gpuFree(Bufferrec2_2flux2[nl[n]]);
+	status += gpuFree(Bufferrec2_3flux2[nl[n]]);
+	status += gpuFree(Bufferrec2_4flux2[nl[n]]);
 	#endif
 	status += gpuFree(Bufferrec3_1flux2[nl[n]]);
-	if (ref3_1)status += gpuFree(Bufferrec3_2flux2[nl[n]]);
-	if (ref1_1)status += gpuFree(Bufferrec3_5flux2[nl[n]]);
-	if (ref3_1 && ref1_1)status += gpuFree(Bufferrec3_6flux2[nl[n]]);
+	status += gpuFree(Bufferrec3_2flux2[nl[n]]);
+	status += gpuFree(Bufferrec3_5flux2[nl[n]]);
+	status += gpuFree(Bufferrec3_6flux2[nl[n]]);
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	status += gpuFree(Bufferrec4_5flux2[nl[n]]);
-	if (ref3_2)status += gpuFree(Bufferrec4_6flux2[nl[n]]);
-	if (ref2_2)status += gpuFree(Bufferrec4_7flux2[nl[n]]);
-	if (ref3_2 && ref2_2)status += gpuFree(Bufferrec4_8flux2[nl[n]]);
+	status += gpuFree(Bufferrec4_6flux2[nl[n]]);
+	status += gpuFree(Bufferrec4_7flux2[nl[n]]);
+	status += gpuFree(Bufferrec4_8flux2[nl[n]]);
 	#endif
 	#if(N3G>0)
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	status += gpuFree(Bufferrec5_1flux2[nl[n]]);
-	if (ref2_6)status += gpuFree(Bufferrec5_3flux2[nl[n]]);
-	if (ref1_6)status += gpuFree(Bufferrec5_5flux2[nl[n]]);
-	if (ref2_6 && ref1_6)status += gpuFree(Bufferrec5_7flux2[nl[n]]);
+	status += gpuFree(Bufferrec5_3flux2[nl[n]]);
+	status += gpuFree(Bufferrec5_5flux2[nl[n]]);
+	status += gpuFree(Bufferrec5_7flux2[nl[n]]);
 	status += gpuFree(Bufferrec6_2flux2[nl[n]]);
-	if (ref2_5)status += gpuFree(Bufferrec6_4flux2[nl[n]]);
-	if (ref1_5)status += gpuFree(Bufferrec6_6flux2[nl[n]]);
-	if (ref2_5 && ref1_5)status += gpuFree(Bufferrec6_8flux2[nl[n]]);
+	status += gpuFree(Bufferrec6_4flux2[nl[n]]);
+	status += gpuFree(Bufferrec6_6flux2[nl[n]]);
+	status += gpuFree(Bufferrec6_8flux2[nl[n]]);
 	#endif
 	#endif
 	#endif
@@ -1893,35 +1893,35 @@ void free_bound_gpu(int n){
 	#endif
 	#if(N_LEVELS>1)
 	status += gpuFree(Bufferrec1_3E2[nl[n]]);
-	if (ref3_3)status += gpuFree(Bufferrec1_4E2[nl[n]]);
-	if (ref1_3)status += gpuFree(Bufferrec1_7E2[nl[n]]);
-	if (ref3_3 && ref1_3)status += gpuFree(Bufferrec1_8E2[nl[n]]);
+	status += gpuFree(Bufferrec1_4E2[nl[n]]);
+	status += gpuFree(Bufferrec1_7E2[nl[n]]);
+	status += gpuFree(Bufferrec1_8E2[nl[n]]);
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	status += gpuFree(Bufferrec2_1E2[nl[n]]);
-	if (ref3_4)status += gpuFree(Bufferrec2_2E2[nl[n]]);
-	if (ref2_4)status += gpuFree(Bufferrec2_3E2[nl[n]]);
-	if (ref3_4 && ref2_4)status += gpuFree(Bufferrec2_4E2[nl[n]]);
+	status += gpuFree(Bufferrec2_2E2[nl[n]]);
+	status += gpuFree(Bufferrec2_3E2[nl[n]]);
+	status += gpuFree(Bufferrec2_4E2[nl[n]]);
 	#endif
 	status += gpuFree(Bufferrec3_1E2[nl[n]]);
-	if (ref3_1)status += gpuFree(Bufferrec3_2E2[nl[n]]);
-	if (ref1_1)status += gpuFree(Bufferrec3_5E2[nl[n]]);
-	if (ref3_1 && ref1_1)status += gpuFree(Bufferrec3_6E2[nl[n]]);
+	status += gpuFree(Bufferrec3_2E2[nl[n]]);
+	status += gpuFree(Bufferrec3_5E2[nl[n]]);
+	status += gpuFree(Bufferrec3_6E2[nl[n]]);
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	status += gpuFree(Bufferrec4_5E2[nl[n]]);
-	if (ref3_2)status += gpuFree(Bufferrec4_6E2[nl[n]]);
-	if (ref2_2)status += gpuFree(Bufferrec4_7E2[nl[n]]);
-	if (ref3_2 && ref2_2)status += gpuFree(Bufferrec4_8E2[nl[n]]);
+	status += gpuFree(Bufferrec4_6E2[nl[n]]);
+	status += gpuFree(Bufferrec4_7E2[nl[n]]);
+	status += gpuFree(Bufferrec4_8E2[nl[n]]);
 	#endif
 	#if(N3G>0)
 	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
 	status += gpuFree(Bufferrec5_1E2[nl[n]]);
-	if (ref2_6)status += gpuFree(Bufferrec5_3E2[nl[n]]);
-	if (ref1_6)status += gpuFree(Bufferrec5_5E2[nl[n]]);
-	if (ref2_6 && ref1_6)status += gpuFree(Bufferrec5_7E2[nl[n]]);
+	status += gpuFree(Bufferrec5_3E2[nl[n]]);
+	status += gpuFree(Bufferrec5_5E2[nl[n]]);
+	status += gpuFree(Bufferrec5_7E2[nl[n]]);
 	status += gpuFree(Bufferrec6_2E2[nl[n]]);
-	if (ref2_5)status += gpuFree(Bufferrec6_4E2[nl[n]]);
-	if (ref1_5)status += gpuFree(Bufferrec6_6E2[nl[n]]);
-	if (ref2_5 && ref1_5)status += gpuFree(Bufferrec6_8E2[nl[n]]);
+	status += gpuFree(Bufferrec6_4E2[nl[n]]);
+	status += gpuFree(Bufferrec6_6E2[nl[n]]);
+	status += gpuFree(Bufferrec6_8E2[nl[n]]);
 	#endif
 	#endif
 	#endif

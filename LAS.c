@@ -1132,15 +1132,18 @@ void set_corners(void){
 	//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	//test = block[test][AMR_CORN3D];
 	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	if (test != block[AMR_coord_linear2(0, 5, 0, 5, 0)][AMR_CORN1D_1] || test != block[AMR_coord_linear2(1, 4, 0, 4, 0)][AMR_CORN2D_1] || test != block[AMR_coord_linear2(1, 4, 1, 4, 0)][AMR_CORN3D_1] || test != block[test][AMR_CORN4D])fprintf(stderr, "corner error \n");
+	//if (test != block[AMR_coord_linear2(0, 5, 0, 5, 0)][AMR_CORN1D_1] || test != block[AMR_coord_linear2(1, 4, 0, 4, 0)][AMR_CORN2D_1] || test != block[AMR_coord_linear2(1, 4, 1, 4, 0)][AMR_CORN3D_1] || test != block[test][AMR_CORN4D])fprintf(stderr, "corner error \n");
 	//fprintf(stderr, "corner %d %d %d %d\n", block[AMR_coord_linear2(0, 5, 0, 5, 0)][AMR_CORN1D], block[AMR_coord_linear2(1, 4, 0, 4, 0)][AMR_CORN2D], block[AMR_coord_linear2(1, 4, 1, 4, 0)][AMR_CORN3D], block[test][AMR_CORN4D_1]);
-	n = AMR_coord_linear2(0, 5, 0, 5, 0);
-	test = block[n][AMR_CORN1D_1];
-	fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	test = block[n][AMR_NBR2_1];
-	fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	
-	
+	//n = AMR_coord_linear2(1, 5, 2, 10, 1);
+	//test = block[n][AMR_CORN3D];
+	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	//test = block[n][AMR_CORN3D_2];
+	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	//n = AMR_coord_linear2(1, 5, 2, 11, 1);
+	//test = block[n][AMR_CORN4D];
+	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	//test = block[n][AMR_CORN4D_2];
+	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	//fprintf(stderr, "test: %d %d %d %d %d\n", block[n][AMR_CORN2], block[block[n][AMR_CORN2]][AMR_ACTIVE]);
 }
 
