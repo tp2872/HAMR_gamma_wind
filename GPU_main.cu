@@ -941,6 +941,26 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
 	if (cudaSuccess != status) fprintf(stderr, "Error Fluxcalc2D2 %d\n", status);
 }
 
+void GPU_reconstruct_internal(int flag, int n)
+{
+	//cudasetDevice(block[n][AMR_GPU]);
+	if ((block[n][AMR_POLE] != 0) || (block[n][AMR_NBR1] < 0) || (block[n][AMR_NBR3] < 0)){
+		int nr_workgroups_local[1];
+		nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1)* (BS_2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1)* (BS_2)* (BS_3)) / LOCAL_WORK_SIZE;
+
+		/*Calculate reconstructed left state*/
+		if (flag == 1){
+			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		}
+		else{
+			reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+		}
+		//cudaDeviceSynchronize();
+		status = cudaGetLastError();
+		if (cudaSuccess != status) fprintf(stderr, "Error GPU_reconstruct_internal %d\n", status);
+	}
+}
+
 /*Start reading timestep from GPU*/
 void read_time_GPU(void){
 	//int n;
@@ -1542,9 +1562,22 @@ void GPU_boundprim_trans(int flag, int n)
 void GPU_read(int n)
 {
 	int i, j, z, k;
+	int nr_workgroups_local[1];
+
 	//cudaDeviceSynchronize();
 	//cudasetDevice(block[n][AMR_GPU]);
+
+	#if(N_LEVELS_1D_INT>1000)
+	/*Calculate gradients for reconstruction*/
+	GPU_fluxcalcprep(3, 0, 1, n);
+	
+	/*Reconstruct derefined region around pole for Ray-Tracing and store in temporary variable (used for fluxes normally)*/
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1)* (BS_2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1)* (BS_2)* (BS_3)) / LOCAL_WORK_SIZE;
+	reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+	cudaMemcpyAsync(p_1[nl[n]], BufferF1_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	#else
 	cudaMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	#endif
 	cudaMemcpyAsync(ph_1[nl[n]], Bufferph_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#if(STAGGERED)
 	cudaMemcpyAsync(ps_1[nl[n]], Bufferps_1[nl[n]], (int)(3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);

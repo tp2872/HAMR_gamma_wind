@@ -50,6 +50,8 @@ void diag(int call_code)
 	int i,j,z,k,n ;
 	double divb,divbmax;
 	int imax,jmax,zmax;
+	bound_prim(p, 1);
+	prolong_grid();
 
 	/* calculate conserved quantities */
 	if (call_code == INIT_OUT || call_code == LOG_OUT || call_code == FINAL_OUT) {

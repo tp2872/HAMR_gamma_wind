@@ -98,7 +98,8 @@ void AMR_set_coord(void){
 		l = l_1D + l_3D;
 		block[n][AMR_LEVEL] = l;
 	
-		/*if (l == 0){
+		#if(Z_ORDER)
+		if (l == 0){
 			max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
 			coord1 = 0;
 			coord2 = 0;
@@ -150,7 +151,8 @@ void AMR_set_coord(void){
 				}
 			}
 			n0++;
-		}*/
+		}
+		#endif
 
 		if (!(N_LEVELS_1D == 0 || (NB_2 == 6 != 0 && N_LEVELS_1D == 1) || (NB_2 == 12 != 0 && N_LEVELS_1D == 2) || (NB_2 == 24 != 0 && N_LEVELS_1D == 3) || (NB_2 == 48 != 0 && N_LEVELS_1D == 4) || (NB_2 == 96 != 0 && N_LEVELS_1D == 5))){
 			if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
@@ -206,6 +208,7 @@ void AMR_set_coord(void){
 				keep_looping = 0;
 				//At 0-th level use row-major ordering with z fastest running index
 				if (l == 0){
+					#if(!Z_ORDER)
 					z[l]++;
 					if (z[l] == NB_3){
 						z[l] = 0;
@@ -219,6 +222,7 @@ void AMR_set_coord(void){
 						fprintf(stderr, "Catastrophic error in grid mapping! \n");
 						exit(0);
 					}
+					#endif
 				}
 				else{
 					z[l]++;
@@ -2851,15 +2855,15 @@ void average_grid(void){
 
 				#if(STAGGERED)
 				temp[1] = 0.0;
-				for (u = 0; u < zsize; u++) temp[1] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1]) / ((double)zsize);
-				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] = temp[1];
+				for (u = 0; u < zsize; u++) temp[1] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE1]) / ((double)zsize);
+				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] = temp[1] / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE1];
 
 				temp[2] = 0.0;
-				for (u = 0; u < zsize; u++) temp[2] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2]) / ((double)zsize);
-				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] = temp[2];
+				for (u = 0; u < zsize; u++) temp[2] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z)][FACE2]) / ((double)zsize);
+					for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] = temp[2] / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z)][FACE2];
 
-				temp[3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE3]) / (2.0*gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3]);
-				for (u = 1; u < zsize; u++)ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = temp[3];
+				temp[3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE3]) / (2.0);
+				for (u = 1; u < zsize; u++)ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = temp[3]/gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3];
 				#endif
 			}
 		}
@@ -2868,4 +2872,89 @@ void average_grid(void){
 	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 	#endif
+}
+
+//Prolongs grid near pole: This is necessary for AMR in combination with internal derefinement
+void prolong_grid(void){
+	int n, i, j, z, k, u;
+	int zsize = 1, zlevel = 0;
+	double temp[NDIM];
+	double b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8;
+	double b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8;
+	double b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8;
+	int ind0, ind1;
+
+	//Store staggered grid variables in temporary array
+	for (n = 0; n < n_active; n++){
+		#pragma omp parallel private(i, j, z)
+		{
+			#pragma omp for collapse(2) schedule(dynamic)
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, N1_GPU_offset[n_ord[n]] + BS_1 + N1G - 1, -N2G + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + N2G - 1, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
+				psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE1];
+				psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE2];
+				psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3];
+			}
+		}
+	}
+
+	for (n = 0; n < n_active; n++){
+		#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, ind0, ind1)
+		for (i = N1_GPU_offset[n_ord[n]]; i < N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j < N2_GPU_offset[n_ord[n]] + BS_2; j++){
+			zlevel = 0;
+			if ((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j < N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(j - N2_GPU_offset[n_ord[n]]) + D2))) / log(2.)), N_LEVELS_1D_INT);
+			if ((block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3) && j >= N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n_ord[n]], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
+			zsize = (int)pow(2.0, (double)zlevel);
+			if (zlevel>0){
+				for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z += zsize){
+					for (u = 0; u < zsize; u++){
+						ind0 = index_3D(n_ord[n], i, j, z + u);
+						ind1 = index_2D(n_ord[n], i, j, z + u);
+
+						//Negative x1
+						b1_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
+						b1_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][1];
+						b1_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1];
+						b1_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][1];
+
+						//Positive x1
+						b1_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1];
+						b1_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + zsize)][1];
+						b1_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1];
+						b1_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + zsize)][1];
+
+						//Negative x2
+						b2_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2];
+						b2_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][2];
+						b2_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2];
+						b2_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][2];
+
+						//Positive x2
+						b2_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2];
+						b2_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + zsize)][2];
+						b2_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2];
+						b2_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + zsize)][2];
+
+						//Negative x3
+						b3_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
+						b3_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
+						b3_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
+						b3_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
+
+						//Positive x3
+						b3_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3];
+						b3_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3];
+						b3_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3];
+						b3_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3];
+
+						ps[nl[n_ord[n]]][ind1][1] = 1. / gdet[nl[n_ord[n]]][ind1][FACE1] * B1_prolong(n_ord[n], i, j, z, -0.5, 0, (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+							b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
+						ps[nl[n_ord[n]]][ind1][2] = 1. / gdet[nl[n_ord[n]]][ind1][FACE2] * B2_prolong(n_ord[n], i, j, z, 0, -0.5, (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+							b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
+						ps[nl[n_ord[n]]][ind1][3] = 1. / gdet[nl[n_ord[n]]][ind1][FACE3] * B3_prolong(n_ord[n], i, j, z, 0, 0, ((double)u) / ((double)zsize), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+							b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
+					}
+				}
+			}
+		}
+	}
 }
