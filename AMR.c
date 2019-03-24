@@ -84,12 +84,12 @@ void AMR_coord_cart_RM(int n, int *level, int *i, int *j, int *z){
 
 //Given a certain linear coordinate n this function determines the cartesian coordinates of a block and it's corresponding AMR-level
 void AMR_set_coord(void){
-	int n, l, l_1D, l_3D, L_1DMAX, lc, i[N_LEVELS], j[N_LEVELS], z[N_LEVELS], keep_looping, index, offset;
-
+	int n, n0, l, l_1D, l_3D, L_1DMAX, lc, i[N_LEVELS], j[N_LEVELS], z[N_LEVELS], keep_looping, index, offset;
+	int max_level, i1, i2, i3, increment1, increment2, increment3, coord1, coord2, coord3, counter;
 	//Initialize counters
 	for (l = 0; l < N_LEVELS; l++) i[l] = j[l] = z[l] = 0;
 	l_1D = l_3D = l = 0;
-	n = 0;
+	n = n0  = 0;
 	while (1){
 		//Set level based on values from last iteration
 		block[n][AMR_LEVEL1] = l_3D;
@@ -98,6 +98,60 @@ void AMR_set_coord(void){
 		l = l_1D + l_3D;
 		block[n][AMR_LEVEL] = l;
 	
+		/*if (l == 0){
+			max_level = (int)(log((double)(MY_MAX(NB_1, MY_MAX(NB_2, NB_3)))) / log(2.)); //Gives the maximum 0-level of grid
+			coord1 = 0;
+			coord2 = 0;
+			coord3 = 0;
+			counter = n0;
+			for (i1 = max_level; i1 >= 0; i1--){
+				increment1 = MY_MIN(pow(2, i1), NB_1 - coord1 - 1);
+				increment2 = MY_MIN(pow(2, i1), NB_2 - coord2 - 1);
+				increment3 = MY_MIN(pow(2, i1), NB_3 - coord3 - 1);
+
+				if (increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				if (increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					coord2 += increment2;
+				}
+				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				if (increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment3;
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					if (increment2 == pow(2, i1)) coord2 -= increment2;
+					coord3 += increment3;
+				}
+				if (increment3 == pow(2, i1) && increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					coord2 += increment2;
+				}
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				i[l] = coord1;
+				j[l] = coord2;
+				z[l] = coord3;
+				if ((i[l] == NB_1) || (j[l] == NB_2) || (z[l] == NB_3)){
+					fprintf(stderr, "Catastrophic error in grid mapping! \n");
+					exit(0);
+				}
+			}
+			n0++;
+		}*/
+
 		if (!(N_LEVELS_1D == 0 || (NB_2 == 6 != 0 && N_LEVELS_1D == 1) || (NB_2 == 12 != 0 && N_LEVELS_1D == 2) || (NB_2 == 24 != 0 && N_LEVELS_1D == 3) || (NB_2 == 48 != 0 && N_LEVELS_1D == 4) || (NB_2 == 96 != 0 && N_LEVELS_1D == 5))){
 			if (rank == 0)fprintf(stderr, "For derefinement near the pole chose NB_2 6, 12, 24, 48, 96 for 1, 2, 3, 4, 5 levels of derefinement near the pole! \n");
 			exit(0);
@@ -2455,15 +2509,14 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
-				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
-				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + ref_1)*(1 + ref_2)*(1 + ref_1) - 1){				
-					for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1){				
+					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
 						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-						if (block[n_send][AMR_NODE] != node){
-							NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
+						if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
+							n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+							if (block[n_send][AMR_NODE] != node){
+								NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
+							}
 						}
 					}
 				}
@@ -2479,21 +2532,20 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				//Send block using non-blocking send
-				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
-				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
-				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
 					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-					if (block[n_send][AMR_NODE] != node){
-						rc = 0;
-						if (block[n_send][AMR_NODE] == rank){
-							rc += MPI_Isend(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][598]);
-							#if STAGGERED
-							rc += MPI_Isend(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][597]);
-							#endif
+					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
+						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+						if (block[n_send][AMR_NODE] != node){
+							rc = 0;
+							if (block[n_send][AMR_NODE] == rank){
+								rc += MPI_Isend(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][598]);
+								#if STAGGERED
+								rc += MPI_Isend(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][597]);
+								#endif
+							}
+							if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
 						}
-						if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
 					}
 				}
 			}
@@ -2505,26 +2557,25 @@ void check_refcrit(void){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				//Send block using non-blocking send
-				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
-				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
-				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
 					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-					if (block[n_send][AMR_NODE] != node){
-						rc = 0;
-						if (node == rank){
-							//Allocate memory for active blocks on node
-							temp_p[n_send] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-							temp_ps[n_send] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
-							if (block[n_send][AMR_NODE] >= 0){
-								rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
-								#if STAGGERED
-								rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
-								#endif
+					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
+						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+						if (block[n_send][AMR_NODE] != node){
+							rc = 0;
+							if (node == rank){
+								//Allocate memory for active blocks on node
+								temp_p[n_send] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+								temp_ps[n_send] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
+								if (block[n_send][AMR_NODE] >= 0){
+									rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
+									#if STAGGERED
+									rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
+									#endif
+								}
 							}
+							if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
 						}
-						if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
 					}
 				}
 			}
@@ -2534,23 +2585,22 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			node = block[n_ord_total[n]][AMR_NODE];
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
-				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
-				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
 					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					//Then use MPI_wait to clean up data that has been sent
-					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-					if (block[n_send][AMR_NODE] != node){
-						if (block[n_send][AMR_NODE] == rank){
-							MPI_Wait(&boundreqs[nl[n_send]][598], &Statbound[nl[n_send]][0]);
-							#if STAGGERED
-							MPI_Wait(&boundreqs[nl[n_send]][597], &Statbound[nl[n_send]][1]);
-							#endif
-							free_arrays(n_send);
-							#if(GPU_ENABLED || GPU_DEBUG )
-							GPU_finish(n_send, 0);
-							#endif
+					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
+						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+						if (block[n_send][AMR_NODE] != node){
+							if (block[n_send][AMR_NODE] == rank){
+								MPI_Wait(&boundreqs[nl[n_send]][598], &Statbound[nl[n_send]][0]);
+								#if STAGGERED
+								MPI_Wait(&boundreqs[nl[n_send]][597], &Statbound[nl[n_send]][1]);
+								#endif
+								free_arrays(n_send);
+								#if(GPU_ENABLED || GPU_DEBUG )
+								GPU_finish(n_send, 0);
+								#endif
+							}
 						}
 					}
 				}
@@ -2561,39 +2611,38 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				node = block[n_ord_total[n]][AMR_NODE];
-				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
-				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
-				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
 					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					//Then initialize sent data on receiving node
-					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-					if (block[n_send][AMR_NODE] != node){
-						if (node == rank){
-							if (block[n_send][AMR_NODE] >= 0){
-								MPI_Wait(&boundreqstemp1[n_send], &Statbound[0][10]);
-								#if STAGGERED
-								MPI_Wait(&boundreqstemp2[n_send], &Statbound[0][11]);
+					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
+						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+						if (block[n_send][AMR_NODE] != node){
+							if (node == rank){
+								if (block[n_send][AMR_NODE] >= 0){
+									MPI_Wait(&boundreqstemp1[n_send], &Statbound[0][10]);
+									#if STAGGERED
+									MPI_Wait(&boundreqstemp2[n_send], &Statbound[0][11]);
+									#endif
+								}
+								set_arrays(n_send);
+								set_grid(n_send);
+								#pragma omp parallel for schedule(dynamic,1)  private(i, j, z, k)
+								ZSLOOP3D(N1_GPU_offset[n_send] - N1G, N1_GPU_offset[n_send] + BS_1 - 1 + N1G, N2_GPU_offset[n_send] - N2G, N2_GPU_offset[n_send] + BS_2 - 1 + N2G, N3_GPU_offset[n_send] - N3G, N3_GPU_offset[n_send] + BS_3 - 1 + N3G){
+									PLOOP p[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_p[n_send][index_3D(n_send, i, j, z)][k];
+									for (k = 0; k < NDIM; k++) ps[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_ps[n_send][index_3D(n_send, i, j, z)][k];
+								}
+								free(temp_p[n_send]);
+								free(temp_ps[n_send]);
+								#if(GPU_ENABLED || GPU_DEBUG )
+								if (mem_spot_gpu[nl[n_send]] != -1) gpu_choice = mem_spot_gpu[nl[n_send]];
+								else {
+									gpu_choice = gpu_counter%N_GPU;
+									gpu_counter++;
+								}
+								set_arrays_GPU(n_send, gpu_choice);
+								GPU_write(n_send);
 								#endif
 							}
-							set_arrays(n_send);
-							set_grid(n_send);
-							#pragma omp parallel for schedule(dynamic,1)  private(i, j, z, k)
-							ZSLOOP3D(N1_GPU_offset[n_send] - N1G, N1_GPU_offset[n_send] + BS_1 - 1 + N1G, N2_GPU_offset[n_send] - N2G, N2_GPU_offset[n_send] + BS_2 - 1 + N2G, N3_GPU_offset[n_send] - N3G, N3_GPU_offset[n_send] + BS_3 - 1 + N3G){
-								PLOOP p[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_p[n_send][index_3D(n_send, i, j, z)][k];
-								for (k = 0; k < NDIM; k++) ps[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_ps[n_send][index_3D(n_send, i, j, z)][k];
-							}
-							free(temp_p[n_send]);
-							free(temp_ps[n_send]);
-							#if(GPU_ENABLED || GPU_DEBUG )
-							if (mem_spot_gpu[nl[n_send]] != -1) gpu_choice = mem_spot_gpu[nl[n_send]];
-							else {
-								gpu_choice = gpu_counter%N_GPU;
-								gpu_counter++;
-							}
-							set_arrays_GPU(n_send, gpu_choice);
-							GPU_write(n_send);
-							#endif
 						}
 					}
 				}
@@ -2604,10 +2653,7 @@ void check_refcrit(void){
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
 				node = block[n_ord_total[n]][AMR_NODE];
-				ref_1 = block[n_ord_total[n]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1];
-				ref_2 = block[n_ord_total[n]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2];
-				ref_3 = block[n_ord_total[n]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3];
-				for (i1 = 0; i1 < 1 + ref_1; i1++)for (i2 = 0; i2 < 1 + ref_2; i2++)for (i3 = 0; i3 < 1 + ref_3; i3++){
+				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
 					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
 					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
 					block[n_send][AMR_NODE] = node;
@@ -2694,29 +2740,6 @@ int derefine_pole(void){
 	#endif
 	
 	return 1;
-}
-
-//Set row major order in case of derfinement near pole
-void rm_order1(void){
-	int l, i, j, z, ni, nj, nz;
-	int number = 0;
-	int number_node = 0;
-	ni = NB_1*pow(1 + REF_1, N_LEVELS - 1);
-	nj = NB_2*pow(1 + REF_2, N_LEVELS - 1);
-	nz = NB_3*pow(1 + REF_3, N_LEVELS - 1);
-	for (z = 0; z < nz; z++)for (j = 0; j < nj; j++)for (i = 0; i < ni; i++){
-		for (l = 0; l<N_LEVELS; l++){
-			if (i<NB_1*pow(1 + REF_1, l) && j<NB_2*pow(1 + REF_2, l) && z<NB_3*pow(1 + REF_3, l) && block[AMR_coord_linear(l, i, j, z)][AMR_ACTIVE] == 1){
-				n_ord_total_RM[number] = AMR_coord_linear(l, i, j, z);
-				number++;
-				if (block[AMR_coord_linear(l, i, j, z)][AMR_NODE] == rank){
-					n_ord_RM[number_node] = AMR_coord_linear(l, i, j, z);
-					number_node++;
-				}
-				block[AMR_coord_linear(l, i, j, z)][RM_ORDER] = number;
-			}
-		}
-	}
 }
 
 //Set row major order in case of no derfinement near pole
