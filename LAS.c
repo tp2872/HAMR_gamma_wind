@@ -474,8 +474,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN2D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN2D] = -2;
-							block[n_ord_total[n]][AMR_CORN2D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN2D_2] = temp;
+							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
+								block[n_ord_total[n]][AMR_CORN2D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN2D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN2D_1] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_1];
+								block[n_ord_total[n]][AMR_CORN2D_2] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_2];
+							}
 						}
 					}
 					else{
@@ -484,8 +490,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN2D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN2D] = -2;
-							block[n_ord_total[n]][AMR_CORN2D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN2D_2] = temp;
+							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
+								block[n_ord_total[n]][AMR_CORN2D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN2D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN2D_1] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_1];
+								block[n_ord_total[n]][AMR_CORN2D_2] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_2];
+							}
 						}
 					}
 				}
@@ -516,8 +528,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN3D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN3D] = -2;
-							block[n_ord_total[n]][AMR_CORN3D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN3D_2] = temp;
+							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
+								block[n_ord_total[n]][AMR_CORN3D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN3D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN3D_1] = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_1];
+								block[n_ord_total[n]][AMR_CORN3D_2] = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_2];
+							}
 						}
 					}
 					else{
@@ -526,8 +544,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN3D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN3D] = -2;
-							block[n_ord_total[n]][AMR_CORN3D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN3D_2] = temp;
+							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
+								block[n_ord_total[n]][AMR_CORN3D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN3D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN3D_1] = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_1];
+								block[n_ord_total[n]][AMR_CORN3D_2] = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_2];
+							}
 						}
 					}
 				}
@@ -563,8 +587,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN4D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN4D] = -2;
-							block[n_ord_total[n]][AMR_CORN4D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN4D_2] = temp;
+							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
+								block[n_ord_total[n]][AMR_CORN4D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN4D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN4D_1] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_1];
+								block[n_ord_total[n]][AMR_CORN4D_2] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_2];
+							}
 						}
 					}
 					else{
@@ -573,8 +603,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN4D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN4D] = -2;
-							block[n_ord_total[n]][AMR_CORN4D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN4D_2] = temp;
+							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
+								block[n_ord_total[n]][AMR_CORN4D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN4D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN4D_1] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_1];
+								block[n_ord_total[n]][AMR_CORN4D_2] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_2];
+							}
 						}
 					}
 				}
@@ -734,8 +770,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN6D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN6D] = -2;
-							block[n_ord_total[n]][AMR_CORN6D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN6D_2] = temp;
+							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
+								block[n_ord_total[n]][AMR_CORN6D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN6D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN6D_1] = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_1];
+								block[n_ord_total[n]][AMR_CORN6D_2] = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_2];
+							}
 						}
 					}
 					else{
@@ -744,8 +786,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN6D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN6D] = -2;
-							block[n_ord_total[n]][AMR_CORN6D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN6D_2] = temp;
+							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
+								block[n_ord_total[n]][AMR_CORN6D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN6D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN6D_1] = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_1];
+								block[n_ord_total[n]][AMR_CORN6D_2] = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_2];
+							}
 						}
 					}
 				}
@@ -776,8 +824,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN7D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN7D] = -2;
-							block[n_ord_total[n]][AMR_CORN7D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN7D_2] = temp;
+							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
+								block[n_ord_total[n]][AMR_CORN7D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN7D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN7D_1] = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_1];
+								block[n_ord_total[n]][AMR_CORN7D_2] = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_2];
+							}
 						}
 					}
 					else{
@@ -786,8 +840,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN7D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN7D] = -2;
-							block[n_ord_total[n]][AMR_CORN7D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN7D_2] = temp;
+							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
+								block[n_ord_total[n]][AMR_CORN7D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN7D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN7D_1] = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_1];
+								block[n_ord_total[n]][AMR_CORN7D_2] = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_2];
+							}
 						}
 					}
 				}
@@ -818,8 +878,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN8D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN8D] = -2;
-							block[n_ord_total[n]][AMR_CORN8D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN8D_2] = temp;
+							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
+								block[n_ord_total[n]][AMR_CORN8D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN8D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN8D_1] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_1];
+								block[n_ord_total[n]][AMR_CORN8D_2] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_2];
+							}
 						}
 					}
 					else{
@@ -828,8 +894,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN8D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN8D] = -2;
-							block[n_ord_total[n]][AMR_CORN8D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN8D_2] = temp;
+							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
+								block[n_ord_total[n]][AMR_CORN8D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN8D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN8D_1] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_1];
+								block[n_ord_total[n]][AMR_CORN8D_2] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_2];
+							}
 						}
 					}
 				}
@@ -986,8 +1058,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN10D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN10D] = -2;
-							block[n_ord_total[n]][AMR_CORN10D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN10D_2] = temp;
+							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
+								block[n_ord_total[n]][AMR_CORN10D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN10D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN10D_1] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_1];
+								block[n_ord_total[n]][AMR_CORN10D_2] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_2];
+							}
 						}
 					}
 					else{
@@ -996,8 +1074,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN10D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN10D] = -2;
-							block[n_ord_total[n]][AMR_CORN10D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN10D_2] = temp;
+							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
+								block[n_ord_total[n]][AMR_CORN10D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN10D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN10D_1] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_1];
+								block[n_ord_total[n]][AMR_CORN10D_2] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_2];
+							}
 						}
 					}
 				}
@@ -1028,8 +1112,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN11D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN11D] = -2;
-							block[n_ord_total[n]][AMR_CORN11D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN11D_2] = temp;
+							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
+								block[n_ord_total[n]][AMR_CORN11D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN11D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN11D_1] = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_1];
+								block[n_ord_total[n]][AMR_CORN11D_2] = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_2];
+							}
 						}
 					}
 					else{
@@ -1038,8 +1128,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN11D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN11D] = -2;
-							block[n_ord_total[n]][AMR_CORN11D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN11D_2] = temp;
+							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
+								block[n_ord_total[n]][AMR_CORN11D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN11D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN11D_1] = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_1];
+								block[n_ord_total[n]][AMR_CORN11D_2] = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_2];
+							}
 						}
 					}
 				}
@@ -1070,8 +1166,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN12D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN12D] = -2;
-							block[n_ord_total[n]][AMR_CORN12D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN12D_2] = temp;
+							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
+								block[n_ord_total[n]][AMR_CORN12D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN12D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN12D_1] = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_1];
+								block[n_ord_total[n]][AMR_CORN12D_2] = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_2];
+							}
 						}
 					}
 					else{
@@ -1080,8 +1182,14 @@ void set_corners(void){
 						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN12D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN12D] = -2;
-							block[n_ord_total[n]][AMR_CORN12D_1] = temp;
-							block[n_ord_total[n]][AMR_CORN12D_2] = temp;
+							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
+								block[n_ord_total[n]][AMR_CORN12D_1] = temp;
+								block[n_ord_total[n]][AMR_CORN12D_2] = temp;
+							}
+							else{
+								block[n_ord_total[n]][AMR_CORN12D_1] = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_1];
+								block[n_ord_total[n]][AMR_CORN12D_2] = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_2];
+							}
 						}
 					}
 				}
@@ -1128,10 +1236,23 @@ void set_corners(void){
 	}
 #endif
 	
-	int test = AMR_coord_linear2(1, 5, 2, 10, 0);
-	//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-	//test = block[test][AMR_CORN3D];
-	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	/*int test = AMR_coord_linear2(1, 0, 1, 1, 0);
+	fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = block[test][AMR_CORN2D_2];
+	fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = AMR_coord_linear2(1, 1, 0, 1, 0);
+	fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = block[test][AMR_CORN1D_2];
+	fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = AMR_coord_linear2(2, 1,2,2,1);
+	fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = block[test][AMR_CORN4D];
+	fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = AMR_coord_linear2(1, 0, 2, 1, 0);
+	fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	test = block[test][AMR_CORN3D_2];
+	fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	*/
 	//if (test != block[AMR_coord_linear2(0, 5, 0, 5, 0)][AMR_CORN1D_1] || test != block[AMR_coord_linear2(1, 4, 0, 4, 0)][AMR_CORN2D_1] || test != block[AMR_coord_linear2(1, 4, 1, 4, 0)][AMR_CORN3D_1] || test != block[test][AMR_CORN4D])fprintf(stderr, "corner error \n");
 	//fprintf(stderr, "corner %d %d %d %d\n", block[AMR_coord_linear2(0, 5, 0, 5, 0)][AMR_CORN1D], block[AMR_coord_linear2(1, 4, 0, 4, 0)][AMR_CORN2D], block[AMR_coord_linear2(1, 4, 1, 4, 0)][AMR_CORN3D], block[test][AMR_CORN4D_1]);
 	//n = AMR_coord_linear2(1, 5, 2, 10, 1);
