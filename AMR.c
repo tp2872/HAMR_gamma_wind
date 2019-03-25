@@ -2336,6 +2336,9 @@ void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
 	set_corners();
+	#if(N_LEVELS_1D_INT>0)
+	average_grid();
+	#endif
 
 	//Set boundary conditions
 	bound_prim(p, 1);
@@ -2404,6 +2407,7 @@ void check_refcrit(void){
 	do{
 		count++;
 		tag = 0;
+		one_block_derefined = 0;
 
 		/*Only allow refinement for one block per node per step*/
 		for (i = 0; i < MY_MIN(numtasks * N_GPU, NB); i++){
@@ -2421,7 +2425,7 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 1 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 10000 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
 				//Refine one level less near black hole
@@ -2471,14 +2475,14 @@ void check_refcrit(void){
 
 	//First make sure all nodes have the same ref_val
 	if (one_block_refined == 1) synch_refcrit();
-	pre_refine();
 
-	one_block_derefined = 0;
+	
 	count = 0;
 	gpu_counter = 0;
 	do{
 		count++;
 		tag = 0;
+		one_block_derefined = 0;
 
 		for (n = 0; n < n_active_total; n++){
 			//derefine
@@ -2670,8 +2674,11 @@ void check_refcrit(void){
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
 
 				//Then derefine and set corresponding tag and timelevel
-				one_block_derefined = 1;
-				//derefine(block[n_ord_total[n]][AMR_PARENT]);
+				if (one_block_derefined == 0){
+					pre_refine();
+					one_block_derefined = 1;
+				}
+				derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
