@@ -1008,7 +1008,7 @@ void GPU_consttransport_bound(void){
 	
 	gpu = 1;
 	#if(TRANS_BOUND)
-	//E_average();
+	E_average();
 	#endif
 	set_iprobe(0, &flag);
 
@@ -1567,14 +1567,15 @@ void GPU_read(int n)
 	//cudaDeviceSynchronize();
 	//cudasetDevice(block[n][AMR_GPU]);
 
-	#if(N_LEVELS_1D_INT>1000)
+	#if(N_LEVELS_1D_INT>10)
 	/*Calculate gradients for reconstruction*/
-	GPU_fluxcalcprep(3, 0, 1, n);
+	GPU_fluxcalcprep(3, 1, 1, n);
 	
 	/*Reconstruct derefined region around pole for Ray-Tracing and store in temporary variable (used for fluxes normally)*/
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1)* (BS_2)* (BS_3)) % LOCAL_WORK_SIZE) + (BS_1)* (BS_2)* (BS_3)) / LOCAL_WORK_SIZE;
-	reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferps_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
-	cudaMemcpyAsync(p_1[nl[n]], BufferF1_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
+	cudaMemcpyAsync(BufferF1_1[nl[n]], Bufferp_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToDevice, commandQueueGPU[nl[n]]);
+	reconstruct_internal << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+	cudaMemcpyAsync(p_1[nl[n]], Bufferph_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#else
 	cudaMemcpyAsync(p_1[nl[n]], Bufferp_1[nl[n]], (int)(NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]))*sizeof(double), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	#endif

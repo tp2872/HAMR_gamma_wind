@@ -2163,6 +2163,7 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int zsize = 1, zlevel = 0, zoffset = 0, u;
+	int zsize2 = 1, zlevel2 = 0, zoffset2 = 0;
 	double temp[NPR];
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -2178,28 +2179,40 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 			for (u = 0; u < zsize; u++){
 				for (k = 0; k < NPR; k++) p[k*ksize + global_id - zoffset + u] = temp[k] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*(dq2[k*(ksize)+global_id - zoffset] - dq1[k*(ksize)+global_id - zoffset]);
 			}
+			
 			temp[0] = ps[0*(ksize)+global_id - zoffset];
-
 			for (u = 0; u < zsize; u++){
 				ps[0 * ksize + global_id - zoffset + u] = temp[0] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*0.5*(dq2[B1*(ksize)+global_id - zoffset] + dq2[B1*(ksize)+global_id - isize - zoffset] - dq1[B1*(ksize)+global_id - zoffset] - dq1[B1*(ksize)+global_id - isize - zoffset]);
 				ps[2 * ksize + global_id - zoffset + u] = (ps[2 * (ksize)+global_id - zoffset] + ((double)u) / ((double)zsize)*(ps[2 * (ksize)+global_id - zoffset + zsize] - ps[2 * (ksize)+global_id - zoffset]));
 			}
 		}
 
-		/*#if(N_LEVELS_1D_INT>0 && D3>0)
-		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
-		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (D2 + BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+		#if(N_LEVELS_1D_INT>0 && D3>0)
+		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(jcurr - (BS_3 + 2 * N3G) - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 		zsize = (int)pow(2.0, (double)zlevel);
 		zoffset = (zcurr - N3G) % zsize;
+		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel2 = MY_MIN((int)(log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel2 = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(jcurr + (BS_3 + 2 * N3G) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+		zsize2 = (int)pow(2.0, (double)zlevel2);
+		zoffset2 = (zcurr - N3G) % zsize2;
 		#endif
 		if (zoffset == 0){
-			temp[1] = ps[1 * (ksize)+global_id - zoffset];
-			for (u = 0; u < zsize; u++){
-				//ps[1 * ksize + global_id - zoffset + u] = temp[1] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*0.5*(dq2[B2*(ksize)+global_id - zoffset] - dq1[B2*(ksize)+global_id - zoffset]);
+			if ((POLE_1 == 1 && jcurr - N2G < BS_2 / 2) && (jcurr!=N2G)){
+				temp[1] = ps[1 * (ksize)+global_id - zoffset2];
+				for (u = 0; u < zsize2; u++){
+					ps[1 * ksize + global_id - zoffset2 + u] = temp[1] + (((double)u + 0.5) - 0.5*(double)zsize2) / ((double)zsize)*0.5*(dq2[B2*(ksize)+global_id - (BS_3 + 2 * N3G) - zoffset] - dq1[B2*(ksize)+global_id - (BS_3 + 2 * N3G) - zoffset]);
+					ps[1 * ksize + global_id - zoffset2 + u] += (((double)u + 0.5) - 0.5*(double)zsize2) / ((double)zsize2)*0.5*(dq2[B2*(ksize)+global_id - zoffset2] - dq1[B2*(ksize)+global_id - zoffset2]);
+				}
 			}
-			//ps[1 * ksize + global_id + u] = temp[1] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*0.5*(dq2[B2*(ksize)+global_id - zoffset] - dq1[B2*(ksize)+global_id - zoffset]);
-
-		}*/
+			if ((POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) && (jcurr + D2 != BS_2 + N2G)){
+				temp[1] = ps[1 * (ksize)+global_id + (BS_3 + 2 * N3G) - zoffset];
+				for (u = 0; u < zsize; u++){
+					ps[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] = temp[1] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*0.5*(dq2[B2*(ksize)+global_id - zoffset] - dq1[B2*(ksize)+global_id - zoffset]);
+					ps[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] += (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize2)*0.5*(dq2[B2*(ksize)+global_id + (BS_3 + 2 * N3G) - zoffset2] - dq1[B2*(ksize)+global_id + (BS_3 + 2 * N3G) - zoffset2]);
+				}
+			}
+		}
 	}
 }
 
@@ -2256,7 +2269,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		if (zoffset != 0 && dir == 3){
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
-				p[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id + D3]);
+				p[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id - D3]);
 			}
 		}
 		else{
@@ -2267,7 +2280,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		}
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
-			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3 && zoffset == 0)){
+			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
 				p[k] = ps[(k - B1)*(ksize)+global_id];
 			}
 
@@ -2289,7 +2302,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		if (zoffset != 0 && dir == 3){
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
-				p[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id + D3]);
+				p[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id - D3]);
 			}
 		}
 		else{
@@ -2300,7 +2313,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		}
 		#if(STAGGERED)
 		for (k = 0; k< NPR; k++){
-			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3 && zoffset == 0)){
+			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)){
 				p[k] = ps[(k - B1)*(ksize)+global_id];
 			}
 			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))){
@@ -2502,7 +2515,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = 0.0;// -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
+			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
 		}
 	}
 }

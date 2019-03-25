@@ -50,7 +50,8 @@ void diag(int call_code)
 	int i,j,z,k,n ;
 	double divb,divbmax;
 	int imax,jmax,zmax;
-	bound_prim(p, 1);
+	for (n = 0; n < n_active; n++) B_send1(ps, Bufferps_1, n_ord[n]);
+	for (n = 0; n < n_active; n++) B_rec1(ps, Bufferps_1, n_ord[n]);	
 	prolong_grid();
 
 	/* calculate conserved quantities */
@@ -184,7 +185,7 @@ double divb_calc(int n, int i, int j, int z){
 	double divb=0.0;
 	int zsize = 1, zoffset = 0, zlevel = 0, u;
 
-	#if(N_LEVELS_1D_INT>0 && D3>0)
+	#if(N_LEVELS_1D_INT>10 && D3>0)
 	if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);

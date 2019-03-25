@@ -622,7 +622,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 						dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij-1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)], avg[k + NPR]);
 					}
 				}
-				dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii - ref_1)*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii + ref_1)*zsize + (NPR + 3)*iz + (k + NPR)]);
+				dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii - ref_1)*zsize + (NPR + 3)*(iz) + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii + ref_1)*zsize + (NPR + 3)*(iz) + (k + NPR)]);
 				dq3[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz - ref_3) + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz + ref_3) + (k + NPR)]);
 			}
 			for (k = 0; k < NPR; k++){
