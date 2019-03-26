@@ -165,7 +165,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (0)
+#define NSY (1)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1)
@@ -493,7 +493,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (0)
+#define NEWMAN (1)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

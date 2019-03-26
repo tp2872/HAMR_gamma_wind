@@ -1285,7 +1285,7 @@ int index_2D(int n, int i, int j, int z)
  *****************************************************************/
 void set_grid(int n)
 {
-	int i,j,z,k,i1,j1,z1 ;
+	int i,j,z,k,i1,j1,z1,zsize=1,zlevel=0,zoffset=0 ;
 	double r, th, phi;
 	struct of_geom geom ;
 
@@ -1295,7 +1295,7 @@ void set_grid(int n)
 	double X[NDIM];
 
 	double temp = a;
-	#pragma omp parallel private(X,i,j,z,k,geom, i1,j1,z1,r,th,phi,a)
+	#pragma omp parallel private(X,i,j,z,k,geom, i1,j1,z1,r,th,phi,a,zsize,zlevel,zoffset)
 	{
 		DLOOPA X[j] = 0.;
 		#pragma omp for collapse(2) schedule(dynamic)
@@ -1306,13 +1306,15 @@ void set_grid(int n)
 		#endif
 			if (j<0 || j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND) a = -temp;
 			else a = temp;
-			
+
+			zlevel = 0;
+			if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
+			if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
+			zsize = (int)pow(2.0, (double)zlevel);
+			zoffset = (z - N3_GPU_offset[n]) % zsize;
+
 			/* zone-centered */
-			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
-			else if (j == 0 && TRANS_BOUND == -1) coord(n, i, 1, z, FACE2, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) + 1, z, FACE2, X);
-			else coord(n,i, j, z, CENT, X);
+			coord(n, i, j, z - zoffset + zsize / 2, CENT, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
 			gdet[nl[n]][index_2D(n, i, j, z)][CENT] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][CENT]);
 			if (j == 0 || j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2])-1 && TRANS_BOUND == 1)gdet[nl[n]][index_2D(n, i, j, z)][CENT] *= 1.0;
@@ -1323,50 +1325,30 @@ void set_grid(int n)
 				//for (i1 = 0; i1 < NDIM; i1++)for (j1 = 0; j1 < NDIM; j1++)for (z1 = 0; z1 < NDIM; z1++)conn[nl[n]][index_2D(n, i, j, z)][i1][j1][z1] = 0.;
 			}
 
-			/* corner-centered */
-			/*if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
-			else if (j == 0 && TRANS_BOUND==-1) coord(n, i, 1, z, FACE2, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) + 1, z, FACE2, X);
-			else coord(n, i, j, z, FACE1, X);
-			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][CORN]);
-			gdet[nl[n]][index_2D(n, i, j, z)][CORN] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][CORN]);
-			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][CORN], gcon[nl[n]][index_2D(n, i, j, z)][CORN]);*/
-
 			/* r-face-centered */
-			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, CORN, X);
-			else if (j == 0 && TRANS_BOUND==-1) coord(n, i, 1, z, CORN, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, CORN, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) + 1, z, CORN, X);
-			else coord(n, i, j, z, FACE1, X);
+			coord(n, i, j, z - zoffset + zsize / 2, FACE1, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1], gcon[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			
 			/* phi-face-centered */
-			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
-			else if (j == 0 && TRANS_BOUND==-1) coord(n, i, 1, z, FACE2, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) + 1, z, FACE2, X);
-			else coord(n, i, j, z, FACE3, X);
+			coord(n, i, j, z - zoffset, FACE3, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE3] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE3], gcon[nl[n]][index_2D(n, i, j, z)][FACE3]);
 
 			/* theta-face-centered */
-			if (j == -1 && TRANS_BOUND==-1)coord(n, i, -1, z, FACE2, X);
-			else if (j == 0 && TRANS_BOUND==1){
+			if (j == 0 && TRANS_BOUND==1){
 				//coord(n, i, 1, z, FACE2, X);
 				a = 0. ;
-				coord(n, i, j, z, FACE2, X);
+				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
 			}
-			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && TRANS_BOUND==-1) coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
 			else if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && TRANS_BOUND==1){
 				//coord(n, i, N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1, z, FACE2, X);
-				coord(n, i, j, z, FACE2, X);
+				coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
 				a = 0.;
 			}
-			else coord(n, i, j, z, FACE2, X);
+			else coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE2] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);	

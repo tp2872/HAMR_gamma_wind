@@ -406,10 +406,10 @@ void prolong_grid(void){
 						b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
 					for (u = 0; u < zsize; u++){
 						if (u<(zsize / 2)){
-							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + ((double)u) / ((double)(zsize / 2))*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] - ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3]);
+							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = (1.0 / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3])*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ((double)u) / ((double)(zsize / 2))*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3] - ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3]));
 						}
 						if (u>(zsize / 2)){
-							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z+zsize/2)][3] + ((double)(u-zsize/2)) / ((double)(zsize / 2))*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] - ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z+zsize/2)][3]);
+							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = (1.0 / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3])*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3] + ((double)(u - zsize / 2)) / ((double)(zsize / 2))*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE3] - ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3]));
 						}
 					}
 				}
