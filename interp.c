@@ -299,9 +299,9 @@ void average_grid(void){
 
 	//Average primitive and staggered grid variables
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	#if(GPU_ENABLED || GPU_DEBUG )
-	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-	#endif
+	//#if(GPU_ENABLED || GPU_DEBUG )
+	//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	//#endif
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u)
 		for (i = N1_GPU_offset[n_ord[n]]; i <= N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j <= N2_GPU_offset[n_ord[n]] + BS_2; j++){
@@ -316,12 +316,12 @@ void average_grid(void){
 
 				#if(STAGGERED)
 				temp[1] = 0.0;
-				for (u = 0; u < zsize; u++) temp[1] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE1]) / ((double)zsize);
-				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] = temp[1] / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE1];
+				for (u = 0; u < zsize; u++) temp[1] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1]) / ((double)zsize);
+				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][1] = temp[1];
 
 				temp[2] = 0.0;
-				for (u = 0; u < zsize; u++) temp[2] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][FACE2]) / ((double)zsize);
-				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] = temp[2] / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][FACE2];
+				for (u = 0; u < zsize; u++) temp[2] += (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2]) / ((double)zsize);
+				for (u = 0; u < zsize; u++) ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + (j >= (N2_GPU_offset[n_ord[n]] + BS_2 / 2)), z + u)][2] = temp[2];
 
 				temp[3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE3]) / (2.0);
 				for (u = 1; u < zsize; u++)ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = temp[3] / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3];
