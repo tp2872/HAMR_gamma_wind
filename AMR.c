@@ -1359,6 +1359,21 @@ void balance_load(void){
 	if (rank == 0) fprintf(stderr, "Number of active steps (total, min,max): %d %d %d \n", total_steps, min_steps, max_steps);
 
 	bound_prim(p, 1);
+	//Copy the B-field to make the code resilient against two bit ECC errors
+	for (n = 0; n < n_active; n++){
+		#pragma omp parallel private(i, j, z, k)
+		{
+			#pragma omp for collapse(2) schedule(dynamic)
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, N1_GPU_offset[n_ord[n]] + BS_1 - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G){
+				#if(STAGGERED)
+				for (k = 1; k < NDIM; k++){
+					ps_1[nl[n_ord[n]]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) + (i - N1_GPU_offset[n_ord[n]] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n_ord[n]] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n_ord[n]] + N3G)] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k];
+				}
+				#endif
+			}
+		}
+		cudaMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]])*sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
+	}
 	#if(GPU_ENABLED)
 	GPU_boundprim(1);
 	#endif
@@ -2404,10 +2419,11 @@ void check_refcrit(void){
 
 	begin1 = time(NULL);
 	count = 0;
+
 	do{
 		count++;
 		tag = 0;
-		one_block_derefined = 0;
+		one_block_refined = 0;
 
 		/*Only allow refinement for one block per node per step*/
 		for (i = 0; i < MY_MIN(numtasks * N_GPU, NB); i++){
@@ -2475,7 +2491,6 @@ void check_refcrit(void){
 
 	//First make sure all nodes have the same ref_val
 	if (one_block_refined == 1) synch_refcrit();
-
 	
 	count = 0;
 	gpu_counter = 0;
@@ -2678,7 +2693,7 @@ void check_refcrit(void){
 					pre_refine();
 					one_block_derefined = 1;
 				}
-				derefine(block[n_ord_total[n]][AMR_PARENT]);
+				//derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}

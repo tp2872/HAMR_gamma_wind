@@ -302,7 +302,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
-		#if(PRESTEP2)
+		#if(PRESTEP2==1)
 		//When at last timestep store old value
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR+3; k++){
@@ -339,8 +339,8 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 		#endif
 		//When at subsequent timesteps for interpolation
-		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && jcurr>=N2G && jcurr<BS_2 + N2G && zcurr>=N3G && zcurr < BS_3 + N3G){
-			#if(PRESTEP==-100 || PRESTEP2)
+		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
+			#if(PRESTEP==-100 || PRESTEP2==1)
 			for (k = 0; k < NPR; k++){
 				for (i = i1; i < i2; i++){
 					p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
@@ -350,12 +350,12 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 				}
 			}
 			for (i = i1; i < i2; i++){
-				if (jcurr>N2G && jcurr<BS_2 + N2G) ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
+				ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(1 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
 					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(1 + NPR + NPR + 3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
-				if (jcurr>N2G && jcurr<BS_2 + N2G) psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
-				if (zcurr>N3G && zcurr<BS_3 + N3G) ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
+				psh[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = ps[1 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+				ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(2 + NPR)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
 					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(2 + NPR + NPR + 3)*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
-				if (zcurr>N3G && zcurr < BS_3 + N3G) psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
+				psh[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr];
 			}
 			#endif
 		}
@@ -404,7 +404,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 	double factor = 1.;
 	if (global_id < work_size){
 		if (reverse == 0){
-			#if(PRESTEP2)
+			#if(PRESTEP2==1)
 			//When at last timestep store old value
 			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 				for (k = 0; k < NPR + 3; k++){
@@ -441,8 +441,8 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			}
 			#endif
 			//When at subsequent timesteps for interpolation
-			if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && icurr>=N1G && icurr<BS_1 + N1G && zcurr>=N3G && zcurr < BS_3 + N3G){
-				#if(PRESTEP==-100 || PRESTEP2)
+			if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
+				#if(PRESTEP==-100 || PRESTEP2==1)
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]+
@@ -452,12 +452,12 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 					}
 				}
 				for (j = j1; j < j2; j++){
-					if (icurr>N1G && icurr<BS_1 + N1G)ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
+					ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(0 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
 						((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(0 + NPR + NPR + 3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
-					if (icurr>N1G && icurr<BS_1 + N1G)psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
-					if (zcurr>N3G && zcurr<BS_3 + N3G)ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
+					psh[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+					ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = (tempreceive[(2 + NPR)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
 						((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(2 + NPR + NPR + 3)*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]);
-					if (zcurr>N3G && zcurr<BS_3 + N3G)psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
+					psh[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[2 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr];
 				}
 				#endif
 			}
@@ -523,7 +523,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
-		#if(PRESTEP2)
+		#if(PRESTEP2==1)
 		//When at last timestep store old value
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
@@ -560,8 +560,8 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		}
 		#endif
 		//When at subsequent timesteps for interpolation
-		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel && icurr>=N1G && icurr<BS_1 + N1G && jcurr>=N2G && jcurr < BS_2 + N2G){
-		#if(PRESTEP==-100 || PRESTEP2)
+		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
+		#if(PRESTEP==-100 || PRESTEP2==1)
 			for (k = 0; k < NPR; k++){
 				for (z = z1; z < z2; z++){
 					p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = tempreceive[(k)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))]+
@@ -571,12 +571,12 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 				}
 			}
 			for (z = z1; z < z2; z++){
-				if (icurr>N1G && icurr<BS_1 + N1G)ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (tempreceive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] +
+				ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (tempreceive[(NPR + 0)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] +
 					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(NPR + 0 + NPR + 3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))]);
-				if (icurr>N1G && icurr<BS_1 + N1G)psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
-				if (jcurr>N2G && jcurr<BS_2 + N2G)ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (tempreceive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] +
+				psh[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = ps[0 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+				ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = (tempreceive[(NPR + 1)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))] +
 					((nstep + 1) % timelevel_rec)*0.5*dt*(double)timelevel*tempreceive[(NPR + 1 + NPR + 3)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))]);
-				if (jcurr>N2G && jcurr<BS_2 + N2G)psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
+				psh[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = ps[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)];
 			}
 			#endif
 		}
@@ -649,7 +649,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			for (k = 0; k < NPR + 3; k++){
 				for (ii1 = 0; ii1 < i2 - i1; ii1++)for (ij1 = ij - ref_2; ij1 <= ij + ref_2; ij1++)for (iz1 = iz - ref_3; iz1 <= iz + ref_3; iz1++){
 					receive_local[k*(i2 - i1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ii1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij1 - (ij - ref_2))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
-					#if(PRESTEP2)
+					#if(PRESTEP2==1)
 					//Store at full step the value at t in temp1
 					if (nstep%timelevel_rec == timelevel_rec - 1 || nstep==-1){
 						temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] =  receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
@@ -795,7 +795,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 			for (k = 0; k < NPR+3; k++){
 				for (ii1 = ii-ref_1; ii1 <= ii+ref_1; ii1++)for (ij1 = 0; ij1 < j2-j1; ij1++)for (iz1 = iz - ref_3; iz1 <= iz + ref_3; iz1++){
 					receive_local[k*(j2 - j1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ij1*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii1 - (ii - ref_1))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
-					#if(PRESTEP2)
+					#if(PRESTEP2==1)
 					//Store at full step the value at t in temp1
 					if (nstep%timelevel_rec == timelevel_rec - 1 || nstep==-1){
 						temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] =  receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
@@ -936,7 +936,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 			for (k = 0; k < NPR+3; k++){
 				for (ii1 = ii - ref_1; ii1 <= ii + ref_1; ii1++)for (ij1 = ij - ref_2; ij1 <= ij + ref_2; ij1++)for (iz1 = 0; iz1 < z2-z1; iz1++){
 					receive_local[k*(z2 - z1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + iz1*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii1 - (ii - ref_1))*(1 + 2 * ref_2) + (ij1 - (ij - ref_2))] = receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
-					#if(PRESTEP2)
+					#if(PRESTEP2==1)
 					//Store at full step the value at t in temp1
 					if (nstep%timelevel_rec == timelevel_rec - 1|| nstep==-1){
 						temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] =  receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];

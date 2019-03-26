@@ -61,10 +61,10 @@ void diag(int call_code)
 		jmax = 0;
 		zmax = 0.;
 		for (n = 0; n < n_active; n++){
-			//#pragma omp parallel for schedule(dynamic,1) private(divb,i,j,z)
+			#pragma omp parallel for schedule(dynamic,1) private(divb,i,j,z)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + BS_1 - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				divb = divb_calc(n_ord[n], i, j, z);
-				//#pragma omp critical
+				#pragma omp critical
 				if (divb > divbmax && i > 1 && j > 0 && (z > 0 || N3 == 1)) {
 					imax = i*pow(1 + REF_1, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
 					jmax = j*pow(1 + REF_2, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
@@ -72,6 +72,7 @@ void diag(int call_code)
 					divbmax = divb;
 				}
 
+				#pragma omp critical
 				if (divb > 0.0000001){
 					fprintf(stderr, "n: %d divb (level: %d, level1: %d, level2: %d, level3: %d, coord1: %d, coord2: %d, coord3: %d) at (%d,%d,%d): %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
 					//fprintf(stderr, "n: %d Corn10_1: %d Corn10_2: %d Corn10P: %d Corn12_1: %d Corn12_2: %d Corn12P: %d  \n", n_ord[n], block[n_ord[n]][AMR_CORN10_1], block[n_ord[n]][AMR_CORN10_2], block[n_ord[n]][AMR_CORN10P], block[n_ord[n]][AMR_CORN12_1], block[n_ord[n]][AMR_CORN12_2], block[n_ord[n]][AMR_CORN12P]);
