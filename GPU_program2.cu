@@ -631,8 +631,8 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			if (i1 < 0 && ref_1 == 1) ii = NG - 1;
 			else if (ref_1 == 1) ii = 0;
 			else ii = i - i1;
-			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + ref_2)) / (1 + ref_2) + ref_2;
-			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + ref_3)) / (1 + ref_3) + ref_3;
+			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + ref_2)) / (1 + ref_2) + N2G * ref_2 / (1 + ref_2);
+			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + ref_3)) / (1 + ref_3) + N3G * ref_3 / (1 + ref_3);
 
 			if (i < 0){
 				if (i == -3) is = -2;
@@ -644,8 +644,8 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 				else if (i == BS_1 + 1) is = 1;
 				else if (i == BS_1 + 2) is = 2;
 			}
-			js = (((jcurr - j1 - N2G) % (1 + ref_2) == 0) ? (-1) : (1));
-			zs = (((zcurr - z1 - N3G) % (1 + ref_3) == 0) ? (-1) : (1));
+			js = (((jcurr - j1 - N2G) % (1 + ref_2) == (N2G % (1 + ref_2))) ? (-1) : (1));
+			zs = (((zcurr - z1 - N3G) % (1 + ref_3) == (N3G % (1 + ref_3))) ? (-1) : (1));
 			for (k = 0; k < NPR + 3; k++){
 				for (ii1 = 0; ii1 < i2 - i1; ii1++)for (ij1 = ij - ref_2; ij1 <= ij + ref_2; ij1++)for (iz1 = iz - ref_3; iz1 <= iz + ref_3; iz1++){
 					receive_local[k*(i2 - i1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ii1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij1 - (ij - ref_2))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
@@ -776,10 +776,10 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 			else if (ref_2 == 1) ij = 0;
 			else ij = j - j1;
 
-			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + ref_1)) / (1 + ref_1) + ref_1;
-			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + ref_3)) / (1 + ref_3) + ref_3;
+			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + ref_1)) / (1 + ref_1) + N1G * ref_1 / (1 + ref_1);
+			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + ref_3)) / (1 + ref_3) + N3G * ref_3 / (1 + ref_3);
 
-			is = (((icurr - i1 - N1G) % (1 + ref_1) == 0) ? (-1) : (1));
+			is = (((icurr - i1 - N1G) % (1 + ref_1) == (N1G % (1 + ref_1))) ? (-1) : (1));
 			if (j < 0){
 				if (j == -3) js = -2;
 				else if (j == -2) js = -1;
@@ -790,7 +790,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 				else if (j == BS_2 + 1) js = 1;
 				else if (j == BS_2 + 2) js = 2;
 			}	
-			zs = (((zcurr - z1 - N3G) % (1 + ref_3) == 0) ? (-1) : (1));
+			zs = (((zcurr - z1 - N3G) % (1 + ref_3) == (N3G % (1 + ref_3))) ? (-1) : (1));
 
 			for (k = 0; k < NPR+3; k++){
 				for (ii1 = ii-ref_1; ii1 <= ii+ref_1; ii1++)for (ij1 = 0; ij1 < j2-j1; ij1++)for (iz1 = iz - ref_3; iz1 <= iz + ref_3; iz1++){
@@ -918,10 +918,10 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 			if (z1 < 0 && ref_3 == 1) iz = NG - 1;
 			else if (ref_3 == 1) iz = 0;
 			else iz = z - z1;
-			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + ref_1)) / (1 + ref_1) + ref_1;
-			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + ref_2)) / (1 + ref_2) + ref_2;
-			is = (((icurr - i1 - N1G) % (1 + ref_1) == 0) ? (-1) : (1));
-			js = (((jcurr - j1 - N2G) % (1 + ref_2) == 0) ? (-1) : (1));
+			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + ref_1)) / (1 + ref_1) + N1G * ref_1 / (1 + ref_1);
+			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + ref_2)) / (1 + ref_2) + N2G * ref_2 / (1 + ref_2);
+			is = (((icurr - i1 - N1G) % (1 + ref_1) == (N1G % (1 + ref_1))) ? (-1) : (1));
+			js = (((jcurr - j1 - N2G) % (1 + ref_2) == (N2G % (1 + ref_2))) ? (-1) : (1));
 			if (z < 0){
 				if (z == -3) zs = -2;
 				else if (z == -2) zs = -1;
