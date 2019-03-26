@@ -458,14 +458,14 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1; z < z2; z++){
 			//Use slope limited interpolation in direction fluxes, copy  boundary cells in other directions
-			if (i1 < 0 && ref_1 == 1) ii = NG - 1;
-			else if (ref_1 == 1)ii = 0;
+			if (i1 < 0 && ref_1 == 1) ii = (NG - 1) - (NG - 1 - i) / (1 + ref_1);
+			else if (ref_1 == 1) ii = (i - BS_1) / (1 + ref_1);
 			else ii = i - i1;
 			ij = (j - j1 - (j - j1) % (1 + ref_2)) / (1 + ref_2) + ref_2;
 			iz = (z - z1 - (z - z1) % (1 + ref_3)) / (1 + ref_3) + ref_3;
 
 			if (i < 0){
-				if (i == -3) is = -2;
+				if (i == -3) is = 1;
 				else if (i == -2) is = -1;
 				else if (i == -1) is = 1;
 				else fprintf(stderr, "Error receivecoursse1! \n");
@@ -473,7 +473,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if(i>0){
 				if (i == BS_1) is = -1;
 				else if (i == BS_1 + 1) is = 1;
-				else if (i == BS_1 + 2) is = 2;
+				else if (i == BS_1 + 2) is = -1;
 				else fprintf(stderr, "Error receivecoursse1! \n");
 			}
 			js = (((j - j1) % (1 + ref_2) == 0) ? (-1) : (1));
@@ -481,16 +481,21 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			for (k = 0; k < NPR; k++){
 				dq1[k] = 0.0;
 				if (ref_1){
-					avg[k] = 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
+					if (ii == NG - 1 || ii == 0){
+						avg[k] = 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
 
-					if (ii == 0){
-						dq1[k] = slope_lim(avg[k], receive[nl[n_rec2]][(NPR + 3) * (ii)* zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ii + 1)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + k]);
+						if (ii == 0){
+							dq1[k] = slope_lim(avg[k], receive[nl[n_rec2]][(NPR + 3) * (ii)* zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ii + 1)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + k]);
+						}
+						else{
+							dq1[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ii - 1) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ii)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + k], avg[k]);
+						}
 					}
 					else{
-						dq1[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ii - 1) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ii)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + k], avg[k]);
+						dq1[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ii - 1) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ii)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + k], receive[nl[n_rec2]][(NPR + 3)*(ii+1)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + k]);
 					}
 				}
 				dq2[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*(ij - ref_2)*zsize + (NPR + 3)*iz + k], receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + k], receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*(ij + ref_2)*zsize + (NPR + 3)*iz + k]);
@@ -499,13 +504,18 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			for (k = 0; k < 3; k++){
 				dq1[k + NPR] = 0.0;
 				if (ref_1){
-					avg[k + NPR] = 0.25*(psim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1] + psim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1]);
-					avg[k + NPR] += 0.25*(psim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 1))][k + 1] + psim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 1))][k + 1]);
-					if (ii == 0){
-						dq1[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * (ii) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ii+1)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (k + NPR)]);
+					if (ii == NG - 1 || ii == 0){
+						avg[k + NPR] = 0.25*(psim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1] + psim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n], z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1]);
+						avg[k + NPR] += 0.25*(psim[nl[n]][index_3D(n, N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 1))][k + 1] + psim[nl[n]][index_3D(n, ii / (NG - 1) + N1_GPU_offset[n] + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 1))][k + 1]);
+						if (ii == 0){
+							dq1[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * (ii)* zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ii + 1)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (k + NPR)]);
+						}
+						else{
+							dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ii - 1) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ii)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (k + NPR)], avg[k + NPR]);
+						}
 					}
 					else{
-						dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ii-1) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ii)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (k + NPR)], avg[k + NPR]);
+						dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ii - 1) * zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ii)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ii+1)*zsize*jsize + (NPR + 3)*(ij)*zsize + (NPR + 3)*iz + (k + NPR)]);
 					}
 				}
 				dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*(ij - ref_2)*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*ij*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ii*zsize*jsize + (NPR + 3)*(ij + ref_2)*zsize + (NPR + 3)*iz + (k + NPR)]);
@@ -571,15 +581,15 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1; z < z2; z++){
 			//now use zero order interpolation, must be done better in the future
-			if (j1 < 0 && ref_2 == 1) ij = NG - 1;
-			else if (ref_2 == 1) ij = 0;
+			if (j1 < 0 && ref_2 == 1) ij = (NG - 1) - (NG - 1 - j) / (1 + ref_2);
+			else if (ref_2 == 1) ij = (j - BS_2) / (1 + ref_2);
 			else ij = j - j1;
 			ii = (i - i1 - (i - i1) % (1 + ref_1)) / (1 + ref_1) + ref_1;
 			iz = (z - z1 - (z - z1) % (1 + ref_3)) / (1 + ref_3) + ref_3;
 
 			is = (((i - i1) % (1 + ref_1) == 0) ? (-1) : (1));
 			if (j < 0){
-				if (j == -3) js = -2;
+				if (j == -3) js = 1;
 				else if (j == -2) js = -1;
 				else if (j == -1) js = 1;
 				else fprintf(stderr, "Error receivecoursse2! \n");
@@ -587,23 +597,28 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if(j>0){
 				if (j == BS_2) js = -1;
 				else if (j == BS_2 + 1) js = 1;
-				else if (j == BS_2 + 2) js = 2;
+				else if (j == BS_2 + 2) js = -1;
 				else fprintf(stderr, "Error receivecoursse2! \n");
 			}			
 			zs = (((z - z1) % (1 + ref_3) == 0) ? (-1) : (1));
 			for (k = 0; k < NPR; k++){
 				dq2[k]=0.0;
 				if (ref_2){
-					avg[k] = 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
+					if (ij == 0 || ij == NG - 1){
+						avg[k] = 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n])][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n])][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3)][k]);
 
-					if (ij == 0){
-						dq2[k] = slope_lim(avg[k], receive[nl[n_rec2]][(NPR + 3) * (ij) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ij + 1)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k]);
+						if (ij == 0){
+							dq2[k] = slope_lim(avg[k], receive[nl[n_rec2]][(NPR + 3) * (ij)* zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ij + 1)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k]);
+						}
+						else{
+							dq2[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij - 1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k], avg[k]);
+						}
 					}
 					else{
-						dq2[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij - 1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k], avg[k]);
+						dq2[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij - 1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+k], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k], receive[nl[n_rec2]][(NPR + 3)*(ij+1)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + k]);
 					}
 				}
 				dq1[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii - ref_1)*zsize + (NPR + 3)*iz + k], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + k], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii + ref_1)*zsize + (NPR + 3)*iz + k]);
@@ -612,14 +627,19 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			for (k = 0; k < 3; k++){
 				dq2[k + NPR]=0.0;
 				if(ref_2){
-					avg[k + NPR] = 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1]);
-					avg[k + NPR] += 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 2), N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 0))][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 2), ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 0))][k + 1]);
+					if (ij == 0 || ij == NG - 1){
+						avg[k + NPR] = 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n])][k + 1]);
+						avg[k + NPR] += 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 2), N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 0))][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 2), ij / (NG - 1) + N2_GPU_offset[n] + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2), z - z % (1 + ref_3) + N3_GPU_offset[n] + ref_3*(k == 0))][k + 1]);
 
-					if (ij == 0){
-						dq2[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * (ij) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij+1)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)]);
+						if (ij == 0){
+							dq2[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * (ij)* zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij + 1)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)]);
+						}
+						else{
+							dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij - 1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)], avg[k + NPR]);
+						}
 					}
 					else{
-						dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij-1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)], avg[k + NPR]);
+						dq2[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (ij - 1) * zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*(iz)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(ij+1)*zsize*isize + (NPR + 3)*(ii)*zsize + (NPR + 3)*iz + (k + NPR)]);
 					}
 				}
 				dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii - ref_1)*zsize + (NPR + 3)*(iz) + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*ii*zsize + (NPR + 3)*iz + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*ij*zsize*isize + (NPR + 3)*(ii + ref_1)*zsize + (NPR + 3)*(iz) + (k + NPR)]);
@@ -683,8 +703,8 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1; j < j2; j++){
 			//now use zero order interpolation, must be done better in the future
-			if (z1 < 0 && ref_3 == 1) iz = NG - 1;
-			else if (ref_3 == 1) iz = 0;
+			if (z1 < 0 && ref_3 == 1) iz = (NG - 1) - (NG - 1 - z) / (1 + ref_3);
+			else if (ref_3 == 1) iz = (z - BS_3) / (1 + ref_3);
 			else iz = z - z1;
 			ij = (j - j1 - (j - j1) % (1 + ref_2)) / (1 + ref_2) + ref_2;
 			ii = (i - i1 - (i - i1) % (1 + ref_1)) / (1 + ref_1) + ref_1;
@@ -706,15 +726,20 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			for (k = 0; k < NPR; k++){
 				dq3[k] = 0.0;
 				if(ref_3){
-					avg[k] = 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
-					avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
-					if (iz == 0){
-						dq3[k] = slope_lim(avg[k], receive[nl[n_rec2]][(NPR + 3) * (iz) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+k], receive[nl[n_rec2]][(NPR + 3)*(iz + 1)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + k]);
+					if (iz == 0 || iz == NG - 1){
+						avg[k] = 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
+						avg[k] += 0.125*(prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k] + prim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1, j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2, iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k]);
+						if (iz == 0){
+							dq3[k] = slope_lim(avg[k], receive[nl[n_rec2]][(NPR + 3) * (iz)* jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+k], receive[nl[n_rec2]][(NPR + 3)*(iz + 1)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + k]);
+						}
+						else{
+							dq3[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (iz - 1) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+k], receive[nl[n_rec2]][(NPR + 3)*(iz)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + k], avg[k]);
+						}
 					}
 					else{
-						dq3[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (iz - 1) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+k], receive[nl[n_rec2]][(NPR + 3)*(iz)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + k], avg[k]);
+						dq3[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (iz - 1) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+k], receive[nl[n_rec2]][(NPR + 3)*(iz)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + k], receive[nl[n_rec2]][(NPR + 3)*(iz+1)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + k]);
 					}
 				}
 				dq1[k] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*iz*isize*jsize + (NPR + 3)*(ii - ref_1)*jsize + (NPR + 3)*ij + k], receive[nl[n_rec2]][(NPR + 3)*iz*isize*jsize + (NPR + 3)*ii*jsize + (NPR + 3)*ij + k], receive[nl[n_rec2]][(NPR + 3)*iz*isize*jsize + (NPR + 3)*(ii + ref_1)*jsize + (NPR + 3)*ij + k]);
@@ -723,13 +748,18 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			for (k = 0; k < 3; k++){
 				dq3[k + NPR] = 0.0;
 				if (ref_3){
-					avg[k + NPR] = 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k + 1]);
-					avg[k + NPR] += 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 0), N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 0), iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k + 1]);
-					if (iz == 0){
-						dq3[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * (iz) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(iz+1)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + (k + NPR)]);
+					if (iz == 0 || iz == NG - 1){
+						avg[k + NPR] = 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n], j - j % (1 + ref_2) + N2_GPU_offset[n], iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k + 1]);
+						avg[k + NPR] += 0.25*(psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 0), N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))][k + 1] + psim[nl[n]][index_3D(n, i - i % (1 + ref_1) + N1_GPU_offset[n] + ref_1*(k == 1), j - j % (1 + ref_2) + N2_GPU_offset[n] + ref_2*(k == 0), iz / (NG - 1) + N3_GPU_offset[n] + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))][k + 1]);
+						if (iz == 0){
+							dq3[k + NPR] = slope_lim(avg[k + NPR], receive[nl[n_rec2]][(NPR + 3) * (iz)* jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(iz + 1)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + (k + NPR)]);
+						}
+						else{
+							dq3[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (iz - 1) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(iz)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + (k + NPR)], avg[k + NPR]);
+						}
 					}
 					else{
-						dq3[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (iz-1) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(iz)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + (k + NPR)], avg[k + NPR]);
+						dq3[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3) * (iz - 1) * jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*(ij)+(k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(iz)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*(iz+1)*jsize*isize + (NPR + 3)*(ii)*jsize + (NPR + 3)*ij + (k + NPR)]);
 					}
 				}
 				dq1[k + NPR] = slope_lim(receive[nl[n_rec2]][(NPR + 3)*iz*isize*jsize + (NPR + 3)*(ii - ref_1)*jsize + (NPR + 3)*ij + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*iz*isize*jsize + (NPR + 3)*ii*jsize + (NPR + 3)*ij + (k + NPR)], receive[nl[n_rec2]][(NPR + 3)*iz*isize*jsize + (NPR + 3)*(ii + ref_1)*jsize + (NPR + 3)*ij + (k + NPR)]);
