@@ -457,7 +457,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD7]){
 						//block[n_ord_total[n]][AMR_CORN2D] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_1];
 						temp = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN2D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN2D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN2D] = -2;
 							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
@@ -473,7 +473,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN2D] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_2];
 						temp = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN1D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN2D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN2D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN2D] = -2;
 							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
@@ -511,7 +511,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD7]){
 						//block[n_ord_total[n]][AMR_CORN3D] = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_1];
 						temp = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN3D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN3D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN3D] = -2;
 							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
@@ -527,7 +527,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN3D] = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_2];
 						temp = block[block[n_ord_total[n]][AMR_CORN3P]][AMR_CORN1D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN3D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN3D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN3D] = -2;
 							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
@@ -570,7 +570,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD7]){
 						//block[n_ord_total[n]][AMR_CORN4D] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_1];
 						temp = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN4D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN4D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN4D] = -2;
 							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
@@ -586,7 +586,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN4D] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_2];
 						temp = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN1D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN4D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN4D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN4D] = -2;
 							if (block[temp][AMR_LEVEL3] - block[n_ord_total[n]][AMR_LEVEL3] == 0){
@@ -753,7 +753,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD6]){
 						//block[n_ord_total[n]][AMR_CORN6D] = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_1];
 						temp = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN6D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN6D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN6D] = -2;
 							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
@@ -769,7 +769,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN6D] = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_2];
 						temp = block[block[n_ord_total[n]][AMR_NBR5P]][AMR_CORN5D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN6D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN6D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN6D] = -2;
 							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
@@ -807,7 +807,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD6]){
 						//block[n_ord_total[n]][AMR_CORN7D] = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_1];
 						temp = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN7D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN7D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN7D] = -2;
 							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
@@ -823,7 +823,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN7D] = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_2];
 						temp = block[block[n_ord_total[n]][AMR_CORN7P]][AMR_CORN5D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN7D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN7D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN7D] = -2;
 							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
@@ -861,7 +861,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD5] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD6]){
 						//block[n_ord_total[n]][AMR_CORN8D] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_1];
 						temp = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN8D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN8D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN8D] = -2;
 							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
@@ -877,7 +877,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN8D] = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_2];
 						temp = block[block[n_ord_total[n]][AMR_NBR4P]][AMR_CORN5D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN8D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN8D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN8D] = -2;
 							if (block[temp][AMR_LEVEL2] == block[n_ord_total[n]][AMR_LEVEL2]){
@@ -1041,7 +1041,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD4]){
 						//block[n_ord_total[n]][AMR_CORN10D] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_1];
 						temp = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN10D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN10D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN10D] = -2;
 							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
@@ -1057,7 +1057,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN10D] = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_2];
 						temp = block[block[n_ord_total[n]][AMR_NBR3P]][AMR_CORN9D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN10D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN10D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN10D] = -2;
 							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
@@ -1095,7 +1095,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD4]){
 						//block[n_ord_total[n]][AMR_CORN11D] = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_1];
 						temp = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN11D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN11D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN11D] = -2;
 							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
@@ -1111,7 +1111,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN11D] = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_2];
 						temp = block[block[n_ord_total[n]][AMR_CORN11P]][AMR_CORN9D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN11D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN11D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN11D] = -2;
 							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
@@ -1149,7 +1149,7 @@ void set_corners(void){
 					if (n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD2] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD3] || n_ord_total[n] == block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD4]){
 						//block[n_ord_total[n]][AMR_CORN12D] = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_1];
 						temp = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_1];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN12D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN12D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN12D] = -2;
 							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){
@@ -1165,7 +1165,7 @@ void set_corners(void){
 					else{
 						//block[n_ord_total[n]][AMR_CORN12D] = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_2];
 						temp = block[block[n_ord_total[n]][AMR_NBR6P]][AMR_CORN9D_2];
-						if (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3]) block[n_ord_total[n]][AMR_CORN12D] = temp;
+						if ((temp<0) || (block[temp][AMR_LEVEL1] + block[temp][AMR_LEVEL3] == block[n_ord_total[n]][AMR_LEVEL1] + block[n_ord_total[n]][AMR_LEVEL3])) block[n_ord_total[n]][AMR_CORN12D] = temp;
 						else{
 							block[n_ord_total[n]][AMR_CORN12D] = -2;
 							if (block[temp][AMR_LEVEL1] == block[n_ord_total[n]][AMR_LEVEL1]){

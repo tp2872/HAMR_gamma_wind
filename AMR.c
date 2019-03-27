@@ -1157,7 +1157,7 @@ void balance_load(void){
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps, count_gpu[N_GPU];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	//rm_order2();
+	rm_order2();
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
 	if (numtasks_local > NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
 	do{
@@ -2217,6 +2217,7 @@ void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
 	set_corners();
+
 	#if(N_LEVELS_1D_INT>0)
 	average_grid();
 	#endif
@@ -2574,7 +2575,7 @@ void check_refcrit(void){
 					pre_refine();
 					one_block_derefined = 1;
 				}
-				//derefine(block[n_ord_total[n]][AMR_PARENT]);
+				if(t>20.)derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
