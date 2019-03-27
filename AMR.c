@@ -1342,7 +1342,10 @@ void balance_load(void){
 	min_steps = 0; max_steps = 0; total_steps = 0;
 	count_node[0]=0;
 	for (g = 0; g < N_GPU; g++) count_gpu[g] = 0;
-	for (n = 0; n < n_active; n++) count_gpu[block[n_ord[n]][AMR_GPU]] += AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL];
+	for (n = 0; n < n_active; n++) {
+		count_node[0] += AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL];
+		count_gpu[block[n_ord[n]][AMR_GPU]] += AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL];
+	}
 	min_steps = count_gpu[0];
 	for (g = 0; g < N_GPU; g++){
 		max_steps = MY_MAX(max_steps, count_gpu[g]);
@@ -2399,7 +2402,7 @@ int check_nesting(int n){
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
-	int n, task, i,j,z,k, l, level, number, ref_1, ref_2, ref_3, i1, i2, i3;
+	int n, task, i,j,z,k, l, level, number, ref_1, ref_2, ref_3, i1, i2, i3, tag2;
 	int node, n_send, gpu_choice, gpu_counter;
 	double  rho_rec;
 	double(*temp_ps[NB])[NDIM];
@@ -2509,21 +2512,7 @@ void check_refcrit(void){
 					if (ref_val[block[block[n_ord_total[n]][AMR_PARENT]][i]] > 0.5*REFINEMENT_CUTOFF) block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 1; //Except if one of the children does satisfy the refinement criterion
 				}
 			}
-		}
-
-		for (l = 0; l < max_levels; l++){
-			for (n = 0; n < n_active_total; n++){
-				//do not derefine if required for proper nesting
-				for (i = AMR_NBR1; i <= AMR_CORN12; i++){
-					if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_TAG] >= 1){
-						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
-					}
-				}
-			}
-		}
-
-		//Do not derefine block around pole
-		for (n = 0; n < n_active_total; n++){
+			//Do not derefine other block around pole
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
 				for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
 					block[AMR_coord_linear2(block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2]
@@ -2531,6 +2520,35 @@ void check_refcrit(void){
 				}
 			}
 		}
+
+		do{
+			tag2 = 0;
+			for (n = 0; n < n_active_total; n++){
+				//do not derefine if required for proper nesting
+				for (i = AMR_NBR1; i <= AMR_CORN12; i++){
+					if (block[n_ord_total[n]][i] == NB){
+						if (block[n_ord_total[n]][i + (AMR_NBR1P - AMR_NBR1)] >= 0 && block[block[n_ord_total[n]][i + (AMR_NBR1P - AMR_NBR1)]][AMR_TAG] >= 1){
+							block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
+							tag2 = 1;
+						}
+					}
+					else{
+						if (block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_TAG] >= 1){
+							block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
+							tag2 = 1;
+						}
+					}
+				}
+				//Do not derefine other block around pole
+				if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
+					for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
+						block[AMR_coord_linear2(block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2]
+							/ pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]), block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD1], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2], z)][AMR_TAG] = 2;
+						tag2 = 1;
+					}
+				}
+			}
+		} while (tag2);
 
 		//Detag if load balancing required as intermediate step
 		for (n = 0; n < n_active_total; n++){
@@ -2831,21 +2849,13 @@ double calc_refcrit(int n){
 void synch_refcrit(void){
 	int n, task;
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
-			ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
-			for (task = 0; task < numtasks; task++){
-				if (rank != task){
-					rc = MPI_Isend(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, task, (17 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Request_free(&req[0]);
-				}
-			}
-		}
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			rc = MPI_Irecv(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], (17 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
+		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
+			if(block[n_ord_total[n]][AMR_NODE]==rank) ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
+			rc = MPI_Ibcast(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 		}
 	}
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
+		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 		}
 	}

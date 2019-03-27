@@ -61,25 +61,6 @@ void gcov_func(double *X, double gcovp[][NDIM])
 #if(NSY)
 	bl_coord(X, &r, &th, &phi);
 
-	//compute Jacobian r,th,phi->x,y,z (dx/dr)
-	dxdr[0][0] = 1.;
-	dxdr[0][1] = 0.;
-	dxdr[0][2] = 0.;
-	dxdr[0][3] = 0.;
-	dxdr[1][0] = 0.;
-	dxdr[1][1] = sin(th)*cos(phi);
-	dxdr[1][2] = r*cos(th)*cos(phi);
-	dxdr[1][3] = -r*sin(th)*sin(phi);
-	dxdr[2][0] = 0.;
-	dxdr[2][1] = sin(th)*sin(phi);
-	dxdr[2][2] = r*cos(th)*sin(phi);
-	dxdr[2][3] = r*sin(th)*cos(phi);
-	dxdr[3][0] = 0.;
-	dxdr[3][1] = cos(th);
-	dxdr[3][2] = -r*sin(th);
-	dxdr[3][3] = 0.;
-	invert_matrix(dxdr, drdx);
-
 	//compute Jacobian nt->t (dt/dnt)
 	dxdxt[0][0] = 1.;
 	dxdxt[0][1] = 0.;
@@ -101,7 +82,6 @@ void gcov_func(double *X, double gcovp[][NDIM])
 
 	//compute Jacobian x1,x2,x3 -> r,th,phi (dr/dx1)
 	dxdxp_func(X, dxdxp);
-
 
 	Vp[1] = r*sin(th)*cos(phi);
 	Vp[2] = r*sin(th)*sin(phi);
@@ -239,7 +219,6 @@ void gcov_func(double *X, double gcovp[][NDIM])
 	dxdr[3][1] = cos(th);
 	dxdr[3][2] = -r*sin(th);
 	dxdr[3][3] = 0.;
-	invert_matrix(dxdr, drdx);
 
 	//convert back to tilted kerr-schild coordinates
 	for (i = 0; i<NDIM; i++){

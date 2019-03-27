@@ -48,8 +48,8 @@ void diag(int call_code);
 void diag(int call_code)
 {
 	int i,j,z,k,n ;
-	double divb,divbmax;
-	int imax,jmax,zmax;
+	double divb,divbmax, divbmax_local;
+	int imax,jmax,zmax, nmax;
 	for (n = 0; n < n_active; n++) B_send1(ps, Bufferps_1, n_ord[n]);
 	for (n = 0; n < n_active; n++) B_rec1(ps, Bufferps_1, n_ord[n]);	
 	prolong_grid();
@@ -60,49 +60,35 @@ void diag(int call_code)
 		imax = 0;
 		jmax = 0;
 		zmax = 0.;
+		nmax = 0;
 		for (n = 0; n < n_active; n++){
 			#pragma omp parallel for schedule(dynamic,1) private(divb,i,j,z)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + BS_1 - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				divb = divb_calc(n_ord[n], i, j, z);
 				#pragma omp critical
 				if (divb > divbmax && i > 1 && j > 0 && (z > 0 || N3 == 1)) {
-					imax = i*pow(1 + REF_1, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
-					jmax = j*pow(1 + REF_2, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
-					zmax = z*pow(1 + REF_3, N_LEVELS - 1 - block[n_ord[n]][AMR_LEVEL]);
+					imax = i;
+					jmax = j;
+					zmax = z;
+					nmax = n_ord[n];
 					divbmax = divb;
 				}
 
 				#pragma omp critical
 				if (divb > 0.0000001){
 					fprintf(stderr, "n: %d divb (level: %d, level1: %d, level2: %d, level3: %d, coord1: %d, coord2: %d, coord3: %d) at (%d,%d,%d): %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
-					//fprintf(stderr, "n: %d Corn10_1: %d Corn10_2: %d Corn10P: %d Corn12_1: %d Corn12_2: %d Corn12P: %d  \n", n_ord[n], block[n_ord[n]][AMR_CORN10_1], block[n_ord[n]][AMR_CORN10_2], block[n_ord[n]][AMR_CORN10P], block[n_ord[n]][AMR_CORN12_1], block[n_ord[n]][AMR_CORN12_2], block[n_ord[n]][AMR_CORN12P]);
 				}
-				//int test = block[n][AMR_NBR3_1];
-				//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 			}
 		}
-		
-		//int test = AMR_coord_linear2(0, 4, 0, 4, 0);
-		//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
-		//test = block[test][AMR_CORN2_1];
-		//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	
 		#if (MPI_enable)
-		MPI_Barrier(mpi_cartcomm);
-		double divbmax_local = divbmax;
+		divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-		//MPI_Allreduce(MPI_IN_PLACE, &imax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		//MPI_Allreduce(MPI_IN_PLACE, &jmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		//MPI_Allreduce(MPI_IN_PLACE, &zmax, 1, MPI_INT, MPI_MAX, mpi_cartcomm);
-		MPI_Barrier(mpi_cartcomm);
 		#endif
-		icurr = imax;
-		jcurr = jmax;
 		
 		if (divbmax==divbmax_local){
-			fprintf(stderr, "LOG      t=%g \t divbmax: %d %d %d %g\n", t, imax, jmax, zmax, divbmax);
+			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g\n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax, jmax, zmax, divbmax);
 		}
-		//if (divbmax > 1.0) exit(44);
 	}
 
 	/* gdump only at code start */

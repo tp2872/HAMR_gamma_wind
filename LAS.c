@@ -12,7 +12,6 @@ void set_timelevel(void){
 	int i, j, z, l, ni, nj, nz;
 	int task;
 	int min_j[NB_1*32];
-	MPI_Request req_local;
 	ni = NB_1;
 	nj = NB_2;
 	nz = NB_3;
@@ -34,25 +33,12 @@ void set_timelevel(void){
 	//First make sure all nodes have the same information regarding the timestep
 	//Send for every block (l,i,j,z) to block (l2,i,j2,z2) on other nodes using non-blocking send
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] == rank){
-			//#pragma omp parallel for schedule(dynamic,1) private(req_local, task)
-			for (task = 0; task < numtasks; task++){
-				if (task != rank){
-					rc = MPI_Isend(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, task, (2 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
-					MPI_Request_free(&req_local);
-				}
-			}
-		}
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			rc = MPI_Irecv(&(block[n_ord_total[n]][AMR_TIMELEVEL]), 1, MPI_INT, block[n_ord_total[n]][AMR_NODE], (2 * NB_LOCAL + block[n_ord_total[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
-		}
+		rc = MPI_Ibcast(&block[n_ord_total[n]][AMR_TIMELEVEL], 1, MPI_INT, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 	}
 
 	//Receive from other nodes using blocking receive
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1 && block[n_ord_total[n]][AMR_NODE] != rank){
-			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
-		}
+		MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 	}
 
 	//Fixate the timestep around the pole
