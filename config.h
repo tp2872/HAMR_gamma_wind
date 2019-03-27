@@ -126,7 +126,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define PRESTEP 0
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
-#define PRESTEP2 0
+#define PRESTEP2 1
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0

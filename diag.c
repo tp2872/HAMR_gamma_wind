@@ -87,7 +87,7 @@ void diag(int call_code)
 		#endif
 		
 		if (divbmax==divbmax_local){
-			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g\n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax, jmax, zmax, divbmax);
+			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g\n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
 		}
 	}
 
