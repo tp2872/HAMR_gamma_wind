@@ -2261,7 +2261,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 10000.0 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.5 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2308,7 +2308,7 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1 || (block[n_ord_total[n]][AMR_COORD1] == 1 && block[n_ord_total[n]][AMR_COORD2] == 0 && block[n_ord_total[n]][AMR_COORD3] == 0)) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
 				//Refine one level less near black hole
@@ -2392,23 +2392,30 @@ void check_refcrit(void){
 				for (i = AMR_NBR1; i <= AMR_CORN12; i++){
 					if (block[n_ord_total[n]][i] == NB){
 						if (block[n_ord_total[n]][i + (AMR_NBR1P - AMR_NBR1)] >= 0 && block[block[n_ord_total[n]][i + (AMR_NBR1P - AMR_NBR1)]][AMR_TAG] >= 1){
+							if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] != 2){
+								tag2 = 1;
+							}
 							block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
-							tag2 = 1;
 						}
 					}
 					else{
 						if (block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_TAG] >= 1){
+							if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] != 2){
+								tag2 = 1;
+							}
 							block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
-							tag2 = 1;
 						}
 					}
 				}
 				//Do not derefine other block around pole
 				if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
 					for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
+						if (block[AMR_coord_linear2(block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2]
+							/ pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]), block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD1], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2], z)][AMR_TAG] != 2){
+							tag2 = 1;
+						}
 						block[AMR_coord_linear2(block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2]
 							/ pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]), block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD1], block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2], z)][AMR_TAG] = 2;
-						tag2 = 1;
 					}
 				}
 			}
@@ -2575,7 +2582,7 @@ void check_refcrit(void){
 					pre_refine();
 					one_block_derefined = 1;
 				}
-				if(t>20.)derefine(block[n_ord_total[n]][AMR_PARENT]);
+				derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}

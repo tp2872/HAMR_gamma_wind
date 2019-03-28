@@ -108,30 +108,34 @@ void init()
   void init_torus_grb();
   void init_disruption(void);
   void init_monopole(double Rout_val);
+  void init_thindisk();
 
   switch( WHICHPROBLEM ) {
-  case MONOPOLE_PROBLEM_1D:
-  case MONOPOLE_PROBLEM_2D:
-    init_monopole(1e3);
-    break;
-  case BZ_MONOPOLE_2D:
-    init_monopole(100.);
-    break;
-  case TORUS_PROBLEM:
-    init_torus();
-    break;
-  case BONDI_PROBLEM_1D:
-	  init_thindisk();
-	  break;
-  case DISRUPTION_PROBLEM:
-    init_disruption();
-    break;
-  case TORUS_PROBLEM_GRB:
-	init_torus_grb();
-	break;
-  case BONDI_PROBLEM_2D:
-    init_bondi();
-    break;
+	  case MONOPOLE_PROBLEM_1D:
+	  case MONOPOLE_PROBLEM_2D:
+		init_monopole(1e3);
+		break;
+	  case BZ_MONOPOLE_2D:
+		init_monopole(100.);
+		break;
+	  case TORUS_PROBLEM:
+		init_torus();
+		break;
+	  case THIN_PROBLEM:
+		init_thindisk();
+		break;
+	  case BONDI_PROBLEM_1D:
+		init_thindisk();
+		break;
+	  case DISRUPTION_PROBLEM:
+		init_disruption();
+		break;
+	  case TORUS_PROBLEM_GRB:
+		init_torus_grb();
+		break;
+	  case BONDI_PROBLEM_2D:
+		init_bondi();
+		break;
   }
 
 }
@@ -170,9 +174,9 @@ void init_thindisk()
 
 	double temp = a;
 	a = 0.9375;
-	rin = 12.5;
+	rin = 6.5;
 	//rmax = 14.6145;
-	rmax = 25.;
+	rmax = 125.;
 	//rmax = 14.6165;
 	///rin = 12.;
 	//rmax = 14.616;
@@ -238,11 +242,19 @@ void init_thindisk()
 
 			double rhoc;
 			thin = M_PI / 2.;
-			rhoc = pow(r - rmax, -1.5);
-			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0));
+			double A, R, D, E, L;
+			A = 1.0 + a*a / (r*r) + 2.0*a*a / (r*r*r);
+			R = 1 + a / (r*sqrt(r));
+			D = 1.0 - 2.0 / r + a*a / (r*sqrt(r));
+			E = 1.0 + 4.0*a*a / (r*r) - 4.0*a*a / (r*r*r) + 3.0 * a*a*a*a / (r*r*r*r);
+			L = 1.;
+			rhoc = pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
+			if (r>rmax) rhoc /= exp(sqrt(r-rmax));
+			if (r<rin) rhoc *= pow(r /rin, 4.);
+			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
 
 			/* regions outside torus */
-			if (lnh < 0. || r < rin) {
+			if (r > 4*rmax || r < 2.0) {
 				rho = 1.e-7*RHOMIN;
 				u = 1.e-7*UUMIN;
 
@@ -260,7 +272,7 @@ void init_thindisk()
 			* Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
 			* so it needs to be transformed at the end */
 			else {
-				up = pow(r,-1.5);
+				up = 1. / (pow(r, 3. / 2.) + a);
 
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 
@@ -268,6 +280,9 @@ void init_thindisk()
 					#pragma omp critical
 					rhomax = rho;
 				}
+
+				double T_target = M_PI / 2.*pow(H_OVER_R*r*up, 2.);
+				u = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * T_target / (gam - 1.);
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2*(ranc(0) - 0.5));
 				if (u > umax && r > rin) {
 					#pragma omp critical
@@ -944,7 +959,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 0., umax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 20., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM];
+	double rho_av, q, beta = 1., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
@@ -1017,7 +1032,12 @@ void set_mag(void){
 				bl_coord(X, &r, &th, &phi);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*r*r; //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3]* pow(dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
+				#if(WHICHPROBLEM==THIN_PROBLEM)
+				double H = H_OVER_R*r;
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/60.)*(th-M_PI/2.0)*sqrt(r)*q*q;
+				#else
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				#endif
 				//3d jet
 				//X[1] = log(r - RB);
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3], 3.0)* pow(r, 3.0)*(0.1 + 0.9*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 0.5), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.05), 2.0))) / 10;
@@ -1063,6 +1083,8 @@ void set_mag(void){
 	/* now differentiate to find cell-centered B,
 	and begin normalization */
 	double bsq_max = 0.;
+	double ug_sum =0.;
+	double bsq_sum = 0.;
 	#if(TRANS_BOUND && STAGGERED)
 	gpu = 0;
 	//E_average();
@@ -1135,16 +1157,22 @@ void set_mag(void){
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
-			if (bsq_ij > bsq_max && (j > 4) && (j <N2*pow(1 + REF_2, N_LEVELS - 1) -4 )) bsq_max = bsq_ij;
+			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
+			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, N_LEVELS - 1) - 4)){
+				bsq_max = bsq_ij;
+			}
+			bsq_sum += bsq_ij* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT];
+			ug_sum += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT];
 		}
 	}
-
 
 
 	#if (MPI_enable)
 	/*Share bsq_max among MPI processes*/
 	MPI_Barrier(mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	MPI_Barrier(mpi_cartcomm);
 	#endif
 
@@ -1153,7 +1181,11 @@ void set_mag(void){
 	}
 
 	/* finally, normalize to set field strength */
+	#if(WHICHPROBLEM==THIN_PROBLEM)
+	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
+	#else
 	beta_act = (gam - 1.)*umax / (0.5*bsq_max);
+	#endif
 	if (rank == 0){
 		fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
 	}

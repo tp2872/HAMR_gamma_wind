@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 		//Refine every TREF
 		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(N_LEVELS_3D>1)
-			check_refcrit();
+			//check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
 			#else
 			close_dump();

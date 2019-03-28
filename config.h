@@ -10,7 +10,8 @@ Physical Parameters section
 #define BONDI_PROBLEM_1D 6
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
-#define WHICHPROBLEM TORUS_PROBLEM
+#define THIN_PROBLEM 9
+#define WHICHPROBLEM THIN_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -21,15 +22,15 @@ Physical Parameters section
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (60.)
+#define TILT_ANGLE (00.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (0)
-#define H_OVER_R (0.03)
+#define COOL_DISK (1)
+#define H_OVER_R (0.1)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
 #define FULL_DISP (0)
@@ -123,10 +124,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Use prestepping for load balancing with HTS*/
-#define PRESTEP 0
+#define PRESTEP 1
 
 /*Use second order timestepping at LAS boundaries, not possible in combination with PRESTEP*/
-#define PRESTEP2 1
+#define PRESTEP2 0
 
 /*Used for loading in old data files. Do not touch!*/
 #define REVERSE_ORDERING 0
@@ -165,7 +166,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1)
