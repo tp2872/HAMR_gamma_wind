@@ -2582,7 +2582,7 @@ void check_refcrit(void){
 					pre_refine();
 					one_block_derefined = 1;
 				}
-				derefine(block[n_ord_total[n]][AMR_PARENT]);
+				//derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
@@ -2709,7 +2709,9 @@ double calc_refcrit(int n){
 	#else
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] > ref_val) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO];
+			coord(n, i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] *r > ref_val && r<150) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO];
 		}
 	}
 	#endif
