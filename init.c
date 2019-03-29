@@ -248,7 +248,7 @@ void init_thindisk()
 			D = 1.0 - 2.0 / r + a*a / (r*sqrt(r));
 			E = 1.0 + 4.0*a*a / (r*r) - 4.0*a*a / (r*r*r) + 3.0 * a*a*a*a / (r*r*r*r);
 			L = 1.;
-			rhoc = pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
+			rhoc = 1./r*pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
 			if (r>rmax) rhoc /= exp(sqrt(r-rmax));
 			if (r<rin) rhoc *= pow(r /rin, 4.);
 			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
@@ -959,7 +959,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 0., umax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 1., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 200., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
@@ -1034,7 +1034,7 @@ void set_mag(void){
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3]* pow(dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
 				#if(WHICHPROBLEM==THIN_PROBLEM)
 				double H = H_OVER_R*r;
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/60.)*(th-M_PI/2.0)*sqrt(r)*q*q;
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
 				#endif

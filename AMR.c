@@ -2261,7 +2261,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.5 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.05 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2314,7 +2314,8 @@ void check_refcrit(void){
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				if (block[n_ord_total[n]][AMR_LEVEL1] == max_levels - 2 && block[n_ord_total[n]][AMR_COORD1] == 0){
+				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] == 0) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 6)
+					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 14) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 30) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 62)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
@@ -2711,7 +2712,7 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] *r > ref_val && r<150) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO];
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<150) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO];
 		}
 	}
 	#endif
