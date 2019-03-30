@@ -628,7 +628,7 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 	if (global_id < work_size){
 		//#pragma unroll NG
 		for (i = i1; i < i2; i++){
-			if (i1 < 0 && ref_1 == 1) ii = (NG - 1) - (NG - 1 - i) / (1 + ref_1);
+			if (i1 < 0 && ref_1 == 1) ii = (NG - 1) + (i + 1) / (1 + ref_1);
 			else if (ref_1 == 1) ii = (i - BS_1) / (1 + ref_1);
 			else ii = i - i1;
 			ij = (jcurr - j1 - N2G - (jcurr - j1 - N2G) % (1 + ref_2)) / (1 + ref_2) + ref_2;
@@ -782,7 +782,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 	if (global_id < work_size){
 //#pragma unroll NG
 		for (j = j1; j < j2; j++){
-			if (j1 < 0 && ref_2 == 1) ij = (NG - 1) - (NG - 1 - j) / (1 + ref_2);
+			if (j1 < 0 && ref_2 == 1) ij = (NG - 1) + (j + 1) / (1 + ref_2);
 			else if (ref_2 == 1) ij = (j - BS_2) / (1 + ref_2);
 			else ij = j - j1;
 
@@ -935,7 +935,7 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	if (global_id < work_size){
 //#pragma unroll NG
 		for (z = z1; z < z2; z++){
-			if (z1 < 0 && ref_3 == 1) iz = (NG - 1) - (NG - 1 - z) / (1 + ref_3);
+			if (z1 < 0 && ref_3 == 1) iz = (NG - 1) + (z + 1) / (1 + ref_3);
 			else if (ref_3 == 1) iz = (z - BS_3) / (1 + ref_3);
 			else iz = z - z1;
 			ii = (icurr - i1 - N1G - (icurr - i1 - N1G) % (1 + ref_1)) / (1 + ref_1) + ref_1;
