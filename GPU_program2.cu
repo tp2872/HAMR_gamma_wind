@@ -7,8 +7,8 @@ __device__ double slope_lim(double y1, double y2, double y3)
 {
 	double Dqm, Dqp, Dqc, s;
 	/* woodward, or monotonized central, slope limiter */
-	Dqm = (1.5)*(y2 - y1);
-	Dqp = (1.5)*(y3 - y2);
+	Dqm = (2.0)*(y2 - y1);
+	Dqp = (2.0)*(y3 - y2);
 	Dqc = 0.5*(y3 - y1);
 	s = Dqm*Dqp;
 	if (s <= 0.) return 0.;
@@ -635,14 +635,14 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 			iz = (zcurr - z1 - N3G - (zcurr - z1 - N3G) % (1 + ref_3)) / (1 + ref_3) + ref_3;
 
 			if (i < 0){
-				if (i == -3) is = -2;
+				if (i == -3) is = 1;
 				else if (i == -2) is = -1;
 				else if (i == -1) is = 1;
 			}
 			if (i>0){
 				if (i == BS_1) is = -1;
 				else if (i == BS_1 + 1) is = 1;
-				else if (i == BS_1 + 2) is = 2;
+				else if (i == BS_1 + 2) is = -1;
 			}
 			js = (((jcurr - j1 - N2G) % (1 + ref_2) == 0) ? (-1) : (1));
 			zs = (((zcurr - z1 - N3G) % (1 + ref_3) == 0) ? (-1) : (1));
@@ -791,14 +791,14 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 
 			is = (((icurr - i1 - N1G) % (1 + ref_1) == 0) ? (-1) : (1));
 			if (j < 0){
-				if (j == -3) js = -2;
+				if (j == -3) js = 1;
 				else if (j == -2) js = -1;
 				else if (j == -1) js = 1;
 			}
 			if (j>0){
 				if(j == BS_2) js=-1;
 				else if (j == BS_2 + 1) js = 1;
-				else if (j == BS_2 + 2) js = 2;
+				else if (j == BS_2 + 2) js = -1;
 			}	
 			zs = (((zcurr - z1 - N3G) % (1 + ref_3) == 0) ? (-1) : (1));
 
@@ -943,14 +943,14 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 			is = (((icurr - i1 - N1G) % (1 + ref_1) == 0) ? (-1) : (1));
 			js = (((jcurr - j1 - N2G) % (1 + ref_2) == 0) ? (-1) : (1));
 			if (z < 0){
-				if (z == -3) zs = -2;
+				if (z == -3) zs = 1;
 				else if (z == -2) zs = -1;
 				else if (z == -1) zs = 1;
 			}
 			if (z>0){
 				if (z == BS_3) zs = -1;
 				else if (z == BS_3 + 1) zs = 1;
-				else if (z == BS_3 + 2) zs = 2;
+				else if (z == BS_3 + 2) zs = -1;
 			}
 
 			for (k = 0; k < NPR+3; k++){

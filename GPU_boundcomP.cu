@@ -712,7 +712,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			is = (((i - i1) % (1 + ref_1) == 0) ? (-1) : (1));
 			js = (((j - j1) % (1 + ref_2) == 0) ? (-1) : (1));
 			if (z < 0){
-				if (z == -3) zs = -2;
+				if (z == -3) zs = 1;
 				else if (z == -2) zs = -1;
 				else if (z == -1) zs = 1;
 				else fprintf(stderr, "Error receivecoursse3! \n");
@@ -720,7 +720,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 			if (z>0){
 				if (z == BS_3) zs = -1;
 				else if (z == BS_3 + 1) zs = 1;
-				else if (z == BS_3 + 2) zs = 2;
+				else if (z == BS_3 + 2) zs = -1;
 				else fprintf(stderr, "Error receivecoursse3! \n");
 			}
 			for (k = 0; k < NPR; k++){

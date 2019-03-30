@@ -273,7 +273,7 @@ void init_thindisk()
 			* so it needs to be transformed at the end */
 			else {
 				up = 1. / (pow(r, 3. / 2.) + a);
-
+				up *= sqrt(1. / (1 - up*up));
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 
 				if (rho > rhomax) {
@@ -959,7 +959,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 0., umax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 200., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 2000., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
