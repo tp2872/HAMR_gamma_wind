@@ -250,7 +250,7 @@ void init_thindisk()
 			L = 1.;
 			rhoc = 1./r*pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
 			if (r>rmax) rhoc /= exp(sqrt(r-rmax));
-			if (r<rin) rhoc *= pow(r /rin, 4.);
+			//if (r<rin) rhoc *= pow(r /rin, 4.);
 			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
 
 			/* regions outside torus */
@@ -959,7 +959,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 0., umax = 0.;
 	int i100 = 0;
-	double rho_av, q, beta = 8.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q_r, q_theta, q_phi, beta = 5.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
@@ -1021,31 +1021,27 @@ void set_mag(void){
 	}
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3){
-			/* field-in-disk version */
-			/* flux_ct */
-			rho_av =p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-				
-			//rho_av = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
-			q = rho_av / rhomax-0.05;
-			if (q > 0. && i < i100){
+			/* field-in-disk version */			
+			rho_av = 0.25*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + D3)][RHO]);
+			q_r = rho_av / rhomax - 0.0005;
+			rho_av = 0.25*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + D3)][RHO]);
+			q_theta = rho_av / rhomax-0.0005;
+			rho_av = 0.25*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j + D2, z)][RHO]);
+			q_phi = rho_av / rhomax - 0.05;
+			if (q_theta > 0.){
 				coord(n_ord[n],i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
-				//E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3]* pow(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3], 2.0) * pow(r, 3.0)*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 1.0), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.1), 2.0)) / 10.;
 				#if(WHICHPROBLEM==THIN_PROBLEM)
-				double H = H_OVER_R*r;
-				//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q_theta*pow(r,2.0); //Toroidal
+				//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q_phi;
 				#else
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q_phi, 2.0) * pow(r, 3.0); //MAD
 				#endif
-				//3d jet
-				//X[1] = log(r - RB);
-				//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3], 3.0)* pow(r, 3.0)*(0.1 + 0.9*sqrt(pow(cos((X[1] - 2.0) * 2.0*M_PI / 0.5), 2.0))*sqrt(pow(cos((X[2] - 0.5) * 2.*M_PI / 0.05), 2.0))) / 10;
 			}
 			else{
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = 0.0;
 			}
-			if (q > 0.){
+			if (q_theta > 0.){
 				#if (TILTED)
 				coord(n_ord[n],i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
@@ -1085,12 +1081,12 @@ void set_mag(void){
 	double bsq_max = 0.;
 	double ug_sum =0.;
 	double bsq_sum = 0.;
-	#if(TRANS_BOUND && STAGGERED)
+	#if(STAGGERED)
 	gpu = 0;
 	nstep = AMR_SWITCHTIMELEVEL - 1;
+	set_prestep();
 	const_transport_bound();
 	nstep = 0;
-	//E_average();
 	#endif
 	for (n = 0; n < n_active; n++){
 		#if(STAGGERED)
@@ -1390,7 +1386,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	double bl_gcov[NDIM][NDIM], bl_gcon[NDIM][NDIM], bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], bl_gcov1[NDIM][NDIM], bl_gcov2[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], gdet1, gdet2;
 	double V_tmp[NDIM], X[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
 	double theta_solve, theta_old, derivative;
-	double delta_X2 = 0.1*M_PI / (double)N2*2. / M_PI;
+	double delta_X2 = 0.05*M_PI / (double)N2*2. / M_PI;
 	int step = 0;
 	int i, j, k, l;
 	for (i = 1; i < NDIM; i++){
@@ -1412,7 +1408,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		derivative = (theta_solve - theta_old) / delta_X2;
 		X[2] -= theta_solve / derivative;
 		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);
+	} while (fabs(theta_solve)>2.*M_PI / (double)N2/20. && step<30);
 	kerr_gcov_func(*r, *th, bl_gcov);
 	invert_matrix(bl_gcov, bl_gcon);
 	dxdxp_func(X, dxdxp);

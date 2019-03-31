@@ -74,13 +74,13 @@ int main(int argc, char *argv[])
 	set_AMR();
 
 	if (!restart_read()) {
-		init();
+		//init();
 		#if(DEREFINE_POLE)
 		derefine_pole();
 		#endif
 		for (l = 0; l < N_LEVELS_3D; l++) {
-			//init();
-			//check_refcrit();
+			init();
+			check_refcrit();
 		}	
 	}
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -313,55 +313,55 @@ void set_arrays(int n)
 	}
 	else mem_spot[i] = 1;
 
-	array[nl[n]] = (float *)calloc(9 * BS_1*BS_2*BS_3, sizeof(float));
-	array_gdump1[nl[n]] = (double *)calloc(9 * BS_1*BS_2*BS_3, sizeof(double));
-	array_gdump2[nl[n]] = (double *)calloc(49 * BS_1*BS_2, sizeof(double));
-	array_rdump[nl[n]] = (double *)calloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
-	array_diag[nl[n]] = (float *)calloc(4 * BS_1*BS_2*BS_3, sizeof(float));
-	Katm[nl[n]] = (double(*))calloc((BS_1 + 2 * N1G), sizeof(double));
-	p[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-	ph[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+	array[nl[n]] = (float *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(float));
+	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
+	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1*BS_2 * sizeof(double));
+	array_rdump[nl[n]] = (double *)malloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
+	array_diag[nl[n]] = (float *)malloc(4 * BS_1*BS_2*BS_3 * sizeof(float));
+	Katm[nl[n]] = (double(*))malloc((BS_1 + 2 * N1G) * sizeof(double));
+	p[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	ph[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	#if(STAGGERED)
-	ps[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
-	psh[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
+	ps[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+	psh[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	#endif
 	#if(LEER)
-	V[nl[n]] = (double(*)[6])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double[6]));
+	V[nl[n]] = (double(*)[6])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double[6]));
 	#endif
-	dq[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-	F1[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-	F2[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-	F3[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-	pflag[nl[n]] = (int(*))calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(int));
+	dq[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	F1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	F2[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	F3[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	pflag[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int));
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
-	dE[nl[n]] = (double(*)[2][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[2][NDIM][NDIM]));
+	dE[nl[n]] = (double(*)[2][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
 	#endif
-	E_corn[nl[n]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
+	E_corn[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	#endif
-	failimage[nl[n]] = (int(*)[NFAIL])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(int[NFAIL]));
+	failimage[nl[n]] = (int(*)[NFAIL])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int[NFAIL]));
 	#if(!NSY)
-	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
-	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
-	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG]));
+	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
+	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG][NDIM][NDIM]));
+	gdet[nl[n]] = (double(*)[NPG])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPG]));
 	#else
-	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double[NPG][NDIM][NDIM]));
-	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPG][NDIM][NDIM]));
-	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPG]));
+	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)  * sizeof(double[NPG][NDIM][NDIM]));
+	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPG][NDIM][NDIM]));
+	gdet[nl[n]] = (double(*)[NPG])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPG]));
 	#endif
 	#if(HLLC)
-	Mud[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
-	Mud_inv[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
+	Mud[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
+	Mud_inv[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
 	#endif
 	#if(ZIRI_DUMP)
-	dump_buffer[nl[n]] = (double(*))calloc(BS_1 * BS_2 * BS_3 * 13 *sizeof(double));
-	dxdxp_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double[NDIM][NDIM]));
-	dxpdx_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double[NDIM][NDIM]));
+	dump_buffer[nl[n]] = (double(*))malloc(BS_1 * BS_2 * BS_3 * 13 *sizeof(double));
+	dxdxp_z[nl[n]] = (double(*)[NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)  * sizeof(double[NDIM][NDIM]));
+	dxpdx_z[nl[n]] = (double(*)[NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)  * sizeof(double[NDIM][NDIM]));
 	#endif
 	#if (ELLIPTICAL2)
-	dU_s[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPR]));
+	dU_s[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G) * sizeof(double[NPR]));
 	#endif
 	alloc_bounds_CPU(n);
 }
@@ -401,48 +401,48 @@ void alloc_bounds_CPU(int n){
 		ref3_4s = 0;
 	}
 
-	send1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	send2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
-	send3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
-	send4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	send1[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	send2[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send3[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send4[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), sizeof(double));
-	send6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), sizeof(double));
+	send5[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) * sizeof(double));
+	send6[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) * sizeof(double));
 	#endif
 
 	#if(N_LEVELS>1)
-	send1_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G), sizeof(double));
-	send1_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G), sizeof(double));
-	send1_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G), sizeof(double));
-	send1_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G), sizeof(double));
-	send2_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G), sizeof(double));
-	send2_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G), sizeof(double));
-	send2_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G), sizeof(double));
-	send2_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G), sizeof(double));
-	send3_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G), sizeof(double));
-	send3_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G), sizeof(double));
-	send3_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G), sizeof(double));
-	send3_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G), sizeof(double));
-	send4_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G), sizeof(double));
-	send4_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G), sizeof(double));
-	send4_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G), sizeof(double));
-	send4_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G), sizeof(double));
-	send5_1[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G), sizeof(double));
-	send5_3[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G), sizeof(double));
-	send5_5[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G), sizeof(double));
-	send5_7[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G), sizeof(double));
-	send6_2[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G), sizeof(double));
-	send6_4[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G), sizeof(double));
-	send6_6[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G), sizeof(double));
-	send6_8[nl[n]] = (double *)calloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G), sizeof(double));
+	send1_3[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	send1_4[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	send1_7[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	send1_8[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_1s) + 2 * N1G)*(BS_3 / (1 + ref3_1s) + 2 * N3G) * sizeof(double));
+	send2_1[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G) * sizeof(double));
+	send2_2[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G) * sizeof(double));
+	send2_3[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G) * sizeof(double));
+	send2_4[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_2s) + 2 * N2G)*(BS_3 / (1 + ref3_2s) + 2 * N3G) * sizeof(double));
+	send3_1[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	send3_2[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	send3_5[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	send3_6[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_1 / (1 + ref1_3s) + 2 * N1G)*(BS_3 / (1 + ref3_3s) + 2 * N3G) * sizeof(double));
+	send4_5[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G) * sizeof(double));
+	send4_6[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G) * sizeof(double));
+	send4_7[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G) * sizeof(double));
+	send4_8[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_4s) + 2 * N2G)*(BS_3 / (1 + ref3_4s) + 2 * N3G) * sizeof(double));
+	send5_1[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G) * sizeof(double));
+	send5_3[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G) * sizeof(double));
+	send5_5[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G) * sizeof(double));
+	send5_7[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_5s) + 2 * N2G) *(BS_1 / (1 + ref1_5s) + 2 * N1G) * sizeof(double));
+	send6_2[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G) * sizeof(double));
+	send6_4[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G) * sizeof(double));
+	send6_6[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G) * sizeof(double));
+	send6_8[nl[n]] = (double *)malloc(NG * (NPR + 3)*(BS_2 / (1 + ref2_6s) + 2 * N2G) *(BS_1 / (1 + ref1_6s) + 2 * N1G) * sizeof(double));
 	#endif
-	receive1[nl[n]] = (double *)calloc((1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G), sizeof(double));
-	receive2[nl[n]] = (double *)calloc((1 + ref2_4)*(1 + ref3_4)* NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G), sizeof(double));
-	receive3[nl[n]] = (double *)calloc((1 + ref1_1)*(1 + ref3_1)* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G), sizeof(double));
-	receive4[nl[n]] = (double *)calloc((1 + ref2_2)*(1 + ref3_2)* NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G), sizeof(double));
+	receive1[nl[n]] = (double *)malloc((1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	receive2[nl[n]] = (double *)malloc((1 + ref2_4)*(1 + ref3_4)* NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	receive3[nl[n]] = (double *)malloc((1 + ref1_1)*(1 + ref3_1)* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	receive4[nl[n]] = (double *)malloc((1 + ref2_2)*(1 + ref3_2)* NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5[nl[n]] = (double *)calloc((1 + ref2_6)*(1 + ref1_6)* NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G), sizeof(double));
-	receive6[nl[n]] = (double *)calloc((1 + ref2_5)*(1 + ref1_5)* NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G), sizeof(double));
+	receive5[nl[n]] = (double *)malloc((1 + ref2_6)*(1 + ref1_6)* NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	receive6[nl[n]] = (double *)malloc((1 + ref2_5)*(1 + ref1_5)* NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
 	receive1_3[nl[n]] = receive1[nl[n]];
@@ -473,13 +473,13 @@ void alloc_bounds_CPU(int n){
 	#endif
 	#endif
 	#if(PRESTEP==-100 || PRESTEP2==-100)
-	tempreceive1[nl[n]] = (double *)calloc((1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G), sizeof(double));
-	tempreceive2[nl[n]] = (double *)calloc((1 + ref2_4)*(1 + ref3_4)* NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G), sizeof(double));
-	tempreceive3[nl[n]] = (double *)calloc((1 + ref1_1)*(1 + ref3_1)* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G), sizeof(double));
-	tempreceive4[nl[n]] = (double *)calloc((1 + ref2_2)*(1 + ref3_2)* NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G), sizeof(double));
+	tempreceive1[nl[n]] = (double *)malloc((1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	tempreceive2[nl[n]] = (double *)malloc((1 + ref2_4)*(1 + ref3_4)* NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	tempreceive3[nl[n]] = (double *)malloc((1 + ref1_1)*(1 + ref3_1)* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	tempreceive4[nl[n]] = (double *)malloc((1 + ref2_2)*(1 + ref3_2)* NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	tempreceive5[nl[n]] = (double *)calloc((1 + ref2_6)*(1 + ref1_6)* NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G), sizeof(double));
-	tempreceive6[nl[n]] = (double *)calloc((1 + ref2_5)*(1 + ref1_5)* NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G), sizeof(double));
+	tempreceive5[nl[n]] = (double *)malloc((1 + ref2_6)*(1 + ref1_6)* NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	tempreceive6[nl[n]] = (double *)malloc((1 + ref2_5)*(1 + ref1_5)* NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
 	tempreceive1_3[nl[n]] = tempreceive1[nl[n]];
@@ -510,21 +510,21 @@ void alloc_bounds_CPU(int n){
 	#endif
 	#endif
 	#endif
-	send1_fine[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	send2_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
-	send3_fine[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
-	send4_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	send1_fine[nl[n]] = (double *)malloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	send2_fine[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send3_fine[nl[n]] = (double *)malloc(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send4_fine[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	send6_fine[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
+	send5_fine[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G) * sizeof(double));
+	send6_fine[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_fine[nl[n]] = (double *)calloc((1 + ref1_3)*(1 + ref3_3)* (NPR)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G), sizeof(double));
-	receive2_fine[nl[n]] = (double *)calloc((1 + ref2_4)*(1 + ref3_4)* (NPR)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G), sizeof(double));
-	receive3_fine[nl[n]] = (double *)calloc((1 + ref1_1)*(1 + ref3_1)* (NPR)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G), sizeof(double));
-	receive4_fine[nl[n]] = (double *)calloc((1 + ref2_2)*(1 + ref3_2)* (NPR)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G), sizeof(double));
+	receive1_fine[nl[n]] = (double *)malloc((1 + ref1_3)*(1 + ref3_3)* (NPR)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	receive2_fine[nl[n]] = (double *)malloc((1 + ref2_4)*(1 + ref3_4)* (NPR)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	receive3_fine[nl[n]] = (double *)malloc((1 + ref1_1)*(1 + ref3_1)* (NPR)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	receive4_fine[nl[n]] = (double *)malloc((1 + ref2_2)*(1 + ref3_2)* (NPR)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_fine[nl[n]] = (double *)calloc((1 + ref2_6)*(1 + ref1_6)* (NPR)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G), sizeof(double));
-	receive6_fine[nl[n]] = (double *)calloc((1 + ref2_5)*(1 + ref1_5)* (NPR)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G), sizeof(double));
+	receive5_fine[nl[n]] = (double *)malloc((1 + ref2_6)*(1 + ref1_6)* (NPR)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G) * sizeof(double));
+	receive6_fine[nl[n]] = (double *)malloc((1 + ref2_5)*(1 + ref1_5)* (NPR)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
 	receive1_3fine[nl[n]] = receive1_fine[nl[n]];
@@ -555,21 +555,21 @@ void alloc_bounds_CPU(int n){
 	#endif
 	#endif
 	#if(CPU_OPENMP)
-	send1_flux[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	send2_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
-	send3_flux[nl[n]] = (double *)calloc(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
-	send4_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	send1_flux[nl[n]] = (double *)malloc(NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	send2_flux[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send3_flux[nl[n]] = (double *)malloc(NPR*(BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send4_flux[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	send6_flux[nl[n]] = (double *)calloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
+	send5_flux[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G) *(BS_1 + 2 * N1G) * sizeof(double));
+	send6_flux[nl[n]] = (double *)malloc(NPR*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_flux[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3), sizeof(double));
-	receive2_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3), sizeof(double));
-	receive3_flux[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3), sizeof(double));
-	receive4_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3), sizeof(double));
+	receive1_flux[nl[n]] = (double *)malloc(NPR* (BS_1)*(BS_3) * sizeof(double));
+	receive2_flux[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_3) * sizeof(double));
+	receive3_flux[nl[n]] = (double *)malloc(NPR* (BS_1)*(BS_3) * sizeof(double));
+	receive4_flux[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_3) * sizeof(double));
 	#if(N3G>0)
-	receive5_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1), sizeof(double));
-	receive6_flux[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1), sizeof(double));
+	receive5_flux[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
+	receive6_flux[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
 	#endif	
 	#if(N_LEVELS>1)
 	receive1_3flux[nl[n]] = receive1_flux[nl[n]];
@@ -599,13 +599,13 @@ void alloc_bounds_CPU(int n){
 	receive6_8flux[nl[n]] = receive6_flux[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NPR *(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
 	#endif
 	#endif
-	receive1_flux1[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3), sizeof(double));
-	receive2_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3), sizeof(double));
-	receive3_flux1[nl[n]] = (double *)calloc(NPR* (BS_1)*(BS_3), sizeof(double));
-	receive4_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_3), sizeof(double));
+	receive1_flux1[nl[n]] = (double *)malloc(NPR* (BS_1)*(BS_3) * sizeof(double));
+	receive2_flux1[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_3) * sizeof(double));
+	receive3_flux1[nl[n]] = (double *)malloc(NPR* (BS_1)*(BS_3) * sizeof(double));
+	receive4_flux1[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_3) * sizeof(double));
 	#if(N3G>0)
-	receive5_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1), sizeof(double));
-	receive6_flux1[nl[n]] = (double *)calloc(NPR* (BS_2)*(BS_1), sizeof(double));
+	receive5_flux1[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
+	receive6_flux1[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
 	#endif	
 	#if(N_LEVELS>1)
 	receive1_3flux1[nl[n]] = receive1_flux1[nl[n]];
@@ -634,50 +634,50 @@ void alloc_bounds_CPU(int n){
 	receive6_6flux1[nl[n]] = receive6_flux1[nl[n]] + (ref2_5 + ref1_5)*(NPR *(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
 	receive6_8flux1[nl[n]] = receive6_flux1[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NPR *(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
 	#endif
-	receive1_3flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)), sizeof(double));
-	receive1_4flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)), sizeof(double));
-	receive1_7flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)), sizeof(double));
-	receive1_8flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)), sizeof(double));
-	receive2_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)), sizeof(double));
-	receive2_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)), sizeof(double));
-	receive2_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)), sizeof(double));
-	receive2_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)), sizeof(double));
-	receive3_1flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)), sizeof(double));
-	receive3_2flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)), sizeof(double));
-	receive3_5flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)), sizeof(double));
-	receive3_6flux2[nl[n]] = (double *)calloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)), sizeof(double));
-	receive4_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)), sizeof(double));
-	receive4_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)), sizeof(double));
-	receive4_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)), sizeof(double));
-	receive4_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)), sizeof(double));
+	receive1_3flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	receive1_4flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	receive1_7flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	receive1_8flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
+	receive2_1flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_2flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_3flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_4flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive3_1flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	receive3_2flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	receive3_5flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	receive3_6flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
+	receive4_5flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_6flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_7flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_8flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
 	#if(N3G>0)
-	receive5_1flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)), sizeof(double));
-	receive5_3flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)), sizeof(double));
-	receive5_5flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)), sizeof(double));
-	receive5_7flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)), sizeof(double));
-	receive6_2flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)), sizeof(double));
-	receive6_4flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)), sizeof(double));
-	receive6_6flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)), sizeof(double));
-	receive6_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_5) + 2 * N2G) *(BS_1 / (1 + ref1_5)), sizeof(double));
+	receive5_1flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	receive5_3flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	receive5_5flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	receive5_7flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
+	receive6_2flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	receive6_4flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	receive6_6flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_5)) *(BS_1 / (1 + ref1_5)) * sizeof(double));
+	receive6_8flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_5) + 2 * N2G) *(BS_1 / (1 + ref1_5)) * sizeof(double));
 	#endif
 	#endif
 	#endif
 	#if(CPU_OPENMP || 1)
-	send1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
-	send2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
-	send3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
-	send4_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double));
+	send1_E[nl[n]] = (double *)malloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	send2_E[nl[n]] = (double *)malloc(2 * (BS_2 + 2 * N2G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send3_E[nl[n]] = (double *)malloc(2 * (BS_1 + 2 * N1G) *(BS_3 + 2 * N3G) * sizeof(double));
+	send4_E[nl[n]] = (double *)malloc(2 * (BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	send5_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_1 + 2 * N1G), sizeof(double));
-	send6_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G), sizeof(double));
+	send5_E[nl[n]] = (double *)malloc(2 * (BS_2 + 2 * N2G) *(BS_1 + 2 * N1G) * sizeof(double));
+	send6_E[nl[n]] = (double *)malloc(2 * (BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) * sizeof(double));
 	#endif
-	receive1_E[nl[n]] = (double *)calloc((1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * N3G), sizeof(double));
-	receive2_E[nl[n]] = (double *)calloc((1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * N3G), sizeof(double));
-	receive3_E[nl[n]] = (double *)calloc((1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * N3G), sizeof(double));
-	receive4_E[nl[n]] = (double *)calloc((1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * N3G), sizeof(double));
+	receive1_E[nl[n]] = (double *)malloc((1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	receive2_E[nl[n]] = (double *)malloc((1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	receive3_E[nl[n]] = (double *)malloc((1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	receive4_E[nl[n]] = (double *)malloc((1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_E[nl[n]] = (double *)calloc((1 + ref2_6)*(1 + ref1_6) * 2 * (BS_2 / (1 + ref2_6) + 2 * D2)*(BS_1 / (1 + ref1_6) + 2 * D1), sizeof(double));
-	receive6_E[nl[n]] = (double *)calloc((1 + ref2_5)*(1 + ref1_5) * 2 * (BS_2 / (1 + ref2_5) + 2 * D2)*(BS_1 / (1 + ref1_5) + 2 * D1), sizeof(double));
+	receive5_E[nl[n]] = (double *)malloc((1 + ref2_6)*(1 + ref1_6) * 2 * (BS_2 / (1 + ref2_6) + 2 * D2)*(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	receive6_E[nl[n]] = (double *)malloc((1 + ref2_5)*(1 + ref1_5) * 2 * (BS_2 / (1 + ref2_5) + 2 * D2)*(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
 	receive1_3E[nl[n]] = receive1_E[nl[n]];
@@ -707,13 +707,13 @@ void alloc_bounds_CPU(int n){
 	receive6_8E[nl[n]] = receive6_E[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
 	#endif
 	#endif
-	receive1_E1[nl[n]] = (double *)calloc((1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * N3G), sizeof(double));
-	receive2_E1[nl[n]] = (double *)calloc((1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * N3G), sizeof(double));
-	receive3_E1[nl[n]] = (double *)calloc((1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * N3G), sizeof(double));
-	receive4_E1[nl[n]] = (double *)calloc((1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * N3G), sizeof(double));
+	receive1_E1[nl[n]] = (double *)malloc((1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
+	receive2_E1[nl[n]] = (double *)malloc((1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * N3G) * sizeof(double));
+	receive3_E1[nl[n]] = (double *)malloc((1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
+	receive4_E1[nl[n]] = (double *)malloc((1 + ref2_2)*(1 + ref3_2) * 2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	#if(N3G>0)
-	receive5_E1[nl[n]] = (double *)calloc((1 + ref2_6)*(1 + ref1_6) * 2 * (BS_2 / (1 + ref2_6) + 2 * D2)*(BS_1 / (1 + ref1_6) + 2 * D1), sizeof(double));
-	receive6_E1[nl[n]] = (double *)calloc((1 + ref2_5)*(1 + ref1_5) * 2 * (BS_2 / (1 + ref2_5) + 2 * D2)*(BS_1 / (1 + ref1_5) + 2 * D1), sizeof(double));
+	receive5_E1[nl[n]] = (double *)malloc((1 + ref2_6)*(1 + ref1_6) * 2 * (BS_2 / (1 + ref2_6) + 2 * D2)*(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	receive6_E1[nl[n]] = (double *)malloc((1 + ref2_5)*(1 + ref1_5) * 2 * (BS_2 / (1 + ref2_5) + 2 * D2)*(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
 	receive1_3E1[nl[n]] = receive1_E1[nl[n]];
@@ -742,159 +742,159 @@ void alloc_bounds_CPU(int n){
 	receive6_6E1[nl[n]] = receive6_E1[nl[n]] + (ref2_5 + ref1_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
 	receive6_8E1[nl[n]] = receive6_E1[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
 	#endif
-	receive1_3E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3), sizeof(double));
-	receive1_4E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3), sizeof(double));
-	receive1_7E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3), sizeof(double));
-	receive1_8E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3), sizeof(double));
-	receive2_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3), sizeof(double));
-	receive2_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3), sizeof(double));
-	receive2_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3), sizeof(double));
-	receive2_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3), sizeof(double));
-	receive3_1E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3), sizeof(double));
-	receive3_2E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3), sizeof(double));
-	receive3_5E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3), sizeof(double));
-	receive3_6E2[nl[n]] = (double *)calloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3), sizeof(double));
-	receive4_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3), sizeof(double));
-	receive4_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3), sizeof(double));
-	receive4_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3), sizeof(double));
-	receive4_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3), sizeof(double));
+	receive1_3E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	receive1_4E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	receive1_7E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	receive1_8E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
+	receive2_1E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_2E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_3E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_4E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive3_1E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	receive3_2E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	receive3_5E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	receive3_6E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
+	receive4_5E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_6E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_7E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_8E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	receive5_1E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1), sizeof(double));
-	receive5_3E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1), sizeof(double));
-	receive5_5E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1), sizeof(double));
-	receive5_7E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1), sizeof(double));
-	receive6_2E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1), sizeof(double));
-	receive6_4E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1), sizeof(double));
-	receive6_6E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1), sizeof(double));
-	receive6_8E2[nl[n]] = (double *)calloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1), sizeof(double));
+	receive5_1E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	receive5_3E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	receive5_5E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	receive5_7E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
+	receive6_2E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	receive6_4E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	receive6_6E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
+	receive6_8E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_5) + 2 * D2) *(BS_1 / (1 + ref1_5) + 2 * D1) * sizeof(double));
 	#endif
 	#endif
-	send_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	send_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	send_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	send_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	send_E3_corn1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	send_E3_corn2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	send_E3_corn3[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	send_E3_corn4[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	send_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	send_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	send_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	send_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	send_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	send_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	send_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	send_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	send_E2_corn5[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	send_E2_corn6[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	send_E2_corn7[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	send_E2_corn8[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	send_E1_corn9[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	send_E1_corn10[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	send_E1_corn11[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	send_E1_corn12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	receive_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	receive_E3_corn1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn3[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn4[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E2_corn5[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn6[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn7[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn8[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E1_corn9[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn10[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn11[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	tempreceive_E3_corn1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn3[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn4[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	tempreceive_E3_corn1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn3[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn4[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn6[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn7[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn8[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E1_corn9[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn10[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn11[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	tempreceive_E2_corn5[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn6[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn7[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn8[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E1_corn9[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn10[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn11[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
 	#if(N_LEVELS>1)
-	receive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	receive_E3_corn1_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn2_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn3_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn4_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E2_corn5_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn6_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn7_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn8_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E1_corn9_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn10_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn11_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn12_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	receive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	receive_E3_corn1_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn2_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn3_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn4_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E2_corn5_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn6_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn7_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn8_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E1_corn9_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn10_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn11_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn12_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	tempreceive_E3_corn1_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn2_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn3_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn4_1[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	tempreceive_E3_corn1_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn2_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn3_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn4_1[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn6_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn7_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn8_1[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E1_corn9_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn10_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn11_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn12_1[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	tempreceive_E2_corn5_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn6_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn7_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn8_1[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E1_corn9_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn10_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn11_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn12_1[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	tempreceive_E3_corn1_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn2_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn3_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	tempreceive_E3_corn4_2[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	tempreceive_E3_corn1_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn2_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn3_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	tempreceive_E3_corn4_2[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	tempreceive_E2_corn5_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn6_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn7_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E2_corn8_2[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	tempreceive_E1_corn9_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn10_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn11_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	tempreceive_E1_corn12_2[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	tempreceive_E2_corn5_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn6_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn7_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E2_corn8_2[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	tempreceive_E1_corn9_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn10_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn11_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	tempreceive_E1_corn12_2[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	receive_E3_corn1_12[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn2_12[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn3_12[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn4_12[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	receive_E3_corn1_12[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn2_12[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn3_12[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn4_12[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_12[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn6_12[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn7_12[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn8_12[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E1_corn9_12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn10_12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn11_12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn12_12[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E2_corn5_12[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn6_12[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn7_12[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn8_12[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E1_corn9_12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn10_12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn11_12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn12_12[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
-	receive_E3_corn1_22[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn2_22[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn3_22[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
-	receive_E3_corn4_22[nl[n]] = (double *)calloc((BS_3 + 2 * D3), sizeof(double));
+	receive_E3_corn1_22[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn2_22[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn3_22[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
+	receive_E3_corn4_22[nl[n]] = (double *)malloc((BS_3 + 2 * D3) * sizeof(double));
 	#if(N3G>0)
-	receive_E2_corn5_22[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn6_22[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn7_22[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E2_corn8_22[nl[n]] = (double *)calloc((BS_2 + 2 * D2), sizeof(double));
-	receive_E1_corn9_22[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn10_22[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn11_22[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
-	receive_E1_corn12_22[nl[n]] = (double *)calloc((BS_1 + 2 * D1), sizeof(double));
+	receive_E2_corn5_22[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn6_22[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn7_22[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E2_corn8_22[nl[n]] = (double *)malloc((BS_2 + 2 * D2) * sizeof(double));
+	receive_E1_corn9_22[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn10_22[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn11_22[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
+	receive_E1_corn12_22[nl[n]] = (double *)malloc((BS_1 + 2 * D1) * sizeof(double));
 	#endif
 	#endif
 	#endif

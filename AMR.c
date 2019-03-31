@@ -1157,8 +1157,9 @@ void balance_load(void){
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps, count_gpu[N_GPU];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	rm_order2();
+	//rm_order2();
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
+
 	if (numtasks_local > NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
 	do{
 		count++;
@@ -1363,6 +1364,7 @@ void balance_load(void){
 
 	bound_prim(p, 1);
 	//Copy the B-field to make the code resilient against two bit ECC errors
+	#if(GPU_ENABLED)
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel private(i, j, z, k)
 		{
@@ -1377,7 +1379,6 @@ void balance_load(void){
 		}
 		cudaMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]])*sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 	}
-	#if(GPU_ENABLED)
 	GPU_boundprim(1);
 	#endif
 	free(n_ord_total_RM_t);
@@ -1998,6 +1999,8 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 				b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 		}
 	}
+	//fprintf(stderr, "hallo3 \n");
+
 }
 
 void pre_refine(void){
@@ -2215,16 +2218,13 @@ int refine(int n){
 void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
-
 	set_corners();
-
 	#if(N_LEVELS_1D_INT>0)
 	average_grid();
 	#endif
 
 	//Set boundary conditions
 	bound_prim(p, 1);
-
 	#if(GPU_ENABLED || GPU_DEBUG)
 	MPI_Barrier(mpi_cartcomm);
 	GPU_boundprim(1);
@@ -2319,7 +2319,7 @@ void check_refcrit(void){
 				//	|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 14) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 30) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 62)){
 				//	block[n_ord_total[n]][AMR_TAG] = 0;
 				//}
-				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] == 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
+				if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
 					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
@@ -2364,7 +2364,7 @@ void check_refcrit(void){
 
 	//First make sure all nodes have the same ref_val
 	if (one_block_refined == 1) synch_refcrit();
-	
+
 	count = 0;
 	gpu_counter = 0;
 	do{
@@ -2396,7 +2396,7 @@ void check_refcrit(void){
 			for (n = 0; n < n_active_total; n++){
 				//do not derefine if required for proper nesting
 				for (i = AMR_NBR1; i <= AMR_CORN12; i++){
-					if (block[n_ord_total[n]][i] == NB){
+					if (block[n_ord_total[n]][i] == NB && block[n_ord_total[n]][AMR_PARENT]>=0){
 						if (block[n_ord_total[n]][i + (AMR_NBR1P - AMR_NBR1)] >= 0 && block[block[n_ord_total[n]][i + (AMR_NBR1P - AMR_NBR1)]][AMR_TAG] >= 1){
 							if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] != 2){
 								tag2 = 1;
@@ -2404,7 +2404,7 @@ void check_refcrit(void){
 							block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 2;
 						}
 					}
-					else{
+					else if(block[n_ord_total[n]][AMR_PARENT] >= 0) {
 						if (block[n_ord_total[n]][i] >= 0 && block[block[n_ord_total[n]][i]][AMR_TAG] >= 1){
 							if (block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] != 2){
 								tag2 = 1;

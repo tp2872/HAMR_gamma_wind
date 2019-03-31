@@ -107,7 +107,6 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 			set_iprobe(1, &flag);
 		} while (flag);
 	}
-
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
 	#if(TRANS_BOUND && NB_3==1)
