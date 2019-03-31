@@ -1821,7 +1821,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	double b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8;
 	double b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8;
 	int set_1, set_2,set_3,set_4,set_5,set_6;
-	int ref_1, ref_2, ref_3;
+	int ref_1=0, ref_2=0, ref_3=0;
 	double *pointer1, *pointer2, *pointer3, *pointer4, *pointer5, *pointer6;
 
 	//Use divergence free prolongation to handle boundaries
@@ -1831,7 +1831,6 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	n_rec4 = -1;
 	n_rec5 = -1;
 	n_rec6 = -1;
-
 	if (block[n][AMR_NBR2_1] >= 0) set_ref(n, block[n][AMR_NBR2_1], &ref_1, &ref_2, &ref_3);
 	if (offset_2 / (2 - ref_2) == 0 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR2] >= 0 && block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR2_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer4 = receive4_5[nl[n]]; n_rec4 = AMR_NBR2_1; }
 	if (block[n][AMR_NBR2_2] >= 0) set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
@@ -1873,7 +1872,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_4[nl[n]]; n_rec6 = 1; }
 	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_6[nl[n]]; n_rec6 = 1; }
 	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_8[nl[n]]; n_rec6 = 1; }
-	
+
 	isize = BS_1;
 	jsize = BS_2;
 	zsize = BS_3;
@@ -2216,6 +2215,7 @@ int refine(int n){
 void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
+
 	set_corners();
 
 	#if(N_LEVELS_1D_INT>0)
@@ -2224,6 +2224,7 @@ void post_refine(void){
 
 	//Set boundary conditions
 	bound_prim(p, 1);
+
 	#if(GPU_ENABLED || GPU_DEBUG)
 	MPI_Barrier(mpi_cartcomm);
 	GPU_boundprim(1);
@@ -2261,7 +2262,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.05 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.025 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2314,8 +2315,12 @@ void check_refcrit(void){
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] == 0) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 6)
-					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 14) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 30) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 62)){
+				//if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] == 0) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 6)
+				//	|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 14) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 30) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 62)){
+				//	block[n_ord_total[n]][AMR_TAG] = 0;
+				//}
+				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] == 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
+					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
@@ -2712,7 +2717,7 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<150) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO];
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] > ref_val) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO];
 		}
 	}
 	#endif

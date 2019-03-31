@@ -67,7 +67,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
   double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
   double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
   int m;
-  int k, flag, dofloor;
+  int k, flag, dofloor=0;
   struct of_state q;
   struct of_geom geom;
 

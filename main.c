@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 {
 	double tdump, tlog;
 	int nfailed = 0;
-	int i, j, z, u, n;
+	int i, j, z, u, n, l;
 	double r, th, phi, X[NDIM];
 	clock_t begin2;
 	nstep = 0;
@@ -78,6 +78,10 @@ int main(int argc, char *argv[])
 		#if(DEREFINE_POLE)
 		derefine_pole();
 		#endif
+		for (l = 0; l < N_LEVELS_3D; l++) {
+			//init();
+			//check_refcrit();
+		}	
 	}
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	average_grid();
@@ -324,12 +328,12 @@ void set_arrays(int n)
 	#if(LEER)
 	V[nl[n]] = (double(*)[6])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G)*sizeof(double[6]));
 	#endif
-	dq[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPR]));
+	dq[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 	F1[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 	F2[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 	F3[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
 	pflag[nl[n]] = (int(*))calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(int));
-	#if(CPU_OPENMP)
+	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
 	dE[nl[n]] = (double(*)[2][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[2][NDIM][NDIM]));
 	#endif
@@ -342,10 +346,10 @@ void set_arrays(int n)
 	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG][NDIM][NDIM]));
 	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPG]));
 	#else
-	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NDIM][NDIM][NDIM]));
-	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NPG][NDIM][NDIM]));
-	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPG][NDIM][NDIM]));
-	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G),sizeof(double[NPG]));
+	conn[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
+	gcov[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double[NPG][NDIM][NDIM]));
+	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPG][NDIM][NDIM]));
+	gdet[nl[n]] = (double(*)[NPG])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPG]));
 	#endif
 	#if(HLLC)
 	Mud[nl[n]] = (double(*)[NDIM][NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM][NDIM][NDIM]));
@@ -353,11 +357,11 @@ void set_arrays(int n)
 	#endif
 	#if(ZIRI_DUMP)
 	dump_buffer[nl[n]] = (double(*))calloc(BS_1 * BS_2 * BS_3 * 13 *sizeof(double));
-	dxdxp_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
-	dxpdx_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) ,sizeof(double[NDIM][NDIM]));
+	dxdxp_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double[NDIM][NDIM]));
+	dxpdx_z[nl[n]] = (double(*)[NDIM][NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) , sizeof(double[NDIM][NDIM]));
 	#endif
 	#if (ELLIPTICAL2)
-	dU_s[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G),sizeof(double[NPR]));
+	dU_s[nl[n]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G), sizeof(double[NPR]));
 	#endif
 	alloc_bounds_CPU(n);
 }
@@ -657,6 +661,8 @@ void alloc_bounds_CPU(int n){
 	receive6_8flux2[nl[n]] = (double *)calloc(NPR*(BS_2 / (1 + ref2_5) + 2 * N2G) *(BS_1 / (1 + ref1_5)), sizeof(double));
 	#endif
 	#endif
+	#endif
+	#if(CPU_OPENMP || 1)
 	send1_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G)*(BS_3 + 2 * N3G), sizeof(double));
 	send2_E[nl[n]] = (double *)calloc(2 * (BS_2 + 2 * N2G) *(BS_3 + 2 * N3G), sizeof(double));
 	send3_E[nl[n]] = (double *)calloc(2 * (BS_1 + 2 * N1G) *(BS_3 + 2 * N3G), sizeof(double));
@@ -925,7 +931,7 @@ void free_arrays(int n){
 	free(F2[nl[n]]);
 	free(F3[nl[n]]);
 	free(pflag[nl[n]]);
-	#if(GPU_DEBUG || CPU_OPENMP)
+	#if(GPU_DEBUG || CPU_OPENMP || 1)
 	#if(STAGGERED)
 	free(dE[nl[n]]);
 	#endif
@@ -1078,6 +1084,8 @@ void free_bound_cpu(int n){
 	free(receive6_8flux2[nl[n]]);
 	#endif
 	#endif
+	#endif
+	#if(CPU_OPENMP || 1)
 	free(send1_E[nl[n]]);
 	free(send2_E[nl[n]]);
 	free(send3_E[nl[n]]);

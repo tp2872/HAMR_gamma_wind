@@ -3,23 +3,12 @@
 
 __device__ double slope_lim(double y1, double y2, double y3);
 
-__device__ double slope_lim(double y1, double y2, double y3)
+__device__ double slope_lim(double C, double y1, double y2, double y3)
 {
-	double Dqm, Dqp, Dqc, s;
-	/* woodward, or monotonized central, slope limiter */
-	Dqm = (2.0)*(y2 - y1);
-	Dqp = (2.0)*(y3 - y2);
-	Dqc = 0.5*(y3 - y1);
-	s = Dqm*Dqp;
-	if (s <= 0.) return 0.;
-	else {
-		if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
-			return(Dqm);
-		else if (fabs(Dqp) < fabs(Dqc))
-			return(Dqp);
-		else
-			return(Dqc);
-	}
+	double s;
+	//s = y3*C + y1*(1.0 - C) -0.5*C*(1.0-C)*((y3-y2)-(y2-y1));
+	s = (C*(y3 - y1)*0.5 + 0.5*C*C*((y3 - y2) - (y2 - y1)))*C/fabs(C);
+	return (0.5*(y3-y1));
 }
 
 __global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int jsize2, int zsize2, double *  pv, double *  ps, double *  send, const  double* __restrict__ gdet_GPU, int work_size)
@@ -691,18 +680,18 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 						avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 						avg[k] += 0.125*(prim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 						if (ii == 0){
-							dq1[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)* (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
+							dq1[k] = slope_lim(0.25*(double)(is), avg[k], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)* (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
 						}
 						else{
-							dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[k]);
+							dq1[k] = slope_lim(0.25*(double)(is), receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[k]);
 						}
 					}
 					else{
-						dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii+1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
+						dq1[k] = slope_lim(0.25*(double)(is), receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
 					}
 				}
-				dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij - ref_2)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij + ref_2)*(1 + 2 * ref_3) + (iz)]);
-				dq3[k] = slope_lim(receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)]);
+				dq2[k] = slope_lim(0.25*(double)(js), receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij - ref_2)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij + ref_2)*(1 + 2 * ref_3) + (iz)]);
+				dq3[k] = slope_lim(0.25*(double)(zs), receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)]);
 			}
 			for (k = 0; k < 3; k++){
 				dq1[(k + NPR)] = 0.0;
@@ -713,18 +702,18 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 						avg[(k + NPR)] += 0.25*(psim[k*(ksize)+(N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 1))] +
 							psim[k*(ksize)+(ii / (NG - 1) + N1G + (NG - 1 - ii) / (NG - 1)*(BS_1 - 2))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 1))]);
 						if (ii == 0){
-							dq1[(k + NPR)] = slope_lim(avg[(k + NPR)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)* (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
+							dq1[(k + NPR)] = slope_lim(0.25*(double)(is), avg[(k + NPR)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)* (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
 						}
 						else{
-							dq1[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[(k + NPR)]);
+							dq1[(k + NPR)] = slope_lim(0.25*(double)(is), receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], avg[(k + NPR)]);
 						}
 					}
 					else{
-						dq1[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii+1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
+						dq1[(k + NPR)] = slope_lim(0.25*(double)(is), receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii - 1) * (1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + (ii + 1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)]);
 					}
 				}
-				dq2[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij - ref_2)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij + ref_2)*(1 + 2 * ref_3) + (iz)]);
-				dq3[(k + NPR)] = slope_lim(receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)]);
+				dq2[(k + NPR)] = slope_lim(0.25*(double)(js), receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij - ref_2)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij + ref_2)*(1 + 2 * ref_3) + (iz)]);
+				dq3[(k + NPR)] = slope_lim(0.25*(double)(zs), receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz)], receive_local[(k + NPR)*(1 + 2 * ref_2)*(1 + 2 * ref_3)*(i2 - i1) + ii*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij)*(1 + 2 * ref_3) + (iz + ref_3)]);
 			}
 			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 			for (k = 0; k < NPR; k++){
@@ -845,18 +834,18 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 						avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 						avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3)]);
 						if (ij == 0){
-							dq2[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)* (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
+							dq2[k] = slope_lim(0.25*(double)(js), avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)* (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
 						}
 						else{
-							dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[k]);
+							dq2[k] = slope_lim(0.25*(double)(js), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[k]);
 						}
 					}
 					else{
-						dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
+						dq2[k] = slope_lim(0.25*(double)(js), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
 					}
 				}
-				dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii - ref_1)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + (iz)]);
-				dq3[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz + ref_3)]);
+				dq1[k] = slope_lim(0.25*(double)(is), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii - ref_1)*(1 + 2 * ref_3) + (iz)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + (iz)]);
+				dq3[k] = slope_lim(0.25*(double)(zs), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz + ref_3)]);
 			}
 			for (k = 0; k < 3; k++){
 				dq2[(NPR + k)] = 0.0;
@@ -867,18 +856,18 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 						avg[NPR + k] += 0.25*(psim[k * (ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 2))*isize + (N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 1))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 0))] +
 							psim[k * (ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 2))*isize + (ij / (NG - 1) + N2G + (NG - 1 - ij) / (NG - 1)*(BS_2 - 2))*(BS_3 + 2 * N3G) + (zcurr - zcurr % (1 + ref_3) + ref_3*(k == 0))]);
 						if (ij == 0){
-							dq2[NPR + k] = slope_lim(avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)* (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
+							dq2[NPR + k] = slope_lim(0.25*(double)(js), avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)* (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
 						}
 						else{
-							dq2[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[(NPR + k)]);
+							dq2[NPR + k] = slope_lim(0.25*(double)(js), receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], avg[(NPR + k)]);
 						}
 					}
 					else{
-						dq2[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij+1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
+						dq2[NPR + k] = slope_lim(0.25*(double)(js), receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + (ij + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ii*(1 + 2 * ref_3) + (iz)]);
 					}
 				}
-				dq1[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii - ref_1)*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + (iz)]);
-				dq3[(NPR + k)] =  slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz + ref_3)]);
+				dq1[(NPR + k)] = slope_lim(0.25*(double)(is), receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii - ref_1)*(1 + 2 * ref_3) + (iz)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii + ref_1)*(1 + 2 * ref_3) + (iz)]);
+				dq3[(NPR + k)] = slope_lim(0.25*(double)(zs), receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz - ref_3)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + iz], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_3)*(j2 - j1) + ij*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii)*(1 + 2 * ref_3) + (iz + ref_3)]);
 			}			
 			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 			for (k = 0; k < NPR; k++){
@@ -996,18 +985,18 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 						avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 						avg[k] += 0.125*(prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] + prim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1)*isize + (jcurr - jcurr % (1 + ref_2) + ref_2)*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 						if (iz == 0){
-							dq3[k] = slope_lim(avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)* (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
+							dq3[k] = slope_lim(0.25*(double)(zs), avg[k], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)* (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
 						}
 						else{
-							dq3[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[k]);
+							dq3[k] = slope_lim(0.25*(double)(zs), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[k]);
 						}
 					}
 					else{
-						dq3[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz+1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
+						dq3[k] = slope_lim(0.25*(double)(zs), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
 					}
 				}
-				dq1[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii - ref_1)*(1 + 2 * ref_2) + (ij)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + (ij)]);
-				dq2[k] = slope_lim(receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij - ref_2)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij + ref_2)]);
+				dq1[k] = slope_lim(0.25*(double)(is), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii - ref_1)*(1 + 2 * ref_2) + (ij)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + (ij)]);
+				dq2[k] = slope_lim(0.25*(double)(js), receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij - ref_2)], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[k*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij + ref_2)]);
 			}
 
 			for (k = 0; k < 3; k++){
@@ -1019,18 +1008,18 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 						avg[NPR + k] += 0.25*(psim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 0))*(BS_3 + 2 * N3G) + (N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 1))] +
 							psim[k*(ksize)+(icurr - icurr % (1 + ref_1) + ref_1*(k == 1))*isize + (jcurr - jcurr % (1 + ref_2) + ref_2*(k == 0))*(BS_3 + 2 * N3G) + (iz / (NG - 1) + N3G + (NG - 1 - iz) / (NG - 1)*(BS_3 - 2))]);
 						if (iz == 0){
-							dq3[NPR + k] = slope_lim(avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)* (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
+							dq3[NPR + k] = slope_lim(0.25*(double)(zs), avg[NPR + k], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)* (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
 						}
 						else{
-							dq3[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[NPR + k]);
+							dq3[NPR + k] = slope_lim(0.25*(double)(zs), receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], avg[NPR + k]);
 						}
 					}
 					else{
-						dq3[NPR + k] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz+1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
+						dq3[NPR + k] = slope_lim(0.25*(double)(zs),receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz - 1) * (1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + (iz + 1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij]);
 					}
 				}
-				dq1[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii - ref_1)*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij]);
-				dq2[(NPR + k)] = slope_lim(receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij - ref_2)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij + ref_2)]);
+				dq1[(NPR + k)] = slope_lim(0.25*(double)(is),receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii - ref_1)*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii + ref_1)*(1 + 2 * ref_2) + ij]);
+				dq2[(NPR + k)] = slope_lim(0.25*(double)(js),receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij - ref_2)], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + ii*(1 + 2 * ref_2) + ij], receive_local[(NPR + k)*(1 + 2 * ref_1)*(1 + 2 * ref_2)*(z2 - z1) + iz*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii)*(1 + 2 * ref_2) + (ij + ref_2)]);
 			}
 			//for (k = 0; k < NPR + 3; k++) dq1[k] = dq2[k] = dq3[k] = 0.;
 			for (k = 0; k < NPR; k++){
