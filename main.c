@@ -80,12 +80,12 @@ int main(int argc, char *argv[])
 		#endif
 		for (l = 0; l < N_LEVELS_3D; l++) {
 			init();
+			#if(N_LEVELS_1D_INT>0 && D3>0)
+			average_grid();
+			#endif
 			check_refcrit();
 		}	
 	}
-	#if(N_LEVELS_1D_INT>0 && D3>0)
-	average_grid();
-	#endif
 
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )

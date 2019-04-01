@@ -22,7 +22,7 @@ Physical Parameters section
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (0.)
+#define TILT_ANGLE (60.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)

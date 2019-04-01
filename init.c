@@ -1056,6 +1056,7 @@ void set_mag(void){
 				V[2] = E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
 				V[3] = E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];
 				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
+				///fprintf(stderr,"test: %f \n", V[2]/ E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2]);
 				//rotate_vector(V, pos_new, &r, &th, &phi, tilt);
 				//coord_transform(V, n_ord[n], i, j, z);
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
@@ -1386,7 +1387,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	double bl_gcov[NDIM][NDIM], bl_gcon[NDIM][NDIM], bl_gcon1[NDIM][NDIM], bl_gcon2[NDIM][NDIM], bl_gcov1[NDIM][NDIM], bl_gcov2[NDIM][NDIM], dxdxp[NDIM][NDIM], dxpdx[NDIM][NDIM], gdet1, gdet2;
 	double V_tmp[NDIM], X[NDIM], X_tmp[NDIM], pos_new_tmp[NDIM];
 	double theta_solve, theta_old, derivative;
-	double delta_X2 = 0.05*M_PI / (double)N2*2. / M_PI;
+	double delta_X2 = 0.1*M_PI / (double)N2*2. / M_PI;
 	int step = 0;
 	int i, j, k, l;
 	for (i = 1; i < NDIM; i++){
@@ -1398,7 +1399,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	X[1] = pow(log(*r - RB), 1. / RADEXP);
 	X[2] = 2. / M_PI*(*th) - 1.;
 	X[3] = *phi;
-	do{
+	/*do{
 		bl_coord(X, &(*r), &(theta_solve), &(*phi));
 		theta_solve -= *th;
 		theta_old = theta_solve;
@@ -1408,7 +1409,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		derivative = (theta_solve - theta_old) / delta_X2;
 		X[2] -= theta_solve / derivative;
 		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N2/20. && step<30);
+	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);*/
 	kerr_gcov_func(*r, *th, bl_gcov);
 	invert_matrix(bl_gcov, bl_gcon);
 	dxdxp_func(X, dxdxp);
@@ -1446,7 +1447,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 	X[2] = 2. / M_PI*pos_new[2] - 1.;
 	X[3] = pos_new[3];
 	step = 0;
-	do{
+	/*do{
 		bl_coord(X, &(pos_new[1]), &(theta_solve), &(pos_new[3]));
 		theta_solve -= pos_new[2];
 		theta_old = theta_solve;
@@ -1456,7 +1457,7 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 		derivative = (theta_solve - theta_old) / delta_X2;
 		X[2] -= theta_solve / derivative;
 		step++;
-	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);
+	} while (fabs(theta_solve)>2.*M_PI / (double)N2/10. && step<30);*/
 	kerr_gcov_func(pos_new[1], pos_new[2], bl_gcov);
 	invert_matrix(bl_gcov, bl_gcon);
 
@@ -1475,7 +1476,6 @@ void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th,
 			}
 		}
 	}
-	gdet2 = gdet_func(bl_gcov2);
 	V[1] = (X_tmp[1] * sin(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * sin(pos_new[2])*sin(pos_new[3]) + X_tmp[3] * cos(pos_new[2]))/ sqrt(bl_gcon2[1][1]);
 	V[2] = (X_tmp[1] * cos(pos_new[2])*cos(pos_new[3]) + X_tmp[2] * cos(pos_new[2])*sin(pos_new[3]) - X_tmp[3] * sin(pos_new[2]))/ sqrt(bl_gcon2[2][2]);
 	V[3] = (-X_tmp[1] * sin(pos_new[3]) + X_tmp[2] * cos(pos_new[3]))/ sqrt(bl_gcon2[3][3]);

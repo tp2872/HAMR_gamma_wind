@@ -2043,6 +2043,114 @@ __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
 	return(dot(q.bcon, q.bcov));
 }
 
+__device__ double interp(double y1, double y2, double y3)
+{
+	double Dqm, Dqp, Dqc, s;
+	/* woodward, or monotonized central, slope limiter */
+	Dqm = (2.0)*(y2 - y1);
+	Dqp = (2.0)*(y3 - y2);
+	Dqc = 0.5*(y3 - y1);
+	s = Dqm*Dqp;
+	if (s <= 0.) return 0.;
+	else {
+		if (fabs(Dqm) < fabs(Dqp) && fabs(Dqm) < fabs(Dqc))
+			return(Dqm);
+		else if (fabs(Dqp) < fabs(Dqc))
+			return(Dqp);
+		else
+			return(Dqc);
+	}
+}
+
+__global__ void interpolate(double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int POLE_1, int POLE_2)
+{
+	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3 + 2 * D3)*(BS_2 + 2 * D2);
+	zcurr = (global_id % (isize)) % (BS_3 + 2 * D3);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3);
+	icurr = (global_id - (jcurr*(BS_3 + 2 * D3) + zcurr)) / (isize);
+	zcurr += (N3G - 1)*D3;
+	jcurr += (N2G - 1)*D2;
+	icurr += (N1G - 1)*D1;
+	if (global_id<(BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) k = 1;
+	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int idel, jdel, zdel;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int zsize = 1, zlevel = 0, zoffset = 0, z1 = 0, z2 = 0, z3 = 0, z4 = 0, z5 = 0;
+	double x1, x2, x3, x4, x5;
+	double temp, result;
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
+	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)pow(2.0, (double)zlevel);
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	if (zdel) {
+		if (zcurr == N3G - D3) {
+			z1 = -2 * zdel;
+			z2 = -1 * zdel;
+			z3 = 0;
+			z4 = 1 * zdel*zsize;
+			z5 = 2 * zdel*zsize;
+		}
+		else if (zcurr - zoffset == N3G) {
+			z1 = -zoffset - 2 * zdel;
+			z2 = -zoffset - 1 * zdel;
+			z3 = -zoffset;
+			z4 = -zoffset + 1 * zdel*zsize;
+			z5 = -zoffset + 2 * zdel*zsize;
+		}
+		else if (zcurr - zoffset == N3G + zdel*zsize) {
+			z1 = -zoffset - 1 * zdel*zsize - 1 * zdel;
+			z2 = -zoffset - 1 * zdel*zsize;
+			z3 = -zoffset;
+			z4 = -zoffset + 1 * zdel*zsize;
+			z5 = -zoffset + 2 * zdel*zsize;
+		}
+		else if (zcurr == BS_3 + N3G) {
+			z1 = -2 * zdel*zsize;
+			z2 = -1 * zdel*zsize;
+			z3 = 0;
+			z4 = 1 * zdel;
+			z5 = 2 * zdel;
+		}
+		else if (zcurr - zoffset == BS_3 + N3G - zdel*zsize) {
+			z1 = -zoffset - 2 * zdel*zsize;
+			z2 = -zoffset - 1 * zdel*zsize;
+			z3 = -zoffset;
+			z4 = -zoffset + zdel*zsize;
+			z5 = -zoffset + zdel*zsize + 1 * zdel;
+		}
+		else {
+			z1 = -zoffset - 2 * zdel*zsize;
+			z2 = -zoffset - 1 * zdel*zsize;
+			z3 = -zoffset;
+			z4 = -zoffset + 1 * zdel*zsize;
+			z5 = -zoffset + 2 * zdel*zsize;
+		}
+	}
+
+	if (k == 1) {
+		#pragma unroll 9	
+		for (k = 0; k<NPR; k++) {
+			x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x3 = p[k*(ksize)+global_id + z3];
+			x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			temp = 0.5*interp(x2, x3, x4);
+			dq1[k*(ksize)+global_id] = x3 - temp;
+			dq2[k*(ksize)+global_id] = x3 + temp;
+		}
+	}
+}
+
 __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int lim, int number, const  double* __restrict__  V, int POLE_1, int POLE_2)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;

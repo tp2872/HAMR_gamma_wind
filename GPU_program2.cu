@@ -30,11 +30,6 @@ __global__ void packsend1(int i1, int i2, int j1, int j2, int z1, int z2, int js
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	if (global_id < work_size){
@@ -62,11 +57,6 @@ __global__ void packsend2(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 
@@ -95,12 +85,7 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int jcurr = global_id % (j2 - j1) + j1 + N2G;
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
-	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int zsize = 1, zlevel = 0, u;
 
@@ -146,11 +131,6 @@ __global__ void packsendaverage1(int i1, int i2, int j1, int j2, int z1, int z2,
 	int zcurr = global_id % ((z2 - z1) / (1 + ref_3))*(1 + ref_3) + z1 + N3G;
 	int jcurr = (global_id - global_id % ((z2 - z1) / (1 + ref_3))) / ((z2 - z1) / (1 + ref_3))*(1 + ref_2) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	if (global_id < work_size){
@@ -195,11 +175,6 @@ __global__ void packsendaverage2(int i1, int i2, int j1, int j2, int z1, int z2,
 	int zcurr = global_id % ((z2 - z1) / (1 + ref_3))*(1 + ref_3) + z1 + N3G;
 	int icurr = (global_id - global_id % ((z2 - z1) / (1 + ref_3))) / ((z2 - z1) / (1 + ref_3))*(1 + ref_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
@@ -244,11 +219,6 @@ __global__ void packsendaverage3(int i1, int i2, int j1, int j2, int z1, int z2,
 	int jcurr = global_id % ((j2 - j1) / (1 + ref_2))*(1 + ref_2) + j1 + N2G;
 	int icurr = (global_id - global_id % ((j2 - j1) / (1 + ref_2))) / ((j2 - j1) / (1 + ref_2))*(1 + ref_1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 
 	if (global_id < work_size){
@@ -294,11 +264,6 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
@@ -394,12 +359,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
-	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor = 1.;
 	if (global_id < work_size){
@@ -515,11 +475,6 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 	int jcurr = global_id % (j2 - j1) + j1 + N2G;
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
@@ -615,11 +570,6 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int jcurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + j1 + N2G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg[NPR + 3], dq1[NPR + 3], dq2[NPR + 3], dq3[NPR + 3];
 	double receive_local[(NPR + 3)*NG*(1 + 2 * REF_2)*(1 + 2 * REF_3)];
@@ -768,12 +718,7 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 	int isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	int zcurr = global_id % (z2 - z1) + z1 + N3G;
 	int icurr = (global_id - global_id % (z2 - z1)) / (z2 - z1) + i1 + N1G;
-	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg[NPR + 3], dq1[NPR + 3], dq2[NPR + 3], dq3[NPR + 3];
 	double receive_local[(NPR + 3)*NG*(1 + 2 * REF_1)*(1 + 2 * REF_3)];
@@ -922,11 +867,6 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 	int jcurr = global_id % (j2 - j1) + j1 + N2G;
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#if(NSY)
-	int fix_mem2 = fix_mem1;
-	#else
-	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double avg[NPR + 3], dq1[NPR + 3], dq2[NPR + 3], dq3[NPR + 3];
 	double receive_local[(NPR + 3)*NG*(1 + 2 * REF_1)*(1 + 2 * REF_2)];
