@@ -160,28 +160,12 @@ void init_thindisk()
 
 	/* for magnetic field */
 	double rho_av, rhomax, umax, beta, bsq_ij, bsq_max, norm, q, beta_act;
-	double lfish_calc(double rmax);
 
 	/* disk parameters (use fishbone.m to select new solutions) */
-	//a = 0.9375 ;
-	//rin = 36.;
-	//rmax = 73.9672;
-	//rin = 5.*36. ;
-	//rmax = 361.95;
-
-
-	//rmax = 73.962 ;
-
 	double temp = a;
 	a = 0.9375;
 	rin = 6.5;
-	//rmax = 14.6145;
 	rmax = 125.;
-	//rmax = 14.6165;
-	///rin = 12.;
-	//rmax = 14.616;
-	//rmax = 24.;
-	l = lfish_calc(rmax);
 	kappa = 1.e-3;
 	beta = 100.;
 
@@ -205,7 +189,7 @@ void init_thindisk()
 	DTi = 100.0; 	/* image file frequ., in units of M */
 	DTr = 5.0 * 1000.; 	/* restart file frequ., in timesteps */
 
-						/* start diagnostic counters */
+	/* start diagnostic counters */
 	dump_cnt = 0;
 	image_cnt = 0;
 	rdump_cnt = 0;
@@ -250,7 +234,6 @@ void init_thindisk()
 			L = 1.;
 			rhoc = 1./r*pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
 			if (r>rmax) rhoc /= exp(sqrt(r-rmax));
-			//if (r<rin) rhoc *= pow(r /rin, 4.);
 			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
 
 			/* regions outside torus */
@@ -293,7 +276,6 @@ void init_thindisk()
 				V[1] = ur;
 				V[2] = uh;
 				V[3] = up;
-				//th = (th - M_PI / 2.) *(fractheta*0.5) + M_PI / 2.;
 				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
@@ -959,7 +941,7 @@ void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 0., umax = 0.;
 	int i100 = 0;
-	double rho_av, q_r, q_theta, q_phi, beta = 5.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 5.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
@@ -1021,27 +1003,23 @@ void set_mag(void){
 	}
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3){
-			/* field-in-disk version */			
-			rho_av = 0.25*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + D3)][RHO]);
-			q_r = rho_av / rhomax - 0.0005;
-			rho_av = 0.25*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + D3)][RHO]);
-			q_theta = rho_av / rhomax-0.0005;
-			rho_av = 0.25*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][RHO] + p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j + D2, z)][RHO]);
-			q_phi = rho_av / rhomax - 0.05;
-			if (q_theta > 0.){
+			/* Cell centered vector potential */					
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
+
+			if (q > 0.){
 				coord(n_ord[n],i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
 				#if(WHICHPROBLEM==THIN_PROBLEM)
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q_theta*pow(r,2.0); //Toroidal
-				//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q_phi;
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
+				//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q_phi, 2.0) * pow(r, 3.0); //MAD
+				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
 				#endif
 			}
 			else{
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = 0.0;
 			}
-			if (q_theta > 0.){
+			if (q > 0.){
 				#if (TILTED)
 				coord(n_ord[n],i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
@@ -1056,9 +1034,6 @@ void set_mag(void){
 				V[2] = E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
 				V[3] = E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];
 				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
-				///fprintf(stderr,"test: %f \n", V[2]/ E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2]);
-				//rotate_vector(V, pos_new, &r, &th, &phi, tilt);
-				//coord_transform(V, n_ord[n], i, j, z);
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
@@ -1067,15 +1042,14 @@ void set_mag(void){
 		}
 	}
 
-	#if (TILTED)
-	//for (n = 0; n < n_active; n++){
-		//ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
-			//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z - D3)][1]);
-			//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z - D3)][2]);
-			//E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.25*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j - D2, z)][3]);
-		//}
-	//}
-	#endif
+	//Transform from cell centered vector potential to edge centered vector potential
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.25*(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + D3)][1]);
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.25*(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][2] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][2] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + D3)][2]);
+			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.25*(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][3] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][3] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j + D2, z)][3]);
+		}
+	}
 
 	/* now differentiate to find cell-centered B,
 	and begin normalization */
@@ -1092,22 +1066,18 @@ void set_mag(void){
 	for (n = 0; n < n_active; n++){
 		#if(STAGGERED)
 		//Reset toroidal component of vector potential so that no monopoles occur in initial conditions at the pole
-		//#if(TRANS_BOUND)
 		if(block[n_ord[n]][AMR_NBR1]==-1 || block[n_ord[n]][AMR_POLE]==1 || block[n_ord[n]][AMR_POLE]==3 ){
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][3] = 0.;
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
-
 			}
 		}
 		if (block[n_ord[n]][AMR_NBR3] == -1 || block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][3] = 0.;
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
-
 			}
 		}
-		//#endif
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 			get_geometry(n_ord[n], i, j, z, FACE1, &geom);
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][3]) / (dx[nl[n_ord[n]]][2] * geom.g)
@@ -1161,8 +1131,10 @@ void set_mag(void){
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
 				bsq_max = bsq_ij;
 			}
+			#if(WHICHPROBLEM==THIN_PROBLEM)
 			bsq_sum += bsq_ij* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT];
 			ug_sum += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT];
+			#endif
 		}
 	}
 
@@ -1191,6 +1163,8 @@ void set_mag(void){
 	}
 	norm = sqrt(beta_act / beta);
 	bsq_max = 0.;
+	bsq_sum = 0.;
+	ug_sum = 0.;
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3-1+D3){
 		//ZLOOP3D_MPI{
@@ -1206,6 +1180,10 @@ void set_mag(void){
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			if (bsq_ij > bsq_max && !((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j == 0) && !((block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3) && j == N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]))) bsq_max = bsq_ij;
+			#if(WHICHPROBLEM==THIN_PROBLEM)
+			bsq_sum += bsq_ij * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT];
+			ug_sum += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT];
+			#endif
 		}
 	}
 
@@ -1216,7 +1194,11 @@ void set_mag(void){
 	MPI_Barrier(mpi_cartcomm);
 	#endif
 
+	#if(WHICHPROBLEM==THIN_PROBLEM)
+	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
+	#else
 	beta_act = (gam - 1.)*umax / (0.5*bsq_max);
+	#endif
 	if (rank == 0){
 		fprintf(stderr, "final beta: %g (should be %g)\n", beta_act, beta);
 	}
