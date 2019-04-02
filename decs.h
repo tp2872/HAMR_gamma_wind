@@ -785,7 +785,7 @@ extern double(*restrict dxdxp_z[NB_LOCAL])[NDIM][NDIM];
 extern double(*restrict dxpdx_z[NB_LOCAL])[NDIM][NDIM];
 extern float *array[NB_LOCAL], *array_diag[NB_LOCAL];
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL];
-extern int first_dump, first_rdump, first_gdump;
+extern int first_dump, first_rdump, first_gdump, restart_number;
 
 /*AMR parameters*/
 extern int(*block)[NV];

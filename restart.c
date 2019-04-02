@@ -80,7 +80,7 @@ void restart_write(void)
 		fclose(param);			
 	}
 
-	if (rank == (0 % numtasks)){
+	if (rank == 0){
 		FILE *grid;
 		if (rdump_cnt % 2 == 0) sprintf(filename, "rdumps0/grid");
 		else sprintf(filename, "rdumps1/grid");
@@ -115,25 +115,6 @@ void rdump_block_write(MPI_File *fp, int n)
 	MPI_File_iwrite_all(fp[0], array_rdump[nl[n]], (NPR + NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), MPI_DOUBLE, &req_block_rdump[nl[n]][0]);
 }
 
-void rdump_block_read(FILE *fp, int n)
-{
-	int i, j, z, k;
-	int double_size = sizeof(double);
-
-	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G){
-		PLOOP fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
-		#if(STAGGERED)
-		for (k = 0; k<NDIM; k++) fread(&(ps[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
-		ps[nl[n]][index_3D(n, i, j, z)][1] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
-		ps[nl[n]][index_3D(n, i, j, z)][2] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
-		ps[nl[n]][index_3D(n, i, j, z)][3] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
-		#endif
- 		p[nl[n]][index_3D(n, i, j, z)][B1]*=1.0;
-		p[nl[n]][index_3D(n, i, j, z)][B2]*=1.0;
-		p[nl[n]][index_3D(n, i, j, z)][B3]*=1.0;
-	}
-}
-
 /*Read restart file*/
 int restart_read(void)
 {
@@ -141,12 +122,7 @@ int restart_read(void)
 	char filename[100], dirpath[100];
 	FILE *rdump, *checkfile;
 	int int_size = sizeof(int);
-	int value = 0;
 	checkfile = fopen("rdumps1/checkfile", "rb");
-	if (checkfile != NULL) {
-		fread(&value, int_size, 1, checkfile);
-		fclose(checkfile);
-	}
 
 	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
@@ -154,8 +130,9 @@ int restart_read(void)
 		#if(READ_OLD)
 		num = AMR_coord_linear_old(block[num][AMR_LEVEL], block[num][AMR_COORD1], block[num][AMR_COORD2], block[num][AMR_COORD3]);
 		#endif	
-		if(value==1) sprintf(filename, "rdumps1/rdump%d", num);
-		sprintf(filename, "rdumps0/rdump%d", num);
+		if(restart_number==1) sprintf(filename, "rdumps1/rdump%d", num);
+		else if (restart_number == 0)sprintf(filename, "rdumps0/rdump%d", num);
+		else return 0;
 
 		rdump = fopen(filename, "rb");
 		if (rdump == NULL) {
@@ -166,6 +143,7 @@ int restart_read(void)
 		fclose(rdump);
 	}
 	if (n_active == 0) {
+		if (rank == 0) fprintf(stderr, "No active blocks in rdump file %s\n", filename);
 		return 0;
 	}
 	/*Disable injection of matter after restart for elliptical orbits*/
@@ -196,6 +174,53 @@ int restart_read(void)
 	return 1;
 }
 
+void rdump_block_read(FILE *fp, int n)
+{
+	int i, j, z, k;
+	int double_size = sizeof(double);
+
+	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+		PLOOP fread(&(p[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+		#if(STAGGERED)
+		for (k = 0; k<NDIM; k++) fread(&(ps[nl[n]][index_3D(n, i, j, z)][k]), double_size, 1, fp);
+		ps[nl[n]][index_3D(n, i, j, z)][1] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+		ps[nl[n]][index_3D(n, i, j, z)][2] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+		ps[nl[n]][index_3D(n, i, j, z)][3] /= gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
+		#endif
+		p[nl[n]][index_3D(n, i, j, z)][B1] *= 1.0;
+		p[nl[n]][index_3D(n, i, j, z)][B2] *= 1.0;
+		p[nl[n]][index_3D(n, i, j, z)][B3] *= 1.0;
+	}
+}
+
+
+void close_rdump(void) {
+	int u, n;
+	int u_stride = 200;
+	int u_max = (n_active_total - n_active_total % u_stride) / u_stride;
+	if (n_active_total%u_stride != 0) u_max++;
+	FILE *checkfile;
+	int one = 1;
+	int int_size = sizeof(int);
+
+	//First close rdump files in progress
+	if (first_rdump == 1) {
+		for (n = 0; n < n_active; n++) {
+			MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
+			MPI_File_close(&rdump[nl[n_ord[n]]]);
+		}
+	}
+
+	//Now tell the writing is complete
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (rank == 0) {
+		if ((rdump_cnt - 1) % 2 == 0) checkfile = fopen("rdumps0/checkfile", "wb");
+		else checkfile = fopen("rdumps1/checkfile", "wb");
+		fwrite(&one, int_size, 1, checkfile);
+		fclose(checkfile);
+	}
+	first_rdump = 0;
+}
 
 //Used to upscale old grid with 3 levels of AMR, to new grid with 4 levels of AMR
 void restart_read_grid(void)
@@ -232,23 +257,65 @@ int restart_read_param(void)
 	char filename[100], dirpath[100];
 	FILE *param, *checkfile;
 	int int_size = sizeof(int);
-	int value=0;
-	checkfile = fopen("rdumps1/checkfile", "rb");
+	double t0=-10.0, t1=-10.0;
+	int value0=0, value1=0;
+	restart_number = -1;
+	
+	checkfile = fopen("rdumps0/checkfile", "rb");
 	if (checkfile != NULL) {
-		fread(&value, int_size, 1, checkfile);
+		fread(&value0, int_size, 1, checkfile);
 		fclose(checkfile);
 	}
 
-	if (value==1) sprintf(filename, "rdumps1/parameter");
-	else sprintf(filename, "rdumps0/parameter");
-	param = fopen(filename, "rb");
-	if (param == NULL) {
-		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
+	if (value0 == 1) {
+		sprintf(filename, "rdumps0/parameter");
+		param = fopen(filename, "rb");
+		if (param != NULL) {
+			param_read(param);
+			fclose(param);
+			t0 = t;
+			restart_number = 0;
+		}
+	}
+
+	checkfile = fopen("rdumps1/checkfile", "rb");
+	if (checkfile != NULL) {
+		fread(&value1, int_size, 1, checkfile);
+		fclose(checkfile);
+	}
+
+	if (value1 == 1) {
+		sprintf(filename, "rdumps1/parameter");
+		param = fopen(filename, "rb");
+		if (param != NULL) {
+			param_read(param);
+			fclose(param);
+			t1 = t;
+			if (t1 > t0) {
+				fprintf(stderr, "Reading in rdumps1! \n");
+				restart_number = 1;
+			}
+		}
+	}
+
+	if (t0 > t1 && value0==1) {
+		sprintf(filename, "rdumps0/parameter");
+		fprintf(stderr, "Reading in rdumps0! \n");
+		param = fopen(filename, "rb");
+		if (param != NULL) {
+			param_read(param);
+			fclose(param);
+			restart_number = 0;
+		}
+	}
+	
+	if (restart_number == -1) {
+		fprintf(stderr, "No restart dump available! \n");
 		return 0;
 	}
-	param_read(param);
-	fclose(param);
-	return 1;
+	else {
+		return 1;
+	}
 }
 
 void param_read(FILE *fp){
@@ -256,7 +323,8 @@ void param_read(FILE *fp){
 	int double_size = sizeof(double);
 	int u;
 	double dummy;
-	//Print out essential stuff for restart
+	
+	 //Print out essential stuff for restart
 	fread(&t, double_size, 1, fp);
 	fread(&n_active, int_size, 1, fp);
 	fread(&n_active_total, int_size, 1, fp);
@@ -268,11 +336,6 @@ void param_read(FILE *fp){
 	fread(&rdump_cnt, int_size, 1, fp);
 	fread(&dt, double_size, 1, fp);
 	fread(&failed, int_size, 1, fp);
-
-	//if (calc_mem(n_active_total)>((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 0){
-	//	fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by reading in too many blocks! Code will segfault! \n");
-	//	max_levels -= 1;
-	//}
 
 	//Print out stuff that should be checked later
 	int BS1_print = BS_1;

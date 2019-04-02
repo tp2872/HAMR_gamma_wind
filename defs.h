@@ -756,7 +756,7 @@ double(*restrict dxdxp_z[NB_LOCAL])[NDIM][NDIM];
 double(*restrict dxpdx_z[NB_LOCAL])[NDIM][NDIM];
 float *array[NB_LOCAL], *array_diag[NB_LOCAL];
 double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL];
-int first_dump, first_rdump, first_gdump;
+int first_dump, first_rdump, first_gdump, restart_number;
 
 /*AMR parameters*/
 int(*block)[NV];
