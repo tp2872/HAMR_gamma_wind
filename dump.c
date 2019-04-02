@@ -59,13 +59,15 @@ void dump_new(void){
 		sprintf(filename, "dumps%d/parameters", dump_cnt);
 		fparam_dump = fopen(filename, "wb");
 		dump_params(fparam_dump);
+		fflush_unlocked(fparam_dump);
 	}
 
-	if (rank == (1%numtasks)){
-		sprintf(filename, "dumps%d/grid", dump_cnt);
-		grid_dump = fopen(filename, "wb");
-		gdump_grid(grid_dump);
-	}
+	//if (rank == (1%numtasks)){
+	//	sprintf(filename, "dumps%d/grid", dump_cnt);
+	//	grid_dump = fopen(filename, "wb");
+	//	gdump_grid(grid_dump);
+	//  fflush_unlocked(grid_dump);
+	//}
 
 	first_dump = 1;
 	
@@ -107,7 +109,7 @@ void close_dump(void) {
 
 	if (first_dump == 1) {
 		if (rank == 0 && fparam_dump != NULL)fclose(fparam_dump);
-		if (rank == 1 % numtasks && grid_dump != NULL)fclose(grid_dump);
+		//if (rank == 1 % numtasks && grid_dump != NULL)fclose(grid_dump);
 
 		for (n = 0; n < n_active; n++) {
 			MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);

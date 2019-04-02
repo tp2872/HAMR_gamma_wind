@@ -75,6 +75,7 @@ void restart_write(void)
 		}
 		fparam_restart = fopen(filename, "wb");	
 		dump_params(fparam_restart);
+		fflush_unlocked(fparam_restart);
 	}
 
 	if (rank == 1%numtasks){
@@ -82,6 +83,7 @@ void restart_write(void)
 		else sprintf(filename, "rdumps1/grid");
 		grid_restart = fopen(filename, "wb");
 		gdump_grid(grid_restart);
+		fflush_unlocked(grid_restart);
 	}
 
 	for (n = 0; n < n_active; n++){

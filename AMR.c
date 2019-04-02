@@ -252,7 +252,6 @@ void AMR_set_coord(void){
 	}
 }
 
-
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3){
 	ref_1[0] = block[n_rec][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 	ref_2[0] = block[n_rec][AMR_LEVEL2] - block[n][AMR_LEVEL2];
@@ -282,7 +281,12 @@ void set_AMR(void){
 		mem_spot_gpu[i] = -1;
 	}
 
-	//Create array for linear coordinates
+	//Set file buffers for non-blocking I/O
+	setvbuf(fparam_dump, NULL, _IOFBF, (200) * sizeof(double) + 2 * NB * sizeof(int));
+	setvbuf(fparam_restart, NULL, _IOFBF, (200) * sizeof(double) + 2 * NB * sizeof(int));	
+	//setvbuf(grid_dump, NULL, _IOFBF, (NV * NB * sizeof(int)));	
+	setvbuf(grid_restart, NULL, _IOFBF, (NV * NB * sizeof(int)));
+
 	for (l = 0; l < N_LEVELS; l++){
 		lin_coord[l] = (int *)calloc(NB_1*pow(1 + (l > N_LEVELS_1D)*REF_1, (l - N_LEVELS_1D))*NB_2*pow(1 + (l > N_LEVELS_1D)*REF_2, (l - N_LEVELS_1D))*NB_3*pow(1 + REF_3, l), sizeof(int));
 		lin_coord_RM[l] = (int *)calloc(NB_1*pow(1 + (l > N_LEVELS_1D)*REF_1, (l - N_LEVELS_1D))*NB_2*pow(1 + (l > N_LEVELS_1D)*REF_2, (l - N_LEVELS_1D))*NB_3*pow(1 + REF_3, l), sizeof(int));
