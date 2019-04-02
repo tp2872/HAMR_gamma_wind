@@ -183,31 +183,6 @@ void vofx_matthewcoords(double *X, double *V){
 /* some grid location, dxs */
 void set_points(int n)
 {
-	/* Grid parameters*/
-	a = BH_SPIN;
-	Rin = 0.9*(1. + sqrt(1. - a*a));
-	Rout = 500.;
-	lim = MC;
-	failed = 0;	/* start slow */
-	cour = COUR;
-	if (dt>1e-5) dt = dt;
-	else dt = 1.e-5;
-	R0 = 0.0;
-	gam = GAMMA;
-
-	if (N2 != 1) {
-		//2D problem, use full pi-wedge in theta
-		fractheta = 1.0 - 2.0 / ((double)N2)*(TRANS_BOUND==1);
-	}
-	else{
-		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
-		fractheta = 1.e-2;
-	}
-
-	double Xtrans = pow(log(RTRANS-RB), 1. / RADEXP);
-	startx[1] = pow(log(Rin-RB), 1. / RADEXP);
-	startx[2] = -1.+1.*(1.-fractheta) ;
-	startx[3] = 0.;
 	if(Rout<=RTRANS){
 		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
@@ -217,6 +192,33 @@ void set_points(int n)
 	}
 	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+}
+
+void set_gridparam(void) {
+	a = BH_SPIN;
+	Rin = 0.9*(1. + sqrt(1. - a * a));
+	Rout = 500.;
+	lim = MC;
+	failed = 0;
+	cour = COUR;
+	if (dt > 1e-5) dt = dt;
+	else dt = 1.e-5;
+	R0 = 0.0;
+	gam = GAMMA;
+
+	if (N2 != 1) {
+		//2D problem, use full pi-wedge in theta
+		fractheta = 1.0 - 2.0 / ((double)N2)*(TRANS_BOUND == 1);
+	}
+	else {
+		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
+		fractheta = 1.e-2;
+	}
+
+	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
+	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
+	startx[2] = -1. + 1.*(1. - fractheta);
+	startx[3] = 0.;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

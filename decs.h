@@ -786,6 +786,7 @@ extern double(*restrict dxpdx_z[NB_LOCAL])[NDIM][NDIM];
 extern float *array[NB_LOCAL], *array_diag[NB_LOCAL];
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL];
 extern int first_dump, first_rdump, first_gdump, restart_number;
+extern FILE *fparam_dump, *fparam_restart, *grid_dump, *grid_restart;
 
 /*AMR parameters*/
 extern int(*block)[NV];
@@ -969,6 +970,7 @@ void set_arrays_image(void);
 void set_arrays(int n);
 void set_grid(int n);
 void set_points(int n);
+void set_gridparam(void);
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3);
 double calc_mem(int n_blocks);
 double B1_prolong(int n, int i, int j, int z, double offset_1, double offset_2, double offset_3, double(*restrict pb[NB_LOCAL])[NDIM],

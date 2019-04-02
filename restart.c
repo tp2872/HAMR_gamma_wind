@@ -54,15 +54,13 @@ void restart_write(void)
 	int n;
 	char filename[100], dirpath[100];
 	int int_size = sizeof(int);
-	FILE *param, *checkfile;
+	FILE *checkfile;
 	int zero = 0;
 
 	//First close rdump files in progress
 	close_rdump();
 
 	if (rank == 0){
-		//sprintf(dirpath, "mkdir rdumps%d", dump_cnt);
-		//system(dirpath);
 		if (rdump_cnt % 2 == 0) {
 			sprintf(filename, "rdumps0/parameter");
 			checkfile = fopen("rdumps0/checkfile", "wb");
@@ -75,18 +73,15 @@ void restart_write(void)
 			fwrite(&zero, int_size, 1, checkfile);
 			fclose(checkfile);
 		}
-		param = fopen(filename, "wb");	
-		dump_params(param);
-		fclose(param);			
+		fparam_restart = fopen(filename, "wb");	
+		dump_params(fparam_restart);
 	}
 
-	if (rank == 0){
-		FILE *grid;
+	if (rank == 1%numtasks){
 		if (rdump_cnt % 2 == 0) sprintf(filename, "rdumps0/grid");
 		else sprintf(filename, "rdumps1/grid");
-		grid = fopen(filename, "wb");
-		gdump_grid(grid);
-		fclose(grid);
+		grid_restart = fopen(filename, "wb");
+		gdump_grid(grid_restart);
 	}
 
 	for (n = 0; n < n_active; n++){
@@ -120,9 +115,8 @@ int restart_read(void)
 {
 	int n, num;
 	char filename[100], dirpath[100];
-	FILE *rdump, *checkfile;
+	FILE *rdump;
 	int int_size = sizeof(int);
-	checkfile = fopen("rdumps1/checkfile", "rb");
 
 	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
@@ -211,6 +205,9 @@ void close_rdump(void) {
 		}
 	}
 
+	if (rank == 0 && fparam_restart != NULL)fclose(fparam_restart);
+	if (rank == 1%numtasks && grid_restart != NULL)fclose(grid_restart);
+
 	//Now tell the writing is complete
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (rank == 0) {
@@ -222,34 +219,6 @@ void close_rdump(void) {
 	first_rdump = 0;
 }
 
-//Used to upscale old grid with 3 levels of AMR, to new grid with 4 levels of AMR
-void restart_read_grid(void)
-{
-	int n, k;
-	int int_size = sizeof(int);
-	int block_read[36];
-
-	char filename[100], dirpath[100];
-	FILE *param;
-
-	sprintf(filename, "rdumps1/grid");
-	param = fopen(filename, "rb");
-
-	if (param == NULL) {
-		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
-		return;
-	}
-
-	fread(&k, int_size, 1, param);
-	for (n = 0; n < (NB_1*NB_2*NB_3*(8 * (8 + 1) + 1)); n++){
-		for (k = 0; k < 36; k++){ //SASMARK: why is 36 hard-coded?
-			fread(&(block_read[k]), int_size, 1, param);
-		}
-		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_ACTIVE] = block_read[AMR_ACTIVE];
-		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_REFINED] = block_read[AMR_REFINED];
-	}
-	fclose(param);
-}
 
 int restart_read_param(void)
 {
@@ -407,13 +376,42 @@ void param_read(FILE *fp){
 	//Read AMR grid hierarchy
 	#if(!READ_OLD)
 	for (u = 0; u <= n_max; u++){
-		fread(&block[u][AMR_REFINED], int_size, 1, fp);
+		fread(&block[u][AMR_TIMELEVEL], int_size, 1, fp);
 	}
 	for (u = 0; u <= n_max; u++){
 		fread(&block[u][AMR_ACTIVE], int_size, 1, fp);
 	}
 	#endif
 	nstep = 0;
+}
+
+//Used to upscale old grid with 3 levels of AMR, to new grid with 4 levels of AMR
+void restart_read_grid(void)
+{
+	int n, k;
+	int int_size = sizeof(int);
+	int block_read[36];
+
+	char filename[100], dirpath[100];
+	FILE *param;
+
+	sprintf(filename, "rdumps1/grid");
+	param = fopen(filename, "rb");
+
+	if (param == NULL) {
+		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
+		return;
+	}
+
+	fread(&k, int_size, 1, param);
+	for (n = 0; n < (NB_1*NB_2*NB_3*(8 * (8 + 1) + 1)); n++) {
+		for (k = 0; k < 36; k++) { //SASMARK: why is 36 hard-coded?
+			fread(&(block_read[k]), int_size, 1, param);
+		}
+		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_ACTIVE] = block_read[AMR_ACTIVE];
+		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_REFINED] = block_read[AMR_REFINED];
+	}
+	fclose(param);
 }
 
 int AMR_coord_linear_old(int level, int i, int j, int z){

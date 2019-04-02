@@ -1131,6 +1131,9 @@ void set_AMR(void){
 		exit(0);
 	}
 
+	//Grid parameters
+	set_gridparam();
+
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
 	#if(READ_OLD)

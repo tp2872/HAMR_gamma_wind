@@ -54,22 +54,18 @@ void dump_new(void){
 	close_dump();
 
 	if (rank == 0){
-		FILE *fparam;
 		sprintf(dirpath, "mkdir dumps%d", dump_cnt);
 		system(dirpath);
 		sprintf(filename, "dumps%d/parameters", dump_cnt);
-		fparam = fopen(filename, "wb");
-		dump_params(fparam);
-		fclose(fparam);
+		fparam_dump = fopen(filename, "wb");
+		dump_params(fparam_dump);
 	}
 
-	/*if (rank == (0%numtasks)){
-		FILE *grid;
+	if (rank == (1%numtasks)){
 		sprintf(filename, "dumps%d/grid", dump_cnt);
-		grid = fopen(filename, "wb");
-		gdump_grid(grid);
-		fclose(grid);
-	}*/
+		grid_dump = fopen(filename, "wb");
+		gdump_grid(grid_dump);
+	}
 
 	first_dump = 1;
 	
@@ -100,6 +96,34 @@ void dump_new(void){
 			}
 		}
 	}
+	dump_cnt++;
+}
+
+void close_dump(void) {
+	int u, n;
+	int u_stride = 200;
+	int u_max = (n_active_total - n_active_total % u_stride) / u_stride;
+	if (n_active_total%u_stride != 0) u_max++;
+
+	if (first_dump == 1) {
+		if (rank == 0 && fparam_dump != NULL)fclose(fparam_dump);
+		if (rank == 1 % numtasks && grid_dump != NULL)fclose(grid_dump);
+
+		for (n = 0; n < n_active; n++) {
+			MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
+			if ((dump_cnt - 1) % 10 == 0) {
+				MPI_Wait(&req_blockdiag[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][1]);
+			}
+		}
+
+		for (u = 0; u < u_max; u++) {
+			MPI_File_close(&fdump[u]);
+			if ((dump_cnt - 1) % 10 == 0) {
+				MPI_File_close(&fdumpdiag[u]);
+			}
+		}
+	}
+	first_dump = 0;
 }
 
 void dump_params(FILE *fp)
@@ -185,7 +209,7 @@ void dump_params(FILE *fp)
 
 		//Print AMR grid hierarchy
 		for (u = 0; u <= n_max; u++){
-			fwrite(&block[u][AMR_REFINED], int_size, 1, fp);
+			fwrite(&block[u][AMR_TIMELEVEL], int_size, 1, fp);
 		}
 		for (u = 0; u <= n_max; u++){
 			fwrite(&block[u][AMR_ACTIVE], int_size, 1, fp);
@@ -340,30 +364,6 @@ void gdump_block(MPI_File  *fp, int n)
 	}
 	MPI_File_seek(fp[0], 9 * BS_1*BS_2*BS_3*sizeof(double), MPI_SEEK_SET);
 	MPI_File_iwrite(fp[0], array_gdump2[nl[n]], 49 * BS_1*BS_2, MPI_DOUBLE, &req_gdump2[nl[n]][0]);
-}
-
-void close_dump(void){
-	int u, n;
-	int u_stride = 200;
-	int u_max = (n_active_total - n_active_total%u_stride) / u_stride;
-	if (n_active_total%u_stride != 0) u_max++;
-
-	if (first_dump == 1){
-		for (n = 0; n < n_active; n++){
-			MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
-			if (dump_cnt % 10 == 0){
-				MPI_Wait(&req_blockdiag[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][1]);
-			}
-		}
-
-		for (u = 0; u < u_max; u++){
-			MPI_File_close(&fdump[u]);
-			if (dump_cnt % 10 == 0){
-				MPI_File_close(&fdumpdiag[u]);
-			}
-		}
-	}
-	first_dump = 0;
 }
 
 void close_gdump(void){

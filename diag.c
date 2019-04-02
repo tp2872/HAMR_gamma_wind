@@ -117,7 +117,6 @@ void diag(int call_code)
 		}
 		gdump_new();
 		dump_new();
-		dump_cnt++;
 	}
 }
 
