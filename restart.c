@@ -53,7 +53,9 @@ void restart_write(void)
 {
 	int n;
 	char filename[100], dirpath[100];
-	FILE *param;
+	int int_size = sizeof(int);
+	FILE *param, *checkfile;
+	int zero = 0;
 
 	//First close rdump files in progress
 	close_rdump();
@@ -61,16 +63,26 @@ void restart_write(void)
 	if (rank == 0){
 		//sprintf(dirpath, "mkdir rdumps%d", dump_cnt);
 		//system(dirpath);
-		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/parameter");
-		else sprintf(filename, "rdumps1/parameter");
-		param = fopen(filename, "wb");
-		if (rank == 0) dump_params(param);
-		fclose(param);
+		if (rdump_cnt % 2 == 0) {
+			sprintf(filename, "rdumps0/parameter");
+			checkfile = fopen("rdumps0/checkfile", "wb");
+			fwrite(&zero, int_size, 1, checkfile);
+			fclose(checkfile);
+		}
+		else {
+			sprintf(filename, "rdumps1/parameter");
+			checkfile = fopen("rdumps1/checkfile", "wb");
+			fwrite(&zero, int_size, 1, checkfile);
+			fclose(checkfile);
+		}
+		param = fopen(filename, "wb");	
+		dump_params(param);
+		fclose(param);			
 	}
 
 	if (rank == (0 % numtasks)){
 		FILE *grid;
-		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/grid");
+		if (rdump_cnt % 2 == 0) sprintf(filename, "rdumps0/grid");
 		else sprintf(filename, "rdumps1/grid");
 		grid = fopen(filename, "wb");
 		gdump_grid(grid);
@@ -78,7 +90,7 @@ void restart_write(void)
 	}
 
 	for (n = 0; n < n_active; n++){
-		if (rdump_cnt % 10 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
+		if (rdump_cnt % 2 == 0) sprintf(filename, "rdumps0/rdump%d", n_ord[n]);
 		else sprintf(filename, "rdumps1/rdump%d", n_ord[n]);
 		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &rdump[nl[n_ord[n]]]);
 		rdump_block_write(&rdump[nl[n_ord[n]]], n_ord[n]);
@@ -127,16 +139,24 @@ int restart_read(void)
 {
 	int n, num;
 	char filename[100], dirpath[100];
-	FILE *rdump;
+	FILE *rdump, *checkfile;
+	int int_size = sizeof(int);
+	int value = 0;
+	checkfile = fopen("rdumps1/checkfile", "rb");
+	if (checkfile != NULL) {
+		fread(&value, int_size, 1, checkfile);
+		fclose(checkfile);
+	}
 
 	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
 		num = n_ord[n];
 		#if(READ_OLD)
 		num = AMR_coord_linear_old(block[num][AMR_LEVEL], block[num][AMR_COORD1], block[num][AMR_COORD2], block[num][AMR_COORD3]);
-		#endif
-		if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/rdump%d", num);
-		else sprintf(filename, "rdumps1/rdump%d", num);
+		#endif	
+		if(value==1) sprintf(filename, "rdumps1/rdump%d", num);
+		sprintf(filename, "rdumps0/rdump%d", num);
+
 		rdump = fopen(filename, "rb");
 		if (rdump == NULL) {
 			if (rank == 0) fprintf(stderr, "Cannot open restart file %s\n", filename);
@@ -210,10 +230,17 @@ int restart_read_param(void)
 {
 	int n;
 	char filename[100], dirpath[100];
-	FILE *param;
+	FILE *param, *checkfile;
+	int int_size = sizeof(int);
+	int value=0;
+	checkfile = fopen("rdumps1/checkfile", "rb");
+	if (checkfile != NULL) {
+		fread(&value, int_size, 1, checkfile);
+		fclose(checkfile);
+	}
 
-	if (rdump_cnt % 2 == 4) sprintf(filename, "rdumps0/parameter");
-	else sprintf(filename, "rdumps1/parameter");
+	if (value==1) sprintf(filename, "rdumps1/parameter");
+	else sprintf(filename, "rdumps0/parameter");
 	param = fopen(filename, "rb");
 	if (param == NULL) {
 		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");

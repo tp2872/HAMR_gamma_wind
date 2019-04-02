@@ -86,7 +86,7 @@ void dump_new(void){
 		}
 	}
 
-	if (dump_cnt%1==0){
+	if (dump_cnt%100==0){
 		for(u=0; u<u_max; u++){
 			sprintf(filename, "dumps%d/new_dumpdiag%d", dump_cnt, u);
 			MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL, &fdumpdiag[u]);
@@ -371,6 +371,9 @@ void close_rdump(void){
 	int u_stride = 200;
 	int u_max = (n_active_total - n_active_total%u_stride) / u_stride;
 	if (n_active_total%u_stride != 0) u_max++;
+	FILE *checkfile;
+	int one = 1;
+	int int_size = sizeof(int);
 
 	//First close rdump files in progress
 	if (first_rdump == 1){
@@ -378,6 +381,15 @@ void close_rdump(void){
 			MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 			MPI_File_close(&rdump[nl[n_ord[n]]]);
 		}
+	}
+
+	//Now tell the writing is complete
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (rank == 0) {
+		if ((rdump_cnt-1) % 2 == 0) checkfile = fopen("rdumps0/checkfile", "wb");
+		else checkfile = fopen("rdumps1/checkfile", "wb");
+		fwrite(&one, int_size, 1, checkfile);
+		fclose(checkfile);
 	}
 	first_rdump = 0;
 }
