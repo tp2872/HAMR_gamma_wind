@@ -59,18 +59,17 @@ void dump_new(void){
 		sprintf(filename, "dumps%d/parameters", dump_cnt);
 		fparam_dump = fopen(filename, "wb");
 		dump_params(fparam_dump);
-		fflush_unlocked(fparam_dump);
+		fflush(fparam_dump);
 	}
 
-	//if (rank == (1%numtasks)){
-	//	sprintf(filename, "dumps%d/grid", dump_cnt);
-	//	grid_dump = fopen(filename, "wb");
-	//	gdump_grid(grid_dump);
-	//  fflush_unlocked(grid_dump);
-	//}
-
 	first_dump = 1;
-	
+
+	if (rank == (1 % numtasks)) {
+		sprintf(filename, "dumps%d/grid", dump_cnt);
+		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &grid_dump[0]);
+		gdump_grid(grid_dump);
+	}
+
 	for(u=0; u<u_max; u++){
 		sprintf(filename, "dumps%d/new_dump%d", dump_cnt, u);
 		MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL, &fdump[u]);
@@ -123,6 +122,10 @@ void close_dump(void) {
 			if ((dump_cnt - 1) % 10 == 0) {
 				MPI_File_close(&fdumpdiag[u]);
 			}
+		}
+		if (rank == 1 % numtasks) {
+			MPI_Wait(&req_gdumpgrid[0], &Statbound[nl[n_ord[0]]][0]);
+			MPI_File_close(&grid_dump[0]);
 		}
 	}
 	first_dump = 0;
@@ -209,13 +212,13 @@ void dump_params(FILE *fp)
 		fwrite(&docyl, int_size, 1, fp);
 		fwrite(&dk, int_size, 1, fp);
 
-		//Print AMR grid hierarchy
-		for (u = 0; u <= n_max; u++){
-			fwrite(&block[u][AMR_TIMELEVEL], int_size, 1, fp);
-		}
-		for (u = 0; u <= n_max; u++){
-			fwrite(&block[u][AMR_ACTIVE], int_size, 1, fp);
-		}
+		////Print AMR grid hierarchy
+		//for (u = 0; u <= n_max; u++){
+		//	fwrite(&block[u][AMR_TIMELEVEL], int_size, 1, fp);
+		//}
+		//for (u = 0; u <= n_max; u++){
+		//	fwrite(&block[u][AMR_ACTIVE], int_size, 1, fp);
+		//}
 	}
 }
 
@@ -238,7 +241,11 @@ void dump_block(MPI_File *fp, int n)
 		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[nl[n]][index_3D(n, i, j, z)][6];
 		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[nl[n]][index_3D(n, i, j, z)][7];
 	}
+	#if(PARALLEL_IO)
+	MPI_File_iwrite_all(fp[0], array[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[nl[n]][0]);
+	#else
 	MPI_File_iwrite(fp[0], array[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[nl[n]][0]);
+	#endif
 }
 
 void dump_blockdiag(MPI_File *fp, int n)
@@ -251,20 +258,24 @@ void dump_blockdiag(MPI_File *fp, int n)
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 2] = (float)failimage[nl[n]][index_3D(n, i, j, z)][1];
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 3] = (float)failimage[nl[n]][index_3D(n, i, j, z)][2];
 	}
+	#if(PARALLEL_IO)
+	MPI_File_iwrite_all(fp[0], array_diag[nl[n]], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
+	#else
 	MPI_File_iwrite(fp[0], array_diag[nl[n]], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
+	#endif
 }
 
 void gdump_new(void){
 	int n;
 	char filename[100];
 
-	FILE *grid;
-	if (rank == 0 && nstep==0){
-		sprintf(filename, "gdumps/grid");
-		grid = fopen(filename, "wb");
-		gdump_grid(grid);
-		fclose(grid);
-	}
+	//FILE *grid;
+	//if (rank == 0 && nstep==0){
+	//	sprintf(filename, "gdumps/grid");
+	//	grid = fopen(filename, "wb");
+	//	gdump_grid(grid);
+	//	fclose(grid);
+	//}
 
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][GDUMP_WRITTEN] != 1 && block[n_ord_total[n]][GDUMP_WRITTEN] != 2){
@@ -286,19 +297,23 @@ void gdump_new(void){
 	}
 }
 
-void gdump_grid(FILE *fp)
+void gdump_grid(MPI_File *fp)
 {
 	int n, k;
-	int int_size = sizeof(int);
-	if (rank == 0){
-		int NB_print = NB;
-		fwrite(&NB_print, int_size, 1, fp);
-		for (n = 0; n <= n_max; n++){
-			for (k = 0; k < NV; k++){ //SASMARK: why is 36 hard-coded?
-				fwrite(&(block[n][k]), int_size, 1, fp);
-			}
+	array_gdumpgrid[0] = NB;
+
+	#pragma omp parallel for schedule(dynamic,1) private(n,k)
+	for (n = 0; n <= n_max; n++){
+		for (k = 0; k < NV; k++){
+			array_gdumpgrid[1 + n*NV + k] = block[n][k];
 		}
 	}
+
+	#if(PARALLEL_IO)
+	MPI_File_iwrite_all(fp[0], array_gdumpgrid, 1 + NB*NV, MPI_INT, &req_gdumpgrid[0]);
+	#else
+	MPI_File_iwrite(fp[0], array_gdumpgrid,1+NB*NV, MPI_INT, &req_gdumpgrid[0]);
+	#endif
 }
 
 void gdump_block(MPI_File  *fp, int n)
@@ -333,7 +348,11 @@ void gdump_block(MPI_File  *fp, int n)
 		array_gdump1[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = phi;
 	}
 	MPI_File_seek(fp[0], 0*sizeof(double), MPI_SEEK_SET);
+	#if(PARALLEL_IO)
+	MPI_File_iwrite_all(fp[0], array_gdump1[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_DOUBLE, &req_gdump1[nl[n]][0]);
+	#else
 	MPI_File_iwrite(fp[0], array_gdump1[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_DOUBLE, &req_gdump1[nl[n]][0]);
+	#endif
 
 	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,l,X,geom,dxdxp)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n])
@@ -365,7 +384,11 @@ void gdump_block(MPI_File  *fp, int n)
 		}
 	}
 	MPI_File_seek(fp[0], 9 * BS_1*BS_2*BS_3*sizeof(double), MPI_SEEK_SET);
+	#if(PARALLEL_IO)
+	MPI_File_iwrite_all(fp[0], array_gdump2[nl[n]], 49 * BS_1*BS_2, MPI_DOUBLE, &req_gdump2[nl[n]][0]);
+	#else
 	MPI_File_iwrite(fp[0], array_gdump2[nl[n]], 49 * BS_1*BS_2, MPI_DOUBLE, &req_gdump2[nl[n]][0]);
+	#endif
 }
 
 void close_gdump(void){

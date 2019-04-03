@@ -784,9 +784,10 @@ extern double *dump_buffer;
 extern double(*restrict dxdxp_z[NB_LOCAL])[NDIM][NDIM];
 extern double(*restrict dxpdx_z[NB_LOCAL])[NDIM][NDIM];
 extern float *array[NB_LOCAL], *array_diag[NB_LOCAL];
+extern int *array_gdumpgrid, *array_rdumpgrid;
 extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL];
 extern int first_dump, first_rdump, first_gdump, restart_number;
-extern FILE *fparam_dump, *fparam_restart, *grid_dump, *grid_restart;
+extern FILE *fparam_dump, *fparam_restart;
 
 /*AMR parameters*/
 extern int(*block)[NV];
@@ -807,7 +808,6 @@ FUNCTION DECLARATIONS
 //Output related
 void dump_new(void);
 void gdump_new(void);
-void gdump_grid(FILE *fp);
 void dump_params(FILE *fp);
 double divb_calc(int n, int i, int j, int z);
 void dump_params(FILE *fp);
@@ -958,7 +958,6 @@ void check_refcrit(void);
 void alloc_bounds_CPU(int n);
 void free_arrays(int n);
 void free_bound_cpu(int n);
-void set_timelevel_jet(void);
 void set_prestep(void);
 void prestep_bound(void);
 void mpi_synch(void);

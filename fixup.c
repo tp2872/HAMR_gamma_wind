@@ -391,9 +391,7 @@ void set_Katm( void )
   G_type = get_G_ATM( &G_tmp );
 
   if (rank == 0){
-	  fflush(stdout);
-	  fprintf(stdout, "G_tmp = %26.20e \n", G_tmp);
-	  fflush(stdout);
+	  fprintf(stderr, "G_tmp = %26.20e \n", G_tmp);
   }
 
   for (n = 0; n < n_active; n++){

@@ -8,14 +8,11 @@ void free_bound_gpu(int n);
 int gpuFree(void *devPtr);
 
 //Wrapper for allocation of boundary cells
-#define gpuAlloc cudaMalloc
-/*void gpuAlloc(void **devPtr, int size){
-	#if(GPU_DIRECT)
-	return cudaMalloc(devPtr, size);
-	#else
-	return cudaHostAlloc(devPtr, size,0);
-	#endif
-}*/
+#if(GPU_DIRECT)
+#define gpuAlloc(val1,val2) cudaMalloc(val1,val2)
+#else
+#define gpuAlloc(val1,val2) cudaHostAlloc(val1,val2,0)
+#endif
 
 void GPU_init(void)
 {
@@ -1567,7 +1564,7 @@ void GPU_read(int n)
 	//cudaDeviceSynchronize();
 	//cudasetDevice(block[n][AMR_GPU]);
 
-	#if(N_LEVELS_1D_INT>100000)
+	#if(N_LEVELS_1D_INT>0)
 	/*Calculate gradients for reconstruction*/
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3 + 2 * D3)) / LOCAL_WORK_SIZE;
 	interpolate << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], 3, (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));

@@ -116,7 +116,6 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	#endif
 
-	MPI_Barrier(MPI_COMM_WORLD);
 	#if (STAGGERED && COPY_BFIELD)
 	rc = 0;
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1 || bound_force == 1){ //watch out does this for both half and full timestep while only needed for full timestep
@@ -510,9 +509,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
     if( ((ucon[1] > 0.) && (type==0)) || ((ucon[1] < 0.) && (type==1)) ) { 
 		/* find gamma and remove it from primitives */
 		if( gamma_calc(pr,&geom,&gamma) ) { 
-			fflush(stderr);
 			fprintf(stderr,"\ninflow_check(): gamma failure \n");
-			fflush(stderr);
 			fail(FAIL_GAMMA);
 		}
 		pr[U1] /= gamma ;

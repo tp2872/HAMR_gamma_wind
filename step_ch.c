@@ -115,9 +115,7 @@ void step_ch()
 	dt = ndt;
 
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
-	#if(TIMESTEP_JET)
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel_jet();
-	#endif
+
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 	/* done! */
 }
@@ -320,6 +318,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			if (pflag[nl[n]][ind0]) {
+				pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			}
 			#endif
 
 			#if( DO_FONT_FIX ) 
@@ -509,9 +510,9 @@ void GPU_step_ch()
 	double ndt, inmsg;
 	int i, j, z, k, n, uu;
 
-	if (rank == 0){
-		fprintf(stderr, "h");
-	}
+	//if (rank == 0){
+	//	fprintf(stderr, "h");
+	//}
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
 	}
@@ -545,7 +546,7 @@ void GPU_step_ch()
 
 	/* Determine next time increment based on current characteristic speeds: */
 	if (dt < 1.e-9) {
-		fprintf(stderr, "timestep too small\n");
+		if(rank==0) fprintf(stderr, "timestep too small\n");
 		exit(11);
 	}
 
@@ -563,9 +564,6 @@ void GPU_step_ch()
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
 		set_timelevel();
 	}
-	#if(TIMESTEP_JET)
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel_jet();
-	#endif
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 }
@@ -705,7 +703,6 @@ double advance_GPU(void)
 
 	gpu = 1;
 	rc = 0;
-
 
 	#if(PRESTEP)
 	set_iprobe(0, &flag);

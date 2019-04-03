@@ -281,11 +281,11 @@ void set_AMR(void){
 		mem_spot_gpu[i] = -1;
 	}
 
-	//Set file buffers for non-blocking I/O
-	setvbuf(fparam_dump, NULL, _IOFBF, (200) * sizeof(double) + 2 * NB * sizeof(int));
-	setvbuf(fparam_restart, NULL, _IOFBF, (200) * sizeof(double) + 2 * NB * sizeof(int));	
-	//setvbuf(grid_dump, NULL, _IOFBF, (NV * NB * sizeof(int)));	
-	setvbuf(grid_restart, NULL, _IOFBF, (NV * NB * sizeof(int)));
+	//Set arrays for grid data output
+	if (rank==(1 % numtasks)) {
+		array_gdumpgrid = (int *)malloc((1 + NB*NV) * sizeof(int));
+		array_rdumpgrid = (int *)malloc((1 + NB*NV) * sizeof(int));
+	}
 
 	for (l = 0; l < N_LEVELS; l++){
 		lin_coord[l] = (int *)calloc(NB_1*pow(1 + (l > N_LEVELS_1D)*REF_1, (l - N_LEVELS_1D))*NB_2*pow(1 + (l > N_LEVELS_1D)*REF_2, (l - N_LEVELS_1D))*NB_3*pow(1 + REF_3, l), sizeof(int));
@@ -1140,15 +1140,10 @@ void set_AMR(void){
 
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();
-	#if(READ_OLD)
-	restart_read_grid();
-	#endif
 
 	activate_blocks();
-	set_corners();
-
-	MPI_Barrier(MPI_COMM_WORLD);
 	balance_load();
+	set_corners();
 }
 
 void balance_load(void){
@@ -1260,7 +1255,10 @@ void balance_load(void){
 		if ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
 	} while ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
 
-	if (rank == 0 && n_active_local_max > MAX_BLOCKS) fprintf(stderr, "Error in balance_load: Too many blocks refined, possible to get OpenCL or OOM errors! \n");
+	if (n_active_local_max > MAX_BLOCKS) {
+		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
+		exit(0);
+	}
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
 	for (i = 0; i < n_active_total; i++){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
@@ -1347,6 +1345,9 @@ void balance_load(void){
 
 	activate_blocks();
 	
+	//Set timelevel communicator
+	set_communicator();
+
 	min_steps = 0; max_steps = 0; total_steps = 0;
 	count_node[0]=0;
 	for (g = 0; g < N_GPU; g++) count_gpu[g] = 0;
@@ -1389,6 +1390,7 @@ void balance_load(void){
 	GPU_boundprim(1);
 	#endif
 	free(n_ord_total_RM_t);
+
 	if (rank == 0) fprintf(stderr, "Load balance finished! \n");
 }
 
@@ -2006,8 +2008,6 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 				b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, set_1, set_2, set_3, set_4, set_5, set_6);
 		}
 	}
-	//fprintf(stderr, "hallo3 \n");
-
 }
 
 void pre_refine(void){
@@ -2046,7 +2046,7 @@ void pre_refine(void){
 int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	int ref_1, ref_2, ref_3;
-	//MPI_Barrier(mpi_cartcomm);
+
 	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
 		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
@@ -2205,7 +2205,7 @@ int refine(int n){
 		GPU_finish(n, 0);
 		#endif
 		}
-		//MPI_Barrier(mpi_cartcomm);
+
 		//Take note that block becomes refined
 		for (i = AMR_CHILD1; i <= AMR_CHILD8; i++){
 			block[block[n][i]][AMR_TIMELEVEL] = block[n][AMR_TIMELEVEL];
@@ -2233,7 +2233,6 @@ void post_refine(void){
 	//Set boundary conditions
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG)
-	MPI_Barrier(mpi_cartcomm);
 	GPU_boundprim(1);
 	MPI_Barrier(mpi_cartcomm);
 	#endif
@@ -2275,7 +2274,7 @@ int check_nesting(int n){
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
 void check_refcrit(void){
 	int n, task, i,j,z,k, l, level, number, ref_1, ref_2, ref_3, i1, i2, i3, tag2;
-	int node, n_send, gpu_choice, gpu_counter;
+	int node, n_send, gpu_choice, gpu_counter, var;
 	double  rho_rec;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
@@ -2288,9 +2287,9 @@ void check_refcrit(void){
 
 	//First close dump files in progress
 	close_dump();
-	close_rdump();
 	close_gdump();
-	MPI_Barrier(mpi_cartcomm);
+	close_rdump();
+	//MPI_Barrier(mpi_cartcomm);
 
 	begin1 = time(NULL);
 	count = 0;
@@ -2330,6 +2329,23 @@ void check_refcrit(void){
 					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
+				#if(DEREFINE_POLE)
+				var = NB_2 / 3-1;
+				if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && block[n_ord_total[n]][AMR_COORD2] <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && block[n_ord_total[n]][AMR_COORD2] <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && block[n_ord_total[n]][AMR_COORD2] <= 6 + var*pow(1 + REF_2, 2))
+					|| (block[n_ord_total[n]][AMR_LEVEL2] == 3 && block[n_ord_total[n]][AMR_COORD2] == 14 + var*pow(1 + REF_2, 3)) || (block[n_ord_total[n]][AMR_LEVEL2] == 4 && block[n_ord_total[n]][AMR_COORD2] == 30 + var*pow(1 + REF_2, 4)) || (block[n_ord_total[n]][AMR_LEVEL2] == 5 && block[n_ord_total[n]][AMR_COORD2] == 62 + var*pow(1 + REF_2, 5))){
+					if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
+						|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)) {
+						block[n_ord_total[n]][AMR_TAG] = 0;
+					}
+				}
+				if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && (NB_2-block[n_ord_total[n]][AMR_COORD2]) <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && (NB_2*pow(1 + REF_2, 1) - block[n_ord_total[n]][AMR_COORD2]) <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && (NB_2*pow(1 + REF_2, 2) - block[n_ord_total[n]][AMR_COORD2]) <= 6 + var*pow(1 + REF_2, 2))
+					|| (block[n_ord_total[n]][AMR_LEVEL2] == 3 && (NB_2*pow(1 + REF_2, 3) - block[n_ord_total[n]][AMR_COORD2]) == 14 + var*pow(1 + REF_2, 3)) || (block[n_ord_total[n]][AMR_LEVEL2] == 4 && (NB_2*pow(1 + REF_2, 4) - block[n_ord_total[n]][AMR_COORD2]) == 30 + var*pow(1 + REF_2, 4)) || (block[n_ord_total[n]][AMR_LEVEL2] == 5 && (NB_2*pow(1 + REF_2, 5) - block[n_ord_total[n]][AMR_COORD2]) == 62 + var*pow(1 + REF_2, 5))) {
+					if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
+						|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)) {
+						block[n_ord_total[n]][AMR_TAG] = 0;
+					}
+				}
+				#endif
 				#else
 				if (block[n_ord_total[n]][AMR_COORD1] <= 0 && block[n_ord_total[n]][AMR_LEVEL1]==0) block[n_ord_total[n]][AMR_TAG] = 0;
 				else if (block[n_ord_total[n]][AMR_COORD1] <= 2 && block[n_ord_total[n]][AMR_LEVEL1] == 1) block[n_ord_total[n]][AMR_TAG] = 0;
@@ -2355,14 +2371,14 @@ void check_refcrit(void){
 		}
 
 		if(one_block_refined==1) post_refine();
-		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS){
+		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU){
 			balance_load();
 			#if(GPU_ENABLED)
 			balance_load_gpu();
 			#endif
 			pre_refine();
 		}
-	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS && count<10);
+	} while (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU && count<10);
 
 	if (tag == 1){
 		if(rank==0) fprintf(stderr, "Maximum number of blocks exceeded. Please select more nodes or adjust refinement criterion! \n");
@@ -2595,7 +2611,7 @@ void check_refcrit(void){
 					pre_refine();
 					one_block_derefined = 1;
 				}
-				//derefine(block[n_ord_total[n]][AMR_PARENT]);
+				derefine(block[n_ord_total[n]][AMR_PARENT]);
 				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
@@ -2617,9 +2633,6 @@ void check_refcrit(void){
 	//Decrease the timestep if required
 	if (reduce_timestep == 1) dt /= 2.;
 	reduce_timestep = 0;
-
-	//Set timelevel communicator
-	set_communicator();
 	
 	//Start very conservatively
 	dt /= 2.;

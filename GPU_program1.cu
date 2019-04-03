@@ -2079,9 +2079,9 @@ __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restr
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0, zoffset = 0, z1 = 0, z2 = 0, z3 = 0, z4 = 0, z5 = 0;
-	double x1, x2, x3, x4, x5;
-	double temp, result;
+	int zsize = 1, zlevel = 0, zoffset = 0, z2 = 0, z3 = 0, z4 = 0;
+	double x2, x3, x4;
+	double temp;
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
@@ -2095,46 +2095,34 @@ __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restr
 
 	if (zdel) {
 		if (zcurr == N3G - D3) {
-			z1 = -2 * zdel;
 			z2 = -1 * zdel;
 			z3 = 0;
 			z4 = 1 * zdel*zsize;
-			z5 = 2 * zdel*zsize;
 		}
 		else if (zcurr - zoffset == N3G) {
-			z1 = -zoffset - 2 * zdel;
 			z2 = -zoffset - 1 * zdel;
 			z3 = -zoffset;
 			z4 = -zoffset + 1 * zdel*zsize;
-			z5 = -zoffset + 2 * zdel*zsize;
 		}
 		else if (zcurr - zoffset == N3G + zdel*zsize) {
-			z1 = -zoffset - 1 * zdel*zsize - 1 * zdel;
 			z2 = -zoffset - 1 * zdel*zsize;
 			z3 = -zoffset;
 			z4 = -zoffset + 1 * zdel*zsize;
-			z5 = -zoffset + 2 * zdel*zsize;
 		}
 		else if (zcurr == BS_3 + N3G) {
-			z1 = -2 * zdel*zsize;
 			z2 = -1 * zdel*zsize;
 			z3 = 0;
 			z4 = 1 * zdel;
-			z5 = 2 * zdel;
 		}
 		else if (zcurr - zoffset == BS_3 + N3G - zdel*zsize) {
-			z1 = -zoffset - 2 * zdel*zsize;
 			z2 = -zoffset - 1 * zdel*zsize;
 			z3 = -zoffset;
 			z4 = -zoffset + zdel*zsize;
-			z5 = -zoffset + zdel*zsize + 1 * zdel;
 		}
 		else {
-			z1 = -zoffset - 2 * zdel*zsize;
 			z2 = -zoffset - 1 * zdel*zsize;
 			z3 = -zoffset;
 			z4 = -zoffset + 1 * zdel*zsize;
-			z5 = -zoffset + 2 * zdel*zsize;
 		}
 	}
 
@@ -3086,6 +3074,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		}
 		#else
 		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		if (pflag[global_id]) {
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+		}
 		#endif
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		#if( DO_FONT_FIX ) 
@@ -3237,15 +3228,19 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			}
 			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[global_id]) {
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+			}
 			#endif
 			if (pflag[global_id]){
 				failimage[global_id]++;
 				#if( DO_FONT_FIX ) 
-				U_ent = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+				U[KTOT] = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+				pf[KTOT] = U[KTOT] / U[RHO];
 				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[icurr]);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 					if (pflag[global_id]){
 						pflag[0] = 100;
 						failimage[2 * (ksize)+global_id]++;
@@ -3432,6 +3427,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			}
 			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			if (pflag[global_id]) {
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+			}
 			#endif
 
 			//compute the square of fluid frame magnetic field (twice magnetic pressure)
@@ -3584,15 +3582,19 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				}
 				#else
 				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+				if (pflag[global_id]) {
+					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+				}
 				#endif
 				if (pflag[global_id]){
 					failimage[global_id]++;
 					#if( DO_FONT_FIX ) 
-					U_ent = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+					U[KTOT] = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+					pf[KTOT] = U[KTOT] / U[RHO];
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 					if (pflag[global_id]) {
 						failimage[1 * (ksize)+global_id]++;
-						pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, Katm[icurr]);
+						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
 						if (pflag[global_id]){
 							pflag[0] = 100;
 							failimage[2 * (ksize)+global_id]++;

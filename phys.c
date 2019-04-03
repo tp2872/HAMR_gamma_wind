@@ -234,7 +234,6 @@ int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * re
         return(0) ;
 }
 
-
 /*  
  * VCHAR():
  * 
@@ -327,11 +326,11 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	vm = -(-B - discr) / (2.*A);
 	
 	#if( FULL_DISP ) 
-		double vp2, vm2;
-		vp2 = NewtonRaphson(vp, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-		vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-		vp = vp2;
-		vm = vm2;
+	double vp2, vm2;
+	vp2 = NewtonRaphson(vp, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+	vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
+	vp = vp2;
+	vm = vm2;
 	#endif
 
 	if(vp > vm) {
@@ -380,15 +379,15 @@ double NewtonRaphson(double start, int max_count, int dir, double *ucon, double 
 	double dx = start/1000000.0;
 	double x = start;
 	double diff, derivative;
-	//do{
+	do{
 		diff = Drel(dir, x, ucon, ucov, bcon, geom, E, vasq, csq);
 		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / dx;
 		count++;
 		x = x - diff / (derivative);
-	//} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
-	//if (count >= 3){
-	//	x = start;
-	//}
+	} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
+	if (count >= 3){
+		x = start;
+	}
 	return x;
 }
 

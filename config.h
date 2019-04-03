@@ -32,7 +32,7 @@ Physical Parameters section
 #define COOL_DISK (1)
 #define H_OVER_R (0.1)
 
-/*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy*/
+/*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
@@ -76,12 +76,15 @@ Numerical Parameters section
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
 
+/*Enable parallel I/0*/
+#define PARALLEL_IO (0)
+
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (1600)
-#define NB_LOCAL (1600)
+#define MAX_BLOCKS (30)
+#define NB_LOCAL (400)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
@@ -96,7 +99,7 @@ Numerical Parameters section
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 2
 
-/*Set in which dimensions to refine for AMR. You must set at least one value to 1 for the correct functioning of the code*/
+/*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
 #define REF_2 1
 #define REF_3 1
@@ -110,7 +113,7 @@ Numerical Parameters section
 /*Number of internal derefinement levels*/
 #define N_LEVELS_1D_INT (2)
 
-/*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Requires that number NB2*NB3/NUM_OF_MPI_PROCESSES is an integer number*/
+/*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
 
 //Use Z-order at 0-level for load balancing
@@ -122,6 +125,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
+
+/*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
+#define DUMPFACTOR (20)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -215,20 +221,17 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define CHARLIE (0.0)
 #define DELTA (3.0)
 
-/*Wheter to cylindrify coordinates to increase GLOBAL timestep*/
+/*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
 #define DOCYLINDRIFYCOORDS (0)
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
 
-/* whether or not to rescale primitive variables before interpolating them for flux/BC's. Is not implemented on GPU */
+/* whether or not to rescale primitive variables before interpolating them for flux/BC's. Is not implemented on GPU and dperacated/unlikely to work correctly on CPU */
 #define RESCALE     (0)
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
-
-/*Do not use; Used to load in 3 level AMR data into 4-level AMR grid*/
-#define READ_OLD (0)
 
 /*************************************************************************
 MNEMONICS SECTION
@@ -494,7 +497,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (1)
+#define NEWMAN (0)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

@@ -45,9 +45,6 @@
 /* restart functions; restart_init and restart_dump */
 #include "decs_MPI.h"
 
-void restart_read_grid(void);
-int AMR_coord_linear_old(int level, int i, int j, int z);
-
 /*Write restart file*/
 void restart_write(void)
 {
@@ -75,15 +72,14 @@ void restart_write(void)
 		}
 		fparam_restart = fopen(filename, "wb");	
 		dump_params(fparam_restart);
-		fflush_unlocked(fparam_restart);
+		fflush(fparam_restart);
 	}
 
 	if (rank == 1%numtasks){
 		if (rdump_cnt % 2 == 0) sprintf(filename, "rdumps0/grid");
 		else sprintf(filename, "rdumps1/grid");
-		grid_restart = fopen(filename, "wb");
-		gdump_grid(grid_restart);
-		fflush_unlocked(grid_restart);
+		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &grid_restart[0]);
+		rdump_grid(grid_restart);
 	}
 
 	for (n = 0; n < n_active; n++){
@@ -109,7 +105,31 @@ void rdump_block_write(MPI_File *fp, int n)
 		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (2 + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
 		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (3 + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3];	
 	}
+
+	#if(PARALLEL_IO)
 	MPI_File_iwrite_all(fp[0], array_rdump[nl[n]], (NPR + NDIM) * (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G), MPI_DOUBLE, &req_block_rdump[nl[n]][0]);
+	#else
+	MPI_File_iwrite(fp[0], array_rdump[nl[n]], (NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), MPI_DOUBLE, &req_block_rdump[nl[n]][0]);
+	#endif
+}
+
+void rdump_grid(MPI_File *fp)
+{
+	int n, k;
+	array_rdumpgrid[0] = NB;
+
+	#pragma omp parallel for schedule(dynamic,1) private(n,k)
+	for (n = 0; n <= n_max; n++) {
+		for (k = 0; k < NV; k++) {
+			array_rdumpgrid[1 + n*NV + k] = block[n][k];
+		}
+	}
+
+	#if(PARALLEL_IO)
+	MPI_File_iwrite_all(fp[0], array_rdumpgrid, 1 + NB*NV, MPI_INT, &req_rdumpgrid[0]);
+	#else
+	MPI_File_iwrite(fp[0], array_rdumpgrid, 1 + NB*NV, MPI_INT, &req_rdumpgrid[0]);
+	#endif
 }
 
 /*Read restart file*/
@@ -123,9 +143,6 @@ int restart_read(void)
 	//From new grid to old grid to read rdumps1
 	for (n = 0; n < n_active; n++){
 		num = n_ord[n];
-		#if(READ_OLD)
-		num = AMR_coord_linear_old(block[num][AMR_LEVEL], block[num][AMR_COORD1], block[num][AMR_COORD2], block[num][AMR_COORD3]);
-		#endif	
 		if(restart_number==1) sprintf(filename, "rdumps1/rdump%d", num);
 		else if (restart_number == 0)sprintf(filename, "rdumps0/rdump%d", num);
 		else return 0;
@@ -205,10 +222,14 @@ void close_rdump(void) {
 			MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 			MPI_File_close(&rdump[nl[n_ord[n]]]);
 		}
+		if (rank == 1 % numtasks) {
+			MPI_Wait(&req_rdumpgrid[0], &Statbound[nl[n_ord[0]]][0]);
+			MPI_File_close(&grid_restart[0]);
+		}
 	}
 
 	if (rank == 0 && fparam_restart != NULL)fclose(fparam_restart);
-	if (rank == 1%numtasks && grid_restart != NULL)fclose(grid_restart);
+	//if (rank == 1%numtasks && grid_restart != NULL)fclose(grid_restart);
 
 	//Now tell the writing is complete
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -218,20 +239,21 @@ void close_rdump(void) {
 		fwrite(&one, int_size, 1, checkfile);
 		fclose(checkfile);
 	}
+
 	first_rdump = 0;
 }
 
 
 int restart_read_param(void)
 {
-	int n;
+	int n, k;
 	char filename[100], dirpath[100];
-	FILE *param, *checkfile;
+	FILE *param, *grid, *checkfile;
 	int int_size = sizeof(int);
 	double t0=-10.0, t1=-10.0;
 	int value0=0, value1=0;
 	restart_number = -1;
-	
+
 	checkfile = fopen("rdumps0/checkfile", "rb");
 	if (checkfile != NULL) {
 		fread(&value0, int_size, 1, checkfile);
@@ -263,7 +285,24 @@ int restart_read_param(void)
 			fclose(param);
 			t1 = t;
 			if (t1 > t0) {
+				grid = fopen("rdumps1/grid", "rb");
+				if (grid == NULL) {
+					if (rank == 0) fprintf(stderr, "Cannot open restart grid file\n");
+					return 0;
+				}
 				fprintf(stderr, "Reading in rdumps1! \n");
+
+				fread(&k, int_size, 1, grid);
+				for (n = 0; n < NB; n++) {
+					for (k = 0; k < NV; k++) { //SASMARK: why is 36 hard-coded?
+						fread(&(block[n][k]), int_size, 1, grid);
+					}
+					block[n][AMR_NODE] = -1;
+					block[n][AMR_GPU] = -1;
+					block[n][GDUMP_WRITTEN] = 0;
+					block[n][AMR_REFINED] = 0;
+				}
+				fclose(grid);
 				restart_number = 1;
 			}
 		}
@@ -276,10 +315,27 @@ int restart_read_param(void)
 		if (param != NULL) {
 			param_read(param);
 			fclose(param);
+			grid = fopen("rdumps0/grid", "rb");
+			if (grid == NULL) {
+				if (rank == 0) fprintf(stderr, "Cannot open restart grid file\n");
+				return 0;
+			}
+
+			fread(&k, int_size, 1, grid);
+			for (n = 0; n < NB; n++) {
+				for (k = 0; k < NV; k++) { //SASMARK: why is 36 hard-coded?
+					fread(&(block[n][k]), int_size, 1, grid);
+				}
+				block[n][AMR_NODE] = -1;
+				block[n][AMR_GPU] = -1;
+				block[n][GDUMP_WRITTEN] = 0;
+				block[n][AMR_REFINED] = 0;
+			}
+			fclose(grid);
 			restart_number = 0;
 		}
 	}
-	
+
 	if (restart_number == -1) {
 		fprintf(stderr, "No restart dump available! \n");
 		return 0;
@@ -375,85 +431,7 @@ void param_read(FILE *fp){
 		|| dk != DOKTOT){
 		if(rank==0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
 	}
-	//Read AMR grid hierarchy
-	#if(!READ_OLD)
-	for (u = 0; u <= n_max; u++){
-		fread(&block[u][AMR_TIMELEVEL], int_size, 1, fp);
-	}
-	for (u = 0; u <= n_max; u++){
-		fread(&block[u][AMR_ACTIVE], int_size, 1, fp);
-	}
-	#endif
+
+	//Set nstep to 0 for convenience
 	nstep = 0;
 }
-
-//Used to upscale old grid with 3 levels of AMR, to new grid with 4 levels of AMR
-void restart_read_grid(void)
-{
-	int n, k;
-	int int_size = sizeof(int);
-	int block_read[36];
-
-	char filename[100], dirpath[100];
-	FILE *param;
-
-	sprintf(filename, "rdumps1/grid");
-	param = fopen(filename, "rb");
-
-	if (param == NULL) {
-		if (rank == 0) fprintf(stderr, "Cannot open restart param file\n");
-		return;
-	}
-
-	fread(&k, int_size, 1, param);
-	for (n = 0; n < (NB_1*NB_2*NB_3*(8 * (8 + 1) + 1)); n++) {
-		for (k = 0; k < 36; k++) { //SASMARK: why is 36 hard-coded?
-			fread(&(block_read[k]), int_size, 1, param);
-		}
-		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_ACTIVE] = block_read[AMR_ACTIVE];
-		block[AMR_coord_linear(block_read[AMR_LEVEL], block_read[AMR_COORD1], block_read[AMR_COORD2], block_read[AMR_COORD3])][AMR_REFINED] = block_read[AMR_REFINED];
-	}
-	fclose(param);
-}
-
-int AMR_coord_linear_old(int level, int i, int j, int z){
-	int index[N_LEVELS], coord[NDIM], factor[N_LEVELS], u, y, n;
-
-	if (i < 0 || j < 0 || z < 0){
-		n = -1;
-		return n;
-	}
-
-	for (y = 0; y < N_LEVELS - 1; y++){
-		factor[y] = 1;
-		for (u = 0; u < N_LEVELS - y - 2; u++){
-			factor[y] = factor[y] * pow(2, REF_1 + REF_2 + REF_3) + 1;
-		}
-	}
-	#if(REVERSE_ORDERING)
-	index[0] = ((z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level) * NB_2*NB_1 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_1
-		+ (i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level));
-	n = index[0] * factor[0];
-	for (u = level; u > 0; u--){
-		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
-		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
-		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
-		index[u] = coord[3] * (1 + REF_2)*(1 + REF_1) + coord[2] * (1 + REF_1) + coord[1]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
-		n += index[u] * factor[u] + 1;
-	}
-	#else
-	index[0] = ((i - i % (int)pow(1 + REF_1, level)) / pow(1 + REF_1, level) * NB_2*NB_3 + (j - j % (int)pow(1 + REF_2, level)) / pow(1 + REF_2, level) * NB_3
-		+ (z - z % (int)pow(1 + REF_3, level)) / pow(1 + REF_3, level));
-	n = index[0] * factor[0];
-	for (u = level; u > 0; u--){
-		coord[1] = (i % (int)(pow(1 + REF_1, level - u + 1)) - (i % (int)pow(1 + REF_1, level - u))) / pow(2, level - u);
-		coord[2] = (j % (int)(pow(1 + REF_2, level - u + 1)) - (j % (int)pow(1 + REF_2, level - u))) / pow(2, level - u);
-		coord[3] = (z % (int)(pow(1 + REF_3, level - u + 1)) - (z % (int)pow(1 + REF_3, level - u))) / pow(2, level - u);
-		index[u] = coord[1] * (1 + REF_2)*(1 + REF_3) + coord[2] * (1 + REF_3) + coord[3]; //index of subblock within block in range [1,8] for refinement in 3 dimensions
-		n += index[u] * factor[u] + 1;
-	}
-	#endif
-
-	return n;
-}
-

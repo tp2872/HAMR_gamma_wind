@@ -183,6 +183,7 @@ void vofx_matthewcoords(double *X, double *V){
 /* some grid location, dxs */
 void set_points(int n)
 {
+	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
 	if(Rout<=RTRANS){
 		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
@@ -215,7 +216,6 @@ void set_gridparam(void) {
 		fractheta = 1.e-2;
 	}
 
-	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
 	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
 	startx[2] = -1. + 1.*(1. - fractheta);
 	startx[3] = 0.;

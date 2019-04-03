@@ -1,11 +1,5 @@
 #include "decs_MPI.h"
 
-/*Set the timelevel for a jet which is domain decomposed in the second dimension*/
-void set_timelevel_jet(void){
-	fprintf(stderr,"set_timelevel_jet is obselete and not anymore implemented! \n");
-	exit(0);
-}
-
 /*Calculate for every block the timestep. This function should be node independent*/
 void set_timelevel(void){
 	int n;

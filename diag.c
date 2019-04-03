@@ -109,9 +109,6 @@ void diag(int call_code)
 	if (call_code == INIT_OUT ||
 		call_code == DUMP_OUT) {
 		// make regular dump file 
-		#if (MPI_enable)
-		MPI_Barrier(mpi_cartcomm);
-		#endif
 		if (rank == 0){
 			fprintf(stderr, "DUMP%d started \n", dump_cnt);
 		}

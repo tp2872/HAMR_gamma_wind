@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if (nstep % (20 * AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0){
 			end1 = get_wall_time();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
 			#if(N_LEVELS_3D>1)
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
@@ -148,32 +148,31 @@ int main(int argc, char *argv[])
 			#if(GPU_ENABLED)
 			balance_load_gpu();
 			#endif
-			set_communicator();
 			#endif
 			tref += TREF;
 		}
 
-		/* Put out dump file*/
-		if (t >= tdump && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			diag(DUMP_OUT) ;
-			tdump += DTd;
+		//Put out log file and rdump file
+		if (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+			restart_write(); //do restart dump simultaneous with log
+			tlog += DTl;
 		}
 
-		//Put out log file and rdump file
-		if (t >= tlog && nstep % (20 * AMR_SWITCHTIMELEVEL) == 0) {
-			restart_write(); //do restart dump simultaneous with log
-			tlog +=  DTl;
-		}			
+		/* Put out dump file*/
+		if (t >= tdump && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+			diag(DUMP_OUT) ;
+			tdump += DTd;
+		}	
 
 		#if TIMER
-		if (nstep % (20*AMR_SWITCHTIMELEVEL) == 0){
+		if (nstep % (DUMPFACTOR*AMR_SWITCHTIMELEVEL) == 0){
 			diag(LOG_OUT);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt1, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt2, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			MPI_Allreduce(MPI_IN_PLACE, &ndt3, 1, MPI_DOUBLE, MPI_MIN, mpi_cartcomm);
 			if (rank == 0){
 				fprintf(stderr, "Runtime: %f MPI-time: %f ", (double)(end1 - begin1), time_spent3);
-				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1,ndt2,ndt3,nstep);
+				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1, ndt2, ndt3, nstep);
 				fflush(stderr);
 			}
 			time_spent3 = 0.0;	
@@ -262,13 +261,13 @@ void MPI_initialize(int argc, char *argv[])
 
 void mpi_synch(void){
 	int i;
-	MPI_Barrier(MPI_COMM_WORLD);
-	//for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
-		//if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
-			//if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
-			//break;
-		//}
-	//}
+	//MPI_Barrier(MPI_COMM_WORLD);
+	for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+			break;
+		}
+	}
 }
 
 
@@ -909,7 +908,7 @@ void free_arrays(int n){
 			if (mem_spot_gpu[i] == block[n][AMR_GPU] && GPU_ENABLED==1) count_gpu++;
 		}
 	}
-	if (count_gpu < (MAX_BLOCKS/ (N_GPU)) || count_node < MAX_BLOCKS){
+	if (count_gpu < (MAX_BLOCKS) || count_node < MAX_BLOCKS * N_GPU){
 		mem_spot[nl[n]] = 0;
 		free_bound_cpu(n);
 		return;

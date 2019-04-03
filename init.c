@@ -1007,9 +1007,12 @@ void set_mag(void){
 	}
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
-			/* Cell centered vector potential */					
+			/* Cell centered vector potential */	
+			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
-		
+			#else
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.05;
+			#endif
 			if (q > 0.){		
 				coord(n_ord[n], i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
