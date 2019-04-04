@@ -303,7 +303,7 @@ void set_AMR(void){
 	}
 
  	//Find parent for all blocks(refined and unrefined)
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Find parent of block
 		if (block[n][AMR_LEVEL] == 0) block[n][AMR_PARENT] = -1; //-1 means no parent
@@ -338,7 +338,7 @@ void set_AMR(void){
 	}
 
 	//Find children of block, -1 means no children
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -412,7 +412,7 @@ void set_AMR(void){
 	}
 
 	//Find neighbours of block
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Set maximum coordinates
 		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
@@ -525,7 +525,7 @@ void set_AMR(void){
 	}
 
 	//Find corners of block assuming only third dimension is periodic
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Set maximum coordinates
 		i_max = NB_1*pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1;
@@ -640,13 +640,13 @@ void set_AMR(void){
 	}
 
 	//Set 2-way grid to negative
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) block[n][i] = -1;
 	}
 
 	//Set 2-way grid hierarchy
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -739,7 +739,7 @@ void set_AMR(void){
 	}
 
 	//Set corn children
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_CORN1] >= 0){
 			if (block[n][AMR_CORN1] != NB){
@@ -842,7 +842,7 @@ void set_AMR(void){
 	}
 
 	//Set NBR parent
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -889,7 +889,7 @@ void set_AMR(void){
 	}
 
 	//Set corn parent
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
@@ -1029,7 +1029,7 @@ void set_AMR(void){
 	}
 
 	//Reset fake parent corners
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_CORN1P] >= 0){
 			ref_1 = block[n][AMR_LEVEL1] - block[block[n][AMR_CORN1P]][AMR_LEVEL1];
@@ -1093,14 +1093,14 @@ void set_AMR(void){
 		}
 	}
 
-	//Set offsets and size of blocks#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	//Set offsets and size of blocks#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		N1_GPU_offset[n] = block[n][AMR_COORD1] * BS_1;
 		N2_GPU_offset[n] = block[n][AMR_COORD2] * BS_2;
 		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;	
 	}
 
-	#pragma omp parallel for schedule(dynamic,1) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
+	#pragma omp parallel for schedule((dynamic, NB/nthreads)) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		set_points(n);
 

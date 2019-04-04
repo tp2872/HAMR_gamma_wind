@@ -82,7 +82,9 @@ int main(int argc, char *argv[])
 			#if(N_LEVELS_1D_INT>0 && D3>0)
 			average_grid();
 			#endif
+			#if(N_LEVELS_3D>1)
 			check_refcrit();
+			#endif
 		}	
 	}
 
