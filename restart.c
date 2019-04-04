@@ -226,20 +226,19 @@ void close_rdump(void) {
 			MPI_Wait(&req_rdumpgrid[0], &Statbound[nl[n_ord[0]]][0]);
 			MPI_File_close(&grid_restart[0]);
 		}
+
+		if (rank == 0 && fparam_restart != NULL)fclose(fparam_restart);
+		//if (rank == 1%numtasks && grid_restart != NULL)fclose(grid_restart);
+
+		//Now tell the writing is complete
+		MPI_Barrier(MPI_COMM_WORLD);
+		if (rank == 0) {
+			if ((rdump_cnt - 1) % 2 == 0) checkfile = fopen("rdumps0/checkfile", "wb");
+			else checkfile = fopen("rdumps1/checkfile", "wb");
+			fwrite(&one, int_size, 1, checkfile);
+			fclose(checkfile);
+		}
 	}
-
-	if (rank == 0 && fparam_restart != NULL)fclose(fparam_restart);
-	//if (rank == 1%numtasks && grid_restart != NULL)fclose(grid_restart);
-
-	//Now tell the writing is complete
-	MPI_Barrier(MPI_COMM_WORLD);
-	if (rank == 0) {
-		if ((rdump_cnt - 1) % 2 == 0) checkfile = fopen("rdumps0/checkfile", "wb");
-		else checkfile = fopen("rdumps1/checkfile", "wb");
-		fwrite(&one, int_size, 1, checkfile);
-		fclose(checkfile);
-	}
-
 	first_rdump = 0;
 }
 
@@ -290,7 +289,7 @@ int restart_read_param(void)
 					if (rank == 0) fprintf(stderr, "Cannot open restart grid file\n");
 					return 0;
 				}
-				fprintf(stderr, "Reading in rdumps1! \n");
+				if (rank == 0) fprintf(stderr, "Reading in rdumps1! \n");
 
 				fread(&k, int_size, 1, grid);
 				for (n = 0; n < NB; n++) {
@@ -310,7 +309,7 @@ int restart_read_param(void)
 
 	if (t0 > t1 && value0==1) {
 		sprintf(filename, "rdumps0/parameter");
-		fprintf(stderr, "Reading in rdumps0! \n");
+		if (rank == 0) fprintf(stderr, "Reading in rdumps0! \n");
 		param = fopen(filename, "rb");
 		if (param != NULL) {
 			param_read(param);
@@ -337,7 +336,7 @@ int restart_read_param(void)
 	}
 
 	if (restart_number == -1) {
-		fprintf(stderr, "No restart dump available! \n");
+		if(rank==0) fprintf(stderr, "No restart dump available! \n");
 		return 0;
 	}
 	else {

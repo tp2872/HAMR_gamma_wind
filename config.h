@@ -77,13 +77,13 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Enable parallel I/0*/
-#define PARALLEL_IO (0)
+#define PARALLEL_IO (1)
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (30)
+#define MAX_BLOCKS (300)
 #define NB_LOCAL (400)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/

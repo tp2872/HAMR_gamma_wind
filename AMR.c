@@ -1374,6 +1374,9 @@ void balance_load(void){
 	//Copy the B-field to make the code resilient against two bit ECC errors
 	#if(GPU_ENABLED)
 	for (n = 0; n < n_active; n++){
+		#if(N_GPU>1)
+		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
+		#endif
 		#pragma omp parallel private(i, j, z, k)
 		{
 			#pragma omp for collapse(2) schedule(dynamic)
