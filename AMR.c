@@ -514,11 +514,11 @@ void set_AMR(void){
 		//Find the neighbours in the case we have transmissive boundary conditions at the pole
 		if (j == 0){
 			block[n][AMR_POLE] += 1;
-			block[n][AMR_NBR1] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
+			block[n][AMR_NBR1] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2) % (z_max + 1));
 		}
 		if (j == j_max){
 			block[n][AMR_POLE] += 2;
-			block[n][AMR_NBR3] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, level) / 2) % (z_max + 1));
+			block[n][AMR_NBR3] = AMR_coord_linear2(level, j0, i, j, (z + NB_3*(int)pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2) % (z_max + 1));
 		}
 		#endif
 
