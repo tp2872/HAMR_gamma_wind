@@ -1395,7 +1395,10 @@ void GPU_boundprim(int bound_force)
 	#endif
 
 	//For last timestep do not receive synchronized electrice fields 
-	cudaDeviceSynchronize();
+	for (n = 0; n < N_GPU; n++) {
+		cudaSetDevice(n);
+		cudaDeviceSynchronize();
+	}
 	mpi_synch();
 	if (rank == 0) begin2 = get_wall_time();
 
