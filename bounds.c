@@ -164,7 +164,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	if (block[n][AMR_NBR4] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, pflag,gdet) private(i,j,z,k,geom)
 		{
-			#pragma omp for collapse(2) schedule(static, BS_2*BS_3/nthreads)	
+			#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 			for (j = N2_GPU_offset[n]-N2G; j < N2_GPU_offset[n] + BS_2+N2G; j++){
 				for (z = N3_GPU_offset[n]-N3G; z < N3_GPU_offset[n] + BS_3+N3G; z++){
 					#if( RESCALE )
@@ -200,8 +200,7 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		// outer r BC: outflow 		
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag) private(i,j,k,z, geom)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)	
-			#pragma omp for collapse(2) schedule(static, BS_2*BS_3/nthreads)	
+			#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 			for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 				for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++){
 					#if( RESCALE )
@@ -236,9 +235,8 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		for (i = -N1G; i <= -1; i++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
 			{
-				//#pragma omp for collapse(2) schedule(dynamic)	
 				#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
-				for (j = N2_GPU_offset[n] - 2; j < N2_GPU_offset[n] + BS_2 + 2; j++){
+				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 						inflow_check(prim[nl[n]][index_3D(n, -1, j, z)], n, i, j, z, 0);
 						inflow_check(prim[nl[n]][index_3D(n, -2, j, z)], n, i, j, z, 0);
@@ -255,7 +253,6 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 		for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i <= N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G - 1; i++){
 			#pragma omp   parallel shared(block,n,n_ord,n_active,prim, i) private(j,z)
 			{
-				//#pragma omp for collapse(2) schedule(dynamic)	
 				#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 				for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 					for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
@@ -280,7 +277,6 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	if (block[n][AMR_NBR1] == -1){
 		#pragma omp   parallel shared(n,n_ord,n_active,prim, jref,gdet) private(i,j,z,k)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)	
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
@@ -306,7 +302,6 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	if (block[n][AMR_NBR3] == -1){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, jref,gdet) private(i,j,z,k)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)	
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
@@ -335,7 +330,6 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	if (block[n][AMR_NBR1] == -1){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag,gdet) private(i,j,z, k)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)	
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
@@ -409,7 +403,6 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	if (block[n][AMR_NBR1] == -1){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim) private(i,j,z)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)	
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
@@ -424,7 +417,6 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 	if (block[n][AMR_NBR3] == -1){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim) private(i,j,z)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
@@ -446,7 +438,6 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 	if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 		#pragma omp   parallel shared(block,n,n_ord,n_active,prim, pflag,gdet) private(i,j,z, k)
 		{
-			//#pragma omp for collapse(2) schedule(dynamic)	
 			#pragma omp for collapse(2) schedule(static, (BS_1+2*N1G)*(BS_3+2*N3G)/nthreads)	
 			for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {

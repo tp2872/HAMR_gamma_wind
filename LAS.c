@@ -12,7 +12,7 @@ void set_timelevel(void){
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
 	if (nstep > 0){
-		#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,i)
+		#pragma omp parallel for schedule(static, n_active/nthreads) private(n,i)
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
@@ -325,7 +325,7 @@ void set_corners(void){
 		block[n_ord_total[n]][AMR_CORN12D_2] = -100;
 	}
 	#else
-	#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
+	#pragma omp parallel for schedule(static, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
 	for (n = 0; n < n_active_total; n++){
 		//Corn 1
 		block[n_ord_total[n]][AMR_CORN1D] = -10;
@@ -404,7 +404,7 @@ void set_corners(void){
 			}
 		}
 	}
-	#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
+	#pragma omp parallel for schedule(static, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
 	for (n = 0; n < n_active_total; n++){
 		block[n_ord_total[n]][AMR_CORN2D] = -10;
 		block[n_ord_total[n]][AMR_CORN2D_1] = -10;
@@ -622,7 +622,7 @@ void set_corners(void){
 			}
 		}
 	}
-	#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
+	#pragma omp parallel for schedule(static, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
 	for (n = 0; n < n_active_total; n++){
 		//Corn 5
 		block[n_ord_total[n]][AMR_CORN5D] = -10;
@@ -701,7 +701,7 @@ void set_corners(void){
 		}
 	}
 
-	#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
+	#pragma omp parallel for schedule(static, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
 	for (n = 0; n < n_active_total; n++){
 		block[n_ord_total[n]][AMR_CORN6D] = -10;
 		block[n_ord_total[n]][AMR_CORN6D_1] = -10;
@@ -910,7 +910,7 @@ void set_corners(void){
 		}
 	}
 	//Set the most important corner value of the electric field to break the degeneracy of E-fields at each corner
-	#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
+	#pragma omp parallel for schedule(static, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
 	for (n = 0; n < n_active_total; n++){
 		//Corn 9
 		block[n_ord_total[n]][AMR_CORN9D] = -10;
@@ -989,7 +989,7 @@ void set_corners(void){
 		}
 	}
 
-	#pragma omp parallel for schedule(dynamic, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
+	#pragma omp parallel for schedule(static, n_active_total/nthreads) private(n,counter0, counter1, counter2, counter3,counter0_1, counter1_1, counter2_1, counter3_1, counter0_2, counter1_2, counter2_2, counter3_2, temp)
 	for (n = 0; n < n_active_total; n++){
 		block[n_ord_total[n]][AMR_CORN10D] = -10;
 		block[n_ord_total[n]][AMR_CORN10D_1] = -10;

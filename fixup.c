@@ -52,7 +52,7 @@ void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 	int i, j, z;
 	#pragma omp parallel shared(n,pv, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z)
 	{
-		#pragma omp for collapse(2) schedule(static,BS_1*BS_2/nthreads)
+		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		for (i = N1_GPU_offset[n]; i<N1_GPU_offset[n] + BS_1; i++)for (j = N2_GPU_offset[n]; j<N2_GPU_offset[n] + BS_2; j++)for (z = N3_GPU_offset[n]; z<N3_GPU_offset[n] + BS_3; z++){			
 			fixup1zone(i, j, z, n, pv[nl[n]][index_3D(n, i, j, z)]);
 		}
@@ -306,7 +306,7 @@ void fixup_utoprim(double((* restrict pv[NB_LOCAL])[NPR]), int n)
   /* Fix the interior points first */ 
 	#pragma omp parallel shared(pflag, pv) private(i,j,z,k, pf)
 	{
-		#pragma omp for schedule(static,1)
+		#pragma omp for schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) 	{
 			if (pflag[nl[n]][index_3D(n ,i, j, z)] != 0) {
 				//fprintf(stderr, "i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);

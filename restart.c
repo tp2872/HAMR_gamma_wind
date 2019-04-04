@@ -97,7 +97,7 @@ void restart_write(void)
 void rdump_block_write(MPI_File *fp, int n)
 {
 	int i, j, z, k;
-	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads) private(i,j,z,k)
 	ZSLOOP3D(-N1G + N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, -N3G + N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + N3G){
 		for (k = 0; k < NPR; k++) array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (k)] = p[nl[n]][index_3D(n, i, j, z)][k];
 		array_rdump[nl[n]][(i - N1_GPU_offset[n] + N1G) * (NPR + NDIM) * (BS_2 + 2 * N2G)* (BS_3 + 2 * N3G) + (j - N2_GPU_offset[n] + N2G) * (NPR + NDIM) * (BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G) * (NPR + NDIM) + (0 + NPR)] = ps[nl[n]][index_3D(n, i, j, z)][0];
@@ -118,7 +118,7 @@ void rdump_grid(MPI_File *fp)
 	int n, k;
 	array_rdumpgrid[0] = NB;
 
-	#pragma omp parallel for schedule(dynamic,1) private(n,k)
+	#pragma omp parallel for schedule(static, NB/nthreads) private(n,k)
 	for (n = 0; n <= n_max; n++) {
 		for (k = 0; k < NV; k++) {
 			array_rdumpgrid[1 + n*NV + k] = block[n][k];

@@ -367,7 +367,7 @@ void prolong_grid(void){
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel private(i, j, z)
 		{
-			#pragma omp for collapse(2) schedule(dynamic)
+			#pragma omp for collapse(3) schedule(static, (BS_1*2*N1G)*(BS_2*2*N2G)*(BS_3*2*N3G)/nthreads)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, N1_GPU_offset[n_ord[n]] + BS_1 + N1G - 1, -N2G + N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 + N2G - 1, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 + N3G - 1) {
 				psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE1];
 				psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE2];
@@ -376,7 +376,7 @@ void prolong_grid(void){
 		}
 	}
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for schedule(dynamic,1) private(i, j, z, k, temp, zsize, zlevel, u, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8)
+		#pragma omp parallel for collapse(2) schedule(static, (BS_1*2*N1G)*(BS_2*2*N2G)/nthreads) private(i, j, z, k, temp, zsize, zlevel, u, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8)
 		for (i = N1_GPU_offset[n_ord[n]]; i < N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j <= N2_GPU_offset[n_ord[n]] + BS_2; j++){
 			zlevel = 0;
 			if ((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j < N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (abs(j - N2_GPU_offset[n_ord[n]]) + D2))) / log(2.)), N_LEVELS_1D_INT);

@@ -62,7 +62,7 @@ void diag(int call_code)
 		zmax = 0.;
 		nmax = 0;
 		for (n = 0; n < n_active; n++){
-			#pragma omp parallel for schedule(dynamic,1) private(divb,i,j,z)
+			#pragma omp parallel for schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(divb,i,j,z)
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], N1_GPU_offset[n_ord[n]] + BS_1 - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 				divb = divb_calc(n_ord[n], i, j, z);
 				#pragma omp critical

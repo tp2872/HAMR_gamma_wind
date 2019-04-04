@@ -14,7 +14,7 @@ void pack_send1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -47,7 +47,7 @@ void pack_send2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (j = j1; j < j2; j++){
 			for (i = i1; i < i2; i++){
 				for (z = z1; z < z2; z++){
@@ -81,7 +81,7 @@ void pack_send3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
@@ -118,7 +118,7 @@ void pack_send_average1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (i = i1; i < i2; i += 1 + ref_1){
 			for (j = j1; j < j2; j += 1 + ref_2){
 				for (z = z1; z < z2; z += (1 + ref_3)){
@@ -174,7 +174,7 @@ void pack_send_average2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (j = j1; j < j2; j += 1 + ref_2){
 			for (i = i1; i < i2; i += 1 + ref_1){
 				for (z = z1; z < z2; z += 1 + ref_3){
@@ -230,7 +230,7 @@ void pack_send_average3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (z = z1; z < z2; z += 1 + ref_3){
 			for (i = i1; i < i2; i += 1 + ref_1){
 				for (j = j1; j < j2; j += 1 + ref_2){
@@ -290,7 +290,7 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (i = i1; i < i2; i++){
 			for (j = j1; j < j2; j++){
 				for (z = z1; z < z2; z++){
@@ -339,7 +339,7 @@ void unpack_receive2(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	else{
 		int i, j, z, k;
 		if (reverse == 0){
-			#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+			#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 			for (j = j1; j < j2; j++){
 				for (i = i1; i < i2; i++){
 					for (z = z1; z < z2; z++){
@@ -406,7 +406,7 @@ void unpack_receive3(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 	}
 	else{
 		int i, j, z, k;
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k)
 		for (z = z1; z < z2; z++){
 			for (i = i1; i < i2; i++){
 				for (j = j1; j < j2; j++){
@@ -455,7 +455,7 @@ void unpack_receive_coarse1(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int ii, ij, iz;
 		int is, js, zs;
 		double dq1[NPR + NDIM], dq2[NPR + NDIM], dq3[NPR + NDIM], avg[NPR + NDIM];
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (i = i1; i < i2; i++)for (j = j1; j < j2; j++)for (z = z1; z < z2; z++){
 			//Use slope limited interpolation in direction fluxes, copy  boundary cells in other directions
 			if (i1 < 0 && ref_1 == 1) ii = (NG - 1) + (i + 1) / (1 + ref_1);
@@ -578,7 +578,7 @@ void unpack_receive_coarse2(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int ii, ij, iz;
 		int is, js, zs;
 		double dq1[NPR + NDIM], dq2[NPR + NDIM], dq3[NPR + NDIM], avg[NPR + NDIM];
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (j = j1; j < j2; j++)for (i = i1; i < i2; i++)for (z = z1; z < z2; z++){
 			//now use zero order interpolation, must be done better in the future
 			if (j1 < 0 && ref_2 == 1) ij = (NG - 1) + (j + 1) / (1 + ref_2);
@@ -700,7 +700,7 @@ void unpack_receive_coarse3(int n, int n_rec, int i1, int i2, int j1, int j2, in
 		int ii, ij, iz;
 		int is, js, zs;
 		double dq1[NPR + NDIM], dq2[NPR + NDIM], dq3[NPR + NDIM], avg[NPR + NDIM];
-		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
+		#pragma omp parallel for schedule(static,(i2-i1)*(j2-j1)*(z2-z1)/nthreads) private(i,j,z,k,ii, ij, iz,is, js, zs, dq1, dq2, dq3, avg)
 		for (z = z1; z < z2; z++)for (i = i1; i < i2; i++)for (j = j1; j < j2; j++){
 			//now use zero order interpolation, must be done better in the future
 			if (z1 < 0 && ref_3 == 1) iz = (NG - 1) + (z + 1) / (1 + ref_3);

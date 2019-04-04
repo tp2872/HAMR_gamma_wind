@@ -228,7 +228,7 @@ void dump_block(MPI_File *fp, int n)
 	struct of_geom geom;
 	struct of_state q;
 
-	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,geom,q)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads) private(i,j,z,k,geom,q)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
 		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
@@ -251,7 +251,7 @@ void dump_block(MPI_File *fp, int n)
 void dump_blockdiag(MPI_File *fp, int n)
 {
 	int i, j, z;
-	#pragma omp parallel for schedule(dynamic,1) private(i,j,z)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads) private(i,j,z)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 0] = (float)divb_calc(n, i, j, z);
 		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[nl[n]][index_3D(n, i, j, z)][0];
@@ -302,7 +302,7 @@ void gdump_grid(MPI_File *fp)
 	int n, k;
 	array_gdumpgrid[0] = NB;
 
-	#pragma omp parallel for schedule(dynamic,1) private(n,k)
+	#pragma omp parallel for schedule(static,NB/nthreads) private(n,k)
 	for (n = 0; n <= n_max; n++){
 		for (k = 0; k < NV; k++){
 			array_gdumpgrid[1 + n*NV + k] = block[n][k];
@@ -332,7 +332,7 @@ void gdump_block(MPI_File  *fp, int n)
 	/***************************************************************
 	Write header information :
 	***************************************************************/
-	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,X,r,th,phi)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z,k,X,r,th,phi)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1)
 	{
 		coord(n, i, j, z, CENT, X);
@@ -354,7 +354,7 @@ void gdump_block(MPI_File  *fp, int n)
 	MPI_File_iwrite(fp[0], array_gdump1[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_DOUBLE, &req_gdump1[nl[n]][0]);
 	#endif
 
-	#pragma omp parallel for schedule(dynamic,1) private(i,j,z,k,l,X,geom,dxdxp)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2)/nthreads) private(i,j,z,k,l,X,geom,dxdxp)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n])
 	{
 		coord(n, i, j, z, CENT, X);

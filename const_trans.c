@@ -9,7 +9,7 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 
 	#pragma omp parallel shared(n,n_ord,n_active,E_corn, F1, F2, F3, dx,pb, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0, E_cent, geom, q)
 	{
-		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2+D2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)*(BS_3+2*D3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n] * D1 - D1, (N1_GPU_offset[n] + BS_1)*D1, N2_GPU_offset[n] * D2 - D2, (N2_GPU_offset[n] + BS_2)*D2, N3_GPU_offset[n] * D3 - D3, (N3_GPU_offset[n] + BS_3)*D3){
 			ind0 = index_3D(n, i, j, z);
 
@@ -140,7 +140,6 @@ void E_average(void){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				//Which nodes have an active block around a slice in phi for a given i
 				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
-					//#pragma omp parallel for schedule(dynamic,1) private(number, u)
 					for (u = 0; u < numtasks; u++){
 						send_tag1[l][u] = 0;
 						for (z = 0; z < nz; z++){
@@ -154,7 +153,6 @@ void E_average(void){
 							rc = MPI_Irecv(&E_avg1[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[l][i*nz + z]);
 						}
 						if (block[number][AMR_NODE] == rank){
-							//#pragma omp parallel for schedule(dynamic,1) private(req_local, u)
 							for (u = 0; u < numtasks; u++){
 								if (send_tag1[l][u] == 1 && u != rank){
 									rc = MPI_Isend(&E_avg1[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
@@ -189,7 +187,6 @@ void E_average(void){
 							rc = MPI_Irecv(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[l][i*nz + z]);
 						}
 						if (block[number][AMR_NODE] == rank){
-							//#pragma omp parallel for schedule(dynamic,1) private(req_local, u)
 							for (u = 0; u < numtasks; u++){
 								if (send_tag2[l][u] == 1 && u != rank){
 									rc = MPI_Isend(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
@@ -211,7 +208,6 @@ void E_average(void){
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
-					//#pragma omp parallel for schedule(dynamic,1) private(number, u)
 					for (u = 0; u < numtasks; u++){
 						send_tag1[l][u] = 0;
 						for (z = 0; z < nz; z++){
@@ -237,7 +233,6 @@ void E_average(void){
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, NB_2-1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
-					//#pragma omp parallel for schedule(dynamic,1) private(number, u)
 					for (u = 0; u < numtasks; u++){
 						send_tag2[l][u] = 0;
 						for (z = 0; z < nz; z++){
@@ -377,7 +372,7 @@ void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict ps
 	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psi,psf, dx,Dt, p, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
 	{
 		//update the staggered field components
-		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2+D2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			ind0 = index_3D(n, i, j, z);
 			psf[nl[n]][index_3D(n, i, j, z)][1] = psi[nl[n]][index_3D(n, i, j, z)][1] - Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
@@ -387,7 +382,7 @@ void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict ps
 		}
 
 		//update the staggered field components
-		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2+D2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2+D2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			ind0 = index_3D(n, i, j, z);
 			psf[nl[n]][index_3D(n, i, j, z)][2] = psi[nl[n]][index_3D(n, i, j, z)][2] + Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
@@ -398,7 +393,7 @@ void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict ps
 
 		//update the staggered field components
 		#if(N3G>0)
-		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2+D2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3+D3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], (N3_GPU_offset[n] + BS_3)*D3){
 			ind0 = index_3D(n, i, j, z);
 			psf[nl[n]][index_3D(n, i, j, z)][3] = psi[nl[n]][index_3D(n, i, j, z)][3] - Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][2] - E_corn[nl[n]][ind0][2]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE3]
@@ -425,7 +420,7 @@ void flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])
 	/* Toth approach: just average */
 	#pragma omp parallel shared(n,dq, F1, F2, F3) private(i,j,z, ind0)
 	{
-		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2+D2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2+D2)*(BS_3+D3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + D3){
 			ind0 = index_3D(n, i, j, z);
 			#if (N2G>0 && N3G>0)
@@ -442,7 +437,7 @@ void flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])
 		}
 
 		/* rewrite EMFs as fluxes, after Toth */
-		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) 	{
 			ind0 = index_3D(n, i, j, z);
 			#if (N1G>0)
@@ -456,7 +451,7 @@ void flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])
 			#endif
 		}
 
-		#pragma omp for collapse(2) schedule(dynamic)
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2+D2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) 	{
 			ind0 = index_3D(n, i, j, z);
 			#if (N1G>0 && N2G>0)		
@@ -470,7 +465,7 @@ void flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])
 			#endif
 		}
 
-		#pragma omp for collapse(2) schedule(static,(BS_1)*(BS_2)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3+D3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1 + D3) 	{
 			ind0 = index_3D(n, i, j, z);
 			#if (N1G>0 && N3G>0)

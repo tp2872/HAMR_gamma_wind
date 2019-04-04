@@ -1306,7 +1306,7 @@ void set_grid(int n)
 	#pragma omp parallel private(X,i,j,z,k,geom, i1,j1,z1,r,th,phi,a,zsize,zlevel,zoffset)
 	{
 		DLOOPA X[j] = 0.;
-		#pragma omp for collapse(2) schedule(dynamic)
+		#pragma omp for collapse(2) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)/nthreads)
 		#if(!NSY)
 		ZSLOOP3D(-N1G + N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1 + N1G, -N2G + N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n], N3_GPU_offset[n]) {
 		#else
