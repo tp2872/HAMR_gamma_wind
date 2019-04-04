@@ -279,6 +279,7 @@ void set_AMR(void){
 	for (i = 0; i < NB_LOCAL; i++){
 		mem_spot[i] = -1;
 		mem_spot_gpu[i] = -1;
+		mem_spot_gpu_bound[i] = -1;
 	}
 
 	//Set arrays for grid data output
@@ -2064,149 +2065,149 @@ int refine(int n){
 		gpu_local = block[n][AMR_GPU];
 		if (block[n][AMR_NODE] == rank){
 			//Calculate gradients, store in flux array F1, F2, F3
-		#pragma omp parallel private(i, j, z,k)
-		{
-			#pragma omp for collapse(2) schedule(dynamic)
-			ZSLOOP3D(-D1, BS_1 - 1 + D1, -D2, BS_2 - 1 + D2, -D3, BS_3 - 1 + D3) {
-				PLOOP{
-					F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n] - 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n] + 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
-					F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - 1, z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 1, z + N3_GPU_offset[n])][k]);
-					#if(N3>1)
-					F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - 1)][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 1)][k]);
-					#endif
+			#pragma omp parallel private(i, j, z,k)
+			{
+				#pragma omp for collapse(2) schedule(dynamic)
+				ZSLOOP3D(-D1, BS_1 - 1 + D1, -D2, BS_2 - 1 + D2, -D3, BS_3 - 1 + D3) {
+					PLOOP{
+						F1[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n] - 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n] + 1, j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k]);
+						F2[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] - 1, z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n] + 1, z + N3_GPU_offset[n])][k]);
+						#if(N3>1)
+						F3[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k] = slope_lim(p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] - 1)][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n])][k], p[nl[n]][index_3D(n, i + N1_GPU_offset[n], j + N2_GPU_offset[n], z + N3_GPU_offset[n] + 1)][k]);
+						#endif
+					}
 				}
 			}
-		}
 
-		if (block[n][AMR_CHILD1] >= 0){
-			set_arrays(block[n][AMR_CHILD1]);
-			set_grid(block[n][AMR_CHILD1]);
-			n_child = block[n][AMR_CHILD1];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 0, 0, 0, p, F1, F2, F3);
-			refine_field(n, n_child, 0, 0, 0, ps);
+			if (block[n][AMR_CHILD1] >= 0){
+				set_arrays(block[n][AMR_CHILD1]);
+				set_grid(block[n][AMR_CHILD1]);
+				n_child = block[n][AMR_CHILD1];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 0, 0, 0, p, F1, F2, F3);
+				refine_field(n, n_child, 0, 0, 0, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD1], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD1]);
+				#endif
+			}
+
+			ref_3 = block[block[n][AMR_CHILD2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+			if (block[n][AMR_CHILD2] >= 0 && ref_3 == 1){
+				set_arrays(block[n][AMR_CHILD2]);
+				set_grid(block[n][AMR_CHILD2]);
+				n_child = block[n][AMR_CHILD2];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 0, 0, 1, p, F1, F2, F3);
+				refine_field(n, n_child, 0, 0, 1, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD2], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD2]);
+				#endif
+			}
+
+			ref_2 = block[block[n][AMR_CHILD3]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+			if (block[n][AMR_CHILD3] >= 0 && ref_2 == 1){
+				set_arrays(block[n][AMR_CHILD3]);
+				set_grid(block[n][AMR_CHILD3]);
+				n_child = block[n][AMR_CHILD3];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 0, 1, 0, p, F1, F2, F3);
+				refine_field(n, n_child, 0, 1, 0, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD3], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD3]);
+				#endif
+			}
+
+			ref_2 = block[block[n][AMR_CHILD4]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+			ref_3 = block[block[n][AMR_CHILD4]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+			if (block[n][AMR_CHILD4] >= 0 && ref_2 == 1 && ref_3 == 1){
+				set_arrays(block[n][AMR_CHILD4]);
+				set_grid(block[n][AMR_CHILD4]);
+				n_child = block[n][AMR_CHILD4];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 0, 1, 1, p, F1, F2, F3);
+				refine_field(n, n_child, 0, 1, 1, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD4], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD4]);
+				#endif
+			}
+
+			ref_1 = block[block[n][AMR_CHILD5]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+			if (block[n][AMR_CHILD5] >= 0 && ref_1 == 1){
+				set_arrays(block[n][AMR_CHILD5]);
+				set_grid(block[n][AMR_CHILD5]);
+				n_child = block[n][AMR_CHILD5];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 1, 0, 0, p, F1, F2, F3);
+				refine_field(n, n_child, 1, 0, 0, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD5], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD5]);
+				#endif
+			}
+
+			ref_1 = block[block[n][AMR_CHILD6]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+			ref_3 = block[block[n][AMR_CHILD6]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+			if (block[n][AMR_CHILD6] >= 0 && ref_1 == 1 && ref_3 == 1){
+				set_arrays(block[n][AMR_CHILD6]);
+				set_grid(block[n][AMR_CHILD6]);
+				n_child = block[n][AMR_CHILD6];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 1, 0, 1, p, F1, F2, F3);
+				refine_field(n, n_child, 1, 0, 1, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD6], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD6]);
+				#endif
+			}
+
+			ref_1 = block[block[n][AMR_CHILD7]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+			ref_2 = block[block[n][AMR_CHILD7]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+			if (block[n][AMR_CHILD7] >= 0 && ref_1 == 1 && ref_2 == 1){
+				set_arrays(block[n][AMR_CHILD7]);
+				set_grid(block[n][AMR_CHILD7]);
+				n_child = block[n][AMR_CHILD7];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 1, 1, 0, p, F1, F2, F3);
+				refine_field(n, n_child, 1, 1, 0, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD7], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD7]);
+				#endif
+			}
+
+			ref_1 = block[block[n][AMR_CHILD8]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+			ref_2 = block[block[n][AMR_CHILD8]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+			ref_3 = block[block[n][AMR_CHILD8]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+			if (block[n][AMR_CHILD8] >= 0 && ref_1 == 1 && ref_2 == 1 && ref_3 == 1){
+				set_arrays(block[n][AMR_CHILD8]);
+				set_grid(block[n][AMR_CHILD8]);
+				n_child = block[n][AMR_CHILD8];
+				block[n_child][AMR_ACTIVE] = 1;
+				block[n_child][AMR_NODE] = rank;
+				refine_cell(n, n_child, 1, 1, 1, p, F1, F2, F3);
+				refine_field(n, n_child, 1, 1, 1, ps);
+				#if(GPU_ENABLED || GPU_DEBUG )
+				set_arrays_GPU(block[n][AMR_CHILD8], block[n][AMR_GPU]);
+				GPU_write(block[n][AMR_CHILD8]);
+				#endif
+			}
+
+			//Clean up memory of parent block
+			free_arrays(n);
 			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD1], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD1]);
+			GPU_finish(n, 0);
 			#endif
-		}
-
-		ref_3 = block[block[n][AMR_CHILD2]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_CHILD2] >= 0 && ref_3 == 1){
-			set_arrays(block[n][AMR_CHILD2]);
-			set_grid(block[n][AMR_CHILD2]);
-			n_child = block[n][AMR_CHILD2];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 0, 0, 1, p, F1, F2, F3);
-			refine_field(n, n_child, 0, 0, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD2], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD2]);
-			#endif
-		}
-
-		ref_2 = block[block[n][AMR_CHILD3]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_CHILD3] >= 0 && ref_2 == 1){
-			set_arrays(block[n][AMR_CHILD3]);
-			set_grid(block[n][AMR_CHILD3]);
-			n_child = block[n][AMR_CHILD3];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 0, 1, 0, p, F1, F2, F3);
-			refine_field(n, n_child, 0, 1, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD3], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD3]);
-			#endif
-		}
-
-		ref_2 = block[block[n][AMR_CHILD4]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref_3 = block[block[n][AMR_CHILD4]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_CHILD4] >= 0 && ref_2 == 1 && ref_3 == 1){
-			set_arrays(block[n][AMR_CHILD4]);
-			set_grid(block[n][AMR_CHILD4]);
-			n_child = block[n][AMR_CHILD4];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 0, 1, 1, p, F1, F2, F3);
-			refine_field(n, n_child, 0, 1, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD4], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD4]);
-			#endif
-		}
-
-		ref_1 = block[block[n][AMR_CHILD5]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_CHILD5] >= 0 && ref_1 == 1){
-			set_arrays(block[n][AMR_CHILD5]);
-			set_grid(block[n][AMR_CHILD5]);
-			n_child = block[n][AMR_CHILD5];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 1, 0, 0, p, F1, F2, F3);
-			refine_field(n, n_child, 1, 0, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD5], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD5]);
-			#endif
-		}
-
-		ref_1 = block[block[n][AMR_CHILD6]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref_3 = block[block[n][AMR_CHILD6]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_CHILD6] >= 0 && ref_1 == 1 && ref_3 == 1){
-			set_arrays(block[n][AMR_CHILD6]);
-			set_grid(block[n][AMR_CHILD6]);
-			n_child = block[n][AMR_CHILD6];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 1, 0, 1, p, F1, F2, F3);
-			refine_field(n, n_child, 1, 0, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD6], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD6]);
-			#endif
-		}
-
-		ref_1 = block[block[n][AMR_CHILD7]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref_2 = block[block[n][AMR_CHILD7]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		if (block[n][AMR_CHILD7] >= 0 && ref_1 == 1 && ref_2 == 1){
-			set_arrays(block[n][AMR_CHILD7]);
-			set_grid(block[n][AMR_CHILD7]);
-			n_child = block[n][AMR_CHILD7];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 1, 1, 0, p, F1, F2, F3);
-			refine_field(n, n_child, 1, 1, 0, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD7], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD7]);
-			#endif
-		}
-
-		ref_1 = block[block[n][AMR_CHILD8]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		ref_2 = block[block[n][AMR_CHILD8]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
-		ref_3 = block[block[n][AMR_CHILD8]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_CHILD8] >= 0 && ref_1 == 1 && ref_2 == 1 && ref_3 == 1){
-			set_arrays(block[n][AMR_CHILD8]);
-			set_grid(block[n][AMR_CHILD8]);
-			n_child = block[n][AMR_CHILD8];
-			block[n_child][AMR_ACTIVE] = 1;
-			block[n_child][AMR_NODE] = rank;
-			refine_cell(n, n_child, 1, 1, 1, p, F1, F2, F3);
-			refine_field(n, n_child, 1, 1, 1, ps);
-			#if(GPU_ENABLED || GPU_DEBUG )
-			set_arrays_GPU(block[n][AMR_CHILD8], block[n][AMR_GPU]);
-			GPU_write(block[n][AMR_CHILD8]);
-			#endif
-		}
-
-		//Clean up memory of parent block
-		free_arrays(n);
-		#if(GPU_ENABLED || GPU_DEBUG )
-		GPU_finish(n, 0);
-		#endif
 		}
 
 		//Take note that block becomes refined

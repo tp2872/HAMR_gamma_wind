@@ -190,7 +190,11 @@ void alloc_bounds_GPU(int n){
 	int ref1_1s, ref1_3s, ref1_5s, ref1_6s;
 	int ref2_2s, ref2_4s, ref2_5s, ref2_6s;
 	int ref3_1s, ref3_2s, ref3_3s, ref3_4s;
-	
+	#if(N_GPU>1)
+	cudaSetDevice(mem_spot_gpu[nl[n]]);
+	#endif
+	mem_spot_gpu_bound[nl[n]] = mem_spot_gpu[nl[n]];
+
 	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
 	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
 	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
@@ -1680,7 +1684,7 @@ void GPU_finish(int n, int force_delete)
 
 	//Tell code no GPU
 	block[n][AMR_GPU] = -1;
-	if (mem_spot[nl[n]] == 1) fprintf(stderr, "Error, tries to deallocate GPU memory before deaalocating RAM! \n");
+	//if (mem_spot[nl[n]] == 1) fprintf(stderr, "Error, tries to deallocate GPU memory before deaalocating RAM! \n");
 	if (mem_spot[nl[n]] == 0 && force_delete==0){
 		free_bound_gpu(n);
 		return;
@@ -1691,6 +1695,7 @@ void GPU_finish(int n, int force_delete)
 	}
 	else{
 		//Tell the code that memory is deallocated on the GPU
+		free_bound_gpu(n);
 		mem_spot_gpu[nl[n]] = -1;
 	}
 
@@ -1750,8 +1755,6 @@ void GPU_finish(int n, int force_delete)
 	status += cudaFree(Bufferconn[nl[n]]);
 	status += cudaFree(Buffergdet[nl[n]]);
 	
-	if (mem_spot[nl[n]] != 1) free_bound_gpu(n);
-
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error in GPU_finish_1: %d \n", status);
@@ -1759,314 +1762,316 @@ void GPU_finish(int n, int force_delete)
 
 void free_bound_gpu(int n){
 	//status += gpuFree(NULL_POINTER[nl[n]]);
-	status += gpuFree(Buffersend1[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Buffersend1_3[nl[n]]);
-	status += gpuFree(Buffersend1_4[nl[n]]);
-	status += gpuFree(Buffersend1_7[nl[n]]);
-	status += gpuFree(Buffersend1_8[nl[n]]);
-	#endif
-	status += gpuFree(Buffersend2[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Buffersend2_1[nl[n]]);
-	status += gpuFree(Buffersend2_2[nl[n]]);
-	status += gpuFree(Buffersend2_3[nl[n]]);
-	status += gpuFree(Buffersend2_4[nl[n]]);
-	#endif
-	status += gpuFree(Buffersend3[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Buffersend3_1[nl[n]]);
-	status += gpuFree(Buffersend3_2[nl[n]]);
-	status += gpuFree(Buffersend3_5[nl[n]]);
-	status += gpuFree(Buffersend3_6[nl[n]]);
-	#endif
-	status += gpuFree(Buffersend4[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Buffersend4_5[nl[n]]);
-	status += gpuFree(Buffersend4_6[nl[n]]);
-	status += gpuFree(Buffersend4_7[nl[n]]);
-	status += gpuFree(Buffersend4_8[nl[n]]);
-	#endif
-	#if(N3G>0)
-	status += gpuFree(Buffersend5[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Buffersend5_1[nl[n]]);
-	status += gpuFree(Buffersend5_3[nl[n]]);
-	status += gpuFree(Buffersend5_5[nl[n]]);
-	status += gpuFree(Buffersend5_7[nl[n]]);
-	#endif
-	status += gpuFree(Buffersend6[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Buffersend6_2[nl[n]]);
-	status += gpuFree(Buffersend6_4[nl[n]]);
-	status += gpuFree(Buffersend6_6[nl[n]]);
-	status += gpuFree(Buffersend6_8[nl[n]]);
-	#endif
-	#endif
-	status += gpuFree(Bufferrec1[nl[n]]);
-	status += gpuFree(Bufferrec2[nl[n]]);
-	status += gpuFree(Bufferrec3[nl[n]]);
-	status += gpuFree(Bufferrec4[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Bufferrec5[nl[n]]);
-	status += gpuFree(Bufferrec6[nl[n]]);
-	#endif
-	#if(PRESTEP || PRESTEP2)
-	status += gpuFree(tempBufferrec1[nl[n]]);
-	status += gpuFree(tempBufferrec2[nl[n]]);
-	status += gpuFree(tempBufferrec3[nl[n]]);
-	status += gpuFree(tempBufferrec4[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(tempBufferrec5[nl[n]]);
-	status += gpuFree(tempBufferrec6[nl[n]]);
-	#endif
-	#endif	
-	status += gpuFree(Buffersend1flux[nl[n]]);
-	status += gpuFree(Buffersend2flux[nl[n]]);
-	status += gpuFree(Buffersend3flux[nl[n]]);
-	status += gpuFree(Buffersend4flux[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Buffersend5flux[nl[n]]);
-	status += gpuFree(Buffersend6flux[nl[n]]);
-	#endif
-	status += gpuFree(Bufferrec1flux[nl[n]]);
-	status += gpuFree(Bufferrec2flux[nl[n]]);
-	status += gpuFree(Bufferrec3flux[nl[n]]);
-	status += gpuFree(Bufferrec4flux[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Bufferrec5flux[nl[n]]);
-	status += gpuFree(Bufferrec6flux[nl[n]]);
-	#endif
+	if (mem_spot_gpu_bound[nl[n]]!=-1) {
+		status += gpuFree(Buffersend1[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Buffersend1_3[nl[n]]);
+		status += gpuFree(Buffersend1_4[nl[n]]);
+		status += gpuFree(Buffersend1_7[nl[n]]);
+		status += gpuFree(Buffersend1_8[nl[n]]);
+		#endif
+		status += gpuFree(Buffersend2[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Buffersend2_1[nl[n]]);
+		status += gpuFree(Buffersend2_2[nl[n]]);
+		status += gpuFree(Buffersend2_3[nl[n]]);
+		status += gpuFree(Buffersend2_4[nl[n]]);
+		#endif
+		status += gpuFree(Buffersend3[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Buffersend3_1[nl[n]]);
+		status += gpuFree(Buffersend3_2[nl[n]]);
+		status += gpuFree(Buffersend3_5[nl[n]]);
+		status += gpuFree(Buffersend3_6[nl[n]]);
+		#endif
+		status += gpuFree(Buffersend4[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Buffersend4_5[nl[n]]);
+		status += gpuFree(Buffersend4_6[nl[n]]);
+		status += gpuFree(Buffersend4_7[nl[n]]);
+		status += gpuFree(Buffersend4_8[nl[n]]);
+		#endif
+		#if(N3G>0)
+		status += gpuFree(Buffersend5[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Buffersend5_1[nl[n]]);
+		status += gpuFree(Buffersend5_3[nl[n]]);
+		status += gpuFree(Buffersend5_5[nl[n]]);
+		status += gpuFree(Buffersend5_7[nl[n]]);
+		#endif
+		status += gpuFree(Buffersend6[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Buffersend6_2[nl[n]]);
+		status += gpuFree(Buffersend6_4[nl[n]]);
+		status += gpuFree(Buffersend6_6[nl[n]]);
+		status += gpuFree(Buffersend6_8[nl[n]]);
+		#endif
+		#endif
+		status += gpuFree(Bufferrec1[nl[n]]);
+		status += gpuFree(Bufferrec2[nl[n]]);
+		status += gpuFree(Bufferrec3[nl[n]]);
+		status += gpuFree(Bufferrec4[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Bufferrec5[nl[n]]);
+		status += gpuFree(Bufferrec6[nl[n]]);
+		#endif
+		#if(PRESTEP || PRESTEP2)
+		status += gpuFree(tempBufferrec1[nl[n]]);
+		status += gpuFree(tempBufferrec2[nl[n]]);
+		status += gpuFree(tempBufferrec3[nl[n]]);
+		status += gpuFree(tempBufferrec4[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(tempBufferrec5[nl[n]]);
+		status += gpuFree(tempBufferrec6[nl[n]]);
+		#endif
+		#endif	
+		status += gpuFree(Buffersend1flux[nl[n]]);
+		status += gpuFree(Buffersend2flux[nl[n]]);
+		status += gpuFree(Buffersend3flux[nl[n]]);
+		status += gpuFree(Buffersend4flux[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Buffersend5flux[nl[n]]);
+		status += gpuFree(Buffersend6flux[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec1flux[nl[n]]);
+		status += gpuFree(Bufferrec2flux[nl[n]]);
+		status += gpuFree(Bufferrec3flux[nl[n]]);
+		status += gpuFree(Bufferrec4flux[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Bufferrec5flux[nl[n]]);
+		status += gpuFree(Bufferrec6flux[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec1flux1[nl[n]]);
+		status += gpuFree(Bufferrec2flux1[nl[n]]);
+		status += gpuFree(Bufferrec3flux1[nl[n]]);
+		status += gpuFree(Bufferrec4flux1[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Bufferrec5flux1[nl[n]]);
+		status += gpuFree(Bufferrec6flux1[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec1_3flux2[nl[n]]);
+		#if(N_LEVELS>1)
+		status += gpuFree(Bufferrec1_4flux2[nl[n]]);
+		status += gpuFree(Bufferrec1_7flux2[nl[n]]);
+		status += gpuFree(Bufferrec1_8flux2[nl[n]]);
+		#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
+		status += gpuFree(Bufferrec2_1flux2[nl[n]]);
+		status += gpuFree(Bufferrec2_2flux2[nl[n]]);
+		status += gpuFree(Bufferrec2_3flux2[nl[n]]);
+		status += gpuFree(Bufferrec2_4flux2[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec3_1flux2[nl[n]]);
+		status += gpuFree(Bufferrec3_2flux2[nl[n]]);
+		status += gpuFree(Bufferrec3_5flux2[nl[n]]);
+		status += gpuFree(Bufferrec3_6flux2[nl[n]]);
+		#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
+		status += gpuFree(Bufferrec4_5flux2[nl[n]]);
+		status += gpuFree(Bufferrec4_6flux2[nl[n]]);
+		status += gpuFree(Bufferrec4_7flux2[nl[n]]);
+		status += gpuFree(Bufferrec4_8flux2[nl[n]]);
+		#endif
+		#if(N3G>0)
+		#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
+		status += gpuFree(Bufferrec5_1flux2[nl[n]]);
+		status += gpuFree(Bufferrec5_3flux2[nl[n]]);
+		status += gpuFree(Bufferrec5_5flux2[nl[n]]);
+		status += gpuFree(Bufferrec5_7flux2[nl[n]]);
+		status += gpuFree(Bufferrec6_2flux2[nl[n]]);
+		status += gpuFree(Bufferrec6_4flux2[nl[n]]);
+		status += gpuFree(Bufferrec6_6flux2[nl[n]]);
+		status += gpuFree(Bufferrec6_8flux2[nl[n]]);
+		#endif
+		#endif
+		#endif
+		status += cudaFreeHost(Buffersend1fine[nl[n]]);
+		status += cudaFreeHost(Buffersend3fine[nl[n]]);
+		status += cudaFreeHost(Bufferrec1fine[nl[n]]);
+		status += cudaFreeHost(Bufferrec3fine[nl[n]]);
 
-	status += gpuFree(Bufferrec1flux1[nl[n]]);
-	status += gpuFree(Bufferrec2flux1[nl[n]]);
-	status += gpuFree(Bufferrec3flux1[nl[n]]);
-	status += gpuFree(Bufferrec4flux1[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Bufferrec5flux1[nl[n]]);
-	status += gpuFree(Bufferrec6flux1[nl[n]]);
-	#endif
-	status += gpuFree(Bufferrec1_3flux2[nl[n]]);
-	#if(N_LEVELS>1)
-	status += gpuFree(Bufferrec1_4flux2[nl[n]]);
-	status += gpuFree(Bufferrec1_7flux2[nl[n]]);
-	status += gpuFree(Bufferrec1_8flux2[nl[n]]);
-	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	status += gpuFree(Bufferrec2_1flux2[nl[n]]);
-	status += gpuFree(Bufferrec2_2flux2[nl[n]]);
-	status += gpuFree(Bufferrec2_3flux2[nl[n]]);
-	status += gpuFree(Bufferrec2_4flux2[nl[n]]);
-	#endif
-	status += gpuFree(Bufferrec3_1flux2[nl[n]]);
-	status += gpuFree(Bufferrec3_2flux2[nl[n]]);
-	status += gpuFree(Bufferrec3_5flux2[nl[n]]);
-	status += gpuFree(Bufferrec3_6flux2[nl[n]]);
-	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	status += gpuFree(Bufferrec4_5flux2[nl[n]]);
-	status += gpuFree(Bufferrec4_6flux2[nl[n]]);
-	status += gpuFree(Bufferrec4_7flux2[nl[n]]);
-	status += gpuFree(Bufferrec4_8flux2[nl[n]]);
-	#endif
-	#if(N3G>0)
-	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	status += gpuFree(Bufferrec5_1flux2[nl[n]]);
-	status += gpuFree(Bufferrec5_3flux2[nl[n]]);
-	status += gpuFree(Bufferrec5_5flux2[nl[n]]);
-	status += gpuFree(Bufferrec5_7flux2[nl[n]]);
-	status += gpuFree(Bufferrec6_2flux2[nl[n]]);
-	status += gpuFree(Bufferrec6_4flux2[nl[n]]);
-	status += gpuFree(Bufferrec6_6flux2[nl[n]]);
-	status += gpuFree(Bufferrec6_8flux2[nl[n]]);
-	#endif
-	#endif
-	#endif
-	status += cudaFreeHost(Buffersend1fine[nl[n]]);
-	status += cudaFreeHost(Buffersend3fine[nl[n]]);
-	status += cudaFreeHost(Bufferrec1fine[nl[n]]);
-	status += cudaFreeHost(Bufferrec3fine[nl[n]]);
-
-	status += gpuFree(Buffersend1E[nl[n]]);
-	status += gpuFree(Buffersend2E[nl[n]]);
-	status += gpuFree(Buffersend3E[nl[n]]);
-	status += gpuFree(Buffersend4E[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Buffersend5E[nl[n]]);
-	status += gpuFree(Buffersend6E[nl[n]]);
-	#endif
-	status += gpuFree(Bufferrec1E[nl[n]]);
-	status += gpuFree(Bufferrec2E[nl[n]]);
-	status += gpuFree(Bufferrec3E[nl[n]]);
-	status += gpuFree(Bufferrec4E[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Bufferrec5E[nl[n]]);
-	status += gpuFree(Bufferrec6E[nl[n]]);
-	#endif
-	status += gpuFree(Bufferrec1E1[nl[n]]);
-	status += gpuFree(Bufferrec2E1[nl[n]]);
-	status += gpuFree(Bufferrec3E1[nl[n]]);
-	status += gpuFree(Bufferrec4E1[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(Bufferrec5E1[nl[n]]);
-	status += gpuFree(Bufferrec6E1[nl[n]]);
-	#endif
-	#if(N_LEVELS>1)
-	status += gpuFree(Bufferrec1_3E2[nl[n]]);
-	status += gpuFree(Bufferrec1_4E2[nl[n]]);
-	status += gpuFree(Bufferrec1_7E2[nl[n]]);
-	status += gpuFree(Bufferrec1_8E2[nl[n]]);
-	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	status += gpuFree(Bufferrec2_1E2[nl[n]]);
-	status += gpuFree(Bufferrec2_2E2[nl[n]]);
-	status += gpuFree(Bufferrec2_3E2[nl[n]]);
-	status += gpuFree(Bufferrec2_4E2[nl[n]]);
-	#endif
-	status += gpuFree(Bufferrec3_1E2[nl[n]]);
-	status += gpuFree(Bufferrec3_2E2[nl[n]]);
-	status += gpuFree(Bufferrec3_5E2[nl[n]]);
-	status += gpuFree(Bufferrec3_6E2[nl[n]]);
-	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	status += gpuFree(Bufferrec4_5E2[nl[n]]);
-	status += gpuFree(Bufferrec4_6E2[nl[n]]);
-	status += gpuFree(Bufferrec4_7E2[nl[n]]);
-	status += gpuFree(Bufferrec4_8E2[nl[n]]);
-	#endif
-	#if(N3G>0)
-	#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
-	status += gpuFree(Bufferrec5_1E2[nl[n]]);
-	status += gpuFree(Bufferrec5_3E2[nl[n]]);
-	status += gpuFree(Bufferrec5_5E2[nl[n]]);
-	status += gpuFree(Bufferrec5_7E2[nl[n]]);
-	status += gpuFree(Bufferrec6_2E2[nl[n]]);
-	status += gpuFree(Bufferrec6_4E2[nl[n]]);
-	status += gpuFree(Bufferrec6_6E2[nl[n]]);
-	status += gpuFree(Bufferrec6_8E2[nl[n]]);
-	#endif
-	#endif
-	#endif
-	#if(N3G>0)
-	status += gpuFree(BuffersendE1corn9[nl[n]]);
-	status += gpuFree(BuffersendE1corn10[nl[n]]);
-	status += gpuFree(BuffersendE1corn11[nl[n]]);
-	status += gpuFree(BuffersendE1corn12[nl[n]]);
-	status += gpuFree(BuffersendE2corn5[nl[n]]);
-	status += gpuFree(BuffersendE2corn6[nl[n]]);
-	status += gpuFree(BuffersendE2corn7[nl[n]]);
-	status += gpuFree(BuffersendE2corn8[nl[n]]);
-	#endif
-	status += gpuFree(BuffersendE3corn1[nl[n]]);
-	status += gpuFree(BuffersendE3corn2[nl[n]]);
-	status += gpuFree(BuffersendE3corn3[nl[n]]);
-	status += gpuFree(BuffersendE3corn4[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(BufferrecE1corn9[nl[n]]);
-	status += gpuFree(BufferrecE1corn10[nl[n]]);
-	status += gpuFree(BufferrecE1corn11[nl[n]]);
-	status += gpuFree(BufferrecE1corn12[nl[n]]);
-	status += gpuFree(BufferrecE2corn5[nl[n]]);
-	status += gpuFree(BufferrecE2corn6[nl[n]]);
-	status += gpuFree(BufferrecE2corn7[nl[n]]);
-	status += gpuFree(BufferrecE2corn8[nl[n]]);
-	#endif
-	status += gpuFree(BufferrecE3corn1[nl[n]]);
-	status += gpuFree(BufferrecE3corn2[nl[n]]);
-	status += gpuFree(BufferrecE3corn3[nl[n]]);
-	status += gpuFree(BufferrecE3corn4[nl[n]]);
-	#if(N_LEVELS>1)
-	#if(N3G>0)
-	status += gpuFree(BufferrecE1corn9_3[nl[n]]);
-	status += gpuFree(BufferrecE1corn9_7[nl[n]]);
-	status += gpuFree(BufferrecE1corn10_1[nl[n]]);
-	status += gpuFree(BufferrecE1corn10_5[nl[n]]);
-	status += gpuFree(BufferrecE1corn11_2[nl[n]]);
-	status += gpuFree(BufferrecE1corn11_6[nl[n]]);
-	status += gpuFree(BufferrecE1corn12_4[nl[n]]);
-	status += gpuFree(BufferrecE1corn12_8[nl[n]]);
-	status += gpuFree(BufferrecE2corn5_2[nl[n]]);
-	status += gpuFree(BufferrecE2corn5_4[nl[n]]);
-	status += gpuFree(BufferrecE2corn6_1[nl[n]]);
-	status += gpuFree(BufferrecE2corn6_3[nl[n]]);
-	status += gpuFree(BufferrecE2corn7_5[nl[n]]);
-	status += gpuFree(BufferrecE2corn7_7[nl[n]]);
-	status += gpuFree(BufferrecE2corn8_6[nl[n]]);
-	status += gpuFree(BufferrecE2corn8_8[nl[n]]);
-	#endif
-	status += gpuFree(BufferrecE3corn1_3[nl[n]]);
-	status += gpuFree(BufferrecE3corn1_4[nl[n]]);
-	status += gpuFree(BufferrecE3corn2_1[nl[n]]);
-	status += gpuFree(BufferrecE3corn2_2[nl[n]]);
-	status += gpuFree(BufferrecE3corn3_5[nl[n]]);
-	status += gpuFree(BufferrecE3corn3_6[nl[n]]);
-	status += gpuFree(BufferrecE3corn4_7[nl[n]]);
-	status += gpuFree(BufferrecE3corn4_8[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(tempBufferrecE1corn9[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn10[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn11[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn12[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn5[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn6[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn7[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn8[nl[n]]);
-	#endif
-	#endif
-	status += gpuFree(tempBufferrecE3corn1[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn2[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn3[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn4[nl[n]]);
-	#if(N_LEVELS>1)
-	#if(N3G>0)
-	status += gpuFree(tempBufferrecE1corn9_3[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn9_7[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn10_1[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn10_5[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn11_2[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn11_6[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn12_4[nl[n]]);
-	status += gpuFree(tempBufferrecE1corn12_8[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn5_2[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn5_4[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn6_1[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn6_3[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn7_5[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn7_7[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn8_6[nl[n]]);
-	status += gpuFree(tempBufferrecE2corn8_8[nl[n]]);
-	#endif
-	status += gpuFree(tempBufferrecE3corn1_3[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn1_4[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn2_1[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn2_2[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn3_5[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn3_6[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn4_7[nl[n]]);
-	status += gpuFree(tempBufferrecE3corn4_8[nl[n]]);
-	#if(N3G>0)
-	status += gpuFree(BufferrecE1corn9_32[nl[n]]);
-	status += gpuFree(BufferrecE1corn9_72[nl[n]]);
-	status += gpuFree(BufferrecE1corn10_12[nl[n]]);
-	status += gpuFree(BufferrecE1corn10_52[nl[n]]);
-	status += gpuFree(BufferrecE1corn11_22[nl[n]]);
-	status += gpuFree(BufferrecE1corn11_62[nl[n]]);
-	status += gpuFree(BufferrecE1corn12_42[nl[n]]);
-	status += gpuFree(BufferrecE1corn12_82[nl[n]]);
-	status += gpuFree(BufferrecE2corn5_22[nl[n]]);
-	status += gpuFree(BufferrecE2corn5_42[nl[n]]);
-	status += gpuFree(BufferrecE2corn6_12[nl[n]]);
-	status += gpuFree(BufferrecE2corn6_32[nl[n]]);
-	status += gpuFree(BufferrecE2corn7_52[nl[n]]);
-	status += gpuFree(BufferrecE2corn7_72[nl[n]]);
-	status += gpuFree(BufferrecE2corn8_62[nl[n]]);
-	status += gpuFree(BufferrecE2corn8_82[nl[n]]);
-	#endif
-	status += gpuFree(BufferrecE3corn1_32[nl[n]]);
-	status += gpuFree(BufferrecE3corn1_42[nl[n]]);
-	status += gpuFree(BufferrecE3corn2_12[nl[n]]);
-	status += gpuFree(BufferrecE3corn2_22[nl[n]]);
-	status += gpuFree(BufferrecE3corn3_52[nl[n]]);
-	status += gpuFree(BufferrecE3corn3_62[nl[n]]);
-	status += gpuFree(BufferrecE3corn4_72[nl[n]]);
-	status += gpuFree(BufferrecE3corn4_82[nl[n]]);
-	#endif
+		status += gpuFree(Buffersend1E[nl[n]]);
+		status += gpuFree(Buffersend2E[nl[n]]);
+		status += gpuFree(Buffersend3E[nl[n]]);
+		status += gpuFree(Buffersend4E[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Buffersend5E[nl[n]]);
+		status += gpuFree(Buffersend6E[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec1E[nl[n]]);
+		status += gpuFree(Bufferrec2E[nl[n]]);
+		status += gpuFree(Bufferrec3E[nl[n]]);
+		status += gpuFree(Bufferrec4E[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Bufferrec5E[nl[n]]);
+		status += gpuFree(Bufferrec6E[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec1E1[nl[n]]);
+		status += gpuFree(Bufferrec2E1[nl[n]]);
+		status += gpuFree(Bufferrec3E1[nl[n]]);
+		status += gpuFree(Bufferrec4E1[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(Bufferrec5E1[nl[n]]);
+		status += gpuFree(Bufferrec6E1[nl[n]]);
+		#endif
+		#if(N_LEVELS>1)
+		status += gpuFree(Bufferrec1_3E2[nl[n]]);
+		status += gpuFree(Bufferrec1_4E2[nl[n]]);
+		status += gpuFree(Bufferrec1_7E2[nl[n]]);
+		status += gpuFree(Bufferrec1_8E2[nl[n]]);
+		#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
+		status += gpuFree(Bufferrec2_1E2[nl[n]]);
+		status += gpuFree(Bufferrec2_2E2[nl[n]]);
+		status += gpuFree(Bufferrec2_3E2[nl[n]]);
+		status += gpuFree(Bufferrec2_4E2[nl[n]]);
+		#endif
+		status += gpuFree(Bufferrec3_1E2[nl[n]]);
+		status += gpuFree(Bufferrec3_2E2[nl[n]]);
+		status += gpuFree(Bufferrec3_5E2[nl[n]]);
+		status += gpuFree(Bufferrec3_6E2[nl[n]]);
+		#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
+		status += gpuFree(Bufferrec4_5E2[nl[n]]);
+		status += gpuFree(Bufferrec4_6E2[nl[n]]);
+		status += gpuFree(Bufferrec4_7E2[nl[n]]);
+		status += gpuFree(Bufferrec4_8E2[nl[n]]);
+		#endif
+		#if(N3G>0)
+		#if(DEREFINE_POLE==0 || N_LEVELS_3D>1)
+		status += gpuFree(Bufferrec5_1E2[nl[n]]);
+		status += gpuFree(Bufferrec5_3E2[nl[n]]);
+		status += gpuFree(Bufferrec5_5E2[nl[n]]);
+		status += gpuFree(Bufferrec5_7E2[nl[n]]);
+		status += gpuFree(Bufferrec6_2E2[nl[n]]);
+		status += gpuFree(Bufferrec6_4E2[nl[n]]);
+		status += gpuFree(Bufferrec6_6E2[nl[n]]);
+		status += gpuFree(Bufferrec6_8E2[nl[n]]);
+		#endif
+		#endif
+		#endif
+		#if(N3G>0)
+		status += gpuFree(BuffersendE1corn9[nl[n]]);
+		status += gpuFree(BuffersendE1corn10[nl[n]]);
+		status += gpuFree(BuffersendE1corn11[nl[n]]);
+		status += gpuFree(BuffersendE1corn12[nl[n]]);
+		status += gpuFree(BuffersendE2corn5[nl[n]]);
+		status += gpuFree(BuffersendE2corn6[nl[n]]);
+		status += gpuFree(BuffersendE2corn7[nl[n]]);
+		status += gpuFree(BuffersendE2corn8[nl[n]]);
+		#endif
+		status += gpuFree(BuffersendE3corn1[nl[n]]);
+		status += gpuFree(BuffersendE3corn2[nl[n]]);
+		status += gpuFree(BuffersendE3corn3[nl[n]]);
+		status += gpuFree(BuffersendE3corn4[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(BufferrecE1corn9[nl[n]]);
+		status += gpuFree(BufferrecE1corn10[nl[n]]);
+		status += gpuFree(BufferrecE1corn11[nl[n]]);
+		status += gpuFree(BufferrecE1corn12[nl[n]]);
+		status += gpuFree(BufferrecE2corn5[nl[n]]);
+		status += gpuFree(BufferrecE2corn6[nl[n]]);
+		status += gpuFree(BufferrecE2corn7[nl[n]]);
+		status += gpuFree(BufferrecE2corn8[nl[n]]);
+		#endif
+		status += gpuFree(BufferrecE3corn1[nl[n]]);
+		status += gpuFree(BufferrecE3corn2[nl[n]]);
+		status += gpuFree(BufferrecE3corn3[nl[n]]);
+		status += gpuFree(BufferrecE3corn4[nl[n]]);
+		#if(N_LEVELS>1)
+		#if(N3G>0)
+		status += gpuFree(BufferrecE1corn9_3[nl[n]]);
+		status += gpuFree(BufferrecE1corn9_7[nl[n]]);
+		status += gpuFree(BufferrecE1corn10_1[nl[n]]);
+		status += gpuFree(BufferrecE1corn10_5[nl[n]]);
+		status += gpuFree(BufferrecE1corn11_2[nl[n]]);
+		status += gpuFree(BufferrecE1corn11_6[nl[n]]);
+		status += gpuFree(BufferrecE1corn12_4[nl[n]]);
+		status += gpuFree(BufferrecE1corn12_8[nl[n]]);
+		status += gpuFree(BufferrecE2corn5_2[nl[n]]);
+		status += gpuFree(BufferrecE2corn5_4[nl[n]]);
+		status += gpuFree(BufferrecE2corn6_1[nl[n]]);
+		status += gpuFree(BufferrecE2corn6_3[nl[n]]);
+		status += gpuFree(BufferrecE2corn7_5[nl[n]]);
+		status += gpuFree(BufferrecE2corn7_7[nl[n]]);
+		status += gpuFree(BufferrecE2corn8_6[nl[n]]);
+		status += gpuFree(BufferrecE2corn8_8[nl[n]]);
+		#endif
+		status += gpuFree(BufferrecE3corn1_3[nl[n]]);
+		status += gpuFree(BufferrecE3corn1_4[nl[n]]);
+		status += gpuFree(BufferrecE3corn2_1[nl[n]]);
+		status += gpuFree(BufferrecE3corn2_2[nl[n]]);
+		status += gpuFree(BufferrecE3corn3_5[nl[n]]);
+		status += gpuFree(BufferrecE3corn3_6[nl[n]]);
+		status += gpuFree(BufferrecE3corn4_7[nl[n]]);
+		status += gpuFree(BufferrecE3corn4_8[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(tempBufferrecE1corn9[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn10[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn11[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn12[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn5[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn6[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn7[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn8[nl[n]]);
+		#endif
+		#endif
+		status += gpuFree(tempBufferrecE3corn1[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn2[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn3[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn4[nl[n]]);
+		#if(N_LEVELS>1)
+		#if(N3G>0)
+		status += gpuFree(tempBufferrecE1corn9_3[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn9_7[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn10_1[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn10_5[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn11_2[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn11_6[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn12_4[nl[n]]);
+		status += gpuFree(tempBufferrecE1corn12_8[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn5_2[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn5_4[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn6_1[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn6_3[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn7_5[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn7_7[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn8_6[nl[n]]);
+		status += gpuFree(tempBufferrecE2corn8_8[nl[n]]);
+		#endif
+		status += gpuFree(tempBufferrecE3corn1_3[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn1_4[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn2_1[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn2_2[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn3_5[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn3_6[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn4_7[nl[n]]);
+		status += gpuFree(tempBufferrecE3corn4_8[nl[n]]);
+		#if(N3G>0)
+		status += gpuFree(BufferrecE1corn9_32[nl[n]]);
+		status += gpuFree(BufferrecE1corn9_72[nl[n]]);
+		status += gpuFree(BufferrecE1corn10_12[nl[n]]);
+		status += gpuFree(BufferrecE1corn10_52[nl[n]]);
+		status += gpuFree(BufferrecE1corn11_22[nl[n]]);
+		status += gpuFree(BufferrecE1corn11_62[nl[n]]);
+		status += gpuFree(BufferrecE1corn12_42[nl[n]]);
+		status += gpuFree(BufferrecE1corn12_82[nl[n]]);
+		status += gpuFree(BufferrecE2corn5_22[nl[n]]);
+		status += gpuFree(BufferrecE2corn5_42[nl[n]]);
+		status += gpuFree(BufferrecE2corn6_12[nl[n]]);
+		status += gpuFree(BufferrecE2corn6_32[nl[n]]);
+		status += gpuFree(BufferrecE2corn7_52[nl[n]]);
+		status += gpuFree(BufferrecE2corn7_72[nl[n]]);
+		status += gpuFree(BufferrecE2corn8_62[nl[n]]);
+		status += gpuFree(BufferrecE2corn8_82[nl[n]]);
+		#endif
+		status += gpuFree(BufferrecE3corn1_32[nl[n]]);
+		status += gpuFree(BufferrecE3corn1_42[nl[n]]);
+		status += gpuFree(BufferrecE3corn2_12[nl[n]]);
+		status += gpuFree(BufferrecE3corn2_22[nl[n]]);
+		status += gpuFree(BufferrecE3corn3_52[nl[n]]);
+		status += gpuFree(BufferrecE3corn3_62[nl[n]]);
+		status += gpuFree(BufferrecE3corn4_72[nl[n]]);
+		status += gpuFree(BufferrecE3corn4_82[nl[n]]);
+		#endif
+	}
+	mem_spot_gpu_bound[nl[n]] = -1;
 }
 
 int gpuFree(void *devPtr){

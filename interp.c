@@ -299,9 +299,6 @@ void average_grid(void){
 
 	//Average primitive and staggered grid variables
 	#if(N_LEVELS_1D_INT>0 && D3>0)
-	//#if(GPU_ENABLED || GPU_DEBUG )
-	//for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-	//#endif
 	for (n = 0; n < n_active; n++) {
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -336,24 +333,24 @@ void average_grid(void){
 		#pragma omp parallel private(i, j, z, k)
 		{
 			#pragma omp for collapse(2) schedule(dynamic)
-			ZSLOOP3D(N1_GPU_offset[n] - N1G, N1_GPU_offset[n] + BS_1 - 1 + N1G, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 - 1 + N2G, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 - 1 + N3G) {
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, N1_GPU_offset[n_ord[n]] + BS_1 - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
 				for (k = 0; k < NPR; k++) {
-					p_1[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = p[nl[n]][index_3D(n, i, j, z)][k];
+					p_1[nl[n_ord[n]]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) + (i - N1_GPU_offset[n_ord[n]] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n_ord[n]] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n_ord[n]] + N3G)] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k];
 				}
 				#if(STAGGERED)
 				for (k = 1; k < NDIM; k++) {
-					ps_1[nl[n]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)] = ps[nl[n]][index_3D(n, i, j, z)][k];
+					ps_1[nl[n_ord[n]]][(k - 1) * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) + (i - N1_GPU_offset[n_ord[n]] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n_ord[n]] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n_ord[n]] + N3G)] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][k];
 				}
 				#endif
 			}
 		}
-		cudaMemcpyAsync(Bufferp_1[nl[n]], p_1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n]]);
+		cudaMemcpyAsync(Bufferp_1[nl[n_ord[n]]], p_1[nl[n_ord[n]]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 		#if(STAGGERED)
-		cudaMemcpyAsync(Bufferps_1[nl[n]], ps_1[nl[n]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-		#endif
+		cudaMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]]) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 		#endif
 		#endif
 	}
+	#endif
 }
 
 //Prolongs grid near pole: This is necessary for AMR in combination with internal derefinement
@@ -365,6 +362,7 @@ void prolong_grid(void){
 	double b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8;
 	double b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8;
 
+	#if(N_LEVELS_1D_INT>0 && D3>0)
 	//Store staggered grid variables in temporary array
 	for (n = 0; n < n_active; n++){
 		#pragma omp parallel private(i, j, z)
@@ -437,4 +435,5 @@ void prolong_grid(void){
 			}
 		}
 	}
+	#endif
 }
