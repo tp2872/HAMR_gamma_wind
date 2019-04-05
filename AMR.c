@@ -664,7 +664,7 @@ void set_AMR(void){
 			else{
 				//Difference in REF_1, REF_2
 				if (block[n][AMR_COORD2] < NB_2 / 2 * pow(1 + REF_2, block[n][AMR_LEVEL2])){
-					if (block[n][AMR_LEVEL1] + (block[n][AMR_TAG1] == 1)< N_LEVELS_3D - 1){
+					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
 						//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d L_1DMAX: %d i: %d j: %d z: %d \n", n, block[n][AMR_LEVEL], block[n][AMR_LEVEL1], block[n][AMR_LEVEL2], block[n][AMR_LEVEL3], L_1DMAX, block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 						block[n][AMR_NBR1_3] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG1] == 1), j0 - (block[n][AMR_TAG1] != 1), block[n][AMR_COORD1] * (1 + REF_1), block[n][AMR_COORD2] * (1 + REF_2) - 1, block[n][AMR_COORD3]);
 						block[n][AMR_NBR1_4] = block[n][AMR_NBR1_3];
@@ -709,7 +709,7 @@ void set_AMR(void){
 					//if (block[n][AMR_COORD1] == 0 && block[n][AMR_COORD3] == 0)fprintf(stderr, "Child: n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 				}
 				else{ //Difference in REF_1, REF_2
-					if (block[n][AMR_LEVEL1] + (block[n][AMR_TAG3] == 3) < N_LEVELS_3D - 1){
+					if (block[n][AMR_LEVEL1] < N_LEVELS_3D - 1){
 						block[n][AMR_NBR3_1] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] * (1 + REF_1), (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
 						block[n][AMR_NBR3_2] = block[n][AMR_NBR3_1];
 						block[n][AMR_NBR3_5] = AMR_coord_linear2(block[n][AMR_LEVEL] + (block[n][AMR_TAG3] == 3), j0 + (block[n][AMR_TAG3] != 3), block[n][AMR_COORD1] * (1 + REF_1) + REF_1, (block[n][AMR_COORD2] + 1) * (1 + REF_2), block[n][AMR_COORD3]);
@@ -2284,7 +2284,7 @@ void check_refcrit(void){
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
-	if (max_levels == 0) max_levels = N_LEVELS_3D;
+	if (max_levels == 0) max_levels = N_LEVELS_3D-1;
 	int tag, count, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	
@@ -2320,7 +2320,7 @@ void check_refcrit(void){
 
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
-			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1 && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
+			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && (block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1) && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
 				block[n_ord_total[n]][AMR_TAG] = 1;
 				
 				//Refine one level less near black hole

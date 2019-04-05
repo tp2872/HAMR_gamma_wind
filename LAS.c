@@ -1198,6 +1198,11 @@ void set_corners(void){
 	}
 #endif
 	
+	//int test = AMR_coord_linear2(1, 0, 3, 1, 0);
+	//fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+	//test = block[test][AMR_NBR1_3];
+	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
+
 	/*int test = AMR_coord_linear2(1, 0, 1, 1, 0);
 	fprintf(stderr, "n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	test = block[test][AMR_CORN2D_2];

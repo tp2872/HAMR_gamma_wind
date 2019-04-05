@@ -95,10 +95,10 @@ int main(int argc, char *argv[])
 	
 	/* do initial diagnostics */
 	#if(GPU_ENABLED || GPU_DEBUG )
-	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 	first_dump = 0;
-	diag(INIT_OUT);
+	diag(LOG_OUT);
 
 	DTl = 50.0;
 	DTd = 50.0;
