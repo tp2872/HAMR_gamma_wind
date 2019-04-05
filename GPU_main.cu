@@ -52,7 +52,7 @@ void set_arrays_GPU(int n, int device){
 
 	if (mem_spot_gpu[nl[n]] == device){
 		block[n][AMR_GPU] = device;	
-		//alloc_bounds_GPU(n);
+		alloc_bounds_GPU(n);
 		return;
 	}
 	else if (mem_spot_gpu[nl[n]] != device && mem_spot_gpu[nl[n]] != -1){
@@ -102,11 +102,8 @@ void set_arrays_GPU(int n, int device){
 	cudaStreamCreate(&commandQueueGPU[nl[n]]);
 
 	//Create events
-	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventF[nl[n]][i]);
-	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventB[nl[n]][i]);
-	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventE[nl[n]][i]);
-	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventEcorn[nl[n]][i]);
-	for (i = 0; i < 70; i++) cudaEventCreate(&boundevent1[nl[n]][i]);
+	for (i = 0; i < 600; i++) cudaEventCreate(&boundevent[nl[n]][i]);
+	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent1[nl[n]][i]);
 
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error in creating events: %d \n", status);
@@ -204,25 +201,25 @@ void alloc_bounds_GPU(int n){
 	ref2_2s = REF_2;ref2_4s = REF_2; ref2_5s = REF_2; ref2_6s = REF_2;
 	ref3_1s = REF_3; ref3_2s = REF_3; ref3_3s = REF_3; ref3_4s = REF_3;
 
-	//if (block[n][AMR_LEVEL] != N_LEVELS - 1){
-	//	if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-	//	if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-	//	if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-	//	if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-	//}
+	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
+		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+	}
 	ref1_1s = 0;
 	ref1_3s = 0;
 	ref3_1s = 0;
 	ref3_3s = 0;
 
-	//if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
-	//if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
-	//if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
-	//if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	//if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL]) - 1) && DEREFINE_POLE){
+	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
+	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
+	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
+	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
+	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL]) - 1) && DEREFINE_POLE){
 		ref3_2s = 0;
 		ref3_4s = 0;
-	//}
+	}
 
 	gpuAlloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
@@ -1397,11 +1394,13 @@ void GPU_boundprim(int bound_force)
 	#endif
 
 	//For last timestep do not receive synchronized electrice fields 
-	for (n = 0; n < N_GPU; n++) {
-		cudaSetDevice(n);
-		cudaDeviceSynchronize();
+	for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
+		//#if(N_GPU>1)
+		//cudaSetDevice(n);
+		//#endif
+		//cudaDeviceSynchronize();
 	}
-	mpi_synch();
+	//mpi_synch();
 	if (rank == 0) begin2 = get_wall_time();
 
 	#if(PRESTEP)
@@ -1551,7 +1550,7 @@ void GPU_boundprim(int bound_force)
 
 	//MPI communication
 	//cudaDeviceSynchronize();
-	mpi_synch();
+	//mpi_synch();
 
 	if (rank == 0){
 		end2 = get_wall_time();
@@ -1691,7 +1690,7 @@ void GPU_finish(int n, int force_delete)
 	block[n][AMR_GPU] = -1;
 	//if (mem_spot[nl[n]] == 1) fprintf(stderr, "Error, tries to deallocate GPU memory before deaalocating RAM! \n");
 	if (mem_spot[nl[n]] == 0 && force_delete==0){
-		//free_bound_gpu(n);
+		free_bound_gpu(n);
 		return;
 	}
 	else if (mem_spot_gpu[nl[n]] == -1){
@@ -1705,11 +1704,8 @@ void GPU_finish(int n, int force_delete)
 	}
 
 	//Make sure all events are finished
-	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventF[nl[n]][i], 0);
-	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventE[nl[n]][i], 0);
-	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventEcorn[nl[n]][i], 0);
-	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventB[nl[n]][i], 0);
-	for (i = 0; i < 70; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
+	for (i = 0; i < 600; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][i], 0);
+	for (i = 0; i < 100; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
 
 	//Destroy CUDA events associated with block
 	for (i = 0; i < 600; i++) cudaEventDestroy(boundevent[nl[n]][i]);
