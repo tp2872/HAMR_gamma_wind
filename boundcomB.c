@@ -1,6 +1,6 @@
 #include "decs_MPI.h"
 
-void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundeventB){
 	if (gpu == 1){
 
 	}
@@ -16,7 +16,7 @@ void pack_send_B1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsi
 	}
 }
 
-void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundeventB){
 	if (gpu == 1){
 
 	}
@@ -32,7 +32,7 @@ void pack_send_B2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent){
+void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundeventB){
 	if (gpu == 1){
 
 	}
@@ -48,7 +48,7 @@ void pack_send_B3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isi
 	}
 }
 
-void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *send[NB_LOCAL], double(*restrict F1[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundeventB, int ref_1, int ref_2, int ref_3){
 	if (gpu == 1){
 
 	}
@@ -68,7 +68,7 @@ void pack_send_B_average1(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 }
 
-void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *send[NB_LOCAL], double(*restrict F2[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundeventB, int ref_1, int ref_2, int ref_3){
 	if (gpu == 1){
 
 	}
@@ -88,7 +88,7 @@ void pack_send_B_average2(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 	}
 }
 
-void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundevent, int ref_1, int ref_2, int ref_3){
+void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *send[NB_LOCAL], double(*restrict F3[NB_LOCAL])[NDIM], double **Bufferp, double **Bufferboundsend, cudaEvent_t *boundeventB, int ref_1, int ref_2, int ref_3){
 	if (gpu == 1){
 
 	}
@@ -109,7 +109,7 @@ void pack_send_B_average3(int n, int i1, int i2, int j1, int j2, int z1, int z2,
 }
 
 
-void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
+void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int jsize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundeventB){
 	if (gpu == 1){
 
 	}
@@ -128,7 +128,7 @@ void unpack_receive_B1(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	}
 }
 
-void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent, int neg){
+void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int zsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundeventB, int neg){
 	if (gpu == 1){
 
 	}
@@ -149,7 +149,7 @@ void unpack_receive_B2(int n, int n_rec, int i1, int i2, int j1, int j2, int z1,
 	}
 }
 
-void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundevent){
+void unpack_receive_B3(int n, int n_rec, int i1, int i2, int j1, int j2, int z1, int z2, int isize, int jsize, double *receive[NB_LOCAL], double(*restrict prim[NB_LOCAL])[NDIM], int div, double **Bufferp, double **Bufferboundreceive, cudaEvent_t *boundeventB){
 	if (gpu == 1){
 
 	}
@@ -205,7 +205,7 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR2P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average1(n, BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
-					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[n]]), &(boundevent[nl[n]][520]), ref_1, ref_2, ref_3);
+					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[n]]), &(boundeventB[nl[n]][2]), ref_1, ref_2, ref_3);
 				if (block[block[n][AMR_NBR2P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send2_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_NBR2P]][AMR_NODE], (42* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -218,7 +218,7 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 	if (block[n][AMR_NBR4] >= 0){
 		if (block[block[n][AMR_NBR4]][AMR_ACTIVE] == 1){
 			pack_send_B1(n, 0, 1, 0, BS_2, 0, BS_3,
-				BS_2, BS_3, send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundevent[nl[n]][540]));
+				BS_2, BS_3, send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundeventB[nl[n]][4]));
 			if (block[block[n][AMR_NBR4]][AMR_NODE] != block[n][AMR_NODE]){
 				rc += MPI_Isend(&send4_fine[nl[n]][0], NDIM*BS_3 * BS_2, MPI_DOUBLE, block[block[n][AMR_NBR4]][AMR_NODE], (44* NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				MPI_Request_free(&req[nl[n]]);
@@ -247,7 +247,7 @@ void B_send1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR4P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average1(n, 0, 1, 0, BS_2, 0, BS_3,
-					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundevent[nl[n]][540]), ref_1, ref_2, ref_3);
+					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[n]]), &(boundeventB[nl[n]][4]), ref_1, ref_2, ref_3);
 				if (block[block[n][AMR_NBR4P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send4_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_2) / (1 + ref_2), MPI_DOUBLE, block[block[n][AMR_NBR4P]][AMR_NODE], (44* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -268,7 +268,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 			if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
 				if (block[n][AMR_COORD3] < NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2){
 					pack_send_B2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
-						BS_1, BS_3, send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][530]));
+						BS_1, BS_3, send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundeventB[nl[n]][3]));
 					if (block[block[n][AMR_NBR3]][AMR_NODE] != block[n][AMR_NODE]){
 						rc += MPI_Isend(&send3_fine[nl[n]][0], NDIM*BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR3]][AMR_NODE], (43* NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 						MPI_Request_free(&req[nl[n]]);
@@ -310,7 +310,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average2(n, 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
-					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundevent[nl[n]][530]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[n]]), &(boundeventB[nl[n]][3]), ref_1, ref_2, ref_3);
 				if (block[block[n][AMR_NBR3P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send3_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR3P]][AMR_NODE], (43* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -325,7 +325,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 			if (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3){
 				if (block[n][AMR_COORD3] < NB_3*pow(1 + REF_3, block[n][AMR_LEVEL3]) / 2){
 					pack_send_B2(n, 0, BS_1, 0, 1, 0, BS_3,
-						BS_1, BS_3, send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]));
+						BS_1, BS_3, send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundeventB[nl[n]][1]));
 					if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 						rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (41* NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 						MPI_Request_free(&req[nl[n]]);
@@ -339,7 +339,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 			}
 			else{
 				pack_send_B2(n, 0, BS_1, 0, 1, 0, BS_3,
-					BS_1, BS_3, send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]));
+					BS_1, BS_3, send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundeventB[nl[n]][1]));
 				if (block[block[n][AMR_NBR1]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*BS_3 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR1]][AMR_NODE], (41* NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -369,7 +369,7 @@ void B_send2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average2(n, 0, BS_1, 0, 1, 0, BS_3,
-					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundevent[nl[n]][510]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[n]]), &(boundeventB[nl[n]][1]), ref_1, ref_2, ref_3);
 				if (block[block[n][AMR_NBR1P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send1_fine[nl[n]][0], NDIM*(BS_3) / (1 + ref_3)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR1P]][AMR_NODE], (41* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -413,7 +413,7 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR5P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average3(n, 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
-					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[n]]), &(boundevent[nl[n]][550]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[n]]), &(boundeventB[nl[n]][5]), ref_1, ref_2, ref_3);
 				if (block[block[n][AMR_NBR5P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send5_fine[nl[n]][0], NDIM*(BS_2) / (1 + ref_2)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR5P]][AMR_NODE], (45* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -425,7 +425,7 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 	//Negative X3
 	if (block[n][AMR_NBR6] >= 0){
 		if (block[block[n][AMR_NBR6]][AMR_ACTIVE] == 1){
-			pack_send_B3(n, 0, BS_1, 0, BS_2, 0, D3, BS_1, BS_2, send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundevent[nl[n]][560]));
+			pack_send_B3(n, 0, BS_1, 0, BS_2, 0, D3, BS_1, BS_2, send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundeventB[nl[n]][6]));
 			if (block[block[n][AMR_NBR6]][AMR_NODE] != block[n][AMR_NODE]){
 				rc += MPI_Isend(&send6_fine[nl[n]][0], NDIM*BS_2 * BS_1, MPI_DOUBLE, block[block[n][AMR_NBR6]][AMR_NODE], (46* NB_LOCAL + block[n][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 				MPI_Request_free(&req[nl[n]]);
@@ -454,7 +454,7 @@ void B_send3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], i
 				ref_3 = block[n][AMR_LEVEL3] - block[block[n][AMR_NBR6P]][AMR_LEVEL3];
 				//send to coarser grid
 				pack_send_B_average3(n, 0, BS_1, 0, BS_2, 0, D3,
-					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundevent[nl[n]][560]), ref_1, ref_2, ref_3);
+					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[n]]), &(boundeventB[nl[n]][6]), ref_1, ref_2, ref_3);
 				if (block[block[n][AMR_NBR6P]][AMR_NODE] != block[n][AMR_NODE]){
 					rc += MPI_Isend(&send6_fine[nl[n]][0], NDIM*(BS_2) / (1 + ref_2)*(BS_1) / (1 + ref_1), MPI_DOUBLE, block[block[n][AMR_NBR6P]][AMR_NODE], (46* NB_LOCAL + block[n][AMR_NUMBER])%MPI_TAG_MAX, mpi_cartcomm, &req[nl[n]]);
 					MPI_Request_free(&req[nl[n]]);
@@ -483,7 +483,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B1(n, block[n][AMR_NBR4_5], 0, 1, 0, BS_2 / (1 + ref_2), 0, BS_3 / (1 + ref_3),
-					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_5]]]), &(boundevent[nl[block[n][AMR_NBR4_5]]][520]));
+					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_5]]]), &(boundeventB[nl[block[n][AMR_NBR4_5]]][2]));
 			}
 			set_ref(n, block[n][AMR_NBR4_6], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
@@ -494,7 +494,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B1(n, block[n][AMR_NBR4_6], 0, 1, 0, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), BS_3,
-						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_6]]]), &(boundevent[nl[block[n][AMR_NBR4_6]]][520]));
+						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_6]]]), &(boundeventB[nl[block[n][AMR_NBR4_6]]][2]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR4_7], &ref_1, &ref_2, &ref_3);
@@ -506,7 +506,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B1(n, block[n][AMR_NBR4_7], 0, 1, BS_2 / (1 + ref_2), BS_2, 0, BS_3 / (1 + ref_3),
-						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_7]]]), &(boundevent[nl[block[n][AMR_NBR4_7]]][520]));
+						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_7]]]), &(boundeventB[nl[block[n][AMR_NBR4_7]]][2]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR4_8], &ref_1, &ref_2, &ref_3);
@@ -518,7 +518,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B1(n, block[n][AMR_NBR4_8], 0, 1, BS_2 / (1 + ref_2), BS_2, BS_3 / (1 + ref_3), BS_3,
-						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_8]]]), &(boundevent[nl[block[n][AMR_NBR4_8]]][520]));
+						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send2_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend2fine[nl[block[n][AMR_NBR4_8]]]), &(boundeventB[nl[block[n][AMR_NBR4_8]]][2]));
 				}
 			}
 		}
@@ -535,7 +535,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B1(n, block[n][AMR_NBR2], BS_1, BS_1 + 1, 0, BS_2, 0, BS_3,
-					BS_2, BS_3, send4_fine, F1, 0, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2]]]), &(boundevent[nl[block[n][AMR_NBR2]]][540]));
+					BS_2, BS_3, send4_fine, F1, 0, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2]]]), &(boundeventB[nl[block[n][AMR_NBR2]]][4]));
 			}		
 		}	
 		else if (block[n][AMR_NBR2_1]>=0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1){
@@ -548,7 +548,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B1(n, block[n][AMR_NBR2_1], BS_1, BS_1 + 1, 0, BS_2 / (1 + ref_2), 0, BS_3 / (1 + ref_3),
-					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_1]]]), &(boundevent[nl[block[n][AMR_NBR2_1]]][540]));
+					BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_1]]]), &(boundeventB[nl[block[n][AMR_NBR2_1]]][4]));
 			}
 			set_ref(n, block[n][AMR_NBR2_2], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
@@ -559,7 +559,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B1(n, block[n][AMR_NBR2_2], BS_1, BS_1 + 1, 0, BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), BS_3,
-						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_2]]]), &(boundevent[nl[block[n][AMR_NBR2_2]]][540]));
+						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_2]]]), &(boundeventB[nl[block[n][AMR_NBR2_2]]][4]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR2_3], &ref_1, &ref_2, &ref_3);
@@ -571,7 +571,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B1(n, block[n][AMR_NBR2_3], BS_1, BS_1 + 1, BS_2 / (1 + ref_2), BS_2, 0, BS_3 / (1 + ref_3),
-						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_3]]]), &(boundevent[nl[block[n][AMR_NBR2_3]]][540]));
+						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_3]]]), &(boundeventB[nl[block[n][AMR_NBR2_3]]][4]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR2_4], &ref_1, &ref_2, &ref_3);
@@ -583,7 +583,7 @@ void B_rec1(double(*restrict F1[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B1(n, block[n][AMR_NBR2_4], BS_1, BS_1 + 1, BS_2 / (1 + ref_2), BS_2, BS_3 / (1 + ref_3), BS_3,
-						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_4]]]), &(boundevent[nl[block[n][AMR_NBR2_4]]][540]));
+						BS_2 / (1 + ref_2), BS_3 / (1 + ref_3), send4_fine, F1, 1, &(Bufferp[nl[n]]), &(Buffersend4fine[nl[block[n][AMR_NBR2_4]]]), &(boundeventB[nl[block[n][AMR_NBR2_4]]][4]));
 				}
 			}
 		}
@@ -606,7 +606,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR1], 0, BS_1, 0, 1, 0, BS_3,
-						BS_1, BS_3, send1_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR1]]]), &(boundevent[nl[block[n][AMR_NBR1]]][510]), 1);
+						BS_1, BS_3, send1_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR1]]]), &(boundeventB[nl[block[n][AMR_NBR1]]][1]), 1);
 				}
 			}
 			else{
@@ -623,7 +623,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B2(n, block[n][AMR_NBR1_3], 0, BS_1 / (1 + ref_1), 0, 1, 0, BS_3 / (1 + ref_3),
-					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_3]]]), &(boundevent[nl[block[n][AMR_NBR1_3]]][530]), 0);
+					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_3]]]), &(boundeventB[nl[block[n][AMR_NBR1_3]]][3]), 0);
 			}
 			set_ref(n, block[n][AMR_NBR1_4], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
@@ -634,7 +634,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR1_4], 0, BS_1 / (1 + ref_1), 0, 1, BS_3 / (1 + ref_3), BS_3,
-						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_4]]]), &(boundevent[nl[block[n][AMR_NBR1_4]]][530]), 0);
+						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_4]]]), &(boundeventB[nl[block[n][AMR_NBR1_4]]][3]), 0);
 				}
 			}
 			set_ref(n, block[n][AMR_NBR1_7], &ref_1, &ref_2, &ref_3);
@@ -646,7 +646,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR1_7], BS_1 / (1 + ref_1), BS_1, 0, 1, 0, BS_3 / (1 + ref_3),
-						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_7]]]), &(boundevent[nl[block[n][AMR_NBR1_7]]][530]), 0);
+						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_7]]]), &(boundeventB[nl[block[n][AMR_NBR1_7]]][3]), 0);
 				}
 			}
 			set_ref(n, block[n][AMR_NBR1_8], &ref_1, &ref_2, &ref_3);
@@ -658,7 +658,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR1_8], BS_1 / (1 + ref_1), BS_1, 0, 1, BS_3 / (1 + ref_3), BS_3,
-						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_8]]]), &(boundevent[nl[block[n][AMR_NBR1_8]]][530]), 0);
+						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send3_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR1_8]]]), &(boundeventB[nl[block[n][AMR_NBR1_8]]][3]), 0);
 				}
 			}
 		}
@@ -677,7 +677,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 					}
 					else{
 						unpack_receive_B2(n, block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
-							BS_1, BS_3, send3_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR3]]]), &(boundevent[nl[block[n][AMR_NBR3]]][530]), 1);
+							BS_1, BS_3, send3_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend3fine[nl[block[n][AMR_NBR3]]]), &(boundeventB[nl[block[n][AMR_NBR3]]][3]), 1);
 					}
 				}
 			}
@@ -689,7 +689,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR3], 0, BS_1, BS_2, BS_2 + 1, 0, BS_3,
-						BS_1, BS_3, send1_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3]]]), &(boundevent[nl[block[n][AMR_NBR3]]][510]), 0);
+						BS_1, BS_3, send1_fine, F2, 0, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3]]]), &(boundeventB[nl[block[n][AMR_NBR3]]][1]), 0);
 				}
 			}
 		}
@@ -703,7 +703,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B2(n, block[n][AMR_NBR3_1], 0, BS_1 / (1 + ref_1), BS_2, BS_2 + 1, 0, BS_3 / (1 + ref_3),
-					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_1]]]), &(boundevent[nl[block[n][AMR_NBR3_1]]][510]), 0);
+					BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_1]]]), &(boundeventB[nl[block[n][AMR_NBR3_1]]][1]), 0);
 			}
 			set_ref(n, block[n][AMR_NBR3_2], &ref_1, &ref_2, &ref_3);
 			if (ref_3 == 1){
@@ -714,7 +714,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR3_2], 0, BS_1 / (1 + ref_1), BS_2, BS_2 + 1, BS_3 / (1 + ref_3), BS_3,
-						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_2]]]), &(boundevent[nl[block[n][AMR_NBR3_2]]][510]), 0);
+						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_2]]]), &(boundeventB[nl[block[n][AMR_NBR3_2]]][1]), 0);
 				}
 			}
 			set_ref(n, block[n][AMR_NBR3_5], &ref_1, &ref_2, &ref_3);
@@ -726,7 +726,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR3_5], BS_1 / (1 + ref_1), BS_1, BS_2, BS_2 + 1, 0, BS_3 / (1 + ref_3),
-						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_5]]]), &(boundevent[nl[block[n][AMR_NBR3_5]]][510]), 0);
+						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_5]]]), &(boundeventB[nl[block[n][AMR_NBR3_5]]][1]), 0);
 				}
 			}
 			set_ref(n, block[n][AMR_NBR3_6], &ref_1, &ref_2, &ref_3);
@@ -738,7 +738,7 @@ void B_rec2(double(*restrict F2[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B2(n, block[n][AMR_NBR3_6], BS_1 / (1 + ref_1), BS_1, BS_2, BS_2 + 1, BS_3 / (1 + ref_3), BS_3,
-						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_6]]]), &(boundevent[nl[block[n][AMR_NBR3_6]]][510]), 0);
+						BS_1 / (1 + ref_1), BS_3 / (1 + ref_3), send1_fine, F2, 1, &(Bufferp[nl[n]]), &(Buffersend1fine[nl[block[n][AMR_NBR3_6]]]), &(boundeventB[nl[block[n][AMR_NBR3_6]]][1]), 0);
 				}
 			}
 		}
@@ -760,7 +760,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B3(n, block[n][AMR_NBR6_2], 0, BS_1 / (1 + ref_1), 0, BS_2 / (1 + ref_2), 0, D3,
-					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_2]]]), &(boundevent[nl[block[n][AMR_NBR6_2]]][550]));
+					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_2]]]), &(boundeventB[nl[block[n][AMR_NBR6_2]]][5]));
 			}
 			set_ref(n, block[n][AMR_NBR6_4], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1){
@@ -771,7 +771,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B3(n, block[n][AMR_NBR6_4], 0, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), BS_2, 0, D3,
-						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_4]]]), &(boundevent[nl[block[n][AMR_NBR6_4]]][550]));
+						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_4]]]), &(boundeventB[nl[block[n][AMR_NBR6_4]]][5]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR6_6], &ref_1, &ref_2, &ref_3);
@@ -783,7 +783,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B3(n, block[n][AMR_NBR6_6], BS_1 / (1 + ref_1), BS_1, 0, BS_2 / (1 + ref_2), 0, D3,
-						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_6]]]), &(boundevent[nl[block[n][AMR_NBR6_6]]][550]));
+						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_6]]]), &(boundeventB[nl[block[n][AMR_NBR6_6]]][5]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR6_8], &ref_1, &ref_2, &ref_3);
@@ -795,7 +795,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B3(n, block[n][AMR_NBR6_8], BS_1 / (1 + ref_1), BS_1, BS_2 / (1 + ref_2), BS_2, 0, D3,
-						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_8]]]), &(boundevent[nl[block[n][AMR_NBR6_8]]][550]));
+						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send5_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend5fine[nl[block[n][AMR_NBR6_8]]]), &(boundeventB[nl[block[n][AMR_NBR6_8]]][5]));
 				}
 			}
 		}
@@ -812,7 +812,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B3(n, block[n][AMR_NBR5], 0, BS_1, 0, BS_2, BS_3, BS_3 + D3,
-					BS_1, BS_2, send6_fine, F3, 0, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5]]]), &(boundevent[nl[block[n][AMR_NBR5]]][560]));
+					BS_1, BS_2, send6_fine, F3, 0, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5]]]), &(boundeventB[nl[block[n][AMR_NBR5]]][6]));
 			}
 		}
 		else if (block[n][AMR_NBR5_1]>=0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1){
@@ -825,7 +825,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 			}
 			else{
 				unpack_receive_B3(n, block[n][AMR_NBR5_1], 0, BS_1 / (1 + ref_1), 0, BS_2 / (1 + ref_2), BS_3, BS_3 + D3,
-					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_1]]]), &(boundevent[nl[block[n][AMR_NBR5_1]]][560]));
+					BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_1]]]), &(boundeventB[nl[block[n][AMR_NBR5_1]]][6]));
 			}
 			set_ref(n, block[n][AMR_NBR5_3], &ref_1, &ref_2, &ref_3);
 			if (ref_2 == 1){
@@ -836,7 +836,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B3(n, block[n][AMR_NBR5_3], 0, BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), BS_2, BS_3, BS_3 + D3,
-						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_3]]]), &(boundevent[nl[block[n][AMR_NBR5_3]]][560]));
+						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_3]]]), &(boundeventB[nl[block[n][AMR_NBR5_3]]][6]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR5_5], &ref_1, &ref_2, &ref_3);
@@ -848,7 +848,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B3(n, block[n][AMR_NBR5_5], BS_1 / (1 + ref_1), BS_1, 0, BS_2 / (1 + ref_2), BS_3, BS_3 + D3,
-						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_5]]]), &(boundevent[nl[block[n][AMR_NBR5_5]]][560]));
+						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_5]]]), &(boundeventB[nl[block[n][AMR_NBR5_5]]][6]));
 				}
 			}
 			set_ref(n, block[n][AMR_NBR5_7], &ref_1, &ref_2, &ref_3);
@@ -860,7 +860,7 @@ void B_rec3(double(*restrict F3[NB_LOCAL])[NDIM], double * Bufferp[NB_LOCAL], in
 				}
 				else{
 					unpack_receive_B3(n, block[n][AMR_NBR5_7], BS_1 / (1 + ref_1), BS_1, BS_2 / (1 + ref_2), BS_2, BS_3, BS_3 + D3,
-						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_7]]]), &(boundevent[nl[block[n][AMR_NBR5_7]]][560]));
+						BS_1 / (1 + ref_1), BS_2 / (1 + ref_2), send6_fine, F3, 1, &(Bufferp[nl[n]]), &(Buffersend6fine[nl[block[n][AMR_NBR5_7]]]), &(boundeventB[nl[block[n][AMR_NBR5_7]]][6]));
 				}
 			}
 		}

@@ -102,8 +102,11 @@ void set_arrays_GPU(int n, int device){
 	cudaStreamCreate(&commandQueueGPU[nl[n]]);
 
 	//Create events
-	for (i = 0; i < 600; i++) cudaEventCreate(&boundevent[nl[n]][i]);
-	for (i = 0; i < 100; i++) cudaEventCreate(&boundevent1[nl[n]][i]);
+	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventF[nl[n]][i]);
+	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventB[nl[n]][i]);
+	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventE[nl[n]][i]);
+	for (i = 0; i < 7; i++) cudaEventCreate(&boundeventEcorn[nl[n]][i]);
+	for (i = 0; i < 70; i++) cudaEventCreate(&boundevent1[nl[n]][i]);
 
 	status = cudaGetLastError();
 	if (cudaSuccess != status ) fprintf(stderr, "Error in creating events: %d \n", status);
@@ -1702,8 +1705,11 @@ void GPU_finish(int n, int force_delete)
 	}
 
 	//Make sure all events are finished
-	for (i = 0; i < 600; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][i], 0);
-	for (i = 0; i < 100; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
+	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventF[nl[n]][i], 0);
+	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventE[nl[n]][i], 0);
+	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventEcorn[nl[n]][i], 0);
+	for (i = 0; i < 7; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundeventB[nl[n]][i], 0);
+	for (i = 0; i < 70; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
 
 	//Destroy CUDA events associated with block
 	for (i = 0; i < 600; i++) cudaEventDestroy(boundevent[nl[n]][i]);

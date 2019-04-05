@@ -217,8 +217,11 @@ double *tempreceive_E1_corn9[NB_LOCAL], *tempreceive_E1_corn10[NB_LOCAL], *tempr
 double *NULL_POINTER[NB_LOCAL];
 cudaStream_t commandQueue[NB_LOCAL];
 cudaStream_t commandQueueGPU[NB_LOCAL];
-cudaEvent_t boundevent[NB_LOCAL][600];
-cudaEvent_t boundevent1[NB_LOCAL][100];
+cudaEvent_t boundeventB[NB_LOCAL][7];
+cudaEvent_t boundeventF[NB_LOCAL][7];
+cudaEvent_t boundeventE[NB_LOCAL][7];
+cudaEvent_t boundeventEcorn[NB_LOCAL][13];
+cudaEvent_t boundevent1[NB_LOCAL][70];
 cudaEvent_t boundevent2[NB_LOCAL][100];
 int fix_mem[NB_LOCAL];
 int fix_mem2[NB_LOCAL];
