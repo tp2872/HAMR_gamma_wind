@@ -12,7 +12,6 @@ void set_timelevel(void){
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
 	if (nstep > 0){
-		#pragma omp parallel for schedule(static, n_active/nthreads) private(n,i)
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
@@ -92,7 +91,9 @@ void set_prestep(void){
 	#if(PRESTEP || PRESTEP2)
 	int timelevel_min = AMR_MAXTIMELEVEL;
 	int blocks_per_timestep = 0;
-	int blocks_this_timestep = 0;
+	int blocks_this_timestep[N_GPU];
+
+	for (n = 0; n < N_GPU; n++)blocks_this_timestep[n] = 0;
 
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_NSTEP] = nstep;
@@ -105,7 +106,7 @@ void set_prestep(void){
 	//Calculate the number of blocks you want to evolve simultaneously
 	blocks_per_timestep = (count_node[0] - count_node[0] % (AMR_MAXTIMELEVEL / timelevel_min)) / (AMR_MAXTIMELEVEL / timelevel_min);
 	for (n = 0; n < n_active; n++){
-		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep++;
+		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0)blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
 	}
 
 	//First make sure that the block required for prestepping in case of 2nd order time accuracy are preevolved
@@ -116,27 +117,27 @@ void set_prestep(void){
 			for (i = AMR_NBR1; i <= AMR_NBR6; i++){
 				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
 					block[n_ord[n]][AMR_PRESTEP] = 1;
-					blocks_this_timestep++;
+					blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
 					break;
 				}
 			}
 			for (i = AMR_NBR1P; i <= AMR_NBR6P; i++){
 				if (block[n_ord[n]][i] >= 0 && block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
 					block[n_ord[n]][AMR_PRESTEP] = 1;
-					blocks_this_timestep++;
+					blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
 					break;
 				}
 			}
 			for (i = AMR_NBR1_3; i <= AMR_NBR6_8; i++){
 				if (block[n_ord[n]][i] >= 0 && block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_TIMELEVEL] < block[n_ord[n]][AMR_TIMELEVEL]){
 					block[n_ord[n]][AMR_PRESTEP] = 1;
-					blocks_this_timestep++;
+					blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
 					break;
 				}
 			}
 			if (block[n_ord[n]][AMR_POLE] > 0){
 				block[n_ord[n]][AMR_PRESTEP] = 1;
-				blocks_this_timestep++;
+				blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
 			}
 			if (block[n_ord[n]][AMR_PRESTEP] == 1) block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
 		}
@@ -146,10 +147,10 @@ void set_prestep(void){
 	//If you don't have sufficient blocks this timestep preevolve some blocks if available
 	if ((nstep % timelevel_min) == timelevel_min - 1){
 		for (n = 0; n < n_active; n++){
-			if (blocks_this_timestep < blocks_per_timestep && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
+			if (blocks_this_timestep[block[n_ord[n]][AMR_GPU]] < blocks_per_timestep && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
 				block[n_ord[n]][AMR_PRESTEP] = 1;
 				block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
-				blocks_this_timestep++;
+				blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
 			}
 		}
 	}

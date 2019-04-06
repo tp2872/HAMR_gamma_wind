@@ -11,7 +11,7 @@ int gpuFree(void *devPtr);
 #if(GPU_DIRECT)
 #define gpuAlloc(val1,val2) cudaMalloc(val1,val2)
 #else
-#define gpuAlloc(val1,val2) cudaHostAlloc(val1,val2,0)
+#define gpuAlloc(val1,val2) cudaMallocHost(val1,val2,0)
 #endif
 
 void GPU_init(void)
@@ -172,27 +172,15 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferKatm[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
 	//cudaMalloc(&BufferdU[nl[n]], NPR*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*sizeof(double));
 	if (cudaSuccess != cudaSuccess ) fprintf(stderr, "Error in setting kernel arguments 3: %d \n", cudaSuccess);
-	cudaHostAlloc(&dtij_GPU[nl[n]], (nr_workgroups[nl[n]] + 1)*sizeof(double), 0);
+	cudaHostAlloc(&dtij_GPU[nl[n]], (nr_workgroups[nl[n]] + 1)*sizeof(double),0);
 	//cudaMalloc(&Bufferdtij[nl[n]], (nr_workgroups[nl[n]] + 1)*sizeof(double));
 	
-	alloc_bounds_GPU(n);
-	
-	status = cudaGetLastError();
-	if (cudaSuccess != status) fprintf(stderr, "Error in setting kernel arguments 4.6: %d \n", status);
-}
-
-//Set arrays for boundary cell transfer on GPU
-void alloc_bounds_GPU(int n){
 	int ref1_1, ref1_3, ref1_5, ref1_6;
 	int ref2_2, ref2_4, ref2_5, ref2_6;
 	int ref3_1, ref3_2, ref3_3, ref3_4;
 	int ref1_1s, ref1_3s, ref1_5s, ref1_6s;
 	int ref2_2s, ref2_4s, ref2_5s, ref2_6s;
 	int ref3_1s, ref3_2s, ref3_3s, ref3_4s;
-	#if(N_GPU>1)
-	cudaSetDevice(mem_spot_gpu[nl[n]]);
-	#endif
-	mem_spot_gpu_bound[nl[n]] = mem_spot_gpu[nl[n]];
 
 	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
 	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
@@ -201,25 +189,12 @@ void alloc_bounds_GPU(int n){
 	ref2_2s = REF_2;ref2_4s = REF_2; ref2_5s = REF_2; ref2_6s = REF_2;
 	ref3_1s = REF_3; ref3_2s = REF_3; ref3_3s = REF_3; ref3_4s = REF_3;
 
-	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
-		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
-		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
-	}
 	ref1_1s = 0;
 	ref1_3s = 0;
 	ref3_1s = 0;
 	ref3_3s = 0;
-
-	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
-	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) && DEREFINE_POLE){
-		ref3_2s = 0;
-		ref3_4s = 0;
-	}
+	ref3_2s = 0;
+	ref3_4s = 0;
 
 	gpuAlloc(&Buffersend1[nl[n]], NG * (NPR + 3)*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	#if(N_LEVELS>1)
@@ -266,69 +241,21 @@ void alloc_bounds_GPU(int n){
 	#endif
 	#endif
 	gpuAlloc(&Bufferrec1[nl[n]], (1 + ref1_3)*(1 + ref3_3)* NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G)*sizeof(double));
-	Bufferrec1_3[nl[n]] = Bufferrec1[nl[n]];
-	Bufferrec1_4[nl[n]] = Bufferrec1[nl[n]] + ref3_3*(NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
-	Bufferrec1_7[nl[n]] = Bufferrec1[nl[n]] + (ref3_3 + ref1_3)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
-	Bufferrec1_8[nl[n]] = Bufferrec1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
 	gpuAlloc(&Bufferrec2[nl[n]], (1 + ref2_4)*(1 + ref3_4)* NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G)*sizeof(double));
-	Bufferrec2_1[nl[n]] = Bufferrec2[nl[n]];
-	Bufferrec2_2[nl[n]] = Bufferrec2[nl[n]] + ref3_4*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
-	Bufferrec2_3[nl[n]] = Bufferrec2[nl[n]] + (ref3_4 + ref2_4)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
-	Bufferrec2_4[nl[n]] = Bufferrec2[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
 	gpuAlloc(&Bufferrec3[nl[n]], (1 + ref1_1)*(1 + ref3_1)* NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G)*sizeof(double));
-	Bufferrec3_1[nl[n]] = Bufferrec3[nl[n]];
-	Bufferrec3_2[nl[n]] = Bufferrec3[nl[n]] + ref3_1*(NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
-	Bufferrec3_5[nl[n]] = Bufferrec3[nl[n]] + (ref3_1 + ref1_1)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
-	Bufferrec3_6[nl[n]] = Bufferrec3[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
 	gpuAlloc(&Bufferrec4[nl[n]], (1 + ref2_2)*(1 + ref3_2)* NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G)*sizeof(double));
-	Bufferrec4_5[nl[n]] = Bufferrec4[nl[n]];
-	Bufferrec4_6[nl[n]] = Bufferrec4[nl[n]] + ref3_2*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	Bufferrec4_7[nl[n]] = Bufferrec4[nl[n]] + (ref3_2 + ref2_2)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	Bufferrec4_8[nl[n]] = Bufferrec4[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	#if(N3G>0)
 	gpuAlloc(&Bufferrec5[nl[n]], (1 + ref1_6)*(1 + ref2_6)* NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G)*sizeof(double));
-	Bufferrec5_1[nl[n]] = Bufferrec5[nl[n]];
-	Bufferrec5_3[nl[n]] = Bufferrec5[nl[n]] + ref2_6*(NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
-	Bufferrec5_5[nl[n]] = Bufferrec5[nl[n]] + (ref2_6 + ref1_6)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
-	Bufferrec5_7[nl[n]] = Bufferrec5[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(NG * (NPR + 3) * (BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
 	gpuAlloc(&Bufferrec6[nl[n]], (1 + ref1_5)*(1 + ref2_5)* NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G)*sizeof(double));
-	Bufferrec6_2[nl[n]] = Bufferrec6[nl[n]];
-	Bufferrec6_4[nl[n]] = Bufferrec6[nl[n]] + ref2_5*(NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
-	Bufferrec6_6[nl[n]] = Bufferrec6[nl[n]] + (ref2_5 + ref1_5)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
-	Bufferrec6_8[nl[n]] = Bufferrec6[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NG * (NPR + 3) * (BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
 	#endif
 	#if(PRESTEP || PRESTEP2)
 	gpuAlloc(&tempBufferrec1[nl[n]], (1 + ref1_3)*(1 + ref3_3)* 2 * NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G)*sizeof(double));
-	tempBufferrec1_3[nl[n]] = tempBufferrec1[nl[n]];
-	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + ref3_3*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
-	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (ref3_3 + ref1_3)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
-	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
 	gpuAlloc(&tempBufferrec2[nl[n]], (1 + ref2_4)*(1 + ref3_4)* 2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G)*sizeof(double));
-	tempBufferrec2_1[nl[n]] = tempBufferrec2[nl[n]];
-	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + ref3_4*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
-	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (ref3_4 + ref2_4)*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
-	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
 	gpuAlloc(&tempBufferrec3[nl[n]], (1 + ref1_1)*(1 + ref3_1)* 2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G)*sizeof(double));
-	tempBufferrec3_1[nl[n]] = tempBufferrec3[nl[n]];
-	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + ref3_1*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
-	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (ref3_1 + ref1_1)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
-	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
 	gpuAlloc(&tempBufferrec4[nl[n]], (1 + ref2_2)*(1 + ref3_2)* 2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G)*sizeof(double));
-	tempBufferrec4_5[nl[n]] = tempBufferrec4[nl[n]];
-	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + ref3_2*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (ref3_2 + ref2_2)*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	#if(N3G>0)
 	gpuAlloc(&tempBufferrec5[nl[n]], (1 + ref1_6)*(1 + ref2_6)*2 * NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G)*sizeof(double));
-	tempBufferrec5_1[nl[n]] = tempBufferrec5[nl[n]];
-	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + ref2_6*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
-	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (ref2_6 + ref1_6)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
-	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(2 *NG * (NPR + 3) * (BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
 	gpuAlloc(&tempBufferrec6[nl[n]], (1 + ref1_5)*(1 + ref2_5)*2 * NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G)*sizeof(double));
-	tempBufferrec6_2[nl[n]] = tempBufferrec6[nl[n]];
-	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + ref2_5*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
-	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (ref2_5 + ref1_5)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
-	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(2 *NG * (NPR + 3) * (BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
 	#endif
 	#endif
 	gpuAlloc(&Buffersend1flux[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double));
@@ -347,32 +274,6 @@ void alloc_bounds_GPU(int n){
 	gpuAlloc(&Bufferrec5flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	gpuAlloc(&Bufferrec6flux[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	#endif
-	Bufferrec1_3flux[nl[n]] = Bufferrec1flux[nl[n]];
-	Bufferrec1_4flux[nl[n]] = Bufferrec1flux[nl[n]] + ref3_3*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
-	Bufferrec1_7flux[nl[n]] = Bufferrec1flux[nl[n]] + (ref3_3 + ref1_3)*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
-	Bufferrec1_8flux[nl[n]] = Bufferrec1flux[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
-	Bufferrec2_1flux[nl[n]] = Bufferrec2flux[nl[n]];
-	Bufferrec2_2flux[nl[n]] = Bufferrec2flux[nl[n]] + ref3_4*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
-	Bufferrec2_3flux[nl[n]] = Bufferrec2flux[nl[n]] + (ref3_4 + ref2_4)*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
-	Bufferrec2_4flux[nl[n]] = Bufferrec2flux[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
-	Bufferrec3_1flux[nl[n]] = Bufferrec3flux[nl[n]];
-	Bufferrec3_2flux[nl[n]] = Bufferrec3flux[nl[n]] + ref3_1*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
-	Bufferrec3_5flux[nl[n]] = Bufferrec3flux[nl[n]] + (ref3_1 + ref1_1)*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
-	Bufferrec3_6flux[nl[n]] = Bufferrec3flux[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
-	Bufferrec4_5flux[nl[n]] = Bufferrec4flux[nl[n]];
-	Bufferrec4_6flux[nl[n]] = Bufferrec4flux[nl[n]] + ref3_2*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
-	Bufferrec4_7flux[nl[n]] = Bufferrec4flux[nl[n]] + (ref3_2 + ref2_2)*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
-	Bufferrec4_8flux[nl[n]] = Bufferrec4flux[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
-	#if(N3G>0)
-	Bufferrec5_1flux[nl[n]] = Bufferrec5flux[nl[n]];
-	Bufferrec5_3flux[nl[n]] = Bufferrec5flux[nl[n]] + ref2_6*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
-	Bufferrec5_5flux[nl[n]] = Bufferrec5flux[nl[n]] + (ref2_6 + ref1_6)*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
-	Bufferrec5_7flux[nl[n]] = Bufferrec5flux[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
-	Bufferrec6_2flux[nl[n]] = Bufferrec6flux[nl[n]];
-	Bufferrec6_4flux[nl[n]] = Bufferrec6flux[nl[n]] + ref2_5*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
-	Bufferrec6_6flux[nl[n]] = Bufferrec6flux[nl[n]] + (ref2_5 + ref1_5)*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
-	Bufferrec6_8flux[nl[n]] = Bufferrec6flux[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
-	#endif
 	gpuAlloc(&Bufferrec1flux1[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double));
 	gpuAlloc(&Bufferrec2flux1[nl[n]], NPR*(BS_2)*(BS_3)*sizeof(double));
 	gpuAlloc(&Bufferrec3flux1[nl[n]], NPR*(BS_1)*(BS_3)*sizeof(double));
@@ -380,32 +281,6 @@ void alloc_bounds_GPU(int n){
 	#if(N3G>0)
 	gpuAlloc(&Bufferrec5flux1[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
 	gpuAlloc(&Bufferrec6flux1[nl[n]], NPR*(BS_1)*(BS_2)*sizeof(double));
-	#endif
-	Bufferrec1_3flux1[nl[n]] = Bufferrec1flux1[nl[n]];
-	Bufferrec1_4flux1[nl[n]] = Bufferrec1flux1[nl[n]] + ref3_3*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
-	Bufferrec1_7flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (ref3_3 + ref1_3)*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
-	Bufferrec1_8flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
-	Bufferrec2_1flux1[nl[n]] = Bufferrec2flux1[nl[n]];
-	Bufferrec2_2flux1[nl[n]] = Bufferrec2flux1[nl[n]] + ref3_4*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
-	Bufferrec2_3flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (ref3_4 + ref2_4)*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
-	Bufferrec2_4flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
-	Bufferrec3_1flux1[nl[n]] = Bufferrec3flux1[nl[n]];
-	Bufferrec3_2flux1[nl[n]] = Bufferrec3flux1[nl[n]] + ref3_1*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
-	Bufferrec3_5flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (ref3_1 + ref1_1)*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
-	Bufferrec3_6flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
-	Bufferrec4_5flux1[nl[n]] = Bufferrec4flux1[nl[n]];
-	Bufferrec4_6flux1[nl[n]] = Bufferrec4flux1[nl[n]] + ref3_2*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
-	Bufferrec4_7flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (ref3_2 + ref2_2)*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
-	Bufferrec4_8flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
-	#if(N3G>0)
-	Bufferrec5_1flux1[nl[n]] = Bufferrec5flux1[nl[n]];
-	Bufferrec5_3flux1[nl[n]] = Bufferrec5flux1[nl[n]] + ref2_6*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
-	Bufferrec5_5flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (ref2_6 + ref1_6)*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
-	Bufferrec5_7flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
-	Bufferrec6_2flux1[nl[n]] = Bufferrec6flux1[nl[n]];
-	Bufferrec6_4flux1[nl[n]] = Bufferrec6flux1[nl[n]] + ref2_5*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
-	Bufferrec6_6flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (ref2_5 + ref1_5)*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
-	Bufferrec6_8flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
 	#endif
 	#if(N_LEVELS>1)
 	gpuAlloc(&Bufferrec1_3flux2[nl[n]], NPR*(BS_1 / (1 + ref1_3s))*(BS_3 / (1 + ref3_3s))*sizeof(double));
@@ -441,12 +316,10 @@ void alloc_bounds_GPU(int n){
 	#endif
 	#endif
 	#endif
-
-	cudaHostAlloc(&Buffersend1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	cudaHostAlloc(&Buffersend3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-	cudaHostAlloc(&Bufferrec3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double), 0);
-
+	cudaMallocHost(&Buffersend1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMallocHost(&Buffersend3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMallocHost(&Bufferrec1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
+	cudaMallocHost(&Bufferrec3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G)*sizeof(double));
 	gpuAlloc(&Buffersend1E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
 	gpuAlloc(&Buffersend2E[nl[n]], 2 * (BS_2 + 2 * D2)*(BS_3 + 2 * D3)*sizeof(double));
 	gpuAlloc(&Buffersend3E[nl[n]], 2 * (BS_1 + 2 * D1)*(BS_3 + 2 * D3)*sizeof(double));
@@ -463,32 +336,6 @@ void alloc_bounds_GPU(int n){
 	gpuAlloc(&Bufferrec5E[nl[n]], (1 + ref2_6)*(1 + ref1_6) * 2 * (BS_1 / (1 + ref2_6) + 2 * D1)*(BS_2 / (1 + ref1_6) + 2 * D2)*sizeof(double));
 	gpuAlloc(&Bufferrec6E[nl[n]], (1 + ref2_5)*(1 + ref1_5) * 2 * (BS_1 / (1 + ref2_5) + 2 * D1)*(BS_2 / (1 + ref1_5) + 2 * D2)*sizeof(double));
 	#endif
-	Bufferrec1_3E[nl[n]] = Bufferrec1E[nl[n]];
-	Bufferrec1_4E[nl[n]] = Bufferrec1E[nl[n]] + ref3_3*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
-	Bufferrec1_7E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
-	Bufferrec1_8E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
-	Bufferrec2_1E[nl[n]] = Bufferrec2E[nl[n]];
-	Bufferrec2_2E[nl[n]] = Bufferrec2E[nl[n]] + ref3_4*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
-	Bufferrec2_3E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
-	Bufferrec2_4E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
-	Bufferrec3_1E[nl[n]] = Bufferrec3E[nl[n]];
-	Bufferrec3_2E[nl[n]] = Bufferrec3E[nl[n]] + ref3_1*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
-	Bufferrec3_5E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
-	Bufferrec3_6E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
-	Bufferrec4_5E[nl[n]] = Bufferrec4E[nl[n]];
-	Bufferrec4_6E[nl[n]] = Bufferrec4E[nl[n]] + ref3_2*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
-	Bufferrec4_7E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
-	Bufferrec4_8E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
-	#if(N3G>0)
-	Bufferrec5_1E[nl[n]] = Bufferrec5E[nl[n]];
-	Bufferrec5_3E[nl[n]] = Bufferrec5E[nl[n]] + ref1_6*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
-	Bufferrec5_5E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
-	Bufferrec5_7E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
-	Bufferrec6_2E[nl[n]] = Bufferrec6E[nl[n]];
-	Bufferrec6_4E[nl[n]] = Bufferrec6E[nl[n]] + ref1_5*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
-	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
-	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
-	#endif
 	gpuAlloc(&Bufferrec1E1[nl[n]], (1 + ref1_3)*(1 + ref3_3) * 2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3)*sizeof(double));
 	gpuAlloc(&Bufferrec2E1[nl[n]], (1 + ref2_4)*(1 + ref3_4) * 2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4) + 2 * D3)*sizeof(double));
 	gpuAlloc(&Bufferrec3E1[nl[n]], (1 + ref1_1)*(1 + ref3_1) * 2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3)*sizeof(double));
@@ -496,32 +343,6 @@ void alloc_bounds_GPU(int n){
 	#if(N3G>0)
 	gpuAlloc(&Bufferrec5E1[nl[n]], (1 + ref2_6)*(1 + ref1_6) * 2 * (BS_1 / (1 + ref2_6) + 2 * D1)*(BS_2 / (1 + ref1_6) + 2 * D2)*sizeof(double));
 	gpuAlloc(&Bufferrec6E1[nl[n]], (1 + ref2_5)*(1 + ref1_5) * 2 * (BS_1 / (1 + ref2_5) + 2 * D1)*(BS_2 / (1 + ref1_5) + 2 * D2)*sizeof(double));
-	#endif
-	Bufferrec1_3E1[nl[n]] = Bufferrec1E1[nl[n]];
-	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + ref3_3*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
-	Bufferrec1_7E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
-	Bufferrec1_8E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
-	Bufferrec2_1E1[nl[n]] = Bufferrec2E1[nl[n]];
-	Bufferrec2_2E1[nl[n]] = Bufferrec2E1[nl[n]] + ref3_4*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
-	Bufferrec2_3E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
-	Bufferrec2_4E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
-	Bufferrec3_1E1[nl[n]] = Bufferrec3E1[nl[n]];
-	Bufferrec3_2E1[nl[n]] = Bufferrec3E1[nl[n]] + ref3_1*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
-	Bufferrec3_5E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
-	Bufferrec3_6E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
-	Bufferrec4_5E1[nl[n]] = Bufferrec4E1[nl[n]];
-	Bufferrec4_6E1[nl[n]] = Bufferrec4E1[nl[n]] + ref3_2*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
-	Bufferrec4_7E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
-	Bufferrec4_8E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
-	#if(N3G>0)
-	Bufferrec5_1E1[nl[n]] = Bufferrec5E1[nl[n]];
-	Bufferrec5_3E1[nl[n]] = Bufferrec5E1[nl[n]] + ref1_6*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
-	Bufferrec5_5E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
-	Bufferrec5_7E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
-	Bufferrec6_2E1[nl[n]] = Bufferrec6E1[nl[n]];
-	Bufferrec6_4E1[nl[n]] = Bufferrec6E1[nl[n]] + ref1_5*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
-	Bufferrec6_6E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
-	Bufferrec6_8E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
 	#endif
 	#if(N_LEVELS>1)
 	gpuAlloc(&Bufferrec1_3E2[nl[n]], 2 * (BS_1 + 2 * D1) / (1 + ref1_3s) *(BS_3 + 2 * D3) / (1 + ref3_3s) *sizeof(double));
@@ -681,7 +502,194 @@ void alloc_bounds_GPU(int n){
 	gpuAlloc(&BufferrecE3corn4_72[nl[n]], 1 * (BS_3 + 2 * D3) *sizeof(double));
 	gpuAlloc(&BufferrecE3corn4_82[nl[n]], 1 * (BS_3 + 2 * D3) *sizeof(double));
 	#endif
+	
+	alloc_bounds_GPU(n);
+	
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting kernel arguments 4.6: %d \n", status);
+}
 
+//Set arrays for boundary cell transfer on GPU
+void alloc_bounds_GPU(int n){
+	int ref1_1, ref1_3, ref1_5, ref1_6;
+	int ref2_2, ref2_4, ref2_5, ref2_6;
+	int ref3_1, ref3_2, ref3_3, ref3_4;
+
+	#if(N_GPU>1)
+	cudaSetDevice(mem_spot_gpu[nl[n]]);
+	#endif
+	mem_spot_gpu_bound[nl[n]] = mem_spot_gpu[nl[n]];
+
+	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
+	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
+	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
+	
+	if (block[n][AMR_LEVEL] != N_LEVELS - 1) {
+		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR3_1] >= 0) ref1_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		if (block[n][AMR_NBR1_3] >= 0) ref3_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
+	}
+
+	Bufferrec1_3[nl[n]] = Bufferrec1[nl[n]];
+	Bufferrec1_4[nl[n]] = Bufferrec1[nl[n]] + ref3_3*(NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
+	Bufferrec1_7[nl[n]] = Bufferrec1[nl[n]] + (ref3_3 + ref1_3)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
+	Bufferrec1_8[nl[n]] = Bufferrec1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
+	Bufferrec2_1[nl[n]] = Bufferrec2[nl[n]];
+	Bufferrec2_2[nl[n]] = Bufferrec2[nl[n]] + ref3_4*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
+	Bufferrec2_3[nl[n]] = Bufferrec2[nl[n]] + (ref3_4 + ref2_4)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
+	Bufferrec2_4[nl[n]] = Bufferrec2[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
+	Bufferrec3_1[nl[n]] = Bufferrec3[nl[n]];
+	Bufferrec3_2[nl[n]] = Bufferrec3[nl[n]] + ref3_1*(NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
+	Bufferrec3_5[nl[n]] = Bufferrec3[nl[n]] + (ref3_1 + ref1_1)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
+	Bufferrec3_6[nl[n]] = Bufferrec3[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
+	Bufferrec4_5[nl[n]] = Bufferrec4[nl[n]];
+	Bufferrec4_6[nl[n]] = Bufferrec4[nl[n]] + ref3_2*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
+	Bufferrec4_7[nl[n]] = Bufferrec4[nl[n]] + (ref3_2 + ref2_2)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
+	Bufferrec4_8[nl[n]] = Bufferrec4[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
+	#if(N3G>0)
+	Bufferrec5_1[nl[n]] = Bufferrec5[nl[n]];
+	Bufferrec5_3[nl[n]] = Bufferrec5[nl[n]] + ref2_6*(NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
+	Bufferrec5_5[nl[n]] = Bufferrec5[nl[n]] + (ref2_6 + ref1_6)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
+	Bufferrec5_7[nl[n]] = Bufferrec5[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(NG * (NPR + 3) * (BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
+	Bufferrec6_2[nl[n]] = Bufferrec6[nl[n]];
+	Bufferrec6_4[nl[n]] = Bufferrec6[nl[n]] + ref2_5*(NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
+	Bufferrec6_6[nl[n]] = Bufferrec6[nl[n]] + (ref2_5 + ref1_5)*(NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
+	Bufferrec6_8[nl[n]] = Bufferrec6[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NG * (NPR + 3) * (BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
+	#endif
+	#if(PRESTEP || PRESTEP2)
+	tempBufferrec1_3[nl[n]] = tempBufferrec1[nl[n]];
+	tempBufferrec1_4[nl[n]] = tempBufferrec1[nl[n]] + ref3_3*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
+	tempBufferrec1_7[nl[n]] = tempBufferrec1[nl[n]] + (ref3_3 + ref1_3)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
+	tempBufferrec1_8[nl[n]] = tempBufferrec1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G));
+	tempBufferrec2_1[nl[n]] = tempBufferrec2[nl[n]];
+	tempBufferrec2_2[nl[n]] = tempBufferrec2[nl[n]] + ref3_4*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
+	tempBufferrec2_3[nl[n]] = tempBufferrec2[nl[n]] + (ref3_4 + ref2_4)*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
+	tempBufferrec2_4[nl[n]] = tempBufferrec2[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
+	tempBufferrec3_1[nl[n]] = tempBufferrec3[nl[n]];
+	tempBufferrec3_2[nl[n]] = tempBufferrec3[nl[n]] + ref3_1*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
+	tempBufferrec3_5[nl[n]] = tempBufferrec3[nl[n]] + (ref3_1 + ref1_1)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
+	tempBufferrec3_6[nl[n]] = tempBufferrec3[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G));
+	tempBufferrec4_5[nl[n]] = tempBufferrec4[nl[n]];
+	tempBufferrec4_6[nl[n]] = tempBufferrec4[nl[n]] + ref3_2*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
+	tempBufferrec4_7[nl[n]] = tempBufferrec4[nl[n]] + (ref3_2 + ref2_2)*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
+	tempBufferrec4_8[nl[n]] = tempBufferrec4[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 *NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
+	#if(N3G>0)
+	tempBufferrec5_1[nl[n]] = tempBufferrec5[nl[n]];
+	tempBufferrec5_3[nl[n]] = tempBufferrec5[nl[n]] + ref2_6*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
+	tempBufferrec5_5[nl[n]] = tempBufferrec5[nl[n]] + (ref2_6 + ref1_6)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
+	tempBufferrec5_7[nl[n]] = tempBufferrec5[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(2 *NG * (NPR + 3) * (BS_1 / (1 + ref1_6) + 2 * N1G)*(BS_2 / (1 + ref2_6) + 2 * N2G));
+	tempBufferrec6_2[nl[n]] = tempBufferrec6[nl[n]];
+	tempBufferrec6_4[nl[n]] = tempBufferrec6[nl[n]] + ref2_5*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
+	tempBufferrec6_6[nl[n]] = tempBufferrec6[nl[n]] + (ref2_5 + ref1_5)*(2 *NG * (NPR + 3)*(BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
+	tempBufferrec6_8[nl[n]] = tempBufferrec6[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(2 *NG * (NPR + 3) * (BS_1 / (1 + ref1_5) + 2 * N1G)*(BS_2 / (1 + ref2_5) + 2 * N2G));
+	#endif
+	#endif
+	Bufferrec1_3flux[nl[n]] = Bufferrec1flux[nl[n]];
+	Bufferrec1_4flux[nl[n]] = Bufferrec1flux[nl[n]] + ref3_3*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
+	Bufferrec1_7flux[nl[n]] = Bufferrec1flux[nl[n]] + (ref3_3 + ref1_3)*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
+	Bufferrec1_8flux[nl[n]] = Bufferrec1flux[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
+	Bufferrec2_1flux[nl[n]] = Bufferrec2flux[nl[n]];
+	Bufferrec2_2flux[nl[n]] = Bufferrec2flux[nl[n]] + ref3_4*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
+	Bufferrec2_3flux[nl[n]] = Bufferrec2flux[nl[n]] + (ref3_4 + ref2_4)*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
+	Bufferrec2_4flux[nl[n]] = Bufferrec2flux[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
+	Bufferrec3_1flux[nl[n]] = Bufferrec3flux[nl[n]];
+	Bufferrec3_2flux[nl[n]] = Bufferrec3flux[nl[n]] + ref3_1*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
+	Bufferrec3_5flux[nl[n]] = Bufferrec3flux[nl[n]] + (ref3_1 + ref1_1)*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
+	Bufferrec3_6flux[nl[n]] = Bufferrec3flux[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
+	Bufferrec4_5flux[nl[n]] = Bufferrec4flux[nl[n]];
+	Bufferrec4_6flux[nl[n]] = Bufferrec4flux[nl[n]] + ref3_2*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
+	Bufferrec4_7flux[nl[n]] = Bufferrec4flux[nl[n]] + (ref3_2 + ref2_2)*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
+	Bufferrec4_8flux[nl[n]] = Bufferrec4flux[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
+	#if(N3G>0)
+	Bufferrec5_1flux[nl[n]] = Bufferrec5flux[nl[n]];
+	Bufferrec5_3flux[nl[n]] = Bufferrec5flux[nl[n]] + ref2_6*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
+	Bufferrec5_5flux[nl[n]] = Bufferrec5flux[nl[n]] + (ref2_6 + ref1_6)*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
+	Bufferrec5_7flux[nl[n]] = Bufferrec5flux[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
+	Bufferrec6_2flux[nl[n]] = Bufferrec6flux[nl[n]];
+	Bufferrec6_4flux[nl[n]] = Bufferrec6flux[nl[n]] + ref2_5*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
+	Bufferrec6_6flux[nl[n]] = Bufferrec6flux[nl[n]] + (ref2_5 + ref1_5)*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
+	Bufferrec6_8flux[nl[n]] = Bufferrec6flux[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
+	#endif
+	Bufferrec1_3flux1[nl[n]] = Bufferrec1flux1[nl[n]];
+	Bufferrec1_4flux1[nl[n]] = Bufferrec1flux1[nl[n]] + ref3_3*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
+	Bufferrec1_7flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (ref3_3 + ref1_3)*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
+	Bufferrec1_8flux1[nl[n]] = Bufferrec1flux1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
+	Bufferrec2_1flux1[nl[n]] = Bufferrec2flux1[nl[n]];
+	Bufferrec2_2flux1[nl[n]] = Bufferrec2flux1[nl[n]] + ref3_4*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
+	Bufferrec2_3flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (ref3_4 + ref2_4)*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
+	Bufferrec2_4flux1[nl[n]] = Bufferrec2flux1[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4)));
+	Bufferrec3_1flux1[nl[n]] = Bufferrec3flux1[nl[n]];
+	Bufferrec3_2flux1[nl[n]] = Bufferrec3flux1[nl[n]] + ref3_1*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
+	Bufferrec3_5flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (ref3_1 + ref1_1)*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
+	Bufferrec3_6flux1[nl[n]] = Bufferrec3flux1[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)));
+	Bufferrec4_5flux1[nl[n]] = Bufferrec4flux1[nl[n]];
+	Bufferrec4_6flux1[nl[n]] = Bufferrec4flux1[nl[n]] + ref3_2*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
+	Bufferrec4_7flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (ref3_2 + ref2_2)*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
+	Bufferrec4_8flux1[nl[n]] = Bufferrec4flux1[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2)));
+	#if(N3G>0)
+	Bufferrec5_1flux1[nl[n]] = Bufferrec5flux1[nl[n]];
+	Bufferrec5_3flux1[nl[n]] = Bufferrec5flux1[nl[n]] + ref2_6*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
+	Bufferrec5_5flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (ref2_6 + ref1_6)*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
+	Bufferrec5_7flux1[nl[n]] = Bufferrec5flux1[nl[n]] + (ref2_6 + ref1_6 + (ref2_6 && ref1_6))*(NPR*(BS_2 / (1 + ref2_6))*(BS_1 / (1 + ref1_6)));
+	Bufferrec6_2flux1[nl[n]] = Bufferrec6flux1[nl[n]];
+	Bufferrec6_4flux1[nl[n]] = Bufferrec6flux1[nl[n]] + ref2_5*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
+	Bufferrec6_6flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (ref2_5 + ref1_5)*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
+	Bufferrec6_8flux1[nl[n]] = Bufferrec6flux1[nl[n]] + (ref2_5 + ref1_5 + (ref2_5 && ref1_5))*(NPR*(BS_2 / (1 + ref2_5))*(BS_1 / (1 + ref1_5)));
+	#endif
+	Bufferrec1_3E[nl[n]] = Bufferrec1E[nl[n]];
+	Bufferrec1_4E[nl[n]] = Bufferrec1E[nl[n]] + ref3_3*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_7E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_8E[nl[n]] = Bufferrec1E[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec2_1E[nl[n]] = Bufferrec2E[nl[n]];
+	Bufferrec2_2E[nl[n]] = Bufferrec2E[nl[n]] + ref3_4*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_3E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_4E[nl[n]] = Bufferrec2E[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec3_1E[nl[n]] = Bufferrec3E[nl[n]];
+	Bufferrec3_2E[nl[n]] = Bufferrec3E[nl[n]] + ref3_1*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_5E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_6E[nl[n]] = Bufferrec3E[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec4_5E[nl[n]] = Bufferrec4E[nl[n]];
+	Bufferrec4_6E[nl[n]] = Bufferrec4E[nl[n]] + ref3_2*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_7E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_8E[nl[n]] = Bufferrec4E[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	#if(N3G>0)
+	Bufferrec5_1E[nl[n]] = Bufferrec5E[nl[n]];
+	Bufferrec5_3E[nl[n]] = Bufferrec5E[nl[n]] + ref1_6*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_5E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_7E[nl[n]] = Bufferrec5E[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec6_2E[nl[n]] = Bufferrec6E[nl[n]];
+	Bufferrec6_4E[nl[n]] = Bufferrec6E[nl[n]] + ref1_5*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_6E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_8E[nl[n]] = Bufferrec6E[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	#endif
+	Bufferrec1_3E1[nl[n]] = Bufferrec1E1[nl[n]];
+	Bufferrec1_4E1[nl[n]] = Bufferrec1E1[nl[n]] + ref3_3*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_7E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3)*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec1_8E1[nl[n]] = Bufferrec1E1[nl[n]] + (ref3_3 + ref1_3 + (ref3_3 && ref1_3))*(2 * ((BS_1 / (1 + ref1_3) + 2 * D1))*((BS_3 / (1 + ref3_3) + 2 * D3)));
+	Bufferrec2_1E1[nl[n]] = Bufferrec2E1[nl[n]];
+	Bufferrec2_2E1[nl[n]] = Bufferrec2E1[nl[n]] + ref3_4*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_3E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4)*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec2_4E1[nl[n]] = Bufferrec2E1[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(2 * ((BS_2 / (1 + ref2_4) + 2 * D2))*((BS_3 / (1 + ref3_4) + 2 * D3)));
+	Bufferrec3_1E1[nl[n]] = Bufferrec3E1[nl[n]];
+	Bufferrec3_2E1[nl[n]] = Bufferrec3E1[nl[n]] + ref3_1*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_5E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1)*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec3_6E1[nl[n]] = Bufferrec3E1[nl[n]] + (ref3_1 + ref1_1 + (ref3_1 && ref1_1))*(2 * ((BS_1 / (1 + ref1_1) + 2 * D1))*((BS_3 / (1 + ref3_1) + 2 * D3)));
+	Bufferrec4_5E1[nl[n]] = Bufferrec4E1[nl[n]];
+	Bufferrec4_6E1[nl[n]] = Bufferrec4E1[nl[n]] + ref3_2*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_7E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2)*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	Bufferrec4_8E1[nl[n]] = Bufferrec4E1[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2 * ((BS_2 / (1 + ref2_2) + 2 * D2))*((BS_3 / (1 + ref3_2) + 2 * D3)));
+	#if(N3G>0)
+	Bufferrec5_1E1[nl[n]] = Bufferrec5E1[nl[n]];
+	Bufferrec5_3E1[nl[n]] = Bufferrec5E1[nl[n]] + ref1_6*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_5E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6)*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec5_7E1[nl[n]] = Bufferrec5E1[nl[n]] + (ref1_6 + ref2_6 + (ref1_6 && ref2_6))*(2 * ((BS_2 / (1 + ref2_6) + 2 * D2))*((BS_1 / (1 + ref1_6) + 2 * D1)));
+	Bufferrec6_2E1[nl[n]] = Bufferrec6E1[nl[n]];
+	Bufferrec6_4E1[nl[n]] = Bufferrec6E1[nl[n]] + ref1_5*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_6E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5)*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	Bufferrec6_8E1[nl[n]] = Bufferrec6E1[nl[n]] + (ref1_5 + ref2_5 + (ref1_5 && ref2_5))*(2 * ((BS_2 / (1 + ref2_5) + 2 * D2))*((BS_1 / (1 + ref1_5) + 2 * D1)));
+	#endif
+	
 }
 double check = 1.0;
 
@@ -1394,13 +1402,7 @@ void GPU_boundprim(int bound_force)
 	#endif
 
 	//For last timestep do not receive synchronized electrice fields 
-	for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-		//#if(N_GPU>1)
-		//cudaSetDevice(n);
-		//#endif
-		//cudaDeviceSynchronize();
-	}
-	//mpi_synch();
+	mpi_synch();
 	if (rank == 0) begin2 = get_wall_time();
 
 	#if(PRESTEP)
@@ -1690,7 +1692,7 @@ void GPU_finish(int n, int force_delete)
 	block[n][AMR_GPU] = -1;
 	//if (mem_spot[nl[n]] == 1) fprintf(stderr, "Error, tries to deallocate GPU memory before deaalocating RAM! \n");
 	if (mem_spot[nl[n]] == 0 && force_delete==0){
-		free_bound_gpu(n);
+		//free_bound_gpu(n);
 		return;
 	}
 	else if (mem_spot_gpu[nl[n]] == -1){

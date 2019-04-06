@@ -1276,8 +1276,8 @@ void balance_load(void){
 		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
 			if (NODE[n_ord_total_RM[i]] == rank){
 				//Allocate memory for active blocks on node
-				temp_p[n_ord_total_RM[i]] = (double(*)[NPR])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
-				temp_ps[n_ord_total_RM[i]] = (double(*)[NDIM])calloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
+				temp_p[n_ord_total_RM[i]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NPR]));
+				temp_ps[n_ord_total_RM[i]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G), sizeof(double[NDIM]));
 				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
 					rc = MPI_Irecv(&temp_p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (5 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_ord_total_RM[i]]);
 					#if STAGGERED
@@ -2335,21 +2335,21 @@ void check_refcrit(void){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#if(DEREFINE_POLE)
-				var = NB_2 / 3-1;
-				if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && block[n_ord_total[n]][AMR_COORD2] <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && block[n_ord_total[n]][AMR_COORD2] <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && block[n_ord_total[n]][AMR_COORD2] <= 6 + var*pow(1 + REF_2, 2))
-					|| (block[n_ord_total[n]][AMR_LEVEL2] == 3 && block[n_ord_total[n]][AMR_COORD2] == 14 + var*pow(1 + REF_2, 3)) || (block[n_ord_total[n]][AMR_LEVEL2] == 4 && block[n_ord_total[n]][AMR_COORD2] == 30 + var*pow(1 + REF_2, 4)) || (block[n_ord_total[n]][AMR_LEVEL2] == 5 && block[n_ord_total[n]][AMR_COORD2] == 62 + var*pow(1 + REF_2, 5))){
-					if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
-						|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)) {
-						block[n_ord_total[n]][AMR_TAG] = 0;
-					}
-				}
-				if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && (NB_2-block[n_ord_total[n]][AMR_COORD2]) <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && (NB_2*pow(1 + REF_2, 1) - block[n_ord_total[n]][AMR_COORD2]) <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && (NB_2*pow(1 + REF_2, 2) - block[n_ord_total[n]][AMR_COORD2]) <= 6 + var*pow(1 + REF_2, 2))
-					|| (block[n_ord_total[n]][AMR_LEVEL2] == 3 && (NB_2*pow(1 + REF_2, 3) - block[n_ord_total[n]][AMR_COORD2]) == 14 + var*pow(1 + REF_2, 3)) || (block[n_ord_total[n]][AMR_LEVEL2] == 4 && (NB_2*pow(1 + REF_2, 4) - block[n_ord_total[n]][AMR_COORD2]) == 30 + var*pow(1 + REF_2, 4)) || (block[n_ord_total[n]][AMR_LEVEL2] == 5 && (NB_2*pow(1 + REF_2, 5) - block[n_ord_total[n]][AMR_COORD2]) == 62 + var*pow(1 + REF_2, 5))) {
-					if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
-						|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)) {
-						block[n_ord_total[n]][AMR_TAG] = 0;
-					}
-				}
+				//var = NB_2 / 3-1;
+				//if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && block[n_ord_total[n]][AMR_COORD2] <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && block[n_ord_total[n]][AMR_COORD2] <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && block[n_ord_total[n]][AMR_COORD2] <= 6 + var*pow(1 + REF_2, 2))
+				//	|| (block[n_ord_total[n]][AMR_LEVEL2] == 3 && block[n_ord_total[n]][AMR_COORD2] == 14 + var*pow(1 + REF_2, 3)) || (block[n_ord_total[n]][AMR_LEVEL2] == 4 && block[n_ord_total[n]][AMR_COORD2] == 30 + var*pow(1 + REF_2, 4)) || (block[n_ord_total[n]][AMR_LEVEL2] == 5 && block[n_ord_total[n]][AMR_COORD2] == 62 + var*pow(1 + REF_2, 5))){
+				////	if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
+				//		|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)) {
+				//		block[n_ord_total[n]][AMR_TAG] = 0;
+				//	}
+				//}
+				//if ((block[n_ord_total[n]][AMR_LEVEL2] == 0 && (NB_2-block[n_ord_total[n]][AMR_COORD2]) <= var) || (block[n_ord_total[n]][AMR_LEVEL2] == 1 && (NB_2*pow(1 + REF_2, 1) - block[n_ord_total[n]][AMR_COORD2]) <= 2 + var*pow(1 + REF_2, 1)) || (block[n_ord_total[n]][AMR_LEVEL2] == 2 && (NB_2*pow(1 + REF_2, 2) - block[n_ord_total[n]][AMR_COORD2]) <= 6 + var*pow(1 + REF_2, 2))
+				//	|| (block[n_ord_total[n]][AMR_LEVEL2] == 3 && (NB_2*pow(1 + REF_2, 3) - block[n_ord_total[n]][AMR_COORD2]) == 14 + var*pow(1 + REF_2, 3)) || (block[n_ord_total[n]][AMR_LEVEL2] == 4 && (NB_2*pow(1 + REF_2, 4) - block[n_ord_total[n]][AMR_COORD2]) == 30 + var*pow(1 + REF_2, 4)) || (block[n_ord_total[n]][AMR_LEVEL2] == 5 && (NB_2*pow(1 + REF_2, 5) - block[n_ord_total[n]][AMR_COORD2]) == 62 + var*pow(1 + REF_2, 5))) {
+				//	if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] <= 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 10)
+				//		|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 22) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 46) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 94)) {
+				//		block[n_ord_total[n]][AMR_TAG] = 0;
+				//	}
+				//}
 				#endif
 				#else
 				if (block[n_ord_total[n]][AMR_COORD1] <= 0 && block[n_ord_total[n]][AMR_LEVEL1]==0) block[n_ord_total[n]][AMR_TAG] = 0;

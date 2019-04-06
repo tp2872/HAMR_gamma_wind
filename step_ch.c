@@ -507,7 +507,6 @@ void GPU_step_ch()
 		#if(PRESTEP2)
 		prestep_bound();
 		mpi_synch();
-		cudaDeviceSynchronize();
 		#endif
 
 		//Set boundary conditions at end of timestep after correction step to fluxes and electric fields
@@ -777,7 +776,6 @@ double advance_GPU(void)
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
-
 	#else
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct1(n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);
