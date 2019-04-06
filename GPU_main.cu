@@ -515,11 +515,6 @@ void alloc_bounds_GPU(int n){
 	int ref2_2, ref2_4, ref2_5, ref2_6;
 	int ref3_1, ref3_2, ref3_3, ref3_4;
 
-	#if(N_GPU>1)
-	cudaSetDevice(mem_spot_gpu[nl[n]]);
-	#endif
-	mem_spot_gpu_bound[nl[n]] = mem_spot_gpu[nl[n]];
-
 	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
 	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
 	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
@@ -1767,7 +1762,6 @@ void GPU_finish(int n, int force_delete)
 
 void free_bound_gpu(int n){
 	//status += gpuFree(NULL_POINTER[nl[n]]);
-	if (mem_spot_gpu_bound[nl[n]]!=-1) {
 		status += gpuFree(Buffersend1[nl[n]]);
 		#if(N_LEVELS>1)
 		status += gpuFree(Buffersend1_3[nl[n]]);
@@ -2075,8 +2069,6 @@ void free_bound_gpu(int n){
 		status += gpuFree(BufferrecE3corn4_72[nl[n]]);
 		status += gpuFree(BufferrecE3corn4_82[nl[n]]);
 		#endif
-	}
-	mem_spot_gpu_bound[nl[n]] = -1;
 }
 
 int gpuFree(void *devPtr){
