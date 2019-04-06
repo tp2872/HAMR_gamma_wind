@@ -396,7 +396,7 @@ void alloc_bounds_CPU(int n){
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
 	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL]) - 1) && DEREFINE_POLE){
+	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) && DEREFINE_POLE){
 		ref3_2s = 0;
 		ref3_4s = 0;
 	}
