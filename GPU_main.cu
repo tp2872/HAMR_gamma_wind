@@ -1411,9 +1411,9 @@ void GPU_boundprim(int bound_force)
 		#if(N_GPU>1)
 		cudaSetDevice(n);
 		#endif
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 	}
-	mpi_synch();
+	//mpi_synch();
 	if (rank == 0) begin2 = get_wall_time();
 
 	#if(PRESTEP)
@@ -1566,9 +1566,9 @@ void GPU_boundprim(int bound_force)
 		#if(N_GPU>1)
 		cudaSetDevice(n);
 		#endif
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 	}
-	mpi_synch();
+	//mpi_synch();
 
 	if (rank == 0){
 		end2 = get_wall_time();

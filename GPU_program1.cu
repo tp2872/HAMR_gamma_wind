@@ -2156,7 +2156,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0, zoffset = 0, z1 = 0, z2 = 0, z3 = 0, z4 = 0, z5 = 0;
+	int zsize = 1, zlevel = 0, zoffset = 0, z1 = -2, z2 = -1, z3 = 0, z4 = 1, z5 = 2;
 	double x1, x2, x3, x4, x5;
 	double temp, result;
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
@@ -2168,7 +2168,6 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)pow(2.0, (double)zlevel);
 	zoffset = (zcurr - N3G) % zsize;
-	#endif
 
 	if (zdel){
 		if (zcurr == N3G - D3) {
@@ -2214,16 +2213,16 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			z5 = - zoffset + 2 * zdel*zsize;
 		}
 	}
-
+	#endif
 	if (k == 1){
 		#if(PPM)
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x1 = p[MY_MAX(k*(ksize)+global_id + z1 - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
-			x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
-			x3 = p[k*(ksize)+global_id + z3];
-			x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			x5 = p[MY_MIN(k*(ksize)+global_id + z5 + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x1 = p[MY_MAX(k*(ksize)+global_id + z1*zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
+			x2 = p[MY_MAX(k*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x3 = p[k*(ksize)+global_id + z3*zdel];
+			x4 = p[MY_MIN(k*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x5 = p[MY_MIN(k*(ksize)+global_id + z5*zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			para(x1, x2, x3, x4, x5, &result, &temp);		
 			dq1[k*(ksize)+global_id] = result;
 			dq2[k*(ksize)+global_id] = temp;
@@ -2231,9 +2230,9 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 		#else
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
-			x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
-			x3 = p[k*(ksize)+global_id + z3];
-			x4 = p[MY_MIN(k*(ksize)+global_id + z4 + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x2 = p[MY_MAX(k*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x3 = p[k*(ksize)+global_id + z3*zdel];
+			x4 = p[MY_MIN(k*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			temp=0.5*slope_lim(x2, x3, x4, 0);
 			dq1[k*(ksize)+global_id] = x3-temp;
 			dq2[k*(ksize)+global_id] = x3+temp;
@@ -2692,7 +2691,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			temp = psi[2 * ksize + global_id - zoffset] * gdet_GPU[index3 - NSY*(zoffset)];
 			temp +=  - Dt / dx_1*(E_corn[2 * ksize + global_id + isize - zoffset] - E_corn[2 * ksize + global_id - zoffset]) ;
 			temp += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset] - E_corn[1 * ksize + global_id - zoffset]);
-			for (u = 0; u < zsize; u++)psf[2 * ksize + global_id - zoffset + u] = temp / gdet_GPU[index3 - NSY*(zoffset-u)];
+			if (zcurr != zmax[2] - D3)for (u = 0; u < zsize; u++)psf[2 * ksize + global_id - zoffset + u] = temp / gdet_GPU[index3 - NSY*(zoffset-u)];
 		}
 		#endif
 	}
@@ -2816,7 +2815,7 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 				temp = psi[2 * ksize + global_id - zoffset + (k == 6)] * gdet_GPU[index3 - NSY*(zoffset)];
 				temp += -Dt / dx_1*(E_corn[2 * ksize + global_id + isize - zoffset + (k == 6)] - E_corn[2 * ksize + global_id - zoffset + (k == 6)]) ;
 				temp += Dt / dx_2*(E_corn[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + (k == 6)] - E_corn[1 * ksize + global_id - zoffset + (k == 6)]);
-				for (u = 0; u < zsize; u++)psf[2 * ksize + global_id - zoffset + u + (k == 6)] = temp / gdet_GPU[index3 - NSY*(zoffset-u)];
+				if(zcurr != BS_3 + N3G - D3) for (u = 0; u < zsize; u++)psf[2 * ksize + global_id - zoffset + u + (k == 6)] = temp / gdet_GPU[index3 - NSY*(zoffset-u)];
 			}
 			#endif
 		}

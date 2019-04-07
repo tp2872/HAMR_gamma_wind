@@ -110,37 +110,37 @@ void AMR_set_coord(void){
 				increment2 = MY_MIN(pow(2, i1), NB_2 - coord2 - 1);
 				increment3 = MY_MIN(pow(2, i1), NB_3 - coord3 - 1);
 
-				if (increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					coord2 += increment2;
-				}
-				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment3;
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
-					if (increment2 == pow(2, i1)) coord2 -= increment2;
+				if (increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= increment3*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1));
 					coord3 += increment3;
 				}
-				if (increment3 == pow(2, i1) && increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					coord1 += increment1;
-				}
-				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
-					if (increment1 == pow(2, i1)) coord1 -= increment1;
+				if (increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= MY_MIN(pow(2, i1), (NB_3 - coord3))*increment2*MY_MIN(pow(2, i1), (NB_1 - coord1));
+					if (increment3 == pow(2, i1)) coord3 -= increment3;
 					coord2 += increment2;
 				}
-				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
-					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= increment3*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1));
+					coord3 += increment3;
+				}
+				if (increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment1;
+					if (increment3 == pow(2, i1)) coord3 -= increment3;
+					if (increment2 == pow(2, i1)) coord2 -= increment2;
 					coord1 += increment1;
+				}
+				if (increment1 == pow(2, i1) && increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= increment3*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1));
+					coord3 += increment3;
+				}
+				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= MY_MIN(pow(2, i1), (NB_3 - coord3))*increment2*MY_MIN(pow(2, i1), (NB_1 - coord1));
+					if (increment3 == pow(2, i1)) coord3 -= increment3;
+					coord2 += increment2;
+				}
+				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
+					counter -= increment3*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1));
+					coord3 += increment3;
 				}
 				i[l] = coord1;
 				j[l] = coord2;
@@ -1126,7 +1126,7 @@ void set_AMR(void){
 		}
 	}
 
-	if (BS_2 / (int)pow(2, N_LEVELS_1D_INT)<4 || BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
+	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
 		exit(0);
 	}
@@ -2744,7 +2744,7 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<80.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<125.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
 		}
 	}
 	#endif
