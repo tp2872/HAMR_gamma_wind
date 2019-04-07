@@ -609,7 +609,7 @@ double advance_GPU(void)
 	#else
 	ndt3 = 1e9;
 	#endif
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -642,7 +642,7 @@ double advance_GPU(void)
 	#else
 	ndt2 = 1e9;
 	#endif
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -672,7 +672,7 @@ double advance_GPU(void)
 	#else
 	ndt1 = 1e9;
 	#endif
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -687,7 +687,7 @@ double advance_GPU(void)
 	set_iprobe(0, &flag);
 	do{
 		//For last timestep synchronize electric fields immediately
-		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 		for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) == 2 * AMR_SWITCHTIMELEVEL - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -702,7 +702,7 @@ double advance_GPU(void)
 	} while (flag);
 
 	//For first timestep do not synchronize electrice fields 
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 && ((block[n_ord[n]][AMR_NSTEP] % (2 * AMR_SWITCHTIMELEVEL) != 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1))){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -716,7 +716,7 @@ double advance_GPU(void)
 	#elif(!PRESTEP2)
 	set_iprobe(0, &flag);
 	do{
-		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -732,7 +732,7 @@ double advance_GPU(void)
 	set_iprobe(0, &flag);
 
 	//For first timestep do not synchronize electrice fields
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);

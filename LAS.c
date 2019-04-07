@@ -192,7 +192,7 @@ void prestep_bound(void){
 	}
 	#endif
 
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++) {
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -216,7 +216,7 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 	do{
 		//Store difference between evolved and required flux/electric field in temporary array
-		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -232,7 +232,7 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 
 	do{
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -247,7 +247,7 @@ void prestep_bound(void){
 	} while (flag);
 	set_iprobe(0, &flag);
 
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -266,7 +266,7 @@ void prestep_bound(void){
 	}
 
 	//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);

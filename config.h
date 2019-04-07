@@ -87,7 +87,7 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 24
+#define NB_1 12
 #define NB_2 12
 #define NB_3 4
 
@@ -97,7 +97,7 @@ Numerical Parameters section
 #define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 4
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -117,17 +117,17 @@ Numerical Parameters section
 #define TIMESTEP_JET 0
 
 //Use Z-order at 0-level for load balancing
-#define Z_ORDER 0
+#define Z_ORDER 1
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (20)
+#define DUMPFACTOR (120)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0

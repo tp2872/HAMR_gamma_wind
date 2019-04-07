@@ -2058,7 +2058,9 @@ int refine(int n){
 	}
 	else{
 		if (rank == 0) fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
-		NODE_global[block[n][AMR_NODE] * N_GPU + block[n][AMR_GPU]] += (1 + REF_1)*(1 + REF_2)*(1 + REF_3) - 1;
+		ref_1 = block[block[n][AMR_CHILD2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
+		ref_2 = block[block[n][AMR_CHILD2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
+		NODE_global[block[n][AMR_NODE] * N_GPU + block[n][AMR_GPU]] += (1 + ref_1)*(1 + ref_2)*(1 + REF_3) - 1;
 	}
 
 	if (block[n][AMR_ACTIVE] == 0 && rank == 0) fprintf(stderr, "Watch out: trying to refine non-active block %d \n", n);
@@ -2640,9 +2642,9 @@ void check_refcrit(void){
 	reduce_timestep = 0;
 	
 	//Start very conservatively
-	dt /= 2.;
+	//dt /= 2.;
 	for (n = 0; n < n_active_total; n++){
-		block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
+		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
 	}
 	set_corners();
 
