@@ -269,14 +269,6 @@ void mpi_synch(void){
 			if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
 			break;
 		}
-		#if(GPU_ENABLED)
-		for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-			#if(N_GPU>1)
-			cudaSetDevice(n);
-			#endif
-			cudaDeviceSynchronize();
-		}
-		#endif
 	}
 }
 

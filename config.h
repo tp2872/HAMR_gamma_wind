@@ -30,7 +30,7 @@ Physical Parameters section
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (1)
-#define H_OVER_R (0.1)
+#define H_OVER_R (0.02)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
@@ -65,7 +65,7 @@ Numerical Parameters section
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
-#define AMD (1)
+#define AMD (0)
 
 /*Enable if running on the new VOLTA GPUs*/
 #define V100 (1)
@@ -83,21 +83,21 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (300)
-#define NB_LOCAL (400)
+#define MAX_BLOCKS (50)
+#define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 6
-#define NB_3 2
+#define NB_1 24
+#define NB_2 12
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 50
+#define BS_2 48
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 2
+#define N_LEVELS_3D 4
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
