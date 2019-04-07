@@ -11,8 +11,8 @@ void test_AMR(void){
 int AMR_coord_linear(int l, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
 	int b2 = j;
-	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
+	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
+	else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
 
 	if (l != 0){
 		fprintf(stderr, "This function only works at the 0-th level for 3D AMR. Please check and disable this comment if not applicable! \n");
@@ -38,8 +38,8 @@ int AMR_coord_linear(int l, int i, int j, int z){
 
 int AMR_coord_linear2(int l, int b2, int i, int j, int z){
 	int index, n, offset, L_1DMAX;
-	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
-	else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
+	if (b2 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)b2 + 1.0) / log(2.)), N_LEVELS_1D);
+	else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - b2) + 1.0) / log(2.)), N_LEVELS_1D);
 
 	if (l<0 || b2<0 || i<0 || j<0 || z<0 || i >= NB_1*pow(1 + (l>L_1DMAX)*REF_1, l - L_1DMAX) || j >= NB_2*pow(1 + (l>L_1DMAX)*REF_2, l - L_1DMAX) || z >= NB_3*pow(1 + REF_1, l)){
 		n = -1;
@@ -109,7 +109,40 @@ void AMR_set_coord(void){
 				increment1 = MY_MIN(pow(2, i1), NB_1 - coord1 - 1);
 				increment2 = MY_MIN(pow(2, i1), NB_2 - coord2 - 1);
 				increment3 = MY_MIN(pow(2, i1), NB_3 - coord3 - 1);
-
+				/*
+				if (increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				if (increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					coord2 += increment2;
+				}
+				if (increment1 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				if (increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*increment3;
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					if (increment2 == pow(2, i1)) coord2 -= increment2;
+					coord3 += increment3;
+				}
+				if (increment3 == pow(2, i1) && increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= MY_MIN(pow(2, i1), (NB_1 - coord1))*increment2*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					if (increment1 == pow(2, i1)) coord1 -= increment1;
+					coord2 += increment2;
+				}
+				if (increment3 == pow(2, i1) && increment2 == pow(2, i1) && increment1 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_1 - coord1))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3))){
+					counter -= increment1*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_3 - coord3));
+					coord1 += increment1;
+				}
+				*/
 				if (increment3 == pow(2, i1) && counter >= MY_MIN(pow(2, i1), (NB_3 - coord3))*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1))) {
 					counter -= increment3*MY_MIN(pow(2, i1), (NB_2 - coord2))*MY_MIN(pow(2, i1), (NB_1 - coord1));
 					coord3 += increment3;
@@ -160,8 +193,8 @@ void AMR_set_coord(void){
 		}
 
 		//Based on value of 0-th level block determine the number of 1D refinement levels
-		if (j[0] < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j[0] + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j[0]) + 1.0) / log(2.)), N_LEVELS_1D);
+		if (j[0] < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j[0] + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j[0]) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//Set coordinates based on values from last iteration
 		block[n][AMR_COORD1] = block[n][AMR_COORD2] = block[n][AMR_COORD3] = 0;
@@ -342,8 +375,8 @@ void set_AMR(void){
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
-		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		if (block[n][AMR_LEVEL] == N_LEVELS_3D + L_1DMAX-1){
 			block[n][AMR_CHILD1] = -1;
@@ -426,8 +459,8 @@ void set_AMR(void){
 
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
-		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//First dimension is trivial
 		if (i + 1 > i_max && PERIODIC1 == 1) i1 = 0;
@@ -539,8 +572,8 @@ void set_AMR(void){
 
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
-		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//x-y plane
 		if (i + 1 > i_max || j - 1 < 0){
@@ -650,8 +683,8 @@ void set_AMR(void){
 	for (n = 0; n <= n_max; n++){
 		//Calculate the maximum level of the block at the given location
 		j0 = (int)(block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]));
-		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
-		else L_1DMAX = MY_MIN((ceil)(log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
+		if (j0 < NB_2 / 2) L_1DMAX = MY_MIN((ceil)(-0.001+log((double)j0 + 1.0) / log(2.)), N_LEVELS_1D);
+		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//Set NBR children
 		if (block[n][AMR_NBR1] >= 0){
