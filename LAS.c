@@ -77,7 +77,7 @@ void set_communicator(void){
 	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
 		if (nstep > 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
 
-		min_timelevel[i] = rank + 1000;
+		min_timelevel[i] = rank + 1000000;
 		for (n = 0; n < n_active; n++){
 			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2, i)) min_timelevel[i] = 1;
 		}
