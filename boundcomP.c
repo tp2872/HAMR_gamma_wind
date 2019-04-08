@@ -1082,13 +1082,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_1, send4_5, tempreceive2_1, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_1[nl[n]]), &(Buffersend4_5[nl[n]]), &(tempBufferrec2_1[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_1, tempreceive2_1, tempreceive2_1, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_1[nl[n]]), &(tempBufferrec2_1[nl[n]]), &(tempBufferrec2_1[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_1, receive2_1, tempreceive2_1, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_1[nl[block[n][AMR_NBR4P]]]), &(Bufferrec2_1[nl[n]]), &(tempBufferrec2_1[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][21]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_1, tempreceive2_1, tempreceive2_1, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_1[nl[block[n][AMR_NBR4P]]]), &(tempBufferrec2_1[nl[n]]), &(tempBufferrec2_1[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][21]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR4P]][AMR_NBR2_2] == n && ref_3 == 1){
@@ -1100,13 +1100,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_2, send4_6, tempreceive2_2, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_2[nl[n]]), &(Buffersend4_6[nl[n]]), &(tempBufferrec2_2[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_2, tempreceive2_2, tempreceive2_2, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_2[nl[n]]), &(tempBufferrec2_2[nl[n]]), &(tempBufferrec2_2[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_2, receive2_2, tempreceive2_2, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_2[nl[block[n][AMR_NBR4P]]]), &(Bufferrec2_2[nl[n]]), &(tempBufferrec2_2[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][22]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_2, tempreceive2_2, tempreceive2_2, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_2[nl[block[n][AMR_NBR4P]]]), &(tempBufferrec2_2[nl[n]]), &(tempBufferrec2_2[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][22]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR4P]][AMR_NBR2_3] == n && ref_2 == 1){
@@ -1118,13 +1118,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_3, send4_7, tempreceive2_3, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_3[nl[n]]), &(Buffersend4_7[nl[n]]), &(tempBufferrec2_3[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_3, tempreceive2_3, tempreceive2_3, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_3[nl[n]]), &(tempBufferrec2_3[nl[n]]), &(tempBufferrec2_3[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_3, receive2_3, tempreceive2_3, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_3[nl[block[n][AMR_NBR4P]]]), &(Bufferrec2_3[nl[n]]), &(tempBufferrec2_3[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][23]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_3, tempreceive2_3, tempreceive2_3, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_3[nl[block[n][AMR_NBR4P]]]), &(tempBufferrec2_3[nl[n]]), &(tempBufferrec2_3[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][23]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR4P]][AMR_NBR2_4] == n && ref_2 == 1 && ref_3 == 1){
@@ -1136,13 +1136,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE2] != 1) block[n][AMR_IPROBE2] = -1;
 					}
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_4, send4_8, tempreceive2_4, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_4[nl[n]]), &(Buffersend4_8[nl[n]]), &(tempBufferrec2_4[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), receive2_4, tempreceive2_4, tempreceive2_4, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec2_4[nl[n]]), &(tempBufferrec2_4[nl[n]]), &(tempBufferrec2_4[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE2] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR4P], -N1G, 0, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_4, receive2_4, tempreceive2_4, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_4[nl[block[n][AMR_NBR4P]]]), &(Bufferrec2_4[nl[n]]), &(tempBufferrec2_4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][24]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, (BS_2 / (1 + ref_2) + 2 * N2G), (BS_3 / (1 + ref_3) + 2 * N3G), send2_4, tempreceive2_4, tempreceive2_4, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend2_4[nl[block[n][AMR_NBR4P]]]), &(tempBufferrec2_4[nl[n]]), &(tempBufferrec2_4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR4P]]][24]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR4P]][AMR_TIMELEVEL]);
 				}
 			}
 		}
@@ -1259,13 +1259,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_5, send2_1, tempreceive4_5, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_5[nl[n]]), &(Buffersend2_1[nl[n]]), &(tempBufferrec4_5[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_5, tempreceive4_5, tempreceive4_5, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_5[nl[n]]), &(tempBufferrec4_5[nl[n]]), &(tempBufferrec4_5[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_5, receive4_5, tempreceive4_5, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_5[nl[block[n][AMR_NBR2P]]]), &(Bufferrec4_5[nl[n]]), &(tempBufferrec4_5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][45]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_5, tempreceive4_5, tempreceive4_5, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_5[nl[block[n][AMR_NBR2P]]]), &(tempBufferrec4_5[nl[n]]), &(tempBufferrec4_5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][45]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR2P]][AMR_NBR4_6] == n && ref_3 == 1){
@@ -1277,13 +1277,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_6, send2_2, tempreceive4_6, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_6[nl[n]]), &(Buffersend2_2[nl[n]]), &(tempBufferrec4_6[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_6, tempreceive4_6, tempreceive4_6, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_6[nl[n]]), &(tempBufferrec4_6[nl[n]]), &(tempBufferrec4_6[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_6, receive4_6, tempreceive4_6, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_6[nl[block[n][AMR_NBR2P]]]), &(Bufferrec4_6[nl[n]]), &(tempBufferrec4_6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][46]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_6, tempreceive4_6, tempreceive4_6, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_6[nl[block[n][AMR_NBR2P]]]), &(tempBufferrec4_6[nl[n]]), &(tempBufferrec4_6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][46]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR2P]][AMR_NBR4_7] == n && ref_2 == 1){
@@ -1295,13 +1295,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_7, send2_3, tempreceive4_7, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_7[nl[n]]), &(Buffersend2_3[nl[n]]), &(tempBufferrec4_7[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_7, tempreceive4_7, tempreceive4_7, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_7[nl[n]]), &(tempBufferrec4_7[nl[n]]), &(tempBufferrec4_7[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_7, receive4_7, tempreceive4_7, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_7[nl[block[n][AMR_NBR2P]]]), &(Bufferrec4_7[nl[n]]), &(tempBufferrec4_7[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][47]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_7, tempreceive4_7, tempreceive4_7, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_7[nl[block[n][AMR_NBR2P]]]), &(tempBufferrec4_7[nl[n]]), &(tempBufferrec4_7[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][47]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR2P]][AMR_NBR4_8] == n && ref_2 == 1 && ref_3 == 1){
@@ -1313,13 +1313,13 @@ void bound_rec1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE4] != 1) block[n][AMR_IPROBE4] = -1;
 					}
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_8, send2_4, tempreceive4_8, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_8[nl[n]]), &(Buffersend2_4[nl[n]]), &(tempBufferrec4_8[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), receive4_8, tempreceive4_8, tempreceive4_8, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec4_8[nl[n]]), &(tempBufferrec4_8[nl[n]]), &(tempBufferrec4_8[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE4] == 0) unpack_receive_coarse1(n, block[n][AMR_NBR2P], BS_1, BS_1 + N1G, -2 * D2, BS_2 + 2 * D2,
-						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_8, receive4_8, tempreceive4_8, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_8[nl[block[n][AMR_NBR2P]]]), &(Bufferrec4_8[nl[n]]), &(tempBufferrec4_8[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][48]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
+						-2 * D3, BS_3 + 2 * D3, BS_2 / (1 + ref_2) + 2 * N2G, (BS_3 / (1 + ref_3) + 2 * N3G), send4_8, tempreceive4_8, tempreceive4_8, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend4_8[nl[block[n][AMR_NBR2P]]]), &(tempBufferrec4_8[nl[n]]), &(tempBufferrec4_8[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR2P]]][48]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR2P]][AMR_TIMELEVEL]);
 				}
 			}
 		}
@@ -1454,13 +1454,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_1, send1_3, tempreceive3_1, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_1[nl[n]]), &(Buffersend1_3[nl[n]]), &(tempBufferrec3_1[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_1, tempreceive3_1, tempreceive3_1, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_1[nl[n]]), &(tempBufferrec3_1[nl[n]]), &(tempBufferrec3_1[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_1, receive3_1, tempreceive3_1, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_1[nl[block[n][AMR_NBR1P]]]), &(Bufferrec3_1[nl[n]]), &(tempBufferrec3_1[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][31]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_1, tempreceive3_1, tempreceive3_1, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_1[nl[block[n][AMR_NBR1P]]]), &(tempBufferrec3_1[nl[n]]), &(tempBufferrec3_1[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][31]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_NBR1P]][AMR_NBR3_2] == n && ref_3 == 1){
@@ -1472,13 +1472,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_2, send1_4, tempreceive3_2, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_2[nl[n]]), &(Buffersend1_4[nl[n]]), &(tempBufferrec3_2[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_2, tempreceive3_2, tempreceive3_2, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_2[nl[n]]), &(tempBufferrec3_2[nl[n]]), &(tempBufferrec3_2[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_2, receive3_2, tempreceive3_2, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_2[nl[block[n][AMR_NBR1P]]]), &(Bufferrec3_2[nl[n]]), &(tempBufferrec3_2[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][32]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_2, tempreceive3_2, tempreceive3_2, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_2[nl[block[n][AMR_NBR1P]]]), &(tempBufferrec3_2[nl[n]]), &(tempBufferrec3_2[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][32]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_NBR1P]][AMR_NBR3_5] == n && ref_1 == 1){
@@ -1490,13 +1490,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_5, send1_7, tempreceive3_5, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_5[nl[n]]), &(Buffersend1_7[nl[n]]), &(tempBufferrec3_5[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_5, tempreceive3_5, tempreceive3_5, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_5[nl[n]]), &(tempBufferrec3_5[nl[n]]), &(tempBufferrec3_5[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_5, receive3_5, tempreceive3_5, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_5[nl[block[n][AMR_NBR1P]]]), &(Bufferrec3_5[nl[n]]), &(tempBufferrec3_5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][35]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_5, tempreceive3_5, tempreceive3_5, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_5[nl[block[n][AMR_NBR1P]]]), &(tempBufferrec3_5[nl[n]]), &(tempBufferrec3_5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][35]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_NBR1P]][AMR_NBR3_6] == n && ref_1 == 1 && ref_3 == 1){
@@ -1508,13 +1508,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE3] != 1) block[n][AMR_IPROBE3] = -1;
 						}
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_6, send1_8, tempreceive3_6, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_6[nl[n]]), &(Buffersend1_8[nl[n]]), &(tempBufferrec3_6[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive3_6, tempreceive3_6, tempreceive3_6, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec3_6[nl[n]]), &(tempBufferrec3_6[nl[n]]), &(tempBufferrec3_6[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE3] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR1P], -2 * D1, BS_1 + 2 * D1, -N2G, 0,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_6, receive3_6, tempreceive3_6, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_6[nl[block[n][AMR_NBR1P]]]), &(Bufferrec3_6[nl[n]]), &(tempBufferrec3_6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][36]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send3_6, tempreceive3_6, tempreceive3_6, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend3_6[nl[block[n][AMR_NBR1P]]]), &(tempBufferrec3_6[nl[n]]), &(tempBufferrec3_6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR1P]]][36]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR1P]][AMR_TIMELEVEL]);
 					}
 				}
 			}
@@ -1645,13 +1645,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_3, send3_1, tempreceive1_3, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_3[nl[n]]), &(Buffersend3_1[nl[n]]), &(tempBufferrec1_3[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_3, tempreceive1_3, tempreceive1_3, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_3[nl[n]]), &(tempBufferrec1_3[nl[n]]), &(tempBufferrec1_3[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_3, receive1_3, tempreceive1_3, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_3[nl[block[n][AMR_NBR3P]]]), &(Bufferrec1_3[nl[n]]), &(tempBufferrec1_3[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][13]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_3, tempreceive1_3, tempreceive1_3, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_3[nl[block[n][AMR_NBR3P]]]), &(tempBufferrec1_3[nl[n]]), &(tempBufferrec1_3[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][13]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_NBR3P]][AMR_NBR1_4] == n && ref_3 == 1){
@@ -1663,13 +1663,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_4, send3_2, tempreceive1_4, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_4[nl[n]]), &(Buffersend3_2[nl[n]]), &(tempBufferrec1_4[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_4, tempreceive1_4, tempreceive1_4, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_4[nl[n]]), &(tempBufferrec1_4[nl[n]]), &(tempBufferrec1_4[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_4, receive1_4, tempreceive1_4, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_4[nl[block[n][AMR_NBR3P]]]), &(Bufferrec1_4[nl[n]]), &(tempBufferrec1_4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][14]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_4, tempreceive1_4, tempreceive1_4, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_4[nl[block[n][AMR_NBR3P]]]), &(tempBufferrec1_4[nl[n]]), &(tempBufferrec1_4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][14]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_NBR3P]][AMR_NBR1_7] == n && ref_1 == 1){
@@ -1681,13 +1681,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_7, send3_5, tempreceive1_7, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_7[nl[n]]), &(Buffersend3_5[nl[n]]), &(tempBufferrec1_7[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_7, tempreceive1_7, tempreceive1_7, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_7[nl[n]]), &(tempBufferrec1_7[nl[n]]), &(tempBufferrec1_7[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_7, receive1_7, tempreceive1_7, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_7[nl[block[n][AMR_NBR3P]]]), &(Bufferrec1_7[nl[n]]), &(tempBufferrec1_7[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][17]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_7, tempreceive1_7, tempreceive1_7, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_7[nl[block[n][AMR_NBR3P]]]), &(tempBufferrec1_7[nl[n]]), &(tempBufferrec1_7[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][17]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 				}
 				if (block[block[n][AMR_NBR3P]][AMR_NBR1_8] == n && ref_1 == 1 && ref_3 == 1){
@@ -1699,13 +1699,13 @@ void bound_rec2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 							else if (block[n][AMR_IPROBE1] != 1) block[n][AMR_IPROBE1] = -1;
 						}
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_8, send3_6, tempreceive1_8, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_8[nl[n]]), &(Buffersend3_6[nl[n]]), &(tempBufferrec1_8[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), receive1_8, tempreceive1_8, tempreceive1_8, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec1_8[nl[n]]), &(tempBufferrec1_8[nl[n]]), &(tempBufferrec1_8[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 					else{
 						if (block[n][AMR_IPROBE1] == 0) unpack_receive_coarse2(n, block[n][AMR_NBR3P], -2 * D1, BS_1 + 2 * D1, BS_2, BS_2 + N2G,
-							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_8, receive1_8, tempreceive1_8, prim, ps,
-							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_8[nl[block[n][AMR_NBR3P]]]), &(Bufferrec1_8[nl[n]]), &(tempBufferrec1_8[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][18]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
+							-2 * D3, BS_3 + 2 * D3, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_3 / (1 + ref_3) + 2 * N3G), send1_8, tempreceive1_8, tempreceive1_8, prim, ps,
+							&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend1_8[nl[block[n][AMR_NBR3P]]]), &(tempBufferrec1_8[nl[n]]), &(tempBufferrec1_8[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR3P]]][18]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR3P]][AMR_TIMELEVEL]);
 					}
 				}
 			}
@@ -1827,13 +1827,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_1, send6_2, tempreceive5_1, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_1[nl[n]]), &(Buffersend6_2[nl[n]]), &(tempBufferrec5_1[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_1, tempreceive5_1, tempreceive5_1, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_1[nl[n]]), &(tempBufferrec5_1[nl[n]]), &(tempBufferrec5_1[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_1, receive5_1, tempreceive5_1, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_1[nl[block[n][AMR_NBR6P]]]), &(Bufferrec5_1[nl[n]]), &(tempBufferrec5_1[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][51]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_1, tempreceive5_1, tempreceive5_1, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_1[nl[block[n][AMR_NBR6P]]]), &(tempBufferrec5_1[nl[n]]), &(tempBufferrec5_1[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][51]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR6P]][AMR_NBR5_3] == n && ref_2 == 1){
@@ -1845,13 +1845,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_3, send6_4, tempreceive5_3, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_3[nl[n]]), &(Buffersend6_4[nl[n]]), &(tempBufferrec5_3[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_3, tempreceive5_3, tempreceive5_3, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_3[nl[n]]), &(tempBufferrec5_3[nl[n]]), &(tempBufferrec5_3[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_3, receive5_3, tempreceive5_3, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_3[nl[block[n][AMR_NBR6P]]]), &(Bufferrec5_3[nl[n]]), &(tempBufferrec5_3[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][53]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_3, tempreceive5_3, tempreceive5_3, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_3[nl[block[n][AMR_NBR6P]]]), &(tempBufferrec5_3[nl[n]]), &(tempBufferrec5_3[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][53]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR6P]][AMR_NBR5_5] == n && ref_1 == 1){
@@ -1863,13 +1863,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_5, send6_6, tempreceive5_5, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_5[nl[n]]), &(Buffersend6_6[nl[n]]), &(tempBufferrec5_5[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_5, tempreceive5_5, tempreceive5_5, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_5[nl[n]]), &(tempBufferrec5_5[nl[n]]), &(tempBufferrec5_5[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_5, receive5_5, tempreceive5_5, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_5[nl[block[n][AMR_NBR6P]]]), &(Bufferrec5_5[nl[n]]), &(tempBufferrec5_5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][55]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_5, tempreceive5_5, tempreceive5_5, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_5[nl[block[n][AMR_NBR6P]]]), &(tempBufferrec5_5[nl[n]]), &(tempBufferrec5_5[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][55]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR6P]][AMR_NBR5_7] == n && ref_1 == 1 && ref_2 == 1){
@@ -1881,13 +1881,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE5] != 1) block[n][AMR_IPROBE5] = -1;
 					}
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_7, send6_8, tempreceive5_7, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_7[nl[n]]), &(Buffersend6_8[nl[n]]), &(tempBufferrec5_7[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive5_7, tempreceive5_7, tempreceive5_7, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec5_7[nl[n]]), &(tempBufferrec5_7[nl[n]]), &(tempBufferrec5_7[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE5] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR6P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_7, receive5_7, tempreceive5_7, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_7[nl[block[n][AMR_NBR6P]]]), &(Bufferrec5_7[nl[n]]), &(tempBufferrec5_7[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][57]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
+						-N3G, 0, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send5_7, tempreceive5_7, tempreceive5_7, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend5_7[nl[block[n][AMR_NBR6P]]]), &(tempBufferrec5_7[nl[n]]), &(tempBufferrec5_7[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR6P]]][57]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR6P]][AMR_TIMELEVEL]);
 				}
 			}
 		}
@@ -2003,13 +2003,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_2, send5_1, tempreceive6_2, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_2[nl[n]]), &(Buffersend5_1[nl[n]]), &(tempBufferrec6_2[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_2, tempreceive6_2, tempreceive6_2, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_2[nl[n]]), &(tempBufferrec6_2[nl[n]]), &(tempBufferrec6_2[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_2, receive6_2, tempreceive6_2, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_2[nl[block[n][AMR_NBR5P]]]), &(Bufferrec6_2[nl[n]]), &(tempBufferrec6_2[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][62]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_2, tempreceive6_2, tempreceive6_2, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_2[nl[block[n][AMR_NBR5P]]]), &(tempBufferrec6_2[nl[n]]), &(tempBufferrec6_2[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][62]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR5P]][AMR_NBR6_4] == n && ref_2 == 1){
@@ -2021,13 +2021,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_4, send5_3, tempreceive6_4, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_4[nl[n]]), &(Buffersend5_3[nl[n]]), &(tempBufferrec6_4[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_4, tempreceive6_4, tempreceive6_4, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_4[nl[n]]), &(tempBufferrec6_4[nl[n]]), &(tempBufferrec6_4[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_4, receive6_4, tempreceive6_4, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_4[nl[block[n][AMR_NBR5P]]]), &(Bufferrec6_4[nl[n]]), &(tempBufferrec6_4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][64]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_4, tempreceive6_4, tempreceive6_4, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_4[nl[block[n][AMR_NBR5P]]]), &(tempBufferrec6_4[nl[n]]), &(tempBufferrec6_4[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][64]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR5P]][AMR_NBR6_6] == n && ref_1 == 1){
@@ -2039,13 +2039,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_6, send5_5, tempreceive6_6, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_6[nl[n]]), &(Buffersend5_5[nl[n]]), &(tempBufferrec6_6[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_6, tempreceive6_6, tempreceive6_6, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_6[nl[n]]), &(tempBufferrec6_6[nl[n]]), &(tempBufferrec6_6[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_6, receive6_6, tempreceive6_6, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_6[nl[block[n][AMR_NBR5P]]]), &(Bufferrec6_6[nl[n]]), &(tempBufferrec6_6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][66]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_6, tempreceive6_6, tempreceive6_6, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_6[nl[block[n][AMR_NBR5P]]]), &(tempBufferrec6_6[nl[n]]), &(tempBufferrec6_6[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][66]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 			}
 			if (block[block[n][AMR_NBR5P]][AMR_NBR6_8] == n && ref_1 == 1 && ref_2 == 1){
@@ -2057,13 +2057,13 @@ void bound_rec3(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LO
 						else if (block[n][AMR_IPROBE6] != 1) block[n][AMR_IPROBE6] = -1;
 					}
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_8, send5_7, tempreceive6_8, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_8[nl[n]]), &(Buffersend5_7[nl[n]]), &(tempBufferrec6_8[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), receive6_8, tempreceive6_8, tempreceive6_8, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Bufferrec6_8[nl[n]]), &(tempBufferrec6_8[nl[n]]), &(tempBufferrec6_8[nl[n]]), NULL, NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 				else{
 					if (block[n][AMR_IPROBE6] == 0) unpack_receive_coarse3(n, block[n][AMR_NBR5P], -2 * D1, BS_1 + 2 * D1, -2 * D2, BS_2 + 2 * D2,
-						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_8, receive6_8, tempreceive6_8, prim, ps,
-						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_8[nl[block[n][AMR_NBR5P]]]), &(Bufferrec6_8[nl[n]]), &(tempBufferrec6_8[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][68]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
+						BS_3, BS_3 + N3G, (BS_1 / (1 + ref_1) + 2 * N1G), (BS_2 / (1 + ref_2) + 2 * N2G), send6_8, tempreceive6_8, tempreceive6_8, prim, ps,
+						&(Bufferp[nl[n]]), &(Bufferps[nl[n]]), &(Buffersend6_8[nl[block[n][AMR_NBR5P]]]), &(tempBufferrec6_8[nl[n]]), &(tempBufferrec6_8[nl[n]]), &(boundevent1[nl[block[n][AMR_NBR5P]]][68]), NULL, block[n][AMR_TIMELEVEL] < block[block[n][AMR_NBR5P]][AMR_TIMELEVEL]);
 				}
 			}
 		}

@@ -606,25 +606,25 @@ __global__ void unpackreceivecoarse1(int i1, int i2, int j1, int j2, int z1, int
 					}
 					//Store at prestep the time gradient in temp2
 					if (nstep%timelevel_rec == timelevel - 1 || nstep%timelevel_rec == timelevel_rec - 1 || nstep==-1){
-						temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = (receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1]-temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
+						temp1receive[(k+NPR+3)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = (receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1]-temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
 					}
 					//Add gradient to boundary
 					if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
-						receive_local[k*(i2 - i1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ii1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij1 - (ij - ref_2))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] + (nstep+1)%timelevel_rec*0.5*dt*timelevel*temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
+						receive_local[k*(i2 - i1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ii1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij1 - (ij - ref_2))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] + (nstep+1)%timelevel_rec*0.5*dt*timelevel*temp1receive[(k+NPR+3)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
 					}
 					#elif(PRESTEP==-100)
 					if(nstep%timelevel_rec==timelevel_rec-1 || nstep == -1){ 
-						temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = (receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1]-temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
+						temp1receive[(k+NPR+3)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = (receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1]-temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
 					}
 
 					if (nstep == -1 || timelevel_rec <= timelevel){
-						temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = 0.0;
+						temp1receive[(k+NPR+3)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = 0.0;
 						temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
 					}
 
 					if (nstep != -1 && timelevel_rec>timelevel && nstep%timelevel_rec!=timelevel_rec-1){
 						temp1receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
-						receive_local[k*(i2 - i1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ii1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij1 - (ij - ref_2))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp2receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
+						receive_local[k*(i2 - i1)*(1 + 2 * ref_2)*(1 + 2 * ref_3) + ii1*(1 + 2 * ref_2)*(1 + 2 * ref_3) + (ij1 - (ij - ref_2))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[(k)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp1receive[(k+NPR+3)*jsize2*zsize2*(i2 - i1) + ii1*jsize2*zsize2 + ij1*zsize2 + iz1];
 					}
 					#endif
 				}
@@ -757,24 +757,24 @@ __global__ void unpackreceivecoarse2(int i1, int i2, int j1, int j2, int z1, int
 					}
 					//Store at prestep the time gradient in temp2
 					if (nstep%timelevel_rec == timelevel - 1 || nstep%timelevel_rec == timelevel_rec - 1 || nstep==-1){
-						temp2receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = (receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1]-temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
+						temp1receive[(k+NPR+3)*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = (receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1]-temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
 					}
 					//Add gradient to boundary
 					if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
-						receive_local[k*(j2 - j1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ij1*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii1 - (ii - ref_1))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp2receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
+						receive_local[k*(j2 - j1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ij1*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii1 - (ii - ref_1))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp1receive[(k+NPR+3)*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
 					}
 					#elif(PRESTEP==-100)
 					if(nstep%timelevel_rec==timelevel_rec-1 || nstep == -1){ 
-						temp2receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = (receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1]-temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
+						temp1receive[(k+NPR+3)*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = (receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1]-temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1])/(timelevel_rec*0.5*dt);
 					}
 					if (nstep == -1 || timelevel_rec <= timelevel){
-						temp2receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = 0.0;
+						temp1receive[(k+NPR+3)*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = 0.0;
 						temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
 					}
 
 					if (nstep != -1 && timelevel_rec>timelevel && nstep%timelevel_rec!=timelevel_rec-1){
 						temp1receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] = receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
-						receive_local[k*(j2 - j1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ij1*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii1 - (ii - ref_1))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp2receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
+						receive_local[k*(j2 - j1)*(1 + 2 * ref_1)*(1 + 2 * ref_3) + ij1*(1 + 2 * ref_1)*(1 + 2 * ref_3) + (ii1 - (ii - ref_1))*(1 + 2 * ref_3) + (iz1 - (iz - ref_3))] = receive[k*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp1receive[(k+NPR+3)*isize2*zsize2*(j2 - j1) + ij1*isize2*zsize2 + ii1*zsize2 + iz1];
 					}
 					#endif
 				}
@@ -903,24 +903,24 @@ __global__ void unpackreceivecoarse3(int i1, int i2, int j1, int j2, int z1, int
 					}
 					//Store at prestep the time gradient in temp2
 					if (nstep%timelevel_rec == timelevel - 1 || nstep%timelevel_rec == timelevel_rec - 1 || nstep==-1){
-						temp2receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = (receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1]-temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1])/(timelevel_rec*0.5*dt);
+						temp1receive[(k+NPR+3)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = (receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1]-temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1])/(timelevel_rec*0.5*dt);
 					}
 					//Add gradient to boundary
 					if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
-						receive_local[k*(z2 - z1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + iz1*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii1 - (ii - ref_1))*(1 + 2 * ref_2) + (ij1 - (ij - ref_2))] = temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp2receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
+						receive_local[k*(z2 - z1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + iz1*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii1 - (ii - ref_1))*(1 + 2 * ref_2) + (ij1 - (ij - ref_2))] = temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp1receive[(k+NPR+3)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
 					}					
 					#elif(PRESTEP==-100)
 					if(nstep%timelevel_rec==timelevel_rec-1 || nstep == -1){ 
-						temp2receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = (receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1]-temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1])/(timelevel_rec*0.5*dt);
+						temp1receive[(k+NPR+3)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = (receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1]-temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1])/(timelevel_rec*0.5*dt);
 					}
 					if (nstep == -1 || timelevel_rec <= timelevel){
-						temp2receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = 0.0;
+						temp1receive[(k+NPR+3)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = 0.0;
 						temp1receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = receive[(k)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
 					}
 
 					if (nstep != -1 && timelevel_rec>timelevel && nstep%timelevel_rec!=timelevel_rec-1){
 						temp1receive[(k)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] = receive[(k)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
-						receive_local[k*(z2 - z1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + iz1*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii1 - (ii - ref_1))*(1 + 2 * ref_2) + (ij1 - (ij - ref_2))] = receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp2receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
+						receive_local[k*(z2 - z1)*(1 + 2 * ref_1)*(1 + 2 * ref_2) + iz1*(1 + 2 * ref_1)*(1 + 2 * ref_2) + (ii1 - (ii - ref_1))*(1 + 2 * ref_2) + (ij1 - (ij - ref_2))] = receive[k*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1] + (nstep + 1) % timelevel_rec*0.5*dt*timelevel*temp1receive[(k+NPR+3)*isize2*jsize2*(z2 - z1) + iz1*isize2*jsize2 + ii1*jsize2 + ij1];
 					}
 					#endif
 				}
