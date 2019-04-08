@@ -370,16 +370,14 @@ void alloc_bounds_CPU(int n){
 	int ref1_1, ref1_3, ref1_5, ref1_6;
 	int ref2_2, ref2_4, ref2_5, ref2_6;
 	int ref3_1, ref3_2, ref3_3, ref3_4;
-	int ref1_1s, ref1_3s, ref1_5s, ref1_6s;
-	int ref2_2s, ref2_4s, ref2_5s, ref2_6s;
-	int ref3_1s, ref3_2s, ref3_3s, ref3_4s;
+	int ref1_1s, ref1_3s;
+	int ref3_1s, ref3_3s, ref3_2s, ref3_4s;
 
 	ref1_1 = REF_1; ref1_3 = REF_1; ref1_5 = REF_1; ref1_6 = REF_1;
 	ref2_2 = REF_2; ref2_4 = REF_2; ref2_5 = REF_2; ref2_6 = REF_2;
 	ref3_1 = REF_3; ref3_2 = REF_3; ref3_3 = REF_3; ref3_4 = REF_3;
-	ref1_1s = REF_1; ref1_3s = REF_1; ref1_5s = REF_1; ref1_6s = REF_1;
-	ref2_2s = REF_2; ref2_4s = REF_2; ref2_5s = REF_2; ref2_6s = REF_2;
-	ref3_1s = REF_3; ref3_2s = REF_3; ref3_3s = REF_3; ref3_4s = REF_3;
+	ref1_1s = REF_1; ref1_3s = REF_1;
+	ref3_1s = REF_3; ref3_3s = REF_3;
 
 	if (block[n][AMR_LEVEL] != N_LEVELS - 1){
 		if (block[n][AMR_NBR1_3] >= 0) ref1_1 = block[block[n][AMR_NBR1_3]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
@@ -396,11 +394,10 @@ void alloc_bounds_CPU(int n){
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
 	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
-	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) && DEREFINE_POLE){
-		ref3_2s = 0;
-		ref3_4s = 0;
-	}
-
+	
+	ref3_2s = 0;
+	ref3_4s = 0;
+	
 	send1[nl[n]] = (double *)malloc(NG *(1 + ref1_1)*(1 + ref3_1)* (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
 	send2[nl[n]] = (double *)malloc(NG *(1 + ref2_2)*(1 + ref3_2)* (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	send3[nl[n]] = (double *)malloc(NG *(1 + ref1_3)*(1 + ref3_3)* (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));
@@ -640,18 +637,18 @@ void alloc_bounds_CPU(int n){
 	receive1_4flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
 	receive1_7flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
 	receive1_8flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)) * sizeof(double));
-	receive2_1flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
-	receive2_2flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
-	receive2_3flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
-	receive2_4flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4s))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_1flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_2flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_3flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
+	receive2_4flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_4))*(BS_3 / (1 + ref3_4s)) * sizeof(double));
 	receive3_1flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
 	receive3_2flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
 	receive3_5flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
 	receive3_6flux2[nl[n]] = (double *)malloc(NPR*(BS_1 / (1 + ref1_1))*(BS_3 / (1 + ref3_1)) * sizeof(double));
-	receive4_5flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
-	receive4_6flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
-	receive4_7flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
-	receive4_8flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2s))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_5flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_6flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_7flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
+	receive4_8flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_2))*(BS_3 / (1 + ref3_2s)) * sizeof(double));
 	#if(N3G>0)
 	receive5_1flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
 	receive5_3flux2[nl[n]] = (double *)malloc(NPR*(BS_2 / (1 + ref2_6)) *(BS_1 / (1 + ref1_6)) * sizeof(double));
@@ -748,18 +745,18 @@ void alloc_bounds_CPU(int n){
 	receive1_4E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
 	receive1_7E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
 	receive1_8E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_3) + 2 * D1)*(BS_3 / (1 + ref3_3) + 2 * D3) * sizeof(double));
-	receive2_1E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
-	receive2_2E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
-	receive2_3E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
-	receive2_4E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4s) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_1E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_2E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_3E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
+	receive2_4E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_4) + 2 * D2)*(BS_3 / (1 + ref3_4s) + 2 * D3) * sizeof(double));
 	receive3_1E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
 	receive3_2E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
 	receive3_5E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
 	receive3_6E2[nl[n]] = (double *)malloc(2 * (BS_1 / (1 + ref1_1) + 2 * D1)*(BS_3 / (1 + ref3_1) + 2 * D3) * sizeof(double));
-	receive4_5E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
-	receive4_6E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
-	receive4_7E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
-	receive4_8E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2s) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_5E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_6E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_7E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
+	receive4_8E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_2) + 2 * D2)*(BS_3 / (1 + ref3_2s) + 2 * D3) * sizeof(double));
 	#if(N3G>0)
 	receive5_1E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));
 	receive5_3E2[nl[n]] = (double *)malloc(2 * (BS_2 / (1 + ref2_6) + 2 * D2) *(BS_1 / (1 + ref1_6) + 2 * D1) * sizeof(double));

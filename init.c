@@ -137,7 +137,6 @@ void init()
 		init_bondi();
 		break;
   }
-
 }
 
 void init_thindisk()
@@ -373,27 +372,12 @@ void init_torus()
 
 	/* for magnetic field */
 	double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-	double lfish_calc(double rmax) ;
 
 	/* disk parameters (use fishbone.m to select new solutions) */
-    //a = 0.9375 ;
-	//rin = 36.;
-	//rmax = 73.9672;
-	//rin = 5.*36. ;
-	//rmax = 361.95;
-
-	
-	//rmax = 73.962 ;
-	
 	double temp = a;
 	a = 0.9375;
 	rin = 6.0;
-	//rmax = 14.6145;
 	rmax = 12.;
-	//rmax = 14.6165;
-	///rin = 12.;
-	//rmax = 14.616;
-	//rmax = 24.;
     l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
@@ -564,12 +548,10 @@ void init_torus()
 	a = temp;
 	#if (MPI_enable)
 	/*Share rhomax among MPI processes*/
-	MPI_Barrier(mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 
 	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Barrier(mpi_cartcomm);
 	#endif
 
 	/* Normalize the densities so that max(rho) = 1 */
@@ -588,6 +570,7 @@ void init_torus()
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
+
 	bound_prim(p, 1);
 
 	set_mag();
@@ -643,24 +626,6 @@ void init_disruption()
   
   /* disk parameters (use fishbone.m to select new solutions) */
   a = 0.9375 ;
-  //rin = 36.;
-  //rmax = 73.9672;
-  //rin = 5.*36. ;
-  //rmax = 361.95;
-  
-  
-  //rmax = 73.962 ;
-  
-  rin = 6;
-  //rmax = 14.6145;
-  rmax = 12.;
-  //rmax = 14.6165;
-  ///rin = 12.;
-  //rmax = 14.616;
-  //rmax = 24.;
-  l = lfish_calc(rmax) ;
-  kappa = 1.e-3 ;
-  beta = 100. ;
   
   coord(0,5, 0, 0, CENT, X);
   bl_coord(X, &r, &th, &phi);
@@ -735,13 +700,10 @@ void init_disruption()
     }
 
   }
-	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
-	#endif
+
   //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
   //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
-  
+  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk] 
   rhomax = 0. ;
   umax = 0. ;
 	#if(!NSY)
@@ -799,12 +761,10 @@ void init_disruption()
   }
   #if (MPI_enable)
   /*Share rhomax among MPI processes*/
-  MPI_Barrier(mpi_cartcomm);
   MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
   
   /*Share umax among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-  MPI_Barrier(mpi_cartcomm);
   #endif
   
   /* Normalize the densities so that max(rho) = 1 */
@@ -827,18 +787,17 @@ void init_disruption()
 
   //set_mag();
   
-#if( DO_FONT_FIX ) 
+	#if( DO_FONT_FIX ) 
   set_Katm();
-#endif 
+	#endif 
   
   sourceflag=0.;
-#if(ELLIPTICAL2)
+	#if(ELLIPTICAL2)
   calc_source();
-#endif
-
+	#endif
 
 	#if (GPU_ENABLED)
-  for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 }
 
@@ -939,7 +898,7 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
 
 void set_mag(void){
 	int i, j, z, k, n;
-	double rhomax = 0., umax = 0.;
+	double rhomax = 1., umax = 0.;
 	int i100 = 0;
 	double rho_av, q, beta = 10.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
@@ -949,46 +908,12 @@ void set_mag(void){
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif	
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO]> rhomax) rhomax = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] > umax) umax = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU];
-		}
-	}
-
-	#if (MPI_enable)
-	/*Share rhomax among MPI processes*/
-	MPI_Barrier(mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-	/*Share umax among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Barrier(mpi_cartcomm);
-	#endif
-
-	/* Normalize the densities so that max(rho) = 1 */
-	if (rank == 0){
-		fprintf(stderr, "rhomax: %g\n", rhomax);
-	}
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-		}
-	}
-	umax /= rhomax;
-	rhomax = 1.;
-	for (n = 0; n < n_active; n++){
-		fixup(p, n_ord[n]);
-	}
-	bound_prim(p, 1);
 
 	do{
 		i100++;
 		coord(0, i100, 0, 0, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 	} while (r < 400.0);
-	/* first find corner-centered vector potential */
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]] + D1, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + D2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
 			dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][0] = 0.;
@@ -1005,6 +930,8 @@ void set_mag(void){
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
 		}
 	}
+
+	/* first find corner-centered vector potential */
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
 			/* Cell centered vector potential */	
@@ -1060,9 +987,6 @@ void set_mag(void){
 
 	/* now differentiate to find cell-centered B,
 	and begin normalization */
-	double bsq_max = 0.;
-	double ug_sum =0.;
-	double bsq_sum = 0.;
 	#if(STAGGERED)
 	gpu = 0;
 	nstep = AMR_SWITCHTIMELEVEL - 1;
@@ -1073,37 +997,44 @@ void set_mag(void){
 	for (n = 0; n < n_active; n++){
 		#if(STAGGERED)
 		//Reset toroidal component of vector potential so that no monopoles occur in initial conditions at the pole
-		if(block[n_ord[n]][AMR_NBR1]==-1 || block[n_ord[n]][AMR_POLE]==1 || block[n_ord[n]][AMR_POLE]==3 ){
+		if (block[n_ord[n]][AMR_NBR1] == -1 || block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][3] = 0.;
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
 			}
 		}
+
 		if (block[n_ord[n]][AMR_NBR3] == -1 || block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
 			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][3] = 0.;
 				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
 			}
 		}
+
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
 			get_geometry(n_ord[n], i, j, z, FACE1, &geom);
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][3]) / (dx[nl[n_ord[n]]][2] * geom.g)
-			#if(N3G>0)
+				#if(N3G>0)
 				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][2]) / (dx[nl[n_ord[n]]][3] * geom.g)
-			#endif
+				#endif
 				;
-			get_geometry(n_ord[n],i, j, z, FACE2, &geom);
+			get_geometry(n_ord[n], i, j, z, FACE2, &geom);
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][3]) / (dx[nl[n_ord[n]]][1] * geom.g)
-			#if(N3G>0)
-				-(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + D3)][1]) / (dx[nl[n_ord[n]]][3] * geom.g)
-			#endif
+				#if(N3G>0)
+				- (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][1]) / (dx[nl[n_ord[n]]][3] * geom.g)
+				#endif
 				;
-			get_geometry(n_ord[n],i, j, z, FACE3, &geom);
-			ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i + D1, j, z)][2]) / (dx[nl[n_ord[n]]][1] * geom.g)
-				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + D2, z)][1]) / (dx[nl[n_ord[n]]][2] * geom.g);
+			get_geometry(n_ord[n], i, j, z, FACE3, &geom);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][2]) / (dx[nl[n_ord[n]]][1] * geom.g)
+				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][1]) / (dx[nl[n_ord[n]]][2] * geom.g);
 		}
+			#endif
+	}
 
-		#endif
+	double bsq_max = 0.;
+	double ug_sum = 0.;
+	double bsq_sum = 0.;
+	for (n = 0; n < n_active; n++){
 		ZLOOP3D_MPI{
 			/* flux-ct */
 			#if(!STAGGERED)
@@ -1151,14 +1082,13 @@ void set_mag(void){
 		}
 	}
 
-
 	#if (MPI_enable)
 	/*Share bsq_max among MPI processes*/
-	MPI_Barrier(mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#if(WHICHPROBLEM==THIN_PROBLEM)
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Barrier(mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
 	#endif
 
 	if (rank == 0){
@@ -1175,25 +1105,31 @@ void set_mag(void){
 		fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
 	}
 	norm = sqrt(beta_act / beta);
+
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] *= norm;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] *= norm;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= norm;
+			#if(STAGGERED)
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] *= norm;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] *= norm;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= norm;
+			#endif
+		}
+	}
+
 	bsq_max = 0.;
 	bsq_sum = 0.;
 	ug_sum = 0.;
 	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3-1+D3){
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B1] *= norm;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B2] *= norm;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] *= norm;
-			#if(STAGGERED)
-			ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] *= norm;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] *= norm;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] *= norm;
-			#endif
-
+		ZLOOP3D_MPI{
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
+
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
 			coord(n_ord[n], i, j, z, CENT, X);
@@ -1208,9 +1144,11 @@ void set_mag(void){
 
 	/*Share bsq_max among MPI processes*/
 	#if (MPI_enable)
-	MPI_Barrier(mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Barrier(mpi_cartcomm);
+	#if(WHICHPROBLEM==THIN_PROBLEM)
+	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
 	#endif
 
 	#if(WHICHPROBLEM==THIN_PROBLEM)
