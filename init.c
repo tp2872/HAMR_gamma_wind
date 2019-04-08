@@ -82,6 +82,7 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 void init_torus_grb();
 void set_mag_TDE(void);
 void set_uniform_Bphi(void);
+double lfish_calc(double r);
 
 double global_kappa, aphipow;
 
@@ -610,7 +611,6 @@ void init_disruption()
   
   /* for magnetic field */
   double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-  double lfish_calc(double rmax) ;
   
   /* for ICs */
   FILE *fp;

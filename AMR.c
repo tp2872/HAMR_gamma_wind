@@ -1191,7 +1191,7 @@ void balance_load(void){
 	double(*temp_p[NB])[NPR];
 	int timelevel_cutoff = AMR_MAXTIMELEVEL;
 	int numtasks_local = numtasks*N_GPU;
-	int min_steps, max_steps, total_steps, count_gpu[N_GPU];
+	int min_steps, max_steps, total_steps;
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
 	//rm_order2();
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
@@ -2361,13 +2361,9 @@ void check_refcrit(void){
 				//Refine one level less near black hole
 				level = block[n_ord_total[n]][AMR_LEVEL1];
 				#if(!REFINE_JET)
-				//if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] == 0) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] <= 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] <= 6)
-				//	|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] == 14) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] == 30) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] == 62)){
-				//	block[n_ord_total[n]][AMR_TAG] = 0;
-				//}
 				#if(NB_1<10)
 				if ((block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 2 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1)
-					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 15) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
+					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
@@ -2784,7 +2780,7 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<125.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<80.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
 		}
 	}
 	#endif

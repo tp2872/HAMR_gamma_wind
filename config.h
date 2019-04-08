@@ -22,7 +22,7 @@ Physical Parameters section
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (80.)
+#define TILT_ANGLE (60.)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -83,21 +83,21 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (50)
+#define MAX_BLOCKS (280)
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 3
-#define NB_2 2
+#define NB_1 4
+#define NB_2 6
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 50
-#define BS_2 48
-#define BS_3 64
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 2
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -121,7 +121,7 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
 #define AMR_SWITCHTIMELEVEL 64

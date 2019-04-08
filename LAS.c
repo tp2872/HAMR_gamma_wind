@@ -149,9 +149,9 @@ void set_prestep(void){
 	#endif
 
 	//If you don't have sufficient blocks this timestep preevolve some blocks if available
-	if ((nstep % timelevel_min) == timelevel_min - 1){
-		for (n = 0; n < n_active; n++){
-			if (blocks_this_timestep[block[n_ord[n]][AMR_GPU]] < blocks_per_timestepp[block[n_ord[n]][AMR_GPU]] && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
+	for (n = 0; n < n_active; n++){
+		if ((nstep %  timelevel_min[block[n_ord[n]][AMR_GPU]]) == timelevel_min[block[n_ord[n]][AMR_GPU]] - 1){
+			if (blocks_this_timestep[block[n_ord[n]][AMR_GPU]] < blocks_per_timestep[block[n_ord[n]][AMR_GPU]] && nstep % (block[n_ord[n]][AMR_TIMELEVEL]) != block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 0 && (block[n_ord[n]][AMR_POLE] == 0)){
 				block[n_ord[n]][AMR_PRESTEP] = 1;
 				block[n_ord[n]][AMR_NSTEP] = nstep - (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) - (block[n_ord[n]][AMR_TIMELEVEL] - 1));
 				blocks_this_timestep[block[n_ord[n]][AMR_GPU]]++;
