@@ -38,15 +38,15 @@ void set_timelevel(void){
 	for (l = 0; l < N_LEVELS_3D; l++){
 		ni = NB_1*pow(1 + REF_1, l);
 		nj = NB_2*pow(1 + REF_2, l);
-		nz = NB_3;
+		nz = NB_3*pow(1 + REF_3*(!DEREFINE_POLE), l);
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				min_j[i] = 10000;
 				if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 3){
-					for (z = 0; z < NB_3; z++){
+					for (z = 0; z < nz; z++){
 						min_j[i] = MY_MIN(block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL], min_j[i]);
 					}
-					for (z = 0; z < NB_3; z++){
+					for (z = 0; z < nz; z++){
 						block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL] = min_j[i];
 					}
 				}
@@ -56,10 +56,10 @@ void set_timelevel(void){
 			if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				min_j[i] = 10000;
 				if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 3){
-					for (z = 0; z < NB_3; z++){
+					for (z = 0; z < nz; z++){
 						min_j[i] = MY_MIN(block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
 					}
-					for (z = 0; z < NB_3; z++){
+					for (z = 0; z < nz; z++){
 						block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL] = min_j[i];
 					}
 				}

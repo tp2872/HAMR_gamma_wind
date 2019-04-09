@@ -344,7 +344,7 @@ void set_AMR(void){
 			if (block[n][AMR_LEVEL1] > 0 || block[n][AMR_LEVEL2] > 0){
 				new_level1 = block[n][AMR_LEVEL1] - REF_1;
 				new_level2 = block[n][AMR_LEVEL2] - REF_2;
-				new_level3 = block[n][AMR_LEVEL3] - REF_3 * (block[n][AMR_COORD2] != 0 && block[n][AMR_COORD2] != NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1);
+				new_level3 = block[n][AMR_LEVEL3] - REF_3 * ((block[n][AMR_COORD2] != 0 && block[n][AMR_COORD2] != NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) || !DEREFINE_POLE);
 			}
 			else if (block[n][AMR_LEVEL3] > 0){
 				new_level1 = block[n][AMR_LEVEL1];
@@ -407,7 +407,7 @@ void set_AMR(void){
 			ref_1 = new_level1 - block[n][AMR_LEVEL1];
 			ref_2 = new_level2 - block[n][AMR_LEVEL2];
 			ref_3 = new_level3 - block[n][AMR_LEVEL3];
-			if (block[n][AMR_COORD2] == 0 && block[n][AMR_LEVEL] >= L_1DMAX) {
+			if (block[n][AMR_COORD2] == 0 && block[n][AMR_LEVEL] >= L_1DMAX && DEREFINE_POLE) {
 				block[n][AMR_CHILD1] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3]);
 				block[n][AMR_CHILD2] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3]);
 				block[n][AMR_CHILD3] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3] * (1 + ref_3));
@@ -417,7 +417,7 @@ void set_AMR(void){
 				block[n][AMR_CHILD7] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1) + ref_1, block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3] * (1 + ref_3));
 				block[n][AMR_CHILD8] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1) + ref_1, block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3] * (1 + ref_3) + ref_3);
 			}
-			else if (block[n][AMR_COORD2] == NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && block[n][AMR_LEVEL] >= L_1DMAX) {
+			else if (block[n][AMR_COORD2] == NB_2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && block[n][AMR_LEVEL] >= L_1DMAX && DEREFINE_POLE) {
 				block[n][AMR_CHILD1] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3] * (1 + ref_3));
 				block[n][AMR_CHILD2] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2), block[n][AMR_COORD3] * (1 + ref_3) + ref_3);
 				block[n][AMR_CHILD3] = AMR_coord_linear2(block[n][AMR_LEVEL] + 1, j0, block[n][AMR_COORD1] * (1 + ref_1), block[n][AMR_COORD2] * (1 + ref_2) + ref_2, block[n][AMR_COORD3]);
@@ -2780,7 +2780,7 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<80.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<50.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
 		}
 	}
 	#endif

@@ -108,7 +108,7 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (0)
+#define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
 #define N_LEVELS_1D_INT (2)
