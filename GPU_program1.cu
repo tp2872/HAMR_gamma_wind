@@ -2292,7 +2292,7 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 		zoffset = (zcurr - N3G) % zsize;
 		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr + (BS_3 + 2 * N3G) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
-		zsize2 = (int)pow(2.0, (double)zlevel2);
+		zsize2 = (int)(0.001 + pow(2.0, (double)zlevel2));
 		zoffset2 = (zcurr - N3G) % zsize2;
 		#endif
 		if (zoffset == 0){
@@ -2613,7 +2613,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
-			emf[1 * (ksize)+global_id] = 0.;// -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
+			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
 		}
 	}
 }
