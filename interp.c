@@ -355,7 +355,7 @@ void average_grid(void){
 
 //Prolongs grid near pole: This is necessary for AMR in combination with internal derefinement
 void prolong_grid(void){
-	int n, i, j, z, k, u;
+	int n, i, j, z, zs, k, u, u2;
 	int zsize = 1, zlevel = 0;
 	double temp[NDIM];
 	double b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8;
@@ -376,7 +376,7 @@ void prolong_grid(void){
 		}
 	}
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(2) schedule(static, (BS_1*2*N1G)*(BS_2*2*N2G)/nthreads) private(i, j, z, k, temp, zsize, zlevel, u, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8)
+		#pragma omp parallel for collapse(2) schedule(static, (BS_1*2*N1G)*(BS_2*2*N2G)/nthreads) private(i, j, z, zs, k, temp, zsize, zlevel, u, u2, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8,b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8)
 		for (i = N1_GPU_offset[n_ord[n]]; i < N1_GPU_offset[n_ord[n]] + BS_1; i++)for (j = N2_GPU_offset[n_ord[n]]; j <= N2_GPU_offset[n_ord[n]] + BS_2; j++){
 			zlevel = 0;
 			if ((block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3) && j < N2_GPU_offset[n_ord[n]] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(j - N2_GPU_offset[n_ord[n]]) + D2))) / log(2.)), N_LEVELS_1D_INT);
@@ -384,51 +384,65 @@ void prolong_grid(void){
 			zsize =(int)(0.001+pow(2.0, (double)zlevel));
 			if (zlevel>0){
 				for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z += zsize){
-					//Negative x1
-					b1_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * ((double)zsize);
-					b1_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][1] * ((double)zsize);
-					b1_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * ((double)zsize);
-					b1_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][1] * ((double)zsize);
+					for (zs = zsize; zs > 1; zs/=2) {
+						for (u = zs / 2; u < zsize; u+=zs/2) {
+							b1_1 = b1_2 = b1_3 = b1_4 = 0.;
+							b1_5 = b1_6 = b1_7 = b1_8 = 0.;
+							b2_1 = b2_2 = b2_5 = b2_6 = 0.;
+							b2_3 = b2_4 = b2_7 = b2_8 = 0.;
+							b3_1 = b3_3 = b3_5 = b3_7 = 0.;
+							b3_2 = b3_4 = b3_6 = b3_8 = 0.;
 
-					//Positive x1
-					b1_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1] * ((double)zsize);
-					b1_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + zsize / 2)][1] * ((double)zsize);
-					b1_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1] * ((double)zsize);
-					b1_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + zsize / 2)][1] * ((double)zsize);
+							for (u2 = u - zs/2; u2 < u; u2++) {
+								//Negative x1
+								b1_1 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][1] * 2.0;
+								b1_3 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][1] * 2.0;
 
-					//Negative x2
-					b2_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * ((double)zsize);
-					b2_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][2] * ((double)zsize);
-					b2_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * ((double)zsize);
-					b2_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][2] * ((double)zsize);
+								//Positive x1
+								b1_5 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + u2)][1] * 2.0;
+								b1_7 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + u2)][1] * 2.0;
+								
+								//Negative x2
+								b2_1 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
+								b2_5 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
 
-					//Positive x2
-					b2_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2] * ((double)zsize);
-					b2_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + zsize / 2)][2] * ((double)zsize);
-					b2_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2] * ((double)zsize);
-					b2_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + zsize / 2)][2] * ((double)zsize);
+								//Positive x2
+								b2_3 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + u2)][2] * 2.0;
+								b2_7 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + u2)][2] * 2.0;
+							}
 
-					//Negative x3
-					b3_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
-					b3_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
-					b3_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
-					b3_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
+							for (u2 = u; u2 < u + zs / 2; u2++) {
+								//Negative x1
+								b1_2 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][1] * 2.0;
+								b1_4 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][1] * 2.0;
 
-					//Positive x3
-					b3_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3];
-					b3_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3];
-					b3_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3];
-					b3_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3];
+								//Positive x1
+								b1_6 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + u2)][1] * 2.0;
+								b1_8 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + u2)][1] * 2.0;
 
-					u = zsize / 2;
-					ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3] * B3_prolong(n_ord[n], i, j, z, 0, 0, -0.5 + ((double)u) / ((double)zsize), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
-						b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
-					for (u = 0; u < zsize; u++){
-						if (u<(zsize / 2)){
-							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = (1.0 / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3])*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ((double)u) / ((double)(zsize / 2))*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3] - ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3]));
-						}
-						if (u>(zsize / 2)){
-							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = (1.0 / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3])*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3] + ((double)(u - zsize / 2)) / ((double)(zsize / 2))*(ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize)][FACE3] - ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + zsize / 2)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + zsize / 2)][FACE3]));
+								//Negative x2
+								b2_3 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
+								b2_6 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
+
+								//Positive x2
+								b2_4 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + u2)][2] * 2.0;
+								b2_8 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z + u2)][2] * 2.0;
+							}
+
+							//Negative x3
+							b3_1 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u - zs / 2))][3];
+							b3_3 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u - zs / 2))][3];
+							b3_5 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u - zs / 2))][3];
+							b3_7 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u - zs / 2))][3];
+
+							//Positive x3
+							b3_2 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
+							b3_4 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
+							b3_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
+							b3_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
+
+							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3] * B3_prolong(n_ord[n], i, j, z, 0, 0, -0.5 + ((double)u) / ((double)zsize), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+								b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
 						}
 					}
 				}
