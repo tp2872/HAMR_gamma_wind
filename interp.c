@@ -385,13 +385,11 @@ void prolong_grid(void){
 			if (zlevel>0){
 				for (z = N3_GPU_offset[n_ord[n]]; z < N3_GPU_offset[n_ord[n]] + BS_3; z += zsize){
 					for (zs = zsize; zs > 1; zs/=2) {
-						for (u = zs / 2; u < zsize; u+=zs/2) {
+						for (u = zs / 2; u < zsize; u += zs) {
 							b1_1 = b1_2 = b1_3 = b1_4 = 0.;
 							b1_5 = b1_6 = b1_7 = b1_8 = 0.;
 							b2_1 = b2_2 = b2_5 = b2_6 = 0.;
 							b2_3 = b2_4 = b2_7 = b2_8 = 0.;
-							b3_1 = b3_3 = b3_5 = b3_7 = 0.;
-							b3_2 = b3_4 = b3_6 = b3_8 = 0.;
 
 							for (u2 = u - zs/2; u2 < u; u2++) {
 								//Negative x1
@@ -421,7 +419,7 @@ void prolong_grid(void){
 								b1_8 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z + u2)][1] * 2.0;
 
 								//Negative x2
-								b2_3 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
+								b2_2 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
 								b2_6 += psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u2)][2] * 2.0;
 
 								//Positive x2
@@ -441,8 +439,9 @@ void prolong_grid(void){
 							b3_6 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
 							b3_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
 
-							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3] * B3_prolong(n_ord[n], i, j, z, 0, 0, -0.5 + ((double)u) / ((double)zsize), psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
+							psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = B3_prolong(n_ord[n], i, j, z, 0, 0, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 								b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
+							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3] * psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3];
 						}
 					}
 				}

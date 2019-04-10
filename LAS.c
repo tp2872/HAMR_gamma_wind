@@ -179,20 +179,26 @@ void set_prestep(void){
 void prestep_bound(void){
 	int flag, n;
 	//If block is prestepped send non-corrected boundary cells to blocks with finer timelevels for interpolation in time
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#if(GPU_OPENMP)
+		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim1(1, n_ord[n]);
 		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim1(0, n_ord[n]);
 	}
 	#if(!TRANS_BOUND)
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_boundprim2(1, n_ord[n]);
 		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_boundprim2(0, n_ord[n]);
 	}
 	#endif
 
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif	
 	for (n = 0; n < n_active; n++) {
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -216,7 +222,9 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 	do{
 		//Store difference between evolved and required flux/electric field in temporary array
-		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#if(GPU_OPENMP)
+		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -232,7 +240,9 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 
 	do{
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#if(GPU_OPENMP)
+		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -247,7 +257,9 @@ void prestep_bound(void){
 	} while (flag);
 	set_iprobe(0, &flag);
 
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -260,13 +272,17 @@ void prestep_bound(void){
 	}
 
 	//Then reset flux and electric fields to zero
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++) {
 		if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_cleanup_post(n_ord[n]);
 	}
 
 	//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -288,13 +304,17 @@ void prestep_bound(void){
 	}
 
 	//Evolve magnetic fields at boundary
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
 		GPU_consttransport3_post(dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 
 	//Evolve conserved quantities at boundary using update fluxes and invert to primitive variables plus floor
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
 		GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
 	}

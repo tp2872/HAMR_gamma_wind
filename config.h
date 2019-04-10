@@ -80,7 +80,7 @@ Numerical Parameters section
 #define PARALLEL_IO (1)
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
-#define COPY_BFIELD 0
+#define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
 #define MAX_BLOCKS (280)
@@ -106,6 +106,9 @@ Numerical Parameters section
 
 /*Number of GPUs per MPI rank*/
 #define N_GPU 1
+
+/*If you want to call multiple blocks from multiple threads. Will not *allways* improve performance and SLOWS down performance of workstation, so not recommended for non-cluster use!*/
+#define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
 #define DEREFINE_POLE (0)
