@@ -1412,7 +1412,7 @@ void GPU_boundprim(int bound_force)
 
 	if (bound_force == 1) nstep = -1;
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim1(1, n_ord[n]);
@@ -1420,7 +1420,7 @@ void GPU_boundprim(int bound_force)
 	}
 	#if(!TRANS_BOUND)
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim2(1, n_ord[n]);
@@ -1598,7 +1598,7 @@ void GPU_boundprim(int bound_force)
 
 	#if(TRANS_BOUND && NB_3==1)
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || nstep == -1) GPU_boundprim_trans(1, n_ord[n]);

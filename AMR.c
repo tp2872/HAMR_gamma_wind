@@ -1157,6 +1157,10 @@ void set_AMR(void){
 			block[n][AMR_ACTIVE] = 0;
 			block[n][AMR_TIMELEVEL] = 1;
 		}
+
+		//Give blocks near pole extra weight for load balancing
+		if (block[n][AMR_POLE] == 0)block[n][AMR_WEIGHT] = 1;
+		else block[n][AMR_WEIGHT] = MAX_WEIGHT;
 	}
 
 	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
@@ -1189,7 +1193,7 @@ void balance_load(void){
 	int n_active_total_t[10], (*n_ord_total_RM_t)[10], n_active_local_gpu[N_GPU], n_active_local_max,n_active_local_min;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
-	int timelevel_cutoff = AMR_MAXTIMELEVEL;
+	int timelevel_cutoff = AMR_MAXTIMELEVEL*2;
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps;
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
@@ -1208,9 +1212,9 @@ void balance_load(void){
 		//Order active blocks in an ordered array and keep track of the number of blocks and timesteps at each timelevel
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total_RM[n]][AMR_ACTIVE] == 1){
-				tl = MY_MIN(round(log(block[n_ord_total_RM[n]][AMR_TIMELEVEL]) / log(2)), log(timelevel_cutoff) / log(2));
+				tl = MY_MIN(round(log(block[n_ord_total_RM[n]][AMR_TIMELEVEL] * MAX_WEIGHT / block[n_ord_total_RM[n]][AMR_WEIGHT]) / log(2)), log(timelevel_cutoff) / log(2));
 				n_ord_total_RM_t[n_active_total_t[tl]][tl] = n_ord_total_RM[n];
-				n_active_total_steps_t[tl] += timelevel_cutoff / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
+				n_active_total_steps_t[tl] += timelevel_cutoff / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL] * block[n_ord_total_RM[n]][AMR_WEIGHT], timelevel_cutoff);
 				n_active_total_t[tl]++;
 			}
 		}
@@ -1228,7 +1232,7 @@ void balance_load(void){
 		for (i = 0; i <= round(log(timelevel_cutoff) / log(2)); i++){
 			//If there is not an even load from the previous timelevel, first correct for that
 			if (n_active_localsteps[(u - 1 + numtasks_local) % numtasks_local] > n_active_localsteps[u % numtasks_local]){
-				nr_timesteps = timelevel_cutoff / MY_MIN(block[n_ord_total_RM_t[0][i]][AMR_TIMELEVEL], timelevel_cutoff);
+				nr_timesteps = timelevel_cutoff / MY_MIN(block[n_ord_total_RM_t[0][i]][AMR_TIMELEVEL] * MAX_WEIGHT / block[n_ord_total_RM_t[0][i]][AMR_WEIGHT], timelevel_cutoff);
 				increment = (n_active_localsteps[(u - 1 + numtasks_local) % numtasks_local] - n_active_localsteps[u % numtasks_local]) / nr_timesteps;
 				fillup_mode = 1;
 			}
@@ -1240,7 +1244,7 @@ void balance_load(void){
 			}
 			n = 0;
 			while (n < n_active_total_t[i]){
-				nr_timesteps = timelevel_cutoff / MY_MIN(block[n_ord_total_RM_t[n][i]][AMR_TIMELEVEL], timelevel_cutoff);
+				nr_timesteps = timelevel_cutoff / MY_MIN(block[n_ord_total_RM_t[n][i]][AMR_TIMELEVEL] * MAX_WEIGHT / block[n_ord_total_RM_t[n][i]][AMR_WEIGHT], timelevel_cutoff);
 				if (fillup_mode == 1) increment = (n_active_localsteps[(u - 1 + numtasks_local) % numtasks_local] - n_active_localsteps[u % numtasks_local]) / nr_timesteps;
 				if (n_active_localsteps[(u - 1 + numtasks_local) % numtasks_local] == n_active_localsteps[u % numtasks_local]){
 					rem = (n_active_total_t[i] - n) % (numtasks_local); //remainder number of blocks at given timelevel
@@ -1386,8 +1390,8 @@ void balance_load(void){
 	count_node[0]=0;
 	for (g = 0; g < N_GPU; g++) count_gpu[g] = 0;
 	for (n = 0; n < n_active; n++) {
-		count_node[0] += AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL];
-		count_gpu[block[n_ord[n]][AMR_GPU]] += AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL];
+		count_node[0] += MAX_WEIGHT * AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL] / block[n_ord[n]][AMR_WEIGHT];
+		count_gpu[block[n_ord[n]][AMR_GPU]] += MAX_WEIGHT * AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL] / block[n_ord[n]][AMR_WEIGHT];
 	}
 	min_steps = count_gpu[0];
 	for (g = 0; g < N_GPU; g++){

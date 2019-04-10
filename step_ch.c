@@ -578,7 +578,7 @@ double advance_GPU(void)
 
 	#if(N3G>0)		
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1){
@@ -624,7 +624,7 @@ double advance_GPU(void)
 
 	#if(N2G>0)
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(2, 1, n_ord[n]);
@@ -659,7 +659,7 @@ double advance_GPU(void)
 
 	#if(N1G>0)
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_fluxcalc2D(1, 1, n_ord[n]);
@@ -766,13 +766,13 @@ double advance_GPU(void)
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
 	#if(!TRANS_BOUND)
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++) if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1) GPU_fix_flux(n_ord[n]);
 	#endif
 	#if(STAGGERED)
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport1(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -780,7 +780,7 @@ double advance_GPU(void)
 	}
 
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -791,7 +791,7 @@ double advance_GPU(void)
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
 
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -803,7 +803,7 @@ double advance_GPU(void)
 	#endif
 
 	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static, n_active/nthreads) private(n,status,timestep)
+	//#pragma omp parallel for schedule(static, n_active/nthreads) private(n,status,timestep)
 	#endif
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1){

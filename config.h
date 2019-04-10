@@ -122,6 +122,9 @@ Numerical Parameters section
 //Use Z-order at 0-level for load balancing
 #define Z_ORDER 1
 
+/*Set the maximum weight for load balancing of a heavy block around the pole*/
+#define MAX_WEIGHT (2)
+
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_MAXTIMELEVEL 32
