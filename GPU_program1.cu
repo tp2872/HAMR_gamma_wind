@@ -198,7 +198,7 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 		u = (w - rho0) / GAMMA;
 		p_new = (GAMMA - 1.)*u;
 	}
-	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq>=1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG ||gamma>50. || gamma<1.){
+	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq>=1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG ||gamma>GAMMAMAX || gamma<1.){
 		return(1);
 	}
 

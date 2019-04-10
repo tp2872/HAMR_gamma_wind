@@ -1437,10 +1437,14 @@ void balance_load_gpu(void){
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 /*Function calculates the ordered arrays of all active blocks on a single node (n_active) and on the whole cluster (n_active_total) */
 void activate_blocks(void){
-	int n, i;
+	int n, i, g;
+	int n_ord_gpu[NB_LOCAL], n_active_gpu[N_GPU], n_g[N_GPU];
 	n_active = 0;
 	n_active_total = 0;
 
+	#if(N_GPU>1)
+	for (g = 0; g < N_GPU; g++)n_active_gpu[g] = 0;
+	#endif
 	for (n = 0; n < MY_MIN(numtasks * N_GPU, NB); n++) NODE_global[n] = 0;
 	for (n = 0; n <= n_max; n++) block[n][AMR_REFINED] = 0;
 	for (n = 0; n <= n_max; n++){
@@ -1448,7 +1452,11 @@ void activate_blocks(void){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active
 			n_ord[n_active] = n;
 			n_ord_RM[n_active] = n;
-			n_active++;		
+			n_active++;	
+			#if(N_GPU>1)
+			n_ord_gpu[block[n][AMR_GPU]] = n_active_gpu[block[n][AMR_GPU]];
+			n_active_gpu[block[n][AMR_GPU]]++;
+			#endif
 		}
 		if (block[n][AMR_ACTIVE] == 1){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active_total
@@ -1463,9 +1471,21 @@ void activate_blocks(void){
 		}
 	}
 	#if(N_GPU>1)
+	for (n = 0; n < MY_MIN(numtasks * N_GPU, NB); n++) NODE_global[n] = 0;
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][AMR_NODE] >= 0) NODE_global[block[n_ord_total[n]][AMR_NODE]*N_GPU + (block[n_ord_total[n]][AMR_GPU])]++;
 	}
+	n=0;
+	for(g=0;g<N_GPU;g++) n_g[g]=0;
+	while(n < n_active){
+		for(g=0;g<N_GPU;g++){
+			if(n_g[g]<n_active_gpu[g]){
+				n_ord[n] = n_ord_gpu[n_g[g]];
+				n_g[g]++
+				n++;
+			}
+		}
+	}	
 	#endif
 	MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -2293,7 +2313,7 @@ int check_nesting(int n){
 	//Refine around pole
 	if (block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && flag == 1){
 		block[n][AMR_TAG] = 1;
-		if (rank == 0) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
+		if (rank == 0 && numtasks<100) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
 		if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5]][AMR_TAG]!=1){
 			block[block[n][AMR_NBR5]][AMR_TAG] = 1;
 			if (!refine(block[n][AMR_NBR5])){
@@ -2704,7 +2724,7 @@ int derefine_pole(void){
 		exit(20);
 		return -1;
 	}
-	if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS_1D - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
+	//if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS_1D - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
 	for (l = 0; l < N_LEVELS_1D; l++){
 		pre_refine();
 		ni = NB_1*pow(1 + REF_1, 0);
