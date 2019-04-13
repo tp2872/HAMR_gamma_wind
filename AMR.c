@@ -1193,7 +1193,7 @@ void balance_load(void){
 	int n_active_total_t[10], (*n_ord_total_RM_t)[10], n_active_local_gpu[N_GPU], n_active_local_max,n_active_local_min;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
-	int timelevel_cutoff = AMR_MAXTIMELEVEL*2;
+	int timelevel_cutoff = AMR_MAXTIMELEVEL* MAX_WEIGHT;
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps;
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
@@ -1214,7 +1214,7 @@ void balance_load(void){
 			if (block[n_ord_total_RM[n]][AMR_ACTIVE] == 1){
 				tl = MY_MIN(round(log(block[n_ord_total_RM[n]][AMR_TIMELEVEL] * MAX_WEIGHT / block[n_ord_total_RM[n]][AMR_WEIGHT]) / log(2)), log(timelevel_cutoff) / log(2));
 				n_ord_total_RM_t[n_active_total_t[tl]][tl] = n_ord_total_RM[n];
-				n_active_total_steps_t[tl] += timelevel_cutoff / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL] * block[n_ord_total_RM[n]][AMR_WEIGHT], timelevel_cutoff);
+				n_active_total_steps_t[tl] += timelevel_cutoff / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL] * MAX_WEIGHT / block[n_ord_total_RM[n]][AMR_WEIGHT], timelevel_cutoff);
 				n_active_total_t[tl]++;
 			}
 		}
@@ -1390,8 +1390,8 @@ void balance_load(void){
 	count_node[0]=0;
 	for (g = 0; g < N_GPU; g++) count_gpu[g] = 0;
 	for (n = 0; n < n_active; n++) {
-		count_node[0] += MAX_WEIGHT * AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL] / block[n_ord[n]][AMR_WEIGHT];
-		count_gpu[block[n_ord[n]][AMR_GPU]] += MAX_WEIGHT * AMR_MAXTIMELEVEL / block[n_ord[n]][AMR_TIMELEVEL] / block[n_ord[n]][AMR_WEIGHT];
+		count_node[0] += MAX_WEIGHT * AMR_MAXTIMELEVEL / (MAX_WEIGHT * block[n_ord[n]][AMR_TIMELEVEL] / block[n_ord[n]][AMR_WEIGHT]);
+		count_gpu[block[n_ord[n]][AMR_GPU]] += MAX_WEIGHT * AMR_MAXTIMELEVEL / (MAX_WEIGHT * block[n_ord[n]][AMR_TIMELEVEL] / block[n_ord[n]][AMR_WEIGHT]);
 	}
 	min_steps = count_gpu[0];
 	for (g = 0; g < N_GPU; g++){
@@ -2332,7 +2332,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.025 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.125 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2804,7 +2804,7 @@ double calc_refcrit(int n){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<50.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<150.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
 		}
 	}
 	#endif

@@ -122,7 +122,7 @@ void const_transport_bound(void){
 }
 
 void E_average(void){
-	int n, n1, n2, i, j, z, k, ind0, z_max, number, u;
+	int n, n1, n2, i, j, z, z2,z3, tag, k, ind0, z_max, number, number_rec, u;
 	MPI_Request req_local;
 	int l, ni, nj, nz;
 
@@ -137,26 +137,36 @@ void E_average(void){
 		nj = NB_2*pow(1 + REF_2, l);
 		nz = NB_3*pow(1 + REF_3*(!DEREFINE_POLE), l);
 		for (i = 0; i < ni; i++){
-			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
+			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1) {
 				//Which nodes have an active block around a slice in phi for a given i
-				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
-					for (u = 0; u < numtasks; u++){
-						send_tag1[l][u] = 0;
-						for (z = 0; z < nz; z++){
-							number = AMR_coord_linear2(l, 0, i, 0, z);
-							if (block[number][AMR_NODE] == u) send_tag1[l][u] = 1;
-						}
-					}
-					for (z = 0; z < nz; z++){
+				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)) {
+					for (z = 0; z < nz; z++) {
 						number = AMR_coord_linear2(l, 0, i, 0, z);
-						if (block[number][AMR_NODE] != rank && send_tag1[l][rank] == 1){
-							rc = MPI_Irecv(&E_avg1[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[l][i*nz + z]);
+						if (block[number][AMR_NODE] == rank) {
+							for (z2 = 0; z2 < nz; z2++) {
+								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
+								if (u != rank) {
+									tag = 1;
+									for (z3 = z2 - 1; z3 > 0; z3--) {
+										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
+									}
+									if (tag == 1) {
+										rc = MPI_Isend(&E_avg1[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
+										MPI_Request_free(&req_local);
+									}
+								}
+							}
 						}
-						if (block[number][AMR_NODE] == rank){
-							for (u = 0; u < numtasks; u++){
-								if (send_tag1[l][u] == 1 && u != rank){
-									rc = MPI_Isend(&E_avg1[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
-									MPI_Request_free(&req_local);
+						else {
+							for (z2 = 0; z2 < nz; z2++) {
+								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
+								if (u == rank) {
+									for (z3 = z2 - 1; z3 > 0; z3--) {
+										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
+									}
+									if (tag == 1) {
+										rc = MPI_Irecv(&E_avg1[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (8 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local1[l][i*nz + z]);
+									}
 								}
 							}
 						}
@@ -174,23 +184,33 @@ void E_average(void){
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
-					for (u = 0; u < numtasks; u++){
-						send_tag2[l][u] = 0;
-						for (z = 0; z < nz; z++){
-							number = AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z);
-							if (block[number][AMR_NODE] == u) send_tag2[l][u] = 1;
-						}
-					}
-					for (z = 0; z < nz; z++){
+					for (z = 0; z < nz; z++) {
 						number = AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z);
-						if (block[number][AMR_NODE] != rank && send_tag2[l][rank] == 1){
-							rc = MPI_Irecv(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[l][i*nz + z]);
+						if (block[number][AMR_NODE] == rank) {
+							for (z2 = 0; z2 < nz; z2++) {
+								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
+								if (u != rank) {
+									tag = 1;
+									for (z3 = z2 - 1; z3 > 0; z3--) {
+										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
+									}
+									if (tag == 1) {
+										rc = MPI_Isend(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
+										MPI_Request_free(&req_local);
+									}
+								}
+							}
 						}
-						if (block[number][AMR_NODE] == rank){
-							for (u = 0; u < numtasks; u++){
-								if (send_tag2[l][u] == 1 && u != rank){
-									rc = MPI_Isend(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
-									MPI_Request_free(&req_local);
+						else {
+							for (z2 = 0; z2 < nz; z2++) {
+								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
+								if (u == rank) {
+									for (z3 = z2 - 1; z3 > 0; z3--) {
+										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
+									}
+									if (tag == 1) {
+										rc = MPI_Irecv(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, block[number][AMR_NODE], (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local2[l][i*nz + z]);
+									}
 								}
 							}
 						}
@@ -208,17 +228,20 @@ void E_average(void){
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_TIMELEVEL]) == 0)){
-					for (u = 0; u < numtasks; u++){
-						send_tag1[l][u] = 0;
-						for (z = 0; z < nz; z++){
-							number = AMR_coord_linear2(l, 0, i, 0, z);
-							if (block[number][AMR_NODE] == u) send_tag1[l][u] = 1;
-						}
-					}
-					for (z = 0; z < nz; z++){
-						number = AMR_coord_linear2(l, 0, i, 0, z);
-						if (block[number][AMR_NODE] != rank && send_tag1[l][rank] == 1){
-							MPI_Wait(&req_local1[l][i*nz + z], &Statbound[0][490]);
+					for (z = 0; z < nz; z++) {
+						number = AMR_coord_linear2(l, 0, i,0, z);
+						if (block[number][AMR_NODE] != rank) {
+							for (z2 = 0; z2 < nz; z2++) {
+								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
+								if (u == rank) {
+									for (z3 = z2 - 1; z3 > 0; z3--) {
+										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
+									}
+									if (tag == 1) {
+										MPI_Wait(&req_local1[l][i*nz + z], &Statbound[0][491]);
+									}
+								}
+							}
 						}
 					}
 				}
@@ -233,17 +256,20 @@ void E_average(void){
 		for (i = 0; i < ni; i++){
 			if (block[AMR_coord_linear2(l, NB_2-1, i, nj - 1, 0)][AMR_ACTIVE] == 1){
 				if ((nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL] - 1 && !PRESTEP2) || (PRESTEP2 && nstep % (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_TIMELEVEL]) == 0)){
-					for (u = 0; u < numtasks; u++){
-						send_tag2[l][u] = 0;
-						for (z = 0; z < nz; z++){
-							number = AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z);
-							if (block[number][AMR_NODE] == u) send_tag2[l][u] = 1;
-						}
-					}
-					for (z = 0; z < nz; z++){
+					for (z = 0; z < nz; z++) {
 						number = AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z);
-						if (block[number][AMR_NODE] != rank && send_tag2[l][rank] == 1){
-							MPI_Wait(&req_local2[l][i*nz + z], &Statbound[0][491]);
+						if (block[number][AMR_NODE] != rank) {
+							for (z2 = 0; z2 < nz; z2++) {
+								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
+								if (u == rank) {
+									for (z3 = z2 - 1; z3 > 0; z3--) {
+										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
+									}
+									if (tag == 1) {
+										MPI_Wait(&req_local2[l][i*nz + z], &Statbound[0][491]);
+									}
+								}
+							}
 						}
 					}
 				}
