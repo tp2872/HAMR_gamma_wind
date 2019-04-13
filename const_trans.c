@@ -161,6 +161,7 @@ void E_average(void){
 							for (z2 = 0; z2 < nz; z2++) {
 								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
 								if (u == rank) {
+									tag = 1;
 									for (z3 = z2 - 1; z3 > 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
 									}
@@ -205,6 +206,7 @@ void E_average(void){
 							for (z2 = 0; z2 < nz; z2++) {
 								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
 								if (u == rank) {
+									tag = 1;
 									for (z3 = z2 - 1; z3 > 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
 									}
@@ -234,6 +236,7 @@ void E_average(void){
 							for (z2 = 0; z2 < nz; z2++) {
 								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
 								if (u == rank) {
+									tag = 1;
 									for (z3 = z2 - 1; z3 > 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
 									}
@@ -262,6 +265,7 @@ void E_average(void){
 							for (z2 = 0; z2 < nz; z2++) {
 								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
 								if (u == rank) {
+									tag = 1;
 									for (z3 = z2 - 1; z3 > 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
 									}
@@ -276,7 +280,7 @@ void E_average(void){
 			}
 		}
 	}
-
+	
 	//Average the first component of the E_field for both poles
 	for (n = 0; n < n_active; n++)if (prestep_full[nl[n_ord[n]]] == 1 || prestep_half[nl[n_ord[n]]] == 1){
 		nz = NB_3 * pow(1 + REF_3, block[n_ord[n]][AMR_LEVEL3]);
