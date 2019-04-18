@@ -114,7 +114,7 @@ void step_ch()
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
 
-	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel();
+	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel(0);
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */
 	/* done! */
@@ -551,7 +551,7 @@ void GPU_step_ch()
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
 	dt = ndt;
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0){
-		set_timelevel();
+		set_timelevel(0);
 	}
 
 	if (t + dt > tf) dt = tf - t;  /* but don't step beyond end of run */

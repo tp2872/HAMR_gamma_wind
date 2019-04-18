@@ -1193,7 +1193,7 @@ void balance_load(void){
 	int n_active_total_t[10], (*n_ord_total_RM_t)[10], n_active_local_gpu[N_GPU], n_active_local_max,n_active_local_min;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
-	int timelevel_cutoff = AMR_MAXTIMELEVEL* MAX_WEIGHT;
+	int timelevel_cutoff = AMR_MAXTIMELEVEL;
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps;
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
@@ -1201,9 +1201,10 @@ void balance_load(void){
 	n_ord_total_RM_t=(int(*)[10])calloc(NB, sizeof(int[10]));
 
 	if (numtasks_local > NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
+	
 	do{
 		count++;
-		/*First make a z-order curve for each timelevel seperately, then load balance for timesteps. This is the best and most advanced method*/
+		//First make a z-order curve for each timelevel seperately, then load balance for timesteps. This is the best and most advanced method
 		for (i = 0; i <= round(log(timelevel_cutoff) / log(2)); i++){
 			n_active_total_t[i] = 0;
 			n_active_total_steps_t[i] = 0;
@@ -1271,6 +1272,36 @@ void balance_load(void){
 			}
 		}
 
+		/*n_active_total_steps = 0;
+		n_active_local_max = 0;
+		n_active_local_min = 0;
+		for (n = 0; n < n_active_total; n++) {
+			steps_total_RM[n] = n_active_total_steps + AMR_MAXTIMELEVEL / 2 / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
+			n_active_total_steps += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
+		}
+
+		rem = n_active_total_steps % (numtasks); //remainder of last unfilled block
+		y = (n_active_total_steps - rem) / (numtasks); //number of blocks/node
+		tt = -1, ip = 0, fp = 0;
+
+		//First use non blocking sends and receives to send and receive data around cluster
+		for (i = 0; i < n_active_total; i++) {
+			NODE[i] = (steps_total_RM[i] - steps_total_RM[i] % (y + 1)) / (y + 1);
+			if (NODE[i] >= rem) {
+				if (tt == -1) {
+					fp = NODE[i];
+					ip = steps_total_RM[i] - steps_total_RM[i] % (y + 1);
+					tt = 0;
+				}
+				NODE[i] = fp + ((steps_total_RM[i] - ip) - (steps_total_RM[i] - ip) % y) / y;
+			}
+			if (NODE[i] >= numtasks) fprintf(stderr, "Error balance_load() \n");
+			if (NODE[i] == rank) {
+				n_active_local_max++;
+				n_active_local_min = n_active_local_max;
+			}
+		}*/
+
 		//Split up between GPUs on a single node
 		for (n = 0; n < n_active_total; n++){
 			temp = NODE[n_ord_total_RM[n]];
@@ -1292,7 +1323,7 @@ void balance_load(void){
 
 		if ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && timelevel_cutoff >= 2) timelevel_cutoff /= 2;
 	} while ((n_active_local_max> MAX_BLOCKS || n_active_local_min < 1) && count < round(log(AMR_MAXTIMELEVEL) / log(2)) + 1);
-
+	
 	if (n_active_local_max > MAX_BLOCKS) {
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
 		exit(0);

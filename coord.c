@@ -203,7 +203,7 @@ void set_gridparam(void) {
 	failed = 0;
 	cour = COUR;
 	if (dt > 1e-5) dt = dt;
-	else dt = 1.e-5;
+	else dt = 1.e-4;
 	R0 = 0.0;
 	gam = GAMMA;
 

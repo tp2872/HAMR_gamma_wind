@@ -4,7 +4,7 @@
 void set_timelevel(int tag){
 	int n;
 	int i, j, z, l, ni, nj, nz;
-	int task, n_block;
+	int task, n_block, min_timelevel;
 	int min_j[NB_1*32];
 	ni = NB_1;
 	nj = NB_2;
@@ -15,8 +15,8 @@ void set_timelevel(int tag){
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
 			for (i = i_max; i >= 0; i--){
-				if (bdt[nl[n_ord[n]]][0] / dt >=1.0 * pow(2, i)){
-					block[n_ord[n]][AMR_TIMELEVEL] = pow(2, i);
+				if (bdt[nl[n_ord[n]]][0] / dt >=1.2 * pow(2, i)){
+					block[n_ord[n]][AMR_TIMELEVEL] = round(pow(2, i));
 					break;
 				}
 			}
@@ -36,12 +36,35 @@ void set_timelevel(int tag){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 		}
 
+		//Fixate timelevel on block level and 0-level theta-phi slice
+		for (n = 0; n < n_active_total; n++) {
+			min_timelevel = 1000;
+			if ((block[n_ord_total[n]][AMR_LEVEL] > 0) && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n])) {
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i++) {
+					if (block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_TIMELEVEL] < min_timelevel) min_timelevel = block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_TIMELEVEL];
+				}
+				for (i = AMR_CHILD1; i <= AMR_CHILD8; i++) {
+					block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_TIMELEVEL] = min_timelevel;
+				}
+			}
+			if ((block[n_ord_total[n]][AMR_LEVEL] == 0) && (block[n_ord_total[n]][AMR_COORD2]==0) && (block[n_ord_total[n]][AMR_COORD3] == 0)) {
+				for (j = 0; j < NB_2; j++)for (z = 0; z < NB_3; z++) {
+					n_block = AMR_coord_linear2(0, j, block[n_ord_total[n]][AMR_COORD1], j, z);
+					if (block[n_block][AMR_TIMELEVEL] < min_timelevel)  min_timelevel = block[n_block][AMR_TIMELEVEL];
+				}
+				for (j = 0; j < NB_2; j++)for (z = 0; z < NB_3; z++) {
+					n_block = AMR_coord_linear2(0, j, block[n_ord_total[n]][AMR_COORD1], j, z);
+					if (block[n_block][AMR_TIMELEVEL] < min_timelevel)  block[n_block][AMR_TIMELEVEL]=min_timelevel;
+				}
+			}
+		}
+
 		//Fixate the timestep around the pole
 		for (l = 0; l < N_LEVELS_3D; l++) {
 			ni = NB_1 * pow(1 + REF_1, l);
 			nj = NB_2 * pow(1 + REF_2, l);
 			nz = NB_3 * pow(1 + REF_3 * (!DEREFINE_POLE), l);
-			#pragma omp parallel for schedule(static,1) private(i)
+			//#pragma omp parallel for schedule(static,1) private(i)
 			for (i = 0; i < ni; i++) {
 				if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1) {
 					min_j[i] = 10000;
@@ -55,7 +78,7 @@ void set_timelevel(int tag){
 					}
 				}
 			}
-			#pragma omp parallel for schedule(static,1) private(i)
+			//#pragma omp parallel for schedule(static,1) private(i)
 			for (i = 0; i < ni; i++) {
 				if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1) {
 					min_j[i] = 10000;
@@ -76,57 +99,30 @@ void set_timelevel(int tag){
 		for (n = 0; n < n_active; n++) {
 			if (block[n_ord[n]][AMR_POLE] > 0) {
 				for (z = 0; z < NB_3*pow(1 + REF_3 * (!DEREFINE_POLE), block[n_ord[n]][AMR_LEVEL3]); z++) {
-					n_block = block[AMR_coord_linear2(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD2] / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]), block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z)];
+					n_block = AMR_coord_linear2(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD2] / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]), block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
 					if (block[n_block][AMR_NODE] != rank) {
-						MPI_Isend(&block[n_ord[n]][AMR_TIMELEVEL], 1, MPI_INT, block[n_block][AMR_NODE], (3 * NB_LOCAL + 70 * NB_LOCAL + block[n_ord[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-						MPI_Irecv(&block[n_block][AMR_TIMELEVEL], 1, MPI_INT, block[n_block][AMR_NODE], (3 * NB_LOCAL + 70 * NB_LOCAL + block[n_block][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_block]);
+						MPI_Isend(&block[n_ord[n]][AMR_TIMELEVEL], 1, MPI_INT, block[n_block][AMR_NODE], (3 * NB_LOCAL + block[n_ord[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						MPI_Irecv(&block[n_block][AMR_TIMELEVEL], 1, MPI_INT, block[n_block][AMR_NODE], (3 * NB_LOCAL + block[n_block][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[n_block]);
 						MPI_Request_free(&req[0]);
-					}
-				}
-			}
-		}
-		for (n = 0; n < n_active; n++) {
-			if (block[n_ord[n]][AMR_POLE] > 0) {
-				for (z = 0; z < NB_3*pow(1 + REF_3 * (!DEREFINE_POLE), block[n_ord[n]][AMR_LEVEL3]); z++) {
-					n_block = block[AMR_coord_linear2(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD2] / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]), block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z)];
-					if (block[n_block][AMR_NODE] != rank) {
-						MPI_Wait(&request_timelevel[n_block]);
 					}
 				}
 			}
 		}
 
 		//Fixate the timestep around the pole
-		for (l = 0; l < N_LEVELS_3D; l++) {
-			ni = NB_1 * pow(1 + REF_1, l);
-			nj = NB_2 * pow(1 + REF_2, l);
-			nz = NB_3 * pow(1 + REF_3 * (!DEREFINE_POLE), l);
-			#pragma omp parallel for schedule(static,1) private(i)
-			for (i = 0; i < ni; i++) {
-				if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_ACTIVE] == 1) {
-					min_j[i] = 10000;
-					if (block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, 0, i, 0, 0)][AMR_POLE] == 3) {
-						for (z = 0; z < nz; z++) {
-							min_j[i] = MY_MIN(block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL], min_j[i]);
-						}
-						for (z = 0; z < nz; z++) {
-							block[AMR_coord_linear2(l, 0, i, 0, z)][AMR_TIMELEVEL] = min_j[i];
-						}
+		for (n = 0; n < n_active; n++) {
+			if (block[n_ord[n]][AMR_POLE] > 0) {
+				min_timelevel = 1000;
+				for (z = 0; z < NB_3*pow(1 + REF_3 * (!DEREFINE_POLE), block[n_ord[n]][AMR_LEVEL3]); z++) {
+					n_block = AMR_coord_linear2(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD2] / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]), block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
+					if (block[n_block][AMR_NODE] != rank) {
+						MPI_Wait(&request_timelevel[n_block], &Statbound[0][0]);
 					}
+					if (block[n_block][AMR_TIMELEVEL] < min_timelevel) min_timelevel = block[n_block][AMR_TIMELEVEL];
 				}
-			}
-			#pragma omp parallel for schedule(static,1) private(i)
-			for (i = 0; i < ni; i++) {
-				if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_ACTIVE] == 1) {
-					min_j[i] = 10000;
-					if (block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 1 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 2 || block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, 0)][AMR_POLE] == 3) {
-						for (z = 0; z < nz; z++) {
-							min_j[i] = MY_MIN(block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL], min_j[i]);
-						}
-						for (z = 0; z < nz; z++) {
-							block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z)][AMR_TIMELEVEL] = min_j[i];
-						}
-					}
+				for (z = 0; z < NB_3*pow(1 + REF_3 * (!DEREFINE_POLE), block[n_ord[n]][AMR_LEVEL3]); z++) {
+					n_block = AMR_coord_linear2(block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_COORD2] / pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]), block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], z);
+					if (block[n_block][AMR_TIMELEVEL] < min_timelevel) block[n_block][AMR_TIMELEVEL] = min_timelevel;
 				}
 			}
 		}
@@ -135,28 +131,48 @@ void set_timelevel(int tag){
 		for (n = 0; n < n_active; n++) {
 			for (i = AMR_NBR1; i <= AMR_CORN12; i++) {
 				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_NODE] != rank) {
-					MPI_Isend(&block[n_ord[n]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + 70 * NB_LOCAL + block[n_ord[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Irecv(&block[block[n_ord[n]][i]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + 70 * NB_LOCAL + block[block[n_ord[n]][i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[block[n_ord[n]][i]]);
+					MPI_Isend(&block[n_ord[n]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + block[n_ord[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+					MPI_Irecv(&block[block[n_ord[n]][i]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + block[block[n_ord[n]][i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[block[n_ord[n]][i]]);
 					MPI_Request_free(&req[0]);
 				}
 			}
 			for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) {
 				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_NODE] != rank) {
-					MPI_Isend(&block[n_ord[n]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + 70 * NB_LOCAL + block[n_ord[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
-					MPI_Irecv(&block[block[n_ord[n]][i]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + 70 * NB_LOCAL + block[block[n_ord[n]][i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[block[n_ord[n]][i]]);
-					MPI_Request_free(&req[0]);
+					block[block[n_ord[n]][i]][AMR_TAG1] = 0;
+					block[block[n_ord[n]][i]][AMR_TAG3] = 0;
+				}
+			}
+			for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) {
+				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_NODE] != rank) {
+					if (block[block[n_ord[n]][i]][AMR_TAG1] == 0) {
+						MPI_Isend(&block[n_ord[n]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + block[n_ord[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+						MPI_Request_free(&req[0]);
+						block[block[n_ord[n]][i]][AMR_TAG1] = 1;
+					}
+					if (block[block[n_ord[n]][i]][AMR_TAG3] == 0) {
+						MPI_Irecv(&block[block[n_ord[n]][i]][AMR_TIMELEVEL], 1, MPI_INT, block[block[n_ord[n]][i]][AMR_NODE], (3 * NB_LOCAL + block[block[n_ord[n]][i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[block[n_ord[n]][i]]);
+						block[block[n_ord[n]][i]][AMR_TAG3] = 1;
+					}
 				}
 			}
 		}
 		for (n = 0; n < n_active; n++) {
 			for (i = AMR_NBR1; i <= AMR_CORN12; i++) {
 				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_NODE] != rank) {
-					MPI_Wait(&request_timelevel[block[n_ord[n]][i]]);
+					MPI_Wait(&request_timelevel[block[n_ord[n]][i]], &Statbound[0][0]);
 				}
 			}
 			for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) {
 				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_NODE] != rank) {
-					MPI_Wait(&request_timelevel[block[n_ord[n]][i]]);
+					block[block[n_ord[n]][i]][AMR_TAG3] = 0;
+				}
+			}
+			for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) {
+				if (block[n_ord[n]][i] >= 0 && block[block[n_ord[n]][i]][AMR_ACTIVE] == 1 && block[block[n_ord[n]][i]][AMR_NODE] != rank) {
+					if (block[block[n_ord[n]][i]][AMR_TAG3] == 0) {
+						MPI_Wait(&request_timelevel[block[n_ord[n]][i]], &Statbound[0][0]);
+						block[block[n_ord[n]][i]][AMR_TAG3] = 1;
+					}
 				}
 			}
 		}
@@ -287,7 +303,9 @@ void prestep_bound(void){
 	}
 	#endif
 
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++) {
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -311,7 +329,9 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 	do{
 		//Store difference between evolved and required flux/electric field in temporary array
-		//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#if(GPU_OPENMP)
+		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
 		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -327,8 +347,10 @@ void prestep_bound(void){
 	set_iprobe(0, &flag);
 
 	do{
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-		for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
+			#if(GPU_OPENMP)
+			#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+			#endif		
+			for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			#endif	
@@ -342,7 +364,9 @@ void prestep_bound(void){
 	} while (flag);
 	set_iprobe(0, &flag);
 
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#if(GPU_OPENMP)
+		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
 	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -355,13 +379,17 @@ void prestep_bound(void){
 	}
 
 	//Then reset flux and electric fields to zero
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#if(GPU_OPENMP)
+		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+		#endif
 	for (n = 0; n < n_active; n++) {
 		if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) GPU_cleanup_post(n_ord[n]);
 	}
 
 	//Then insert flux differnce from temporary array in zeroed out flux and electric fields arrays
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
@@ -383,13 +411,17 @@ void prestep_bound(void){
 	}
 
 	//Evolve magnetic fields at boundary
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif	
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
 		GPU_consttransport3_post(dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 
 	//Evolve conserved quantities at boundary using update fluxes and invert to primitive variables plus floor
-	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#if(GPU_OPENMP)
+	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
 	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
 		GPU_fixup_post(n_ord[n], dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
 	}
