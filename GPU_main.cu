@@ -1713,6 +1713,8 @@ void GPU_read(int n)
 	cudaMemcpyAsync(failimage_GPU[nl[n]], Bufferfailimage[nl[n]], (int)((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) * NFAIL * sizeof(int), cudaMemcpyDeviceToHost, commandQueueGPU[nl[n]]);
 	cudaDeviceSynchronize();
 
+	for (k = 0; k < NFAIL; k++) failimage_counter[k] = 0;
+
 	#pragma omp parallel private(i, j, z, k)
 	{
 		#pragma omp for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)
@@ -1725,6 +1727,7 @@ void GPU_read(int n)
 			}
 			for (k = 0; k < NFAIL; k++){
 				failimage[nl[n]][index_3D(n, i, j, z)][k] = failimage_GPU[nl[n]][k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]]) + (i - N1_GPU_offset[n] + N1G)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (j - N2_GPU_offset[n] + N2G)*(BS_3 + 2 * N3G) + (z - N3_GPU_offset[n] + N3G)];
+				if (failimage[nl[n]][index_3D(n, i, j, z)][k] != 0) failimage_counter[k] += failimage[nl[n]][index_3D(n, i, j, z)][k];
 			}
 			#if(STAGGERED)
 			for (k = 1; k < NDIM; k++){

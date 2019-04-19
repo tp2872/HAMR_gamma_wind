@@ -1181,7 +1181,7 @@ void set_AMR(void){
 
 	activate_blocks();
 	balance_load();
-	set_corners();
+	set_corners(1);
 }
 
 void balance_load(void){
@@ -1516,7 +1516,7 @@ void activate_blocks(void){
 		for(g=0;g<N_GPU;g++){
 			if(n_g[g]<n_active_gpu[g]){
 				n_ord[n] = n_ord_gpu[n_g[g]];
-				n_g[g]++
+				n_g[g]++;
 				n++;
 			}
 		}
@@ -2320,7 +2320,7 @@ int refine(int n){
 void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
-	set_corners();
+	set_corners(1);
 	#if(N_LEVELS_1D_INT>0)
 	average_grid();
 	#endif
@@ -2734,10 +2734,10 @@ void check_refcrit(void){
 	
 	//Start very conservatively
 	//dt /= 2.;
-	for (n = 0; n < n_active_total; n++){
+	//for (n = 0; n < n_active_total; n++){
 		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
-	}
-	set_corners();
+	//}
+	set_corners(1);
 
 	MPI_Barrier(mpi_cartcomm);
 	end1 = time(NULL);

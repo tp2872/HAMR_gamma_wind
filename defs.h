@@ -97,6 +97,7 @@ double *dtij3_GPU[NB_LOCAL];
 double *Katm_GPU[NB_LOCAL];
 int *pflag_GPU[NB_LOCAL];
 int *failimage_GPU[NB_LOCAL];
+int failimage_counter[NFAIL];
 
 /*MPI arrays*/
 double  *send1[NB_LOCAL], *send2[NB_LOCAL], *send3[NB_LOCAL], *send4[NB_LOCAL], *send5[NB_LOCAL], *send6[NB_LOCAL];

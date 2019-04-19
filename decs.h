@@ -108,6 +108,7 @@ extern double *dtij3_GPU[NB_LOCAL];
 extern double *Katm_GPU[NB_LOCAL];
 extern int *pflag_GPU[NB_LOCAL];
 extern int *failimage_GPU[NB_LOCAL];
+extern int failimage_counter[NFAIL];
 
 /*MPI arrays*/
 extern double  *send1[NB_LOCAL], *send2[NB_LOCAL], *send3[NB_LOCAL], *send4[NB_LOCAL], *send5[NB_LOCAL], *send6[NB_LOCAL];
@@ -942,7 +943,7 @@ void MPI_initialize(int argc, char *argv[]);
 void activate_blocks(void);
 void average_grid(void);
 void prolong_grid(void);
-void set_corners(void);
+void set_corners(int tag);
 void set_communicator(void);
 void pre_refine(void);
 int refine(int n);

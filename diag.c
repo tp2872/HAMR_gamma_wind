@@ -84,10 +84,12 @@ void diag(int call_code)
 		#if (MPI_enable)
 		divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+		for(k=0;k<NFAIL;k++)MPI_Allreduce(MPI_IN_PLACE, &failimage_counter[k], 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 		#endif
 		
 		if (divbmax==divbmax_local){
-			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g\n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
+			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g ", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
+			fprintf(stderr, " f1: %d f2: %d f3: %d f4 %d \n", failimage_counter[0], failimage_counter[1], failimage_counter[2], failimage_counter[3]);
 		}
 	}
 

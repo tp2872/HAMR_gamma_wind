@@ -147,7 +147,7 @@ void E_average(void){
 								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
 								if (u != rank) {
 									tag = 1;
-									for (z3 = z2 - 1; z3 > 0; z3--) {
+									for (z3 = z2 - 1; z3 >= 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
@@ -162,7 +162,7 @@ void E_average(void){
 								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
 								if (u == rank) {
 									tag = 1;
-									for (z3 = z2 - 1; z3 > 0; z3--) {
+									for (z3 = z2 - 1; z3 >= 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
@@ -192,7 +192,7 @@ void E_average(void){
 								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
 								if (u != rank) {
 									tag = 1;
-									for (z3 = z2 - 1; z3 > 0; z3--) {
+									for (z3 = z2 - 1; z3 >= 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
@@ -207,7 +207,7 @@ void E_average(void){
 								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
 								if (u == rank) {
 									tag = 1;
-									for (z3 = z2 - 1; z3 > 0; z3--) {
+									for (z3 = z2 - 1; z3 >= 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
@@ -237,7 +237,7 @@ void E_average(void){
 								u = block[AMR_coord_linear2(l, 0, i, 0, z2)][AMR_NODE];
 								if (u == rank) {
 									tag = 1;
-									for (z3 = z2 - 1; z3 > 0; z3--) {
+									for (z3 = z2 - 1; z3 >= 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
@@ -266,7 +266,7 @@ void E_average(void){
 								u = block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z2)][AMR_NODE];
 								if (u == rank) {
 									tag = 1;
-									for (z3 = z2 - 1; z3 > 0; z3--) {
+									for (z3 = z2 - 1; z3 >= 0; z3--) {
 										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
@@ -334,11 +334,11 @@ void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G]
 		}
 		for (i = i1; i < i2; i++){
 			E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] = 0.;
-			if (gpu == 1) for (z = z1; z < BS_3 + D3; z++){
+			if (gpu == 1) for (z = z1; z < BS_3; z++){
 				E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] += Buffersend1fine[nl[n]][(i - i1)*zsize + (z - z1)];
 			}
-			else for (z = z1; z < BS_3 + D3; z++) E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] += send1_fine[nl[n]][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
-			E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] /= (double)(BS_3 + D3);
+			else for (z = z1; z < BS_3; z++) E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] += send1_fine[nl[n]][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
+			E_avg1[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] /= (double)(BS_3);
 		}
 	}
 	if (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3){
@@ -348,11 +348,11 @@ void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G]
 		}
 		for (i = i1; i < i2; i++){
 			E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] = 0.;
-			if (gpu == 1) for (z = z1; z < BS_3 + D3; z++){
+			if (gpu == 1) for (z = z1; z < BS_3; z++){
 				E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] += Buffersend3fine[nl[n]][(i - i1)*zsize + (z - z1)];
 			}
-			else for (z = z1; z < BS_3 + D3; z++) E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] += send3_fine[nl[n]][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
-			E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] /= (double)(BS_3 + D3);
+			else for (z = z1; z < BS_3; z++) E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] += send3_fine[nl[n]][2 * (i - i1)*zsize + 2 * (z - z1) + 0];
+			E_avg2[block[n][AMR_COORD1] * nz + block[n][AMR_COORD3]][i] /= (double)(BS_3);
 		}
 	}
 }
