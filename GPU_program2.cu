@@ -267,7 +267,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
-		#if(PRESTEP2==10000)
+		#if(PRESTEP2)
 		//When at last timestep store old value
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR+3; k++){
@@ -305,7 +305,7 @@ __global__ void unpackreceive1(int i1, int i2, int i_offset, int j1, int j2, int
 		#endif
 		//When at subsequent timesteps for interpolation
 		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
-			#if(PRESTEP==-100 || PRESTEP2==10000)
+			#if(PRESTEP==-100 || PRESTEP2)
 			for (k = 0; k < NPR; k++){
 				for (i = i1; i < i2; i++){
 					p[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = tempreceive[k*jsize2*zsize2*(i2 - i1) + (i - i1 + i_offset * 2 * D1 / (1 + ref_1))*jsize2*zsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))] +
@@ -364,7 +364,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 	double factor = 1.;
 	if (global_id < work_size){
 		if (reverse == 0){
-			#if(PRESTEP2==10000)
+			#if(PRESTEP2)
 			//When at last timestep store old value
 			if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 				for (k = 0; k < NPR + 3; k++){
@@ -402,7 +402,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			#endif
 			//When at subsequent timesteps for interpolation
 			if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
-				#if(PRESTEP==-100 || PRESTEP2==10000)
+				#if(PRESTEP==-100 || PRESTEP2)
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = tempreceive[k*isize2*zsize2*(j2 - j1) + (j - j1 + j_offset * 2 * D2 / (1 + ref_2))*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))]+
@@ -478,7 +478,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	
 	if (global_id < work_size){
-		#if(PRESTEP2==10000)
+		#if(PRESTEP2)
 		//When at last timestep store old value
 		if (nstep%timelevel_rec == timelevel_rec - 1 || nstep == -1){
 			for (k = 0; k < NPR + 3; k++){
@@ -516,7 +516,7 @@ __global__ void unpackreceive3(int i1, int i2, int i_offset, int j1, int j2, int
 		#endif
 		//When at subsequent timesteps for interpolation
 		if (nstep%timelevel_rec != timelevel_rec - 1 && nstep != -1 && timelevel_rec > timelevel){
-		#if(PRESTEP==-100 || PRESTEP2==10000)
+		#if(PRESTEP==-100 || PRESTEP2)
 			for (k = 0; k < NPR; k++){
 				for (z = z1; z < z2; z++){
 					p[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = tempreceive[(k)*isize2*jsize2*(z2 - z1) + (z - z1 + z_offset * 2 * D3 / (1 + ref_3))*isize2*jsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*jsize2 + (jcurr - j1 - N2G + j_offset * 2 * D2 / (1 + ref_2))]+

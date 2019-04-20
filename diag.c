@@ -84,7 +84,7 @@ void diag(int call_code)
 		#if (MPI_enable)
 		divbmax_local = divbmax;
 		MPI_Allreduce(MPI_IN_PLACE, &divbmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-		for(k=0;k<NFAIL;k++)MPI_Allreduce(MPI_IN_PLACE, &failimage_counter[k], 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+		for(k=0;k<NFAIL;k++)MPI_Allreduce(MPI_IN_PLACE, &failimage_counter[k], 1, MPI_INT, MPI_SUM, mpi_cartcomm);
 		#endif
 		
 		if (divbmax==divbmax_local){
