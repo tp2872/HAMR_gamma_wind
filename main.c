@@ -98,10 +98,10 @@ int main(int argc, char *argv[])
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	first_dump = 0;
-	diag(LOG_OUT);
+	diag(INIT_OUT);
 
-	DTl = 50.0;
-	DTd = 50.0;
+	DTl = 25.0;
+	DTd = 25.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t;

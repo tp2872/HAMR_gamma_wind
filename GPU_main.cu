@@ -1732,7 +1732,7 @@ void GPU_read(int n)
 				if ((failimage[nl[n]][index_3D(n, i, j, z)][k] != 0) && (i >= N1_GPU_offset[n]) && (j >= N2_GPU_offset[n]) && (z >= N3_GPU_offset[n]) && (i < N1_GPU_offset[n] + BS_1) && (j < N2_GPU_offset[n] + BS_2) && (z < N3_GPU_offset[n] + BS_3)) {
 					#pragma omp critical
 					{
-						failimage_counter[k] += failimage[nl[n]][index_3D(n, i, j, z)][k];
+						if(block[n][AMR_POLE]==0) failimage_counter[k] += failimage[nl[n]][index_3D(n, i, j, z)][k];
 					}
 				}
 			}

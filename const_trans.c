@@ -193,7 +193,7 @@ void E_average(void){
 								if (u != rank) {
 									tag = 1;
 									for (z3 = z2 - 1; z3 >= 0; z3--) {
-										if (u == block[AMR_coord_linear2(l, 0, i, 0, z3)][AMR_NODE]) tag = 0;
+										if (u == block[AMR_coord_linear2(l, NB_2 - 1, i, nj - 1, z3)][AMR_NODE]) tag = 0;
 									}
 									if (tag == 1) {
 										rc = MPI_Isend(&E_avg2[l][i*nz + z][0], (BS_1 + 2 * N1G), MPI_DOUBLE, u, (9 * NB_LOCAL + block[number][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &req_local);
