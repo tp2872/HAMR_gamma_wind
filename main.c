@@ -272,6 +272,7 @@ void mpi_synch(int tag){
 
 	if (tag == 1) {
 		MPI_Barrier(MPI_COMM_WORLD);
+		gpu_block = 1;
 	}
 	else {
 		/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
@@ -282,7 +283,7 @@ void mpi_synch(int tag){
 		}*/
 		for (i = 0; i < numtasks; i++) NODE_global[i] = 0;
 		for (n = 0; n < n_active; n++) {
-			if (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1)gpu_block = 1;
+			if (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1) gpu_block = 1;
 			for (i = AMR_NBR1; i <= AMR_CORN12; i++) {
 				if ((block[n_ord[n]][i]>=0) && (block[block[n_ord[n]][i]][AMR_ACTIVE] == 1) && (nstep%block[block[n_ord[n]][i]][AMR_TIMELEVEL] == block[block[n_ord[n]][i]][AMR_TIMELEVEL] - 1)) {
 					NODE_global[block[block[n_ord[n]][i]][AMR_NODE]] = 10;
@@ -305,17 +306,18 @@ void mpi_synch(int tag){
 			if (NODE_global[i] == 10 && rank != NODE_global[i]) {
 				MPI_Wait(&request_timelevel[i], &Statbound[0][0]);
 			}
-		}
-		if (gpu_block == 1) {
-			#if(GPU_ENABLED)
-			for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-				#if(N_GPU>1)
-				cudaSetDevice(n);
-				#endif
-				cudaDeviceSynchronize();
-			}
+		}	
+	}
+	
+	if (gpu_block == 1) {
+		#if(GPU_ENABLED)
+		for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
+			#if(N_GPU>1)
+			cudaSetDevice(n);
 			#endif
+			cudaDeviceSynchronize();
 		}
+		#endif
 	}
 }
 

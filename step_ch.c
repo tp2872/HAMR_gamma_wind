@@ -505,15 +505,6 @@ void GPU_step_ch()
 		//Post-stepping when having 2nd order time accuracy at boundary
 		#if(PRESTEP2)
 		prestep_bound();
-		//mpi_synch();
-		#if(GPU_ENABLED)
-		for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-			#if(N_GPU>1)
-			cudaSetDevice(n);
-			#endif
-			cudaDeviceSynchronize();
-		}
-		#endif
 		#endif
 
 		//Set boundary conditions at end of timestep after correction step to fluxes and electric fields
@@ -747,21 +738,6 @@ double advance_GPU(void)
 		set_iprobe(1, &flag);
 	} while (flag);
 	set_iprobe(0, &flag);
-
-	//For first timestep do not synchronize electrice fields
-	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-	#endif
-	for (n = 0; n < n_active; n++)if ((nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)){
-		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		#endif	
-		flux_rec1(F1, BufferF1_1, n_ord[n], 2);
-		flux_rec2(F2, BufferF2_1, n_ord[n], 2);
-		#if(N3G>0)
-		flux_rec3(F3, BufferF3_1, n_ord[n], 2);
-		#endif
-	}
 	#endif 
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomF \n");
 	#if(!TRANS_BOUND)

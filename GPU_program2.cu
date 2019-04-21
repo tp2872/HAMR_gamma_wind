@@ -1108,7 +1108,14 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				for (k = 0; k < NPR; k++) {
+					for (i = i1; i < i2; i++) {
+						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+					}
+				}
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				for (k = 0; k < NPR; k++){
 					for (i = i1; i < i2; i++){
 						temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
@@ -1116,21 +1123,21 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			if (calc_corr == 2){
+			else if (calc_corr == 2){
 				for (k = 0; k < NPR; k++){
 					for (i = i1; i < i2; i++){
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 					}
 				}
 			}
-			if (calc_corr == 3){
+			else if (calc_corr == 3){
 				for (k = 0; k < NPR; k++){
 					for (i = i1; i < i2; i++){
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] -= temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 					}
 				}
 			}
-			if (calc_corr == 5){
+			else if (calc_corr == 5){
 				for (k = 0; k < NPR; k++){
 					for (i = i1; i < i2; i++){
 						temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]
@@ -1138,7 +1145,7 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			if (calc_corr == 6){
+			else if (calc_corr == 6){
 				for (k = 0; k < NPR; k++){
 					for (i = i1; i < i2; i++){
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = temp1[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
@@ -1172,7 +1179,7 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			else if (calc_corr == 2 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (k = 0; k < NPR; k++){
 					for (i = i1; i < i2; i++){
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr]
@@ -1220,7 +1227,14 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				for (k = 0; k < NPR; k++) {
+					for (j = j1; j < j2; j++) {
+						pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+					}
+				}
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
@@ -1228,21 +1242,21 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			if (calc_corr == 2){
+			else if (calc_corr == 2){
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 					}
 				}
 			}
-			if (calc_corr == 3){
+			else if (calc_corr == 3){
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] -= temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 					}
 				}
 			}
-			if (calc_corr == 5){
+			else if (calc_corr == 5){
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]
@@ -1250,7 +1264,7 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			if (calc_corr == 6){
+			else if (calc_corr == 6){
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = temp1[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
@@ -1284,7 +1298,7 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			else if (calc_corr == 2 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (k = 0; k < NPR; k++){
 					for (j = j1; j < j2; j++){
 						pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr]
@@ -1333,7 +1347,14 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				for (k = 0; k < NPR; k++) {
+					for (z = z1; z < z2; z++) {
+						pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+					}
+				}
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				for (k = 0; k < NPR; k++){
 					for (z = z1; z < z2; z++){
 						temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
@@ -1341,21 +1362,21 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			if (calc_corr == 2){
+			else if (calc_corr == 2){
 				for (k = 0; k < NPR; k++){
 					for (z = z1; z < z2; z++){
 						pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
 					}
 				}
 			}
-			if (calc_corr == 3){
+			else if (calc_corr == 3){
 				for (k = 0; k < NPR; k++){
 					for (z = z1; z < z2; z++){
 						pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] -= temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
 					}
 				}
 			}
-			if (calc_corr == 5){
+			else if (calc_corr == 5){
 				for (k = 0; k < NPR; k++){
 					for (z = z1; z < z2; z++){
 						temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]
@@ -1363,7 +1384,7 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			if (calc_corr == 6){
+			else if (calc_corr == 6){
 				for (k = 0; k < NPR; k++){
 					for (z = z1; z < z2; z++){
 						pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = temp1[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
@@ -1398,7 +1419,7 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 					}
 				}
 			}
-			else if (calc_corr == 2 && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (k = 0; k < NPR; k++){
 					for (z = z1; z < z2; z++){
 						pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)]
@@ -1766,7 +1787,15 @@ __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				for (i = i1; i < i2; i++) {
+					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr < j2 + N2G)prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+				for (i = i1; i < i2; i++) {
+					if (jcurr >= j1 + N2G + d1*D2 && jcurr < j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr < z2 + N3G) prim[3 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				for (i = i1; i < i2; i++){
 					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr < j2 + N2G) temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
 				}
@@ -1832,7 +1861,7 @@ __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, 
 					if (jcurr >= j1 + N2G + d1*D2 && jcurr < j2 + N2G + d2*D2 && zcurr >= z1 + N3G && zcurr < z2 + N3G) temp1[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] = (receive[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] - temp2[1 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)]);
 				}
 			}
-			else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (i = i1; i < i2; i++){
 					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr < j2 + N2G) prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 				}
@@ -1883,7 +1912,15 @@ __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				for (j = j1; j < j2; j++) {
+					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr < i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+				for (j = j1; j < j2; j++) {
+					if (icurr >= i1 + N1G + d1*D1 && icurr < i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr < z2 + N3G)  prim[3 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
+				}
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				for (j = j1; j < j2; j++){
 					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr < i2 + N1G) temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] * factor;
 				}
@@ -1955,7 +1992,7 @@ __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, 
 					if (icurr >= i1 + N1G + d1*D1 && icurr < i2 + N1G + d2*D1 && zcurr >= z1 + N3G && zcurr < z2 + N3G)  temp1[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] = (receive[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] - temp2[1 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)]);
 				}
 			}
-			else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (j = j1; j < j2; j++){
 					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr < i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] += temp1[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 				}
@@ -2005,7 +2042,15 @@ __global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				for (z = z1; z < z2; z++) {
+					if (jcurr >= j1 + N2G + e1*D2 && jcurr < j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr < i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+				}
+				for (z = z1; z < z2; z++) {
+					if (icurr >= i1 + N1G + d1*D1 && icurr < i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr < j2 + N2G) prim[2 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
+				}
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				for (z = z1; z < z2; z++){
 					if (jcurr >= j1 + N2G + e1*D2 && jcurr < j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr < i2 + N1G) temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] * factor;
 				}
@@ -2071,7 +2116,7 @@ __global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, 
 					if (icurr >= i1 + N1G + d1*D1 && icurr < i2 + N1G + d2*D1 && jcurr >= j1 + N2G && jcurr < j2 + N2G) temp1[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] = (receive[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] - temp2[1 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)]);
 				}
 			}
-			else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				for (z = z1; z < z2; z++){
 					if (jcurr >= j1 + N2G + e1*D2 && jcurr < j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr < i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] += temp1[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
 				}
@@ -2203,7 +2248,10 @@ __global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, double *  prim
 	
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[global_id] / factor;
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				temp1[global_id] = receive[global_id] - prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
 			}
 			else if (calc_corr == 2){
@@ -2229,7 +2277,7 @@ __global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, double *  prim
 			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
 				temp1[global_id] = (receive[global_id] - temp2[global_id]);
 			}
-			else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor; //times dt_old/dt_new to add in future code
 			}
 			else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
@@ -2257,7 +2305,10 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, double *  prim
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[global_id] / factor;
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				temp1[global_id] = receive[global_id] - prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
 			}
 			else if (calc_corr == 2){
@@ -2283,7 +2334,7 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, double *  prim
 			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
 				temp1[global_id] = (receive[global_id] - temp2[global_id]);
 			}
-			else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP* timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor; //times dt_old/dt_new to add in future code
 			}
 			else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities
@@ -2311,7 +2362,10 @@ __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, double *  prim
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
+			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+				prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[global_id] / factor;
+			}
+			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
 				temp1[global_id] = receive[global_id] - prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] * factor;
 			}
 			else if (calc_corr == 2){
@@ -2337,7 +2391,7 @@ __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, double *  prim
 			if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){ //receive 'correct'flux from more refined AMR block and insert correction wrt flux from previous step 'temp2' into 'temp1'
 				temp1[global_id] = (receive[global_id] - temp2[global_id]);
 			}
-			else if (calc_corr == 2 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
+			if (calc_corr == 2 - !(PRESTEP || PRESTEP2) && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //add correction to fluxes before applying fluxes to conserved quantities
 				prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] += temp1[global_id] / factor; //times dt_old/dt_new to add in future code
 			}
 			else if (calc_corr == 3 && nstep_2 % (2 * timelevel_rec) == 2 * timelevel_rec - 1 && (nstep_2 % (2 * AMR_SWITCHTIMELEVEL) != 2 * PRESTEP * timelevel_rec - 1)){ //remove corrections to fluxes after applyting fluxes to conserved quantities

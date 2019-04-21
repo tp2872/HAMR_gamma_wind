@@ -1158,16 +1158,6 @@ void GPU_consttransport_bound(void){
 	} while (flag);
 	set_iprobe(0, &flag);
 
-	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-	#endif
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		#endif
-		E_rec1(E_corn, BufferE_1, n_ord[n], 2);
-	}
-
 	do{
 		#if(GPU_OPENMP)
 		#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
@@ -1181,16 +1171,6 @@ void GPU_consttransport_bound(void){
 		set_iprobe(1, &flag);
 	} while (flag);
 	set_iprobe(0, &flag);
-
-	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-	#endif
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		#endif
-		E_rec2(E_corn, BufferE_1, n_ord[n], 2);
-	}
 	
 	#if(N3G>0)
 	do{
@@ -1214,23 +1194,9 @@ void GPU_consttransport_bound(void){
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif		
-		E_rec3(E_corn, BufferE_1, n_ord[n], 2);
-	}
-
-	#if(GPU_OPENMP)
-	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
-	#endif
-	for (n = 0; n < n_active; n++)if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1){
-		#if(N_GPU>1)
-		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
-		#endif		
 		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
 		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 1);
-
-		E1_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
-		E2_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
-		E3_receive_corn(E_corn, BufferE_1, n_ord[n], 2);
 	}
 	#endif
 	#endif
@@ -1428,16 +1394,6 @@ void GPU_boundprim(int bound_force)
 	}
 	#endif
 
-	//For last timestep do not receive synchronized electrice fields 
-	for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-		#if(N_GPU>1)
-		cudaSetDevice(n);
-		#endif
-		//cudaDeviceSynchronize();
-	}
-	mpi_synch(1);
-	if (rank == 0) begin2 = get_wall_time();
-
 	#if(PRESTEP)
 	if (nstep != -1 && nstep % (2 * AMR_SWITCHTIMELEVEL) != 2 * AMR_SWITCHTIMELEVEL - 1){
 		set_iprobe(0, &flag);
@@ -1517,6 +1473,16 @@ void GPU_boundprim(int bound_force)
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE/BoundcomF \n");
 	#endif
 
+	//For last timestep do not receive synchronized electrice fields 
+	for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
+		#if(N_GPU>1)
+		cudaSetDevice(n);
+		#endif
+		//cudaDeviceSynchronize();
+	}
+	mpi_synch(1);
+
+	if (rank == 0) begin2 = get_wall_time();
 	rc = 0;
 	#if(GPU_OPENMP)
 	#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
@@ -1613,7 +1579,9 @@ void GPU_boundprim(int bound_force)
 		#endif
 		//cudaDeviceSynchronize();
 	}
-	//mpi_synch();
+	#if(PRESTEP2)
+	mpi_synch(1);
+	#endif
 
 	if (rank == 0){
 		end2 = get_wall_time();
