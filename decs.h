@@ -965,7 +965,7 @@ void free_arrays(int n);
 void free_bound_cpu(int n);
 void set_prestep(void);
 void prestep_bound(void);
-void mpi_synch(void);
+void mpi_synch(int tag);
 void set_timelevel(int tag);
 void rm_order1(void);
 void balance_load(void);

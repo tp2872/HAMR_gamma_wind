@@ -1435,7 +1435,7 @@ void GPU_boundprim(int bound_force)
 		#endif
 		//cudaDeviceSynchronize();
 	}
-	//mpi_synch();
+	mpi_synch(1);
 	if (rank == 0) begin2 = get_wall_time();
 
 	#if(PRESTEP)

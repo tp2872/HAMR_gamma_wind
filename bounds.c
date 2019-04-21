@@ -65,6 +65,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	#endif
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	rc = 0;
 	gpu = 0;
 	for (n = 0; n < n_active; n++){
