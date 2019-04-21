@@ -235,15 +235,15 @@ void init_thindisk()
 			rhoc = 1./r*pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
 			if (r > rmax) rhoc = 0.0;////rhoc /= exp(sqrt(r-rmax));
 			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
-
+			ur = 0.;
+			uh = 0.;
+			up = 0.;
 			/* regions outside torus */
 			if (r > 4*rmax || r < 2.0) {
 				rho = 1.e-7*RHOMIN;
 				u = 1.e-7*UUMIN;
 
-				ur = 0.;
-				uh = 0.;
-				up = 0.;
+
 
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
@@ -1087,7 +1087,7 @@ void set_mag(void){
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	#endif
 	#endif
 
@@ -1147,7 +1147,7 @@ void set_mag(void){
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	#endif
 	#endif
 

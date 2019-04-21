@@ -2384,7 +2384,7 @@ void check_refcrit(void){
 	close_dump();
 	close_gdump();
 	close_rdump();
-	//MPI_Barrier(mpi_cartcomm);
+	MPI_Barrier(mpi_cartcomm);
 
 	begin1 = time(NULL);
 	count = 0;
