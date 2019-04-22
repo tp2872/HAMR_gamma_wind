@@ -87,23 +87,21 @@ int main(int argc, char *argv[])
 			#endif
 		}	
 	}
-
-	bound_prim(p, 1);
-	#if(GPU_ENABLED || GPU_DEBUG )
-	GPU_boundprim(1);
-	#endif
 	
 	/* do initial diagnostics */
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	first_dump = 0;
 	diag(INIT_OUT);
-	DTl = 75.0;
-	DTd = 75.0;
+
+	/*Set dumping frequency*/
+	DTl = 50.0;
+	DTd = 50.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t;
+
+	/*Start timer*/
 	time_spent3 = 0.0;
 	begin1 = get_wall_time();
 	begin2 = begin1;

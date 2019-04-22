@@ -172,9 +172,9 @@ void set_arrays_GPU(int n, int device){
 	cudaMalloc(&BufferKatm[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
 	//cudaMalloc(&BufferdU[nl[n]], NPR*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G))*sizeof(double));
 	if (cudaSuccess != cudaSuccess ) fprintf(stderr, "Error in setting kernel arguments 3: %d \n", cudaSuccess);
-	cudaMallocHost(&dtij1_GPU[nl[n]],(nr_workgroups[nl[n]] + 1)*sizeof(double));
-	cudaMallocHost(&dtij2_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double), 0);
-	cudaMallocHost(&dtij3_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double), 0);
+	cudaMallocHost(&dtij1_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
+	cudaMallocHost(&dtij2_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
+	cudaMallocHost(&dtij3_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
 	
 	int ref1_1, ref1_3, ref1_5, ref1_6;
 	int ref2_2, ref2_4, ref2_5, ref2_6;
@@ -1474,12 +1474,12 @@ void GPU_boundprim(int bound_force)
 	#endif
 
 	//For last timestep do not receive synchronized electrice fields 
-	for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-		#if(N_GPU>1)
-		cudaSetDevice(n);
-		#endif
+	//for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
+		//#if(N_GPU>1)
+		//cudaSetDevice(n);
+		//#endif
 		//cudaDeviceSynchronize();
-	}
+	//}
 	mpi_synch(1);
 
 	if (rank == 0) begin2 = get_wall_time();
@@ -1573,12 +1573,12 @@ void GPU_boundprim(int bound_force)
 	#endif
 
 	//MPI communication
-	for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
-		#if(N_GPU>1)
-		cudaSetDevice(n);
-		#endif
+	//for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
+		//#if(N_GPU>1)
+		//cudaSetDevice(n);
+		//#endif
 		//cudaDeviceSynchronize();
-	}
+	//}
 	#if(PRESTEP2)
 	mpi_synch(1);
 	#endif
@@ -1729,9 +1729,8 @@ void GPU_finish(int n, int force_delete)
 
 	//Tell code no GPU
 	block[n][AMR_GPU] = -1;
-	//if (mem_spot[nl[n]] == 1) fprintf(stderr, "Error, tries to deallocate GPU memory before deaalocating RAM! \n");
+
 	if (mem_spot[nl[n]] == 0 && force_delete==0){
-		//free_bound_gpu(n);
 		return;
 	}
 	else if (mem_spot_gpu[nl[n]] == -1){
@@ -1743,10 +1742,6 @@ void GPU_finish(int n, int force_delete)
 		free_bound_gpu(n);
 		mem_spot_gpu[nl[n]] = -1;
 	}
-
-	//Make sure all events are finished
-	for (i = 0; i < 600; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent[nl[n]][i], 0);
-	for (i = 0; i < 100; i++) cudaStreamWaitEvent(commandQueueGPU[nl[n]], boundevent1[nl[n]][i], 0);
 
 	//Destroy CUDA events associated with block
 	for (i = 0; i < 600; i++) cudaEventDestroy(boundevent[nl[n]][i]);

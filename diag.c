@@ -74,10 +74,10 @@ void diag(int call_code)
 					divbmax = divb;
 				}
 
-				#pragma omp critical
-				if (divb > 0.0000001 && numtasks<100){
+				//#pragma omp critical
+				//if (divb > 0.0000001 && numtasks<100){
 					//fprintf(stderr, "n: %d divb:  (%d %d)x(%d %d %d)x(%d %d %d)x(%d %d %d) %f \n", n_ord[n], block[n_ord[n]][AMR_LEVEL], block[n_ord[n]][AMR_LEVEL1], block[n_ord[n]][AMR_LEVEL2], block[n_ord[n]][AMR_LEVEL3], block[n_ord[n]][AMR_COORD1], block[n_ord[n]][AMR_COORD2], block[n_ord[n]][AMR_COORD3], i, j, z, divb);
-				}
+				//}
 			}
 		}
 	
@@ -93,13 +93,6 @@ void diag(int call_code)
 		}
 	}
 
-	/* gdump only at code start */
-	if (call_code == INIT_OUT) {
-		if (rank == 0){
-			fprintf(stderr, "GDUMP started \n");
-		}
-	}
-
 	if (call_code == FINAL_OUT) {
 		//First close dump files in progress
 		close_dump();
@@ -112,8 +105,10 @@ void diag(int call_code)
 		call_code == DUMP_OUT) {
 		// make regular dump file 
 		if (rank == 0){
+			fprintf(stderr, "GDUMP started \n");
 			fprintf(stderr, "DUMP%d started \n", dump_cnt);
 		}
+		rdump_new();
 		gdump_new();
 		dump_new();
 		close_dump();
@@ -128,11 +123,11 @@ void fail(int fail_type)
 	int n;
 	failed = 1 ;
 
-	fprintf(stderr,"\n\nfail: %d %d %d\n",icurr,jcurr,fail_type) ;
+	//fprintf(stderr,"\n\nfail: %d %d %d\n",icurr,jcurr,fail_type) ;
 
-	area_map(icurr,jcurr, 0, p) ;
+	//area_map(icurr,jcurr, 0, p) ;
 	
-	fprintf(stderr,"fail, Matthew: Doesn't work anymore correctly for AMR!\n") ;
+	fprintf(stderr,"Failed, error number %d!\n", fail_type) ;
 
 	//diag(FINAL_OUT) ;
 
@@ -143,27 +138,7 @@ void fail(int fail_type)
 /* map out region around failure point */
 void area_map(int i, int j, int n, double (*restrict prim[NB_LOCAL])[NPR])
 {
-	int k ;
-	fprintf(stderr,"area map\n") ;
-	PLOOP {
-		fprintf(stderr,"variable %d \n",k) ;
-		fprintf(stderr,"i = \t %12d %12d %12d\n",i-1,i,i+1) ;
-		fprintf(stderr,"j = %d \t %12.5g %12.5g %12.5g\n",
-				j+1,
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i-1, j+1, 0)][k],
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, 0)][k],
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i + 1, j + 1, 0)][k]);
-		fprintf(stderr,"j = %d \t %12.5g %12.5g %12.5g\n",
-				j,
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i - 1, j, 0)][k],
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j , 0)][k],
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i + 1, j, 0)][k]);
-		fprintf(stderr,"j = %d \t %12.5g %12.5g %12.5g\n",
-				j-1,
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i - 1, j - 1, 0)][k],
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j - 1, 0)][k],
-				prim[nl[n_ord[n]]][index_3D(n_ord[n] ,i +1, j - 1, 0)][k]);
-	}
+
 }
 
 double divb_calc(int n, int i, int j, int z){

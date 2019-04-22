@@ -1664,7 +1664,7 @@ void block_average(int n, int n_child, int i1, int i2, int j1, int j2, int z1, i
 void derefine(int n){
 	int i,j,z,k, n_child;
 	int ref_1, ref_2, ref_3;
-	if (rank == 0) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
+	if (rank == 0 && numtasks<10) fprintf(stderr, "Derefining block %d %d %d %d \n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3]);
 	if (block[n][AMR_ACTIVE] != 0) fprintf(stderr, "Error: Trying to derefine active block %d! \n", n);
 
 	block[n][AMR_ACTIVE] = 1;
@@ -2511,7 +2511,7 @@ void check_refcrit(void){
 				}
 			}
 		}
-
+		
 		do{
 			tag2 = 0;
 			for (n = 0; n < n_active_total; n++){
@@ -2534,6 +2534,7 @@ void check_refcrit(void){
 						}
 					}
 				}
+
 				//Do not derefine other block around pole
 				if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] > 0 && (block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == 0 || block[block[n_ord_total[n]][AMR_PARENT]][AMR_COORD2] == NB_2*pow(1 + REF_2, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) - 1)){
 					for (z = 0; z < NB_3*pow(1 + REF_3, block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]); z++){
@@ -2706,7 +2707,7 @@ void check_refcrit(void){
 
 				//Then derefine and set corresponding tag and timelevel
 				if (one_block_derefined == 0){
-					pre_refine();
+					//pre_refine();
 					one_block_derefined = 1;
 				}
 				derefine(block[n_ord_total[n]][AMR_PARENT]);
