@@ -1953,28 +1953,28 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 	if (offset_2 / (2 - ref_2) == 1 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR4] >= 0 && block[n][AMR_NBR4_8] >= 0 && block[block[n][AMR_NBR4_8]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR4_8]][AMR_PARENT]][AMR_REFINED] == 1){ pointer2 = receive2_4[nl[n]]; n_rec2 = AMR_NBR4_8; }
 
 	if (block[n][AMR_NBR1_3] >= 0) set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
-	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_3]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_1[nl[n]]; n_rec3 = 1; }
-	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_3]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_2[nl[n]]; n_rec3 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_3]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_5[nl[n]]; n_rec3 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_3]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_6[nl[n]]; n_rec3 = 1; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_3]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_1[nl[n]]; n_rec3 = block[n][AMR_NBR1_3]; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_4] >= 0 && block[block[n][AMR_NBR1_4]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_4]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_2[nl[n]]; n_rec3 = block[n][AMR_NBR1_4]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_7] >= 0 && block[block[n][AMR_NBR1_7]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_7]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_5[nl[n]]; n_rec3 = block[n][AMR_NBR1_7]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR1] >= 0 && block[n][AMR_NBR1_8] >= 0 && block[block[n][AMR_NBR1_8]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR1_8]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 2)){ pointer3 = receive3_6[nl[n]]; n_rec3 = block[n][AMR_NBR1_8]; }
 
 	if (block[n][AMR_NBR3_1] >= 0) set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
-	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_1]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_3[nl[n]]; n_rec1 = 1; }
-	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_1]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_4[nl[n]]; n_rec1 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_1]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_7[nl[n]]; n_rec1 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_1]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_8[nl[n]]; n_rec1 = 1; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_1]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_3[nl[n]]; n_rec1 = block[n][AMR_NBR3_1]; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_2] >= 0 && block[block[n][AMR_NBR3_2]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_2]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_4[nl[n]]; n_rec1 = block[n][AMR_NBR3_2]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 0 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_5] >= 0 && block[block[n][AMR_NBR3_5]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_5]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_7[nl[n]]; n_rec1 = block[n][AMR_NBR3_5]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_3 / (2 - ref_3) == 1 && block[n][AMR_NBR3] >= 0 && block[n][AMR_NBR3_6] >= 0 && block[block[n][AMR_NBR3_6]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR3_6]][AMR_PARENT]][AMR_REFINED] == 1 && (block[n][AMR_POLE] == 0 || block[n][AMR_POLE] == 1)){ pointer1 = receive1_8[nl[n]]; n_rec1 = block[n][AMR_NBR3_6]; }
 
 	if (block[n][AMR_NBR6_2] >= 0) set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
-	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_2]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_1[nl[n]]; n_rec5 = 1; }
-	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_2]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_3[nl[n]]; n_rec5 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_2]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_5[nl[n]]; n_rec5 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_2]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_7[nl[n]]; n_rec5 = 1; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_2]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_1[nl[n]]; n_rec5 = block[n][AMR_NBR6_2]; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_4] >= 0 && block[block[n][AMR_NBR6_4]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_4]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_3[nl[n]]; n_rec5 = block[n][AMR_NBR6_4]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_6] >= 0 && block[block[n][AMR_NBR6_6]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_6]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_5[nl[n]]; n_rec5 = block[n][AMR_NBR6_6]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR6] >= 0 && block[n][AMR_NBR6_8] >= 0 && block[block[n][AMR_NBR6_8]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR6_8]][AMR_PARENT]][AMR_REFINED] == 1){ pointer5 = receive5_7[nl[n]]; n_rec5 = block[n][AMR_NBR6_8]; }
 
 	if (block[n][AMR_NBR5_1] >= 0) set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
-	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_2[nl[n]]; n_rec6 = 1; }
-	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_4[nl[n]]; n_rec6 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_6[nl[n]]; n_rec6 = 1; }
-	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_8[nl[n]]; n_rec6 = 1; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_1]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_2[nl[n]]; n_rec6 = block[n][AMR_NBR5_1]; }
+	if (offset_1 / (2 - ref_1) == 0 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_3] >= 0 && block[block[n][AMR_NBR5_3]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_3]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_4[nl[n]]; n_rec6 = block[n][AMR_NBR5_3]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 0 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_5] >= 0 && block[block[n][AMR_NBR5_5]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_5]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_6[nl[n]]; n_rec6 = block[n][AMR_NBR5_5]; }
+	if (offset_1 / (2 - ref_1) == 1 && offset_2 / (2 - ref_2) == 1 && block[n][AMR_NBR5] >= 0 && block[n][AMR_NBR5_7] >= 0 && block[block[n][AMR_NBR5_7]][AMR_ACTIVE] == 1 && block[block[block[n][AMR_NBR5_7]][AMR_PARENT]][AMR_REFINED] == 1){ pointer6 = receive6_8[nl[n]]; n_rec6 = block[n][AMR_NBR5_7]; }
 
 	isize = BS_1;
 	jsize = BS_2;
@@ -1999,7 +1999,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			j1 = (j - j % (1 + ref_2)) / (1 + ref_2);
 			z1 = (z - z % (1 + ref_3)) / (1 + ref_3);
 
-			if ((i == 0 || i == ref_1) && offset_1 == 0 && n_rec2 >= 1){
+			if ((i == 0 || i == ref_1) && offset_1 == 0 && n_rec2 >= 0){
 				set_ref(n, block[n][n_rec2], &ref_1, &ref_2, &ref_3);
 				if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
 				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -2013,7 +2013,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_2 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((i == BS_1 || i == BS_1 - ref_1 || i == BS_1 - (1 + ref_1)) && (offset_1 == 1 || ref_1 == 0) && n_rec4 >= 1){
+			if ((i == BS_1 || i == BS_1 - ref_1 || i == BS_1 - (1 + ref_1)) && (offset_1 == 1 || ref_1 == 0) && n_rec4 >= 0){
 				set_ref(n, block[n][n_rec4], &ref_1, &ref_2, &ref_3);
 				if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
 				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -2028,7 +2028,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			else set_4 = -1;
 
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 >= 1){
+			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 >= 0){
 				set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
 				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -2042,7 +2042,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_3 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 >= 1){
+			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 >= 0){
 				set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
 				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
@@ -2057,7 +2057,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			else set_1 = -1;
 
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 >= 1){
+			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 >= 0){
 				set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
 				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 				if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
@@ -2071,7 +2071,7 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			}
 			else set_5 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 >= 1){
+			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 >= 0){
 				set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
 				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
 				if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
