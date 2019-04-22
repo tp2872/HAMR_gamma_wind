@@ -197,7 +197,7 @@ double B2_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
 	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
 
-	if (n_rec6 == 10){
+	if (n_rec6 == 1000000000){
 		B2p = 0.25*(b2_3 + b2_8 + b2_4 + b2_7);
 		B2m = 0.25*(b2_1 + b2_6 + b2_2 + b2_5);
 	}
@@ -261,7 +261,7 @@ double B3_prolong(int n, int i, int j, int z, double offset_1, double offset_2, 
 	d12B3p = 4.*(b3_2 + b3_8 - b3_4 - b3_6); //2,4,6,8
 	d12B3m = 4.*(b3_1 + b3_7 - b3_3 - b3_5); //1,3,5,7
 
-	if (n_rec6 == 10){
+	if (n_rec6 == 1000000000){
 		B3p = 0.25*(b3_2 + b3_4 + b3_6 + b3_8);
 		B3m = 0.25*(b3_1 + b3_3 + b3_5 + b3_7);
 	}
@@ -440,7 +440,7 @@ void prolong_grid(void){
 							b3_8 = psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + (u + zs / 2))][3];
 
 							psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = B3_prolong(n_ord[n], i, j, z, 0, 0, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
-								b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 10);
+								b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 1000000000);
 							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3] * psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3];
 						}
 					}
