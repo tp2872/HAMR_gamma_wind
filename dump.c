@@ -123,7 +123,7 @@ void close_dump(void) {
 				MPI_File_close(&fdumpdiag[u]);
 			}
 		}
-		if (rank == 1 % numtasks) {
+		if (rank == (1 % numtasks)) {
 			MPI_Wait(&req_gdumpgrid[0], &Statbound[nl[n_ord[0]]][0]);
 			MPI_File_close(&grid_dump[0]);
 		}

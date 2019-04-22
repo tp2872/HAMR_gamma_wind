@@ -143,7 +143,7 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 	Qtsq = Qsq + Qdotn*Qdotn;
 	
 	//Start inversion scheme AKA Newman et al
-	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new;
+	double a, d, z, phi, R, Wsq, p_array[3], epsilon, p_old, p_new;
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
@@ -154,7 +154,7 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 
 	do{
 		set_variables = 0;
-		p_old = p_array[iter];
+		p_old = p_array[iter%3];
 		a = -Qdotn + p_new + 0.5*Bsq;
 		if (a < pow(27.*d/4.,1./3.)) return 1;
 		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
@@ -170,16 +170,16 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 
 		iter++;
 		iter_tot++;
-		p_array[iter] = (GAMMA - 1.)*u;
-		p_new = p_array[iter];
+		p_array[iter % 3] = (GAMMA - 1.)*u;
+		p_new = p_array[iter % 3];
 		if (iter >= 2) {
-			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
+			R = (p_array[iter % 3] - p_array[(iter - 1) % 3]) / (p_array[(iter - 1) % 3] - p_array[(iter - 2) % 3]);
 
 			if (R<1. && R>0.) {
 				set_variables = 1;
-				p_new = p_array[iter - 1] + (p_array[iter] - p_array[iter - 1]) / (1. - R);
+				p_new = p_array[(iter - 1) % 3] + (p_array[iter % 3] - p_array[(iter - 1) % 3]) / (1. - R);
 				iter = 0.;
-				p_array[iter] = p_new;
+				p_array[iter % 3] = p_new;
 			}
 		}
 	} while (fabs(p_new - p_old) > 0.01*NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);

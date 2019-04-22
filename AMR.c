@@ -2707,7 +2707,7 @@ void check_refcrit(void){
 
 				//Then derefine and set corresponding tag and timelevel
 				if (one_block_derefined == 0){
-					//pre_refine();
+					prolong_grid();
 					one_block_derefined = 1;
 				}
 				derefine(block[n_ord_total[n]][AMR_PARENT]);
