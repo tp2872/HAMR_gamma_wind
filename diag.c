@@ -108,12 +108,8 @@ void diag(int call_code)
 			fprintf(stderr, "GDUMP started \n");
 			fprintf(stderr, "DUMP%d started \n", dump_cnt);
 		}
-		restart_write();
 		gdump_new();
 		dump_new();
-		close_dump();
-		close_gdump();
-		close_rdump();
 	}
 }
 

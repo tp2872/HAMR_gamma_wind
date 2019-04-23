@@ -86,13 +86,14 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			#endif
 		}	
+		restart_write();
 	}
 	
 	/* do initial diagnostics */
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	diag(LOG_OUT);
+	diag(INIT_OUT);
 
 	/*Set dumping frequency*/
 	DTl = 50.0;
