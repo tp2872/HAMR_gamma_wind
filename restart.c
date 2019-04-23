@@ -176,13 +176,14 @@ int restart_read(void)
 	MPI_Barrier(mpi_cartcomm);
 	#endif
 
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+	#endif
+
 	/* bound */
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
-	#endif
-	#if(GPU_ENABLED || GPU_DEBUG )
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 	return 1;
 }

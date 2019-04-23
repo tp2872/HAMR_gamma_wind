@@ -1108,7 +1108,7 @@ __global__ void unpackreceive1flux(int i1, int i2, int j1, int j2, int z1, int z
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				for (k = 0; k < NPR; k++) {
 					for (i = i1; i < i2; i++) {
 						pv[k*(ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[k*jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
@@ -1227,7 +1227,7 @@ __global__ void unpackreceive2flux(int i1, int i2, int j1, int j2, int z1, int z
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				for (k = 0; k < NPR; k++) {
 					for (j = j1; j < j2; j++) {
 						pv[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[k*isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
@@ -1347,7 +1347,7 @@ __global__ void unpackreceive3flux(int i1, int i2, int j1, int j2, int z1, int z
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				for (k = 0; k < NPR; k++) {
 					for (z = z1; z < z2; z++) {
 						pv[k*(ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[k*isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
@@ -1787,7 +1787,7 @@ __global__ void unpackreceive1E(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				for (i = i1; i < i2; i++) {
 					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && jcurr >= j1 + N2G && jcurr < j2 + N2G)prim[2 * (ksize)+(i + N1G)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[0 * jsize2*zsize2*(i2 - i1) + (i - i1)*jsize2*zsize2 + (jcurr - j1 - N2G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 				}
@@ -1912,7 +1912,7 @@ __global__ void unpackreceive2E(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				for (j = j1; j < j2; j++) {
 					if (zcurr >= z1 + N3G + e1*D3 && zcurr < z2 + N3G + e2*D3 && icurr >= i1 + N1G && icurr < i2 + N1G) prim[1 * (ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = receive[0 * isize2*zsize2*(j2 - j1) + (j - j1)*isize2*zsize2 + (icurr - i1 - N1G)*zsize2 + (zcurr - z1 - N3G)] / factor;
 				}
@@ -2042,7 +2042,7 @@ __global__ void unpackreceive3E(int i1, int i2, int j1, int j2, int z1, int z2, 
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				for (z = z1; z < z2; z++) {
 					if (jcurr >= j1 + N2G + e1*D2 && jcurr < j2 + N2G + e2*D2 && icurr >= i1 + N1G && icurr < i2 + N1G) prim[1 * (ksize)+icurr*isize + jcurr*(BS_3 + 2 * N3G) + (z + N3G)] = receive[0 * isize2*jsize2*(z2 - z1) + (z - z1)*isize2*jsize2 + (icurr - i1 - N1G)*jsize2 + (jcurr - j1 - N2G)] / factor;
 				}
@@ -2248,7 +2248,7 @@ __global__ void unpackreceiveE1corn(int i1, int i2, int j, int z, double *  prim
 	
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				prim[1 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[global_id] / factor;
 			}
 			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
@@ -2305,7 +2305,7 @@ __global__ void unpackreceiveE2corn(int i, int j1, int j2, int z, double *  prim
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				prim[2 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[global_id] / factor;
 			}
 			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){
@@ -2362,7 +2362,7 @@ __global__ void unpackreceiveE3corn(int i, int j, int z1, int z2, double *  prim
 
 	if (global_id < work_size){
 		if (timelevel_rec <= timelevel){
-			if (!PRESTEP && !PRESTEP2 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
+			if (calc_corr == 1 && !PRESTEP && !PRESTEP2&& nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1) {
 				prim[3 * (ksize)+(icurr)*isize + jcurr*(BS_3 + 2 * N3G) + zcurr] = receive[global_id] / factor;
 			}
 			else if (calc_corr == 1 && nstep % (2 * timelevel_rec) == 2 * timelevel_rec - 1){

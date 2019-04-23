@@ -183,19 +183,6 @@ void set_timelevel(int tag){
 	set_corners(tag);
 }
 
-void set_communicator(void){
-	int min_timelevel[8],i,n;
-	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++){
-		if (nstep > 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
-
-		min_timelevel[i] = rank + 1000000;
-		for (n = 0; n < n_active; n++){
-			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2, i)) min_timelevel[i] = 1;
-		}
-		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
-	}
-}
-
 void set_prestep(void){
 	int n;
 
@@ -1423,6 +1410,75 @@ void set_corners(int tag){
 	//test = block[n][AMR_CORN4D_2];
 	//fprintf(stderr, "Child n1: %d level: %d level1: %d level2: %d level3: %d i: %d j: %d z: %d \n", test, block[test][AMR_LEVEL], block[test][AMR_LEVEL1], block[test][AMR_LEVEL2], block[test][AMR_LEVEL3], block[test][AMR_COORD1], block[test][AMR_COORD2], block[test][AMR_COORD3]);
 	//fprintf(stderr, "test: %d %d %d %d %d\n", block[n][AMR_CORN2], block[block[n][AMR_CORN2]][AMR_ACTIVE]);
+}
+
+void mpi_synch(int tag) {
+	int i, n;
+	int test1 = 0, test2 = 0;
+	int gpu_block = 0;
+
+	if (tag == 1) {
+		MPI_Barrier(MPI_COMM_WORLD);
+		gpu_block = 1;
+	}
+	else {
+		/*for (i = log(AMR_MAXTIMELEVEL) / log(2); i >= 0; i--){
+		if (nstep % ((int)pow(2, i)) == ((int)pow(2, i)) - 1){
+		if (nstep >= 2 * AMR_SWITCHTIMELEVEL) MPI_Barrier(row_comm[i]);
+		break;
+		}
+		}*/
+		for (i = 0; i < numtasks; i++) NODE_global[i] = 0;
+		for (n = 0; n < n_active; n++) {
+			if (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1) gpu_block = 1;
+			for (i = AMR_NBR1; i <= AMR_CORN12; i++) {
+				if ((block[n_ord[n]][i] >= 0) && (block[block[n_ord[n]][i]][AMR_ACTIVE] == 1) && (nstep%block[block[n_ord[n]][i]][AMR_TIMELEVEL] == block[block[n_ord[n]][i]][AMR_TIMELEVEL] - 1) && (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
+					NODE_global[block[block[n_ord[n]][i]][AMR_NODE]] = 10;
+				}
+			}
+			for (i = AMR_NBR1_3; i <= AMR_CORN12P; i++) {
+				if ((block[n_ord[n]][i] >= 0) && (block[block[n_ord[n]][i]][AMR_ACTIVE] == 1) && (nstep%block[block[n_ord[n]][i]][AMR_TIMELEVEL] == block[block[n_ord[n]][i]][AMR_TIMELEVEL] - 1) && (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
+					NODE_global[block[block[n_ord[n]][i]][AMR_NODE]] = 10;
+				}
+			}
+		}
+		for (i = 0; i < numtasks; i++) {
+			if (NODE_global[i] == 10 && rank != i) {
+				MPI_Isend(&test1, 1, MPI_INT, i, (4 * NB_LOCAL) % MPI_TAG_MAX, mpi_cartcomm, &req[0]);
+				MPI_Irecv(&test2, 1, MPI_INT, i, (4 * NB_LOCAL) % MPI_TAG_MAX, mpi_cartcomm, &request_timelevel[i]);
+				MPI_Request_free(&req[0]);
+			}
+		}
+		for (i = 0; i < numtasks; i++) {
+			if (NODE_global[i] == 10 && rank != i) {
+				MPI_Wait(&request_timelevel[i], &Statbound[0][0]);
+			}
+		}
+	}
+
+	if (gpu_block == 1) {
+		#if(GPU_ENABLED)
+		for (n = gpu_offset; n < gpu_offset + N_GPU; n++) {
+			#if(N_GPU>1)
+			cudaSetDevice(n);
+			#endif
+			cudaDeviceSynchronize();
+		}
+		#endif
+	}
+}
+
+void set_communicator(void) {
+	int min_timelevel[8], i, n;
+	for (i = 0; i <= log(AMR_MAXTIMELEVEL) / log(2); i++) {
+		if (nstep > 2 * AMR_SWITCHTIMELEVEL) MPI_Comm_free(&row_comm[i]);
+
+		min_timelevel[i] = rank + 1000000;
+		for (n = 0; n < n_active; n++) {
+			if (block[n_ord[n]][AMR_TIMELEVEL] <= pow(2, i)) min_timelevel[i] = 1;
+		}
+		MPI_Comm_split(mpi_cartcomm, min_timelevel[i], rank, &row_comm[i]);
+	}
 }
 
 /*
