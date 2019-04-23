@@ -183,6 +183,9 @@ int restart_read(void)
 	/* bound */
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active; n++) {
+		alloc_bounds_GPU(n_ord[n]);
+	}
 	GPU_boundprim(1);
 	#endif
 	return 1;

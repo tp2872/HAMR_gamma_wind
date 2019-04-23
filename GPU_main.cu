@@ -3,8 +3,6 @@ extern "C" {
 #include "decs.h"
 }
 int gpuAlloc(void **devPtr, int size);
-void alloc_bounds_GPU(int n);
-void free_bound_gpu(int n);
 int gpuFree(void *devPtr, int trash1, int trash2);
 
 //Wrapper for allocation of boundary cells
@@ -176,7 +174,7 @@ void set_arrays_GPU(int n, int device){
 	cudaMallocHost(&dtij2_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
 	cudaMallocHost(&dtij3_GPU[nl[n]], (nr_workgroups[nl[n]] + 1) * sizeof(double));
 	
-	alloc_bounds_GPU(n);
+	//alloc_bounds_GPU(n);
 	
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error in setting kernel arguments 4.6: %d \n", status);
@@ -203,7 +201,7 @@ void alloc_bounds_GPU(int n){
 	if (block[n][AMR_NBR5P] >= 0 && block[block[n][AMR_NBR5P]][AMR_ACTIVE] == 1)gpuAlloc(&Buffersend5[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) * sizeof(double), block[block[n][AMR_NBR5P]][AMR_NODE] == rank);
 	if (block[n][AMR_NBR6P] >= 0 && block[block[n][AMR_NBR6P]][AMR_ACTIVE] == 1)gpuAlloc(&Buffersend6[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) * sizeof(double), block[block[n][AMR_NBR6P]][AMR_NODE] == rank);
 	#endif
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Buffersend2_1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -283,7 +281,7 @@ void alloc_bounds_GPU(int n){
 		gpuAlloc(&Bufferrec4_7[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 		gpuAlloc(&Bufferrec4_8[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 	}
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -400,7 +398,7 @@ void alloc_bounds_GPU(int n){
 		gpuAlloc(&tempBufferrec4_7[nl[n]], (2 * NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 		gpuAlloc(&tempBufferrec4_8[nl[n]], (2 * NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 	}
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&tempBufferrec4_5[nl[n]], (2 * NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -529,7 +527,7 @@ void alloc_bounds_GPU(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuAlloc(&Bufferrec6flux[nl[n]], NPR*(BS_1)*(BS_2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -606,7 +604,7 @@ void alloc_bounds_GPU(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuAlloc(&Bufferrec6flux1[nl[n]], NPR*(BS_1)*(BS_2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -673,7 +671,7 @@ void alloc_bounds_GPU(int n){
 	#endif
 
 	//Receive buffers flux2 variables
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -773,7 +771,7 @@ void alloc_bounds_GPU(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuAlloc(&Bufferrec6E[nl[n]], NPR*(BS_1 + 2 * D1)*(BS_2 + 2 * D2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5E[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * D2)*(BS_3 / (1 + ref3) + 2 * D3) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -849,7 +847,7 @@ void alloc_bounds_GPU(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuAlloc(&Bufferrec6E1[nl[n]], NPR*(BS_1 + 2 * D1)*(BS_2 + 2 * D2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5E1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * D2)*(BS_3 / (1 + ref3) + 2 * D3) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -917,7 +915,7 @@ void alloc_bounds_GPU(int n){
 	#endif
 
 	//Receive buffers E2 variables
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuAlloc(&Bufferrec4_5E2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * D2)*(BS_3 / (1 + ref3) + 2 * D3) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2011,13 +2009,6 @@ void GPU_boundprim(int bound_force)
 	//}
 	mpi_synch(bound_force);
 
-	#if(GPU_ENABLED)
-	if (bound_force == 1) {
-		free_bound_gpu(n);
-		alloc_bounds_GPU(n);
-	}
-	#endif
-
 	if (rank == 0) begin2 = get_wall_time();
 	rc = 0;
 	#if(GPU_OPENMP)
@@ -2357,7 +2348,7 @@ void free_bound_gpu(int n){
 	if (block[n][AMR_NBR5P] >= 0 && block[block[n][AMR_NBR5P]][AMR_ACTIVE] == 1)gpuFree(Buffersend5[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) * sizeof(double), block[block[n][AMR_NBR5P]][AMR_NODE] == rank);
 	if (block[n][AMR_NBR6P] >= 0 && block[block[n][AMR_NBR6P]][AMR_ACTIVE] == 1)gpuFree(Buffersend6[nl[n]], NG * (NPR + 3)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) * sizeof(double), block[block[n][AMR_NBR6P]][AMR_NODE] == rank);
 	#endif
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Buffersend2_1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2437,7 +2428,7 @@ void free_bound_gpu(int n){
 		gpuFree(Bufferrec4_7[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 		gpuFree(Bufferrec4_8[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 	}
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2554,7 +2545,7 @@ void free_bound_gpu(int n){
 		gpuFree(tempBufferrec4_7[nl[n]], (2 * NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 		gpuFree(tempBufferrec4_8[nl[n]], (2 * NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2P]][AMR_NODE] == rank);
 	}
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(tempBufferrec4_5[nl[n]], (2 * NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * N2G)*(BS_3 / (1 + ref3) + 2 * N3G) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2683,7 +2674,7 @@ void free_bound_gpu(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuFree(Bufferrec6flux[nl[n]], NPR*(BS_1)*(BS_2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2760,7 +2751,7 @@ void free_bound_gpu(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuFree(Bufferrec6flux1[nl[n]], NPR*(BS_1)*(BS_2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2827,7 +2818,7 @@ void free_bound_gpu(int n){
 	#endif
 
 	//Receive buffers flux2 variables
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -2927,7 +2918,7 @@ void free_bound_gpu(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuFree(Bufferrec6E[nl[n]], NPR*(BS_1 + 2 * D1)*(BS_2 + 2 * D2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5E[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * D2)*(BS_3 / (1 + ref3) + 2 * D3) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -3003,7 +2994,7 @@ void free_bound_gpu(int n){
 	if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1)gpuFree(Bufferrec6E1[nl[n]], NPR*(BS_1 + 2 * D1)*(BS_2 + 2 * D2) * sizeof(double), block[block[n][AMR_NBR5]][AMR_NODE] == rank);
 	#endif
 
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5E1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * D2)*(BS_3 / (1 + ref3) + 2 * D3) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -3071,7 +3062,7 @@ void free_bound_gpu(int n){
 	#endif
 
 	//Receive buffers E2 variables
-	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2P]][AMR_ACTIVE] == 1) {
+	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
 		gpuFree(Bufferrec4_5E2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2) + 2 * D2)*(BS_3 / (1 + ref3) + 2 * D3) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] == rank);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
@@ -3360,9 +3351,10 @@ void free_bound_gpu(int n){
 
 }
 
-int gpuFree(void *devPtr, int trash1, int trash2){
+int gpuFree(void *devPtr, int trash1, int val3){
 	#if(GPU_DIRECT)
-	return cudaFree(devPtr);
+	if (val3) return cudaFree(devPtr);
+	else return cudaFreeHost(devPtr);
 	#else
 	return cudaFreeHost(devPtr);
 	#endif

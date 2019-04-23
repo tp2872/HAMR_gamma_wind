@@ -973,6 +973,8 @@ void balance_load_gpu(void);
 void set_arrays_image(void);
 void set_arrays(int n);
 void set_grid(int n);
+void alloc_bounds_GPU(int n);
+void free_bound_gpu(int n);
 void set_points(int n);
 void set_gridparam(void);
 void set_ref(int n, int n_rec, int *ref_1, int *ref_2, int * ref_3);

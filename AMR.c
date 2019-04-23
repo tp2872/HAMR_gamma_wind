@@ -1459,7 +1459,7 @@ void balance_load(void){
 		}
 		cudaMemcpyAsync(Bufferps_1[nl[n_ord[n]]], ps_1[nl[n_ord[n]]], 3 * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n_ord[n]]])*sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n_ord[n]]]);
 	}
-	GPU_boundprim(1);
+	//GPU_boundprim(1);
 	#endif
 	free(n_ord_total_RM_t);
 
@@ -2328,7 +2328,7 @@ void post_refine(void){
 	//Set boundary conditions
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG)
-	GPU_boundprim(1);
+	//GPU_boundprim(1);
 	MPI_Barrier(mpi_cartcomm);
 	#endif
 }
@@ -2385,6 +2385,11 @@ void check_refcrit(void){
 	close_gdump();
 	close_rdump();
 	MPI_Barrier(mpi_cartcomm);
+
+	//Remove boundaries from GPU
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for(n;n<n_active;n++) free_bound_gpu(n_ord[n]);
+	#endif
 
 	begin1 = time(NULL);
 	count = 0;
@@ -2740,7 +2745,13 @@ void check_refcrit(void){
 	//}
 	set_corners(1);
 
+	//Set boundaries on GPU
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for(n=0;n<n_active;n++) alloc_bounds_GPU(n_ord[n]);
 	MPI_Barrier(mpi_cartcomm);
+	GPU_boundprim(1);
+	#endif
+
 	end1 = time(NULL);
 	if (rank == 0) fprintf(stderr, "Runtime load balance: %f \n", (double)(end1 - begin1));
 }
