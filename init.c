@@ -104,40 +104,48 @@ typedef struct {
 
 void init()
 {
-  void init_bondi(void);
-  void init_torus(void);
-  void init_torus_grb();
-  void init_disruption(void);
-  void init_monopole(double Rout_val);
-  void init_thindisk();
+	void init_bondi(void);
+	void init_torus(void);
+	void init_torus_grb();
+	void init_disruption(void);
+	void init_monopole(double Rout_val);
+	void init_thindisk();
 
-  switch( WHICHPROBLEM ) {
-	  case MONOPOLE_PROBLEM_1D:
-	  case MONOPOLE_PROBLEM_2D:
+	switch( WHICHPROBLEM ) {
+		case MONOPOLE_PROBLEM_1D:
+		case MONOPOLE_PROBLEM_2D:
 		init_monopole(1e3);
 		break;
-	  case BZ_MONOPOLE_2D:
+		case BZ_MONOPOLE_2D:
 		init_monopole(100.);
 		break;
-	  case TORUS_PROBLEM:
+		case TORUS_PROBLEM:
 		init_torus();
 		break;
-	  case THIN_PROBLEM:
+		case THIN_PROBLEM:
 		init_thindisk();
 		break;
-	  case BONDI_PROBLEM_1D:
+		case BONDI_PROBLEM_1D:
 		init_thindisk();
 		break;
-	  case DISRUPTION_PROBLEM:
+		case DISRUPTION_PROBLEM:
 		init_disruption();
 		break;
-	  case TORUS_PROBLEM_GRB:
+		case TORUS_PROBLEM_GRB:
 		init_torus_grb();
 		break;
-	  case BONDI_PROBLEM_2D:
+		case BONDI_PROBLEM_2D:
 		init_bondi();
 		break;
-  }
+	}
+
+	int n;
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active; n++) {
+		alloc_bounds_GPU(n_ord[n]);
+	}
+	GPU_boundprim(1);
+	#endif
 }
 
 void init_thindisk()
@@ -346,10 +354,6 @@ void init_thindisk()
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)
 	calc_source();
-	#endif
-
-	#if (GPU_ENABLED)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 }
 
@@ -584,10 +588,6 @@ void init_torus()
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
-
-	#if (GPU_ENABLED)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
-	#endif
 }
 
 void init_disruption()
@@ -794,10 +794,6 @@ void init_disruption()
   sourceflag=0.;
 	#if(ELLIPTICAL2)
   calc_source();
-	#endif
-
-	#if (GPU_ENABLED)
-   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
 }
 

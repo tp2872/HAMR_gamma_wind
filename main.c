@@ -137,20 +137,9 @@ int main(int argc, char *argv[])
 
 		//Refine every TREF
 		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
-			#if(N_LEVELS_3D>1)
 			set_timelevel(1);
 			check_refcrit();
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
-			#else
-			close_dump();
-			close_rdump();
-			close_gdump();
-			set_timelevel(1);
-			balance_load();
-			#if(GPU_ENABLED || GPU_DEBUG )
-			GPU_boundprim(1);
-			#endif
-			#endif
 			tref += TREF;
 		}
 
