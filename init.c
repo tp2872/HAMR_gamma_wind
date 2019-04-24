@@ -170,7 +170,7 @@ void init_thindisk()
 	double temp = a;
 	a = 0.9375;
 	rin = 6.5;
-	rmax = 125.;
+	rmax = 75.;
 	kappa = 1.e-3;
 	beta = 100.;
 
@@ -1059,10 +1059,12 @@ void set_mag(void){
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
-			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
-
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
 			coord(n_ord[n], i, j, z, CENT, X);
@@ -1113,6 +1115,7 @@ void set_mag(void){
 	}
 
 	bsq_max = 0.;
+	umax = 0;
 	bsq_sum = 0.;
 	ug_sum = 0.;
 	for (n = 0; n < n_active; n++){
@@ -1122,7 +1125,9 @@ void set_mag(void){
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
-
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
 			coord(n_ord[n], i, j, z, CENT, X);

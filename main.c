@@ -133,9 +133,7 @@ int main(int argc, char *argv[])
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
-			 bound_prim(p, 1);
-			 if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
-
+			bound_prim(p, 1);
 			if (dt > 0.5) break;
 		}
 
@@ -144,7 +142,6 @@ int main(int argc, char *argv[])
 			set_timelevel(1);
 			check_refcrit();
 			#if (GPU_ENABLED==1)
-			bound_prim(p, 1);
 			GPU_boundprim(1);
 			#endif
 			if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
