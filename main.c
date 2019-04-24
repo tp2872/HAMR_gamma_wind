@@ -93,6 +93,10 @@ int main(int argc, char *argv[])
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
+	bound_prim(p, 1);
+	#if(GPU_ENABLED || GPU_DEBUG )
+	GPU_boundprim(1);
+	#endif
 	diag(INIT_OUT);
 
 	/*Set dumping frequency*/
@@ -139,6 +143,7 @@ int main(int argc, char *argv[])
 		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
 			set_timelevel(1);
 			check_refcrit();
+			GPU_boundprim(1);
 			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
 			tref += TREF;
 		}

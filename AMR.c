@@ -1405,7 +1405,6 @@ void balance_load(void){
 
 		//Set to updated node
 		block[n_ord_total_RM[n]][AMR_NODE] = NODE[n_ord_total_RM[n]];
-
 	}
 
 	//Now reloadbalance between the GPUs on a single node
@@ -2123,9 +2122,6 @@ void pre_refine(void){
 	prolong_grid();
 
 	for (n1 = 0; n1 < n_active; n1++){
-		#if(GPU_ENABLED || GPU_DEBUG )
-		//GPU_read(n_ord[n1]);
-		#endif
 		#pragma omp parallel private(i, j, z)
 		{
 			#pragma omp for collapse(3) schedule(static, (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
@@ -2154,7 +2150,7 @@ int refine(int n){
 	int ref_1, ref_2, ref_3;
 
 	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
-		if (rank == 0 && numtasks<100) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
+		if (rank == 0 && numtasks<10) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
 	else{
@@ -2388,27 +2384,24 @@ void check_refcrit(void){
 	double(*temp_p[NB])[NPR];
 	MPI_Request boundreqstemp1[NB], boundreqstemp2[NB];
 	if (max_levels == 0) max_levels = N_LEVELS_3D;
-	int tag, count, begin1, end1;
+	int tag, count=0, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	
+	//Start timer
 	MPI_Barrier(mpi_cartcomm);
-	if(rank==0) fprintf(stderr,"Starting refinement! \n");
+	if (rank == 0) fprintf(stderr, "Starting refinement! \n");
+	begin1 = time(NULL);
 
 	//First close dump files in progress
 	close_dump();
 	close_gdump();
 	close_rdump();
 	MPI_Barrier(mpi_cartcomm);
-	if (rank == 0) fprintf(stderr, "Starting refinement! \n");
 
 	//Remove boundaries from GPU
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for(n=0;n<n_active;n++) free_bound_gpu(n_ord[n]);
 	#endif
-	MPI_Barrier(mpi_cartcomm);
-	if (rank == 0) fprintf(stderr, "Starting refinement! \n");
-	begin1 = time(NULL);
-	count = 0;
 
 	do{
 		count++;
@@ -2428,8 +2421,7 @@ void check_refcrit(void){
 
 		/*First make sure all nodes have the same ref_val*/
 		synch_refcrit();
-		MPI_Barrier(mpi_cartcomm);
-		if (rank == 0) fprintf(stderr, "Starting refinement! \n");
+
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
 			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && (block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1) && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
