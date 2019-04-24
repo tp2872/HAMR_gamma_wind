@@ -1181,6 +1181,10 @@ void set_AMR(void){
 
 	activate_blocks();
 	balance_load();
+	for (n = 0; n < n_active; n++) {
+		alloc_bounds_GPU(n_ord[n]);
+	}
+
 	set_corners(1);
 }
 
@@ -1303,16 +1307,16 @@ void balance_load(void){
 		}*/
 
 		//Split up between GPUs on a single node
-		#pragma omp parallel for schedule(dynamic,1) private(n, temp)
+		//#pragma omp parallel for schedule(dynamic,1) private(n, temp)
 		for (n = 0; n < n_active_total; n++){
 			temp = NODE[n_ord_total_RM[n]];
 			NODE[n_ord_total_RM[n]] = temp / N_GPU;
 			GPU[n_ord_total_RM[n]] = (temp - NODE[n_ord_total_RM[n]] * N_GPU);
 			if (rank == NODE[n_ord_total_RM[n]]) {
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					n_active_local_gpu[GPU[n_ord_total_RM[n]]]++;
-				}
+				//}
 			}
 			if (GPU[n_ord_total_RM[n]] >= 20) fprintf(stderr, "Catastrophic load balancing error 1 \n");
 			if (NODE[n_ord_total_RM[n]] >= numtasks) fprintf(stderr, "Catastrophic load balancing error 2 \n");
@@ -1336,7 +1340,7 @@ void balance_load(void){
 	}
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
 	
-	#pragma omp parallel for schedule(dynamic,1) private(n, rc)
+	//#pragma omp parallel for schedule(dynamic,1) private(n, rc)
 	for (n = 0; n < n_active_total; n++) {
 		if (block[n_ord_total_RM[n]][AMR_NODE] != NODE[n_ord_total_RM[n]]){
 			if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
@@ -1362,13 +1366,13 @@ void balance_load(void){
 		}
 	}
 
-	#pragma omp parallel for schedule(dynamic,1) private(n)
+	//#pragma omp parallel for schedule(dynamic,1) private(n)
 	for (n = 0; n < n_active_total; n++){
 		//Then use MPI_wait to clean up data that has been sent
 		if (block[n_ord_total_RM[n]][AMR_NODE] != NODE[n_ord_total_RM[n]]){
 			if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					MPI_Wait(&boundreqs[nl[n_ord_total_RM[n]]][0], &Statbound[nl[n_ord_total_RM[n]]][0]);
 					#if STAGGERED
 					MPI_Wait(&boundreqs[nl[n_ord_total_RM[n]]][1], &Statbound[nl[n_ord_total_RM[n]]][1]);
@@ -1377,13 +1381,13 @@ void balance_load(void){
 					#if(GPU_ENABLED || GPU_DEBUG )
 					GPU_finish(n_ord_total_RM[n], 0);
 					#endif
-				}
+				//}
 			}
 			block[n_ord_total_RM[n]][AMR_GPU] = -1;
 
 			if (NODE[n_ord_total_RM[n]] == rank){
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					if (block[n_ord_total_RM[n]][AMR_NODE] >= 0) {
 						MPI_Wait(&boundreqstemp1[n_ord_total_RM[n]], &Statbound[0][10]);
 						#if STAGGERED
@@ -1399,7 +1403,7 @@ void balance_load(void){
 					}
 					free(temp_p[n_ord_total_RM[n]]);
 					free(temp_ps[n_ord_total_RM[n]]);
-				}
+				//}
 			}
 		}
 
@@ -1408,17 +1412,17 @@ void balance_load(void){
 	}
 
 	//Now reloadbalance between the GPUs on a single node
-	#pragma omp parallel for schedule(dynamic,1) private(n)
+	//#pragma omp parallel for schedule(dynamic,1) private(n)
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
 			if (GPU[n_ord_total_RM[n]] != block[n_ord_total_RM[n]][AMR_GPU]){
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					#if(GPU_ENABLED || GPU_DEBUG )
 					set_arrays_GPU(n_ord_total_RM[n], GPU[n_ord_total_RM[n]]);
 					GPU_write(n_ord_total_RM[n]);
 					#endif
-				}
+				//}
 			}
 		}
 		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
@@ -2564,11 +2568,11 @@ void check_refcrit(void){
 		} while (tag2);
 
 		//Detag if load balancing required as intermediate step
-		#pragma omp parallel for schedule(dynamic,1) private(n, node)
+		//#pragma omp parallel for schedule(dynamic,1) private(n, node)
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					node = block[n_ord_total[n]][AMR_NODE];
 					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
 						for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
@@ -2585,16 +2589,16 @@ void check_refcrit(void){
 						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == 0;
 						tag = 1;
 					}
-				}
+				//}
 			}
 		}
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Send/REceive blocks
-		#pragma omp parallel for schedule(dynamic,1) private(n, node)
+		//#pragma omp parallel for schedule(dynamic,1) private(n, node)
 		for (n = 0; n < n_active_total; n++) {
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					node = block[n_ord_total[n]][AMR_NODE];
 					//Send block using non-blocking send
 					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
@@ -2626,16 +2630,16 @@ void check_refcrit(void){
 							}
 						}
 					}
-				}
+				//}
 			}
 		}
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Clean up on sending side
-		#pragma omp parallel for schedule(dynamic,1) private(n, node)
+		//#pragma omp parallel for schedule(dynamic,1) private(n, node)
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
 				#pragma omp critical
-				{
+				//{
 					node = block[n_ord_total[n]][AMR_NODE];
 					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
 						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
@@ -2656,16 +2660,16 @@ void check_refcrit(void){
 							}
 						}
 					}
-				}
+				//}
 			}
 		}
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Allocate arrays on receiving side
-		#pragma omp parallel for schedule(dynamic,1) private(n)
+		//#pragma omp parallel for schedule(dynamic,1) private(n)
 		for (n = 0; n < n_active_total; n++){
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
-				#pragma omp critical
-				{
+				//#pragma omp critical
+				//{
 					node = block[n_ord_total[n]][AMR_NODE];
 					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
 						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
@@ -2713,7 +2717,7 @@ void check_refcrit(void){
 					}
 					derefine(block[n_ord_total[n]][AMR_PARENT]);
 					block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
-				}
+				//}
 			}
 		}
 
@@ -2754,7 +2758,7 @@ void check_refcrit(void){
 
 //This function derefines in phi near the pole
 int derefine_pole(void){
-	int i, j, z, l, ni, nj, nz, u;
+	int i, j, z, l, ni, nj, nz, u, n;
 	//if (REF_3 != 1 || REF_1 == 1 || REF_2 == 1){
 		//if(rank==0)fprintf(stderr, "Error! Derefinement near the pole works only for REF_1=0, REF_2=0, REF_3=1 \n");
 		//exit(20);
@@ -2767,6 +2771,9 @@ int derefine_pole(void){
 		exit(20);
 		return -1;
 	}
+	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n<n_active; n++) free_bound_gpu(n_ord[n]);
+	#endif
 	//if (calc_mem(NB_1*NB_2*NB_3*pow(2., N_LEVELS_1D - 1)) > ((double)numtasks*(double)(numdevices)* 4. * (pow(10., 9.))) && rank == 1) fprintf(stderr, "You are exceeding the maximum memory size of 4 GB per GPU by refining too many blocks! Code will probably segfault, choose a bigger cluster \n");
 	for (l = 0; l < N_LEVELS_1D; l++){
 		pre_refine();
@@ -2788,8 +2795,9 @@ int derefine_pole(void){
 	balance_load();
 	#if(GPU_ENABLED)
 	balance_load_gpu();
+	for (n = 0; n<n_active; n++) alloc_bounds_GPU(n_ord[n]);
+	GPU_boundprim(1);
 	#endif
-	
 	return 1;
 }
 

@@ -90,12 +90,10 @@ int main(int argc, char *argv[])
 	}
 	
 	/* do initial diagnostics */
-	#if(GPU_ENABLED || GPU_DEBUG )
-	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
-	#endif
 	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_boundprim(1);
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	diag(INIT_OUT);
 
@@ -135,7 +133,9 @@ int main(int argc, char *argv[])
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
-			bound_prim(p, 1);
+			 bound_prim(p, 1);
+			 if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
+
 			if (dt > 0.5) break;
 		}
 
@@ -143,8 +143,11 @@ int main(int argc, char *argv[])
 		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
 			set_timelevel(1);
 			check_refcrit();
+			#if (GPU_ENABLED==1)
+			bound_prim(p, 1);
 			GPU_boundprim(1);
-			if (rank == 0) fprintf(stderr, "Refinement succesfull! \n");
+			#endif
+			if (rank == 0) fprintf(stderr, "Refinement  succesfull! \n");
 			tref += TREF;
 		}
 
