@@ -37,10 +37,10 @@ Physical Parameters section
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #define RHOMIN	(1.e-6)
-#define UUMIN	(1.e-7)
+#define UUMIN	(1.e-8)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
-#define POWRHO (1.5)
+#define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)

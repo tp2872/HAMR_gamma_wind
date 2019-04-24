@@ -1405,7 +1405,6 @@ void balance_load(void){
 
 		//Set to updated node
 		block[n_ord_total_RM[n]][AMR_NODE] = NODE[n_ord_total_RM[n]];
-		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
 
 	}
 
@@ -1423,6 +1422,7 @@ void balance_load(void){
 				}
 			}
 		}
+		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
 	}
 
 	activate_blocks();
@@ -2158,7 +2158,8 @@ int refine(int n){
 		return 0; //First make sure nesting criteria are satisfied
 	}
 	else{
-		if (rank == 0 && numtasks<100) fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
+		if (rank == 0 && numtasks<10) fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
+		if (rank == 0 && block[n][AMR_COORD1]==0) fprintf(stderr, "Refining block %d %d %d %d on node %d\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		ref_1 = block[block[n][AMR_CHILD2]][AMR_LEVEL1] - block[n][AMR_LEVEL1];
 		ref_2 = block[block[n][AMR_CHILD2]][AMR_LEVEL2] - block[n][AMR_LEVEL2];
 		NODE_global[block[n][AMR_NODE] * N_GPU + block[n][AMR_GPU]] += (1 + ref_1)*(1 + ref_2)*(1 + REF_3) - 1;
@@ -2361,7 +2362,6 @@ int check_nesting(int n){
 	//Refine around pole
 	if (block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 && flag == 1){
 		block[n][AMR_TAG] = 1;
-		if (rank == 0 && numtasks<100) fprintf(stderr, "Warning refining around pole. This is not well tested, watch out for errors! \n");
 		if (block[n][AMR_NBR5] >= 0 && block[block[n][AMR_NBR5]][AMR_ACTIVE] == 1 && block[block[n][AMR_NBR5]][AMR_TAG]!=1){
 			block[block[n][AMR_NBR5]][AMR_TAG] = 1;
 			if (!refine(block[n][AMR_NBR5])){
@@ -2391,6 +2391,7 @@ void check_refcrit(void){
 	int tag, count, begin1, end1;
 	int one_block_refined = 0, one_block_derefined=0;
 	
+	MPI_Barrier(mpi_cartcomm);
 	if(rank==0) fprintf(stderr,"Starting refinement! \n");
 
 	//First close dump files in progress
@@ -2398,12 +2399,14 @@ void check_refcrit(void){
 	close_gdump();
 	close_rdump();
 	MPI_Barrier(mpi_cartcomm);
+	if (rank == 0) fprintf(stderr, "Starting refinement! \n");
 
 	//Remove boundaries from GPU
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for(n=0;n<n_active;n++) free_bound_gpu(n_ord[n]);
 	#endif
-
+	MPI_Barrier(mpi_cartcomm);
+	if (rank == 0) fprintf(stderr, "Starting refinement! \n");
 	begin1 = time(NULL);
 	count = 0;
 
@@ -2425,7 +2428,8 @@ void check_refcrit(void){
 
 		/*First make sure all nodes have the same ref_val*/
 		synch_refcrit();
-
+		MPI_Barrier(mpi_cartcomm);
+		if (rank == 0) fprintf(stderr, "Starting refinement! \n");
 		//Tag for refinement
 		for (n = 0; n < n_active_total; n++){
 			if ((ref_val[n_ord_total[n]] > REFINEMENT_CUTOFF || block[n_ord_total[n]][AMR_TAG] == 1) && (block[n_ord_total[n]][AMR_LEVEL1] < max_levels - 1) && block[n_ord_total[n]][AMR_ACTIVE] == 1){ //If satisfy refinement criterion and smaller than maximum levels
@@ -2440,8 +2444,8 @@ void check_refcrit(void){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
-				if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 3) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 6 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 14 + 1)
-					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 30 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 62 + 1) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 126 + 1)){
+				if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 3) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 6 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 16 + 2)
+					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 36 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 76 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 156 + 2)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#endif
@@ -2749,7 +2753,6 @@ void check_refcrit(void){
 	//Set boundaries on GPU
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for(n=0;n<n_active;n++) alloc_bounds_GPU(n_ord[n]);
-	MPI_Barrier(mpi_cartcomm);
 	GPU_boundprim(1);
 	#endif
 
@@ -2862,13 +2865,11 @@ double calc_refcrit(int n){
 //Send refinement criterion across cluster
 void synch_refcrit(void){
 	int n, task;
-	#pragma omp parallel for schedule(dynamic,1) private(n, rc)
 	for (n = 0; n < n_active_total; n++){
 			if(block[n_ord_total[n]][AMR_NODE]==rank) ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
 			rc = MPI_Ibcast(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
 	}
 
-	#pragma omp parallel for schedule(dynamic,1) private(n, rc)
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
