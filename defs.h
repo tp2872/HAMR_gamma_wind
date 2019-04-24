@@ -779,7 +779,7 @@ int N2_GPU_offset[NB];
 int N3_GPU_offset[NB];
 
 //MPI Variables
-MPI_Request req[NB_LOCAL], boundreqs[NB_LOCAL][600];
+MPI_Request req[NB], boundreqs[NB_LOCAL][600];
 MPI_Status Statbound[NB_LOCAL][600];
 MPI_Comm  mpi_cartcomm, mpi_self;
 MPI_Comm row_comm[8];

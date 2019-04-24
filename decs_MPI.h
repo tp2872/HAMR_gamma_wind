@@ -2,7 +2,7 @@
 #include <mpi.h>
 
 //MPI Variables
-extern MPI_Request req[NB_LOCAL], boundreqs[NB_LOCAL][600];
+extern MPI_Request req[NB], boundreqs[NB_LOCAL][600];
 extern MPI_Status Statbound[NB_LOCAL][600];
 extern MPI_Comm  mpi_cartcomm, mpi_self;
 extern MPI_Comm row_comm[8];

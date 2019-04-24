@@ -1430,7 +1430,7 @@ void mpi_synch(int tag) {
 		}*/
 		for (i = 0; i < numtasks; i++) NODE_global[i] = 0;
 		for (n = 0; n < n_active; n++) {
-			if (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1) gpu_block = 1;
+			//if (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1) gpu_block = 1;
 			for (i = AMR_NBR1; i <= AMR_CORN12; i++) {
 				if ((block[n_ord[n]][i] >= 0) && (block[block[n_ord[n]][i]][AMR_ACTIVE] == 1) && (nstep%block[block[n_ord[n]][i]][AMR_TIMELEVEL] == block[block[n_ord[n]][i]][AMR_TIMELEVEL] - 1) && (nstep%block[n_ord[n]][AMR_TIMELEVEL] == block[n_ord[n]][AMR_TIMELEVEL] - 1)) {
 					NODE_global[block[block[n_ord[n]][i]][AMR_NODE]] = 10;
