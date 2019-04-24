@@ -1296,18 +1296,24 @@ void balance_load(void){
 				NODE[i] = fp + ((steps_total_RM[i] - ip) - (steps_total_RM[i] - ip) % y) / y;
 			}
 			if (NODE[i] >= numtasks) fprintf(stderr, "Error balance_load() \n");
-			if (NODE[i] == rank) {
+			if (NODE[i] == rank) {[i[
 				n_active_local_max++;
 				n_active_local_min = n_active_local_max;
 			}
 		}*/
 
 		//Split up between GPUs on a single node
+		#pragma omp parallel for schedule(dynamic,1) private(n, temp)
 		for (n = 0; n < n_active_total; n++){
 			temp = NODE[n_ord_total_RM[n]];
 			NODE[n_ord_total_RM[n]] = temp / N_GPU;
 			GPU[n_ord_total_RM[n]] = (temp - NODE[n_ord_total_RM[n]] * N_GPU);
-			if (rank == NODE[n_ord_total_RM[n]])n_active_local_gpu[GPU[n_ord_total_RM[n]]]++;
+			if (rank == NODE[n_ord_total_RM[n]]) {
+				#pragma omp critical
+				{
+					n_active_local_gpu[GPU[n_ord_total_RM[n]]]++;
+				}
+			}
 			if (GPU[n_ord_total_RM[n]] >= 20) fprintf(stderr, "Catastrophic load balancing error 1 \n");
 			if (NODE[n_ord_total_RM[n]] >= numtasks) fprintf(stderr, "Catastrophic load balancing error 2 \n");
 		}
@@ -1329,87 +1335,94 @@ void balance_load(void){
 		exit(0);
 	}
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
-	for (i = 0; i < n_active_total; i++){
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
-			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
-				rc = MPI_Isend(&p[nl[n_ord_total_RM[i]]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (5 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][0]);
+	
+	#pragma omp parallel for schedule(dynamic,1) private(n, rc)
+	for (n = 0; n < n_active_total; n++) {
+		if (block[n_ord_total_RM[n]][AMR_NODE] != NODE[n_ord_total_RM[n]]){
+			if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
+				rc = MPI_Isend(&p[nl[n_ord_total_RM[n]]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[n]], (5 * NB_LOCAL + block[n_ord_total_RM[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[n]]][0]);
 				#if STAGGERED
-				rc += MPI_Isend(&ps[nl[n_ord_total_RM[i]]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[i]], (6 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[i]]][1]);
+				rc += MPI_Isend(&ps[nl[n_ord_total_RM[n]]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, NODE[n_ord_total_RM[n]], (6 * NB_LOCAL + block[n_ord_total_RM[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_ord_total_RM[n]]][1]);
 				#endif
 				if (rc != 0)fprintf(stderr, "Error balance_load send %d", rc);
 			}
-		}
-	}
-	for (i = 0; i < n_active_total; i++){
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
-			if (NODE[n_ord_total_RM[i]] == rank){
+
+			if (NODE[n_ord_total_RM[n]] == rank){
 				//Allocate memory for active blocks on node
-				temp_p[n_ord_total_RM[i]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
-				temp_ps[n_ord_total_RM[i]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
-				if (block[n_ord_total_RM[i]][AMR_NODE] >= 0){
-					rc = MPI_Irecv(&temp_p[n_ord_total_RM[i]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (5 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_ord_total_RM[i]]);
+				temp_p[n_ord_total_RM[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+				temp_ps[n_ord_total_RM[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+				if (block[n_ord_total_RM[n]][AMR_NODE] >= 0){
+					rc = MPI_Irecv(&temp_p[n_ord_total_RM[n]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[n]][AMR_NODE], (5 * NB_LOCAL + block[n_ord_total_RM[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_ord_total_RM[n]]);
 					#if STAGGERED
-					rc += MPI_Irecv(&temp_ps[n_ord_total_RM[i]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[i]][AMR_NODE], (6 * NB_LOCAL + block[n_ord_total_RM[i]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_ord_total_RM[i]]);
+					rc += MPI_Irecv(&temp_ps[n_ord_total_RM[n]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_ord_total_RM[n]][AMR_NODE], (6 * NB_LOCAL + block[n_ord_total_RM[n]][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_ord_total_RM[n]]);
 					#endif
 					if (rc != 0)fprintf(stderr, "Error balance_load receive %d", rc);
 				}
 			}
 		}
 	}
-	for (i = 0; i < n_active_total; i++){
-		//Then use MPI_wait to clean up data that has been sent
-		if (block[n_ord_total_RM[i]][AMR_NODE] != NODE[n_ord_total_RM[i]]){
-			if (block[n_ord_total_RM[i]][AMR_NODE] == rank){
-				MPI_Wait(&boundreqs[nl[n_ord_total_RM[i]]][0], &Statbound[nl[n_ord_total_RM[i]]][0]);
-				#if STAGGERED
-				MPI_Wait(&boundreqs[nl[n_ord_total_RM[i]]][1], &Statbound[nl[n_ord_total_RM[i]]][1]);
-				#endif
-				free_arrays(n_ord_total_RM[i]);
-				#if(GPU_ENABLED || GPU_DEBUG )
-				GPU_finish(n_ord_total_RM[i], 0);
-				#endif
-			}
-			block[n_ord_total_RM[i]][AMR_GPU] = -1;
-		}
-	}
 
-	//Then use MPI_wait to receive data 
+	#pragma omp parallel for schedule(dynamic,1) private(n)
 	for (n = 0; n < n_active_total; n++){
+		//Then use MPI_wait to clean up data that has been sent
 		if (block[n_ord_total_RM[n]][AMR_NODE] != NODE[n_ord_total_RM[n]]){
-			if (NODE[n_ord_total_RM[n]] == rank){
-				if (block[n_ord_total_RM[n]][AMR_NODE] >= 0){
-					MPI_Wait(&boundreqstemp1[n_ord_total_RM[n]], &Statbound[0][10]);
+			if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
+				#pragma omp critical
+				{
+					MPI_Wait(&boundreqs[nl[n_ord_total_RM[n]]][0], &Statbound[nl[n_ord_total_RM[n]]][0]);
 					#if STAGGERED
-					MPI_Wait(&boundreqstemp2[n_ord_total_RM[n]], &Statbound[0][11]);
+					MPI_Wait(&boundreqs[nl[n_ord_total_RM[n]]][1], &Statbound[nl[n_ord_total_RM[n]]][1]);
+					#endif
+					free_arrays(n_ord_total_RM[n]);
+					#if(GPU_ENABLED || GPU_DEBUG )
+					GPU_finish(n_ord_total_RM[n], 0);
 					#endif
 				}
-				set_arrays(n_ord_total_RM[n]);
-				set_grid(n_ord_total_RM[n]);
-				#pragma omp parallel for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)  private(i, j, z, k)
-				ZSLOOP3D(N1_GPU_offset[n_ord_total_RM[n]] - N1G, N1_GPU_offset[n_ord_total_RM[n]] + BS_1 - 1 + N1G, N2_GPU_offset[n_ord_total_RM[n]] - N2G, N2_GPU_offset[n_ord_total_RM[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord_total_RM[n]] - N3G, N3_GPU_offset[n_ord_total_RM[n]] + BS_3 - 1 + N3G){
-					PLOOP p[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_p[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
-					for(k=0; k<NDIM; k++) ps[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_ps[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+			}
+			block[n_ord_total_RM[n]][AMR_GPU] = -1;
+
+			if (NODE[n_ord_total_RM[n]] == rank){
+				#pragma omp critical
+				{
+					if (block[n_ord_total_RM[n]][AMR_NODE] >= 0) {
+						MPI_Wait(&boundreqstemp1[n_ord_total_RM[n]], &Statbound[0][10]);
+						#if STAGGERED
+						MPI_Wait(&boundreqstemp2[n_ord_total_RM[n]], &Statbound[0][11]);
+						#endif
+					}
+					set_arrays(n_ord_total_RM[n]);
+					set_grid(n_ord_total_RM[n]);
+					#pragma omp parallel for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)  private(i, j, z, k)
+					ZSLOOP3D(N1_GPU_offset[n_ord_total_RM[n]] - N1G, N1_GPU_offset[n_ord_total_RM[n]] + BS_1 - 1 + N1G, N2_GPU_offset[n_ord_total_RM[n]] - N2G, N2_GPU_offset[n_ord_total_RM[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord_total_RM[n]] - N3G, N3_GPU_offset[n_ord_total_RM[n]] + BS_3 - 1 + N3G) {
+						PLOOP p[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_p[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+						for (k = 0; k < NDIM; k++) ps[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_ps[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+					}
+					free(temp_p[n_ord_total_RM[n]]);
+					free(temp_ps[n_ord_total_RM[n]]);
 				}
-				free(temp_p[n_ord_total_RM[n]]);
-				free(temp_ps[n_ord_total_RM[n]]);
 			}
 		}
 
 		//Set to updated node
 		block[n_ord_total_RM[n]][AMR_NODE] = NODE[n_ord_total_RM[n]];
+		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
+
 	}
 
 	//Now reloadbalance between the GPUs on a single node
+	#pragma omp parallel for schedule(dynamic,1) private(n)
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total_RM[n]][AMR_NODE] == rank){
 			if (GPU[n_ord_total_RM[n]] != block[n_ord_total_RM[n]][AMR_GPU]){
-				#if(GPU_ENABLED || GPU_DEBUG )
-				set_arrays_GPU(n_ord_total_RM[n], GPU[n_ord_total_RM[n]]);
-				GPU_write(n_ord_total_RM[n]);
-				#endif
+				#pragma omp critical
+				{
+					#if(GPU_ENABLED || GPU_DEBUG )
+					set_arrays_GPU(n_ord_total_RM[n], GPU[n_ord_total_RM[n]]);
+					GPU_write(n_ord_total_RM[n]);
+					#endif
+				}
 			}
 		}
-		block[n_ord_total_RM[n]][AMR_GPU] = GPU[n_ord_total_RM[n]];
 	}
 
 	activate_blocks();
@@ -2320,7 +2333,7 @@ int refine(int n){
 void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
-	set_corners(1);
+	//set_corners(1);
 	#if(N_LEVELS_1D_INT>0)
 	average_grid();
 	#endif
@@ -2388,7 +2401,7 @@ void check_refcrit(void){
 
 	//Remove boundaries from GPU
 	#if(GPU_ENABLED || GPU_DEBUG )
-	for(n;n<n_active;n++) free_bound_gpu(n_ord[n]);
+	for(n=0;n<n_active;n++) free_bound_gpu(n_ord[n]);
 	#endif
 
 	begin1 = time(NULL);
@@ -2555,75 +2568,66 @@ void check_refcrit(void){
 		} while (tag2);
 
 		//Detag if load balancing required as intermediate step
+		#pragma omp parallel for schedule(dynamic,1) private(n, node)
 		for (n = 0; n < n_active_total; n++){
-			node = block[n_ord_total[n]][AMR_NODE];
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1){				
-					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
-						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-						if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
-							n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-							if (block[n_send][AMR_NODE] != node){
-								NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
-							}
-						}
-					}
-				}
-				else{
-					block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == 0;
-					tag = 1;
-				}
-			}
-		}
-
-		//First make sure all blocks needed for derefinement are on the same node are on the same node: Send blocks
-		for (n = 0; n < n_active_total; n++){
-			node = block[n_ord_total[n]][AMR_NODE];
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				//Send block using non-blocking send
-				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
-					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
-						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-						if (block[n_send][AMR_NODE] != node){
-							rc = 0;
-							if (block[n_send][AMR_NODE] == rank){
-								rc += MPI_Isend(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][598]);
-								#if STAGGERED
-								rc += MPI_Isend(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][597]);
-								#endif
-							}
-							if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
-						}
-					}
-				}
-			}
-		}
-
-
-		//First make sure all blocks needed for derefinement are on the same node are on the same node: Receive blocks
-		for (n = 0; n < n_active_total; n++){
-			node = block[n_ord_total[n]][AMR_NODE];
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				//Send block using non-blocking send
-				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
-					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
-						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-						if (block[n_send][AMR_NODE] != node){
-							rc = 0;
-							if (node == rank){
-								//Allocate memory for active blocks on node
-								temp_p[n_send] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
-								temp_ps[n_send] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
-								if (block[n_send][AMR_NODE] >= 0){
-									rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
-									#if STAGGERED
-									rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
-									#endif
+			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
+				#pragma omp critical
+				{
+					node = block[n_ord_total[n]][AMR_NODE];
+					if (NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]] < MAX_BLOCKS + (1 + REF_1)*(1 + REF_2)*(1 + REF_1) - 1) {
+						for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
+							i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
+							if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {
+								n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+								if (block[n_send][AMR_NODE] != node) {
+									NODE_global[node*N_GPU + block[n_ord_total[n]][AMR_GPU]]++;
 								}
 							}
-							if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
+						}
+					}
+					else {
+						block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == 0;
+						tag = 1;
+					}
+				}
+			}
+		}
+
+		//First make sure all blocks needed for derefinement are on the same node are on the same node: Send/REceive blocks
+		#pragma omp parallel for schedule(dynamic,1) private(n, node)
+		for (n = 0; n < n_active_total; n++) {
+			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
+				#pragma omp critical
+				{
+					node = block[n_ord_total[n]][AMR_NODE];
+					//Send block using non-blocking send
+					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
+						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
+						if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {
+							n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+							if (block[n_send][AMR_NODE] != node) {
+								rc = 0;
+								if (block[n_send][AMR_NODE] == rank) {
+									rc += MPI_Isend(&p[nl[n_send]][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][598]);
+									#if STAGGERED
+									rc += MPI_Isend(&ps[nl[n_send]][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, node, (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqs[nl[n_send]][597]);
+									#endif
+								}
+								if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
+
+								if (node == rank) {
+									//Allocate memory for active blocks on node
+									temp_p[n_send] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+									temp_ps[n_send] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
+									if (block[n_send][AMR_NODE] >= 0) {
+										rc += MPI_Irecv(&temp_p[n_send][0], NPR*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (3 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp1[n_send]);
+										#if STAGGERED
+										rc += MPI_Irecv(&temp_ps[n_send][0], NDIM*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G), MPI_DOUBLE, block[n_send][AMR_NODE], (4 * NB_LOCAL + block[n_send][AMR_NUMBER]) % MPI_TAG_MAX, mpi_cartcomm, &boundreqstemp2[n_send]);
+										#endif
+									}
+								}
+								if (rc != 0)fprintf(stderr, "Error in MPI in derefine \n");
+							}
 						}
 					}
 				}
@@ -2631,24 +2635,28 @@ void check_refcrit(void){
 		}
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Clean up on sending side
+		#pragma omp parallel for schedule(dynamic,1) private(n, node)
 		for (n = 0; n < n_active_total; n++){
-			node = block[n_ord_total[n]][AMR_NODE];
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
-					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					//Then use MPI_wait to clean up data that has been sent
-					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
-						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-						if (block[n_send][AMR_NODE] != node){
-							if (block[n_send][AMR_NODE] == rank){
-								MPI_Wait(&boundreqs[nl[n_send]][598], &Statbound[nl[n_send]][0]);
-								#if STAGGERED
-								MPI_Wait(&boundreqs[nl[n_send]][597], &Statbound[nl[n_send]][1]);
-								#endif
-								free_arrays(n_send);
-								#if(GPU_ENABLED || GPU_DEBUG )
-								GPU_finish(n_send, 0);
-								#endif
+			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
+				#pragma omp critical
+				{
+					node = block[n_ord_total[n]][AMR_NODE];
+					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
+						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
+						//Then use MPI_wait to clean up data that has been sent
+						if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {
+							n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+							if (block[n_send][AMR_NODE] != node) {
+								if (block[n_send][AMR_NODE] == rank) {
+									MPI_Wait(&boundreqs[nl[n_send]][598], &Statbound[nl[n_send]][0]);
+									#if STAGGERED
+									MPI_Wait(&boundreqs[nl[n_send]][597], &Statbound[nl[n_send]][1]);
+									#endif
+									free_arrays(n_send);
+									#if(GPU_ENABLED || GPU_DEBUG )
+									GPU_finish(n_send, 0);
+									#endif
+								}
 							}
 						}
 					}
@@ -2657,66 +2665,59 @@ void check_refcrit(void){
 		}
 
 		//First make sure all blocks needed for derefinement are on the same node are on the same node: Allocate arrays on receiving side
+		#pragma omp parallel for schedule(dynamic,1) private(n)
 		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				node = block[n_ord_total[n]][AMR_NODE];
-				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
-					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					//Then initialize sent data on receiving node
-					if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)){
-						n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-						if (block[n_send][AMR_NODE] != node){
-							if (node == rank){
-								if (block[n_send][AMR_NODE] >= 0){
-									MPI_Wait(&boundreqstemp1[n_send], &Statbound[0][10]);
-									#if STAGGERED
-									MPI_Wait(&boundreqstemp2[n_send], &Statbound[0][11]);
+			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
+				#pragma omp critical
+				{
+					node = block[n_ord_total[n]][AMR_NODE];
+					for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++) {
+						i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
+						//Then initialize sent data on receiving node
+						if (((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL1] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL1]) % (1 + REF_1) >= i1) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL2] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL2]) % (1 + REF_2) >= i2) && ((block[block[block[n_ord_total[n]][AMR_PARENT]][i]][AMR_LEVEL3] - block[block[n_ord_total[n]][AMR_PARENT]][AMR_LEVEL3]) % (1 + REF_3) >= i3)) {
+							n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
+							if (block[n_send][AMR_NODE] != node) {
+								if (node == rank) {
+									if (block[n_send][AMR_NODE] >= 0) {
+										MPI_Wait(&boundreqstemp1[n_send], &Statbound[0][10]);
+										#if STAGGERED
+										MPI_Wait(&boundreqstemp2[n_send], &Statbound[0][11]);
+										#endif
+									}
+									set_arrays(n_send);
+									set_grid(n_send);
+									#pragma omp parallel for schedule(static, (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)  private(i, j, z, k)
+									ZSLOOP3D(N1_GPU_offset[n_send] - N1G, N1_GPU_offset[n_send] + BS_1 - 1 + N1G, N2_GPU_offset[n_send] - N2G, N2_GPU_offset[n_send] + BS_2 - 1 + N2G, N3_GPU_offset[n_send] - N3G, N3_GPU_offset[n_send] + BS_3 - 1 + N3G) {
+										PLOOP p[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_p[n_send][index_3D(n_send, i, j, z)][k];
+										for (k = 0; k < NDIM; k++) ps[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_ps[n_send][index_3D(n_send, i, j, z)][k];
+									}
+									free(temp_p[n_send]);
+									free(temp_ps[n_send]);
+									#if(GPU_ENABLED || GPU_DEBUG )
+									if (mem_spot_gpu[nl[n_send]] != -1) gpu_choice = mem_spot_gpu[nl[n_send]];
+									else {
+										gpu_choice = gpu_counter%N_GPU;
+										gpu_counter++;
+									}
+									set_arrays_GPU(n_send, gpu_choice);
+									GPU_write(n_send);
 									#endif
 								}
-								set_arrays(n_send);
-								set_grid(n_send);
-								#pragma omp parallel for schedule(static, (BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)  private(i, j, z, k)
-								ZSLOOP3D(N1_GPU_offset[n_send] - N1G, N1_GPU_offset[n_send] + BS_1 - 1 + N1G, N2_GPU_offset[n_send] - N2G, N2_GPU_offset[n_send] + BS_2 - 1 + N2G, N3_GPU_offset[n_send] - N3G, N3_GPU_offset[n_send] + BS_3 - 1 + N3G){
-									PLOOP p[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_p[n_send][index_3D(n_send, i, j, z)][k];
-									for (k = 0; k < NDIM; k++) ps[nl[n_send]][index_3D(n_send, i, j, z)][k] = temp_ps[n_send][index_3D(n_send, i, j, z)][k];
-								}
-								free(temp_p[n_send]);
-								free(temp_ps[n_send]);
-								#if(GPU_ENABLED || GPU_DEBUG )
-								if (mem_spot_gpu[nl[n_send]] != -1) gpu_choice = mem_spot_gpu[nl[n_send]];
-								else {
-									gpu_choice = gpu_counter%N_GPU;
-									gpu_counter++;
-								}
-								set_arrays_GPU(n_send, gpu_choice);
-								GPU_write(n_send);
-								#endif
 							}
 						}
+						block[n_send][AMR_NODE] = node;
 					}
-				}
-			}
-		}
 
-		//Derefine if tagged for derefinement and not part of nesting
-		for (n = 0; n < n_active_total; n++){
-			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]){
-				node = block[n_ord_total[n]][AMR_NODE];
-				for (i1 = 0; i1 < 1 + REF_1; i1++)for (i2 = 0; i2 < 1 + REF_2; i2++)for (i3 = 0; i3 < 1 + REF_3; i3++){
-					i = AMR_CHILD1 + i1 * 4 + i2 * 2 + i3;
-					n_send = block[block[n_ord_total[n]][AMR_PARENT]][i];
-					block[n_send][AMR_NODE] = node;
-				}
+					block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
 
-				block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
-
-				//Then derefine and set corresponding tag and timelevel
-				if (one_block_derefined == 0){
-					prolong_grid();
-					one_block_derefined = 1;
+					//Then derefine and set corresponding tag and timelevel
+					if (one_block_derefined == 0) {
+						prolong_grid();
+						one_block_derefined = 1;
+					}
+					derefine(block[n_ord_total[n]][AMR_PARENT]);
+					block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 				}
-				derefine(block[n_ord_total[n]][AMR_PARENT]);
-				block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 			}
 		}
 
@@ -2743,7 +2744,7 @@ void check_refcrit(void){
 	//for (n = 0; n < n_active_total; n++){
 		//block[n_ord_total[n]][AMR_TIMELEVEL] = 1;
 	//}
-	set_corners(1);
+	set_corners(0);
 
 	//Set boundaries on GPU
 	#if(GPU_ENABLED || GPU_DEBUG )
@@ -2844,10 +2845,14 @@ double calc_refcrit(int n){
 	}
 	#else
 	if (block[n][AMR_NODE] == rank){
+		#pragma omp parallel for schedule(dynamic,1) private(i,j,z,X,r,th,phi)
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r<150.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			#pragma omp critical
+			{
+				if (p[nl[n]][index_3D(n, i, j, z)][RHO] * r > ref_val && r < 150.) ref_val = p[nl[n]][index_3D(n, i, j, z)][RHO] * r;
+			}
 		}
 	}
 	#endif
@@ -2857,12 +2862,13 @@ double calc_refcrit(int n){
 //Send refinement criterion across cluster
 void synch_refcrit(void){
 	int n, task;
+	#pragma omp parallel for schedule(dynamic,1) private(n, rc)
 	for (n = 0; n < n_active_total; n++){
-		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
 			if(block[n_ord_total[n]][AMR_NODE]==rank) ref_val[n_ord_total[n]] = calc_refcrit(n_ord_total[n]);
 			rc = MPI_Ibcast(&ref_val[n_ord_total[n]], 1, MPI_DOUBLE, block[n_ord_total[n]][AMR_NODE], mpi_cartcomm, &request_timelevel[n_ord_total[n]]);
-		}
 	}
+
+	#pragma omp parallel for schedule(dynamic,1) private(n, rc)
 	for (n = 0; n < n_active_total; n++){
 		if (block[n_ord_total[n]][AMR_ACTIVE] == 1){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
