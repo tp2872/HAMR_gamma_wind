@@ -529,67 +529,67 @@ void alloc_bounds_GPU(int n){
 
 	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec4_5flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec4_5flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec4_6flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_2]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec4_6flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_3], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec4_7flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_3]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec4_7flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_4], &ref1, &ref2, &ref3);
-		if (ref3 && ref2)gpuAlloc(&Bufferrec4_8flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref2)gpuAlloc(&Bufferrec4_8flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_4]][AMR_NODE] / 1 == rank / 1);
 	}	
 	if (block[n][AMR_NBR4_5] >= 0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR4_5], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec2_1flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_5]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec2_1flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_6], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec2_2flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec2_2flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_6]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_7], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec2_3flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec2_3flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_7]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_8], &ref1, &ref2, &ref3);
-		if (ref3 && ref2)gpuAlloc(&Bufferrec2_4flux[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref2)gpuAlloc(&Bufferrec2_4flux[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_8]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	if (block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR3_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec1_3flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec1_3flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_2], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec1_4flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_2]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec1_4flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_5], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec1_7flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_5]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec1_7flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_6], &ref1, &ref2, &ref3);
-		if (ref3 && ref1)gpuAlloc(&Bufferrec1_8flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref1)gpuAlloc(&Bufferrec1_8flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_6]][AMR_NODE] / 1 == rank / 1);
 	}
 	if (block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR1_3], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec3_1flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_3]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec3_1flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_4], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec3_2flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec3_2flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_4]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_7], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec3_5flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec3_5flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_7]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_8], &ref1, &ref2, &ref3);
-		if (ref3 && ref1)gpuAlloc(&Bufferrec3_6flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref1)gpuAlloc(&Bufferrec3_6flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_8]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	#if(N3G>0)
 	if (block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR5_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec6_2flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec6_2flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_3], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec6_4flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_3]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec6_4flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_5], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec6_6flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_5]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec6_6flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_7], &ref1, &ref2, &ref3);
-		if (ref2 && ref1)gpuAlloc(&Bufferrec6_8flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref2 && ref1)gpuAlloc(&Bufferrec6_8flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_7]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	if (block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR6_2], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec5_1flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_2]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec5_1flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_4], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec5_3flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec5_3flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_4]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_6], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec5_5flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec5_5flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_6]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_8], &ref1, &ref2, &ref3);
-		if (ref2 && ref1)gpuAlloc(&Bufferrec5_7flux[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref2 && ref1)gpuAlloc(&Bufferrec5_7flux[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_8]][AMR_NODE] / 1 == rank / 1);
 	}
 	#endif
 
@@ -605,134 +605,134 @@ void alloc_bounds_GPU(int n){
 
 	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec4_5flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec4_5flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec4_6flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_2]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec4_6flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_3], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec4_7flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_3]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec4_7flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_4], &ref1, &ref2, &ref3);
-		if (ref3 && ref2)gpuAlloc(&Bufferrec4_8flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref2)gpuAlloc(&Bufferrec4_8flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_4]][AMR_NODE] / 1 == rank / 1);
 	}
 	if (block[n][AMR_NBR4_5] >= 0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR4_5], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec2_1flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_5]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec2_1flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_6], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec2_2flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec2_2flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_6]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_7], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec2_3flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec2_3flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_7]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_8], &ref1, &ref2, &ref3);
-		if (ref3 && ref2)gpuAlloc(&Bufferrec2_4flux1[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref2)gpuAlloc(&Bufferrec2_4flux1[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_8]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	if (block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR3_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec1_3flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec1_3flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_2], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec1_4flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_2]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec1_4flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_5], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec1_7flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_5]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec1_7flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_6], &ref1, &ref2, &ref3);
-		if (ref3 && ref1)gpuAlloc(&Bufferrec1_8flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref1)gpuAlloc(&Bufferrec1_8flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_6]][AMR_NODE] / 1 == rank / 1);
 	}
 	if (block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR1_3], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec3_1flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_3]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec3_1flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_4], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec3_2flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec3_2flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_4]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_7], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec3_5flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec3_5flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_7]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_8], &ref1, &ref2, &ref3);
-		if (ref3 && ref1)gpuAlloc(&Bufferrec3_6flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref1)gpuAlloc(&Bufferrec3_6flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_8]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	#if(N3G>0)
 	if (block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR5_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec6_2flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec6_2flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_3], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec6_4flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_3]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec6_4flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_5], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec6_6flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_5]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec6_6flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_7], &ref1, &ref2, &ref3);
-		if (ref2 && ref1)gpuAlloc(&Bufferrec6_8flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref2 && ref1)gpuAlloc(&Bufferrec6_8flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_7]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	if (block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR6_2], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec5_1flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_2]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec5_1flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_4], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec5_3flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec5_3flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_4]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_6], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec5_5flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec5_5flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_6]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_8], &ref1, &ref2, &ref3);
-		if (ref2 && ref1)gpuAlloc(&Bufferrec5_7flux1[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref2 && ref1)gpuAlloc(&Bufferrec5_7flux1[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_8]][AMR_NODE] / 1 == rank / 1);
 	}
 	#endif
 
 	//Receive buffers flux2 variables
 	if (block[n][AMR_NBR2_1] >= 0 && block[block[n][AMR_NBR2_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR2_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec4_5flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec4_5flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_2], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec4_6flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_2]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec4_6flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_3], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec4_7flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_3]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec4_7flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR2_4], &ref1, &ref2, &ref3);
-		if (ref3 && ref2)gpuAlloc(&Bufferrec4_8flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref2)gpuAlloc(&Bufferrec4_8flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR2_4]][AMR_NODE] / 1 == rank / 1);
 	}
 	if (block[n][AMR_NBR4_5] >= 0 && block[block[n][AMR_NBR4_5]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR4_5], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec2_1flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_5]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec2_1flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_6], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec2_2flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec2_2flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_6]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_7], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec2_3flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec2_3flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_7]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR4_8], &ref1, &ref2, &ref3);
-		if (ref3 && ref2)gpuAlloc(&Bufferrec2_4flux2[nl[n]], (NG * (NPR + 3)*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref2)gpuAlloc(&Bufferrec2_4flux2[nl[n]], (NPR*(BS_2 / (1 + ref2))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR4_8]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	if (block[n][AMR_NBR3_1] >= 0 && block[block[n][AMR_NBR3_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR3_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec1_3flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec1_3flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_2], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec1_4flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_2]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec1_4flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_5], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec1_7flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_5]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec1_7flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR3_6], &ref1, &ref2, &ref3);
-		if (ref3 && ref1)gpuAlloc(&Bufferrec1_8flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref1)gpuAlloc(&Bufferrec1_8flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR3_6]][AMR_NODE] / 1 == rank / 1);
 	}
 	if (block[n][AMR_NBR1_3] >= 0 && block[block[n][AMR_NBR1_3]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR1_3], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec3_1flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_3]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec3_1flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_4], &ref1, &ref2, &ref3);
-		if (ref3)gpuAlloc(&Bufferrec3_2flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref3)gpuAlloc(&Bufferrec3_2flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_4]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_7], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec3_5flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec3_5flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_7]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR1_8], &ref1, &ref2, &ref3);
-		if (ref3 && ref1)gpuAlloc(&Bufferrec3_6flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref3 && ref1)gpuAlloc(&Bufferrec3_6flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_3 / (1 + ref3)) * sizeof(double)), block[block[n][AMR_NBR1_8]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	#if(N3G>0)
 	if (block[n][AMR_NBR5_1] >= 0 && block[block[n][AMR_NBR5_1]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR5_1], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec6_2flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_1]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec6_2flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_1]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_3], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec6_4flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_3]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec6_4flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_3]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_5], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec6_6flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_5]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec6_6flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_5]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR5_7], &ref1, &ref2, &ref3);
-		if (ref2 && ref1)gpuAlloc(&Bufferrec6_8flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_7]][AMR_NODE] / 1 == rank / 1);
+		if (ref2 && ref1)gpuAlloc(&Bufferrec6_8flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR5_7]][AMR_NODE] / 1 == rank / 1);
 	}
 
 	if (block[n][AMR_NBR6_2] >= 0 && block[block[n][AMR_NBR6_2]][AMR_ACTIVE] == 1) {
 		set_ref(n, block[n][AMR_NBR6_2], &ref1, &ref2, &ref3);
-		gpuAlloc(&Bufferrec5_1flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_2]][AMR_NODE] / 1 == rank / 1);
+		gpuAlloc(&Bufferrec5_1flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_2]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_4], &ref1, &ref2, &ref3);
-		if (ref2)gpuAlloc(&Bufferrec5_3flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_4]][AMR_NODE] / 1 == rank / 1);
+		if (ref2)gpuAlloc(&Bufferrec5_3flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_4]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_6], &ref1, &ref2, &ref3);
-		if (ref1)gpuAlloc(&Bufferrec5_5flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_6]][AMR_NODE] / 1 == rank / 1);
+		if (ref1)gpuAlloc(&Bufferrec5_5flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_6]][AMR_NODE] / 1 == rank / 1);
 		set_ref(n, block[n][AMR_NBR6_8], &ref1, &ref2, &ref3);
-		if (ref2 && ref1)gpuAlloc(&Bufferrec5_7flux2[nl[n]], (NG * (NPR + 3)*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_8]][AMR_NODE] / 1 == rank / 1);
+		if (ref2 && ref1)gpuAlloc(&Bufferrec5_7flux2[nl[n]], (NPR*(BS_1 / (1 + ref1))*(BS_2 / (1 + ref2)) * sizeof(double)), block[block[n][AMR_NBR6_8]][AMR_NODE] / 1 == rank / 1);
 	}
 	#endif
 
@@ -2884,10 +2884,10 @@ void free_bound_gpu(int n){
 	#endif
 
 	//Send buffers misc variables
-	cudaMallocHost(&Buffersend1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
-	cudaMallocHost(&Buffersend3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
-	cudaMallocHost(&Bufferrec1fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
-	cudaMallocHost(&Bufferrec3fine[nl[n]], NPR*(BS_1 + 2 * N1G)*(BS_3 + 2 * N3G) * sizeof(double));
+	cudaFreeHost(Buffersend1fine[nl[n]]);
+	cudaFreeHost(Buffersend3fine[nl[n]]);
+	cudaFreeHost(Bufferrec1fine[nl[n]]);
+	cudaFreeHost(Bufferrec3fine[nl[n]]);
 
 	//Send buffers E variables
 	if (block[n][AMR_NBR1] >= 0 && block[block[n][AMR_NBR1]][AMR_ACTIVE] == 1)gpuFree(Buffersend1E[nl[n]], NPR*(BS_1 + 2 * D1)*(BS_3 + 2 * D3) * sizeof(double), block[block[n][AMR_NBR1]][AMR_NODE] / 1 == rank / 1);
