@@ -746,11 +746,12 @@ extern int status;
 
 /* output parameters */
 extern double DTd;
+extern double DTd_reduced;
 extern double DTl;
 extern double DTi;
 extern int    DTr;
 extern double tref;
-extern int    dump_cnt;
+extern int    dump_cnt, dump_cnt_reduced;
 extern int    image_cnt;
 extern int    rdump_cnt;
 
@@ -788,11 +789,11 @@ extern double time_spent3;
 extern double *dump_buffer;
 extern double(*restrict dxdxp_z[NB_LOCAL])[NDIM][NDIM];
 extern double(*restrict dxpdx_z[NB_LOCAL])[NDIM][NDIM];
-extern float *array[NB_LOCAL], *array_diag[NB_LOCAL];
+extern float *array[NB_LOCAL], *array_reduced[NB_LOCAL], *array_diag[NB_LOCAL];
 extern int *array_gdumpgrid, *array_rdumpgrid;
-extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL];
-extern int first_dump, first_rdump, first_gdump, restart_number;
-extern FILE *fparam_dump, *fparam_restart;
+extern double *array_rdump[NB_LOCAL], *array_gdump1[NB_LOCAL], *array_gdump2[NB_LOCAL], *array_gdump1_reduced[NB_LOCAL], *array_gdump2_reduced[NB_LOCAL];
+extern int first_dump, first_dump_reduced, first_rdump, first_gdump, restart_number;
+extern FILE *fparam_dump, *fparam_dump_reduced, *fparam_restart;
 
 /*AMR parameters*/
 extern int(*block)[NV];
@@ -812,10 +813,11 @@ FUNCTION DECLARATIONS
 *************************************************************************/
 //Output related
 void dump_new(void);
+void dump_new_reduced(void);
 void gdump_new(void);
-void dump_params(FILE *fp);
+void gdump_new_reduced(void);
+void dump_params(FILE *fp, int dump_reduced); 
 double divb_calc(int n, int i, int j, int z);
-void dump_params(FILE *fp);
 void param_read(FILE *fp);
 void rdump_block_read(FILE *fp, int n);
 int restart_read_param(void);
@@ -824,8 +826,10 @@ int restart_read(void);
 void dump_read(void);
 void gdump_read(FILE *fp);
 void close_dump();
+void close_dump_reduced();
 void close_rdump();
 void close_gdump();
+void close_gdump_reduced();
 double get_wall_time();
 
 /** Evolution/physics functions **/

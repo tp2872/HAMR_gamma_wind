@@ -71,15 +71,8 @@ void restart_write(void)
 			fclose(checkfile);
 		}
 		fparam_restart = fopen(filename, "wb");	
-		dump_params(fparam_restart);
+		dump_params(fparam_restart, 0);
 		fflush(fparam_restart);
-	}
-
-	if (rank == 1%numtasks){
-		if (rdump_cnt % 2 == 0) sprintf(filename, "rdumps0/grid");
-		else sprintf(filename, "rdumps1/grid");
-		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &grid_restart[0]);
-		rdump_grid(grid_restart);
 	}
 
 	for (n = 0; n < n_active; n++){
@@ -207,7 +200,6 @@ void rdump_block_read(FILE *fp, int n)
 	}
 }
 
-
 void close_rdump(void) {
 	int u, n;
 	int u_stride = 200;
@@ -223,13 +215,12 @@ void close_rdump(void) {
 			MPI_Wait(&req_block_rdump[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 			MPI_File_close(&rdump[nl[n_ord[n]]]);
 		}
-		if (rank == 1 % numtasks) {
-			MPI_Wait(&req_rdumpgrid[0], &Statbound[nl[n_ord[0]]][0]);
-			MPI_File_close(&grid_restart[0]);
-		}
+		//if (rank == 1 % numtasks) {
+		//	MPI_Wait(&req_rdumpgrid[0], &Statbound[nl[n_ord[0]]][0]);
+		//	MPI_File_close(&grid_restart[0]);
+		//}
 
 		if (rank == 0 && fparam_restart != NULL)fclose(fparam_restart);
-		//if (rank == 1%numtasks && grid_restart != NULL)fclose(grid_restart);
 
 		//Now tell the writing is complete
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -285,24 +276,7 @@ int restart_read_param(void)
 			fclose(param);
 			t1 = t;
 			if (t1 > t0) {
-				grid = fopen("rdumps1/grid", "rb");
-				if (grid == NULL) {
-					if (rank == 0) fprintf(stderr, "Cannot open restart grid file\n");
-					return 0;
-				}
 				if (rank == 0) fprintf(stderr, "Reading in rdumps1! \n");
-
-				fread(&k, int_size, 1, grid);
-				for (n = 0; n < NB; n++) {
-					for (k = 0; k < NV; k++) { //SASMARK: why is 36 hard-coded?
-						fread(&(block[n][k]), int_size, 1, grid);
-					}
-					block[n][AMR_NODE] = -1;
-					block[n][AMR_GPU] = -1;
-					block[n][GDUMP_WRITTEN] = 0;
-					block[n][AMR_REFINED] = 0;
-				}
-				fclose(grid);
 				restart_number = 1;
 			}
 		}
@@ -315,23 +289,6 @@ int restart_read_param(void)
 		if (param != NULL) {
 			param_read(param);
 			fclose(param);
-			grid = fopen("rdumps0/grid", "rb");
-			if (grid == NULL) {
-				if (rank == 0) fprintf(stderr, "Cannot open restart grid file\n");
-				return 0;
-			}
-
-			fread(&k, int_size, 1, grid);
-			for (n = 0; n < NB; n++) {
-				for (k = 0; k < NV; k++) { //SASMARK: why is 36 hard-coded?
-					fread(&(block[n][k]), int_size, 1, grid);
-				}
-				block[n][AMR_NODE] = -1;
-				block[n][AMR_GPU] = -1;
-				block[n][GDUMP_WRITTEN] = 0;
-				block[n][AMR_REFINED] = 0;
-			}
-			fclose(grid);
 			restart_number = 0;
 		}
 	}
@@ -348,9 +305,9 @@ int restart_read_param(void)
 void param_read(FILE *fp){
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
-	int u;
+	int u, n, n2;
 	double dummy;
-	
+	u = rdump_cnt + 1;
 	 //Print out essential stuff for restart
 	fread(&t, double_size, 1, fp);
 	fread(&n_active, int_size, 1, fp);
@@ -360,7 +317,7 @@ void param_read(FILE *fp){
 	fread(&DTl, double_size, 1, fp);
 	fread(&dummy, double_size, 1, fp);
 	fread(&dump_cnt, int_size, 1, fp);
-	fread(&rdump_cnt, int_size, 1, fp);
+	fread(&u, int_size, 1, fp);
 	fread(&dt, double_size, 1, fp);
 	fread(&failed, int_size, 1, fp);
 
@@ -410,7 +367,7 @@ void param_read(FILE *fp){
 	fread(&fractheta, double_size, 1, fp);
 	fread(&lim, int_size, 1, fp);
 	fread(&stag, int_size, 1, fp);
-	fread(&B, int_size, 1, fp);
+	fread(&dump_cnt_reduced, int_size, 1, fp);
 	fread(&T, int_size, 1, fp);
 	fread(&C, int_size, 1, fp);
 	fread(&D, int_size, 1, fp);
@@ -424,11 +381,13 @@ void param_read(FILE *fp){
 	fread(&docyl, int_size, 1, fp);
 	fread(&dk, int_size, 1, fp);
 
-	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1
-		|| NB2_print != NB_2 || NB3_print != NB_3 || stag != STAGGERED
-		|| B != BRAVO || T != TANGO || C != CHARLIE || D != DELTA || r1 != REF_1 || r2 != REF_2
-		|| r3 != REF_3 || nl != N_LEVELS || rx != RADEXP || rt != RTRANS || rb != RB || docyl != DOCYLINDRIFYCOORDS
-		|| dk != DOKTOT){
+	for (n = 0; n < n_active_total; n++) {
+		fread(&n2, int_size, 1, fp);
+		block[n2][AMR_ACTIVE] = 1;
+		fread(&block[n2][AMR_TIMELEVEL], int_size, 1, fp);
+	}
+
+	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3){
 		if(rank==0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
 	}
 

@@ -30,7 +30,7 @@ Physical Parameters section
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (1)
-#define H_OVER_R (0.02)
+#define H_OVER_R (0.1)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
@@ -40,7 +40,7 @@ Physical Parameters section
 #define UUMIN	(1.e-8)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
-#define POWRHO (2.0)
+#define POWRHO (1.5)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
@@ -87,17 +87,17 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 24
-#define NB_2 12
+#define NB_1 4
+#define NB_2 4
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 50
-#define BS_2 48
-#define BS_3 64
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 4
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -111,10 +111,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (4)
+#define N_LEVELS_1D_INT (2)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -130,10 +130,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 64
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (120)
+#define DUMPFACTOR (240)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -233,6 +233,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
 
+/*Whether to output a reduced resolution file*/
+#define DUMP_SMALL (1)
+#define REDUCE_FACTOR1 (2)
+#define REDUCE_FACTOR2 (2)
+#define REDUCE_FACTOR3 (2)
+
+/*Whether to dump diag file*/
+#define DUMP_DIAG (0)
+
 /* whether or not to rescale primitive variables before interpolating them for flux/BC's. Is not implemented on GPU and dperacated/unlikely to work correctly on CPU */
 #define RESCALE     (0)
 
@@ -282,11 +291,12 @@ MNEMONICS SECTION
 #define MINM	(2)
 
 /* mnemonics for diagnostic calls */
-#define INIT_OUT	(0)
-#define DUMP_OUT	(1)
-#define IMAGE_OUT	(2)
-#define LOG_OUT		(3)
-#define FINAL_OUT	(4)
+#define INIT_OUT	    (0)
+#define DUMP_OUT	    (1)
+#define IMAGE_OUT	    (2)
+#define LOG_OUT		    (3)
+#define FINAL_OUT	    (4)
+#define DUMP_OUT_REDUCED	(5)
 
 /* failure modes */
 #define FAIL_UTOPRIM        (1)
@@ -306,7 +316,7 @@ MNEMONICS SECTION
 #endif 
 
 /*Mnemonics for AMR parameters*/
-#define NV 182
+#define NV 183
 #define AMR_ACTIVE 0
 #define AMR_LEVEL 1
 #define AMR_REFINED 2
@@ -488,6 +498,8 @@ MNEMONICS SECTION
 #define AMR_TAG1 179
 #define AMR_TAG3 180
 #define AMR_WEIGHT 181
+#define GDUMP_WRITTEN_REDUCED 182
+
 
 /*************************************************************************
 Variable Inversion Section
@@ -504,7 +516,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (1)
+#define NEWMAN (0)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

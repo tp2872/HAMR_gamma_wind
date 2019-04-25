@@ -189,13 +189,10 @@ void init_thindisk()
 
 	/* output choices */
 	tf = 200000000.0;
-	DTd = 5.;	/* dumping frequency, in units of M */
-	DTl = 50.0;	/* logfile frequency, in units of M */
-	DTi = 100.0; 	/* image file frequ., in units of M */
-	DTr = 5.0 * 1000.; 	/* restart file frequ., in timesteps */
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
+	dump_cnt_reduced = 0;
 	image_cnt = 0;
 	rdump_cnt = 0;
 
@@ -399,13 +396,10 @@ void init_torus()
 	
     /* output choices */
 	tf = 200000000.0 ;
-	DTd = 5.;	/* dumping frequency, in units of M */
-	DTl = 50.0;	/* logfile frequency, in units of M */
-	DTi = 100.0; 	/* image file frequ., in units of M */
-	DTr = 5.0 * 1000.; 	/* restart file frequ., in timesteps */
 
 	/* start diagnostic counters */
 	dump_cnt = 0 ;
+	dump_cnt_reduced = 0;
 	image_cnt = 0 ;
 	rdump_cnt = 0 ;
 
@@ -639,13 +633,10 @@ void init_disruption()
   
   /* output choices */
   tf = 200000000.0 ;
-  DTd = 25.0;	/* dumping frequency, in units of M */
-  DTl = 50.0;	/* logfile frequency, in units of M */
-  DTi = 100.0; 	/* image file frequ., in units of M */
-  DTr = 5.0 * 1000.; 	/* restart file frequ., in timesteps */
   
   /* start diagnostic counters */
   dump_cnt = 0 ;
+  dump_cnt_reduced = 0;
   image_cnt = 0 ;
   rdump_cnt = 0 ;
 
@@ -1599,13 +1590,9 @@ void init_torus_grb(){
 	/* output choices */
 	tf = 25000.0;
 
-	DTd = 10.; /* dumping frequency, in units of M */
-	DTl = 10.;	/* logfile frequency, in units of M */
-	DTi = 10.; 	/* image file frequ., in units of M */
-	DTr = 10.; /* restart file frequ., in units of M */
-
 	/* start diagnostic counters */
 	dump_cnt = 0;
+	dump_cnt_reduced = 0;
 	image_cnt = 0;
 	rdump_cnt = 0;
 	defcon = 1.;

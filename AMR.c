@@ -1141,6 +1141,7 @@ void set_AMR(void){
 		block[n][AMR_REFINED] = 0;
 
 		block[n][GDUMP_WRITTEN] = 0;
+		block[n][GDUMP_WRITTEN_REDUCED] = 0;
 
 		//No node assigned yet
 		block[n][AMR_NODE] = -1;
@@ -1172,6 +1173,13 @@ void set_AMR(void){
 		if (rank == 0) fprintf(stderr, "Grid not power of 2 of internal derefinment levels! \n");
 		exit(0);
 	}
+
+	#if(DUMP_SMALL)
+	if (BS_1%REDUCE_FACTOR1 != 0 || BS_2%REDUCE_FACTOR2 != 0 || BS_3%REDUCE_FACTOR3 != 0) {
+		if (rank == 0) fprintf(stderr, "Grid reduction incompatible with grid size! \n");
+		exit(0);
+	}
+	#endif
 
 	//Grid parameters
 	set_gridparam();
@@ -2398,6 +2406,10 @@ void check_refcrit(void){
 
 	//First close dump files in progress
 	close_dump();
+	#if(DUMP_SMALL)
+	close_dump_reduced();
+	close_gdump_reduced();
+	#endif
 	close_gdump();
 	close_rdump();
 	MPI_Barrier(mpi_cartcomm);

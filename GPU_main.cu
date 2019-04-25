@@ -5,7 +5,7 @@ extern "C" {
 int gpuAlloc(void **devPtr, int size);
 int gpuFree(void *devPtr, int trash1, int trash2);
 
-#define GPU_SET (6)
+#define GPU_SET (1)
 
 //Wrapper for allocation of boundary cells
 #if(GPU_DIRECT)

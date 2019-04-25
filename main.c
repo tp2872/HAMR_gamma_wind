@@ -58,7 +58,7 @@
 -*****************************************************************/
 int main(int argc, char *argv[])
 {
-	double tdump, tlog;
+	double tdump, tdump_reduced, tlog;
 	int nfailed = 0;
 	int i, j, z, u, n, l;
 	double r, th, phi, X[NDIM];
@@ -98,8 +98,9 @@ int main(int argc, char *argv[])
 	diag(INIT_OUT);
 
 	/*Set dumping frequency*/
-	DTl = 50.0;
-	DTd = 50.0;
+	DTl = 100.0;
+	DTd = 100.0;
+	DTd_reduced = 25.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t;
@@ -159,6 +160,14 @@ int main(int argc, char *argv[])
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}	
+
+		/* Put out reduced dump file*/
+		#if(DUMP_SMALL)
+		if (t >= tdump_reduced && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+			diag(DUMP_OUT_REDUCED);
+			tdump_reduced += DTd_reduced;
+		}
+		#endif
 
 		#if TIMER
 		if (nstep % (DUMPFACTOR*AMR_SWITCHTIMELEVEL) == 0){
@@ -251,7 +260,13 @@ void MPI_initialize(int argc, char *argv[])
 	//omp_set_num_threads(1);
 
 	if (rank == 0){
-		system("mkdir dumps gdumps rdumps0 rdumps1");
+		system("mkdir dumps gdumps rdumps0 rdumps1 reduced");
+		#if defined(WIN32)
+		system("mkdir reduced\\gdumps");
+		#else
+		system("mkdir -p reduced/gdumps");
+		#endif
+
 	}
 }
 
@@ -294,6 +309,11 @@ void set_arrays(int n)
 	else mem_spot[i] = 1;
 
 	array[nl[n]] = (float *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(float));
+	#if(DUMP_SMALL)
+	array_reduced[nl[n]] = (float *)malloc(9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
+	array_gdump1_reduced[nl[n]] = (double *)malloc(9 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 *BS_3 / REDUCE_FACTOR3 * sizeof(double));
+	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * sizeof(double));
+	#endif
 	array_gdump1[nl[n]] = (double *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(double));
 	array_gdump2[nl[n]] = (double *)malloc(49 * BS_1*BS_2 * sizeof(double));
 	array_rdump[nl[n]] = (double *)malloc((NPR + NDIM) * (BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double));
@@ -936,6 +956,11 @@ void free_arrays(int n){
 	#endif
 	free(Katm[nl[n]]);
 	free(array[nl[n]]);
+	#if(DUMP_SMALL)
+	free(array_reduced[nl[n]]);
+	free(array_gdump1_reduced[nl[n]]);
+	free(array_gdump2_reduced[nl[n]]);
+	#endif
 	free(array_rdump[nl[n]]);
 	free(array_gdump1[nl[n]]);
 	free(array_gdump2[nl[n]]);

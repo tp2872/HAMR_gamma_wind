@@ -88,7 +88,7 @@ void diag(int call_code)
 		#endif
 		
 		if (divbmax==divbmax_local){
-			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g ", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
+			fprintf(stderr, "LOG      t=%g \t divbmax: (%d %d %d)x(%d %d %d)x(%d %d %d) %g \n", t, block[nmax][AMR_LEVEL1], block[nmax][AMR_LEVEL2], block[nmax][AMR_LEVEL3], block[nmax][AMR_COORD1], block[nmax][AMR_COORD2], block[nmax][AMR_COORD3], imax - N1_GPU_offset[nmax], jmax - N2_GPU_offset[nmax], zmax - N3_GPU_offset[nmax], divbmax);
 			//fprintf(stderr, " f1: %d f2: %d f3: %d f4 %d \n", failimage_counter[0], failimage_counter[1], failimage_counter[2], failimage_counter[3]);
 		}
 	}
@@ -98,11 +98,25 @@ void diag(int call_code)
 		close_dump();
 		close_rdump();
 		close_gdump();
+		#if(DUMP_SMALL)
+		close_dump_reduced();
+		close_gdump_reduced();
+		#endif
 	}
 
 	// dump at regular intervals 
-	if (call_code == INIT_OUT ||
-		call_code == DUMP_OUT) {
+	if (call_code == DUMP_OUT_REDUCED) {
+		// make regular dump file 
+		if (rank == 0) {
+			fprintf(stderr, "GDUMP_reduced started \n");
+			fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt);
+		}
+		gdump_new_reduced();
+		dump_new_reduced();
+	}
+
+	// dump at regular intervals 
+	if (call_code == INIT_OUT || call_code == DUMP_OUT) {
 		// make regular dump file 
 		if (rank == 0){
 			fprintf(stderr, "GDUMP started \n");
@@ -110,6 +124,10 @@ void diag(int call_code)
 		}
 		gdump_new();
 		dump_new();
+		#if(DUMP_SMALL)
+		gdump_new_reduced();
+		dump_new_reduced();
+		#endif
 	}
 }
 
