@@ -49,6 +49,7 @@ void dump_new(void){
 	int u_stride = 200;
 	int u_max = (n_active_total - n_active_total%u_stride) / u_stride;
 	if (n_active_total%u_stride != 0) u_max++;
+	FILE *file;
 
 	//First close dump files in progress
 	close_dump();
@@ -63,17 +64,24 @@ void dump_new(void){
 		fflush(fparam_dump);
 	}
 
-	for(u=0; u<u_max; u++){
-		sprintf(filename, "dumps%d/new_dump%d", dump_cnt, u);
-		MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL, &fdump[u]);
+	sprintf(filename, "dumps%d/new_dump%d", dump_cnt, rank);
+	if ((file = fopen(filename, "r")))
+	{
+		fclose(file);
+		remove(filename);
 	}
-	for (n = 0; n < n_active_total; n++){
-		for(u=0; u<u_max; u++)if(n>=u*u_stride && n<(u+1)*u_stride){
-			if (block[n_ord_total[n]][AMR_NODE]==rank){
-				MPI_File_seek(fdump[u], (n-u*u_stride) * 9 * BS_1*BS_2*BS_3*sizeof(float), MPI_SEEK_SET);
-				dump_block(&fdump[u], n_ord_total[n]);
-			}
-		}
+	MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL, &fdump[0]);
+	//for (n = 0; n < n_active_total; n++){
+	//	for(u=0; u<u_max; u++)if(n>=u*u_stride && n<(u+1)*u_stride){
+	//		if (block[n_ord_total[n]][AMR_NODE]==rank){
+	//			MPI_File_seek(fdump[u], (n-u*u_stride) * 9 * BS_1*BS_2*BS_3*sizeof(float), MPI_SEEK_SET);
+	//			dump_block(&fdump[u], n_ord_total[n]);
+	//		}
+	//	}
+	//}
+	for (n = 0; n < n_active; n++) {
+		MPI_File_seek(fdump[0], (n) * 9 * BS_1 * BS_2 * BS_3 * sizeof(float), MPI_SEEK_SET);
+		dump_block(&fdump[0], n_ord[n]);
 	}
 
 	#if(DUMP_DIAG)
@@ -101,7 +109,7 @@ void dump_new_reduced(void) {
 	int u_stride = 200;
 	int u_max = (n_active_total - n_active_total%u_stride) / u_stride;
 	if (n_active_total%u_stride != 0) u_max++;
-
+	FILE *file;
 	//First close dump files in progress
 	close_dump_reduced();
 	first_dump_reduced = 1;
@@ -119,17 +127,25 @@ void dump_new_reduced(void) {
 		fflush(fparam_dump_reduced);
 	}
 
-	for (u = 0; u<u_max; u++) {
-		sprintf(filename, "reduced/dumps%d/new_dump%d", dump_cnt_reduced, u);
-		MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fdump_reduced[u]);
+	sprintf(filename, "reduced/dumps%d/new_dump%d", dump_cnt_reduced, rank);
+	if ((file = fopen(filename, "r")))
+	{
+		fclose(file);
+		remove(filename);
 	}
-	for (n = 0; n < n_active_total; n++) {
-		for (u = 0; u<u_max; u++)if (n >= u*u_stride && n<(u + 1)*u_stride) {
-			if (block[n_ord_total[n]][AMR_NODE] == rank) {
-				MPI_File_seek(fdump_reduced[u], (n - u*u_stride) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
-				dump_block_reduced(&fdump_reduced[u], n_ord_total[n]);
-			}
-		}
+
+	MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fdump_reduced[0]);
+	//for (n = 0; n < n_active_total; n++) {
+	//	for (u = 0; u<u_max; u++)if (n >= u*u_stride && n<(u + 1)*u_stride) {
+	//		if (block[n_ord_total[n]][AMR_NODE] == rank) {
+	//			MPI_File_seek(fdump_reduced[u], (n - u*u_stride) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
+	//			dump_block_reduced(&fdump_reduced[u], n_ord_total[n]);
+	//		}
+	//	}
+	//}
+	for (n = 0; n < n_active; n++) {
+		MPI_File_seek(fdump_reduced[0], (n) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
+		dump_block_reduced(&fdump_reduced[0], n_ord[n]);
 	}
 	dump_cnt_reduced++;
 }
@@ -152,8 +168,9 @@ void close_dump(void) {
 			#endif
 		}
 
+		MPI_File_close(&fdump[0]);
 		for (u = 0; u < u_max; u++) {
-			MPI_File_close(&fdump[u]);
+			//MPI_File_close(&fdump[u]);
 			#if(DUMP_DIAG)
 			if ((dump_cnt - 1) % 10 == 0) {
 				MPI_File_close(&fdumpdiag[u]);
@@ -171,15 +188,16 @@ void close_dump_reduced(void) {
 	if (n_active_total%u_stride != 0) u_max++;
 
 	if (first_dump_reduced == 1) {
-		if (rank == 1 % numtasks && fparam_dump_reduced != NULL)fclose(fparam_dump_reduced);
+		if (rank == 0 % numtasks && fparam_dump_reduced != NULL)fclose(fparam_dump_reduced);
 
 		for (n = 0; n < n_active; n++) {
 			MPI_Wait(&req_block_reduced[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 		}
 
-		for (u = 0; u < u_max; u++) {
-			MPI_File_close(&fdump_reduced[u]);
-		}
+		MPI_File_close(&fdump_reduced[0]);
+		//for (u = 0; u < u_max; u++) {
+			//MPI_File_close(&fdump_reduced[u]);
+		//}
 	}
 	first_dump_reduced = 0;
 }
@@ -354,9 +372,9 @@ void dump_blockdiag(MPI_File *fp, int n)
 void gdump_new(void){
 	int n;
 	char filename[100];
-
-	FILE *grid;
-	if (rank == 0 && nstep==0){
+	
+	FILE *grid, *file;
+	if (rank == 1 % numtasks && nstep==0){
 		sprintf(filename, "gdumps/grid");
 		grid = fopen(filename, "wb");
 		gdump_grid(grid);
@@ -367,6 +385,11 @@ void gdump_new(void){
 		if (block[n_ord_total[n]][GDUMP_WRITTEN] != 1 && block[n_ord_total[n]][GDUMP_WRITTEN] != 2){
 			sprintf(filename, "gdumps/gdump%d", n_ord_total[n]);
 			if (block[n_ord_total[n]][AMR_NODE] == rank){
+				if ((file = fopen(filename, "r")))
+				{
+					fclose(file);
+					remove(filename);
+				}
 				MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &gdump[nl[n_ord_total[n]]]);
 				gdump_block(&gdump[nl[n_ord_total[n]]], n_ord_total[n]);
 			}

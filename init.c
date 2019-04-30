@@ -170,7 +170,7 @@ void init_thindisk()
 	double temp = a;
 	a = 0.9375;
 	rin = 6.5;
-	rmax = 75.;
+	rmax = 80.;
 	kappa = 1.e-3;
 	beta = 100.;
 

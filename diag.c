@@ -109,7 +109,7 @@ void diag(int call_code)
 		// make regular dump file 
 		if (rank == 0) {
 			fprintf(stderr, "GDUMP_reduced started \n");
-			fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt);
+			fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt_reduced);
 		}
 		gdump_new_reduced();
 		dump_new_reduced();
@@ -125,6 +125,10 @@ void diag(int call_code)
 		gdump_new();
 		dump_new();
 		#if(DUMP_SMALL)
+		if (rank == 0) {
+			fprintf(stderr, "GDUMP_reduced started \n");
+			fprintf(stderr, "DUMP%d_reduced started \n", dump_cnt_reduced);
+		}
 		gdump_new_reduced();
 		dump_new_reduced();
 		#endif

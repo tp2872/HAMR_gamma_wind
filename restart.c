@@ -381,6 +381,10 @@ void param_read(FILE *fp){
 	fread(&docyl, int_size, 1, fp);
 	fread(&dk, int_size, 1, fp);
 
+	for (n = 0; n < NB; n++) {
+		block[n][AMR_ACTIVE] = 0;
+	}
+
 	for (n = 0; n < n_active_total; n++) {
 		fread(&n2, int_size, 1, fp);
 		block[n2][AMR_ACTIVE] = 1;

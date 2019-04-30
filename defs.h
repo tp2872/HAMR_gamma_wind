@@ -784,7 +784,7 @@ MPI_Request req[NB], boundreqs[NB_LOCAL][600];
 MPI_Status Statbound[NB_LOCAL][600];
 MPI_Comm  mpi_cartcomm, mpi_self;
 MPI_Comm row_comm[8];
-MPI_File fdump[100], fdump_reduced[100], fdumpdiag[100], rdump[NB_LOCAL], gdump[NB_LOCAL], gdump_reduced[NB_LOCAL], grid_dump[1], grid_restart[1];
+MPI_File fdump[2000], fdump_reduced[2000], fdumpdiag[2000], rdump[NB_LOCAL], gdump[NB_LOCAL], gdump_reduced[NB_LOCAL], grid_dump[1], grid_restart[1];
 MPI_Request req_block[NB_LOCAL][1], req_block_reduced[NB_LOCAL][1], req_block_rdump[NB_LOCAL][1], req_blockdiag[NB_LOCAL][1], req_gdump1[NB_LOCAL][1], req_gdump2[NB_LOCAL][1], req_gdump1_reduced[NB_LOCAL][1], req_gdump2_reduced[NB_LOCAL][1], req_gdumpgrid[1], req_rdumpgrid[1];
 MPI_Request request_timelevel[NB];
 MPI_Request req_local1[N_LEVELS_3D][NB_1*NB_3 * 64], req_local2[N_LEVELS_3D][NB_1*NB_3 * 64];
