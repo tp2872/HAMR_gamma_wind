@@ -22,7 +22,7 @@ Physical Parameters section
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (1)
-#define TILT_ANGLE (60.0)
+#define TILT_ANGLE (65.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -30,14 +30,14 @@ Physical Parameters section
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (1)
-#define H_OVER_R (0.1)
+#define H_OVER_R (0.02)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(1.e-6)
-#define UUMIN	(1.e-8)
+#define RHOMIN	(1.e-7)
+#define UUMIN	(1.e-9)
 #define RHOMINLIMIT (1.e-20)
 #define UUMINLIMIT  (1.e-20)
 #define POWRHO (2.0)
@@ -87,17 +87,17 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
+#define NB_1 35
 #define NB_2 12
 #define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 48
+#define BS_2 48
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 3
+#define N_LEVELS_3D 4
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -114,7 +114,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (1)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (4)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -235,9 +235,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Whether to output a reduced resolution file*/
 #define DUMP_SMALL (1)
-#define REDUCE_FACTOR1 (2)
-#define REDUCE_FACTOR2 (2)
-#define REDUCE_FACTOR3 (2)
+#define REDUCE_FACTOR1 (4)
+#define REDUCE_FACTOR2 (4)
+#define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
 #define DUMP_DIAG (0)

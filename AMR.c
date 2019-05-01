@@ -2432,8 +2432,8 @@ void check_refcrit(void){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#else
-				if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 3) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 6 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 16 + 2)
-					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 36 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 76 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 156 + 2)){
+				if ( (block[n_ord_total[n]][AMR_LEVEL1] == 0 && block[n_ord_total[n]][AMR_COORD1] < 4) || (block[n_ord_total[n]][AMR_LEVEL1] == 1 && block[n_ord_total[n]][AMR_COORD1] < 10) || (block[n_ord_total[n]][AMR_LEVEL1] == 2 && block[n_ord_total[n]][AMR_COORD1] < 26)
+					|| (block[n_ord_total[n]][AMR_LEVEL1] == 3 && block[n_ord_total[n]][AMR_COORD1] < 42 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 4 && block[n_ord_total[n]][AMR_COORD1] < 96 + 2) || (block[n_ord_total[n]][AMR_LEVEL1] == 5 && block[n_ord_total[n]][AMR_COORD1] < 196 + 2)){
 					block[n_ord_total[n]][AMR_TAG] = 0;
 				}
 				#endif

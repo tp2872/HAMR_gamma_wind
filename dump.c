@@ -327,22 +327,22 @@ void dump_block_reduced(MPI_File *fp, int n){
 	int i1, j1, z1;
 	struct of_geom geom;
 	struct of_state q;
-	float factor = 1.0 / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
+	float factor = 1.0;// / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
 
 	#pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom,q)
 	for (i = 0; i < BS_1 / REDUCE_FACTOR1; i++)for (j = 0; j < BS_2 / REDUCE_FACTOR2; j++)for (z = 0; z < BS_3 / REDUCE_FACTOR3; z++) {
 		for (k = 0; k < 9; k++)array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + k] = 0;
-		for (i1 = 0; i1 < REDUCE_FACTOR1; i1++)for (j1 = 0; j1 < REDUCE_FACTOR2; j1++)for (z1 = 0; z1 < REDUCE_FACTOR3; z1++) {
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 0] += (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][0] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 1] += (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][1] * factor;
+		for (i1 = 0; i1 < 1; i1++)for (j1 = 0; j1 < 1; j1++)for (z1 = 0; z1 < 1; z1++) {
+			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 0] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][0] * factor;
+			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 1] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][1] * factor;
 
 			get_geometry(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n], CENT, &geom);
 			get_state(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])], &geom, &q);
 
-			for (k = 0; k < NDIM; k++) array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + (k + 2)] += (float)q.ucon[k] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 6] += (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][5] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 7] += (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][6] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 8] += (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][7] * factor;
+			for (k = 0; k < NDIM; k++) array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + (k + 2)] = (float)q.ucon[k] * factor;
+			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 6] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][5] * factor;
+			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 7] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][6] * factor;
+			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 8] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][7] * factor;
 		}
 	}
 	#if(PARALLEL_IO)
@@ -537,23 +537,23 @@ void gdump_block_reduced(MPI_File  *fp, int n)
 	int z = 0; //The grid is axysymmetric, so put out only for z=0
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
-	float factor = 1.0 / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
+	float factor = 1.0;// / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
 
 	#pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom,q, r, th, phi, X)
 	for (i = 0; i < BS_1 / REDUCE_FACTOR1; i++)for (j = 0; j < BS_2 / REDUCE_FACTOR2; j++)for (z = 0; z < BS_3 / REDUCE_FACTOR3; z++) {
 		for (k = 0; k < 9; k++)array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + k] = 0.;
-		for (i1 = 0; i1 < REDUCE_FACTOR1; i1++)for (j1 = 0; j1 < REDUCE_FACTOR2; j1++)for (z1 = 0; z1 < REDUCE_FACTOR3; z1++) {
+		for (i1 = 0; i1 < 1; i1++)for (j1 = 0; j1 < 1; j1++)for (z1 = 0; z1 < 1; z1++) {
 			coord(n, N1_GPU_offset[n] + i*REDUCE_FACTOR1 + i1, N2_GPU_offset[n] + j*REDUCE_FACTOR2 + j1, N3_GPU_offset[n] + z*REDUCE_FACTOR3 + z1, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 0] += (double)i*REDUCE_FACTOR1*pow(2., (N_LEVELS - (block[n][AMR_LEVEL1] + 1))*REF_1) * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 1] += (double)j*REDUCE_FACTOR2*pow(2., (N_LEVELS - (block[n][AMR_LEVEL2] + 1))*REF_2) * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 2] += (double)z*REDUCE_FACTOR3*pow(2., (N_LEVELS - (block[n][AMR_LEVEL3] + 1))*REF_3) * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 3] += X[1] * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 4] += X[2] * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 5] += X[3] * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 6] += r * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 7] += th * factor;
-			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 8] += phi * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 0] = (double)i*REDUCE_FACTOR1*pow(2., (N_LEVELS - (block[n][AMR_LEVEL1] + 1))*REF_1) * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 1] = (double)j*REDUCE_FACTOR2*pow(2., (N_LEVELS - (block[n][AMR_LEVEL2] + 1))*REF_2) * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 2] = (double)z*REDUCE_FACTOR3*pow(2., (N_LEVELS - (block[n][AMR_LEVEL3] + 1))*REF_3) * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 3] = X[1] * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 4] = X[2] * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 5] = X[3] * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 6] = r * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 7] = th * factor;
+			array_gdump1_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 8] = phi * factor;
 		}
 	}
 	MPI_File_seek(fp[0], 0 * sizeof(double), MPI_SEEK_SET);
@@ -565,12 +565,12 @@ void gdump_block_reduced(MPI_File  *fp, int n)
 
 	if (rank == 0 && NSY)fprintf(stderr, "Warning: metric is written out unsymmetric! \n");
 
-	factor = 1.0 / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2));
+	factor = 1.0;// / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2));
 	#pragma omp parallel for collapse(2) schedule(static,(BS_1*BS_2)/nthreads) private(i,j,z,i1,j1,z1,k,l,X,geom,dxdxp)
 	for (i = 0; i < BS_1 / REDUCE_FACTOR1; i++)for (j = 0; j < BS_2 / REDUCE_FACTOR2; j++) {
 		z = 0;
 		for (k = 0; k < 49; k++)array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + k] = 0.;
-		for (i1 = 0; i1 < REDUCE_FACTOR1; i1++)for (j1 = 0; j1 < REDUCE_FACTOR2; j1++) {
+		for (i1 = 0; i1 < 1; i1++)for (j1 = 0; j1 < 1; j1++) {
 
 			coord(n, N1_GPU_offset[n] + i*REDUCE_FACTOR1 + i1, N2_GPU_offset[n] + j*REDUCE_FACTOR2 + j1, N3_GPU_offset[n] + z, CENT, X);
 			get_geometry(n, N1_GPU_offset[n] + i*REDUCE_FACTOR1 + i1, N2_GPU_offset[n] + j*REDUCE_FACTOR2 + j1, N3_GPU_offset[n] + z, CENT, &geom);
@@ -579,22 +579,22 @@ void gdump_block_reduced(MPI_File  *fp, int n)
 			//g_{kl}
 			for (k = 0; k < NDIM; k++) {
 				for (l = 0; l < NDIM; l++) {
-					array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + k*NDIM + l] += geom.gcov[k][l] * factor;
+					array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + k*NDIM + l] = geom.gcov[k][l] * factor;
 				}
 			}
 			//g^{kl}
 			for (k = 0; k < NDIM; k++) {
 				for (l = 0; l < NDIM; l++) {
-					array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + NDIM*NDIM + k*NDIM + l] += geom.gcon[k][l] * factor;
+					array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + NDIM*NDIM + k*NDIM + l] = geom.gcon[k][l] * factor;
 				}
 			}
 			//(-deg(g))**0.5
-			array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + 2 * NDIM*NDIM] += geom.g * factor;
+			array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + 2 * NDIM*NDIM] = geom.g * factor;
 
 			//dr^i/dx^j
 			for (k = 0; k < NDIM; k++) {
 				for (l = 0; l < NDIM; l++) {
-					array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + 2 * NDIM*NDIM + 1 + k*NDIM + l] += dxdxp[k][l] * factor;
+					array_gdump2_reduced[nl[n]][(i) * 49 * BS_2 / REDUCE_FACTOR2 + (j) * 49 + 2 * NDIM*NDIM + 1 + k*NDIM + l] = dxdxp[k][l] * factor;
 				}
 			}
 		}
