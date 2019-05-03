@@ -2052,39 +2052,59 @@ void refine_field(int n, int n_child, int offset_1, int offset_2, int offset_3, 
 			else set_4 = -1;
 
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 >= 0){
+			if ((j == 0 || j == ref_2) && offset_2 == 0 && n_rec3 >= 0) {
+				set_ref(n, block[n][AMR_NBR1_3], &ref_1, &ref_2, &ref_3);
+				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
+				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
 				b2_1 = pointer3[i1*(1 + ref_1)*zsize + z1*(1 + ref_3)];
 				b2_2 = pointer3[i1*(1 + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
 				b2_5 = pointer3[(i1*(1 + ref_1) + ref_1)*zsize + z1*(1 + ref_3)];
 				b2_6 = pointer3[(i1*(1 + ref_1) + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
+				if (offset_1 == 1 && ref_1 == 0) i1 -= BS_1 / 2;
+				if (offset_3 == 1 && ref_3 == 0) z1 -= BS_3 / 2;
 				set_3 = 1;
 			}
 			else set_3 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 >= 0){
+			if ((j == BS_2 || j == BS_2 - ref_2 || j == BS_2 - (1 + ref_2)) && (offset_2 == 1 || ref_2 == 0) && n_rec1 >= 0) {
+				set_ref(n, block[n][AMR_NBR3_1], &ref_1, &ref_2, &ref_3);
+				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
+				if (offset_3 == 1 && ref_3 == 0) z1 += BS_3 / 2;
 				b2_3 = pointer1[i1*(1 + ref_1)*zsize + z1*(1 + ref_3)];
 				b2_4 = pointer1[i1*(1 + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
 				b2_7 = pointer1[(i1*(1 + ref_1) + ref_1)*zsize + z1*(1 + ref_3)];
 				b2_8 = pointer1[(i1*(1 + ref_1) + ref_1)*zsize + (z1*(1 + ref_3) + ref_3)];
+				if (offset_1 == 1 && ref_1 == 0) i1 -= BS_1 / 2;
+				if (offset_3 == 1 && ref_3 == 0) z1 -= BS_3 / 2;
 				set_1 = 1;
 			}
 			else set_1 = -1;
 
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 >= 0){
+			if ((z == 0 || z == ref_3) && offset_3 == 0 && n_rec5 >= 0) {
+				set_ref(n, block[n][AMR_NBR6_2], &ref_1, &ref_2, &ref_3);
+				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
+				if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
 				b3_1 = pointer5[i1*(1 + ref_1)*jsize + j1*(1 + ref_2)];
 				b3_3 = pointer5[i1*(1 + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
 				b3_5 = pointer5[(i1*(1 + ref_1) + ref_1)*jsize + j1*(1 + ref_2)];
 				b3_7 = pointer5[(i1*(1 + ref_1) + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
+				if (offset_1 == 1 && ref_1 == 0) i1 -= BS_1 / 2;
+				if (offset_2 == 1 && ref_2 == 0) j1 -= BS_2 / 2;
 				set_5 = 1;
 			}
 			else set_5 = -1;
 			set_ref(n, n_child, &ref_1, &ref_2, &ref_3);
-			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 >= 0){
+			if ((z == BS_3 || z == BS_3 - ref_3 || z == BS_3 - (1 + ref_3)) && (offset_3 == 1 || ref_3 == 0) && n_rec6 >= 0) {
+				set_ref(n, block[n][AMR_NBR5_1], &ref_1, &ref_2, &ref_3);
+				if (offset_1 == 1 && ref_1 == 0) i1 += BS_1 / 2;
+				if (offset_2 == 1 && ref_2 == 0) j1 += BS_2 / 2;
 				b3_2 = pointer6[i1*(1 + ref_1)*jsize + j1*(1 + ref_2)];
 				b3_4 = pointer6[i1*(1 + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
 				b3_6 = pointer6[(i1*(1 + ref_1) + ref_1)*jsize + j1*(1 + ref_2)];
 				b3_8 = pointer6[(i1*(1 + ref_1) + ref_1)*jsize + (j1*(1 + ref_2) + ref_2)];
+				if (offset_1 == 1 && ref_1 == 0) i1 -= BS_1 / 2;
+				if (offset_2 == 1 && ref_2 == 0) j1 -= BS_2 / 2;
 				set_6 = 1;
 			}
 			else set_6 = -1;
@@ -2790,6 +2810,7 @@ int derefine_pole(void){
 	for (n = 0; n<n_active; n++) alloc_bounds_GPU(n_ord[n]);
 	GPU_boundprim(1);
 	#endif
+	set_corners(0);
 	return 1;
 }
 
