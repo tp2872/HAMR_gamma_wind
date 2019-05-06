@@ -1050,7 +1050,7 @@ void set_mag(void){
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
 				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
@@ -1116,9 +1116,10 @@ void set_mag(void){
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}
+
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
 			coord(n_ord[n], i, j, z, CENT, X);
