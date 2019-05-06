@@ -183,11 +183,11 @@ int main(int argc, char *argv[])
 			time_spent3 = 0.0;	
 
 			//Safe and exit at end of 24 hour runtime
-			if ((double)(begin2 - end1) > RUNTIME*3600.){
-				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
-				restart_write();
-				break;
-			}
+//      if ((double)(begin2 - end1) > RUNTIME*3600.){
+//        if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
+//        restart_write();
+//        break;
+//      }
 			begin1 = get_wall_time();
 		}
 		#endif
