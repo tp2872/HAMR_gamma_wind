@@ -59,7 +59,7 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 1
+#define GPU_ENABLED 0
 #define GPU_DEBUG 0
 #define CPU_OPENMP 0
 #define TIMER 1
@@ -71,7 +71,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -87,9 +87,9 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 35
-#define NB_2 12
-#define NB_3 4
+#define NB_1 4
+#define NB_2 4
+#define NB_3 2
 
 /*Set block size in each dimension*/
 #define BS_1 48
@@ -97,7 +97,7 @@ Numerical Parameters section
 #define BS_3 64
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 4
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -108,10 +108,10 @@ Numerical Parameters section
 #define N_GPU 1
 
 /*If you want to call multiple blocks from multiple threads. Will not *allways* improve performance and SLOWS down performance of workstation, so not recommended for non-cluster use!*/
-#define GPU_OPENMP 0
+#define GPU_OPENMP 1
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
 #define N_LEVELS_1D_INT (4)
