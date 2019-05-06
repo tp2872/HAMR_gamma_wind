@@ -78,6 +78,14 @@ struct of_geom * restrict geom, double * restrict flux)
 	#if(DOKTOT )
 	flux[KTOT] = flux[RHO] * pr[KTOT];
 	#endif
+    
+#if(DONUCLEAR)
+    flux[RHONP] = flux[RHO]*pr[RHONP];
+    flux[RHOALPHA] = flux[RHO]*pr[RHOALPHA];
+    flux[RHOFLOOR] = flux[RHO]*pr[RHOFLOOR]/pr[RHO];
+    flux[YE] = flux[RHO]*pr[YE];
+    flux[AMB] = flux[RHO]*pr[AMB];
+#endif
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }

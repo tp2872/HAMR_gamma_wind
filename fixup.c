@@ -199,6 +199,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
       pv[U3] *= f ;	
     }
   }
+    
+#if(DONUCLEAR)
+    //account for the floor addition
+    pv[RHOFLOOR] += pv[RHO] - pv_prefloor[RHO];
+#endif
+    
+    
   return;
 }
 

@@ -171,6 +171,14 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 	prim[KTOT] = U[KTOT] / U[RHO];
 	#endif
 
+#if(DONUCLEAR)
+    prim[RHONP] = U[RHONP]/U[RHO];
+    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
+    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
+    prim[YE] = U[YE]/U[RHO];
+    prim[AMB] = U[AMB]/U[RHO];
+#endif
+    
 	return(ret);
 
 }

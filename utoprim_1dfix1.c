@@ -179,6 +179,14 @@ int Utoprim_1dfix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
       prim[i] = prim_tmp[i];
     }
   }
+    
+#if(DONUCLEAR)
+    prim[RHONP] = U[RHONP]/U[RHO];
+    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
+    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
+    prim[YE] = U[YE]/U[RHO];
+    prim[AMB] = U[AMB]/U[RHO];
+#endif
 
   return( ret ) ;
 

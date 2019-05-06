@@ -2604,6 +2604,11 @@ void init_torus_grb(){
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
+#if (DONUCLEAR)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.;  //ambient mass fraction (to be multiplied by rho later)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.;  //Ye = 1 outside the disk
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.;  //no nucleons
+#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			* Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -2626,6 +2631,12 @@ void init_torus_grb(){
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
 
+#if (DONUCLEAR)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0. ;  //ambient mass fraction vanishes
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1. ;  //all nucleons initially
+#endif
+        
 				/* convert from 4-vel in BL coords to relative 4-vel in code coords */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 
@@ -3430,6 +3441,10 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 {
 	double rhoflr, uuflr;
 	double uuscal, rhoscal;
+#if(DONUCLEAR)
+  double fac1, fac2;
+  double r0, rt, tnu;
+#endif
 
 
 	if (BL == 0){
@@ -3442,8 +3457,37 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 		rhoflr = RHOMIN*rhoscal; //this is Rodrigo's rhot
 		uuflr = UUMIN*uuscal;
 
-		if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
-		if (uuflr  < UUMINLIMIT) uuflr = UUMINLIMIT;
+#if DONUCLEAR
+    //uuscal = pow(r,-POWRHO*gam); //rhoscal/r ;
+    //////////////////////
+    //
+    // Rodrigo's time-dependent floor
+    //
+    r0 = rmax;
+    rt = 4.*r0;
+    //from Rodrigo:
+    //t_v = 250  rmax / vk(rmax) = 9,425  rg / c ~ 40 Newtonian orbits (approx),
+    //for rmax = 50km and Mbh = 3Msun = 0.1397 seconds
+    tnu    = 250 * rmax * sqrt(rmax);
+    rhoflr = RHOMIN*rhomax*rhoscal; //this is Rodrigo's rhot
+    uuflr  = UUMIN*rhomax*uuscal;
+    
+    fac2 = (rt/r); fac2 *= fac2;
+    if( r <= rt ) {
+      fac1 = t/tnu+1.; fac1 *= fac1;
+      rhoflr *= 1.+(fac2-1.)/fac1;
+      rhoflr /= fac2;
+      uuflr *= 1.+(fac2-1.)/fac1;
+      uuflr /= fac2;
+    }
+    if( rhoflr < RHOMINLIMIT*rhomax ) rhoflr = RHOMINLIMIT*rhomax;
+    if( uuflr  < UUMINLIMIT*rhomax  ) uuflr  = UUMINLIMIT*rhomax;
+    //
+    ////////////////////////
+#else
+    if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
+    if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
+#endif
 	}
 
 	*rho_floor = rhoflr;

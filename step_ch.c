@@ -49,6 +49,7 @@
  *
 **/
 #include "decs_MPI.h"
+#include "nuclear.h"
 /** algorithmic choices **/
 
 
@@ -339,6 +340,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#endif
 		}
+#if(DONUCLEAR)
+        int was_floor_activated = 0
+        nuc_evol(pi,pb,pf,Dt,i,j,k,was_floor_activated); //nuclear physics
+#endif
 	}
 }
 
