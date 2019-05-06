@@ -21,7 +21,7 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
+#define TILTED (0)
 #define TILT_ANGLE (65.0)
 
 /*Wheter to activate an untilted elliptical disk*/
@@ -89,12 +89,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 4
-#define NB_3 2
+#define NB_3 4
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 48
-#define BS_3 64
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -133,7 +133,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (240)
+#define DUMPFACTOR (20)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0

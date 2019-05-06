@@ -812,7 +812,7 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 
 			}
 		}
-	} while (fabs(p_new - p_old) > NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
+	} while (fabs(p_new - p_old) > 0.01*NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
 	
 	if (set_variables == 1){
 		a = -Qdotn + p_new + 0.5*Bsq;
