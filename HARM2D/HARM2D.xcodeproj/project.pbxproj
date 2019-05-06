@@ -83,6 +83,16 @@
 		0CA1A0041D135EB40090373C /* boundcomP.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = boundcomP.c; path = ../boundcomP.c; sourceTree = "<group>"; };
 		0CA1A0051D135EB40090373C /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; name = makefile; path = ../makefile; sourceTree = "<group>"; };
 		0CA1A0061D135EB40090373C /* AMR.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = AMR.c; path = ../AMR.c; sourceTree = "<group>"; };
+		E073903B222CAEB200371D82 /* slurm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; name = slurm; path = ../slurm; sourceTree = "<group>"; };
+		E073903C222CAEB300371D82 /* makefile.summit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = makefile.summit; path = ../makefile.summit; sourceTree = "<group>"; };
+		E073903D222CAEB300371D82 /* Eos_map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Eos_map.h; path = ../Eos_map.h; sourceTree = "<group>"; };
+		E073903E222CAEB300371D82 /* decsCUDA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decsCUDA.h; path = ../decsCUDA.h; sourceTree = "<group>"; };
+		E073903F222CAEB300371D82 /* makefile.mac */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = makefile.mac; path = ../makefile.mac; sourceTree = "<group>"; };
+		E0739040222CAEB300371D82 /* Flash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Flash.h; path = ../Flash.h; sourceTree = "<group>"; };
+		E0739041222CAEB300371D82 /* Eos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Eos.h; path = ../Eos.h; sourceTree = "<group>"; };
+		E0739042222CAEB400371D82 /* constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = constants.h; path = ../constants.h; sourceTree = "<group>"; };
+		E0739043222CAEB400371D82 /* eos_helm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = eos_helm.c; path = ../eos_helm.c; sourceTree = "<group>"; };
+		E0739044222CAEB400371D82 /* Flash_mpi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Flash_mpi.h; path = ../Flash_mpi.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +109,16 @@
 		0C677E5D18F32EA400EE533A = {
 			isa = PBXGroup;
 			children = (
+				E0739042222CAEB400371D82 /* constants.h */,
+				E073903E222CAEB300371D82 /* decsCUDA.h */,
+				E0739043222CAEB400371D82 /* eos_helm.c */,
+				E073903D222CAEB300371D82 /* Eos_map.h */,
+				E0739041222CAEB300371D82 /* Eos.h */,
+				E0739044222CAEB400371D82 /* Flash_mpi.h */,
+				E0739040222CAEB300371D82 /* Flash.h */,
+				E073903F222CAEB300371D82 /* makefile.mac */,
+				E073903C222CAEB300371D82 /* makefile.summit */,
+				E073903B222CAEB200371D82 /* slurm */,
 				0C10DDBA1FEB47CD00FDCED0 /* config.h */,
 				0C10DDBB1FEB47CD00FDCED0 /* const_trans.c */,
 				0C10DDBC1FEB47CD00FDCED0 /* decs_MPI.h */,

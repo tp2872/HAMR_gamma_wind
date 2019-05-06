@@ -2,6 +2,156 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:HARM2D.xcodeproj">
+      location = "group:../../AMR.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../boundcomB.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../boundcomE.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../boundcomF.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../boundcomP.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../bounds.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../config.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../const_trans.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../constants.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../coord.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../decs_MPI.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../decs.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../decsCUDA.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../defs.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../diag.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../dump.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../eos_helm.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../Eos_map.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../Eos.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../fixup.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../Flash_mpi.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../Flash.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../GPU_boundcomE.cu">
+   </FileRef>
+   <FileRef
+      location = "group:../../GPU_boundcomF.cu">
+   </FileRef>
+   <FileRef
+      location = "group:../../GPU_boundcomP.cu">
+   </FileRef>
+   <FileRef
+      location = "group:../../GPU_main.cu">
+   </FileRef>
+   <FileRef
+      location = "group:../../GPU_program1.cu">
+   </FileRef>
+   <FileRef
+      location = "group:../../GPU_program2.cu">
+   </FileRef>
+   <FileRef
+      location = "group:..">
+   </FileRef>
+   <FileRef
+      location = "group:../../hllc.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../init.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../interp.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../LAS.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../lu.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../main.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../makefile">
+   </FileRef>
+   <FileRef
+      location = "group:../../makefile.mac">
+   </FileRef>
+   <FileRef
+      location = "group:../../makefile.summit">
+   </FileRef>
+   <FileRef
+      location = "group:../../metric.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../phys.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../ranc.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../restart.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../slurm">
+   </FileRef>
+   <FileRef
+      location = "group:../../step_ch.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../u2p_defs.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../u2p_util.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../u2p_util.h">
+   </FileRef>
+   <FileRef
+      location = "group:../../utoprim_1dfix1.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../utoprim_1dvsq2fix1.c">
+   </FileRef>
+   <FileRef
+      location = "group:../../utoprim_2d.c">
+   </FileRef>
+   <FileRef
+      location = "self:">
    </FileRef>
 </Workspace>

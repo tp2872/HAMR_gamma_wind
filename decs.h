@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#ifdef __unix__   
+#ifdef __unix__
 #include <sys/time.h>
 #endif
 #include <cuda.h>
@@ -1173,5 +1173,3 @@ void eos_init(void);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd);
 void test_eos(void);
 void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr);
-
-

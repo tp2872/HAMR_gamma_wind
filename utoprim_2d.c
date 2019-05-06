@@ -777,7 +777,7 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
-	p_array[0] = (GAMMA - 1.)*prim[UU];
+    p_array[0] = (GAMMA - 1.)*prim[UU]; // DANAT: call eos_helm() here
 	p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
 	if (d < 0.0) return(1);

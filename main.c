@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
-	set_AMR();
+    set_AMR();
 	test_eos();
 
 	if (!restart_read()) {
