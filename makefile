@@ -47,7 +47,7 @@ USEICC = 0
 
 ifeq ($(USEICC),0)
 CC       = clang
-CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb
+CCFLAGS  = -O3 -I/usr/local/cuda/include -g -ggdb
 endif
 
 EXTRALIBS = -lm -L/usr/local/cuda/lib -lcudart -lmpi
