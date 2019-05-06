@@ -61,7 +61,7 @@ Numerical Parameters section
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
 #define GPU_ENABLED 0
 #define GPU_DEBUG 0
-#define CPU_OPENMP 0
+#define CPU_OPENMP 1
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -77,7 +77,7 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Enable parallel I/0*/
-#define PARALLEL_IO (1)
+#define PARALLEL_IO (0)
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
@@ -114,7 +114,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (4)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
