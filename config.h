@@ -11,7 +11,7 @@ Physical Parameters section
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
-#define WHICHPROBLEM THIN_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -29,7 +29,7 @@ Physical Parameters section
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.02)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
