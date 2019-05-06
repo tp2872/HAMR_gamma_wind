@@ -228,13 +228,13 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DELTA (3.0)
 
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
-#define DOCYLINDRIFYCOORDS (0)
+#define DOCYLINDRIFYCOORDS (1)
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
 
 /*Whether to output a reduced resolution file*/
-#define DUMP_SMALL (1)
+#define DUMP_SMALL (0)
 #define REDUCE_FACTOR1 (4)
 #define REDUCE_FACTOR2 (4)
 #define REDUCE_FACTOR3 (4)
