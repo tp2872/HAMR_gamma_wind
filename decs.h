@@ -51,7 +51,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 #include <cuda.h>
 #include <cuda_runtime.h>
+#ifndef __APPLE__
 #include <omp.h>
+#endif
 #include "config.h"
 
 /*************************************************************************
