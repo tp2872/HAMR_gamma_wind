@@ -58,7 +58,7 @@
 -*****************************************************************/
 int main(int argc, char *argv[])
 {
-	double tdump, tdump_reduced, tlog;
+	double tdump, tdump_reduced, tlog, dump_cnt0;
 	int nfailed = 0;
 	int i, j, z, u, n, l;
 	double r, th, phi, X[NDIM];
@@ -96,11 +96,12 @@ int main(int argc, char *argv[])
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
 	diag(INIT_OUT);
+	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.0;
-	DTd = 100.0;
-	DTd_reduced = 25.0;
+	DTl = 200.0;
+	DTd = 200.0;
+	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tlog = t + DTl;
 	tref = t;
@@ -183,9 +184,9 @@ int main(int argc, char *argv[])
 			time_spent3 = 0.0;	
 
 			//Safe and exit at end of 24 hour runtime
-			if ((double)(begin2 - end1) > RUNTIME*3600.){
+			if (dump_cnt-dump_cnt0>5){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
-				restart_write();
+				//restart_write();
 				break;
 			}
 			begin1 = get_wall_time();
@@ -200,7 +201,9 @@ int main(int argc, char *argv[])
 	/*Close GPU*/
 	for (n = 0; n < n_active; n++){
 		free_arrays(n_ord[n]);
+		#if(GPU_ENABLED)
 		GPU_finish(n_ord[n], 1);
+		#endif
 	}
 	return(0) ;
 }
