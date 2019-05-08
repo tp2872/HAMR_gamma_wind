@@ -1483,7 +1483,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
 	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
 	double bsq = dot(q->bcon,q->bcov);
-	if (bsq / ph[RHO]<1. || r<10.){
+	if (bsq / ph[RHO]<1.){
 		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
 			dU[UU] += -q->ucov[0] * lambda;
 			dU[U1] += -q->ucov[1] * lambda;
@@ -3075,9 +3075,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		}
 		#else
 		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-		if (pflag[global_id]) {
-			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-		}
+		//if (pflag[global_id]) {
+		//	pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+		//}
 		#endif
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		#if( DO_FONT_FIX ) 
