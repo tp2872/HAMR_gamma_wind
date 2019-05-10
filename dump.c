@@ -57,11 +57,11 @@ void dump_new(void){
 
 	if (rank == 0) {
 		sprintf(dirpath, "mkdir dumps%d", dump_cnt);
+		system(dirpath);
 	}
 	MPI_Barrier(mpi_cartcomm);
 
 	if (rank == 0) {
-		system(dirpath);
 		sprintf(filename, "dumps%d/parameters", dump_cnt);
 		fparam_dump = fopen(filename, "wb");
 		dump_params(fparam_dump, 0);
@@ -124,11 +124,11 @@ void dump_new_reduced(void) {
 		#else
 		sprintf(dirpath, "mkdir -p reduced/dumps%d", dump_cnt_reduced);
 		#endif
+		system(dirpath);
 	}
 	MPI_Barrier(mpi_cartcomm);
 	
 	if (rank == 0 % numtasks) {
-		system(dirpath);
 		sprintf(filename, "reduced/dumps%d/parameters", dump_cnt_reduced);
 		fparam_dump_reduced = fopen(filename, "wb");
 		dump_params(fparam_dump_reduced,1);
