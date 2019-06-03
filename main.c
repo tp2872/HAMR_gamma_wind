@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
 	DTd = 200.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
+	tdump_reduced = t + DTd_reduced;
 	tlog = t + DTl;
 	tref = t;
 

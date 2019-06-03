@@ -2384,7 +2384,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 0.125 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.200 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2499,7 +2499,10 @@ void check_refcrit(void){
 		}
 
 		if(one_block_refined==1) post_refine();
+
 		if (tag != 0 && n_active_total<numtasks*MAX_BLOCKS*N_GPU){
+			MPI_Barrier(mpi_cartcomm);
+			if(rank==0) fprintf(stderr, "Intermediate load balance! \n");
 			balance_load();
 			#if(GPU_ENABLED)
 			balance_load_gpu();
@@ -2609,6 +2612,11 @@ void check_refcrit(void){
 		//#pragma omp parallel for schedule(dynamic,1) private(n, node)
 		for (n = 0; n < n_active_total; n++) {
 			if (block[n_ord_total[n]][AMR_PARENT] >= 0 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] == -1 && block[block[n_ord_total[n]][AMR_PARENT]][AMR_CHILD1] == n_ord_total[n]) {
+					//Then derefine and set corresponding tag and timelevel
+					if (one_block_derefined == 0) {
+						prolong_grid();
+						one_block_derefined = 1;
+					}				
 				//#pragma omp critical
 				//{
 					node = block[n_ord_total[n]][AMR_NODE];
@@ -2711,7 +2719,7 @@ void check_refcrit(void){
 										gpu_choice = gpu_counter%N_GPU;
 										gpu_counter++;
 									}
-									set_arrays_GPU(n_send, gpu_choice);
+									set_arrays_GPU(n_send, 0);
 									GPU_write(n_send);
 									#endif
 								}
@@ -2719,24 +2727,17 @@ void check_refcrit(void){
 						}
 						block[n_send][AMR_NODE] = node;
 					}
-
 					block[block[n_ord_total[n]][AMR_PARENT]][AMR_NODE] = node;
-
-					//Then derefine and set corresponding tag and timelevel
-					if (one_block_derefined == 0) {
-						prolong_grid();
-						one_block_derefined = 1;
-					}
 					derefine(block[n_ord_total[n]][AMR_PARENT]);
 					block[block[n_ord_total[n]][AMR_PARENT]][AMR_TAG] = 0;
 				//}
 			}
 		}
 
+
 		if (one_block_derefined == 1)post_refine();
-
+		
 		balance_load();
-
 		#if(GPU_ENABLED)
 		balance_load_gpu();
 		#endif
@@ -2761,6 +2762,7 @@ void check_refcrit(void){
 	//Set boundaries on GPU
 	#if(GPU_ENABLED || GPU_DEBUG )
 	for(n=0;n<n_active;n++) alloc_bounds_GPU(n_ord[n]);
+	GPU_boundprim(1);
 	GPU_boundprim(1);
 	#endif
 
