@@ -1,7 +1,7 @@
 #!/bin/bash
 # Begin LSF Directives
 #BSUB -P PHY129
-#BSUB -W 0:30
+#BSUB -W 6:00
 #BSUB -nnodes 600
 #BSUB -alloc_flags "smt1"
 #BSUB -N matthewliska92@gmail.com

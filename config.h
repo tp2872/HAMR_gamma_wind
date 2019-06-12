@@ -248,6 +248,38 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
+/*Enable Radiation*/
+#define RAD_M1 (1)
+
+//Abundace constants
+#define Z_AB (0.02)
+#define Y_AB (0.28)
+#define X_AB (0.70)
+
+// CGS constants needed for radiation
+#define ARAD (7.5657e-15) /*Radiation density constant*/
+#define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
+#define MMW (1.69) /*Mean molecular weight*/
+#define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
+#define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
+#define PLANCK_CGS (6.6260755e-27) /*Planck's constant*/
+#define STEFAN_CGS (5.67051e-5) /*Stefan-Boltzmann constant*/
+#define FINE_CGS (7.29735308e-3)
+#define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
+#define E_CGS (4.80320427e-10) /*Elementary charge*/
+#define C_CGS (2.99792458e10) /*Speed of light*/
+#define M_SGRA_SOLAR (1.0e1) /* Solar masses */
+#define M_SOLAR_CGS (1.998e33) /* Solar mass */
+#define G_CGS (6.67259e-8) /* Gravitational constant */
+
+// Scaling from code units to cgs units
+#define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
+#define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
+#define MASS_DENSITY_SCALE (1.0)
+#define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
+#define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
+#define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
+
 /*************************************************************************
 MNEMONICS SECTION
 *************************************************************************/
@@ -261,6 +293,11 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
+#define E_RAD	(9)
+#define UU_RAD	(10)
+#define U1_RAD	(11)
+#define U2_RAD	(12)
+#define U3_RAD	(13)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -557,7 +594,9 @@ Section with derived quantities
 #define D3 (N3>1)
 
 /*Set variable numbers*/
-#define NPR        (8+DOKTOT)        /* number of primitive variables */
+#define NPR_U        (8+DOKTOT)        /* number of gas primitive variables */
+#define NPR_R        (5)        /* number of radiation primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */

@@ -267,6 +267,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 	double ndt, ndt1, ndt2, ndt3, U[NPR], dU[NPR];
 	struct of_geom geom;
 	struct of_state q;
+	struct of_state q_rad;
 	int ind0, ind1, ind2, ind3;
 
 	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
@@ -275,8 +276,16 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
 			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
+			#if(RAD_M1)
+			source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
+			#endif
+
 			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-			primtoU(pi[nl[n]][index_3D(n, i, j, z)], &q, &geom, U);
+			#if(RAD_M1)
+			get_state_rad(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
+			#endif
+			primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U);
+
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
@@ -321,7 +330,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
 			//}
 			#endif
-
+			#if(RAD_M1)
+			Utoprim_R(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			#endif
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
@@ -361,9 +372,11 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	int i, j, z, k, idel, jdel, zdel, face;
 	double p_l[NPR], p_r[NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR], F_HLL[NPR], U_HLL[NPR], vcon[NDIM], U_i[NPR], ptot;
 	double cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ndt, ndt_thread, dtij;
-	double ctop;
+	double cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad;
+	double ctop, ctop_rad;
 	struct of_geom geom;
 	struct of_state state_l, state_r, state_roe, qi;
+	struct of_state_rad *state_l_rad, *state_r_rad;
 	double bsq;
 	int max_i, max_j, max_z;
 	double val;
@@ -379,7 +392,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; }
 	else { exit(10); }
 	
-		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ctop, dtij, ind0, ind1, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
+		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_l_rad, state_r_rad,state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin,cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad, cmax_roe, cmin_roe, ctop,ctop_rad, dtij, ind0, ind1, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
 		{
 			ndt_thread = 1.e9;
 
@@ -424,7 +437,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 
 					#if(STAGGERED)
-						if ((dir == 2) && ((j == 0 && (block[n][AMR_NBR1]<0 || block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) || (j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2])) && (block[n][AMR_NBR3]<0 || block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)))){
+					if ((dir == 2) && ((j == 0 && (block[n][AMR_NBR1]<0 || block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) || (j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2])) && (block[n][AMR_NBR3]<0 || block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)))){
 						p_r[B1] = 0.;
 						p_l[B1] = 0.;
 					}
@@ -438,12 +451,15 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					get_state(p_l, &geom, &state_l);
 					get_state(p_r, &geom, &state_r);
+					#if(RAD_M1)
+					get_state(p_l, &geom, state_l_rad);
+					get_state(p_r, &geom, state_r_rad);
+					#endif
+					primtoflux(p_l, &state_l, state_l_rad, dir, &geom, F_l);
+					primtoflux(p_r, &state_r, state_l_rad, dir, &geom, F_r);
 
-					primtoflux(p_l, &state_l, dir, &geom, F_l);
-					primtoflux(p_r, &state_r, dir, &geom, F_r);
-
-					primtoflux(p_l, &state_l, 0, &geom, U_l);
-					primtoflux(p_r, &state_r, 0, &geom, U_r);
+					primtoflux(p_l, &state_l, state_l_rad, 0, &geom, U_l);
+					primtoflux(p_r, &state_r, state_l_rad, 0, &geom, U_r);
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);
@@ -453,7 +469,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					ctop = MY_MAX(cmax, cmin);
 
 					#pragma ivdep
-					PLOOP{
+					for (k = 0; k <= KTOT;k++) {
 						#if(HLLF)
 						F[nl[n]][ind0][k] = (cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
 						#else
@@ -461,8 +477,29 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 						#endif
 					}
 
+					#if(RAD_M1)
+					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
+					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
+
+					cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
+					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
+					ctop_rad = MY_MAX(cmax_rad, cmin_rad);
+
+					for (k = UU_RAD; k <= U3_RAD; k++) {
+						#if(HLLF)
+						F[nl[n]][ind0][k] = (cmax_rad*F_l[k] + cmin_rad*F_r[k] - cmax_rad*cmin_rad*(U_r[k] - U_l[k])) / (cmax_rad + cmin_rad + SMALL);
+						#else
+						F[nl[n]][ind0][k] = 0.5*(F_l[k] + F_r[k] - ctop_rad*(U_r[k] - U_l[k]));
+						#endif
+					}
+					#endif
+
 					/* evaluate restriction on timestep */
 					cmax = MY_MAX(cmax, cmin);
+					#if(RAD_M1)
+					cmax_rad = MY_MAX(cmax_rad, cmin_rad);
+					cmax = MY_MAX(cmax, cmax_rad);
+					#endif
 					dtij = cour*dx[nl[n]][dir] / cmax;
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;

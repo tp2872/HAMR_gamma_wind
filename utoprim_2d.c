@@ -118,7 +118,7 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 	FTYPE gdet, FTYPE prim[NPR])
 {
 
-	FTYPE U_tmp[NPR], U_tmp2[NPR], prim_tmp[NPR];
+	FTYPE U_tmp[NPR_U], U_tmp2[NPR_U], prim_tmp[NPR_U];
 	int i, j, ret;
 	FTYPE alpha;
 
@@ -216,8 +216,8 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
-	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
+	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U])
 {
 
 	FTYPE x_2d[NEWT_DIM_2];
@@ -674,9 +674,9 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYPE gdet, FTYPE prim[NPR])
+int Utoprim_NM(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYPE gdet, FTYPE prim[NPR_U])
 {
-	FTYPE U_tmp[NPR], prim_tmp[NPR];
+	FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
 	int i, ret;
 	FTYPE alpha;
 
@@ -732,7 +732,7 @@ int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYP
 
 }
 
-static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+static int Utoprim_NM_calc(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U])
 {
 	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	FTYPE rho0, u, w,  gamma, vsq;
@@ -839,6 +839,102 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	/* set field components */
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+
+	/* done! */
+	return(0);
+}
+
+
+int Rtoprim(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+{
+	FTYPE U_tmp[NPR_R], prim_tmp[NPR_R];
+	int i, ret;
+	FTYPE alpha;
+
+	/* Set the geometry variables: */
+	alpha = 1.0 / sqrt(-gcon[0][0]);
+
+	/* Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
+	#pragma ivdep
+	for (i = 0; i <= U3_RAD - E_RAD; i++) {
+		U_tmp[i] = alpha * U[i + NPR_U] / gdet;
+	}
+
+	/* Transform the PRIMITIVE variables into the new system */
+	#pragma ivdep
+	for (i = 0; i <= U3_RAD - E_RAD; i++) {
+		prim_tmp[i] = prim[i + NPR_U];
+	}
+
+	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
+
+	/* Transform new primitive variables back if there was no problem : */
+	if (ret == 0) {
+	#pragma ivdep
+		for (i = 0; i <= U3_RAD-E_RAD; i++) {
+			prim[i + NPR_U] = prim_tmp[i];
+		}
+	}
+
+	return(ret);
+}
+#define BASIC (1)
+#define TYPE2 (0)
+static int Rtoprim_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+{
+	FTYPE Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+	FTYPE gammasq, y, pressure, f;
+	int i;
+
+	#pragma ivdep
+	for (i = 0; i < 4; i++) Qcov[i] = U[i + 1];
+	raise_g(Qcov, gcon, Qcon);
+
+	ncov_calc(gcon, ncov);
+	raise_g(ncov, gcon, ncon);
+	Qdotn = Qcon[0] * ncov[0]; //-Erad in McKinney2013
+
+	#pragma ivdep
+	for (i = 1; i < 4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;  //Utilde in McKinney2013
+
+	Qsq = 0.;
+	//#pragma ivdepreduction(+:Qsq)
+	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
+	Qtsq = Qsq + Qdotn*Qdotn; //Utilde^2 in McKinney2013
+
+	y = Qtsq / (Qdotn*Qdotn);
+	gammasq = (2. - y + sqrt(4. - 3.*y)) / (4. - 4.*y);
+	pressure = -Qdotn / (4.*gammasq - 1.);
+	if (-Qdotn <= 0.) {
+		prim[0] = pow(10, -300.);
+		for (i = 1; i < 4; i++) prim[i] = 0;
+		return 0;
+	}
+	else prim[0] = pressure*3.;
+
+	#if(BASIC)
+	if (y < 0.) {
+		for (i = 1; i < 4; i++)prim[i] = 0.;
+	}
+	else if (gammasq > GAMMAMAX*GAMMAMAX) {
+		f = sqrt((GAMMAMAX*GAMMAMAX - 1.) / (gammasq - 1.));
+		for (i = 1; i < 4; i++) prim[i] = f*sqrt(gammasq)*Qtcon[i] / (4.*pressure*gammasq);
+	}
+	else{
+		for (i = 1; i < 4; i++)prim[i] = sqrt(gammasq)*Qtcon[i] / (4.*pressure*gammasq);
+	}
+	#elif(TYPE2)
+	if (y < 0.) {
+		for (i = 1; i < 4; i++)prim[i] = 0.;
+	}
+	else if (gammasq > GAMMAMAX*GAMMAMAX) {
+		f = sqrt((GAMMAMAX*GAMMAMAX - 1.) / (gammasq - 1.));
+		for (i = 1; i < 4; i++) prim[i] = f*sqrt(gammasq)*Qtcon[i] / (4.*pressure*gammasq);
+	}
+	else {
+		for (i = 1; i < 4; i++)prim[i] = sqrt(gammasq)*Qtcon[i] / (4.*pressure*gammasq);
+	}
+	#endif
 
 	/* done! */
 	return(0);

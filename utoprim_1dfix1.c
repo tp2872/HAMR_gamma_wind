@@ -132,11 +132,11 @@ static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
 
 ******************************************************************/
 
-int Utoprim_1dfix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], 
-	       FTYPE gdet, FTYPE prim[NPR], FTYPE K )
+int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
+	       FTYPE gdet, FTYPE prim[NPR_U], FTYPE K )
 {
 
-  FTYPE U_tmp[NPR], prim_tmp[NPR];
+  FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
   int i, j, ret; 
   FTYPE alpha;
 
@@ -225,8 +225,8 @@ return:  (i*100 + j)  where
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], 
-			    FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR])
+static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
+			    FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U])
 {
 
   FTYPE x_1d[1];

@@ -1437,7 +1437,9 @@ void elliptical_vector(double X_cart[NDIM], double V_old[NDIM], double V_new[NDI
 }
 
 void calc_source(){
-	int i, j, z, k, n;
+	if(rank==0)fprintf(stderr, "Calc_source does not work!");
+	exit(0);
+	/*int i, j, z, k, n;
 	double a_radius, b_radius, epsilon;
 	struct of_geom geom;
 	struct of_state q;
@@ -1495,7 +1497,7 @@ void calc_source(){
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
-	bound_prim(p, 1);
+	bound_prim(p, 1);*/
 }
 
 /////////////////////

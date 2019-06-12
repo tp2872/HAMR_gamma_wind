@@ -52,8 +52,7 @@
         
 ***********************************************************************************************/
 
-void primtoflux(double * restrict pr, struct of_state * restrict q, int dir,
-struct of_geom * restrict geom, double * restrict flux)
+void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
 	double mhd[NDIM];
@@ -70,6 +69,11 @@ struct of_geom * restrict geom, double * restrict flux)
 	}
 	flux[UU] += flux[RHO];
 
+	//Radiation energy tensor
+	#if(RAD_M1)
+	mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
+	#endif
+
 	/* dual of Maxwell tensor */
 	#pragma ivdep
 	for (k = B1; k <= B3; k++){
@@ -80,14 +84,6 @@ struct of_geom * restrict geom, double * restrict flux)
 	#endif
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
-}
-
-/* calculate "conserved" quantities; provided strictly for
- * historical reasons */
-void primtoU(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U)
-{
-	primtoflux(pr,q,0,geom, U) ;
-	return ;
 }
 
 /* calculate magnetic field four-vector */
@@ -120,18 +116,25 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	/* single row of mhd stress tensor, 
 	 * first index up, second index down */
 	#pragma ivdep
-	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j]
-		+ ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
-
+	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j] + ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
 }
 
-/* add in source terms to equations of motion */
-void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU,
-		double Dt)
+/* Radiation stress tensor, with first index up, second index down */
+void mhd_calc_rad(double * restrict pr, int dir, struct of_state * restrict q_rad, double * restrict mhd_rad)
 {
-	double mhd[NDIM][NDIM] ;
+	int j;
+	/* single row of mhd stress tensor, first index up, second index down */
+	#pragma ivdep
+	DLOOPA mhd_rad[j] = 4./3.*pr[E_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[E_RAD]*delta(dir, j);
+}
+
+/* add in geometricc source terms to equations of motion */
+void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
+{
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
 	int j,k ;
 	struct of_state q ;
+	struct of_state_rad q_rad;
 
 	get_state(ph, geom, &q) ;
 	mhd_calc(ph, 0, &q, mhd[0]) ;
@@ -139,27 +142,140 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	mhd_calc(ph, 2, &q, mhd[2]) ;
 	mhd_calc(ph, 3, &q, mhd[3]) ;
 
-	/* contract mhd stress tensor with connection */
-	 #pragma ivdep
-	PLOOP dU[k] = 0. ;
-
+	#pragma ivdep
+	PLOOP dU[k] = 0.;
+	
+	//contract mhd stress tensor with connection
 	DLOOP {
-		dU[UU] += mhd[j][k] * conn[nl[n]][index_2D(n,ii,jj,zz)][k][0][j] ;
+		dU[UU] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][0][j];
 		dU[U1] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][1][j];
 		dU[U2] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][2][j];
 		dU[U3] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
-		//fprintf(stderr, "(%d,%d,%f):%f\n", j, k, gcon[index_2D(ii, jj)][0][k][j] / gcon[index_2D(ii, jj)][0][j][k], log(fabs(gcon[index_2D(ii, jj)][0][k][j])));
 	}
+
+	//Add disk cooling term
 	#if(COOL_DISK)
 	double X[NDIM],r,th,phi;
 	coord(n, ii,jj, zz, CENT,X) ;
 	bl_coord(X,&r,&th, &phi) ;
 	misc_source(ph, ii, jj, geom, &q, dU,r, Dt) ;
 	#endif
+
+	//Add M1 radiation terms
+	#if(RAD_M1)
+	get_state_rad(ph, geom, &q_rad);
+	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
+	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
+	mhd_calc_rad(ph, 2, &q_rad, mhd_rad[2]);
+	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
+
+	//contract radiation stress tensor with connection
+	DLOOP{
+		dU[UU_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n,ii,jj,zz)][k][0][j];
+		dU[U1_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][1][j];
+		dU[U2_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][2][j];
+		dU[U3_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
+	}
+
+	
+	#endif
+
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
+}
 
-	/* done! */
+void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU)
+{
+	#if(RAD_M1)
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
+	int j, k;
+	struct of_state q;
+	struct of_state_rad q_rad;
+	#pragma ivdep
+	PLOOP dU[k] = 0.;
+	
+	//Add M1 radiation terms
+	get_state(ph, geom, &q);
+	get_state_rad(ph, geom, &q_rad);
+	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
+	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
+	mhd_calc_rad(ph, 2, &q_rad, mhd_rad[2]);
+	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
+
+	//Add radiation 4-force
+	Tg = 2. / 3.*(0.5*ph[UU]) / (ph[RHO]);
+	calc_Gcon(ph, Gcon, q.ucon, q.ucov, mhd_rad);
+	lower(Gcon, geom, Gcov);
+	dU[UU] += Gcov[0];
+	dU[U1] += Gcov[1];
+	dU[U2] += Gcov[2];
+	dU[U3] += Gcov[3];
+	dU[UU_RAD] -= Gcov[0];
+	dU[U1_RAD] -= Gcov[1];
+	dU[U2_RAD] -= Gcov[2];
+	dU[U3_RAD] -= Gcov[3];
+	dU[KTOT] -= 1. / Tg*(Gcon[0] * q.ucov[0] + Gcon[1] * q.ucov[1] + Gcon[2] * q.ucov[2] + Gcon[3] * q.ucov[3]);
+
+	#pragma ivdep
+	PLOOP dU[k] *= geom->g;
+	#endif
+}
+
+//Calculate radiation 4-force
+void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
+	int i;
+	double lambda, T, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM];
+	double arad = 1.;
+	kappa_abs = calc_kappa_abs(ph);
+	kappa_emmit = calc_kappa_emmit(ph);
+	kappa_es = calc_kappa_es(ph);
+	T = ph[UU] / ph[RHO];
+	lambda = kappa_emmit*ARAD*T*T*t*T;
+	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
+	for (i = 0; i < NDIM; i++) {
+		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
+	}
+}
+
+//Calculate total absorption opacity
+double calc_kappa_abs(double * restrict ph) {
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
+	double Ye = (1. + X_AB) / 2.;
+	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	double Tr = pow(ph[E_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25);
+	kappa_m = 0.1*Z_AB;
+	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
+	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -1.7)*pow(Tr, -3.);
+	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg));
+	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg))*(1. + 4.4*pow(10., -10.)*Tg);
+	//kappa_abs = 1.7*pow(10., -25.)*pow(ph[UU]/ ph[RHO], -7. / 2.) / (MH_CGS*MH_CGS)*ph[RHO];
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
+	
+	return kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS;
+}
+
+//Calculate total emmission opacity
+double calc_kappa_emmit(double * restrict ph) {
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
+	double Ye = (1. + X_AB) / 2.;
+	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	kappa_m = 0.1*Z_AB;
+	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
+	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -4.7);
+	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6);
+	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6)*(1. + 4.4*pow(10., -10.)*Tg);
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
+
+	return kappa_abs*(ph[RHO] * MASS_DENSITY_SCALE)*R_G_CGS;
+}
+
+//Calculate total (electron) scattering opacity
+double calc_kappa_es(double * restrict ph) {
+	double kappa_es;
+	double Tg = MMW*MH_CGS*2. / 3.*(0.5*ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
+
+	return kappa_es*(ph[RHO] *MASS_DENSITY_SCALE)*R_G_CGS;
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
@@ -182,6 +298,16 @@ void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_s
 	lower(q->bcon, geom, q->bcov) ;
 
 	return ;
+}
+
+/* find ucon, ucov, bcon, bcov from radiation primitive variables */
+void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad)
+{
+	/* get radiation ucon */
+	ucon_calc_rad(pr, geom, q_rad->ucon);
+	lower(q_rad->ucon, geom, q_rad->ucov);
+
+	return;
 }
 
 /* find contravariant four-velocity */
@@ -209,19 +335,39 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	return ;
 }
 
+/* find contravariant radiation four-velocity */
+void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad)
+{
+	double alpha, gamma_rad;
+	double beta[NDIM];
+	int j;
+
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
+	#pragma ivdep
+	SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
+
+	if (gamma_calc_rad(pr, geom, &gamma_rad)) {
+		fflush(stderr);
+		fprintf(stderr, "\nucon_calc(): gamma_rad failure \n");
+		fflush(stderr);
+		fail(FAIL_GAMMA);
+	}
+
+	ucon_rad[0] = gamma_rad / alpha;
+	#pragma ivdep
+	SLOOPA ucon_rad[j] = pr[U1_RAD + j - 1] - gamma_rad*beta[j] / alpha;
+
+	return;
+}
+
 /* find gamma-factor wrt normal observer */
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {
         double qsq ;
-        qsq =     geom->gcov[1][1]*pr[U1]*pr[U1]
-                + geom->gcov[2][2]*pr[U2]*pr[U2]
-                + geom->gcov[3][3]*pr[U3]*pr[U3]
-            + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]
-                + geom->gcov[1][3]*pr[U1]*pr[U3]
-                + geom->gcov[2][3]*pr[U2]*pr[U3]) ;
+        qsq =  geom->gcov[1][1]*pr[U1]*pr[U1]  + geom->gcov[2][2]*pr[U2]*pr[U2] + geom->gcov[3][3]*pr[U3]*pr[U3] + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]+ geom->gcov[1][3]*pr[U1]*pr[U3] + geom->gcov[2][3]*pr[U2]*pr[U3]);
         if( qsq < 0. ){
           if( fabs(qsq) > 1.E-10 ){ // then assume not just machine precision
-            fprintf(stderr,"gamma_calc():  failed: i,j,qsq = %d %d %28.18e \n", icurr,jcurr,qsq);
+            fprintf(stderr,"gamma_calc():  failed: qsq = %28.18e \n", qsq);
             fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
 	    *gamma = 1.;
 	    return (1);
@@ -234,6 +380,26 @@ int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * re
         return(0) ;
 }
 
+/* find gamma-factor wrt normal observer */
+int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad)
+{
+	double qsq;
+	qsq = geom->gcov[1][1] * pr[U1_RAD] * pr[U1_RAD] + geom->gcov[2][2] * pr[U2_RAD] * pr[U2_RAD] + geom->gcov[3][3] * pr[U3_RAD] * pr[U3_RAD] + 2.*(geom->gcov[1][2] * pr[U1_RAD] * pr[U2_RAD] + geom->gcov[1][3] * pr[U1_RAD] * pr[U3_RAD] + geom->gcov[2][3] * pr[U2_RAD] * pr[U3_RAD]);
+	if (qsq < 0.) {
+		if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
+			fprintf(stderr, "gamma_calc_rad():  failed: qsq = %28.18e \n", qsq);
+			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1], pr[U2], pr[U3]);
+			*gamma_rad = 1.;
+			return (1);
+		}
+		else qsq = 1.E-10; // set floor
+	}
+
+	*gamma_rad = sqrt(1. + qsq);
+
+	return(0);
+}
+
 /*  
  * VCHAR():
  * 
@@ -244,8 +410,7 @@ int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * re
  * 
  */
 
-void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,
-	double * restrict vmax, double * restrict vmin, int a, int b, int c)
+void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin, int a, int b, int c)
 {
 	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2,rho,u ;
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
@@ -270,15 +435,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	EE = bsq + EF ;
 	va2 = bsq/EE ;
 	cs2 = gam*(gam - 1.)*u/EF ;
-
-//	if(cs2 < 0.) cs2 = SMALL ;
-//	if(cs2 > 1.) cs2 = 1. ;
-//	if(va2 < 0.) va2 = SMALL ;
-//	if(va2 > 1.) va2 = 1. ;
-
 	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */
-
-	//cms2 *= 1.1 ;
 
 	/* check on it! */
 	if(cms2 < 0.) {
@@ -290,8 +447,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 		cms2 = 1. ;
 	}
 
-	/* now require that speed of wave measured by observer 
-	   q->ucon is cms2 */
+	/* now require that speed of wave measured by observer q->ucon is cms2 */
 	Asq = dot(Acon,Acov) ;
 	Bsq = dot(Bcon,Bcov) ;
 	Au =  dot(Acov,q->ucon) ;
@@ -343,6 +499,84 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	}
 
 	return ;
+}
+
+//Calculate radiative wave velocity
+void vchar_rad(double * restrict pr, struct of_state * restrict q, struct of_state * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
+	double discr, vp, vm, tau, kappa_tot, crad2;
+	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
+	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
+	int j;
+
+	#pragma ivdep
+	DLOOPA Acov[j] = 0.;
+	Acov[js] = 1.;
+	raise(Acov, geom, Acon);
+
+	#pragma ivdep
+	DLOOPA Bcov[j] = 0.;
+	Bcov[0] = 1.;
+	raise(Bcov, geom, Bcon);
+
+	/* find radiation wave speed */
+	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
+	tau = kappa_tot*sqrt(geom->gcov[js][js])*dx;
+	crad2 = MY_MIN(1.0 / 3.0, 4. / 3.*tau);
+
+	/* check on it! */
+	if (crad2 < 0.) {
+		fail(FAIL_COEFF_NEG);
+		crad2 = SMALL;
+	}
+	if (crad2 > 1.) {
+		fail(FAIL_COEFF_SUP);
+		crad2 = 1.;
+	}
+
+	/* now require that speed of wave measured by observer q->ucon is crad2 */
+	Asq = dot(Acon, Acov);
+	Bsq = dot(Bcon, Bcov);
+	Au = dot(Acov, q_rad->ucon);
+	Bu = dot(Bcov, q_rad->ucon);
+	AB = dot(Acon, Bcov);
+	Au2 = Au*Au;
+	Bu2 = Bu*Bu;
+	AuBu = Au*Bu;
+
+	A = Bu2 - (Bsq + Bu2)*crad2;
+	B = 2.*(AuBu - (AB + AuBu)*crad2);
+	C = Au2 - (Asq + Au2)*crad2;
+
+	discr = B*B - 4.*A*C;
+	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
+	else if (discr < -1.e-10) {
+		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, crad2);
+		fprintf(stderr, "\n\t q->ucon: %g %g %g %g\n", q->ucon[0], q->ucon[1],
+			q->ucon[2], q->ucon[3]);
+		fprintf(stderr, "\n\t q->bcon: %g %g %g %g\n", q->bcon[0], q->bcon[1],
+			q->bcon[2], q->bcon[3]);
+		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
+			Acon[2], Acon[3]);
+		fprintf(stderr, "\n\t Bcon: %g %g %g %g\n", Bcon[0], Bcon[1],
+			Bcon[2], Bcon[3]);
+		fail(FAIL_VCHAR_DISCR);
+		discr = 0.;
+	}
+
+	discr = sqrt(discr);
+	vp = -(-B + discr) / (2.*A);
+	vm = -(-B - discr) / (2.*A);
+
+	if (vp > vm) {
+		*vmax = vp;
+		*vmin = vm;
+	}
+	else {
+		*vmax = vm;
+		*vmin = vp;
+	}
+
+	return;
 }
 
 /* Add any additional source terms (e.g. cooling functions) */
