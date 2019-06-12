@@ -182,7 +182,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU)
 {
 	#if(RAD_M1)
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], Tg;
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
 	int j, k;
 	struct of_state_rad q_rad;
 
@@ -197,16 +197,22 @@ void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n
 	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
 
 	//Add radiation 4-force
-	Tg = (GAMMA-1.)*(ph[UU]) / (ph[RHO]);
 	ucon_calc(ph, geom, ucon);
+	lower(ucon, geom, ucov);
+	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad);
+	lower(Gcon, geom, Gcov);
+
 	dU[UU] += Gcov[0];
 	dU[U1] += Gcov[1];
 	dU[U2] += Gcov[2];
 	dU[U3] += Gcov[3];
+
 	dU[UU_RAD] -= Gcov[0];
 	dU[U1_RAD] -= Gcov[1];
 	dU[U2_RAD] -= Gcov[2];
 	dU[U3_RAD] -= Gcov[3];
+
+	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
 	dU[KTOT] -= 1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 
 	#pragma ivdep
