@@ -276,10 +276,6 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
 			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
-			#if(RAD_M1)
-			source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
-			#endif
-
 			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 			#if(RAD_M1)
 			get_state_rad(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
@@ -348,6 +344,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 					}
 				}
 			}
+			#endif
+
+			#if(RAD_M1)
+			source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
 			#endif
 		}
 	}

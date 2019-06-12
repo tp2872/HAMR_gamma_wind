@@ -55,18 +55,12 @@
 void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
-	double mhd[NDIM];
 
 	/* particle number flux */
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
-	mhd_calc(pr, dir, q, mhd) ;
 
-	/* MHD stress-energy tensor w/ first index up, 
-	 * second index down. */
-	#pragma ivdep
-	for (k = 0; k < 4; k++){
-		flux[k+1] = mhd[k] ;
-	}
+	/* MHD stress-energy tensor w/ first index up, * second index down. */
+	mhd_calc(pr, dir, q, &flux[UU]) ;
 	flux[UU] += flux[RHO];
 
 	//Radiation energy tensor
@@ -79,9 +73,12 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	for (k = B1; k <= B3; k++){
 		flux[k] = q->bcon[k-4] * q->ucon[dir] - q->bcon[dir] * q->ucon[k-4];
 	}
+
+	//Entropy advection
 	#if(DOKTOT )
 	flux[KTOT] = flux[RHO] * pr[KTOT];
 	#endif
+
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }
@@ -113,8 +110,7 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	eta = w + bsq ;
 	ptot = P + 0.5*bsq;
 
-	/* single row of mhd stress tensor, 
-	 * first index up, second index down */
+	/* single row of mhd stress tensor, first index up, second index down */
 	#pragma ivdep
 	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j] + ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
 }
@@ -128,7 +124,7 @@ void mhd_calc_rad(double * restrict pr, int dir, struct of_state * restrict q_ra
 	DLOOPA mhd_rad[j] = 4./3.*pr[E_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[E_RAD]*delta(dir, j);
 }
 
-/* add in geometricc source terms to equations of motion */
+/* add in (explicit) geometricc source terms to equations of motion */
 void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
 {
 	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
@@ -171,31 +167,29 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 
 	//contract radiation stress tensor with connection
 	DLOOP{
-		dU[UU_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n,ii,jj,zz)][k][0][j];
+		dU[UU_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][0][j];
 		dU[U1_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][1][j];
 		dU[U2_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][2][j];
 		dU[U3_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
 	}
-
-	
 	#endif
 
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
 }
 
+/* add in (implicit) radiation 4-force source term to equations of motion */
 void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU)
 {
 	#if(RAD_M1)
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], Tg;
 	int j, k;
-	struct of_state q;
 	struct of_state_rad q_rad;
+
 	#pragma ivdep
 	PLOOP dU[k] = 0.;
 	
 	//Add M1 radiation terms
-	get_state(ph, geom, &q);
 	get_state_rad(ph, geom, &q_rad);
 	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
 	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
@@ -203,9 +197,8 @@ void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n
 	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
 
 	//Add radiation 4-force
-	Tg = 2. / 3.*(0.5*ph[UU]) / (ph[RHO]);
-	calc_Gcon(ph, Gcon, q.ucon, q.ucov, mhd_rad);
-	lower(Gcon, geom, Gcov);
+	Tg = (GAMMA-1.)*(ph[UU]) / (ph[RHO]);
+	ucon_calc(ph, geom, ucon);
 	dU[UU] += Gcov[0];
 	dU[U1] += Gcov[1];
 	dU[U2] += Gcov[2];
@@ -214,7 +207,7 @@ void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n
 	dU[U1_RAD] -= Gcov[1];
 	dU[U2_RAD] -= Gcov[2];
 	dU[U3_RAD] -= Gcov[3];
-	dU[KTOT] -= 1. / Tg*(Gcon[0] * q.ucov[0] + Gcon[1] * q.ucov[1] + Gcon[2] * q.ucov[2] + Gcon[3] * q.ucov[3]);
+	dU[KTOT] -= 1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g;
@@ -224,13 +217,12 @@ void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n
 //Calculate radiation 4-force
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
 	int i;
-	double lambda, T, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM];
-	double arad = 1.;
+	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM];
 	kappa_abs = calc_kappa_abs(ph);
 	kappa_emmit = calc_kappa_emmit(ph);
 	kappa_es = calc_kappa_es(ph);
-	T = ph[UU] / ph[RHO];
-	lambda = kappa_emmit*ARAD*T*T*t*T;
+	Tg = (GAMMA - 1.)*ph[UU] / ph[RHO];
+	lambda = kappa_emmit*ARAD*pow(Tg,4.);
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
@@ -248,9 +240,9 @@ double calc_kappa_abs(double * restrict ph) {
 	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -1.7)*pow(Tr, -3.);
 	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg));
 	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg))*(1. + 4.4*pow(10., -10.)*Tg);
-	//kappa_abs = 1.7*pow(10., -25.)*pow(ph[UU]/ ph[RHO], -7. / 2.) / (MH_CGS*MH_CGS)*ph[RHO];
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	
+	//kappa_abs = 1.7*pow(10., -25.)*pow(ph[UU]/ ph[RHO], -7. / 2.) / (MH_CGS*MH_CGS)*ph[RHO];
+
 	return kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS;
 }
 

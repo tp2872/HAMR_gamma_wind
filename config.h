@@ -594,8 +594,8 @@ Section with derived quantities
 #define D3 (N3>1)
 
 /*Set variable numbers*/
-#define NPR_U        (8+DOKTOT)        /* number of gas primitive variables */
-#define NPR_R        (5)        /* number of radiation primitive variables */
+#define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
+#define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
