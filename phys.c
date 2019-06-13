@@ -185,9 +185,6 @@ void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n
 	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
 	int j, k;
 	struct of_state_rad q_rad;
-
-	#pragma ivdep
-	PLOOP dU[k] = 0.;
 	
 	//Add M1 radiation terms
 	get_state_rad(ph, geom, &q_rad);
@@ -202,18 +199,18 @@ void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n
 	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad);
 	lower(Gcon, geom, Gcov);
 
-	dU[UU] += Gcov[0];
-	dU[U1] += Gcov[1];
-	dU[U2] += Gcov[2];
-	dU[U3] += Gcov[3];
+	dU[UU] = Gcov[0];
+	dU[U1] = Gcov[1];
+	dU[U2] = Gcov[2];
+	dU[U3] = Gcov[3];
 
-	dU[UU_RAD] -= Gcov[0];
-	dU[U1_RAD] -= Gcov[1];
-	dU[U2_RAD] -= Gcov[2];
-	dU[U3_RAD] -= Gcov[3];
+	dU[UU_RAD] = Gcov[0];
+	dU[U1_RAD] = Gcov[1];
+	dU[U2_RAD] = Gcov[2];
+	dU[U3_RAD] = Gcov[3];
 
 	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
-	dU[KTOT] -= 1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g;
@@ -270,10 +267,10 @@ double calc_kappa_emmit(double * restrict ph) {
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph) {
 	double kappa_es;
-	double Tg = MMW*MH_CGS*2. / 3.*(0.5*ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
 	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
 
-	return kappa_es*(ph[RHO] *MASS_DENSITY_SCALE)*R_G_CGS;
+	return kappa_es*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS;
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
@@ -386,7 +383,7 @@ int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 	if (qsq < 0.) {
 		if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
 			fprintf(stderr, "gamma_calc_rad():  failed: qsq = %28.18e \n", qsq);
-			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1], pr[U2], pr[U3]);
+			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1_RAD], pr[U2_RAD], pr[U3_RAD]);
 			*gamma_rad = 1.;
 			return (1);
 		}
@@ -500,7 +497,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 }
 
 //Calculate radiative wave velocity
-void vchar_rad(double * restrict pr, struct of_state * restrict q, struct of_state * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
+void vchar_rad(double * restrict pr, struct of_state * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
 	double discr, vp, vm, tau, kappa_tot, crad2;
 	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
@@ -548,16 +545,8 @@ void vchar_rad(double * restrict pr, struct of_state * restrict q, struct of_sta
 	discr = B*B - 4.*A*C;
 	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
 	else if (discr < -1.e-10) {
-		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, crad2);
-		fprintf(stderr, "\n\t q->ucon: %g %g %g %g\n", q->ucon[0], q->ucon[1],
-			q->ucon[2], q->ucon[3]);
-		fprintf(stderr, "\n\t q->bcon: %g %g %g %g\n", q->bcon[0], q->bcon[1],
-			q->bcon[2], q->bcon[3]);
-		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
-			Acon[2], Acon[3]);
-		fprintf(stderr, "\n\t Bcon: %g %g %g %g\n", Bcon[0], Bcon[1],
-			Bcon[2], Bcon[3]);
-		fail(FAIL_VCHAR_DISCR);
+		fprintf(stderr, "Failed in vchar_rad");
+		exit(0);
 		discr = 0.;
 	}
 

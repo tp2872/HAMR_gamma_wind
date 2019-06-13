@@ -286,6 +286,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
+			#if(RAD_M1)
+			double E = U[UU];
+			double E_rad = U[UU_RAD];
+			#endif
 			#pragma ivdep
 			PLOOP{
 				U[k] += Dt*(
@@ -315,6 +319,25 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			#endif
 			
+			
+			#if(RAD_M1)
+			E = U[UU]-E;
+			E_rad = U[UU_RAD]-E_rad;
+			double time_remain = 1.;
+			double factor;
+			do {
+
+				source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
+				factor = 1.;
+				if (fabs(dU[UU]) > 0.25*U[UU]) {
+					factor = 0.25*U[UU] / fabs(dU[UU]);
+				}
+				if (dU[UU_RAD] < 0.0) {
+					if (fabs(dU[UU_RAD]) > 0.25*U[UU_RAD]) factor = MY_MIN(factor, 0.25*U[UU_RAD] / fabs(dU[UU_RAD]));
+				}
+			}
+			#endif
+
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
 			if (pflag[nl[n]][ind0]) {
@@ -345,9 +368,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				}
 			}
 			#endif
-
 			#if(RAD_M1)
-			source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
+			do {
+
+				source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
+			}
 			#endif
 		}
 	}
@@ -478,8 +503,8 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 
 					#if(RAD_M1)
-					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
-					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
+					vchar_rad(p_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
+					vchar_rad(p_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
 
 					cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
@@ -500,12 +525,12 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					cmax_rad = MY_MAX(cmax_rad, cmin_rad);
 					cmax = MY_MAX(cmax, cmax_rad);
 					#endif
+
 					dtij = cour*dx[nl[n]][dir] / cmax;
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;
 						#if(!TRANS_BOUND)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1+REF_2,block[n][AMR_LEVEL]))) {
-							//#pragma ivdep
 							PLOOP F[nl[n]][ind0][k] = 0.;
 						}
 						#endif
