@@ -193,7 +193,7 @@ void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_s
 }
 
 /* find contravariant four-velocity */
-void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
+    void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
 {
 	double alpha,gamma ;
 	double beta[NDIM] ;

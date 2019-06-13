@@ -85,7 +85,7 @@ void eos_copy_gpu(void) {
 }
 
 
-void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener,double *entr)
+void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *denerdt)
 {
     // Local variables
     double ytot1, ye, local_coulombMult;
@@ -94,7 +94,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 	double sion, dsiondd, dsiondt;
 	double pele, dpepdd, dpepdt, eele, deepdd, deepdt;
 	double sele, dsepdd, dsepdt;
-	double dpresdd, dpresdt, denerdt;
+	double dpresdd, dpresdt;
 	double presi, chit, chid, gamc, kavoy;
     double cv, cp, etaele, xnefer,denerdd, dentrdd ,dentrdt;
 
@@ -214,11 +214,11 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 	deionda = 1.5 * dpionda*deni;  //Calhoun
 	deiondz = 0.0; //Calhoun
 	#endif
-
+    
 	//  sackur-tetrode equation for the ion entropy of
 	//  a single ideal gas characterized by abar
 	*pres = prad + pion + pele + pcoul * local_coulombMult;
-	eion = 1.5 * pion * deni;
+    eion = 1.5 * pion * deni;
 	*ener = erad + eion + eele + ecoul * local_coulombMult;
 	sion = (pion*deni + eion)*tempi + kavoy*log(pow(abar, 2.5) * deni*avoinv *pow(sioncon * btemp, 1.5));
 	*entr = srad + sion + sele + scoul * local_coulombMult;
@@ -276,7 +276,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 		#endif
 		denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult; //energy derivative vs density and density
 		deiondt = 0.0;
-		denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs density and time
+		*denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs density and time
 
 		//Calculate entropy derivatives
 		dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
@@ -345,25 +345,74 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     return;
 }
 
-void test_eos(void) { 
+void test_eos(void) {
 	double btemp=2.0e8, den=1.0e7;
 	double abar=1.0, zbar=1.0;
-	double pres, ener, entr;
-//    int ix,jx;
+	double pres, ener, entr, denerdtemp;
+
+    
+    // START decs for output table: just for a check:
+//    int ix, jx;
+//    int rho_powmin = -10;
+//    int rho_powmax = 11;
+//    int temp_powmin = 4;
+//    int temp_powmax = 11;
+//    FILE *fp_checking_eos;
+//    fp_checking_eos = fopen("./test.txt", "w+");
+    // END of decs
 
     // Reading the table and writing into arrays
     eos_init();  
-	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr);
+	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr, &denerdtemp);
     
     printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pres, ener, entr);
-//    for (ix=-10;ix<12;ix++){
-//        den = pow(10.0, ix);
-//        for (jx=4;jx<12;jx++){
-//            btemp = pow(10.0, jx);
-//            eos_helm(btemp, den, abar, zbar, &pr, &eps);
-//            printf("d=%e, T=%e, Pressure = %e, Energy = %e\n", den, btemp, pr, eps);
-//        }
-//    }
+
+/*
+    // START output table
+    // Output a table with different rho,T --> P,u,s
+    // Physical range per FLASH manual: rho = (1e-10, 1e11) [g/cm3]; T = (1e4, 1e11) [K]
+	fprintf(fp_checking_eos, "# Density, Temperature, Pressure, Energy, Entropy \n");
+	int Num_max = 1000;
+	for (ix = 0; ix < Num_max; ix++){
+	   den = pow(10.0, rho_powmin + ix * (rho_powmax - rho_powmin) / (float) Num_max);
+	   for (jx = 0; jx < Num_max; jx++){
+	       btemp = pow(10.0, temp_powmin + jx * (temp_powmax - temp_powmin) / (float) Num_max);
+	       eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr);
+	       fprintf(fp_checking_eos, "%e %e %e %e %e\n", den, btemp, pres, ener, entr);
+	   }
+	}
+	fclose(fp_checking_eos);
+    // END output table
+*/
+/* 
+    // START eos mode dens+ener instead of dens+temp
+    int max_iterations = 50;
+    int iter_num = 0;
+    double tolerance = 1.0e-5;
+    double ener_goal = ener;
+    // initial guess : temperature
+    double temp_ini_guess = 1.1e8;//(gam - 1.0) * ener_goal * 1.211475197e-8;
+    double temp_new, temp_old;
+    double ener_old;
+    double error;
+    int i;
+    
+    for(i = 0; i < max_iterations; i++){
+        temp_old = temp_ini_guess;
+        eos_helm(1, temp_old, den, abar, zbar, &pres,  &ener_old, &entr, &denerdtemp);
+        temp_new = temp_old - (ener_old - ener_goal) / denerdtemp;
+        
+        //do not allow temp to change more than 10. times in one iteration
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        iter_num++;
+        if(error < tolerance) break;
+    }
+    printf("Error = %e; ener = %e, dens = %e, temp = %e, iter = %d", error, ener_goal, den, temp_new, iter_num);
+*/
+    
 }
 
 

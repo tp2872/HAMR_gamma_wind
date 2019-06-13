@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 	#endif
     set_AMR();
 	test_eos();
+    exit(1);
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
