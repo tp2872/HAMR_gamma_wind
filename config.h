@@ -68,9 +68,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 0
+#define GPU_ENABLED 1
 #define GPU_DEBUG 0
-#define CPU_OPENMP 1
+#define CPU_OPENMP 0
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -80,13 +80,13 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 0
+#define GPU_DIRECT 1
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
 
 /*Enable parallel I/0*/
-#define PARALLEL_IO (0)
+#define PARALLEL_IO (1)
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
@@ -96,14 +96,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
-#define NB_3 1
+#define NB_1 8
+#define NB_2 4
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 512
-#define BS_2 256
-#define BS_3 4
+#define BS_1 64
+#define BS_2 64
+#define BS_3 64
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
