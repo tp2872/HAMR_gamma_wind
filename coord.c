@@ -42,6 +42,7 @@
 
 ***********************************************************************************/
 #include "decs_MPI.h"
+#include "defs.h"
 
 /** 
  *
@@ -307,7 +308,7 @@ void set_points(int n)
 #if(WHICHPROBLEM == POSTMERGER_PROBLEM)
   double lenx[NDIM];
 
-  lenx[1] = x1max - startx[1];
+    lenx[1] = x1max - startx[1];
 	lenx[2] = 2.*fractheta;
 	lenx[3] = 2.*M_PI;
 

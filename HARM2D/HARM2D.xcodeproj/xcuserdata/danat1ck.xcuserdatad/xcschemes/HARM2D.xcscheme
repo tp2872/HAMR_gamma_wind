@@ -65,7 +65,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DYLD_LIBRARY_PATH"
-            value = "/usr/local/cuda/nvvm/lib:/usr/local/cuda/lib"
+            value = "/usr/local/cuda/nvvm/lib:/usr/local/cuda/lib:$DYLD_LIBRARY_PATH"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

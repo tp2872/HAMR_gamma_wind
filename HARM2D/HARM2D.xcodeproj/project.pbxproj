@@ -85,6 +85,8 @@
 		0CA1A0041D135EB40090373C /* boundcomP.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = boundcomP.c; path = ../boundcomP.c; sourceTree = "<group>"; };
 		0CA1A0051D135EB40090373C /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; name = makefile; path = ../makefile; sourceTree = "<group>"; };
 		0CA1A0061D135EB40090373C /* AMR.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = AMR.c; path = ../AMR.c; sourceTree = "<group>"; };
+		0CB023AF2280CB410095E334 /* nuclear.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nuclear.c; path = ../nuclear.c; sourceTree = "<group>"; };
+		0CB023B02280CB410095E334 /* nuclear.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nuclear.h; path = ../nuclear.h; sourceTree = "<group>"; };
 		E073903B222CAEB200371D82 /* slurm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; name = slurm; path = ../slurm; sourceTree = "<group>"; };
 		E073903C222CAEB300371D82 /* makefile.summit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = makefile.summit; path = ../makefile.summit; sourceTree = "<group>"; };
 		E073903D222CAEB300371D82 /* Eos_map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Eos_map.h; path = ../Eos_map.h; sourceTree = "<group>"; };
@@ -95,8 +97,6 @@
 		E0739042222CAEB400371D82 /* constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = constants.h; path = ../constants.h; sourceTree = "<group>"; };
 		E0739043222CAEB400371D82 /* eos_helm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = eos_helm.c; path = ../eos_helm.c; sourceTree = "<group>"; };
 		E0739044222CAEB400371D82 /* Flash_mpi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Flash_mpi.h; path = ../Flash_mpi.h; sourceTree = "<group>"; };
-		0CB023AF2280CB410095E334 /* nuclear.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nuclear.c; path = ../nuclear.c; sourceTree = "<group>"; };
-		0CB023B02280CB410095E334 /* nuclear.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nuclear.h; path = ../nuclear.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -312,7 +312,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -327,9 +327,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = /usr/local/include;
 			};
 			name = Debug;
 		};
@@ -351,7 +353,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -359,8 +361,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = /usr/local/include;
 			};
 			name = Release;
 		};

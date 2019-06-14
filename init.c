@@ -641,8 +641,8 @@ void init_postmerger()
   int nvars, nx, ny, nz;
   int res;
   double *icdata;
-  char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
-  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";
+  char fname1[] = "PointsToInterpolateHAMR.dat";
+  char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
   int mult = 4;
   char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
   size_t memsize, nitems, nread;
@@ -691,7 +691,7 @@ void init_postmerger()
   //for this, loop over all MPI processes
   //and let them read the IC data from file, one by one
   
-#define READBINARY (1)
+#define READBINARY (0)
   
 #if (READBINARY)
   for (ind=0; ind<numtasks; ind++) {
@@ -888,9 +888,9 @@ void init_postmerger()
         //second file, containing data information
         ptr2 = fgets(buf2, MAXLEN, fp2);
         if(NULL == ptr2) break;
-        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %*lf %lf %lf %lf \n",
-                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
-        nitems_expected = 7;
+        nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf %lf \n",
+                             &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
+        nitems_expected = 8;
         if(nitems_expected != nitems_read) break;
         
       }
@@ -947,11 +947,11 @@ void init_postmerger()
       prim[U3] = dd(i,j,z,VARVUPHI);
       udphi = dd(i,j,z,VARUDPHI)/r_unit;
       
-      //res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
+      res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
       
       /* regions outside stream */
       
-      /*
+      
       if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
         rho = 1.e-30/(r*r);
         u = 1.e-31/(r*r*r*r);
@@ -965,7 +965,7 @@ void init_postmerger()
         prim[U1] = ur;
         prim[U2] = uh;
         prim[U3] = up;
-      }*/
+      } 
       if(1) {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
         //vconbl_to_utcon(prim, n_ord[n], i, j, z);
@@ -2037,16 +2037,16 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   get_geometry(n,ii, jj,zz, CENT, &geom);
   
 // Commented out this part of the code that modifies utconp by matching udphi's
-//
-//  max_iter = 50;
-//  err_tol = 1.0E-4;
-//  for (i = 0; i < max_iter; i++) {
-//    udphi_to_utuphi(utconp, udphi, &udphi_new, &geom, utconp_new);
-//    DLOOPA utconp[j] = utconp_new[j];
-//    err = fabs(2 * (udphi_new - udphi)/(udphi + udphi_new + 1.0E-7));
-//    if (err <= err_tol) break;
-//    udphi = udphi_new;
-//  }
+
+  max_iter = 50;
+  err_tol = 1.0E-4;
+  for (i = 0; i < max_iter; i++) {
+    udphi_to_utuphi(utconp, udphi, &udphi_new, &geom, utconp_new);
+    DLOOPA utconp[j] = utconp_new[j];
+    err = fabs(2 * (udphi_new - udphi)/(udphi + udphi_new + 1.0E-7));
+    if (err <= err_tol) break;
+    udphi = udphi_new;
+  }
   
   //ucon_to_utcon(uconp, &geom, utconp);
   

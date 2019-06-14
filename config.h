@@ -13,7 +13,7 @@ Physical Parameters section
 #define THIN_PROBLEM 9
 #define POSTMERGER_PROBLEM 10
 
-#define WHICHPROBLEM TORUS_PROBLEM_GRB
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -101,8 +101,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
+#define BS_1 512
+#define BS_2 256
 #define BS_3 4
 
 /*Set the maximum number of refinement levels*/
