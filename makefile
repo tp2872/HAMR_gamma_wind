@@ -1,18 +1,61 @@
+#/***********************************************************************************
+#    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
+#                   Gabor Toth, and Luca Del Zanna
+#
+#                        HARM  version 1.0   (released May 1, 2006)
+#
+#    This file is part of HARM.  HARM is a program that solves hyperbolic 
+#    partial differential equations in conservative form using high-resolution
+#    shock-capturing techniques.  This version of HARM has been configured to 
+#    solve the relativistic magnetohydrodynamic equations of motion on a 
+#    stationary black hole spacetime in Kerr-Schild coordinates to evolve
+#    an accretion disk model. 
+#
+#    You are morally obligated to cite the following two papers in his/her 
+#    scientific literature that results from use of any part of HARM:
+#
+#    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
+#        Astrophysical Journal, 589, 444.
+#
+#    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
+#        Astrophysical Journal, 641, 626.
+#
+#   
+#    Further, we strongly encourage you to obtain the latest version of 
+#    HARM directly from our distribution website:
+#    http://rainman.astro.uiuc.edu/codelib/
+#
+#
+#    HARM is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    HARM is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with HARM; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+#***********************************************************************************/
 #### set USEICC to 0 if you want gcc compiler options, else set to 1 to use icc
 ########  gcc generally used for debugging with -g option so we can use gdb 
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = clang
-CCFLAGS  = -O3 -I/usr/local/cuda/include -g -ggdb
+CC       = mpicc 
+CCFLAGS  =  -fopenmp -O3
 endif
 
-EXTRALIBS = -lm -L/usr/local/cuda/lib -lcudart -lmpi
+EXTRALIBS = -lm -L/sw/summit/cuda/10.1.105/lib64 -lstdc++ -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = /usr/local/cuda/bin/nvcc -arch=compute_35 -code=sm_35 -I/usr/local/cuda/include --ptxas-options=-dlcm=ca -Xcompiler -lgomp -c
+CUDA_COMPILE  = nvcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=ca -Xcompiler \-fopenmp -lgomp -c 
 CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = /usr/local/cuda/bin/nvcc -arch=compute_35 -code=sm_35 --ptxas-options=-dlcm=ca -Xcompiler -lgomp -dlink
+CUDA_LOAD  = nvcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=ca -Xcompiler \-fopenmp -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
@@ -21,9 +64,8 @@ GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_p
 
 EXE = harm
 all: $(EXE)
-
+	
 OBJS = \
-eos_helm.o \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o \
 init.o interp.o main.o metric.o lu.o \

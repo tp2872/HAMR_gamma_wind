@@ -11,7 +11,7 @@
 
 module load xl
 module load cuda 
-cd $PROJWORK/phy129/T65TOR
+cd $PROJWORK/phy129/IC_test/harm2d
 make clean
 make -j
-jsrun --smpiargs "-gpu" -n1 -a6 ./harm
+jsrun --smpiargs "-gpu" -n1 -a6 -g6 -c42 -bpacked:7 ./harm
