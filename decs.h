@@ -863,7 +863,9 @@ void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_st
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
-void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU);
+void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
+void implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
+void subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
 void u_to_v(double *pr, int i, int j);
 void fixup(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void fixup1zone(int i, int j, int z, int n, double prim[NPR]);
@@ -879,6 +881,7 @@ double calc_kappa_emmit(double * restrict ph);
 double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
+int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);

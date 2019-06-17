@@ -318,25 +318,6 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			U[B3] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-			
-			
-			#if(RAD_M1)
-			E = U[UU]-E;
-			E_rad = U[UU_RAD]-E_rad;
-			double time_remain = 1.;
-			double factor;
-			do {
-
-				source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
-				factor = 1.;
-				if (fabs(dU[UU]) > 0.25*U[UU]) {
-					factor = 0.25*U[UU] / fabs(dU[UU]);
-				}
-				if (dU[UU_RAD] < 0.0) {
-					if (fabs(dU[UU_RAD]) > 0.25*U[UU_RAD]) factor = MY_MIN(factor, 0.25*U[UU_RAD] / fabs(dU[UU_RAD]));
-				}
-			}
-			#endif
 
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
@@ -350,7 +331,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			//}
 			#endif
 			#if(RAD_M1)
-			Utoprim_R(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
@@ -369,12 +350,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#endif
 			#if(RAD_M1)
-			do {
-
-				source_implicit(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU);
-			}
+			implicit_rad_solve_PMHD(pf, U, geom, dU, Dt);
 			#endif
-		}
+			}
 	}
 }
 

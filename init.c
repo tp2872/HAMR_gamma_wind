@@ -83,6 +83,7 @@ void init_torus_grb();
 void set_mag_TDE(void);
 void set_uniform_Bphi(void);
 double lfish_calc(double r);
+void init_rad_pres(double pi[NPR]);
 
 double global_kappa, aphipow;
 
@@ -308,6 +309,10 @@ void init_thindisk()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+
+			#if(RAD_M1)
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#endif
 		}
 	}
 	a = temp;
@@ -339,6 +344,25 @@ void init_thindisk()
 	}
 	bound_prim(p, 1);
 
+	/*#if(RAD_M1)
+	double kappa_tot, U[NPR];
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			kappa_tot = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]) + calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			U[UU_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][UU_RAD];
+			U[U1_RAD] = -1. / kappa_tot*(p[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][UU_RAD] - p[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][UU_RAD]) / dx[nl[n_ord[n]]][1];
+			U[U2_RAD] = -1. / kappa_tot*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][UU_RAD] - p[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][UU_RAD]) / dx[nl[n_ord[n]]][2];
+			U[U3_RAD] = -1. / kappa_tot*(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][UU_RAD] - p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][UU_RAD]) / dx[nl[n_ord[n]]][3];
+		}
+	}
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			Rtoprim(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], BASIC);
+		}
+	}
+	bound_prim(p, 1);
+	#endif*/
 	set_mag();
 
 	#if( DO_FONT_FIX ) 
@@ -579,6 +603,50 @@ void init_torus()
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
+}
+
+void init_rad_pres(double pi[NPR]) {
+	double T_old, T_new, ptot, arad, dPdT, errx;
+	int keep_iterating, i, n_iter;
+
+	keep_iterating = 1;
+	n_iter = 0;
+	arad = ARAD/(MASS_DENSITY_SCALE*C_CGS*C_CGS/pow(MMW*MH_CGS*C_CGS*C_CGS/BOLTZ_CGS,4.));
+	T_old = (GAMMA - 1.)*pi[UU] / pi[RHO];
+	T_new = T_old;
+	ptot = (GAMMA - 1.)*pi[UU];
+
+	while (keep_iterating) {
+		//Calculate gradient dPdT
+		dPdT = pi[RHO] + 4. / 3.*arad*pow(T_new, 3.);
+
+		/* Make the newton step: */
+		T_old = T_new;
+		T_new = T_old - ((pi[RHO] * T_old+1./3.*arad*pow(T_old,4.))-ptot) / dPdT;
+
+		/****************************************/
+		/* Calculate the convergence criterion for iterated variables */
+		/****************************************/
+		errx = fabs(T_new-T_old)/T_old;
+
+		/*****************************************************************************/
+		/* If we've reached the tolerance level, then just do a few extra iterations */
+		/*  before stopping                                                          */
+		/*****************************************************************************/
+		if (((fabs(errx) <= NEWT_TOL)) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+			keep_iterating = 0;
+		}
+
+		n_iter++;
+	}   // END of while(keep_iterating)
+
+	if (n_iter == MAX_NEWT_ITER) {
+		pi[UU_RAD] = 0.;
+	}
+	else {
+		pi[UU] = 1. / (GAMMA-1.)*pi[RHO]*T_new;
+		pi[UU_RAD] = arad*pow(T_new,4.);
+	}
 }
 
 void init_disruption()

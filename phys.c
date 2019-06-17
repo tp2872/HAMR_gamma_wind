@@ -179,7 +179,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 }
 
 /* add in (implicit) radiation 4-force source term to equations of motion */
-void source_implicit(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU)
+void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU)
 {
 	#if(RAD_M1)
 	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;

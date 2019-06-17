@@ -11,7 +11,7 @@ Physical Parameters section
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
-#define WHICHPROBLEM THIN_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -21,15 +21,15 @@ Physical Parameters section
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
-#define TILTED (1)
-#define TILT_ANGLE (65.0)
+#define TILTED (0)
+#define TILT_ANGLE (0.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
 #define ELLIPTICAL2 (0)
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
-#define COOL_DISK (1)
+#define COOL_DISK (0)
 #define H_OVER_R (0.02)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
@@ -59,9 +59,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 1
+#define GPU_ENABLED 0
 #define GPU_DEBUG 0
-#define CPU_OPENMP 0
+#define CPU_OPENMP 1
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -71,7 +71,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT 1
+#define GPU_DIRECT 0
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -87,17 +87,17 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 35
-#define NB_2 12
-#define NB_3 4
+#define NB_1 2
+#define NB_2 2
+#define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 48
-#define BS_2 48
-#define BS_3 64
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 4
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -111,10 +111,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (4)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -127,13 +127,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 32
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 32
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (240)
+#define DUMPFACTOR (20)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -228,7 +228,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DELTA (3.0)
 
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
-#define DOCYLINDRIFYCOORDS (0)
+#define DOCYLINDRIFYCOORDS (1)
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
@@ -250,6 +250,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable Radiation*/
 #define RAD_M1 (1)
+#define BASIC (0)
+#define TYPE2 (1)
 
 //Abundace constants
 #define Z_AB (0.02)
