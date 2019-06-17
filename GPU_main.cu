@@ -2267,7 +2267,7 @@ void GPU_finish(int n, int force_delete)
 	}
 	else{
 		//Tell the code that memory is deallocated on the GPU
-		free_bound_gpu(n);
+		//free_bound_gpu(n);
 		mem_spot_gpu[nl[n]] = -1;
 	}
 
