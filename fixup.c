@@ -92,11 +92,6 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
 	if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
 
-	//Set floors for radiation energy density
-	#if(RAD_M1)
-	if (pv[E_RAD] < pow(10., -150.)) pv[E_RAD] = pow(10., -150.);
-	#endif
-
 	/* floor on density and internal energy density (momentum *not* conserved) */
 	#pragma ivdep
 	PLOOP pv_prefloor[k] = pv[k];

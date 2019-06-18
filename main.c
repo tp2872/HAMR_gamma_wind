@@ -82,9 +82,7 @@ int main(int argc, char *argv[])
 			#if(N_LEVELS_1D_INT>0 && D3>0)
 			average_grid();
 			#endif
-			#if(N_LEVELS_3D>1)
 			check_refcrit();
-			#endif
 		}	
 		restart_write();
 	}
@@ -312,9 +310,9 @@ void set_arrays(int n)
 	}
 	else mem_spot[i] = 1;
 
-	array[nl[n]] = (float *)malloc(9 * BS_1*BS_2*BS_3 * sizeof(float));
+	array[nl[n]] = (float *)malloc(NPRDUMP * BS_1*BS_2*BS_3 * sizeof(float));
 	#if(DUMP_SMALL)
-	array_reduced[nl[n]] = (float *)malloc(9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
+	array_reduced[nl[n]] = (float *)malloc(NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float));
 	array_gdump1_reduced[nl[n]] = (double *)malloc(9 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 *BS_3 / REDUCE_FACTOR3 * sizeof(double));
 	array_gdump2_reduced[nl[n]] = (double *)malloc(49 * BS_1 / REDUCE_FACTOR1 *BS_2 / REDUCE_FACTOR2 * sizeof(double));
 	#endif

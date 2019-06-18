@@ -1,11 +1,10 @@
-
 #include "decs_MPI.h"
 
-extern void raise_g(double vcov[], double gcon[][NDIM], double vcon[]);
-extern void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
-extern void ncov_calc(double gcon[][NDIM], double ncov[]); int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
+void raise_g(double vcov[], double gcon[][NDIM], double vcon[]);
+void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
+void ncov_calc(double gcon[][NDIM], double ncov[]); int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
 
-void subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom,  double Dt) {
+int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom,  double Dt) {
 	double factor, remainder, dU[NPR], fraction;
 	int flag, keep_iterating=1, nstep=0;
 
@@ -60,6 +59,12 @@ void subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom,  dou
 		}
 		nstep++;
 	}
+	if (nstep >= 100) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom, double dU[NPR], double Dt){
@@ -96,7 +101,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 
 			get_state(pb_new, &geom, &q);
 			mhd_calc(pb_new, 0, &q, &U_new[UU]);
-			get_state(pb_new, &geom, &q_rad);
+			get_state_rad(pb_new, &geom, &q_rad);
 			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 
 			U_new[UU_RAD] -= (U_new[UU] - U_old[UU]);
@@ -132,7 +137,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 
 		get_state(pb_new, &geom, &q);
 		mhd_calc(pb_new, 0, &q, &U_new[UU]);
-		get_state(pb_new, &geom, &q_rad);
+		get_state_rad(pb_new, &geom, &q_rad);
 		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 
 		U_new[UU_RAD] -= (U_new[UU] - U_old[UU]);
@@ -140,7 +145,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 		U_new[U2_RAD] -= (U_new[U2] - U_old[U2]);
 		U_new[U3_RAD] -= (U_new[U3] - U_old[U3]);
 
-		Utoprim_R(U_new, geom.gcov, geom.gcon, geom.g, pb_new);
+		Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
@@ -183,12 +188,12 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 	alpha = 1.0 / sqrt(-gcon[0][0]);
 
 	/* Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
-	for (i = 0; i <= U3_RAD - E_RAD; i++) {
+	for (i = 0; i <= U3_RAD - UU_RAD; i++) {
 		U_tmp[i] = alpha * U[i + NPR_U] / gdet;
 	}
 
 	/* Transform the PRIMITIVE variables into the new system */
-	for (i = 0; i <= U3_RAD - E_RAD; i++) {
+	for (i = 0; i <= U3_RAD - UU_RAD; i++) {
 		prim_tmp[i] = prim[i + NPR_U];
 	}
 
@@ -196,7 +201,7 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
-		for (i = 0; i <= U3_RAD - E_RAD; i++) {
+		for (i = 0; i <= U3_RAD - UU_RAD; i++) {
 			prim[i + NPR_U] = prim_tmp[i];
 		}
 	}

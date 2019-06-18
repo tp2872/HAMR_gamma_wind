@@ -267,10 +267,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 	double ndt, ndt1, ndt2, ndt3, U[NPR], dU[NPR];
 	struct of_geom geom;
 	struct of_state q;
-	struct of_state q_rad;
+	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
@@ -383,7 +383,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	double ctop, ctop_rad;
 	struct of_geom geom;
 	struct of_state state_l, state_r, state_roe, qi;
-	struct of_state_rad *state_l_rad, *state_r_rad;
+	struct of_state_rad state_l_rad, state_r_rad;
 	double bsq;
 	int max_i, max_j, max_z;
 	double val;
@@ -459,14 +459,14 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					get_state(p_l, &geom, &state_l);
 					get_state(p_r, &geom, &state_r);
 					#if(RAD_M1)
-					get_state(p_l, &geom, state_l_rad);
-					get_state(p_r, &geom, state_r_rad);
+					get_state_rad(p_l, &geom, &state_l_rad);
+					get_state_rad(p_r, &geom, &state_r_rad);
 					#endif
-					primtoflux(p_l, &state_l, state_l_rad, dir, &geom, F_l);
-					primtoflux(p_r, &state_r, state_l_rad, dir, &geom, F_r);
+					primtoflux(p_l, &state_l, &state_l_rad, dir, &geom, F_l);
+					primtoflux(p_r, &state_r, &state_l_rad, dir, &geom, F_r);
 
-					primtoflux(p_l, &state_l, state_l_rad, 0, &geom, U_l);
-					primtoflux(p_r, &state_r, state_l_rad, 0, &geom, U_r);
+					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l);
+					primtoflux(p_r, &state_r, &state_l_rad, 0, &geom, U_r);
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);

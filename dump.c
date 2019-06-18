@@ -78,13 +78,13 @@ void dump_new(void){
 	//for (n = 0; n < n_active_total; n++){
 	//	for(u=0; u<u_max; u++)if(n>=u*u_stride && n<(u+1)*u_stride){
 	//		if (block[n_ord_total[n]][AMR_NODE]==rank){
-	//			MPI_File_seek(fdump[u], (n-u*u_stride) * 9 * BS_1*BS_2*BS_3*sizeof(float), MPI_SEEK_SET);
+	//			MPI_File_seek(fdump[u], (n-u*u_stride) * NPRDUMP * BS_1*BS_2*BS_3*sizeof(float), MPI_SEEK_SET);
 	//			dump_block(&fdump[u], n_ord_total[n]);
 	//		}
 	//	}
 	//}
 	for (n = 0; n < n_active; n++) {
-		MPI_File_seek(fdump[0], (n) * 9 * BS_1 * BS_2 * BS_3 * sizeof(float), MPI_SEEK_SET);
+		MPI_File_seek(fdump[0], (n) * NPRDUMP * BS_1 * BS_2 * BS_3 * sizeof(float), MPI_SEEK_SET);
 		dump_block(&fdump[0], n_ord[n]);
 	}
 
@@ -146,13 +146,13 @@ void dump_new_reduced(void) {
 	//for (n = 0; n < n_active_total; n++) {
 	//	for (u = 0; u<u_max; u++)if (n >= u*u_stride && n<(u + 1)*u_stride) {
 	//		if (block[n_ord_total[n]][AMR_NODE] == rank) {
-	//			MPI_File_seek(fdump_reduced[u], (n - u*u_stride) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
+	//			MPI_File_seek(fdump_reduced[u], (n - u*u_stride) * NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
 	//			dump_block_reduced(&fdump_reduced[u], n_ord_total[n]);
 	//		}
 	//	}
 	//}
 	for (n = 0; n < n_active; n++) {
-		MPI_File_seek(fdump_reduced[0], (n) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
+		MPI_File_seek(fdump_reduced[0], (n) * (NPRDUMP) * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
 		dump_block_reduced(&fdump_reduced[0], n_ord[n]);
 	}
 	dump_cnt_reduced++;
@@ -242,7 +242,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	int rd = dump_reduced;
 	int rt = RTRANS;
 	int rb = RB;
-	int docyl = DOCYLINDRIFYCOORDS;
+	int docyl = 0 + RAD_M1 * 10;
 	int dk = DOKTOT;
 
 	//Print out essential stuff for restart
@@ -309,24 +309,34 @@ void dump_block(MPI_File *fp, int n)
 	int i, j, z, k;
 	struct of_geom geom;
 	struct of_state q;
+	struct of_state_rad q_rad;
 
-	#pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom,q)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3)/nthreads) private(i,j,z,k,geom,q,q_rad)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
-		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
-		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 0] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 1] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
 
 		get_geometry(n, i, j, z, CENT, &geom);
 		get_state(p[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 
-		for (k = 0; k < NDIM; k++) array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + (k + 2)] = (float)q.ucon[k];
-		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = (float)p[nl[n]][index_3D(n, i, j, z)][5];
-		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[nl[n]][index_3D(n, i, j, z)][6];
-		array[nl[n]][(i - N1_GPU_offset[n]) * 9 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 9 * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[nl[n]][index_3D(n, i, j, z)][7];
+		for (k = 0; k < NDIM; k++) array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + (k + 2)] = (float)q.ucon[k];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 6] = (float)p[nl[n]][index_3D(n, i, j, z)][5];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 7] = (float)p[nl[n]][index_3D(n, i, j, z)][6];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 8] = (float)p[nl[n]][index_3D(n, i, j, z)][7];
+
+		#if(RAD_M1)
+		get_state_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 9] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_RAD];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 10] = (float)q_rad.ucon[0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 11] = (float)q_rad.ucon[0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 12] = (float)q_rad.ucon[0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * 9 + 13] = (float)q_rad.ucon[0];
+		#endif
 	}
 	#if(PARALLEL_IO)
-	MPI_File_iwrite_all(fp[0], array[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[nl[n]][0]);
+	MPI_File_iwrite_all(fp[0], array[nl[n]], NPRDUMP * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[nl[n]][0]);
 	#else
-	MPI_File_iwrite(fp[0], array[nl[n]], 9 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[nl[n]][0]);
+	MPI_File_iwrite(fp[0], array[nl[n]], NPRDUMP * BS_1*BS_2*BS_3, MPI_FLOAT, &req_block[nl[n]][0]);
 	#endif
 }
 
@@ -335,28 +345,38 @@ void dump_block_reduced(MPI_File *fp, int n){
 	int i1, j1, z1;
 	struct of_geom geom;
 	struct of_state q;
+	struct of_state_rad q_rad;
 	float factor = 1.0;// / ((double)(REDUCE_FACTOR1*REDUCE_FACTOR2*REDUCE_FACTOR3));
 
-	#pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom,q)
+	#pragma omp parallel for collapse(3) schedule(static,(BS_1 / REDUCE_FACTOR1)*(BS_2 / REDUCE_FACTOR2)*(BS_3 / REDUCE_FACTOR3)/nthreads) private(i,j,z,i1,j1,z1,k,geom,q,q_rad)
 	for (i = 0; i < BS_1 / REDUCE_FACTOR1; i++)for (j = 0; j < BS_2 / REDUCE_FACTOR2; j++)for (z = 0; z < BS_3 / REDUCE_FACTOR3; z++) {
-		for (k = 0; k < 9; k++)array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + k] = 0;
+		for (k = 0; k < 9; k++)array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + k] = 0;
 		for (i1 = 0; i1 < 1; i1++)for (j1 = 0; j1 < 1; j1++)for (z1 = 0; z1 < 1; z1++) {
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 0] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][0] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 1] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][1] * factor;
+			array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 0] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][0] * factor;
+			array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 1] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][1] * factor;
 
 			get_geometry(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n], CENT, &geom);
 			get_state(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])], &geom, &q);
 
-			for (k = 0; k < NDIM; k++) array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + (k + 2)] = (float)q.ucon[k] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 6] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][5] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 7] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][6] * factor;
-			array_reduced[nl[n]][(i) * 9 * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * 9 * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 8] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][7] * factor;
+			for (k = 0; k < NDIM; k++) array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + (k + 2)] = (float)q.ucon[k] * factor;
+			array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 6] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][5] * factor;
+			array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 7] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][6] * factor;
+			array_reduced[nl[n]][(i) * NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j) * NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 8] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][7] * factor;
+			
+			#if(RAD_M1)
+			get_state_rad(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])], &geom, &q_rad);
+			array_reduced[nl[n]][(i)* NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j)* NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 9] = (float)p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j*REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z*REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][UU_RAD] * factor;
+			array_reduced[nl[n]][(i)* NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j)* NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 10] = (float)q_rad.ucon[0] * factor;
+			array_reduced[nl[n]][(i)* NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j)* NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 11] = (float)q_rad.ucon[1] * factor;
+			array_reduced[nl[n]][(i)* NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j)* NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 12] = (float)q_rad.ucon[2] * factor;
+			array_reduced[nl[n]][(i)* NPRDUMP * BS_2 / REDUCE_FACTOR2* BS_3 / REDUCE_FACTOR3 + (j)* NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z) * 9 + 13] = (float)q_rad.ucon[3] * factor;
+			#endif
 		}
 	}
 	#if(PARALLEL_IO)
-	MPI_File_iwrite_all(fp[0], array_reduced[nl[n]], 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3, MPI_FLOAT, &req_block_reduced[nl[n]][0]);
+	MPI_File_iwrite_all(fp[0], array_reduced[nl[n]], NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3, MPI_FLOAT, &req_block_reduced[nl[n]][0]);
 	#else
-	MPI_File_iwrite(fp[0], array_reduced[nl[n]], 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3, MPI_FLOAT, &req_block_reduced[nl[n]][0]);
+	MPI_File_iwrite(fp[0], array_reduced[nl[n]], NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3, MPI_FLOAT, &req_block_reduced[nl[n]][0]);
 	#endif
 }
 

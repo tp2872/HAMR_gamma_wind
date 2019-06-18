@@ -116,12 +116,12 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 }
 
 /* Radiation stress tensor, with first index up, second index down */
-void mhd_calc_rad(double * restrict pr, int dir, struct of_state * restrict q_rad, double * restrict mhd_rad)
+void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad)
 {
 	int j;
 	/* single row of mhd stress tensor, first index up, second index down */
 	#pragma ivdep
-	DLOOPA mhd_rad[j] = 4./3.*pr[E_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[E_RAD]*delta(dir, j);
+	DLOOPA mhd_rad[j] = 4./3.*pr[UU_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[UU_RAD]*delta(dir, j);
 }
 
 /* add in (explicit) geometricc source terms to equations of motion */
@@ -237,7 +237,7 @@ double calc_kappa_abs(double * restrict ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
 	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
-	double Tr = pow(ph[E_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25);
+	double Tr = pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25);
 	kappa_m = 0.1*Z_AB;
 	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
 	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -1.7)*pow(Tr, -3.);
@@ -497,7 +497,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 }
 
 //Calculate radiative wave velocity
-void vchar_rad(double * restrict pr, struct of_state * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
+void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
 	double discr, vp, vm, tau, kappa_tot, crad2;
 	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;

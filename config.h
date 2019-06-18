@@ -295,11 +295,10 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
-#define E_RAD	(9)
-#define UU_RAD	(10)
-#define U1_RAD	(11)
-#define U2_RAD	(12)
-#define U3_RAD	(13)
+#define UU_RAD	(9)
+#define U1_RAD	(10)
+#define U2_RAD	(11)
+#define U3_RAD	(12)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -594,6 +593,12 @@ Section with derived quantities
 #define D1 (N1>1)
 #define D2 (N2>1)
 #define D3 (N3>1)
+
+#if(RAD_M1)
+#define NPRDUMP 14
+#else
+#define NPRDUMP 9
+#endif
 
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
