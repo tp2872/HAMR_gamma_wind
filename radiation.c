@@ -1,18 +1,68 @@
 
 #include "decs_MPI.h"
 
-extern void raise_g(FTYPE vcov[], FTYPE gcon[][NDIM], FTYPE vcon[]);
-extern void lower_g(FTYPE vcon[], FTYPE gcov[][NDIM], FTYPE vcov[]);
-extern void ncov_calc(FTYPE gcon[][NDIM], FTYPE ncov[]); int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
+extern void raise_g(double vcov[], double gcon[][NDIM], double vcon[]);
+extern void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
+extern void ncov_calc(double gcon[][NDIM], double ncov[]); int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
 
-void subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt) {
-	double dU;
-	source_rad(pb, &geom, dU);
+void subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom,  double Dt) {
+	double factor, remainder, dU[NPR], fraction;
+	int flag, keep_iterating=1, nstep=0;
 
+	fraction = 0.25;
+	remainder = 1.;
+
+	while (keep_iterating && nstep<100) {
+		source_rad(pb, &geom, dU);
+
+		if (fraction*MY_MIN(U[UU], U[UU_RAD]) >= fabs(dU[UU_RAD] * Dt)) keep_iterating = 0;
+		factor = MY_MIN(fraction*MY_MIN(U[UU], U[UU_RAD]) / fabs(dU[UU_RAD] * Dt), remainder);
+		remainder -= factor;
+
+		source_rad(pb, &geom, dU);
+		U[UU_RAD] += factor*Dt*dU[UU_RAD];
+		U[U1_RAD] += factor*Dt*dU[U1_RAD];
+		U[U2_RAD] += factor*Dt*dU[U2_RAD];
+		U[U3_RAD] += factor*Dt*dU[U3_RAD];
+		U[UU] += factor*Dt*dU[UU];
+		U[U1] += factor*Dt*dU[U1];
+		U[U2] += factor*Dt*dU[U2];
+		U[U3] += factor*Dt*dU[U3];
+
+		flag = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pb);	
+		#if(DO_FONT_FIX) 
+		if (flag) {
+			#if DOKTOT
+			flag = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pb, pb[KTOT]);
+			#endif
+			if (flag) {
+				if (flag) {
+					flag = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pb, pb[KTOT]);
+				}
+			}
+		}
+		#endif
+		#if(RAD_M1)
+		if(!flag)Rtoprim(U, geom.gcov, geom.gcon, geom.g, pb, BASIC);
+		#endif
+
+		if (flag) {
+			remainder += factor;
+			U[UU_RAD] -= factor*Dt*dU[UU_RAD];
+			U[U1_RAD] -= factor*Dt*dU[U1_RAD];
+			U[U2_RAD] -= factor*Dt*dU[U2_RAD];
+			U[U3_RAD] -= factor*Dt*dU[U3_RAD];
+			U[UU] -= factor*Dt*dU[UU];
+			U[U1] -= factor*Dt*dU[U1];
+			U[U2] -= factor*Dt*dU[U2];
+			U[U3] -= factor*Dt*dU[U3];
+			fraction = 0.05;
+		}
+		nstep++;
+	}
 }
 
-
-void implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom, double dU[NPR], double Dt){
+int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom, double dU[NPR], double Dt){
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb[NPR],dEdpb[4][4], dEdpb_inv[4][4], bsq, errx;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -36,11 +86,11 @@ void implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom
 			bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 			if (i == UU) {
 				for (k = UU; k < B1; k++)dpb[k] = 0.;
-				dpb[i] = pow(10, -9)*(pb_old[RHO] + GAMMA*pb_old[UU] + bsq);
+				dpb[i] = pow(10., -9.)*(pb_old[RHO] + GAMMA*pb_old[UU] + bsq);
 			}
 			else {
 				for (k = UU; k < B1; k++)dpb[k] = 0.;
-				dpb[i] = pow(10, -5)/sqrt(geom.gcov[i][i]);
+				dpb[i] = pow(10., -5.)/sqrt(geom.gcov[i][i]);
 			}
 			for (k = UU; k < B1; k++) pb_new[k] = pb_old[k] + dpb[k];
 
@@ -59,9 +109,9 @@ void implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom
 			source_rad(pb_old, &geom, dU_old);
 			source_rad(pb_new, &geom, dU_new);
 
-			for (k = 1; k < 5; k++) {
-				E_old[k] = fabs((U_old[k] - U[k]) + Dt*fabs(dU_old[k]));
-				E_new[k] = fabs((U_new[k] - U[k]) + Dt*fabs(dU_new[k]));
+			for (k = UU; k < B1; k++) {
+				E_old[k] = fabs((U_old[k] - U[k] - Dt*dU_old[k]));
+				E_new[k] = fabs((U_new[k] - U[k] - Dt*dU_new[k]));
 				dEdpb[k-1][i-UU] = (E_new[k] - E_old[k]) / dpb[i];
 			}
 		}
@@ -95,7 +145,7 @@ void implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
-		errx = 0.33*(fabs(dpb[UU]) / (pb_old[UU] + pb_old[RHO] + bsq) + dpb[U1] * dpb[U1] * geom.gcov[1][1] + dpb[U2] * dpb[U2] * geom.gcov[2][2] + dpb[U3] * dpb[U3] * geom.gcov[3][3]);
+		errx = 0.25*(fabs(dpb[UU]) / (pb_old[UU] + pb_old[RHO] + bsq) + dpb[U1] * dpb[U1] * geom.gcov[1][1] + dpb[U2] * dpb[U2] * geom.gcov[2][2] + dpb[U3] * dpb[U3] * geom.gcov[3][3]);
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */

@@ -250,8 +250,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable Radiation*/
 #define RAD_M1 (1)
-#define BASIC (0)
-#define TYPE2 (1)
 
 //Abundace constants
 #define Z_AB (0.02)
@@ -273,6 +271,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define G_CGS (6.67259e-8) /* Gravitational constant */
+#define BASIC (0)
+#define TYPE2 (1)
 
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/

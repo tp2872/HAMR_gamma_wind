@@ -350,7 +350,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#endif
 			#if(RAD_M1)
-			implicit_rad_solve_PMHD(pf, U, geom, dU, Dt);
+			pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
+			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
+				pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
+				if(pflag[nl[n]][index_3D(n, i, j, z)])failimage[nl[n]][index_3D(n, i, j, z)][2]++;
+			}
 			#endif
 			}
 	}

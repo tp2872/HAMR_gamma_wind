@@ -516,7 +516,7 @@ void vchar_rad(double * restrict pr, struct of_state * restrict q_rad, struct of
 	/* find radiation wave speed */
 	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
 	tau = kappa_tot*sqrt(geom->gcov[js][js])*dx;
-	crad2 = MY_MIN(1.0 / 3.0, 4. / 3.*tau);
+	crad2 = MY_MIN(1.0 / 3.0, pow(4. / (3.*tau),2.));
 
 	/* check on it! */
 	if (crad2 < 0.) {
