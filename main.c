@@ -81,10 +81,10 @@ int main(int argc, char *argv[])
 			init();
 			#if(N_LEVELS_1D_INT>0 && D3>0)
 			average_grid();
+			#else
+			for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 			#endif
-			#if(N_LEVELS_3D>1)
-			check_refcrit();
-			#endif
+			check_refcrit();	
 		}	
 		restart_write();
 	}
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	diag(INIT_OUT);
+	//diag(INIT_OUT);
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
