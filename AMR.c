@@ -1175,7 +1175,7 @@ void set_AMR(void){
 	}
 
 	#if(DUMP_SMALL)
-	if (BS_1%REDUCE_FACTOR1 != 0 || BS_2%REDUCE_FACTOR2 != 0 || BS_3%REDUCE_FACTOR3 != 0) {
+	if ((BS_1%REDUCE_FACTOR1 != 0 || BS_2%REDUCE_FACTOR2 != 0 || BS_3%REDUCE_FACTOR3 != 0) && DUMP_SMALL) {
 		if (rank == 0) fprintf(stderr, "Grid reduction incompatible with grid size! \n");
 		exit(0);
 	}
