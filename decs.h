@@ -955,6 +955,7 @@ void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
 void set_Katm(void);
 void set_mag(void);
+void set_mag_postmerger(double beta, double rhomax, double umax);
 int  get_G_ATM(double *g_tmp);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double *X, double lgcov[][NDIM]);

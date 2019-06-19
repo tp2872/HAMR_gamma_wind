@@ -46,16 +46,16 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = mpicc 
-CCFLAGS  =  -fopenmp -O3
+CC       = clang
+CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb
 endif
 
-EXTRALIBS = -lm -L/sw/summit/cuda/10.1.105/lib64 -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -L/usr/local/cuda/lib -lcudart -lmpi
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
-CUDA_COMPILE  = nvcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=ca -Xcompiler \-fopenmp -lgomp -c 
+CUDA_COMPILE  = /usr/local/cuda/bin/nvcc -arch=compute_35 -code=sm_35 -I/usr/local/cuda/include --ptxas-options=-dlcm=ca -Xcompiler -lgomp -c
 CC_LOAD     = $(CC) $(CCFLAGS) 
-CUDA_LOAD  = nvcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=ca -Xcompiler \-fopenmp -lgomp -dlink
+CUDA_LOAD  = /usr/local/cuda/bin/nvcc -arch=compute_35 -code=sm_35 --ptxas-options=-dlcm=ca -Xcompiler -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
