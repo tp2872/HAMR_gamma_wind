@@ -647,6 +647,10 @@ void init_rad_pres(double pi[NPR]) {
 		pi[UU] = 1. / (GAMMA-1.)*pi[RHO]*T_new;
 		pi[UU_RAD] = arad*pow(T_new,4.);
 	}
+	pi[U1_RAD] = pi[U1];
+	pi[U2_RAD] = pi[U2];
+	pi[U3_RAD] = pi[U3];
+
 }
 
 void init_disruption()

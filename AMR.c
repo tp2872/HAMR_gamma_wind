@@ -299,6 +299,8 @@ void set_AMR(void){
 
 	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps
 	block = (int(*)[NV])calloc(NB+1, sizeof(int[NV]));
+	n_ord_node= (int(*)[NB_LOCAL])calloc(numtasks, sizeof(int[NB_LOCAL]));
+	n_active_node= (int(*))calloc(numtasks, sizeof(int));
 	for (l = 0; l < N_LEVELS_3D; l++){
 		E_avg1[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1+REF_1, l)*NB_3*pow(1+REF_3,l), sizeof(double[BS_1 + 2 * N1G]));
 		E_avg2[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
@@ -1284,36 +1286,6 @@ void balance_load(void){
 			}
 		}
 
-		/*n_active_total_steps = 0;
-		n_active_local_max = 0;
-		n_active_local_min = 0;
-		for (n = 0; n < n_active_total; n++) {
-			steps_total_RM[n] = n_active_total_steps + AMR_MAXTIMELEVEL / 2 / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
-			n_active_total_steps += AMR_MAXTIMELEVEL / MY_MIN(block[n_ord_total_RM[n]][AMR_TIMELEVEL], timelevel_cutoff);
-		}
-
-		rem = n_active_total_steps % (numtasks); //remainder of last unfilled block
-		y = (n_active_total_steps - rem) / (numtasks); //number of blocks/node
-		tt = -1, ip = 0, fp = 0;
-
-		//First use non blocking sends and receives to send and receive data around cluster
-		for (i = 0; i < n_active_total; i++) {
-			NODE[i] = (steps_total_RM[i] - steps_total_RM[i] % (y + 1)) / (y + 1);
-			if (NODE[i] >= rem) {
-				if (tt == -1) {
-					fp = NODE[i];
-					ip = steps_total_RM[i] - steps_total_RM[i] % (y + 1);
-					tt = 0;
-				}
-				NODE[i] = fp + ((steps_total_RM[i] - ip) - (steps_total_RM[i] - ip) % y) / y;
-			}
-			if (NODE[i] >= numtasks) fprintf(stderr, "Error balance_load() \n");
-			if (NODE[i] == rank) {[i[
-				n_active_local_max++;
-				n_active_local_min = n_active_local_max;
-			}
-		}*/
-
 		//Split up between GPUs on a single node
 		//#pragma omp parallel for schedule(dynamic,1) private(n, temp)
 		for (n = 0; n < n_active_total; n++){
@@ -1519,11 +1491,14 @@ void activate_blocks(void){
 		}
 		if (block[n][AMR_ACTIVE] == 1){
 			//Order active blocks into array n_ord and keep track of number of active block in n_active_total
+			
 			n_ord_total[n_active_total] = n;
 			n_ord_total_RM[n_active_total] = n;
             if (block[n][AMR_NODE] >= 0){
+				n_ord_node[block[n][AMR_NODE]][n_active_node[block[n][AMR_NODE]]] = n;
                 block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
                 NODE_global[block[n][AMR_NODE]]++;
+				n_active_node[block[n][AMR_NODE]]=NODE_global[block[n][AMR_NODE]];;
             }
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;

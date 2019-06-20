@@ -212,7 +212,7 @@ void close_dump_reduced(void) {
 
 void dump_params(FILE *fp, int dump_reduced)
 {
-	int u,n;
+	int u, n;
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
 	int BS1_print, BS2_print, BS3_print;
@@ -298,9 +298,12 @@ void dump_params(FILE *fp, int dump_reduced)
 	fwrite(&dk, int_size, 1, fp);
 
 	//Print AMR grid hierarchy
-	for (n = 0; n < n_active_total; n++) {
-		fwrite(&n_ord_total[n], int_size, 1, fp);
-		fwrite(&block[n_ord_total[n]][AMR_TIMELEVEL], int_size, 1, fp);
+	for (u = 0; u < numtasks; u++) {
+		for (n = 0; n < n_active_node[u]; n++) {
+			fwrite(&n_ord_node[u][n], int_size, 1, fp);
+			fwrite(&block[n_ord_node[u][n]][AMR_TIMELEVEL], int_size, 1, fp);
+			fwrite(&block[n_ord_node[u][n]][AMR_NODE], int_size, 1, fp);
+		}
 	}
 }
 
