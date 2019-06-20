@@ -1477,6 +1477,8 @@ void activate_blocks(void){
 	for (g = 0; g < N_GPU; g++)n_active_gpu[g] = 0;
 	#endif
 	for (n = 0; n < MY_MIN(numtasks * N_GPU, NB); n++) NODE_global[n] = 0;
+	for (n = 0; n < numtasks; n++) n_active_node[n] = 0;
+
 	for (n = 0; n <= n_max; n++) block[n][AMR_REFINED] = 0;
 	for (n = 0; n <= n_max; n++){
 		if (block[n][AMR_ACTIVE] == 1 && block[n][AMR_NODE] == rank){
