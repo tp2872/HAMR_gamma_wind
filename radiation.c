@@ -11,7 +11,7 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom,  doub
 	fraction = 0.25;
 	remainder = 1.;
 
-	while (keep_iterating && nstep<100) {
+	while (keep_iterating && nstep<1000) {
 		source_rad(pb, &geom, dU);
 
 		if (fraction*MY_MIN(U[UU], U[UU_RAD]) >= fabs(dU[UU_RAD] * Dt)) keep_iterating = 0;
@@ -58,8 +58,9 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom,  doub
 			fraction = 0.05;
 		}
 		nstep++;
+		//printf("nstep: %d\ n", nstep);
 	}
-	if (nstep >= 100) {
+	if (nstep >= 1000) {
 		return 1;
 	}
 	else {
@@ -72,52 +73,62 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter, keep_iterating;
+	pb[UU_RAD] = MY_MAX(pb[UU_RAD], 0.001*pb[UU]);
 
 	// Initialize various parameters and variables:
 	for (k = 0; k < NPR; k++) {
 		pb_old[k] = pb[k];
-		pb_new[k] = 0.;
+		pb_new[k] = pb[k];
 		dpb[k] = 0.;
 	}
+	k = UU;
+	pb_old[k] = 10*pb[k];
+	pb_new[k] = 10*pb[k];
 	n_iter = 0;
+	U[UU] = U[UU] - U[RHO];
 
 	/* Start the Newton-Raphson iterations : */
 	keep_iterating = 1;
 	while (keep_iterating) {
 		//Calculate jacobian dEdpb
-		for (i = UU; i < B1; i++) {
-			get_state(pb_old, &geom, &q);
-			mhd_calc(pb_old, 0, &q, &U_old[UU]);
-			bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+		get_state(pb_old, &geom, &q);
+		mhd_calc(pb_old, 0, &q, &U_old[UU]);
+		for (k = UU; k <= U3; k++)U_old[k] *= geom.g;
+		for (i = UU; i <= U3; i++) {
+			//bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 			if (i == UU) {
-				for (k = UU; k < B1; k++)dpb[k] = 0.;
-				dpb[i] = pow(10., -9.)*(pb_old[RHO] + GAMMA*pb_old[UU] + bsq);
+				for (k = UU; k <= U3; k++) dpb[k] = 0.;
+				dpb[i] = pow(10., -9.)*(pb_old[UU]);
 			}
 			else {
-				for (k = UU; k < B1; k++)dpb[k] = 0.;
-				dpb[i] = pow(10., -5.)/sqrt(geom.gcov[i][i]);
+				for (k = UU; k <= U3; k++) dpb[k] = 0.;
+				dpb[i] = pow(10., -11.)/sqrt(fabs(geom.gcov[i-UU][i - UU]));
 			}
-			for (k = UU; k < B1; k++) pb_new[k] = pb_old[k] + dpb[k];
+			for (k = 0; k < NPR; k++) pb_new[k] = pb_old[k]+ dpb[k];
 
 			get_state(pb_new, &geom, &q);
 			mhd_calc(pb_new, 0, &q, &U_new[UU]);
-			get_state_rad(pb_new, &geom, &q_rad);
-			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+			for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
 
-			U_new[UU_RAD] -= (U_new[UU] - U_old[UU]);
-			U_new[U1_RAD] -= (U_new[U1] - U_old[U1]);
-			U_new[U2_RAD] -= (U_new[U2] - U_old[U2]);
-			U_new[U3_RAD] -= (U_new[U3] - U_old[U3]);
+			U_new[UU_RAD] = U[UU_RAD] - (U_new[UU] - U[UU]);
+			U_new[U1_RAD] = U[U1_RAD] -(U_new[U1] - U[U1]);
+			U_new[U2_RAD] = U[U2_RAD] -(U_new[U2] - U[U2]);
+			U_new[U3_RAD] = U[U3_RAD] -(U_new[U3] - U[U3]);
+			//printf("teste1: %f \n", log(fabs(U[UU_RAD])) / log(10.));
+			//printf("teste1: %f \n", log(fabs(U_new[U1_RAD])) / log(10.));
 
-			Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, TYPE2);
+			Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
+			//printf("teste2: %f \n", log(fabs(pb_new[UU_RAD])) / log(10.));
 
 			source_rad(pb_old, &geom, dU_old);
 			source_rad(pb_new, &geom, dU_new);
 
-			for (k = UU; k < B1; k++) {
-				E_old[k] = fabs((U_old[k] - U[k] - Dt*dU_old[k]));
-				E_new[k] = fabs((U_new[k] - U[k] - Dt*dU_new[k]));
-				dEdpb[k-1][i-UU] = (E_new[k] - E_old[k]) / dpb[i];
+			for (k = UU; k <= U3; k++) {
+				//dU_old[k] = 0.;
+				//dU_new[k] = 0.;
+				E_old[k] = (U_old[k] - U[k] - Dt*dU_old[k]);
+				E_new[k] = (U_new[k] - U[k] - Dt*dU_new[k]);
+				dEdpb[k - UU][i - UU] =  (E_new[k] - E_old[k]) / dpb[i];
 			}
 		}
 
@@ -127,30 +138,37 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 		//error += fabs((U_new[KTOT] - U[KTOT])*Tg + Dt*dU_new[KTOT]);
 		//norm += U[KTOT] * Tg;
 		//error_norm = error / norm;
-		for (k = 0; k < NPR; k++) pb_new[k] = pb_old[k];
 
 		/* Make the newton step: */
 		for (k = 0; k < 4; k++) {
-			dpb[k+1] = -(E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
-			pb_new[k+1] += dpb[k+1];
+			dpb[k+1] = -(E_old[1] * dEdpb_inv[k][0] + E_old[2] * dEdpb_inv[k][1] + E_old[3] * dEdpb_inv[k][2] + E_old[4] * dEdpb_inv[k][3]);
+			pb_new[k + 1] = pb_old[k + 1] + dpb[k + 1];
 		}
 
 		get_state(pb_new, &geom, &q);
 		mhd_calc(pb_new, 0, &q, &U_new[UU]);
-		get_state_rad(pb_new, &geom, &q_rad);
-		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
 
-		U_new[UU_RAD] -= (U_new[UU] - U_old[UU]);
-		U_new[U1_RAD] -= (U_new[U1] - U_old[U1]);
-		U_new[U2_RAD] -= (U_new[U2] - U_old[U2]);
-		U_new[U3_RAD] -= (U_new[U3] - U_old[U3]);
-
+		//get_state_rad(pb_new, &geom, &q_rad);
+		//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom.g;
+		
+		U_new[UU_RAD] = U[UU_RAD] - (U_new[UU] - U[UU]);
+		U_new[U1_RAD] = U[U1_RAD] - (U_new[U1] - U[U1]);
+		U_new[U2_RAD] = U[U2_RAD] - (U_new[U2] - U[U2]);
+		U_new[U3_RAD] = U[U3_RAD] - (U_new[U3] - U[U3]);
 		Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
+		source_rad(pb_new, &geom, dU_new);
+
+		for (k = UU; k <= U3; k++) {	
+			printf("test2: %f \n", log(fabs(Dt*dU_new[k] / U_new[k])) / log(10.));
+		}
 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
-		errx = 0.25*(fabs(dpb[UU]) / (pb_old[UU] + pb_old[RHO] + bsq) + dpb[U1] * dpb[U1] * geom.gcov[1][1] + dpb[U2] * dpb[U2] * geom.gcov[2][2] + dpb[U3] * dpb[U3] * geom.gcov[3][3]);
+		errx = 0.25*(fabs(U_new[UU] - U[UU] - Dt*dU_new[UU]) / fabs(U[UU]) );
+		if(n_iter>=0)printf("iter: %d test: %f \n", n_iter, log(errx)/log(10.));
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
@@ -166,10 +184,10 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 		n_iter++;
 	}   // END of while(keep_iterating)
 
-	if (fabs(errx) > MIN_NEWT_TOL) {
+	if (fabs(errx) > MIN_NEWT_TOL*1000.) {
 		return(1);
 	}
-	if (fabs(errx) <= NEWT_TOL) {
+	if (fabs(errx) <= NEWT_TOL*1000.) {
 		for (k = 0; k < NPR; k++) pb[k] = pb_new[k];
 		return(0);
 	}
@@ -204,6 +222,7 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 		for (i = 0; i <= U3_RAD - UU_RAD; i++) {
 			prim[i + NPR_U] = prim_tmp[i];
 		}
+		prim[UU_RAD] = MY_MAX(prim[UU_RAD], 0.001*prim[UU]);
 	}
 
 	return(ret);
@@ -215,7 +234,7 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	double gammasq, y, pressure, f, ymax;
 	int i;
 
-	for (i = 0; i < 4; i++) Qcov[i] = U[i + 1];
+	for (i = 0; i < 4; i++) Qcov[i] = U[i];
 	raise_g(Qcov, gcon, Qcon);
 
 	ncov_calc(gcon, ncov);
@@ -239,6 +258,7 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	}
 	gammasq = (2. - y + sqrt(4. - 3.*y)) / (4. - 4.*y);
 	pressure = -Qdotn / (4.*gammasq - 1.);
+	//printf("gammasq: %f pres: %f \n", ncon[0],log(U[0]));
 	if (-Qdotn <= 0.) {
 		prim[0] = pow(10, -300.);
 		for (i = 1; i < 4; i++) prim[i] = 0;

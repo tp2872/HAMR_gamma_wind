@@ -204,10 +204,10 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	dU[U2] = Gcov[2];
 	dU[U3] = Gcov[3];
 
-	dU[UU_RAD] = Gcov[0];
-	dU[U1_RAD] = Gcov[1];
-	dU[U2_RAD] = Gcov[2];
-	dU[U3_RAD] = Gcov[3];
+	dU[UU_RAD] = -Gcov[0];
+	dU[U1_RAD] = -Gcov[1];
+	dU[U2_RAD] = -Gcov[2];
+	dU[U3_RAD] = -Gcov[3];
 
 	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
@@ -221,9 +221,11 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
 	int i;
 	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM];
-	kappa_abs = calc_kappa_abs(ph);
-	kappa_emmit = calc_kappa_emmit(ph);
+	kappa_abs = 0.;//calc_kappa_abs(ph);
+		kappa_emmit = 0.;//calc_kappa_emmit(ph);
 	kappa_es = calc_kappa_es(ph);
+	//printf(" Hallo2: %f \n",  kappa_es);
+
 	Tg = (GAMMA - 1.)*ph[UU] / ph[RHO];
 	lambda = kappa_emmit*ARAD*pow(Tg,4.);
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
@@ -236,15 +238,16 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 double calc_kappa_abs(double * restrict ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
-	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
-	double Tr = pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25);
+	double Tg = fabs(MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE));
+	//Tg = fabs((GAMMA - 1.)*(ph[UU] ) / (ph[RHO]));
+	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25));
 	kappa_m = 0.1*Z_AB;
 	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
 	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -1.7)*pow(Tr, -3.);
 	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg));
 	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg))*(1. + 4.4*pow(10., -10.)*Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	//kappa_abs = 1.7*pow(10., -25.)*pow(ph[UU]/ ph[RHO], -7. / 2.) / (MH_CGS*MH_CGS)*ph[RHO];
+	kappa_abs = 1.7*ph[RHO]*pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS,-2.);
 
 	return kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS;
 }
@@ -253,13 +256,16 @@ double calc_kappa_abs(double * restrict ph) {
 double calc_kappa_emmit(double * restrict ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
-	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	double Tg = fabs(MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE));
+	//Tg = fabs((GAMMA - 1.)*(ph[UU]) / (ph[RHO]));
+
 	kappa_m = 0.1*Z_AB;
 	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
 	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -4.7);
 	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6);
 	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6)*(1. + 4.4*pow(10., -10.)*Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
+	kappa_abs = 1.7*ph[RHO] *pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS, -2.);
 
 	return kappa_abs*(ph[RHO] * MASS_DENSITY_SCALE)*R_G_CGS;
 }
@@ -269,7 +275,7 @@ double calc_kappa_es(double * restrict ph) {
 	double kappa_es;
 	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
 	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
-
+	kappa_es = 0.2*(1 + X_AB);
 	return kappa_es*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS;
 }
 

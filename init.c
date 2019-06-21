@@ -245,9 +245,6 @@ void init_thindisk()
 			if (r > 4*rmax || r < 2.0) {
 				rho = 1.e-7*RHOMIN;
 				u = 1.e-7*UUMIN;
-
-
-
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
@@ -563,6 +560,9 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;
+			#if(RAD_M1)
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#endif
 		}
 	}
 	a = temp;
@@ -633,14 +633,14 @@ void init_rad_pres(double pi[NPR]) {
 		/* If we've reached the tolerance level, then just do a few extra iterations */
 		/*  before stopping                                                          */
 		/*****************************************************************************/
-		if (((fabs(errx) <= NEWT_TOL)) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		if (((fabs(errx) <= NEWT_TOL)) || (n_iter >= (MAX_NEWT_ITER*5 - 1))) {
 			keep_iterating = 0;
 		}
-
+		//printf("T_new: %f iter: %d \n", (pi[RHO] * T_old + 1. / 3.*arad*pow(T_old, 4.)) - ptot, n_iter);
 		n_iter++;
 	}   // END of while(keep_iterating)
 
-	if (n_iter == MAX_NEWT_ITER) {
+	if (n_iter == MAX_NEWT_ITER*5) {
 		pi[UU_RAD] = 0.;
 	}
 	else {
