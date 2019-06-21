@@ -1807,24 +1807,21 @@ __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_
 		Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
 		source_rad(pb_new, &geom, dU_new);
 
-		for (k = UU; k <= U3; k++) {
-			printf("test2: %f \n", log(fabs(Dt*dU_new[k] / U_new[k])) / log(10.));
-		}
-
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
 		errx = 0.25*(fabs(U_new[UU] - U[UU] - Dt*dU_new[UU]) / fabs(U[UU]));
-		if (n_iter >= 0)printf("iter: %d test: %f \n", n_iter, log(errx) / log(10.));
+		//if (n_iter >= 0)printf("iter: %d test: %f \n", n_iter, log(errx) / log(10.));
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
 		/*  before stopping                                                          */
 		/*****************************************************************************/
-		if (((fabs(errx) <= NEWT_TOL)) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		if ( (n_iter >= (3 - 1))) {
 			keep_iterating = 0;
 		}
 		else {
+			keep_iterating = 1;
 			for (k = 0; k < NPR; k++) pb_old[k] = pb_new[k];
 		}
 
@@ -1832,6 +1829,7 @@ __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_
 	}   // END of while(keep_iterating)
 
 	if (fabs(errx) > MIN_NEWT_TOL*1000.) {
+		for (k = 0; k < NPR; k++) pb[k] = pb_new[k];
 		return(1);
 	}
 	if (fabs(errx) <= NEWT_TOL*1000.) {
@@ -3985,7 +3983,15 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 
 		#if(RAD_M1)
+		double pf_temp[NPR], sum;
+		sum = 0.;
 		Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf, BASIC);
+		for (k = 0; k < NPR; k++)pf_temp[k] = pf[k];
+		implicit_rad_solve_PMHD(pf_temp, U, geom, dU, Dt);
+		for (k = 0; k < NPR; k++) sum += pf_temp[k];
+		if (sum == 100.1) {
+			for (k = 0; k < NPR; k++)pf[k] = pf_temp[k];
+		}
 		#endif
 
 		r = radius[icurr];

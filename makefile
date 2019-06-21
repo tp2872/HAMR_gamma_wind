@@ -50,7 +50,7 @@ CC       = mpicc
 CCFLAGS  =  -fopenmp -O3
 endif
 
-EXTRALIBS = -lm -L/sw/summit/cuda/9.2.64/lib64 -lstdc++ -lcudart -lcuda
+EXTRALIBS = -lm -L/sw/summit/cuda/10.1.105/lib64 -lstdc++ -lcudart -lcuda
 
 CC_COMPILE  = $(CC) $(CCFLAGS) -c 
 CUDA_COMPILE  = nvcc -arch=compute_70 -code=sm_70 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 
@@ -69,7 +69,7 @@ OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o \
 init.o interp.o main.o metric.o lu.o \
-phys.o ranc.o restart.o step_ch.o \
+phys.o ranc.o restart.o step_ch.o radiation.o \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
 GPU_program1.o GPU_program2.o GPU_main.o\
