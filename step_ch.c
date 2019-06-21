@@ -286,10 +286,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
-			#if(RAD_M1)
-			double E = U[UU];
-			double E_rad = U[UU_RAD];
-			#endif
+
 			#pragma ivdep
 			PLOOP{
 				U[k] += Dt*(

@@ -221,10 +221,9 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
 	int i;
 	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM];
-	kappa_abs = 0.;//calc_kappa_abs(ph);
-		kappa_emmit = 0.;//calc_kappa_emmit(ph);
+	kappa_abs = calc_kappa_abs(ph);
+	kappa_emmit =calc_kappa_emmit(ph);
 	kappa_es = calc_kappa_es(ph);
-	//printf(" Hallo2: %f \n",  kappa_es);
 
 	Tg = (GAMMA - 1.)*ph[UU] / ph[RHO];
 	lambda = kappa_emmit*ARAD*pow(Tg,4.);
@@ -239,7 +238,6 @@ double calc_kappa_abs(double * restrict ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
 	double Tg = fabs(MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE));
-	//Tg = fabs((GAMMA - 1.)*(ph[UU] ) / (ph[RHO]));
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25));
 	kappa_m = 0.1*Z_AB;
 	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
