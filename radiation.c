@@ -86,7 +86,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 	pb_new[k] = 10*pb[k];
 	n_iter = 0;
 	U[UU] = U[UU] - U[RHO];
-
+	errx = 1000000000000000.0;
 	/* Start the Newton-Raphson iterations : */
 	keep_iterating = 1;
 	while (keep_iterating) {
@@ -102,23 +102,21 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 			}
 			else {
 				for (k = UU; k <= U3; k++) dpb[k] = 0.;
-				dpb[i] = pow(10., -11.)/sqrt(fabs(geom.gcov[i-UU][i - UU]));
+				dpb[i] = pow(10., -9.)/sqrt(fabs(geom.gcov[i-UU][i - UU]));
 			}
 			for (k = 0; k < NPR; k++) pb_new[k] = pb_old[k]+ dpb[k];
 
 			get_state(pb_new, &geom, &q);
+			pb_new[RHO] = U[RHO]/ q.ucon[0]/ geom.g;
 			mhd_calc(pb_new, 0, &q, &U_new[UU]);
 			for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
 
-			U_new[UU_RAD] = U[UU_RAD] - (U_new[UU] - U[UU]);
+			U_new[UU_RAD] = U[UU_RAD] -(U_new[UU] - U[UU]);
 			U_new[U1_RAD] = U[U1_RAD] -(U_new[U1] - U[U1]);
 			U_new[U2_RAD] = U[U2_RAD] -(U_new[U2] - U[U2]);
 			U_new[U3_RAD] = U[U3_RAD] -(U_new[U3] - U[U3]);
-			//printf("teste1: %f \n", log(fabs(U[UU_RAD])) / log(10.));
-			//printf("teste1: %f \n", log(fabs(U_new[U1_RAD])) / log(10.));
 
 			Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
-			//printf("teste2: %f \n", log(fabs(pb_new[UU_RAD])) / log(10.));
 
 			source_rad(pb_old, &geom, dU_old);
 			source_rad(pb_new, &geom, dU_new);
@@ -132,7 +130,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 			}
 		}
 
-		invert_matrix(dEdpb, dEdpb_inv);
+		if (invert_matrix(dEdpb, dEdpb_inv) == 1) break;;
 
 		//Tg = (GAMMA - 1.)*pb_new[UU] / pb_new[RHO];
 		//error += fabs((U_new[KTOT] - U[KTOT])*Tg + Dt*dU_new[KTOT]);
@@ -146,6 +144,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 		}
 
 		get_state(pb_new, &geom, &q);
+		pb_new[RHO] = U[RHO] / q.ucon[0] / geom.g;
 		mhd_calc(pb_new, 0, &q, &U_new[UU]);
 		for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
 
@@ -160,15 +159,15 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 		Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
 		source_rad(pb_new, &geom, dU_new);
 
-		for (k = UU; k <= U3; k++) {	
-			printf("test2: %f \n", log(fabs(Dt*dU_new[k] / U_new[k])) / log(10.));
-		}
+		//for (k = UU; k <= U3; k++) {	
+			//printf("test2: %f \n", log(fabs(Dt*dU_new[k] / U_new[k])) / log(10.));
+		//}
 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
 		errx = 0.25*(fabs(U_new[UU] - U[UU] - Dt*dU_new[UU]) / fabs(U[UU]) );
-		if(n_iter>=0)printf("iter: %d test: %f \n", n_iter, log(errx)/log(10.));
+		//if(n_iter>=0)printf("iter: %d test: %f \n", n_iter, log(errx)/log(10.));
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
@@ -182,7 +181,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR],  struct of_geom geom,
 		}
 
 		n_iter++;
-	}   // END of while(keep_iterating)
+	} 
 
 	if (fabs(errx) > MIN_NEWT_TOL*1000.) {
 		return(1);

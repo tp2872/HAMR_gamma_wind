@@ -348,9 +348,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 			#if(RAD_M1)
-			//pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
+			pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
 			//if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-			//	pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
+				//pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
 			//	if(pflag[nl[n]][index_3D(n, i, j, z)])failimage[nl[n]][index_3D(n, i, j, z)][2]++;
 			//}
 			#endif
