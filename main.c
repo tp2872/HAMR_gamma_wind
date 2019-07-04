@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	//diag(INIT_OUT);
+	diag(INIT_OUT);
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 			time_spent3 = 0.0;	
 
 			//Safe and exit at end of 24 hour runtime
-			if (dump_cnt-dump_cnt0>5){
+			if (dump_cnt-dump_cnt0>100){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
 				//restart_write();
 				break;

@@ -13,7 +13,7 @@ Physical Parameters section
 #define THIN_PROBLEM 9
 #define POSTMERGER_PROBLEM 10
 
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -86,7 +86,7 @@ Numerical Parameters section
 #define MPI_TAG_MAX 1264576
 
 /*Enable parallel I/0*/
-#define PARALLEL_IO (1)
+#define PARALLEL_IO (0)
 
 /*Determine if you want to explicitely copy the B fields from block to block. Good to use when working on AMR, since a good implementation gives divB=0*/
 #define COPY_BFIELD 1
@@ -190,7 +190,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1)
+#define TRANS_BOUND (0)
 #if(TRANS_BOUND && NB_3%2!=0)
 #undef TRANS_BOUND
 #define TRANS_BOUND (0)
@@ -240,7 +240,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DELTA (3.0)
 
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
-#define DOCYLINDRIFYCOORDS (1)
+#define DOCYLINDRIFYCOORDS (0)
 
 /* enable nuclear physics */
 #define DONUCLEAR 0
