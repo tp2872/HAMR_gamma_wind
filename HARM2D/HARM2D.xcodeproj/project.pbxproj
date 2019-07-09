@@ -42,6 +42,7 @@
 		0CA1A00E1D135EB40090373C /* AMR.c in Sources */ = {isa = PBXBuildFile; fileRef = 0CA1A0061D135EB40090373C /* AMR.c */; };
 		0CB023B12280CB460095E334 /* nuclear.h in Headers */ = {isa = PBXBuildFile; fileRef = 0CB023B02280CB410095E334 /* nuclear.h */; };
 		0CB023B22280CB4B0095E334 /* nuclear.c in Sources */ = {isa = PBXBuildFile; fileRef = 0CB023AF2280CB410095E334 /* nuclear.c */; };
+		E02BC35022D3F10F00AECFAD /* particles.c in Sources */ = {isa = PBXBuildFile; fileRef = E02BC34F22D3F10F00AECFAD /* particles.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -87,6 +88,7 @@
 		0CA1A0061D135EB40090373C /* AMR.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = AMR.c; path = ../AMR.c; sourceTree = "<group>"; };
 		0CB023AF2280CB410095E334 /* nuclear.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nuclear.c; path = ../nuclear.c; sourceTree = "<group>"; };
 		0CB023B02280CB410095E334 /* nuclear.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nuclear.h; path = ../nuclear.h; sourceTree = "<group>"; };
+		E02BC34F22D3F10F00AECFAD /* particles.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = particles.c; path = ../particles.c; sourceTree = "<group>"; };
 		E073903B222CAEB200371D82 /* slurm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; name = slurm; path = ../slurm; sourceTree = "<group>"; };
 		E073903C222CAEB300371D82 /* makefile.summit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = makefile.summit; path = ../makefile.summit; sourceTree = "<group>"; };
 		E073903D222CAEB300371D82 /* Eos_map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Eos_map.h; path = ../Eos_map.h; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 				0C677E7B18F32F7100EE533A /* utoprim_1dfix1.c */,
 				0C677E7D18F32F7100EE533A /* utoprim_1dvsq2fix1.c */,
 				0C677E7C18F32F7100EE533A /* utoprim_2d.c */,
+				E02BC34F22D3F10F00AECFAD /* particles.c */,
 			);
 			sourceTree = "<group>";
 		};
@@ -287,6 +290,7 @@
 				0C677E9018F32F7100EE533A /* main.c in Sources */,
 				0C677E9B18F32F7100EE533A /* dump.c in Sources */,
 				0C677E9418F32F7100EE533A /* utoprim_2d.c in Sources */,
+				E02BC35022D3F10F00AECFAD /* particles.c in Sources */,
 				0CA1A00A1D135EB40090373C /* boundcomE.c in Sources */,
 				0C677E9818F32F7100EE533A /* coord.c in Sources */,
 				0C10DDC61FEB47CD00FDCED0 /* const_trans.c in Sources */,

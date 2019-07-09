@@ -46,7 +46,7 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = mpicc
+CC       = clang
 CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb
 endif
 
@@ -73,9 +73,11 @@ phys.o ranc.o restart.o step_ch.o \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
 GPU_program1.o GPU_program2.o GPU_main.o\
-hllc.o const_trans.o LAS.o
+hllc.o const_trans.o LAS.o \
+eos_helm.o particles.o
 
-INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h
+INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h \
+Eos_map.h Eos.h Flash_mpi.h Flash.h
 
 
 $(OBJS) : $(INCS) makefile

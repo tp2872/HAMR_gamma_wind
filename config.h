@@ -96,9 +96,9 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 8
-#define NB_2 4
-#define NB_3 2
+#define NB_1 1
+#define NB_2 1
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 8
@@ -244,6 +244,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* enable nuclear physics */
 #define DONUCLEAR 0
+
+/* enable MC particles */
+#define DOPARTICLES 1
+#define NPTOT 10
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0

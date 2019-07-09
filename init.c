@@ -348,7 +348,7 @@ void init_thindisk()
 	bound_prim(p, 1);
 
 	//set_mag();
-
+  
 	#if( DO_FONT_FIX ) 
 	set_Katm();
 	#endif 
@@ -578,6 +578,10 @@ void init_torus()
 	bound_prim(p, 1);
 
 	//set_mag();
+  
+#if DOPARTICLES
+  init_particles();
+#endif
 
 	#if( DO_FONT_FIX ) 
 	set_Katm();

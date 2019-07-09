@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:/Users/danat1ck/Work/code/HAMR/summit_osx/harm2d/HARM2D/particles.c">
+   </FileRef>
+   <FileRef
       location = "self:">
    </FileRef>
 </Workspace>
