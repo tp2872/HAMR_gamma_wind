@@ -79,6 +79,11 @@ double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
 
+#if DOPARTICLES
+/*MC particles arrays*/
+double x_p[NPTOT][NDIM];
+#endif
+
 /*EOS CPU arrays*/
 double eos_f[EOSIMAX*EOSJMAX];
 double eos_fd[EOSIMAX*EOSJMAX];

@@ -46,7 +46,7 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = clang
+CC       = mpicc
 CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb
 endif
 

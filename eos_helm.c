@@ -366,6 +366,7 @@ void test_eos(void) {
 	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr, &denerdtemp);
     
     printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pres, ener, entr);
+    exit(1);
 
 /*
     // START output table

@@ -101,9 +101,9 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 8
-#define BS_2 8
-#define BS_3 8
+#define BS_1 64
+#define BS_2 64
+#define BS_3 2
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -111,7 +111,7 @@ Numerical Parameters section
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
 #define REF_2 1
-#define REF_3 1
+#define REF_3 0
 
 /*Number of GPUs per MPI rank*/
 #define N_GPU 1
@@ -123,7 +123,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (1)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -247,7 +247,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* enable MC particles */
 #define DOPARTICLES 1
-#define NPTOT 10
+#define NPTOT 1000
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0

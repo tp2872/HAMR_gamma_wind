@@ -82,7 +82,9 @@ int main(int argc, char *argv[])
 			#if(N_LEVELS_1D_INT>0 && D3>0)
 			average_grid();
 			#else
+            #if(GPU_ENABLED)
 			for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
+            #endif
 			#endif
 			check_refcrit();	
 		}	
@@ -100,7 +102,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 200.0;
-	DTd = 200.0;
+	DTd = 50.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;

@@ -1167,7 +1167,7 @@ void set_AMR(void){
 		else block[n][AMR_WEIGHT] = MAX_WEIGHT;
 	}
 
-	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
+	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4 && N_LEVELS_1D_INT > 0){
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
 		exit(0);
 	}

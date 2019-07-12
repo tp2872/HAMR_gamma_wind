@@ -89,6 +89,12 @@ void step_ch()
 			}
 		}*/
 		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
+        
+#if DOPARTICLES
+        for (n = 0; n < n_active; n++){
+            if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) advance_particles(ph, dt*(double)block[n_ord[n]][AMR_TIMELEVEL]);
+        }
+#endif
 		nstep++;
 	}
 
@@ -242,7 +248,7 @@ double advance(int flag)
 	}
 	#endif
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  utoprim(p, ph, p, ps, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+        if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  utoprim(p, ph, p, ps, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) utoprim(p, p, ph, psh, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	ndt = 1e9;
