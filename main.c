@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 200.0;
-	DTd = 50.0;
+	DTd = 20.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
