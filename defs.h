@@ -81,7 +81,8 @@ double(*restrict dU_s[NB_LOCAL])[NPR];
 
 #if DOPARTICLES
 /*MC particles arrays*/
-double x_p[NPTOT][NDIM*2];
+double xcon_p[NPTOT][NDIM];
+double pcov_p[NPTOT][NDIM];
 #endif
 
 /*EOS CPU arrays*/

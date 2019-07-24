@@ -92,7 +92,8 @@ extern double(*restrict dU_s[NB_LOCAL])[NPR];
 
 #if DOPARTICLES
 /*MC particles arrays*/
-extern double x_p[NPTOT][NDIM*2];
+extern double xcon_p[NPTOT][NDIM];
+extern double pcov_p[NPTOT][NDIM];
 #endif
 
 /*EOS CPU arrays*/
@@ -868,7 +869,7 @@ double get_wall_time();
 #if DOPARTICLES
 void pdump(void);
 void pdump_frequent(void);
-void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt);
+void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag);
 void init_particles(void);
 #endif
 

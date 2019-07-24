@@ -671,16 +671,14 @@ void pdump(void) {
     int double_size = sizeof(double);
     char filename[100];
     double r, th, phi;
-    double X[NDIM];
     
     sprintf(filename, "dumps%d/pdump", dump_cnt-1);
     f = fopen(filename, "wb");
     
     for (n = 0; n < n_active_total; n++) {
         for (m = 0; m < NPTOT; m++) {
-            for (i=0; i<NDIM; i++) X[i] = x_p[m][i];
-            bl_coord(X, &r, &th, &phi);
-            fwrite(&x_p[m][0], double_size, 1, f);
+            bl_coord(xcon_p[m], &r, &th, &phi);
+            fwrite(&xcon_p[m][0], double_size, 1, f);
             fwrite(&r, double_size, 1, f);
             fwrite(&th, double_size, 1, f);
             fwrite(&phi, double_size, 1, f);
@@ -697,16 +695,14 @@ void pdump_frequent(void) {
     int double_size = sizeof(double);
     char filename[100];
     double r, th, phi;
-    double X[NDIM];
     
     sprintf(filename, "pdump_frequent_%d", nstep);
     f = fopen(filename, "wb");
     
     for (n = 0; n < n_active_total; n++) {
         for (m = 0; m < NPTOT; m++) {
-            for (i=0; i<NDIM; i++) X[i] = x_p[m][i];
-            bl_coord(X, &r, &th, &phi);
-            fwrite(&x_p[m][0], double_size, 1, f);
+            bl_coord(xcon_p[m], &r, &th, &phi);
+            fwrite(&xcon_p[m][0], double_size, 1, f);
             fwrite(&r, double_size, 1, f);
             fwrite(&th, double_size, 1, f);
             fwrite(&phi, double_size, 1, f);
