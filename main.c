@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
 	GPU_init();
 	#endif
     set_AMR();
-    //test_eos(); //DANAT: disabled for now, 6/12/19
+    test_eos(); //DANAT: disabled for now, 6/12/19
+    exit(1);
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)

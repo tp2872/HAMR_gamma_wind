@@ -263,6 +263,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 
 		//Calculate energy derivatives
 		deiondd = (1.5 * dpiondd - eion)*deni;
+        deiondt = 1.5 * xni * kerg *deni;
 		deraddd = -erad*deni;
 		deraddt = 4.0 * erad * tempi;
 		dsepdt = -df_tt * ye;
@@ -275,7 +276,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 		deraddz = 0.0;
 		#endif
 		denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult; //energy derivative vs density and density
-		deiondt = 0.0;
+		
 		*denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs density and time
 
 		//Calculate entropy derivatives
@@ -346,7 +347,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 }
 
 void test_eos(void) {
-	double btemp=2.0e8, den=1.0e7;
+	double btemp=1e5, den=1e-10;
 	double abar=1.0, zbar=1.0;
 	double pres, ener, entr, denerdtemp;
 
@@ -366,41 +367,39 @@ void test_eos(void) {
 	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr, &denerdtemp);
     
     printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pres, ener, entr);
-    exit(1);
 
-/*
     // START output table
     // Output a table with different rho,T --> P,u,s
     // Physical range per FLASH manual: rho = (1e-10, 1e11) [g/cm3]; T = (1e4, 1e11) [K]
-	fprintf(fp_checking_eos, "# Density, Temperature, Pressure, Energy, Entropy \n");
-	int Num_max = 1000;
-	for (ix = 0; ix < Num_max; ix++){
-	   den = pow(10.0, rho_powmin + ix * (rho_powmax - rho_powmin) / (float) Num_max);
-	   for (jx = 0; jx < Num_max; jx++){
-	       btemp = pow(10.0, temp_powmin + jx * (temp_powmax - temp_powmin) / (float) Num_max);
-	       eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr);
-	       fprintf(fp_checking_eos, "%e %e %e %e %e\n", den, btemp, pres, ener, entr);
-	   }
-	}
-	fclose(fp_checking_eos);
+//    fprintf(fp_checking_eos, "# Density, Temperature, Pressure, Energy, Entropy \n");
+//    int Num_max = 100;
+//    for (ix = 0; ix < Num_max; ix++){
+//       den = pow(10.0, rho_powmin + ix * (rho_powmax - rho_powmin) / (float) Num_max);
+//       for (jx = 0; jx < Num_max; jx++){
+//           btemp = pow(10.0, temp_powmin + jx * (temp_powmax - temp_powmin) / (float) Num_max);
+//           eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr,&denerdtemp);
+//           fprintf(fp_checking_eos, "%21.15e %21.15e %21.15e %21.15e %21.15e\n", den, btemp, pres, ener, entr);
+//       }
+//    }
+//    fclose(fp_checking_eos);
     // END output table
-*/
-/* 
+
+
     // START eos mode dens+ener instead of dens+temp
     int max_iterations = 50;
     int iter_num = 0;
     double tolerance = 1.0e-5;
     double ener_goal = ener;
     // initial guess : temperature
-    double temp_ini_guess = 1.1e8;//(gam - 1.0) * ener_goal * 1.211475197e-8;
+    double temp_ini_guess = 1.0e8;//(gam - 1.0) * ener_goal * 1.211475197e-8;
     double temp_new, temp_old;
     double ener_old;
     double error;
     int i;
     
+    temp_old = temp_ini_guess;
     for(i = 0; i < max_iterations; i++){
-        temp_old = temp_ini_guess;
-        eos_helm(1, temp_old, den, abar, zbar, &pres,  &ener_old, &entr, &denerdtemp);
+        eos_helm(1, temp_old, den, abar, zbar, &pres, &ener_old, &entr, &denerdtemp);
         temp_new = temp_old - (ener_old - ener_goal) / denerdtemp;
         
         //do not allow temp to change more than 10. times in one iteration
@@ -408,11 +407,15 @@ void test_eos(void) {
         if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
         
         error = fabs((temp_new - temp_old) / temp_old);
+        printf("num = %d, err = %e\n", i, error);
+        printf("ener = %e, temp = %e, dedt = %e\n", ener_old, temp_new, denerdtemp);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        temp_old = temp_new;
         iter_num++;
         if(error < tolerance) break;
     }
-    printf("Error = %e; ener = %e, dens = %e, temp = %e, iter = %d", error, ener_goal, den, temp_new, iter_num);
-*/
+    printf("Error = %e; ener = %e, dens = %e, temp = %e, iter = %d\n", error, ener_goal, den, temp_new, iter_num);
+
     
 }
 

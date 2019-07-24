@@ -572,7 +572,7 @@ Section with EOS constants
 // becomes true if variables for Aprox13t network are set
 #define bAprox13t (0) 
 
-#define eos_coulombMult (1)
+#define eos_coulombMult (0)
 #define eos_coulombAbort (1)
 
 // from eos_helmConstData
@@ -614,7 +614,7 @@ Section with EOS constants
 #define ddpsi0(zFunc) (zFunc* ( zFunc*( -120.0e0*zFunc + 180.0e0) -60.0e0))
 
 // psi1 and its derivatives
-#define psi1(zFunc) (( zFunc*zFunc * ( zFunc * (-3.0e0*zFunc + 8.0e0) - 6.0e0) + 1.0e0))
+#define psi1(zFunc) (zFunc*( zFunc*zFunc * ( zFunc * (-3.0e0*zFunc + 8.0e0) - 6.0e0) + 1.0e0))
 #define dpsi1(zFunc) (zFunc*zFunc * ( zFunc * (-15.0e0*zFunc + 32.0e0) - 18.0e0) +1.0e0)
 #define ddpsi1(zFunc) (zFunc * (zFunc * (-60.0e0*zFunc + 96.0e0) -36.0e0))
 
