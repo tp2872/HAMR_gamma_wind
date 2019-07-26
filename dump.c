@@ -682,6 +682,7 @@ void pdump(void) {
             fwrite(&r, double_size, 1, f);
             fwrite(&th, double_size, 1, f);
             fwrite(&phi, double_size, 1, f);
+            fwrite(&pcov_p[m][NDIM-1], double_size, 1, f);
         }
     }
 
@@ -706,6 +707,7 @@ void pdump_frequent(void) {
             fwrite(&r, double_size, 1, f);
             fwrite(&th, double_size, 1, f);
             fwrite(&phi, double_size, 1, f);
+            fwrite(&pcov_p[m][NDIM-1], double_size, 1, f);
         }
     }
     

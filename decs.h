@@ -871,6 +871,7 @@ void pdump(void);
 void pdump_frequent(void);
 void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag);
 void init_particles(void);
+void build_tetrad(double gcon[NDIM][NDIM], double Econ[NDIM][NDIM], double Ecov[NDIM][NDIM]);
 #endif
 
 /** Evolution/physics functions **/

@@ -247,7 +247,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* enable MC particles */
 #define DOPARTICLES 1
-#define NPTOT 1000
+#define NPTOT 100
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0

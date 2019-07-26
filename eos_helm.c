@@ -347,7 +347,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 }
 
 void test_eos(void) {
-	double btemp=1e5, den=1e-10;
+	double btemp=1e10, den=1e10;
 	double abar=1.0, zbar=1.0;
 	double pres, ener, entr, denerdtemp;
 
@@ -391,7 +391,7 @@ void test_eos(void) {
     double tolerance = 1.0e-5;
     double ener_goal = ener;
     // initial guess : temperature
-    double temp_ini_guess = 1.0e8;//(gam - 1.0) * ener_goal * 1.211475197e-8;
+    double temp_ini_guess = (GAMMA - 1.0) * ener_goal * 1.211475197e-8;
     double temp_new, temp_old;
     double ener_old;
     double error;
@@ -415,6 +415,8 @@ void test_eos(void) {
         if(error < tolerance) break;
     }
     printf("Error = %e; ener = %e, dens = %e, temp = %e, iter = %d\n", error, ener_goal, den, temp_new, iter_num);
+    
+    // END eos mode dens+ener instead of dens+temp
 
     
 }

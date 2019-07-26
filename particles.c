@@ -1,18 +1,9 @@
 
 #include "decs.h"
 
-/*
-
- advance particle positions using fluid half-step primitives 
-
- revised cfg 11 apr 2016 to improve interpolation scheme 
-
-*/
 #if(DOPARTICLES)
 
-#undef EPS
 #define EPS 1.e-6
-
 void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag)
 {
 	int z, l, i, j, m, k;
@@ -175,19 +166,14 @@ void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag)
             for (j=1; j<NDIM; j++) p_t -= gcona[0][j] * pcov_p[m][j];
             p_t *= 1.0 / gcona[0][0];
             
+            xcon_p[m][0] = p_t;
+            
             //fprintf(stderr, "m = %d, p^t = %f, p_t = %e, p_t_ini = %e, p_t_err = %e\n ## ", m, pcov_p[m][0], p_t, xcon_p[m][0], (p_t - xcon_p[m][0]));
         }
     }
 }
+#undef EPS
 
-/* 
-
- initialize Lagrangian tracer particles
- cfg 4 feb 09
-
- simplified 10 apr 2016 cfg
-
-*/
 
 void init_particles()
 {
@@ -199,9 +185,7 @@ void init_particles()
     double p_prime[NDIM];
     struct of_geom geom;
     double rancval1, rancval2, rancval3, alpha, nueps, angle, anglep;
-    //double r, th, phi;
 
-// DANAT: edits Jul 6 - start
     int n = 0;
 
     for (m = 0; m < NPTOT; m++) {
@@ -217,58 +201,18 @@ void init_particles()
         rancval3 = ranc(0);
 
         //xcon_p[m][0] = (double) k; //particle number is its tag
-        xcon_p[m][1] = X[1] + rancval1 * dx[nl[n]][1];
-        xcon_p[m][2] = X[2]; //+ rancval2 * dx[nl[n]][2];
-        xcon_p[m][3] = X[3] + rancval3 * dx[nl[n]][3];
+        xcon_p[m][1] = log(10.0); //X[1]; // + rancval1 * dx[nl[n]][1];
+        xcon_p[m][2] = X[2]; // + rancval2 * dx[nl[n]][2];
+        xcon_p[m][3] = 0.0; //X[3]; // + rancval3 * dx[nl[n]][3];
         
         gcov_func(xcon_p[m],gcova);
         gcon_func(gcova,gcona);
-        alpha = 1.0/sqrt(-gcona[0][0]);
         
-        // Time-like basis: n^mu
-        Ecov[0][0] = -alpha;
-        for (j=1; j<NDIM; j++) Ecov[0][j] = 0.0;
-        
-        for (j=0; j<NDIM; j++) Econ[0][j] = 0.0;
-        for (j=0; j<NDIM; j++) for (k=0; k<NDIM; k++) Econ[0][j] += gcona[j][k] * Ecov[0][k];
-        
-        // Other basis vectors : Gram-Schmidt algorithm on coordinate basis vectors
-        for (i=1; i<NDIM; i++) {
-            
-            // Initiate vectors
-            for (j=0; j<NDIM; j++) Ecov[i][j] = (i==j ? 1.0 : 0.0);
-            
-            // Make this vector orthogonal to the existing components of tetrad
-            for (j=0; j<i; j++) {
-                double dotproduct = 0.0;
-                double sign_j = (j==0 ? -1.0 : 1.0);
-                for (k=0; k<NDIM; k++) dotproduct += Econ[j][k] * Ecov[i][k];
-                for (k=0; k<NDIM; k++) Ecov[i][k] -= sign_j * dotproduct * Ecov[j][k];
-            }
-            
-            for (j=0; j<NDIM; j++) {
-                Econ[i][j] = 0.0;
-                for (k=0; k<NDIM; k++) Econ[i][j] += gcona[j][k] * Ecov[i][k];
-            }
-            
-            // Normalize
-            double norm = 0.0;
-            for (j=0; j<NDIM; j++) norm += Econ[i][j] * Ecov[i][j];
-            norm = 1.0 / sqrt(norm);
-            for (j=0; j<NDIM; j++) {
-                Ecov[i][j] *= norm;
-                Econ[i][j] *= norm;
-            }
-        }
+        build_tetrad(gcona, Econ, Ecov);
         
         nueps = 5.0;
         angle = M_PI_2; //sranc(0) * 2.0 * M_PI;
-        anglep = ranc(0) * M_PI;
-        
-//        p_prime[0] = nueps / alpha;
-//        p_prime[1] = nueps * (-alpha * gcona[0][1] + sin(anglep) * cos(angle));
-//        p_prime[2] = nueps * (-alpha * gcona[0][2] + cos(anglep));
-//        p_prime[3] = nueps * (-alpha * gcona[0][3] + sin(anglep) * sin(angle));
+        anglep = ranc(0) * 2.0 * M_PI;
         
         p_prime[0] = 0.0;
         p_prime[1] = (cos(anglep));
@@ -287,13 +231,52 @@ void init_particles()
         double check_null = 0.0;
         for (i=0; i<NDIM; i++) for (j=0; j<NDIM; j++) check_null += gcona[i][j] * pcov_p[m][i] * pcov_p[m][j];
         
-        //fprintf(stderr, "MC particles: k = %d,  [%d %d %d], (%f %f %f), p_t=%f, p_i=(%f %f %f), 0 == %e\n", m, ii, jj, zz, xcon_p[m][1], xcon_p[m][2], xcon_p[m][3], pcov_p[m][0], pcov_p[m][1], pcov_p[m][2], pcov_p[m][3], check_null);
-        
         xcon_p[m][0] = pcov_p[m][0];
         pcov_p[m][0] = put;
+        
+        fprintf(stderr, "Particle no. %d, Check = %e\n", m, check_null);
     }
-    
-// DANAT: edits Jul 6 - end
+}
 
+void build_tetrad(double gcon[NDIM][NDIM], double Econ[NDIM][NDIM], double Ecov[NDIM][NDIM]) {
+    int i, j, k;
+    double alpha;
+    
+    alpha = 1.0/sqrt(-gcon[0][0]);
+    
+    // Time-like basis: n^mu
+    Ecov[0][0] = -alpha;
+    for (j=1; j<NDIM; j++) Ecov[0][j] = 0.0;
+    for (j=0; j<NDIM; j++) Econ[0][j] = 0.0;
+    for (j=0; j<NDIM; j++) for (k=0; k<NDIM; k++) Econ[0][j] += gcon[j][k] * Ecov[0][k];
+    
+    // Other basis vectors : Gram-Schmidt algorithm on coordinate basis vectors
+    for (i=1; i<NDIM; i++) {
+        
+        // Initiate vectors
+        for (j=0; j<NDIM; j++) Ecov[i][j] = (i==j ? 1.0 : 0.0);
+        
+        // Make this vector orthogonal to the existing components of tetrad
+        for (j=0; j<i; j++) {
+            double dotproduct = 0.0;
+            double sign_j = (j==0 ? -1.0 : 1.0);
+            for (k=0; k<NDIM; k++) dotproduct += Econ[j][k] * Ecov[i][k];
+            for (k=0; k<NDIM; k++) Ecov[i][k] -= sign_j * dotproduct * Ecov[j][k];
+        }
+        
+        for (j=0; j<NDIM; j++) {
+            Econ[i][j] = 0.0;
+            for (k=0; k<NDIM; k++) Econ[i][j] += gcon[j][k] * Ecov[i][k];
+        }
+        
+        // Normalize
+        double norm = 0.0;
+        for (j=0; j<NDIM; j++) norm += Econ[i][j] * Ecov[i][j];
+        norm = 1.0 / sqrt(norm);
+        for (j=0; j<NDIM; j++) {
+            Ecov[i][j] *= norm;
+            Econ[i][j] *= norm;
+        }
+    }
 }
 #endif
