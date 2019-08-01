@@ -3101,14 +3101,14 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
-	isize = (BS_3)*(BS_2);
+	isize = (BS_3)*(BS_2 + 2 * D2);
 	zcurr = (global_id % (isize)) % (BS_3);
 	jcurr = ((global_id - zcurr) % (isize)) / (BS_3);
 	icurr = (global_id - (jcurr*(BS_3) + zcurr)) / (isize);
 	zcurr += N3G;
-	jcurr += N2G;
-	icurr += N1G;
-	if (global_id<(BS_1) * (BS_2) * (BS_3)) k = 1;
+	jcurr += D2;
+	icurr += D1;
+	if (global_id<(BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3)) k = 1;
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
@@ -3142,23 +3142,25 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 		}
 
 		#if(N_LEVELS_1D_INT>0 && D3>0)
-		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - (BS_3 + 2 * N3G) - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - D2 - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 		zsize = (int)(0.001+pow(2.0, (double)zlevel));
 		zoffset = (zcurr - N3G) % zsize;
 		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
-		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr + (BS_3 + 2 * N3G) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr + D2 - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 		zsize2 = (int)(0.001 + pow(2.0, (double)zlevel2));
 		zoffset2 = (zcurr - N3G) % zsize2;
 		#endif
-		if (zoffset == 0){
-			if ((POLE_1 == 1 && jcurr - N2G < BS_2 / 2) && (jcurr!=N2G)){
+		if (zoffset2 == 0) {
+			if ((POLE_1 == 1 && jcurr - N2G < BS_2 / 2) && (jcurr != N2G)) {
 				temp[1] = ps[1 * (ksize)+global_id - zoffset2];
-				for (u = 0; u < zsize2; u++){
+				for (u = 0; u < zsize2; u++) {
 					ps[1 * ksize + global_id - zoffset2 + u] = temp[1] + (((double)u + 0.5) - 0.5*(double)zsize2) / ((double)zsize)*0.5*(dq2[B2*(ksize)+global_id - (BS_3 + 2 * N3G) - zoffset] - dq1[B2*(ksize)+global_id - (BS_3 + 2 * N3G) - zoffset]);
 					ps[1 * ksize + global_id - zoffset2 + u] += (((double)u + 0.5) - 0.5*(double)zsize2) / ((double)zsize2)*0.5*(dq2[B2*(ksize)+global_id - zoffset2] - dq1[B2*(ksize)+global_id - zoffset2]);
 				}
 			}
+		}
+		if (zoffset == 0) {
 			if ((POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) && (jcurr + D2 != BS_2 + N2G)){
 				temp[1] = ps[1 * (ksize)+global_id + (BS_3 + 2 * N3G) - zoffset];
 				for (u = 0; u < zsize; u++){

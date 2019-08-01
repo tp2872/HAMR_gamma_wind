@@ -283,7 +283,7 @@ void unpack_receive1(int n, int n_rec, int i_offset, int i1, int i2, int j_offse
 		}
 		int work_size = (j2 - j1)*(z2 - z1);
 		 unpackreceive1 << < nr_workgroups_bound, local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (i1, i2, i_offset, j1, j2, j_offset, z1, z2, z_offset, jsize, zsize, Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferps_1[nl[n]], Bufferpsh_1[nl[n]], Bufferboundreceive[0], tempBufferboundreceive[0],
-			 update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3);
+			 update_staggered, Buffergdet[nl[n]], nstep, dt, block[n][AMR_TIMELEVEL], block[n_rec][AMR_TIMELEVEL], work_size, ref_1, ref_2, ref_3, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
 		 //cudaDeviceSynchronize();
 		 status = cudaGetLastError();
 		if (status != cudaSuccess) fprintf(stderr, "unpack_receive1 error! %d \n", status);
