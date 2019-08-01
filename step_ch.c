@@ -370,8 +370,8 @@ slope_lim();
 ***********************************************************************************************/
 double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
-	#if(HLLC)
-	ndt = fluxcalc_hllc(pr, F, dir, flag, n);
+	#if(FRAME_TRANSFORM)
+	ndt = fluxcalc_hlld(pr, F, dir, flag, n);
 	return ndt;
 	#endif
 	int i, j, z, k, idel, jdel, zdel, face;

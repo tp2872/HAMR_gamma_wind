@@ -422,12 +422,12 @@ void set_corners(int tag){
 	int temp;
 
 	if (tag == 0) {
-		#pragma omp parallel for schedule(static, 1)
+		#pragma omp parallel for schedule(static, 1) private(n,i)
 		for (n = 0; n < n_active_total; n++) {
 			block[n_ord_total[n]][AMR_TAG] = 0;
 		}
 
-		#pragma omp parallel for schedule(static, 1)
+		#pragma omp parallel for schedule(static, 1) private(n,i)
 		for (n = 0; n < n_active; n++) {
 			block[n_ord[n]][AMR_TAG] = 1;
 			for (i = AMR_NBR1; i <= AMR_CORN12; i++) {

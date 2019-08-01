@@ -83,11 +83,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	//compute the square of fluid frame magnetic field (twice magnetic pressure)
 	get_geometry(n,i,j,z,CENT,&geom) ;
 	bsq = bsq_calc(pv,&geom) ;
-  
-	//tie floors to the local values of magnetic field and internal energy density
-	if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
-	if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
-	if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+
+  //tie floors to the local values of magnetic field and internal energy density
+	#if(1)
+  if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
+  if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
+  if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+	#endif
 
 	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
 	if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;

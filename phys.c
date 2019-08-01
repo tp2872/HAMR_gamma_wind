@@ -479,14 +479,6 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	discr = sqrt(discr) ;
 	vp = -(-B + discr) / (2.*A);
 	vm = -(-B - discr) / (2.*A);
-	
-	#if( FULL_DISP ) 
-	double vp2, vm2;
-	vp2 = NewtonRaphson(vp, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vp = vp2;
-	vm = vm2;
-	#endif
 
 	if(vp > vm) {
 		*vmax = vp ;
@@ -596,53 +588,4 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 			dU[U3] += -q->ucov[3] * lambda;
 		}
 	}
-}
-
-double NewtonRaphson(double start, int max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq)
-{
-	int count = 0;
-	double dx = start/1000000.0;
-	double x = start;
-	double diff, derivative;
-	do{
-		diff = Drel(dir, x, ucon, ucov, bcon, geom, E, vasq, csq);
-		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / dx;
-		count++;
-		x = x - diff / (derivative);
-	} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
-	if (count >= 3){
-		x = start;
-	}
-	return x;
-}
-
-/*Calculate soundspeed*/
-double Drel(int dir, double v, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq){
-	double kcov[NDIM], kcon[NDIM], Kcov[NDIM], Kcon[NDIM];
-	double om, omsq, ksq, kvasq, cfsq, result;
-	int i;
-	kcov[0] = -v; kcov[1] = 0.0; kcov[2] = 0.0; kcov[3] = 0.0;
-	if (dir == 1){
-		kcov[1] = 1.0;
-	}
-	if (dir == 2){
-		kcov[2] = 1.0;
-	}
-	if (dir == 3){
-		kcov[3] = 1.0;
-	}
-	raise(kcov, geom, kcon);
-	om = dot(ucon, kcov);
-	omsq = pow(om, 2.0);
-	#pragma ivdep
-	for (i = 0; i < NDIM; i++){
-		Kcov[i] = kcov[i] + ucov[i] * om;
-		Kcon[i] = kcon[i] + ucon[i] * om;
-	}
-	ksq = dot(Kcov, Kcon);
-	kvasq = pow(dot(kcov, bcon), 2.0) / E;
-	cfsq = vasq + csq*(1.0 - vasq);
-
-	result = 0.5*(cfsq*ksq + csq*kvasq + sqrt(pow(cfsq*ksq + csq*kvasq, 2.0) - 4.0*ksq*csq*kvasq)) - omsq;
-	return result;
 }

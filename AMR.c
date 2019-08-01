@@ -301,6 +301,7 @@ void set_AMR(void){
 	block = (int(*)[NV])calloc(NB+1, sizeof(int[NV]));
 	n_ord_node= (int(*)[NB_LOCAL])calloc(numtasks, sizeof(int[NB_LOCAL]));
 	n_active_node= (int(*))calloc(numtasks, sizeof(int));
+
 	for (l = 0; l < N_LEVELS_3D; l++){
 		E_avg1[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1+REF_1, l)*NB_3*pow(1+REF_3,l), sizeof(double[BS_1 + 2 * N1G]));
 		E_avg2[l] = (double(*)[BS_1 + 2 * N1G])calloc(NB_1*pow(1 + REF_1, l)*NB_3*pow(1 + REF_3, l), sizeof(double[BS_1 + 2 * N1G]));
@@ -1168,12 +1169,12 @@ void set_AMR(void){
 
 	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
-		exit(0);
+		//exit(0);
 	}
 
 	if (BS_2 % (int)pow(2, N_LEVELS_1D_INT) != 0 || BS_3 % (int)pow(2, N_LEVELS_1D_INT) != 0){
 		if (rank == 0) fprintf(stderr, "Grid not power of 2 of internal derefinment levels! \n");
-		exit(0);
+		//exit(0);
 	}
 
 	#if(DUMP_SMALL)
@@ -1476,6 +1477,7 @@ void activate_blocks(void){
 	#if(N_GPU>1)
 	for (g = 0; g < N_GPU; g++)n_active_gpu[g] = 0;
 	#endif
+
 	for (n = 0; n < MY_MIN(numtasks * N_GPU, NB); n++) NODE_global[n] = 0;
 	for (n = 0; n < numtasks; n++) n_active_node[n] = 0;
 
@@ -1498,9 +1500,9 @@ void activate_blocks(void){
 			n_ord_total_RM[n_active_total] = n;
             if (block[n][AMR_NODE] >= 0){
 				n_ord_node[block[n][AMR_NODE]][n_active_node[block[n][AMR_NODE]]] = n;
-                block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
-                NODE_global[block[n][AMR_NODE]]++;
-				n_active_node[block[n][AMR_NODE]]=NODE_global[block[n][AMR_NODE]];;
+				block[n][AMR_NUMBER] = NODE_global[block[n][AMR_NODE]];
+				NODE_global[block[n][AMR_NODE]]++;
+				n_active_node[block[n][AMR_NODE]] = NODE_global[block[n][AMR_NODE]];
             }
 			n_active_total++;
 			if (block[n][AMR_LEVEL] > 0) block[block[n][AMR_PARENT]][AMR_REFINED] = 1;

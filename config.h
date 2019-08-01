@@ -17,7 +17,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -92,9 +92,9 @@ Numerical Parameters section
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 50
-#define BS_2 50
-#define BS_3 50
+#define BS_1 44
+#define BS_2 48
+#define BS_3 48
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -102,7 +102,11 @@ Numerical Parameters section
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
 #define REF_2 1
+#if(BS_3==1)
+#define REF_3 0
+#else
 #define REF_3 1
+#endif
 
 /*Number of GPUs per MPI rank*/
 #define N_GPU 1
@@ -114,7 +118,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (3)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -148,15 +152,18 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.8)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
 
-/*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
+/*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)
-#define LEER (0)
+#define PPM_FLATTENER (1)
+
+/*Enable/disable van Leer spatial reconstruction. Never enable both*/
+#define LEER (0) //Not working
 
 /*Wheter to set floors in ZAMO frame*/
 #define ZAMO_FLOOR (0)
@@ -167,8 +174,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Whether or not to allow inflow for fluxes (see fix_flux())*/
 #define INFLOW 0
 
-/*Enable or disable the HLLC solver. Does not work yet!*/
+/*Enable or disable the HLLC solver.*/
 #define HLLC (0)
+
+/*Enable or disable the HLLD solver. Does not work yet!*/
+#define HLLD (1)
 
 /*Whether or not to use a staggered grid*/
 #define STAGGERED (1)
@@ -606,6 +616,7 @@ Section with derived quantities
 #define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
+#define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
@@ -681,6 +692,12 @@ Section with derived quantities
 #elif(N_LEVELS==5)
 #define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2+1)+1)+1)+1))
 #endif
+#endif
+
+#if(HLLC==1 || HLLD==1)
+#define FRAME_TRANSFORM (1)
+#else
+#define FRAME_TRANSFORM (0)
 #endif
 
 /*Define offset to make GPU memory access coalesced*/
