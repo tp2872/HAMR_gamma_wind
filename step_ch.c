@@ -94,7 +94,7 @@ void step_ch()
         for (n = 0; n < n_active; n++){
             if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
                 advance_particles(ph, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], 0);
-                pdump_frequent();
+                //pdump_frequent();
             }
         }
 #endif

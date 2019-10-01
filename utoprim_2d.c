@@ -227,8 +227,8 @@ j = 0 -> success
 static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
 {
-
-	FTYPE x_2d[NEWT_DIM_2];
+    FTYPE x_2d[NEWT_DIM_2];
+    
 	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	FTYPE rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
 	int i, j, n, retval, i_increase;
@@ -296,6 +296,10 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	rho0 = D / gamma;
 	u = prim[UU];
 	p = pressure_rho0_u(rho0, u);
+#if DOHELM
+    eos_mode_rho_u(rho0 * u, rho0, 1.0, 1.0, *p);
+#endif
+    
 	w = rho0 + u + p;
 
 	W_last = w*gammasq;
@@ -313,6 +317,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	// Calculate W and vsq: 
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
+    
 	retval = general_newton_raphson(x_2d, n, func_vsq);
 
 	W = x_2d[0];
@@ -589,9 +594,28 @@ static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
 	Wsq = W*W;
 
-	p_tmp = pressure_W_vsq(W, vsq);
-	dPdW = dpdW_calc_vsq(W, vsq);
-	dPdvsq = dpdvsq_calc(W, vsq);
+#if DOHELM
+    double w = W * (1.0 - vsq);
+    double rho = D * sqrt(1.0 - vsq);
+    double gamma_sq = 1.0/(1.0 - vsq);
+    double gamma = sqrt(gamma_sq);
+    double enth = W / gamma_sq / rho
+    double dpdrho, dpdt, dedt, dpde_d;
+    
+    eos_mode_dens_enth(&xtemp, rho0, 1.0, 1.0, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
+    
+    double dpdeps_o_rho = dpde_d / rho;
+    dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
+    
+    double dpdvsq_1 = -0.5*D*gamma*dpdrho;
+    double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
+    
+    dPdvsq = (dpdvsq_1 + dpde_d*dpdvsq_2)/(1+dpdeps_o_rho);
+#else
+    p_tmp = pressure_W_vsq(W, vsq);
+    dPdW = dpdW_calc_vsq(W, vsq);
+    dPdvsq = dpdvsq_calc(W, vsq);
+#endif
 
 	// These expressions were calculated using Mathematica, but made into efficient 
 	// code using Maple.  Since we know the analytic form of the equations, we can 
@@ -661,7 +685,7 @@ dpdW_calc_vsq():
 **********************************************************************/
 static FTYPE dpdW_calc_vsq(FTYPE W, FTYPE vsq)
 {
-	return((GAMMA - 1.) * (1. - vsq) / GAMMA);
+    return((GAMMA - 1.) * (1. - vsq) / GAMMA);
 }
 
 /**********************************************************************/
@@ -672,7 +696,7 @@ dpdvsq_calc():
 **********************************************************************/
 static FTYPE dpdvsq_calc(FTYPE W, FTYPE vsq)
 {
-	return((GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA);
+    return((GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA);
 }
 
 

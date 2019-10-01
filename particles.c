@@ -19,7 +19,7 @@ void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag)
     int n = 0;
     double p_t, put_2;
 
-#if 0
+#if 1
 	for (l = 0; l < NPTOT; l++) {
         
     //ensure that phi-periodicity is in place
@@ -53,15 +53,11 @@ void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag)
             }
 	}
 #endif
-    
+#if 0
     for (m = 0; m < NPTOT; m++) {
         //ensure that phi-periodicity is in place
-        if (xcon_p[m][3] >= startx[3] + (BS_3) * dx[nl[n]][3]) {
-            xcon_p[m][3] -= (BS_3) * dx[nl[n]][3];
-        }
-        else if (xcon_p[m][3] < startx[3]) {
-            xcon_p[m][3] += (BS_3) * dx[nl[n]][3];
-        }
+        if      (xcon_p[m][3] >= startx[3] + (BS_3) * dx[nl[n]][3]) xcon_p[m][3] -= (BS_3) * dx[nl[n]][3];
+        else if (xcon_p[m][3] < startx[3])                          xcon_p[m][3] += (BS_3) * dx[nl[n]][3];
         
         /* don't update particles that are off-grid for this MPI process */
         if(xcon_p[m][1] >= startx[1] && xcon_p[m][2] >= startx[2] && xcon_p[m][3] >= startx[3] && xcon_p[m][1] < startx[1] + (BS_1) * dx[nl[n]][1] && xcon_p[m][2] < startx[2] + (BS_2) * dx[nl[n]][2] && xcon_p[m][3] < startx[3] + (BS_3) * dx[nl[n]][3]) {
@@ -166,11 +162,12 @@ void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag)
             for (j=1; j<NDIM; j++) p_t -= gcona[0][j] * pcov_p[m][j];
             p_t *= 1.0 / gcona[0][0];
             
-            xcon_p[m][0] = p_t;
+            xcon_p[m][0] = p_t; // quick way to output p_t; not permanent
             
             //fprintf(stderr, "m = %d, p^t = %f, p_t = %e, p_t_ini = %e, p_t_err = %e\n ## ", m, pcov_p[m][0], p_t, xcon_p[m][0], (p_t - xcon_p[m][0]));
         }
     }
+#endif
 }
 #undef EPS
 
@@ -201,24 +198,34 @@ void init_particles()
         rancval3 = ranc(0);
 
         //xcon_p[m][0] = (double) k; //particle number is its tag
-        xcon_p[m][1] = log(10.0); //X[1]; // + rancval1 * dx[nl[n]][1];
+        xcon_p[m][1] = X[1] + rancval1 * dx[nl[n]][1] * + log(6.0);
         xcon_p[m][2] = X[2]; // + rancval2 * dx[nl[n]][2];
-        xcon_p[m][3] = 0.0; //X[3]; // + rancval3 * dx[nl[n]][3];
+        xcon_p[m][3] = X[3] + rancval3 * dx[nl[n]][3];
         
         gcov_func(xcon_p[m],gcova);
         gcon_func(gcova,gcona);
         
         build_tetrad(gcona, Econ, Ecov);
         
-        nueps = 5.0;
+        nueps = 1.0;
         angle = M_PI_2; //sranc(0) * 2.0 * M_PI;
-        anglep = ranc(0) * 2.0 * M_PI;
+        anglep = ranc(0) * M_PI / 360.0 + 0.13 * M_PI;
+        
+//        p_prime[0] = 0.0;
+//        p_prime[1] = (cos(anglep));
+//        p_prime[2] = (sin(anglep) * cos(angle));
+//        p_prime[3] = (sin(anglep) * sin(angle));
+        
+        double eta_LE = - m*sqrt(27)/NPTOT/2. - 0.75*sqrt(27);
+        double c1 = eta_LE * Ecov[3][0] - Ecov[3][3];
+        double c2 = eta_LE * Ecov[1][0] - Ecov[1][3];
+        double c3 = -eta_LE * Ecov[0][0];
         
         p_prime[0] = 0.0;
-        p_prime[1] = (cos(anglep));
-        p_prime[2] = (sin(anglep) * cos(angle));
-        p_prime[3] = (sin(anglep) * sin(angle));
-        
+        p_prime[2] = 0.0;
+        p_prime[3] = (-c1*c3-sqrt(c2*c2*(c1*c1+c2*c2-c3*c3))) / (c1*c1+c2*c2);
+        p_prime[1] = -sqrt(1.0 - p_prime[3]*p_prime[3]);
+
         for (i=0; i<NDIM; i++) {
             pcov_p[m][i] = nueps * Ecov[0][i];
             for (j=1; j<NDIM; j++) pcov_p[m][i] += nueps * Ecov[j][i] * p_prime[j];
@@ -234,7 +241,11 @@ void init_particles()
         xcon_p[m][0] = pcov_p[m][0];
         pcov_p[m][0] = put;
         
-        fprintf(stderr, "Particle no. %d, Check = %e\n", m, check_null);
+        double p_t = pcov_p[m][0];
+        for (j=1; j<NDIM; j++) p_t -= gcona[0][j] * pcov_p[m][j];
+        p_t *= 1.0 / gcona[0][0];
+        
+        fprintf(stderr, "Particle no. %d, Check = %e, pphi=%e, pt=%e, ratio = %e\n", m, check_null, pcov_p[m][NDIM-1], p_t, pcov_p[m][NDIM-1]/p_t);
     }
 }
 

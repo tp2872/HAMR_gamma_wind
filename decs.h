@@ -1188,4 +1188,6 @@ void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom
 void eos_init(void);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd);
 void test_eos(void);
-void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *denerdt);
+void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd);
+void eos_mode_dens_ener(double ener, double den, double abar, double zbar, double *pres);
+void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);

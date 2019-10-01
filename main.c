@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
 	GPU_init();
 	#endif
     set_AMR();
-    //test_eos(); //DANAT: disabled for now, 6/12/19
-
+    test_eos();
+    
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
 		derefine_pole();

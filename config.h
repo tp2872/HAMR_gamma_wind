@@ -102,8 +102,8 @@ Numerical Parameters section
 
 /*Set block size in each dimension*/
 #define BS_1 64
-#define BS_2 64
-#define BS_3 2
+#define BS_2 32
+#define BS_3 32
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -246,8 +246,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DONUCLEAR 0
 
 /* enable MC particles */
-#define DOPARTICLES 1
-#define NPTOT 100
+#define DOPARTICLES 0
+#define NPTOT 1000
 
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
@@ -588,11 +588,21 @@ Section with EOS constants
 #define asol (4.0e0 * ssol / c_light)
 #define asoli3 (asol / 3.0e0)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
+#define Mbh_cgs (3 * 1.99e33)
+#define G (6.67259e-8)
 
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
 #define eos_qe (4.8032068e-10) 
 #define esqu (eos_qe * eos_qe)
+
+// conversion factors for EOS
+// DANAT: finish!
+#define conv_T_CODE2CGS (1.0)
+#define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G * G * G * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G^3 / M_bh^2
+#define conv_pres_CGS2CODE (G * G * G * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G^3 * M_bh^2 /c_light^8
+#define conv_ener_CGS2CODE (1.0)
+#define conv_entr_CGS2CODE (1.0)
 
 //For the uniform background coulomb correction
 #define eos_a1 (-0.898004e0)

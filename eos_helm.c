@@ -79,13 +79,8 @@ void eos_init (void) {
     return;
 }
 
-void eos_copy_gpu(void) {
 
-
-}
-
-
-void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *denerdt)
+void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd)
 {
     // Local variables
     double ytot1, ye, local_coulombMult;
@@ -94,7 +89,6 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 	double sion, dsiondd, dsiondt;
 	double pele, dpepdd, dpepdt, eele, deepdd, deepdt;
 	double sele, dsepdd, dsepdt;
-	double dpresdd, dpresdt;
 	double presi, chit, chid, gamc, kavoy;
     double cv, cp, etaele, xnefer,denerdd, dentrdd ,dentrdt;
 
@@ -109,6 +103,17 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     // Added by Calhoun for calculations for the Aprox13t network
     double  deradda,dxnida,dpionda,deionda,dsepda,deepda,decoulda,dsda,dsdda,lamida,plasgda,denerda,deraddz,deiondz,deepdz,decouldz,dsepdz,plasgdz,denerdz;
 
+    // Conversion factors
+    conv_T_CODE2CGS =
+    conv_dens_CODE2CGS = 
+    conv_pres_CGS2CODE
+    conv_ener_CGS2CODE
+    conv_entr_CGS2CODE
+    
+    // Convert from code units to cgs
+    btemp *= conv_T_CODE2CGS;
+    den *= conv_dens_CODE2CGS;
+    
 	kt = kerg * btemp;
 	ktinv = 1.0 / kt;
 
@@ -258,8 +263,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 			decouldd = 3.0*dpcouldd*deni - ecoul*deni;
 			decouldt = 3.0*dpcouldt*deni;
 		}
-		dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult; //pressure derivative vs density and density
-		dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; //pressure derivative vs density and time
+		*dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult; //pressure derivative vs density
+		*dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; //pressure derivative vs temperature
 
 		//Calculate energy derivatives
 		deiondd = (1.5 * dpiondd - eion)*deni;
@@ -275,9 +280,8 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 		deradda = 0.0;
 		deraddz = 0.0;
 		#endif
-		denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult; //energy derivative vs density and density
-		
-		*denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs density and time
+		denerdd = deraddd + deiondd + deepdd + decouldd * local_coulombMult; //energy derivative vs density
+		*denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs temperature
 
 		//Calculate entropy derivatives
 		dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
@@ -298,7 +302,9 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 		}
 		dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * local_coulombMult;//entropy derivative vs density and density
 		dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * local_coulombMult;//entropy derivative vs density and time
-
+        
+        // DANAT: calc soundspeeds
+        
 		//  form gamma_1
 		//presi = 1.0/pres;
 		//chit  = btemp*presi * dpresdt;
@@ -343,13 +349,113 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 		// cvRow(j)     = cv;      // EOS_CV
 		// cpRow(j)     = cp;      // EOS_CP
 	}
+    
+    // Convert from cgs to code units
+    *pres *= conv_pres_CGS2CODE;
+    *ener *= conv_ener_CGS2CODE;
+    *entr *= conv_entr_CGS2CODE;
+    
+    
+    *dpresdt *= conv_pres_CGS2CODE * conv_T_CODE2CGS;
+    *denerdt *= conv_ener_CGS2CODE * conv_dens_CODE2CGS;
+    *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
+    
     return;
 }
 
+
+void eos_mode_dens_ener(double ener, double den, double abar, double zbar, double *pres) {
+    
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    
+    double ener_goal = ener;
+    
+    // initial guess : temperature
+    // DANAT: better guess please!
+    double temp_ini_guess = (GAMMA - 1.0) * ener_goal * 1.211475197e-8;
+    
+    double temp_new, temp_old;
+    double ener_old, entr;
+    double denerdtemp, dpresdtemp, dpresdrho;
+    
+    double error;
+    int i;
+    
+    temp_old = temp_ini_guess;
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(1, temp_old, den, abar, zbar, &pres, &ener_old, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
+        temp_new = temp_old - (ener_old - ener_goal) / denerdtemp;
+        
+        //do not allow temp to change more than 10. times in one iteration
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        printf("num = %d, err = %e\n", i, error);
+        printf("ener = %e, temp = %e, dedt = %e\n", ener_old, temp_new, denerdtemp);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        temp_old = temp_new;
+        if(error < tolerance) break;
+    }
+}
+
+void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d) {
+    
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    
+    double deni = 1.0 / den;
+
+    // initial guess : temperature
+    // DANAT: better guess please!
+    double temp_ini_guess = 0.0; //(GAMMA - 1.0) * ener_goal * 1.211475197e-8;
+    
+    double temp_new, temp_old;
+    double ener_old, pres_old;
+    double dpresdener_d, dhdtemp;
+    double h_tmp, entr;
+    
+    double error;
+    int i;
+    
+    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+    double xpres = *pres;
+    double xener = 0.0;
+    
+    
+    temp_old = temp_ini_guess;
+    for(i = 0; i < max_iterations; i++){
+        eos_init();
+        eos_helm(1, temp_old, den, abar, zbar, &xpres, &xener, &entr, &dpdt, &dedt, &dpdrho);
+        
+        h_tmp = xener + (*pres) * deni;
+        dhdtemp = (*dedt) + (*dpdt) * deni;
+        temp_new = temp_old - (h_tmp / h_goal - 1.0) / dhdtemp * h_goal;
+        
+        // do not allow temp to change more than 10 times in one iteration
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        printf("num = %d, err = %e\n", i, error);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        temp_old = temp_new;
+        if(error < tolerance) break;
+    }
+    
+    // DANAT:
+    // Couple more iterations, if successful
+    // Output: temp, pres, ener, dpdrho, dpdt, dedt, dpde_d
+    *temp_out = temp_old;
+}
+                    
 void test_eos(void) {
 	double btemp=1e10, den=1e10;
 	double abar=1.0, zbar=1.0;
-	double pres, ener, entr, denerdtemp;
+	double pres, ener, entr, denerdtemp, dpresdtemp, dpresdrho;
 
     
     // START decs for output table: just for a check:
@@ -364,7 +470,7 @@ void test_eos(void) {
 
     // Reading the table and writing into arrays
     eos_init();  
-	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr, &denerdtemp);
+	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
     
     printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pres, ener, entr);
 
@@ -399,7 +505,7 @@ void test_eos(void) {
     
     temp_old = temp_ini_guess;
     for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, &pres, &ener_old, &entr, &denerdtemp);
+        eos_helm(1, temp_old, den, abar, zbar, &pres, &ener_old, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
         temp_new = temp_old - (ener_old - ener_goal) / denerdtemp;
         
         //do not allow temp to change more than 10. times in one iteration
