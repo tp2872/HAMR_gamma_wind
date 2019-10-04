@@ -102,13 +102,6 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 
     // Added by Calhoun for calculations for the Aprox13t network
     double  deradda,dxnida,dpionda,deionda,dsepda,deepda,decoulda,dsda,dsdda,lamida,plasgda,denerda,deraddz,deiondz,deepdz,decouldz,dsepdz,plasgdz,denerdz;
-
-    // Conversion factors
-    conv_T_CODE2CGS =
-    conv_dens_CODE2CGS = 
-    conv_pres_CGS2CODE
-    conv_ener_CGS2CODE
-    conv_entr_CGS2CODE
     
     // Convert from code units to cgs
     btemp *= conv_T_CODE2CGS;
@@ -357,7 +350,7 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     
     
     *dpresdt *= conv_pres_CGS2CODE * conv_T_CODE2CGS;
-    *denerdt *= conv_ener_CGS2CODE * conv_dens_CODE2CGS;
+    *denerdt *= conv_ener_CGS2CODE * conv_T_CODE2CGS;
     *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
     
     return;
@@ -406,19 +399,19 @@ void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, 
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
     double tolerance = 1.0e-5;
+    double tolerance_h = 1.0e-5;
     
     double deni = 1.0 / den;
 
     // initial guess : temperature
-    // DANAT: better guess please!
-    double temp_ini_guess = 0.0; //(GAMMA - 1.0) * ener_goal * 1.211475197e-8;
+    double temp_ini_guess = pow(3 * (*pres) / conv_pres_CGS2CODE / asol, 0.25);
     
     double temp_new, temp_old;
     double ener_old, pres_old;
     double dpresdener_d, dhdtemp;
     double h_tmp, entr;
     
-    double error;
+    double error, error_h;
     int i;
     
     double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
@@ -429,21 +422,23 @@ void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, 
     temp_old = temp_ini_guess;
     for(i = 0; i < max_iterations; i++){
         eos_init();
-        eos_helm(1, temp_old, den, abar, zbar, &xpres, &xener, &entr, &dpdt, &dedt, &dpdrho);
+        eos_helm(1, temp_old, den, abar, zbar, pres, &xener, &entr, dpdt, dedt, dpdrho);
         
         h_tmp = xener + (*pres) * deni;
         dhdtemp = (*dedt) + (*dpdt) * deni;
-        temp_new = temp_old - (h_tmp / h_goal - 1.0) / dhdtemp * h_goal;
+        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
         
         // do not allow temp to change more than 10 times in one iteration
         if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
         if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
         
         error = fabs((temp_new - temp_old) / temp_old);
-        printf("num = %d, err = %e\n", i, error);
+        error_h = fabs((h_tmp - xenth) / xenth);
+        
+        printf("num = %d, err = %e, err in h = %e\n", i, error, error_h);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
         temp_old = temp_new;
-        if(error < tolerance) break;
+        if(error < tolerance && error_h < tolerance_h) break;
     }
     
     // DANAT:
@@ -453,77 +448,24 @@ void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, 
 }
                     
 void test_eos(void) {
-	double btemp=1e10, den=1e10;
+	double btemp=1e5, den=1e-5 / conv_dens_CODE2CGS;
 	double abar=1.0, zbar=1.0;
-	double pres, ener, entr, denerdtemp, dpresdtemp, dpresdrho;
-
+	double pres, ener, entr, denerdtemp, dpresdtemp, dpresdrho, dpresdener;
+    double h_goal = 0.0;
     
-    // START decs for output table: just for a check:
-//    int ix, jx;
-//    int rho_powmin = -10;
-//    int rho_powmax = 11;
-//    int temp_powmin = 4;
-//    int temp_powmax = 11;
-//    FILE *fp_checking_eos;
-//    fp_checking_eos = fopen("./test.txt", "w+");
-    // END of decs
-
-    // Reading the table and writing into arrays
-    eos_init();  
-	eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
+    eos_init();
+    eos_helm(1, btemp, den, abar, zbar, &pres, &ener, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
+    printf("dens=%21.15e, Temp=%21.15e, pres = %21.15e, ener = %21.15e, entr = %21.15e\n", den, btemp, pres, ener, entr);
     
-    printf("d=%21.15e, T=%21.15e, Pressure = %21.15e, Energy = %21.15e,  Entr = %21.15e\n", den, btemp, pres, ener, entr);
-
-    // START output table
-    // Output a table with different rho,T --> P,u,s
-    // Physical range per FLASH manual: rho = (1e-10, 1e11) [g/cm3]; T = (1e4, 1e11) [K]
-//    fprintf(fp_checking_eos, "# Density, Temperature, Pressure, Energy, Entropy \n");
-//    int Num_max = 100;
-//    for (ix = 0; ix < Num_max; ix++){
-//       den = pow(10.0, rho_powmin + ix * (rho_powmax - rho_powmin) / (float) Num_max);
-//       for (jx = 0; jx < Num_max; jx++){
-//           btemp = pow(10.0, temp_powmin + jx * (temp_powmax - temp_powmin) / (float) Num_max);
-//           eos_helm(1, btemp,den,abar, zbar, &pres,  &ener, &entr,&denerdtemp);
-//           fprintf(fp_checking_eos, "%21.15e %21.15e %21.15e %21.15e %21.15e\n", den, btemp, pres, ener, entr);
-//       }
-//    }
-//    fclose(fp_checking_eos);
-    // END output table
-
-
-    // START eos mode dens+ener instead of dens+temp
-    int max_iterations = 50;
-    int iter_num = 0;
-    double tolerance = 1.0e-5;
-    double ener_goal = ener;
-    // initial guess : temperature
-    double temp_ini_guess = (GAMMA - 1.0) * ener_goal * 1.211475197e-8;
-    double temp_new, temp_old;
-    double ener_old;
-    double error;
-    int i;
+    h_goal = ener + pres / den + 1.0;
+    printf("enth+%21.15e\n", h_goal);
     
-    temp_old = temp_ini_guess;
-    for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, &pres, &ener_old, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
-        temp_new = temp_old - (ener_old - ener_goal) / denerdtemp;
-        
-        //do not allow temp to change more than 10. times in one iteration
-        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
-        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
-        
-        error = fabs((temp_new - temp_old) / temp_old);
-        printf("num = %d, err = %e\n", i, error);
-        printf("ener = %e, temp = %e, dedt = %e\n", ener_old, temp_new, denerdtemp);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        temp_old = temp_new;
-        iter_num++;
-        if(error < tolerance) break;
-    }
-    printf("Error = %e; ener = %e, dens = %e, temp = %e, iter = %d\n", error, ener_goal, den, temp_new, iter_num);
+    double temp_out = 0.0;
+    eos_mode_dens_enth(&temp_out, den, abar, zbar, &pres, h_goal, &dpresdrho, &dpresdtemp, &denerdtemp, &dpresdener);
     
-    // END eos mode dens+ener instead of dens+temp
-
+    printf("dens=%21.15e, Temp=%21.15e, pres = %21.15e, ener = %21.15e, entr = %21.15e\n", den, temp_out, pres, ener, entr);
+    
+    exit(1);
     
 }
 
