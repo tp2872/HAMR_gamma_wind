@@ -1,27 +1,27 @@
 /***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
+    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble,
                    Gabor Toth, and Luca Del Zanna
 
                         HARM  version 1.0   (released May 1, 2006)
 
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
+    This file is part of HARM.  HARM is a program that solves hyperbolic
     partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
+    shock-capturing techniques.  This version of HARM has been configured to
+    solve the relativistic magnetohydrodynamic equations of motion on a
     stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
+    an accretion disk model.
 
-    You are morally obligated to cite the following two papers in his/her 
+    You are morally obligated to cite the following two papers in his/her
     scientific literature that results from use of any part of HARM:
 
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
+    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003,
         Astrophysical Journal, 589, 444.
 
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
+    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006,
         Astrophysical Journal, 641, 626.
 
-   
-    Further, we strongly encourage you to obtain the latest version of 
+
+    Further, we strongly encourage you to obtain the latest version of
     HARM directly from our distribution website:
     http://rainman.astro.uiuc.edu/codelib/
 
@@ -44,7 +44,7 @@
 
 /*
  *
- * generates initial conditions for a fishbone & moncrief disk 
+ * generates initial conditions for a fishbone & moncrief disk
  * with exterior at minimum values for density & internal energy.
  *
  * cfg 8-10-01
@@ -348,10 +348,10 @@ void init_thindisk()
 	bound_prim(p, 1);
 
 	//set_mag();
-  
-	#if( DO_FONT_FIX ) 
+
+	#if( DO_FONT_FIX )
 	set_Katm();
-	#endif 
+	#endif
 
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)
@@ -380,6 +380,10 @@ void init_torus()
 	/* for magnetic field */
 	double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
 
+  // mass of the disk
+  double torus_mass = 0.0;
+  double rho_factor;
+
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
@@ -401,7 +405,7 @@ void init_torus()
 			fprintf(stderr, "\n");
 		}
 	}
-	
+
     /* output choices */
 	tf = 200000000.0 ;
 
@@ -450,19 +454,19 @@ void init_torus()
 			sthin = sin(thin) ;
 			cthin = cos(thin) ;
 			DDin = rin*rin - 2.*rin + a*a ;
-			AAin = (rin*rin + a*a)*(rin*rin + a*a) 
+			AAin = (rin*rin + a*a)*(rin*rin + a*a)
 				- DDin*a*a*sthin*sthin ;
 			SSin = rin*rin + a*a*cthin*cthin ;
 
 			if(r >= rin) {
 				lnh = 0.5*log((1. + sqrt(1. + 4.*(l*l*SS*SS)*DD/
-					(AA*sth*AA*sth)))/(SS*DD/AA)) 
+					(AA*sth*AA*sth)))/(SS*DD/AA))
 					- 0.5*sqrt(1. + 4.*(l*l*SS*SS)*DD/(AA*AA*sth*sth))
-					- 2.*a*r*l/AA 
+					- 2.*a*r*l/AA
 					- (0.5*log((1. + sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
-					(AAin*AAin*sthin*sthin)))/(SSin*DDin/AAin)) 
+					(AAin*AAin*sthin*sthin)))/(SSin*DDin/AAin))
 					- 0.5*sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
-						(AAin*AAin*sthin*sthin)) 
+						(AAin*AAin*sthin*sthin))
 					- 2.*a*rin*l/AAin ) ;
 			}
 			else
@@ -486,10 +490,10 @@ void init_torus()
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
 			 * so it needs to be transformed at the end */
-			else { 
+			else {
 				hm1 = exp(lnh) - 1. ;
 				rho = pow(hm1*(gam - 1.)/(kappa*gam),
-							1./(gam - 1.)) ; 
+							1./(gam - 1.)) ;
 				u = kappa*pow(rho,gam)/(gam - 1.) ;
 				ur = 0. ;
 				uh = 0. ;
@@ -511,7 +515,7 @@ void init_torus()
 					#pragma omp critical
 					umax = u ;
 				}
-			
+
 				#if (TILTED)
 				V[1] = ur;
 				V[2] = uh;
@@ -543,6 +547,9 @@ void init_torus()
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
 				#endif
+
+        // add mass to compute total mass of the disk
+        torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * rho * dV;
 			}
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
@@ -556,21 +563,41 @@ void init_torus()
 
 	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+
+    /*Share torus_mass among MPI processes*/
+    MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
 
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
-		fprintf(stderr, "rhomax: %g\n", rhomax);
+		fprintf(stderr, "Before normalization: rhomax: %g, torus_mass: %g\n", rhomax, torus_mass);
+    fprintf(stderr, "Normalizing by torus_mass = 0.1:\n");
 	}
+
 	//ZSLOOP(0,N1-1,0,N2-1) {
+  rho_factor = 0.1 / torus_mass;
+  torus_mass = 0.0;
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] *= rho_factor;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] *= rho_factor;
+      // check total mass of the disk after normalization
+      torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * dV;
 		}
 	}
-	umax /= rhomax ;
-	rhomax = 1. ;
+
+  #if (MPI_enable)
+  /*Share torus_mass among MPI processes*/
+  MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
+
+	umax *= rho_factor;
+	rhomax *= rho_factor;
+
+  if (rank == 0){
+		fprintf(stderr, "After normalization: rhomax: %g, torus_mass: %g\n", rhomax, torus_mass);
+	}
+
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
@@ -578,14 +605,14 @@ void init_torus()
 	bound_prim(p, 1);
 
 	//set_mag();
-  
+
 #if DOPARTICLES
   init_particles();
 #endif
 
-	#if( DO_FONT_FIX ) 
+	#if( DO_FONT_FIX )
 	set_Katm();
-	#endif 
+	#endif
 
 	sourceflag=0.;
 	#if(ELLIPTICAL2)
@@ -623,19 +650,19 @@ void init_postmerger()
   double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
   double tilt, eccentricity;
   struct of_geom geom ;
-  
+
   /* for disk interior */
   double l,rin,lnh,expm2chi,up1 ;
   double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
   double kappa,hm1 ;
-  
+
   /*For MPI*/
   double inmsg;
-  
+
   /* for magnetic field */
   double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
   double lfish_calc(double rmax) ;
-  
+
   /* for ICs */
   double r_unit = 8.07; //conversion factor = (Mbh/Msun)
   FILE *fp1, *fp2;
@@ -653,18 +680,18 @@ void init_postmerger()
   double prim[NPR];
   int k, ii, jj, kk;
   double udphi;
-  
+
   // for reading in binary
   double *temp_array_grid, *temp_array_prims;
   int file_size_grid, file_size_prims, num_var, index_grid_final;
   size_t double_size = sizeof(double);
   size_t len_grid, len_prims;
-  
-  
+
+
   /* disk parameters (use fishbone.m to select new solutions) */
-  a = BH_SPIN ;  
+  a = BH_SPIN ;
   beta = 10. ;
-  
+
   coord(0,5, 0, 0, CENT, X);
   bl_coord(X, &r, &th, &phi);
   if (rank == 0) {
@@ -677,26 +704,26 @@ void init_postmerger()
       fprintf(stderr, "\n");
     }
   }
-  
+
   /* output choices */
   tf = 200000000.0 ;
   DTd = 25.0;  /* dumping frequency, in units of M */
   DTl = 50.0;  /* logfile frequency, in units of M */
   DTi = 100.0;   /* image file frequ., in units of M */
   DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
-  
+
   /* start diagnostic counters */
   dump_cnt = 0 ;
   image_cnt = 0 ;
   rdump_cnt = 0 ;
-  
+
   ext.nvars = NVARS;
   //read ICs from file
   //for this, loop over all MPI processes
   //and let them read the IC data from file, one by one
-  
+
 #define READBINARY (0)
-  
+
 #if (READBINARY)
   for (ind=0; ind<numtasks; ind++) {
     if (ind == rank) {
@@ -711,7 +738,7 @@ void init_postmerger()
         fclose(fp1);
         exit(1234);
       }
-      
+
       // reading the first file:
       // a) allocation of memory for the array
       // b) reading the array into the memory
@@ -720,12 +747,12 @@ void init_postmerger()
       num_var = 6;
       len_grid = file_size_grid/double_size;
       index_grid_final = len_grid/num_var;
-      
+
       // reading the second file:
       fseek(fp2, 0L, SEEK_END);
       file_size_prims = ftell(fp2);
       len_prims = file_size_prims/double_size;
-      
+
       memsize = file_size_grid+file_size_prims;
       icdata = (double *) malloc(memsize);
       if(NULL == icdata) {
@@ -734,10 +761,10 @@ void init_postmerger()
         fclose(fp2);
         exit(1235);
       }
-      
+
       fseek(fp1, 0L, SEEK_SET);
       fread(&icdata[0], double_size, len_grid, fp1);
-      
+
       fseek(fp2, 0L, SEEK_SET);
       fread(&icdata[len_grid], double_size, len_prims, fp2);
 
@@ -750,19 +777,19 @@ void init_postmerger()
       ext.ymax = icdata[5*index_grid_final-1];
       ext.zmin = icdata[5*index_grid_final];
       ext.zmax = icdata[6*index_grid_final-1];
-      
+
       ext.nx = ext.nx/mult + 1;
       ext.ny = ext.ny/mult + 1;
       ext.nz = ext.nz/mult + 1;
-      
+
       ext.xmin/=r_unit;
       ext.xmax/=r_unit;
-      
+
       int ix;
       for(ix=3*index_grid_final;ix<4*index_grid_final;ix++){
         icdata[ix] /= r_unit;
       }
-      
+
       if (0 == rank) {
         fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
                 rank,
@@ -773,17 +800,17 @@ void init_postmerger()
                 fname1, fname2);
         fflush(stderr);
       }
-      
-      
+
+
       nx = ext.nx;
       ny = ext.ny;
       nz = ext.nz;
       nvars = ext.nvars;
       nitems = (size_t)nvars*nx*ny*nz;
-       
+
       /*
       memsize = double_size*nitems;
-      
+
       if (memsize == file_size_grid+file_size_prims) {
         fprintf(stderr, "memory allocation size matches the size of the input files ... \n");
       }
@@ -792,7 +819,7 @@ void init_postmerger()
         exit(1234);
       }
       */
-      
+
       if(ferror(fp1) || ferror(fp2) ||
          (NULL == ptr1 && !feof(fp1)) ||
          (NULL == ptr2 && !feof(fp2)) ) {
@@ -800,7 +827,7 @@ void init_postmerger()
       }
       fclose(fp1); fp1 = NULL;
       fclose(fp2); fp2 = NULL;
-      
+
       if (0 == rank) {
         fprintf(stderr, " done\n");
         fflush(stderr);
@@ -808,7 +835,7 @@ void init_postmerger()
       //now icdata contains the IC information
     }
   }
-  
+
 #else
   for (ind=0; ind<numtasks; ind++) {
     if (ind == rank) {
@@ -827,7 +854,7 @@ void init_postmerger()
       sscanf(last_line, "%d %d %d %lf %lf %lf ",
              &ext.nx, &ext.ny, &ext.nz,
              &ext.xmax, &ext.ymax, &ext.zmax);
-      
+
       //rewind the file to the beginning for subsequent reading
       rewind(fp1);
 
@@ -840,15 +867,15 @@ void init_postmerger()
       //skip comment lines in the second file
       read_first_line(first_line, MAXLEN, fp2);
       //read_first_line leaves file at the start of the first non-comment line
-      
+
       //account for coordinates counted off from zero
       ext.nx += 1;
       ext.ny += 1;
       ext.nz += 1;
-      
+
       ext.xmin/=r_unit;
       ext.xmax/=r_unit;
-      
+
       if (0 == rank) {
         fprintf(stderr, "[%d] reading IC block: resolution (%dx%dx%dx%d), extent (%g,%g)x(%g,%g)x(%g,%g), files %s and %s...",
                 rank,
@@ -873,7 +900,7 @@ void init_postmerger()
         exit(1235);
       }
       //read in the data block from file
-      
+
       do{
         //first file, containing grid information
         ptr1 = fgets(buf1, MAXLEN, fp1);
@@ -882,7 +909,7 @@ void init_postmerger()
         nitems_expected = 3;
         if(nitems_expected != nitems_read) break;
         dd(ii,jj,kk,VARI) = (double)ii;
-        dd(ii,jj,kk,VARJ) = (double)jj; 
+        dd(ii,jj,kk,VARJ) = (double)jj;
         dd(ii,jj,kk,VARK) = (double)kk;
         nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n",
                &dd(ii,jj,kk,VARR), &dd(ii,jj,kk,VARTHETA), &dd(ii,jj,kk,VARPHI));
@@ -896,19 +923,19 @@ void init_postmerger()
                              &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
         nitems_expected = 8;
         if(nitems_expected != nitems_read) break;
-        
+
       }
       while(!ferror(fp1) && !ferror(fp2) && NULL != ptr1 && NULL != ptr2);
-      
-      if( nitems_expected != nitems_read || 
+
+      if( nitems_expected != nitems_read ||
          ferror(fp1) || ferror(fp2) ||
-         (NULL == ptr1 && !feof(fp1)) || 
+         (NULL == ptr1 && !feof(fp1)) ||
          (NULL == ptr2 && !feof(fp2)) ) {
         fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
       }
       fclose(fp1); fp1 = NULL;
       fclose(fp2); fp2 = NULL;
-      
+
       if (0 == rank) {
         fprintf(stderr, " done\n");
         fflush(stderr);
@@ -917,21 +944,21 @@ void init_postmerger()
     }
   }
 #endif
-  
+
 #if (MPI_enable)
   MPI_Barrier(mpi_cartcomm);
 #endif
   //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
   //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
   //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
-  
+
   rhomax = 0. ;
   umax = 0. ;
 #if(!NSY)
   tilt = (TILT_ANGLE) / 180.*M_PI;
 #else
   tilt = -(TILT_ANGLE) / 180.*M_PI;
-#endif  
+#endif
   eccentricity = 0.0;
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -940,36 +967,36 @@ void init_postmerger()
       pos_new[1] = r;
       pos_new[2] = th;
       pos_new[3] = phi;
-      
+
       sth = sin(th) ;
       cth = cos(th) ;
-      
+
       prim[RHO] = dd(i,j,z,VARRHO);
       prim[UU] = dd(i,j,z,VARP); prim[UU] /= (gam - 1);
       prim[U1] = dd(i,j,z,VARVUR);
       prim[U2] = dd(i,j,z,VARVUTHETA);
       prim[U3] = dd(i,j,z,VARVUPHI);
       udphi = dd(i,j,z,VARUDPHI)/r_unit;
-      
+
       res = interpolate_spec_prims(r, th, phi, ext, icdata, prim);
-      
+
       /* regions outside stream */
-      
-      
+
+
       if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
         rho = 1.e-30/(r*r);
         u = 1.e-31/(r*r*r*r);
-        
+
         ur = 0. ;
         uh = 0. ;
         up = 0. ;
-        
+
         prim[RHO] = rho;
         prim[UU] = u;
         prim[U1] = ur;
         prim[U2] = uh;
         prim[U3] = up;
-      } 
+      }
       if(1) {
         /* convert from BL 4-vel to relative 4-vel in internal (KS prime) coords */
         //vconbl_to_utcon(prim, n_ord[n], i, j, z);
@@ -994,12 +1021,12 @@ void init_postmerger()
   /*Share rhomax among MPI processes*/
   MPI_Barrier(mpi_cartcomm);
   MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-  
+
   /*Share umax among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
   MPI_Barrier(mpi_cartcomm);
 #endif
-  
+
   /* Normalize the densities so that max(rho) = 1 */
   if (rank == 0){
     fprintf(stderr, "rhomax: %g\n", rhomax);
@@ -1017,19 +1044,19 @@ void init_postmerger()
     fixup(p, n_ord[n]);
   }
   bound_prim(p,1);
-  
+
   set_mag_postmerger(beta, rhomax, umax);
-  
-#if( DO_FONT_FIX ) 
+
+#if( DO_FONT_FIX )
   set_Katm();
-#endif 
-  
+#endif
+
   sourceflag=0.;
 #if(ELLIPTICAL2)
   calc_source();
 #endif
-  
-  
+
+
 #if (GPU_ENABLED)
   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
 #endif
@@ -1043,7 +1070,7 @@ char* read_first_line(char *s, size_t size, FILE *fp)
   size_t len;
   fpos_t pos;
   int is_success;
-    
+
   /* rewind the file to the beginning */
   fseek(fp, 0L, SEEK_SET);
   do {
@@ -1063,18 +1090,18 @@ char* read_first_line(char *s, size_t size, FILE *fp)
 char* read_last_line(char *s, size_t size, FILE *fp)
 {
   char *last_newline, *last_line;
-  
-  //subtract one to get the max number of characters in the string 
+
+  //subtract one to get the max number of characters in the string
   //(i.e., not counting the terminating '\0')
   size--;
-  
+
   /* now read that many bytes from the end of the file */
   fseek(fp, -size, SEEK_END);
   size_t len = fread(s, sizeof(char), size, fp);
-  
+
   /* don't forget the null terminator */
   s[len] = '\0';
-  
+
   /* and find the last newline character (there must be one, right?) */
   last_newline = strrchr(s, '\n');
   //no newline within max_len bytes of file end
@@ -1093,10 +1120,10 @@ char* read_last_line(char *s, size_t size, FILE *fp)
     }
     last_line = last_newline+1;
   }
-  
+
   //the length of the last line
   len = len-(last_line-s);
-  
+
   //move the last line to the beginning of s
   memmove(s, last_line, (len+1)*sizeof(char));
 
@@ -1113,18 +1140,18 @@ void init_disruption()
   double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
   double tilt, eccentricity;
   struct of_geom geom ;
-  
+
   /* for disk interior */
   double l,rin,lnh,expm2chi,up1 ;
   double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
   double kappa,hm1 ;
-  
+
   /*For MPI*/
   double inmsg;
-  
+
   /* for magnetic field */
   double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-  
+
   /* for ICs */
   FILE *fp;
   int ind;
@@ -1136,10 +1163,10 @@ void init_disruption()
   size_t memsize, nitems, nread;
   double prim[NPR];
   int k;
-  
+
   /* disk parameters (use fishbone.m to select new solutions) */
   a = 0.9375 ;
-  
+
   coord(0,5, 0, 0, CENT, X);
   bl_coord(X, &r, &th, &phi);
   if (rank == 0) {
@@ -1152,10 +1179,10 @@ void init_disruption()
       fprintf(stderr, "\n");
     }
   }
-  
+
   /* output choices */
   tf = 200000000.0 ;
-  
+
   /* start diagnostic counters */
   dump_cnt = 0 ;
   dump_cnt_reduced = 0;
@@ -1213,14 +1240,14 @@ void init_disruption()
 
   //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
   //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk] 
+  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
   rhomax = 0. ;
   umax = 0. ;
 	#if(!NSY)
   tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
   tilt = -(TILT_ANGLE) / 180.*M_PI;
-	#endif  
+	#endif
   eccentricity = 0.0;
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1229,21 +1256,21 @@ void init_disruption()
       pos_new[1] = r;
       pos_new[2] = th;
       pos_new[3] = phi;
-      
+
       sth = sin(th) ;
       cth = cos(th) ;
-      
+
       res = interpolate_prims(r, th, phi, ext, icdata, prim);
 
 	  /* regions outside stream */
       if(res ||prim[RHO] < 1e-20 || r<10) {
         rho = 1.e-20;
         u = 1.e-20;
-        
+
         ur = 0. ;
         uh = 0. ;
         up = 0. ;
-        
+
 		prim[RHO] = rho;
 		prim[UU] = u;
         prim[U1] = ur;
@@ -1272,11 +1299,11 @@ void init_disruption()
   #if (MPI_enable)
   /*Share rhomax among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-  
+
   /*Share umax among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
   #endif
-  
+
   /* Normalize the densities so that max(rho) = 1 */
   if (rank == 0){
     fprintf(stderr, "rhomax: %g\n", rhomax);
@@ -1296,11 +1323,11 @@ void init_disruption()
   bound_prim(p,1);
 
   //set_mag();
-  
-	#if( DO_FONT_FIX ) 
+
+	#if( DO_FONT_FIX )
   set_Katm();
-	#endif 
-  
+	#endif
+
   sourceflag=0.;
 	#if(ELLIPTICAL2)
   calc_source();
@@ -1313,7 +1340,7 @@ int interpolate_spec_prims( double r, double th, double ph, extent ext, double *
   double vx, vy, vz, poten, x, y, z, R;
   double bl_gcov[NDIM][NDIM];
   int res;
-  
+
   //vars: VARI, VARJ, VARK, VARR, VARTHETA, VARPHI, VARRHO, VARP, VARYE, VARMUDT, VARVUR, VARVUTHETA, VARVUPHI
   //ivar:  0,    1,    2,     3,    4,         5,     6,      7,    8,      9,      10,        11,       12
   res = interpolate_spec_var(r,th,ph,ext,data,VARRHO,&p[RHO]);
@@ -1324,11 +1351,11 @@ int interpolate_spec_prims( double r, double th, double ph, extent ext, double *
   res += interpolate_spec_var(r,th,ph,ext,data,VARVUR,&p[U1]);
   res += interpolate_spec_var(r,th,ph,ext,data,VARVUTHETA,&p[U2]);
   res += interpolate_spec_var(r,th,ph,ext,data,VARVUPHI,&p[U3]);
-  
+
   p[B1] = 0.;
   p[B2] = 0.;
   p[B3] = 0.;
-  
+
   return(res);
 }
 
@@ -1371,7 +1398,7 @@ int interpolate_prims( double r, double th, double ph, extent ext, double *data,
  // p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
  /// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
 
- 
+
   p[B1] = 0.;
   p[B2] = 0.;
   p[B3] = 0.;
@@ -1423,7 +1450,7 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
   if (isnan(c))  return(1);
   *val = c;
   return(0);
-  
+
 }
 //undefine array shortcut to avoid name conflicts
 #undef d
@@ -1439,13 +1466,13 @@ int interpolate_spec_var( double r, double th, double ph, extent ext, double *ic
   double c00, c01, c10, c11, c0, c1, c;
   int ii, jj, kk;
   double th0, th1;
-  
+
   //limit th, ph to [0,pi], [0,2pi)
   if(th<0) th = 0;
   if(th>M_PI) th = M_PI;
   if(ph>=2. * M_PI) ph -= 2. * M_PI;
   if(ph<0) ph += 2. * M_PI;
-  
+
   nx = ext.nx;
   ny = ext.ny;
   nz = ext.nz;
@@ -1456,7 +1483,7 @@ int interpolate_spec_var( double r, double th, double ph, extent ext, double *ic
   if(i0 < 0 || i0 >= nx-1) return(1);
   di = log2( r/dd(i0,j0,k0,VARR) ) / log2( dd(i0+1,j0,k0,VARR)/dd(i0,j0,k0,VARR) );
   i = i0 + di;
-  
+
   for(j0=0; j0<ny; j0++) {
     th1 = dd(i0,j0,k0,VARTHETA)*(1-di)+dd(i0+1,j0,k0,VARTHETA)*di;
     if( th1 > th ) break;
@@ -1475,10 +1502,10 @@ int interpolate_spec_var( double r, double th, double ph, extent ext, double *ic
     dj = (th-th0)/(th1-th0);
   }
   j = j0 + dj;
-  
+
   dz = (ext.zmax-ext.zmin)/(nz-1);
   k = (ph-ext.zmin)/dz-0.5;
-  
+
   i1 = (int)ceil(i);
   j1 = (int)ceil(j);
   k0 = floor(k);
@@ -1499,14 +1526,14 @@ int interpolate_spec_var( double r, double th, double ph, extent ext, double *ic
   if (isnan(c))  return(1);
   *val = c;
   return(0);
-  
+
 }
 //undefine array shortcut to avoid name conflicts
 #undef d
 
 void set_mag(void){
 	int i, j, z, k, n;
-	double rhomax = 1., umax = 0.; 
+	double rhomax = 1., umax = 0.;
 	int i100 = 0;
 	double rho_av, q, beta = 10., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
@@ -1515,7 +1542,7 @@ void set_mag(void){
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
-	#endif	
+	#endif
 
 	do{
 		i100++;
@@ -1542,13 +1569,13 @@ void set_mag(void){
 	/* first find corner-centered vector potential */
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
-			/* Cell centered vector potential */	
+			/* Cell centered vector potential */
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.05;
 			#endif
-			if (q > 0.){		
+			if (q > 0.){
 				coord(n_ord[n], i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
 				#if(WHICHPROBLEM==THIN_PROBLEM)
@@ -1793,7 +1820,7 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
-	#endif	
+	#endif
 
 	do{
 		i100++;
@@ -1820,13 +1847,13 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 	/* first find corner-centered vector potential */
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
-			/* Cell centered vector potential */	
+			/* Cell centered vector potential */
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.05;
 			#endif
-			if (q > 0.){		
+			if (q > 0.){
 				coord(n_ord[n], i, j, z, CENT, X);
 				bl_coord(X, &r, &th, &phi);
 				#if(WHICHPROBLEM==THIN_PROBLEM)
@@ -2168,7 +2195,7 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   struct of_state q;
   int i, j, k, m;
 #define USEKS (1)
-  
+
   coord(n, ii, jj, zz, CENT, X);
   bl_coord(X, &r, &th, &phi);
 #if(USEKS)
@@ -2176,17 +2203,17 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
 #else
   blgset(n, ii, jj, &geom);
 #endif
-  
-  vcon[0] = 1.0;  
+
+  vcon[0] = 1.0;
   vcon[1] = pr[U1];
   vcon[2] = pr[U2];
   vcon[3] = pr[U3];
-  
+
   //compute u^t corresponding to the new v^i
   ut_calc_3vel(vcon, &geom, &ut);
-    
+
   for(k = 0; k < NDIM; k++) {
-    ucon[k] = ut * vcon[k]; 
+    ucon[k] = ut * vcon[k];
   }
   /* now we've got ucon in BL coords */
   //old[1] = ucon[1];
@@ -2207,12 +2234,12 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   DLOOPA ucon[j] = tmp[j];
   /* now we've got ucon in KS coords */
 #endif
-  
+
   /* transform to KS' coords */
   dxdxp_func(X, dxdxp);
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
-  
+
   for (i = 0; i<NDIM; i++) {
     uconp[i] = 0;
     for (j = 0; j<NDIM; j++){
@@ -2222,9 +2249,9 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
   get_geometry(n,ii, jj,zz, CENT, &geom);
-  
+
   ucon_to_utcon(uconp, &geom, utconp);
-  
+
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
@@ -2232,7 +2259,7 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz)
   /* done! */
 }
 
-/* This function takes Utilde 3-velocity and 
+/* This function takes Utilde 3-velocity and
  * transforms it into 4-velocity in modified Kerr-Schild coordinates
  */
 void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
@@ -2244,7 +2271,7 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   struct of_state q;
   int i, j, k, m, max_iter;
 #define USEKS (1)
-  
+
   coord(n, ii, jj, zz, CENT, X);
   bl_coord(X, &r, &th, &phi);
 #if(USEKS)
@@ -2252,24 +2279,24 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
 #else
   blgset(n, ii, jj, &geom);
 #endif
-  
+
   // By definition, U^t tilde = 0
   vtcon[0] = 0.0;
   vtcon[1] = pr[U1];
   vtcon[2] = pr[U2];
   vtcon[3] = pr[U3];
-  
-  //compute u^t corresponding to the new v^i 
+
+  //compute u^t corresponding to the new v^i
   //ut_calc_3vel(vcon, &geom, &ut);
-    
+
   //for(k = 0; k < NDIM; k++) {
-  //  ucon[k] = ut * vcon[k]; 
+  //  ucon[k] = ut * vcon[k];
   //}
   /* now we've got ucon in BL coords */
   //old[1] = ucon[1];
   //old[2] = ucon[2];
   //old[3] = ucon[3];
-  
+
 #if(USEKS)
   //already in KS coordinates; no transformation needed
 #else
@@ -2285,7 +2312,7 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   DLOOPA ucon[j] = tmp[j];
   /* now we've got ucon in KS coords */
 #endif
-  
+
   /* Jacobian transformation from spherical to cartesian coords */
   dxdr_sph_to_cart(r, th, phi, dxdr);
   invert_matrix(dxdr, drdx);
@@ -2294,7 +2321,7 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
   dxdxp_func(X, dxdxp);
   /* dx^\mu/dr^\nu jacobian */
   invert_matrix(dxdxp, dxpdx);
-  
+
   // converts the input Utilde^{x,y,z} to Utilde^{r,th,phi}
   utcon[0] = 0.0;
   for (i = 1; i<NDIM; i++) {
@@ -2303,7 +2330,7 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
       utcon[i] += drdx[i][j] * vtcon[j];
     }
   }
-  
+
   // converts Utilde^{r,th,phi} from the previous loop into Utilde^{x1,x2,x3}
   utconp[0] = 0.0;
   for (i = 1; i<NDIM; i++) {
@@ -2312,14 +2339,14 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
       utconp[i] += dxpdx[i][j] * utcon[j];
     }
   }
-  
+
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
-  
+
   // This calculates Utilde^{phi} given u_{phi}. Iterations are required because the relation between them is not linear.
-  
+
   get_geometry(n,ii, jj,zz, CENT, &geom);
-  
+
 // Commented out this part of the code that modifies utconp by matching udphi's
 
   max_iter = 50;
@@ -2331,9 +2358,9 @@ void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz)
     if (err <= err_tol) break;
     udphi = udphi_new;
   }
-  
+
   //ucon_to_utcon(uconp, &geom, utconp);
-  
+
   pr[U1] = utconp[1];
   pr[U2] = utconp[2];
   pr[U3] = utconp[3];
@@ -2347,13 +2374,13 @@ void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_ge
 {
   double alpha, beta[NDIM], gamma, gamma_new, AA, BB; //, A, B, C, D, E, F u_minus, u_plus;
   int j, k;
-  
+
   /* now solve for v-- we can use the same u^t because
    * it didn't change under KS -> KS' */
   alpha = 1. / sqrt(-geom->gcon[0][0]);
   SLOOPA beta[j] = geom->gcon[0][j] * alpha*alpha;
   gamma = alpha*ucon[0];
-  
+
   utcon[0] = 0;
   SLOOPA utcon[j] = ucon[j];
 
@@ -2362,13 +2389,13 @@ void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_ge
   utcon[3] /= (geom->gcov[3][3]);
 
   // Update udphi
-  
+
   AA = - geom->gcov[0][0] * geom->gcon[0][0];
   BB = 0.0;
   SLOOP AA += geom->gcov[j][k] * beta[j] * beta[k] / (alpha * alpha);
   SLOOP BB += 2 * geom->gcov[j][k] * utcon[j] * beta[k] / alpha;
   gamma_new = BB / (1 + AA);
-  
+
   *udphi_new = geom->gcov[3][0] * gamma_new / alpha;
   SLOOPA *udphi_new += geom->gcov[3][j] * (utcon[j] - gamma_new * beta[j] / alpha);
 }
@@ -2734,7 +2761,7 @@ void init_torus_grb(){
 	}
 
 	/* output choices */
-	tf = 25000.0;
+	tf = 200000000.0;
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
@@ -2798,7 +2825,7 @@ void init_torus_grb(){
 #if( DOAUTOCOMPUTEENK0 )
 				//will be recomputed for every (ti,tj,tk), but is same for all of them, so ok
 				global_kappa = kappa * pow(rho_scale_factor, 1 - gam);
-#endif    
+#endif
 #else
 				rho_scale_factor = 1.0;
 #endif
@@ -2852,7 +2879,7 @@ void init_torus_grb(){
 #if( DOAUTOCOMPUTEENK0 )
 				//will be recomputed for every (ti,tj,tk), but is same for all of them, so ok
 				global_kappa = kappa * pow(rho_scale_factor, 1 - gam);
-#endif 
+#endif
 #else
 				rho_scale_factor = 1.0;
 #endif
@@ -2920,7 +2947,7 @@ void init_torus_grb(){
         p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
         p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1. ;  //all nucleons initially
 #endif
-        
+
 				/* convert from 4-vel in BL coords to relative 4-vel in code coords */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 
@@ -3013,13 +3040,13 @@ void init_torus_grb(){
 	//need to apply the floor on density to avoid beta ~ ug/(bsq+SMALL) = 0 outside torus when normalizing B
 	for (n = 0; n<n_active; n++) fixup(p, n_ord[n]);
 
-	// now differentiate to find cell-centered B, and begin normalization 
+	// now differentiate to find cell-centered B, and begin normalization
 	bsq_max = compute_B_from_A();
 
 	if (WHICHFIELD == NORMALFIELD || WHICHFIELD == SEMIMAD){
 		if (rank == 0) fprintf(stderr, "initial bsq_max: %g\n", bsq_max);
 
-		//finally, normalize to set field strength 
+		//finally, normalize to set field strength
 		beta_act = (gam - 1.)*umax / (0.5*bsq_max);
 
 		if (rank == 0) fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
@@ -3104,7 +3131,7 @@ void init_torus_grb(){
 
 #if( DO_FONT_FIX )
 	set_Katm();
-#endif 
+#endif
 
 #if (GPU_ENABLED)
 	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need this?
@@ -3755,7 +3782,7 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
     tnu    = 250 * rmax * sqrt(rmax);
     rhoflr = RHOMIN*rhomax*rhoscal; //this is Rodrigo's rhot
     uuflr  = UUMIN*rhomax*uuscal;
-    
+
     fac2 = (rt/r); fac2 *= fac2;
     if( r <= rt ) {
       fac1 = t/tnu+1.; fac1 *= fac1;

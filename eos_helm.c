@@ -465,7 +465,7 @@ void test_eos(void) {
     
     printf("dens=%21.15e, Temp=%21.15e, pres = %21.15e, ener = %21.15e, entr = %21.15e\n", den, temp_out, pres, ener, entr);
     
-    exit(1);
+    //exit(1);
     
 }
 

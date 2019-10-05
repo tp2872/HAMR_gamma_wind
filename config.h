@@ -20,7 +20,7 @@ Physical Parameters section
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
-#define BH_SPIN 0.0 //(0.86)
+#define BH_SPIN (0.86)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
@@ -101,9 +101,9 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 32
-#define BS_3 32
+#define BS_1 512
+#define BS_2 256
+#define BS_3 128
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -563,6 +563,8 @@ Variable Inversion Section
 /*************************************************************************
 Section with EOS constants
 *************************************************************************/
+#define DOHELM (0)
+
 #define EOSIMAX (211)
 #define EOSJMAX (71)
 #define eos_tlo (4.0)

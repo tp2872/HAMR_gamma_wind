@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	GPU_init();
 	#endif
     set_AMR();
-    test_eos();
+    //test_eos();
     
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
