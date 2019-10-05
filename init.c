@@ -570,7 +570,7 @@ void init_torus()
 
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
-		fprintf(stderr, "Before normalization: rhomax: %g, torus_mass: %g\n", rhomax, torus_mass);
+    fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
     fprintf(stderr, "Normalizing by torus_mass = 0.1:\n");
 	}
 
@@ -595,7 +595,7 @@ void init_torus()
 	rhomax *= rho_factor;
 
   if (rank == 0){
-		fprintf(stderr, "After normalization: rhomax: %g, torus_mass: %g\n", rhomax, torus_mass);
+    fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
 	}
 
 	for (n = 0; n < n_active; n++){
