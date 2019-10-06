@@ -101,9 +101,9 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 512
-#define BS_2 256
-#define BS_3 128
+#define BS_1 16
+#define BS_2 8
+#define BS_3 4
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1

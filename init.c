@@ -618,6 +618,21 @@ void init_torus()
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
+  
+  // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+  double den, ener, pres;
+  for (n = 0; n < n_active; n++){
+    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+      den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
+      ener = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU];
+      pres = ener * (gam - 1.0);
+      ener /= den;
+      fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g\n", i, j, z, den, ener, pres);
+      eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
+      fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g\n\n", i, j, z, den, ener, pres);
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
+    }
+  }
 }
 
 #define dd(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
