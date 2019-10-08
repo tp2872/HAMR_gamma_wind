@@ -584,6 +584,7 @@ void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom
 		Acon_js = 1.;
 	}
 
+    // DANAT: leave as is; will modify later with a proper calculation of sound speed using HelmEOS
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon, q->bcov);
 	rho = pr[RHO];

@@ -357,44 +357,50 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 }
 
 
-void eos_mode_dens_ener(double ener, double den, double abar, double zbar, double *pres) {
+void eos_mode_dens_ener(double ener_goal, double den, double abar, double zbar, double *pres) {
     
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
     double tolerance = 1.0e-5;
-    
-    double ener_goal = ener;
+    double tolerance_e = 1.0e-5;
     
     // initial guess : temperature
-    // DANAT: better guess please!
-    double temp_ini_guess = (GAMMA - 1.0) * ener_goal * 1.211475197e-8;
+    double temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     
     double temp_new, temp_old;
-    double ener_old, entr;
-    double denerdtemp, dpresdtemp, dpresdrho;
+    double ener_tmp, ener_old, entr;
+    double dpdt, dedt, dpdrho;
     
-    double error;
+    double error, error_e;
     int i;
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     
     temp_old = temp_ini_guess;
     for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, &pres, &ener_old, &entr, &dpresdtemp, &denerdtemp, &dpresdrho);
-        temp_new = temp_old - (ener_old - ener_goal) / denerdtemp;
+        eos_helm(1, temp_old, den, abar, zbar, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho);
+        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
         
-        //do not allow temp to change more than 10. times in one iteration
-        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
-        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        //do not allow temp to change more than 2. times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
         
         error = fabs((temp_new - temp_old) / temp_old);
-        printf("num = %d, err = %e\n", i, error);
-        printf("ener = %e, temp = %e, dedt = %e\n", ener_old, temp_new, denerdtemp);
+        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
         temp_old = temp_new;
-        if(error < tolerance) break;
+        
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_e < tolerance_e) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
     }
 }
 
-void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d) {
+void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d) {
     
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
@@ -404,7 +410,7 @@ void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, 
     double deni = 1.0 / den;
 
     // initial guess : temperature
-    double temp_ini_guess = pow((*pres) * conv_pres_CODE2CGS * asoli3_inv, 0.25);
+    double temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -418,9 +424,10 @@ void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, 
     double xpres = *pres;
     double xener = 0.0;
     
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     
     temp_old = temp_ini_guess;
-    eos_init();
+    
     for(i = 0; i < max_iterations; i++){
         eos_helm(1, temp_old, den, abar, zbar, pres, &xener, &entr, dpdt, dedt, dpdrho);
         
@@ -435,16 +442,16 @@ void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, 
         error = fabs((temp_new - temp_old) / temp_old);
         error_h = fabs((h_tmp - xenth) / xenth);
         
-        printf("num = %d, err = %e, err in h = %e\n", i, error, error_h);
+        printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, xener);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
         temp_old = temp_new;
-        if(error < tolerance && error_h < tolerance_h) break;
+        if(error < tolerance && error_h < tolerance_h) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
     }
-    
-    // DANAT:
-    // Couple more iterations, if successful
-    // Output: temp, pres, ener, dpdrho, dpdt, dedt, dpde_d
-    *temp_out = temp_old;
 }
 
 int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal) {
@@ -469,6 +476,7 @@ int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, doubl
     
     temp_old = temp_ini_guess;
     
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     for(i = 0; i < max_iterations; i++){
         
         eos_helm(1, temp_old, den, abar, zbar, &p_tmp, ener, &entr, &dpdt, &dedt, &dpdrho);
@@ -484,8 +492,15 @@ int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, doubl
         
         printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
         temp_old = temp_new;
-        if(error < tolerance && error_p < tolerance_p) break;
+        
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_p < tolerance_p) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
     }
     
     if (i == max_iterations) return 100;
@@ -507,7 +522,7 @@ void test_eos(void) {
     printf("enth+%21.15e\n", h_goal);
     
     double temp_out = 0.0;
-    eos_mode_dens_enth(&temp_out, den, abar, zbar, &pres, h_goal, &dpresdrho, &dpresdtemp, &denerdtemp, &dpresdener);
+    eos_mode_dens_enth(den, abar, zbar, &pres, h_goal, &dpresdrho, &dpresdtemp, &denerdtemp, &dpresdener);
     
     printf("dens=%21.15e, Temp=%21.15e, pres = %21.15e, ener = %21.15e, entr = %21.15e\n", den, temp_out, pres, ener, entr);
 

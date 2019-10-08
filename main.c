@@ -71,6 +71,10 @@ int main(int argc, char *argv[])
 	GPU_init();
 	#endif
     set_AMR();
+    
+    #if DOHELM
+    eos_init();
+    #endif
     //test_eos();
     
 	if (!restart_read()) {

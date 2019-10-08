@@ -295,10 +295,12 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	//   i.e. you don't get positive values for dP/d(vsq) . 
 	rho0 = D / gamma;
 	u = prim[UU];
-	p = pressure_rho0_u(rho0, u);
-#if DOHELM
-    eos_mode_rho_u(rho0 * u, rho0, 1.0, 1.0, *p);
-#endif
+
+    #if DOHELM
+    eos_mode_dens_ener(u / rho0, rho0, 1.0, 1.0, &p);
+    #else
+    p = pressure_rho0_u(rho0, u);
+    #endif
     
 	w = rho0 + u + p;
 
@@ -599,10 +601,10 @@ static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
     double rho = D * sqrt(1.0 - vsq);
     double gamma_sq = 1.0/(1.0 - vsq);
     double gamma = sqrt(gamma_sq);
-    double enth = W / gamma_sq / rho
+    double enth = W / gamma_sq / rho;
     double dpdrho, dpdt, dedt, dpde_d;
     
-    eos_mode_dens_enth(&xtemp, rho0, 1.0, 1.0, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
+    eos_mode_dens_enth(rho, 1.0, 1.0, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
     
     double dpdeps_o_rho = dpde_d / rho;
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;

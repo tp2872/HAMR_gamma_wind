@@ -119,7 +119,13 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 
     r = pr[RHO] ;
     u = pr[UU] ;
+    
+    #if DOHELM
+    eos_mode_dens_ener(u / r, r, 1.0, 1.0, &P);
+    #else
     P = (gam - 1.)*u ;
+    #endif
+    
     w = P + r + u ;
 	bsq = dot(q->bcon,q->bcov) ;
 	eta = w + bsq ;
@@ -274,6 +280,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	bsq = dot(q->bcon,q->bcov) ;
 	rho = pr[RHO] ;
 	u = pr[UU] ;
+    // DANAT: leave as is, modify when I will have a calculation of sound speed using HelmEOS
 	EF = rho + gam*u ;
 	EE = bsq + EF ;
 	va2 = bsq/EE ;

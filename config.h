@@ -101,8 +101,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 16
+#define BS_1 16
+#define BS_2 8
 #define BS_3 2
 
 /*Set the maximum number of refinement levels*/
@@ -563,7 +563,7 @@ Variable Inversion Section
 /*************************************************************************
 Section with EOS constants
 *************************************************************************/
-#define DOHELM (0)
+#define DOHELM (1)
 
 #define EOSIMAX (211)
 #define EOSJMAX (71)
@@ -605,6 +605,7 @@ Section with EOS constants
 #define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G * G * G * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G^3 / M_bh^2
 #define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G * G * G * Mbh_cgs * Mbh_cgs))
 #define conv_pres_CGS2CODE (G * G * G * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G^3 * M_bh^2 /c_light^8
+#define conv_ener_CODE2CGS (c_light * c_light)
 #define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
 #define conv_entr_CGS2CODE (1.0)
 
