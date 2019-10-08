@@ -101,9 +101,9 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 16
-#define BS_2 8
-#define BS_3 4
+#define BS_1 32
+#define BS_2 16
+#define BS_3 2
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -574,7 +574,7 @@ Section with EOS constants
 // becomes true if variables for Aprox13t network are set
 #define bAprox13t (0) 
 
-#define eos_coulombMult (0)
+#define eos_coulombMult (0.0)
 #define eos_coulombAbort (1)
 
 // from eos_helmConstData
@@ -589,6 +589,7 @@ Section with EOS constants
 #define ssol (5.67051e-5)
 #define asol (4.0e0 * ssol / c_light)
 #define asoli3 (asol / 3.0e0)
+#define asoli3_inv (3.0e0 / asol)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
 #define Mbh_cgs (3 * 1.99e33)
 #define G (6.67259e-8)
@@ -602,6 +603,7 @@ Section with EOS constants
 // DANAT: finish!
 #define conv_T_CODE2CGS (1.0)
 #define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G * G * G * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G^3 / M_bh^2
+#define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G * G * G * Mbh_cgs * Mbh_cgs))
 #define conv_pres_CGS2CODE (G * G * G * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G^3 * M_bh^2 /c_light^8
 #define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
 #define conv_entr_CGS2CODE (1.0)

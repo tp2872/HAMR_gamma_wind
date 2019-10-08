@@ -390,7 +390,7 @@ void init_torus()
 	rin = 6.0;
 	rmax = 12.;
     l = lfish_calc(rmax) ;
-	kappa = 1.e-3 ;
+  kappa = 1.e-3 ;
 	beta = 1e20 ;
 
 	coord(0,5, 0, 0, CENT, X);
@@ -571,11 +571,11 @@ void init_torus()
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
     fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
-    fprintf(stderr, "Normalizing by torus_mass = 0.1:\n");
+    fprintf(stderr, "Normalizing by torus_mass = 0.001:\n");
 	}
 
 	//ZSLOOP(0,N1-1,0,N2-1) {
-  rho_factor = 0.1 / torus_mass;
+  rho_factor = 0.001 / torus_mass;
   torus_mass = 0.0;
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -621,17 +621,34 @@ void init_torus()
   
   // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
   double den, ener, pres;
-  for (n = 0; n < n_active; n++){
+  int num_it = 0;
+  char filename[100];
+  double double_size = sizeof(double);
+  FILE *f;
+  sprintf(filename, "failed_EOS.bdat");
+  f = fopen(filename, "wb");
+  
+  for (n = 0; n < n_active; n++) {
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
       ener = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU];
       pres = ener * (gam - 1.0);
       ener /= den;
-      fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g\n", i, j, z, den, ener, pres);
-      eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
+      coord(n_ord[n], i, j, z, CENT, X);
+      bl_coord(X,&r,&th, &phi) ;
+      fprintf(stderr, "r:%e, th:%e, phi:%e, rho: %e, ener: %g, pres: %g\n", r, th, phi, den, ener, pres);
+      eos_init();
+      num_it = eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
+      if (num_it == 100) {
+        fwrite(&r, double_size, 1, f);
+        fwrite(&th, double_size, 1, f);
+        fwrite(&phi, double_size, 1, f);
+      }
       fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g\n\n", i, j, z, den, ener, pres);
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
-    }
+  }
+    
+  fclose(f);
   }
 }
 

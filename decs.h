@@ -1190,5 +1190,5 @@ void interp_eostable(double den, double btemp, double din, double ye, double *fr
 void test_eos(void);
 void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd);
 void eos_mode_dens_ener(double ener, double den, double abar, double zbar, double *pres);
-void eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal);
+int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal);
 void eos_mode_dens_enth(double *temp_out, double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);
