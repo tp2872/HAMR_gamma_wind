@@ -389,7 +389,7 @@ void init_torus()
 	a = 0.9375;
 	rin = 6.0;
 	rmax = 12.;
-    l = lfish_calc(rmax) ;
+  l = lfish_calc(rmax) ;
   kappa = 1.e-3 ;
 	beta = 1e20 ;
 
@@ -567,7 +567,8 @@ void init_torus()
     /*Share torus_mass among MPI processes*/
     MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
-
+  
+  #if DOHELM
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
     fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
@@ -597,7 +598,35 @@ void init_torus()
   if (rank == 0){
     fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
 	}
-
+  
+  #else
+  /* Normalize the densities so that max(rho) = 1 */
+  if (rank == 0){
+    fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
+    fprintf(stderr, "Normalizing by torus_mass = 0.001:\n");
+  }
+  
+  //ZSLOOP(0,N1-1,0,N2-1) {
+  rho_factor = 1.0 / rhomax;
+  torus_mass = 0.0;
+  for (n = 0; n < n_active; n++){
+    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] *= rho_factor;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] *= rho_factor;
+      // check total mass of the disk after normalization
+      torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * dV;
+    }
+  }
+  
+  umax *= rho_factor;
+  rhomax *= rho_factor;
+  
+  if (rank == 0){
+    fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
+  }
+  
+  #endif
+  
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
@@ -619,6 +648,7 @@ void init_torus()
 	calc_source();
 	#endif
   
+#if DOHELM
   // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
   double den, ener, pres;
   int num_it = 0;
@@ -628,6 +658,7 @@ void init_torus()
   sprintf(filename, "failed_EOS.bdat");
   f = fopen(filename, "wb");
   
+
   for (n = 0; n < n_active; n++) {
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
@@ -647,9 +678,72 @@ void init_torus()
       fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g\n\n", i, j, z, den, ener, pres);
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
   }
-    
+
   fclose(f);
   }
+#endif
+  
+  void check_inversions (void);
+  check_inversions ();
+}
+
+void check_inversions (void) {
+  FILE *f;
+  char filename[100];
+  double double_size = sizeof(double);
+  sprintf(filename, "check_inversions.bdat");
+  f = fopen(filename, "wb");
+  
+  int n, ind0;
+  int i, j, z, k;
+  struct of_geom geom;
+  struct of_state q;
+  double r, th, phi;
+  double X[NDIM], U[NPR], pf[NPR];
+  int retval;
+  int count_NM_failed = 0;
+  int count_2d_failed = 0;
+  int count_total = 0;
+  
+  for (n = 0; n < n_active; n++) {
+    ZSLOOP3D (N1_GPU_offset [n_ord[n]], N1_GPU_offset [n_ord[n]] + BS_1 - 1, N2_GPU_offset [n_ord[n]], N2_GPU_offset [n_ord[n]] + BS_2 - 1, N3_GPU_offset [n_ord[n]], N3_GPU_offset [n_ord[n]] + BS_3 - 1) {
+      coord(n_ord[n], i, j, z, CENT, X);
+      bl_coord(X,&r,&th, &phi) ;
+      get_geometry (nl [n_ord[n]], i, j, z, CENT, &geom);
+      ind0 = index_3D (n_ord [n], i, j, z);
+      get_state (p [nl [n_ord[n]]] [ind0], &geom, &q);
+      primtoflux (p [nl [n_ord[n]]] [ind0], &q, 0, &geom, U);
+      
+      fprintf(stderr, "i:%d, j:%d, z:%d, rho=%e\n", i, j, z, p [nl [n_ord [n]]] [ind0] [RHO]);
+      
+      fwrite(&r, double_size, 1, f);
+      fwrite(&th, double_size, 1, f);
+      fwrite(&phi, double_size, 1, f);
+      PLOOP fwrite(&p [nl [n_ord [n]]] [ind0] [k], double_size, 1, f);
+      
+      fprintf(stderr, "Newman-Hamlin starts\n");
+      PLOOP U[k] *= 0.95;
+      retval = Utoprim_NM (U, geom.gcov, geom.gcon, geom.g, pf);
+      count_total += 1;
+      if (retval != 0) {
+        fprintf(stderr, "Newman-Hamlin failed; 2d starts\n");
+        count_NM_failed += 1;
+        retval = Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, pf);
+        if (retval != 0) {
+          count_2d_failed += 1;
+          fprintf(stderr, "2d failed\n");
+        }
+      }
+      PLOOP fwrite(&pf [k], double_size, 1, f);
+      fprintf(stderr, "retval = %d\n", retval);
+    }
+  }
+  
+  fprintf(stderr, "failed NM = %d, failed 2d = %d out of %d\n", count_NM_failed, count_2d_failed, count_total);
+  //Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, pf [nl [n]] [ind0]);
+  
+  fclose(f);
+  exit(1);
 }
 
 #define dd(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]

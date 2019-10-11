@@ -807,7 +807,7 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	Qtsq = Qsq + Qdotn*Qdotn;
 
 	//Start inversion scheme AKA Newman et al
-	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new;
+	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new, xpres, xener, xenth;
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
@@ -823,16 +823,33 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+        // DANAT addition
+        if (fabs(vsq) < 1e-15) vsq = 0.0;
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
 		gamma = 1. / sqrt(1. - vsq);
 		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+        
+        #if DOHELM
+        xenth = w / rho0;
+        xpres = 0.0;
+        xener = 0.0;
+        eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+        u = rho0 * xener;
+        #else
 		u = (w - rho0) / GAMMA;
+        #endif
 
 		iter++;
 		iter_tot++;
+        
+        #if DOHELM
+        p_array[iter] = xpres;
+        #else
 		p_array[iter] = (GAMMA - 1.)*u;
-		p_old = p_array[iter - 1];
+        #endif
+        
+        p_old = p_array[iter - 1];
 		p_new = p_array[iter];
 		if (iter >= 2) {
 			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
@@ -855,12 +872,25 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+        // DANAT addition
+        if (fabs(vsq) < 1e-15) vsq = 0.0;
 		Wsq = 1. / (1. - vsq);
 		w = z / Wsq;
 		gamma = sqrt(Wsq);
 		rho0 = D / gamma; //Watch out you may need this for a more complicated EOS
-		u = (w - rho0) / GAMMA;
-		p_new = (GAMMA - 1.)*u;
+        
+        #if DOHELM
+        xenth = w / rho0;
+        xpres = 0.0;
+        xener = 0.0;
+        eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+        u = rho0 * xener;
+        p_new = xpres;
+        #else
+        u = (w - rho0) / GAMMA;
+        p_new = (GAMMA - 1.)*u;
+        #endif
+        
 	}
 	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG || gamma>GAMMAMAX || gamma<1.){
 		return(1);

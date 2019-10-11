@@ -410,7 +410,9 @@ void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, doub
     double deni = 1.0 / den;
 
     // initial guess : temperature
-    double temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    double temp_ini_guess;
+    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -443,6 +445,59 @@ void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, doub
         error_h = fabs((h_tmp - xenth) / xenth);
         
         printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, xener);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
+        temp_old = temp_new;
+        if(error < tolerance && error_h < tolerance_h) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+}
+
+void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal) {
+    // implementation in Newman-Hamlin inversion
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    double tolerance_h = 1.0e-5;
+    
+    double deni = 1.0 / den;
+    
+    // initial guess : temperature
+    double temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    
+    double temp_new, temp_old;
+    double ener_old, pres_old;
+    double dpresdener_d, dhdtemp;
+    double h_tmp, entr;
+    double dpdrho, dpdt, dedt, dpde_d;
+    
+    double error, error_h;
+    int i;
+    
+    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    
+    temp_old = temp_ini_guess;
+    
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(1, temp_old, den, abar, zbar, pres, ener, &entr, &dpdt, &dedt, &dpdrho);
+        
+        h_tmp = *ener + (*pres) * deni;
+        dhdtemp = dedt + dpdt * deni;
+        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
+        
+        // do not allow temp to change more than 10 times in one iteration
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_h = fabs((h_tmp - xenth) / xenth);
+        
+        printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, *ener);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
         if (temp_new > 1.0e11) temp_new = 1.0e11;
         

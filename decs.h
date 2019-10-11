@@ -1192,3 +1192,4 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 void eos_mode_dens_ener(double ener, double den, double abar, double zbar, double *pres);
 int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal);
 void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);
+void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal);
