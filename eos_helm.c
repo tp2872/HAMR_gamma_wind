@@ -444,7 +444,7 @@ void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, doub
         error = fabs((temp_new - temp_old) / temp_old);
         error_h = fabs((h_tmp - xenth) / xenth);
         
-        printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, xener);
+        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, xener);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
         if (temp_new > 1.0e11) temp_new = 1.0e11;
         
@@ -466,7 +466,9 @@ void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, 
     double deni = 1.0 / den;
     
     // initial guess : temperature
-    double temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    double temp_ini_guess;
+    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -497,7 +499,7 @@ void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, 
         error = fabs((temp_new - temp_old) / temp_old);
         error_h = fabs((h_tmp - xenth) / xenth);
         
-        printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, *ener);
+        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, *ener);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
         if (temp_new > 1.0e11) temp_new = 1.0e11;
         
@@ -507,6 +509,14 @@ void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, 
             if (more_iterations == 0) break;
         }
     }
+}
+
+void eos_get_min_pres_NH (double den, double abar, double zbar, double *pres) {
+    // implementation in Newman-Hamlin inversion
+    // Parameters of Newton-Raphson iterations
+    double temp = 1.0e4;
+    double ener, entr, dpdt, dedt, dpdrho;
+    eos_helm(1, temp, den, abar, zbar, pres, &ener, &entr, &dpdt, &dedt, &dpdrho);
 }
 
 int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal) {
@@ -545,7 +555,7 @@ int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, doubl
         error = fabs((temp_new - temp_old) / temp_old);
         error_p = fabs((p_tmp - p_goal) / p_goal);
         
-        printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
+        //printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
         if (temp_new < 1.0e4) temp_new = 1.0e4;
         if (temp_new > 1.0e11) temp_new = 1.0e11;
         

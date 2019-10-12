@@ -683,8 +683,8 @@ void init_torus()
   }
 #endif
   
-  void check_inversions (void);
-  check_inversions ();
+  //void check_inversions (void);
+  //check_inversions ();
 }
 
 void check_inversions (void) {

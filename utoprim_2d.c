@@ -807,12 +807,20 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	Qtsq = Qsq + Qdotn*Qdotn;
 
 	//Start inversion scheme AKA Newman et al
-	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new, xpres, xener, xenth;
+	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new, xdens, xpres, xener, xenth;
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
-    p_array[0] = (GAMMA - 1.)*prim[UU]; // DANAT: call eos_helm() here
-	p_new = p_array[0];
+    
+    #if DOHELM
+    xdens = prim[RHO];
+    eos_get_min_pres_NH (xdens, 1.0, 1.0, &xpres);
+    p_array[0] = xpres;
+    #else
+    p_array[0] = (GAMMA - 1.)*prim[UU];
+    #endif
+	
+    p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
 	if (d < 0.0) return(1);
 	do{
