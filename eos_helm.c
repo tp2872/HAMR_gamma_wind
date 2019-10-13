@@ -365,7 +365,9 @@ void eos_mode_dens_ener(double ener_goal, double den, double abar, double zbar, 
     double tolerance_e = 1.0e-5;
     
     // initial guess : temperature
-    double temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+    double temp_ini_guess;
+    if (ener_goal <= 0.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     
     double temp_new, temp_old;
     double ener_tmp, ener_old, entr;
@@ -531,7 +533,9 @@ int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, doubl
     double deni = 1.0 / den;
     
     // initial guess : temperature
-    double temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
+    double temp_ini_guess;
+    if (p_goal <= 0.0) temp_ini_guess = 1.0e4;
+    temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
     
     double temp_new, temp_old;
     double p_tmp, entr;

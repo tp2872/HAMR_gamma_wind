@@ -722,25 +722,25 @@ void check_inversions (void) {
       PLOOP fwrite(&p [nl [n_ord [n]]] [ind0] [k], double_size, 1, f);
       
       fprintf(stderr, "Newman-Hamlin starts\n");
-      PLOOP U[k] *= 0.95;
-      retval = Utoprim_NM (U, geom.gcov, geom.gcon, geom.g, pf);
+      PLOOP U[k] *= 0.80;
+      //retval = Utoprim_NM (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
+      retval = Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
       count_total += 1;
       if (retval != 0) {
         fprintf(stderr, "Newman-Hamlin failed; 2d starts\n");
         count_NM_failed += 1;
-        retval = Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, pf);
+        retval = Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
         if (retval != 0) {
           count_2d_failed += 1;
           fprintf(stderr, "2d failed\n");
         }
       }
-      PLOOP fwrite(&pf [k], double_size, 1, f);
+      PLOOP fwrite(&p [nl [n_ord [n]]] [ind0] [k], double_size, 1, f);
       fprintf(stderr, "retval = %d\n", retval);
     }
   }
   
   fprintf(stderr, "failed NM = %d, failed 2d = %d out of %d\n", count_NM_failed, count_2d_failed, count_total);
-  //Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, pf [nl [n]] [ind0]);
   
   fclose(f);
   exit(1);
