@@ -454,6 +454,8 @@ void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, doub
             if (more_iterations == 0) break;
         }
     }
+    
+    *dpde_d = (*dpdt) / (*dedt);
 }
 
 void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal) {
