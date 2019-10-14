@@ -280,12 +280,19 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	bsq = dot(q->bcon,q->bcov) ;
 	rho = pr[RHO] ;
 	u = pr[UU] ;
-    // DANAT: leave as is, modify when I will have a calculation of sound speed using HelmEOS
-	EF = rho + gam*u ;
-	EE = bsq + EF ;
-	va2 = bsq/EE ;
-	cs2 = gam*(gam - 1.)*u/EF ;
-
+    
+#if DOHELM
+    double xener = u / rho;
+    double xpres;
+    eos_calc_soundspeed(xener, rho, 1.0, 1.0, &xpres, &cs2);
+    va2 = bsq/(bsq + rho + u + xpres);
+#else
+    EF = rho + gam*u ;
+    EE = bsq + EF ;
+    va2 = bsq/EE ;
+    cs2 = gam*(gam - 1.)*u/EF ;
+#endif
+	
 //	if(cs2 < 0.) cs2 = SMALL ;
 //	if(cs2 > 1.) cs2 = 1. ;
 //	if(va2 < 0.) va2 = SMALL ;

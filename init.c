@@ -658,7 +658,7 @@ void init_torus()
   sprintf(filename, "failed_EOS.bdat");
   f = fopen(filename, "wb");
   
-
+  double cs2, cs2_helm;
   for (n = 0; n < n_active; n++) {
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
@@ -666,16 +666,18 @@ void init_torus()
       pres = ener * (gam - 1.0);
       ener /= den;
       coord(n_ord[n], i, j, z, CENT, X);
-      bl_coord(X,&r,&th, &phi) ;
+      bl_coord(X,&r,&th, &phi);
+      
       fprintf(stderr, "r:%e, th:%e, phi:%e, rho: %e, ener: %g, pres: %g\n", r, th, phi, den, ener, pres);
       eos_init();
-      num_it = eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
+      num_it = eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres, &cs2_helm);
       if (num_it == 100) {
         fwrite(&r, double_size, 1, f);
         fwrite(&th, double_size, 1, f);
         fwrite(&phi, double_size, 1, f);
       }
-      fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g\n\n", i, j, z, den, ener, pres);
+      cs2 = (gam * (gam - 1.0) * ener * den) / (gam * ener + 1.0) / den;
+      fprintf(stderr, "i:%d, j:%d, z:%d, rho: %e, ener: %g, pres: %g, cs^2 = %g, cs^2_helm = %g, ratio = %g\n\n", i, j, z, den, ener, pres, cs2, cs2_helm, cs2_helm / cs2);
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
   }
 
