@@ -831,8 +831,11 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+        
         // DANAT addition
         if (fabs(vsq) < 1e-15) vsq = 0.0;
+        if (fabs(vsq) >= 1.0) return(1); // it gives rho0 = NaN, therefore HelmEOS fails
+        
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
 		gamma = 1. / sqrt(1. - vsq);

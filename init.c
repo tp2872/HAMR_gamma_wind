@@ -564,9 +564,13 @@ void init_torus()
 	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 
-    /*Share torus_mass among MPI processes*/
-    MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+  /*Share torus_mass among MPI processes*/
+  MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
+  
+  for (n = 0; n < n_active; n++){
+    fixup(p, n_ord[n]);
+  }
   
   #if DOHELM
 	/* Normalize the densities so that max(rho) = 1 */
@@ -626,10 +630,6 @@ void init_torus()
   }
   
   #endif
-  
-	for (n = 0; n < n_active; n++){
-		fixup(p, n_ord[n]);
-	}
 
 	bound_prim(p, 1);
 
@@ -2824,6 +2824,10 @@ void calc_source(){
 #else
 #define DENSITY_NORMALIZATION NORMALIZE_BY_DENSITY_MAX
 #endif
+
+#if (DOHELM)
+#define DENSITY_NORMALIZATION NORMALIZE_BY_TORUS_MASS
+#endif
 //torus density normalization
 //////////////////////
 
@@ -3106,8 +3110,8 @@ void init_torus_grb(){
 	}
 	else if (DENSITY_NORMALIZATION == NORMALIZE_BY_TORUS_MASS) {
 		//a factor of fracphi accounts for missing mass outside the wedge
-		rho_scale_factor = 0.01 / torus_mass;
-		if (rank == 0) fprintf(stderr, "Normalizing by torus_mass = 0.01:\n");
+		rho_scale_factor = 0.001 / torus_mass;
+		if (rank == 0) fprintf(stderr, "Normalizing by torus_mass = 0.001:\n");
 	}
 	torus_mass = 0.;
 	for (n = 0; n < n_active; n++){
