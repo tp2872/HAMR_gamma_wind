@@ -570,7 +570,7 @@ void eos_get_min_pres_NH (double den, double abar, double zbar, double *pres) {
     eos_helm(1, temp, den, abar, zbar, pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
 }
 
-int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal, double *cs2) {
+void eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal) {
     
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
@@ -620,11 +620,6 @@ int eos_mode_dens_pres(double *ener, double den, double abar, double zbar, doubl
             if (more_iterations == 0) break;
         }
     }
-    
-    *cs2 = (dpdrho - dpdt * dsdd / dsdt) / (1.0 + (*ener) + p_goal * deni);
-    
-    if (i == max_iterations) return 100;
-    else return 0;
 }
 
 void test_eos(void) {

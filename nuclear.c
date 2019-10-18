@@ -5,6 +5,7 @@
 //  Created by Alexander Tchekhovskoy on 9/8/15.
 //  Copyright (c) 2015 Home. All rights reserved.
 //
+//  Edited by Danat Issa on 10/17/19
 
 #include "decs.h"
 #include "nuclear.h"
@@ -17,8 +18,8 @@ double F4p(double x);
 double F5m(double x);
 double F5p(double x);
 
-void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[][N2M][N3M][NPR], double Dt, int i, int j, int k, int was_floor_activated)
-{
+void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[][N2M][N3M][NPR], double Dt, int i, int j, int k, int was_floor_activated) {
+    
   //all sorts of nuclear physics
   double Xalpha, Xn, Xp, Xnp, Xfloor, Xamb, rho, rhofloor, rhotot, ug;
   double Xalphanew, dXalpha;
@@ -49,9 +50,9 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
   //
   
   //re-normalize densities
-  if( pr[i][j][k][RHONP] < 0. ) pr[i][j][k][RHONP] = 0.;
-  if( pr[i][j][k][RHOALPHA] < 0. ) pr[i][j][k][RHOALPHA] = 0.;
-  if( pr[i][j][k][RHOFLOOR] < 0. ) pr[i][j][k][RHOFLOOR] = 0.;
+  if (pr[i][j][k][RHONP] < 0.)      pr[i][j][k][RHONP] = 0.;
+  if (pr[i][j][k][RHOALPHA] < 0.)   pr[i][j][k][RHOALPHA] = 0.;
+  if (pr[i][j][k][RHOFLOOR] < 0.)   pr[i][j][k][RHOFLOOR] = 0.;
   
   //total density
   rho = pr[i][j][k][RHO];
@@ -60,9 +61,9 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
   //rhofloor = pr[i][j][k][RHOFLOOR];
 
   //total physical density
-  if(rho < 0. ) rho = 0.;
+  if (rho < 0.) rho = 0.;
  
-  fac = 1./(pr[i][j][k][RHONP]+pr[i][j][k][RHOALPHA]+pr[i][j][k][AMB]+SMALL);
+  fac = 1. / (pr[i][j][k][RHONP] + pr[i][j][k][RHOALPHA] + pr[i][j][k][AMB] + SMALL);
  
   //rescale rho_alpha and rho_np to give the total density
   pr[i][j][k][RHOALPHA] *= fac;
@@ -81,34 +82,34 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
   Ye = pr[i][j][k][YE];
 
   //compute temperature accounting for a mixture of gas and neutrinos
-  T = compute_temperature(rho, (gam-1)*ug, Ye);
+  T = compute_temperature (rho, (gam-1)*ug, Ye);
   
-  if( T < SMALL ) T = SMALL; //to avoid division by zero later on
+  if (T < SMALL) T = SMALL; //to avoid division by zero later on
 
   //compute degeneracy
-  etae = compute_degeneracy(rho, T, Ye);
+  etae = compute_degeneracy (rho, T, Ye);
   
   //Xalpha + dXalpha = min(2Ye,2-2Ye) * (1-min(1,Xwb))
   k_cgs = 1.380658e-16; //erg/K
   eV_cgs = 1.6021772e-12; //erg/eV
   MeV_cgs = 1e-6 * k_cgs / eV_cgs;
-  T_MeV = T*T_unit*MeV_cgs; //T in units of MeV
+  T_MeV = T * T_unit * MeV_cgs; //T in units of MeV
   rho_10 = rho * rho_unit * 1.e-10; //rho in units of 1e10 g/cm^3
   T_10 = T * T_unit * 1.e-10; //T in units of 1e10 K
-  Xwb = 15.58*pow(T_MeV,1.125)*pow(rho_10,-0.75)*exp(-7.074/T_MeV);
+  Xwb = 15.58 * pow (T_MeV, 1.125) * pow (rho_10, -0.75) * exp (-7.074 / T_MeV);
 
   if (Xamb < 1 && T_10 > 0.5) {
-    Xalphanew = MY_MIN(2.*Ye,2.*(1.-Ye)) * (1.-MY_MIN(1.,Xwb)) - Xamb;
-    Xalphanew = MY_MAX(Xalphanew, 1.e-10);
+    Xalphanew = MY_MIN (2. * Ye, 2. * (1. - Ye)) * (1. - MY_MIN (1., Xwb)) - Xamb;
+    Xalphanew = MY_MAX (Xalphanew, 1.e-10);
     dXalpha = Xalphanew - Xalpha;
     //update Xalpha, Xn, and Xp
     Xalpha = Xalphanew;
 
     Xp = Ye - 0.5*Xalpha - Xamb;
-    Xp = MY_MAX(Xp, 1.e-10);
+    Xp = MY_MAX (Xp, 1.e-10);
   
     Xn = 1. - Xp - Xalpha - Xamb;
-    Xn = MY_MAX(Xn, 1.e-10);
+    Xn = MY_MAX (Xn, 1.e-10);
 
     //renormalize abundances
     fac = Xn + Xp + Xalpha + Xamb;
@@ -120,10 +121,10 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
   } else {
     //abundances are frozen
     Xp = Ye - 0.5*Xalpha - Xamb;
-    Xp = MY_MAX(Xp, 1.e-10);
+    Xp = MY_MAX (Xp, 1.e-10);
 
     Xn = 1. - Xp - Xalpha - Xamb;
-    Xn = MY_MAX(Xn, 1.e-10);
+    Xn = MY_MAX (Xn, 1.e-10);
 
     dXalpha = 0.;
 
@@ -138,39 +139,39 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
   
   
   //compute u^t = ucon[0] = dt/dtau
-  get_geometry(i,j,k,CENT,&geom) ;
-  ucon_calc(pr[i][j][k], &geom, ucon) ;
+  get_geometry (i, j, k, CENT, &geom) ;
+  ucon_calc (pr[i][j][k], &geom, ucon) ;
 
   //get the true density floor
-  get_phys_coord(i,j,k,&r,&th,&phi); 
-  get_rho_u_floor(r, th, phi, &rhofloor, &ufloor);
+  get_phys_coord (i, j, k, &r, &th, &phi);
+  get_rho_u_floor (r, th, phi, &rhofloor, &ufloor);
 
   //update the mass fractions
-  pr[i][j][k][RHONP] = (Xn+Xp); //*rho;
+  pr[i][j][k][RHONP]    = Xn + Xp; //*rho;
   pr[i][j][k][RHOALPHA] = Xalpha; //*rho;
-  pr[i][j][k][AMB] = Xamb; //*rho;
+  pr[i][j][k][AMB]      = Xamb; //*rho;
   pr[i][j][k][RHOFLOOR] = rhofloor;
  
   //heat per unit mass converted to code units from cgs
-  dqalpha = 6.8e18*dXalpha;  //heating in a time step [erg/g]
+  dqalpha = 6.8e18 * dXalpha;  //heating in a time step [erg/g]
   dqalpha /= 9e20;  //erg/g = c^2
-  if (T_10 <= 0.5 || rho <= 10.*rhofloor) {
+  if (T_10 <= 0.5 || rho <= 10. * rhofloor) {
     dqalpha = 0.;
   } 
  
-  expmtaunu = exp(-rho*rho_unit/1.e11);
+  expmtaunu = exp (-rho * rho_unit / 1.e11);
   G = 0.;
-  if (rho > 10.*rhofloor) {
-    G = 0.22 * pow(T_10,5.) * D4(etae,Xn,Xp) * expmtaunu; //[1/s]
+  if (rho > 10. * rhofloor) {
+    G = 0.22 * pow (T_10, 5.) * D4 (etae, Xn, Xp) * expmtaunu; //[1/s]
   }
   //per unit mass dissipation rate, erg/g/s
-  xxx = D5(etae,Xn,Xp);
+  xxx = D5 (etae, Xn, Xp);
 //  if(i + mpi_startn[1] == 39/2 && j + mpi_startn[2] == 63/2 && k + mpi_startn[3] == 0) {
 //      fprintf(stderr, "got here\n");
 //  }
   Q = 0.;
-  if (rho > 10.*rhofloor) {
-    Q = -8.9e17 * pow(T_10,6.) * xxx * expmtaunu; //[erg/g/s]
+  if (rho > 10. * rhofloor) {
+    Q = -8.9e17 * pow (T_10, 6.) * xxx * expmtaunu; //[erg/g/s]
   }
   //convert G and Q from cgs to code units and from rates to increments
   G /= 6.77e4;
@@ -194,25 +195,25 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
   //implicit update of the internal energy when qalpha != 0.
   if (T_10 > 0.5) {
 
-    Xalpha = Xalphanew -dXalpha;
+    Xalpha = Xalphanew - dXalpha;
     qalpha_global[i][j][k] = 0.;
 
-    a_nr = (7.5657e-15*T_unit*T_unit/rho_unit)*(T_unit*T_unit/9e+20);
-    b_nr = rho*6.8e18/9e20;
-    c_nr = ug + dQ -b_nr*Xalpha; //RHS
-    d_nr = MY_MIN(2.*Ye,2.*(1.-Ye));
-    e_nr = 15.58*pow(rho_10,-0.75);
+    a_nr = (7.5657e-15 * T_unit * T_unit / rho_unit) * (T_unit * T_unit / 9e+20);
+    b_nr = rho * 6.8e18 / 9e20;
+    c_nr = ug + dQ - b_nr * Xalpha; //RHS
+    d_nr = MY_MIN (2. * Ye, 2. * (1. - Ye));
+    e_nr = 15.58 * pow(rho_10, -0.75);
 
 
     //Newton-Raphson loop
-    for (ind=0; ind<=50; ind++) {
-      T     = compute_temperature(rho, (gam-1)*ug, Ye);
-      T_MeV = T*T_unit*MeV_cgs;
-      Xwb   = e_nr*pow(T_MeV,1.125)*exp(-7.074/T_MeV);
-      Xalphanew = d_nr*(1.-MY_MIN(1.,Xwb)) - Xamb;
-      Xalphanew = MY_MAX(Xalphanew, 1.e-10);
+    for (ind = 0; ind <= 50; ind++) {
+      T     = compute_temperature (rho, (gam - 1) * ug, Ye);
+      T_MeV = T * T_unit * MeV_cgs;
+      Xwb   = e_nr * pow (T_MeV, 1.125) * exp(-7.074 / T_MeV);
+      Xalphanew = d_nr * (1. - MY_MIN (1., Xwb)) - Xamb;
+      Xalphanew = MY_MAX (Xalphanew, 1.e-10);
 
-      Fnr = ug - b_nr*Xalphanew - c_nr; //function to zero
+      Fnr = ug - b_nr * Xalphanew - c_nr; //function to zero
       if (Xwb >= 1.) {
         //Xalpha is constant and zero, update ug with cooling and return
         pr[i][j][k][UU] += dQ;
@@ -220,51 +221,51 @@ void nuc_evol(double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[
       }
 
       //derivative
-      dFnr = 1. + b_nr*d_nr*(9./8. + 7.074/T_MeV)*Xwb/(ug + a_nr*pow(T,4.)/(gam-1.));
+      dFnr = 1. + b_nr * d_nr * (9. / 8. + 7.074 / T_MeV) * Xwb / (ug + a_nr * pow (T, 4.) / (gam - 1.));
 
       //DEBUG:
       //if (i==15 && j==5 && mpi_rank==21)
       //  fprintf(stdout,"ug, Fnr/dFnr, rank, ind = %20.12e, %20.12e, %d, %d\n", ug, Fnr/dFnr,mpi_rank,ind);
       //fprintf(stdout,"i,j,k = %d, %d, %d\n", i,j,k);
 
-      if (fabs(Fnr/dFnr) < 1e-8*ug) {
+      if (fabs (Fnr / dFnr) < 1e-8 * ug) {
 
         //converged, update ug, qalpha, and abundances
         pr[i][j][k][UU] = ug;
 
-        dqalpha = b_nr/rho*(Xalphanew-Xalpha);
-        qalpha_global[i][j][k] = dqalpha*ucon[0]/Dt;
+        dqalpha = b_nr / rho * (Xalphanew - Xalpha);
+        qalpha_global[i][j][k] = dqalpha * ucon[0] / Dt;
 
         Xalpha = Xalphanew;
-        Xp = Ye - 0.5*Xalpha - Xamb;
-        Xp = MY_MAX(Xp, 1.e-10);
+        Xp = Ye - 0.5 * Xalpha - Xamb;
+        Xp = MY_MAX (Xp, 1.e-10);
         Xn = 1. - Xp - Xalpha - Xamb;
-        Xn = MY_MAX(Xn, 1.e-10);
+        Xn = MY_MAX (Xn, 1.e-10);
 
         fac = Xn + Xp + Xalpha + Xamb;
         Xn     /= fac;
         Xp     /= fac;
         Xalpha /= fac;
         Xamb   /= fac;
-        pr[i][j][k][RHONP] = (Xn+Xp);
-        pr[i][j][k][RHOALPHA] = Xalpha;
-        pr[i][j][k][AMB] = Xamb;
+        pr[i][j][k][RHONP]      = Xn + Xp;
+        pr[i][j][k][RHOALPHA]   = Xalpha;
+        pr[i][j][k][AMB]        = Xamb;
 
         break;
 
       }
 
-      ug = ug - Fnr/dFnr; //update ug
+      ug = ug - Fnr / dFnr; //update ug
 
       if (ug < ufloor) {
         pr[i][j][k][UU] = ufloor;
         break;
       }
 
-      if (ind==50) {
-        fprintf(stderr, "N-R for ug did not converge\n" );
+      if (ind == 50) {
+        fprintf (stderr, "N-R for ug did not converge\n");
         //fprintf(stderr, "rho = %11.3e\n", rho*rho_unit);
-        exit(2345);
+        exit (2345);
       }
 
     }
@@ -577,104 +578,88 @@ double F5(double eta)
     return( res );
 }
 
-double F4neg(double eta)
-{
+double F4neg (double eta) {
     double res;
     double y, y2, y3;
     
-    y  = exp(eta);
-    y2 = y*y;
-    y3 = y2*y;
+    y  = exp (eta);
+    y2 = y * y;
+    y3 = y2 * y;
     
-    res = 24. * (y - y2*0.03125 + y3*0.00411522633744855967 );
+    res = 24. * (y - y2 * 0.03125 + y3 * 0.00411522633744855967);
     
-    return( res );
+    return (res);
 }
 
-double F5neg(double eta)
-{
+double F5neg (double eta) {
     double res;
     double y, y2, y3;
     
-    y  = exp(eta);
-    y2 = y*y;
-    y3 = y2*y;
+    y  = exp (eta);
+    y2 = y * y;
+    y3 = y2 * y;
     
-    res = 120. * (y - y2*0.015625 + y3*0.00137174211248285322 );
+    res = 120. * (y - y2 * 0.015625 + y3 * 0.00137174211248285322);
     
-    return( res );
+    return (res);
 }
+
 
 
 //code from Rodrigo
 //-------------------------------------------------------
 //D4 and D5
 
-
-double D4rodrigo(double eta, double Xn, double Xp)
-{
-    double res;
-    res = (Xn*F4m(eta) - Xp*F4p(eta))/F4m(0.);
-    return(res);
-}
-double D5rodrigo(double eta, double Xn, double Xp)
-{
-    double res;
-    res = (Xn*F5m(eta) + Xp*F5p(eta))/F5m(0.);
-    return(res);
-}
-
-//Fermi functions
-double F4m(double x)
-{
-    double res;
-
-    res = 4.*3.*2.*(exp(-x)-exp(-2*x)/32. + exp(-3*x)/243.);
-
-    return(res);
-}
-//end function F4m
-
-double F4p(double x)
-{
-    double res;
-    res = 7.*pow(M_PI,4.)/15.*x + 2*pow(M_PI,2)/3.*pow(x,3.)
-        + pow(x,5.)/5. + F4m(x);
-
-    return(res);
-}
-//end function F4p
-
-
-double F5m(double x)
-{
-    double res;
-    res = 5*4*3*2*(exp(-x) -exp(-2*x)/64. + exp(-3*x)/729.);
-
-    return(res);
-}
-//end function F5m
-
-double F5p(double x)
-{
+double D4rodrigo (double eta, double Xn, double Xp) {
     double res;
     
-    res = 31*pow(M_PI,6.)/126. + 7.*pow(M_PI,4)/6.*pow(x,2.)
-        + 5.*pow(M_PI,2.)/6.*pow(x,4.) + pow(x,6.)/6. -F5m(x);
-    return(res);
+    res = (Xn * F4m (eta) - Xp * F4p (eta)) / F4m (0.);
+    
+    return (res);
 }
-//end function F5p
+
+double D5rodrigo (double eta, double Xn, double Xp) {
+    double res;
+    
+    res = (Xn * F5m (eta) + Xp * F5p (eta)) / F5m (0.);
+    
+    return (res);
+}
 
 
+//Fermi functions
+
+double F4m (double x) {
+    double res;
+
+    res = 4. * 3. * 2. * (exp (-x) - exp (-2 * x) / 32. + exp (-3 * x) / 243.);
+
+    return (res);
+}
+
+double F4p (double x) {
+    double res;
+    
+    res = 7. * pow (M_PI, 4.) / 15. * x + 2 * pow (M_PI, 2) / 3. * pow (x, 3.)
+        + pow (x, 5.) / 5. + F4m (x);
+
+    return (res);
+}
+
+double F5m (double x) {
+    double res;
+    
+    res = 5 * 4 * 3 * 2 * (exp (-x) - exp (-2 * x) / 64. + exp (-3 * x) / 729.);
+
+    return (res);
+}
+
+double F5p (double x) {
+    double res;
+    
+    res = 31 * pow (M_PI, 6.) / 126. + 7. * pow (M_PI, 4) / 6. * pow (x, 2.)
+        + 5. * pow (M_PI, 2.) / 6. * pow (x, 4.) + pow (x, 6.) / 6. - F5m (x);
+    
+    return (res);
+}
 #endif
-
-
-
-
-
-
-
-
-
-
-
