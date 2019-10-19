@@ -333,7 +333,7 @@ void set_gridparam(void) {
 	a = BH_SPIN;
 	Rin = 0.9*(1. + sqrt(1. - a * a));
     Rout = 100000.;
-	lim = MC;
+    lim = VANL; // DANAT: edit to avoid rho=0
 	failed = 0;
 	cour = COUR;
 	if (dt > 1e-5) dt = dt;

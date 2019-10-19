@@ -568,10 +568,6 @@ void init_torus()
   MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
   
-  for (n = 0; n < n_active; n++){
-    fixup(p, n_ord[n]);
-  }
-  
   #if DOHELM
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
@@ -631,6 +627,10 @@ void init_torus()
   
   #endif
 
+  for (n = 0; n < n_active; n++){
+    fixup(p, n_ord[n]);
+  }
+  
 	bound_prim(p, 1);
 
 	//set_mag();

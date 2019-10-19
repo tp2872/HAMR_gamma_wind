@@ -37,8 +37,11 @@ Physical Parameters section
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
+/* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
+#define DOHELM (1)
+
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#if((WHICHPROBLEM == POSTMERGER_PROBLEM) || DOHELM)
+#if((WHICHPROBLEM == POSTMERGER_PROBLEM) || (DOHELM && TORUS_PROBLEM))
   #define RHOMIN  (1.e-26)
   #define UUMIN  (1.e-27)
   #define RHOMINLIMIT (1.e-40)
@@ -103,7 +106,7 @@ Numerical Parameters section
 /*Set block size in each dimension*/
 #define BS_1 16
 #define BS_2 8
-#define BS_3 2
+#define BS_3 4
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -563,8 +566,6 @@ Variable Inversion Section
 /*************************************************************************
 Section with EOS constants
 *************************************************************************/
-#define DOHELM (1)
-
 #define EOSIMAX (211)
 #define EOSJMAX (71)
 #define eos_tlo (4.0)
