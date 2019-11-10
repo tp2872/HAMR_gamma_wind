@@ -822,7 +822,7 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	
     p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
-	if (d < 0.0) return(1);
+    if (d < 1e-20) return(1); // Danat : edited for d very small (< 1e-30)
 	do{
 		set_variables = 0;
 		a = -Qdotn + p_new + 0.5*Bsq;

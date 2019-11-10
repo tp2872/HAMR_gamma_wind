@@ -350,8 +350,12 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 		}
 #if(DONUCLEAR)
-        int was_floor_activated = 0
-        nuc_evol(pi,pb,pf,Dt,i,j,k,was_floor_activated); //nuclear physics
+        int was_floor_activated = 0;
+#if(DOHELM)
+        nuc_evol_helm (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, k, was_floor_activated, n);
+#else
+        nuc_evol(pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n); //nuclear physics
+#endif
 #endif
 	}
 }

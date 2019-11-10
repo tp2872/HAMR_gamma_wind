@@ -90,6 +90,13 @@ extern double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict dU_s[NB_LOCAL])[NPR];
 
+// Nuclear physics arrays
+#if(DONUCLEAR)
+extern double (*G_global)[N2M][N3M];
+extern double (*Q_global)[N2M][N3M];
+extern double (*qalpha_global)[N2M][N3M];
+#endif
+
 #if DOPARTICLES
 /*MC particles arrays*/
 extern double xcon_p[NPTOT][NDIM];
@@ -967,7 +974,7 @@ void diag(int call_code);
 void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
 void set_Katm(void);
-void set_mag(void);
+void set_mag(double beta, double rhomax, double umax);
 void set_mag_postmerger(double beta, double rhomax, double umax);
 int  get_G_ATM(double *g_tmp);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
@@ -1186,7 +1193,7 @@ void vchar_FT(double * restrict pr, struct of_state * restrict q, struct of_geom
 
 //EOS related
 void eos_init(void);
-void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd);
+void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
 void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd);
 void eos_calc_soundspeed(double ener_goal, double den, double abar, double zbar, double *pres, double *cs2);
@@ -1195,3 +1202,9 @@ void eos_mode_dens_pres(double *ener, double den, double abar, double zbar, doub
 void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);
 void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal);
 void eos_get_min_pres_NH (double den, double abar, double zbar, double *pres);
+
+#if DONUCLEAR
+void eos_helm_nuclear(int calc_derivatives, double btemp, double den, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd);
+void nse_abundance (double dens, double temp, double ye, double *xn, double *xp, double *xa);
+void nse_derivatives (double dens, double temp, double xn, double xp, double xa, double *xa_r, double *xa_t, double *xa_y, double *xn_r, double *xn_t, double *xn_y, double *xp_r, double *xp_t, double *xp_y);
+#endif

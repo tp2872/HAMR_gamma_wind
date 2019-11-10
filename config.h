@@ -38,7 +38,7 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if((WHICHPROBLEM == POSTMERGER_PROBLEM) || (DOHELM && TORUS_PROBLEM))
@@ -104,8 +104,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 16
-#define BS_2 8
+#define BS_1 32
+#define BS_2 32
 #define BS_3 4
 
 /*Set the maximum number of refinement levels*/
@@ -246,7 +246,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DOCYLINDRIFYCOORDS (0)
 
 /* enable nuclear physics */
-#define DONUCLEAR 0
+#define DONUCLEAR 1
 
 /* enable MC particles */
 #define DOPARTICLES 0
@@ -283,7 +283,7 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
-#if( DONUCLEAR )
+#if(DONUCLEAR)
 #define RHONP     (9)
 #define RHOALPHA  (10)
 #define RHOFLOOR  (11)
@@ -587,13 +587,14 @@ Section with EOS constants
 #define kergavo (kerg * avo)
 #define c_light (2.99792458e10)
 #define h_planck (6.6260755e-27)
+#define hbar_planck (1.05457266e-27)
 #define ssol (5.67051e-5)
 #define asol (4.0e0 * ssol / c_light)
 #define asoli3 (asol / 3.0e0)
 #define asoli3_inv (3.0e0 / asol)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
 #define Mbh_cgs (3 * 1.99e33)
-#define G (6.67259e-8)
+#define G_cgs (6.67259e-8)
 
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
@@ -603,9 +604,9 @@ Section with EOS constants
 // conversion factors for EOS
 // DANAT: finish!
 #define conv_T_CODE2CGS (1.0)
-#define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G * G * G * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G^3 / M_bh^2
-#define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G * G * G * Mbh_cgs * Mbh_cgs))
-#define conv_pres_CGS2CODE (G * G * G * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G^3 * M_bh^2 /c_light^8
+#define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G_cgs^3 / M_bh^2
+#define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs))
+#define conv_pres_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
 #define conv_ener_CODE2CGS (c_light * c_light)
 #define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
 #define conv_entr_CGS2CODE (1.0)
@@ -621,6 +622,10 @@ Section with EOS constants
 #define eos_c2 (0.288675e0)
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
+
+//For the nuclear physics: alpha particles
+#define Qalpha (4.5334641147464686e-5)
+#define Qa (28.3 * 1.60217733e-6)
 
 // ***********Beginning of statement function declarations **********
 // quintic hermite polynomial statement functions

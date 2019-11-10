@@ -61,7 +61,7 @@ double(*E_avg1[N_LEVELS_3D])[BS_1 + 2 * N1G];
 double(*E_avg2[N_LEVELS_3D])[BS_1 + 2 * N1G];
 double(*E_avg1_new[N_LEVELS_3D])[BS_1 + 2 * N1G];
 double(*E_avg2_new[N_LEVELS_3D])[BS_1 + 2 * N1G];
-double(*restrict  ph[NB_LOCAL])[NPR];
+double(*restrict ph[NB_LOCAL])[NPR];
 double(*restrict E_corn[NB_LOCAL])[NDIM];
 double(*restrict dE[NB_LOCAL])[2][NDIM][NDIM];
 double(*restrict ps[NB_LOCAL])[NDIM];
@@ -78,6 +78,13 @@ double(*restrict gdet[NB_LOCAL])[NPG];
 double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
+
+// Nuclear physics arrays
+#if(DONUCLEAR)
+double (*G_global)[N2M][N3M];
+double (*Q_global)[N2M][N3M];
+double (*qalpha_global)[N2M][N3M];
+#endif
 
 #if DOPARTICLES
 /*MC particles arrays*/

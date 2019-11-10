@@ -18,21 +18,166 @@ double F4p(double x);
 double F5m(double x);
 double F5p(double x);
 
-void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr[][N2M][N3M][NPR], double Dt, int i, int j, int k, int was_floor_activated) {
+#if(DOHELM)
+void nuc_evol_helm (double pr[NPR], double Dt, int i, int j, int k, int was_floor_activated, int n) {
+    
+    //all sorts of nuclear physics
+    double Xalpha, Xn, Xp, Xnp, Xfloor, Xamb, rho, rhofloor, rhotot, ug;
+    double Xalphanew, Xalpha_0, dXalpha;
+    double fac;
+    double T, Ye;
+    const double T_unit = compute_Tunit();
+    const double t_unit = compute_t_unit();
+    const double dq_unit = compute_dq_unit();
+    const double M_unit = compute_M_unit();
+    const double L_unit = compute_L_unit();
+    struct of_geom geom;
+    double ucon[NDIM], X[NDIM];
+    double etae, k_cgs, eV_cgs, MeV_cgs, T_MeV, rho_10, T_10, Xwb;
+    double dqalpha;
+    double G, Q, dG, dQ;
+    double expmtaunu;
+    double xxx;
+    double r, th, phi, ufloor;
+    //int ind, ind_max;            //for subcycling
+    //double frac, mult, subcyc;
+    int ind;                       //for implicit update of uu
+    double Fnr, dFnr, a_nr, b_nr, c_nr, d_nr, e_nr;
+    
+    /////////
+    //
+    // Compute mass fractions: Xnp, Xalpha
+    //
+    
+    //re-normalize densities
+    if (pr[RHONP] < 0.)      pr[RHONP] = 0.;
+    if (pr[RHOALPHA] < 0.)   pr[RHOALPHA] = 0.;
+    if (pr[RHOFLOOR] < 0.)   pr[RHOFLOOR] = 0.;
+    
+    //total density
+    rho = pr[RHO];
+    ug = pr[UU];
+    
+    // convert rho & ug & T into cgs from code units
+    rho *= conv_dens_CODE2CGS;
+    ug *= conv_ener_CODE2CGS * conv_dens_CODE2CGS;
+    
+    //floor+ambient density
+    //rhofloor = pr[RHOFLOOR];
+    
+    //total physical density
+    if (rho < 0.) rho = 0.;
+    
+    fac = 1. / (pr[RHONP] + pr[RHOALPHA] + pr[AMB] + SMALL);
+    
+    //rescale rho_alpha and rho_np to give the total density
+    pr[RHOALPHA] *= fac;
+    pr[AMB]      *= fac;
+    
+    //advected mass fractions
+    Xalpha_0 = pr[RHOALPHA]; // / (rho+SMALL);
+    Xamb = pr[AMB]; // / (rho+SMALL);
+    
+    //
+    // End compute mass fractions
+    //
+    /////////
+    
+    //advected Ye
+    Ye = pr[YE];
+    
+    // Danat: given   rho, ug, Ye
+    //        find    T, Xa, elaele
+    double xener = ug / rho;
+    xener = xener - 6.8e18 / 9e20 * Xalpha_0;
+    eos_mode_dens_ener_nuclear (xener, rho, &T, Ye, &Xamb, &Xn, &Xp, &Xalpha, &etae);
+    xener = xener + 6.8e18 / 9e20 * Xalpha;
+    // ug = xener * rho;
+    
+    //Xalpha + dXalpha = min(2Ye,2-2Ye) * (1-min(1,Xwb))
+    k_cgs = 1.380658e-16; //erg/K
+    eV_cgs = 1.6021772e-12; //erg/eV
+    MeV_cgs = 1e-6 * k_cgs / eV_cgs;
+    T_MeV = T * MeV_cgs; //T in units of MeV
+    rho_10 = rho * 1.e-10; //rho in units of 1e10 g/cm^3
+    T_10 = T * 1.e-10; //T in units of 1e10 K
+    
+    //compute u^t = ucon[0] = dt/dtau
+    get_geometry (n, i, j, k, CENT, &geom);
+    ucon_calc (pr, &geom, ucon);
+    
+    //get the true density floor
+    coord(n, i, j, k, CENT, X);
+    r = X[1]; th = X[2]; phi = X[3];
+    get_rho_u_floor (r, th, phi, &rhofloor, &ufloor);
+    
+    //update the mass fractions
+    pr[RHONP]    = Xn + Xp; //*rho;
+    pr[RHOALPHA] = Xalpha; //*rho;
+    pr[AMB]      = Xamb; //*rho;
+    pr[RHOFLOOR] = rhofloor;
+    
+    //heat per unit mass converted to code units from cgs
+    dqalpha = 6.8e18 / 9e20 * (Xalpha - Xalpha_0);  //heating in a time step [erg/g] / c^2
+    // Danat: mass fractions freeze anyway below this T
+    if (T_10 <= 0.5 || rho <= 10. * rhofloor) {
+        dqalpha = 0.0;
+    }
+    
+    expmtaunu = exp (- rho / 1.0e11);
+    
+    G = 0.0;
+    if (rho > 10.0 * rhofloor) G = 0.22 * pow (T_10, 5.0) * D4 (etae, Xn, Xp) * expmtaunu; //[1/s]
+
+    Q = 0.0;
+    if (rho > 10.0 * rhofloor) Q = -8.9e17 * pow (T_10, 6.0) * D5 (etae, Xn, Xp) * expmtaunu; //[erg/g/s]
+    
+    //convert G and Q from cgs to code units and from rates to increments
+    G /= 6.77e4;
+    Q /= 6.08e25;  //[code units of energy per unit mass per unit time]
+    //save G and Q to an array that's going to be written out to disk
+//    G_global[i][j][k] = G;
+//    Q_global[i][j][k] = Q;
+//    qalpha_global[i][j][k] = dqalpha * ucon[0] / Dt;
+    //convert per unit mass heating rate into volumetric heating rate
+//    Q *= rho;
+//    dqalpha *= rho;
+    //dx/dtau * dtau/dt = dx/dt, where ucon[0] = u^t = dt/dtau
+    dG = G * Dt / ucon[0];
+    dQ = Q * Dt / ucon[0];
+    
+    pr[YE] += dG;
+    
+    if (T_10 > 0.5) {
+        xener = (xener + dQ + 6.8e18 / 9e20 * (Xalpha - Xalpha_0)) - 6.8e18 / 9e20 * Xalpha;
+        eos_mode_dens_ener_nuclear (xener, rho, &T, Ye, &Xamb, &Xn, &Xp, &Xalpha, &etae);
+        xener = xener + 6.8e18 / 9e20 * Xalpha;
+    }
+    
+    pr[UU] = xener * rho;
+    
+//    dqalpha = 6.8e18 / 9e20 * (Xalpha - Xalpha_0);
+//    qalpha_global[i][j][k] = dqalpha * ucon[0] / Dt;
+    pr[RHONP]      = Xn + Xp;
+    pr[RHOALPHA]   = Xalpha;
+    pr[AMB]        = Xamb;
+}
+#endif
+
+void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_activated, int n) {
     
   //all sorts of nuclear physics
   double Xalpha, Xn, Xp, Xnp, Xfloor, Xamb, rho, rhofloor, rhotot, ug;
   double Xalphanew, dXalpha;
   double fac;
   double T, Ye;
-  const double rho_unit = compute_rhounit();
   const double T_unit = compute_Tunit();
   const double t_unit = compute_t_unit();
-  const double dq_unit = compute_dq_unit();
-  const double M_unit = compute_M_unit();
-  const double L_unit = compute_L_unit();
+//  const double dq_unit = compute_dq_unit();
+//  const double M_unit = compute_M_unit();
+//  const double L_unit = compute_L_unit();
   struct of_geom geom;
-  double ucon[NDIM];
+  double ucon[NDIM], X[NDIM];
   double etae, k_cgs, eV_cgs, MeV_cgs, T_MeV, rho_10, T_10, Xwb;
   double dqalpha;
   double G, Q, dG, dQ;
@@ -50,28 +195,33 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
   //
   
   //re-normalize densities
-  if (pr[i][j][k][RHONP] < 0.)      pr[i][j][k][RHONP] = 0.;
-  if (pr[i][j][k][RHOALPHA] < 0.)   pr[i][j][k][RHOALPHA] = 0.;
-  if (pr[i][j][k][RHOFLOOR] < 0.)   pr[i][j][k][RHOFLOOR] = 0.;
+  if (pr[RHONP] < 0.)      pr[RHONP] = 0.;
+  if (pr[RHOALPHA] < 0.)   pr[RHOALPHA] = 0.;
+  if (pr[RHOFLOOR] < 0.)   pr[RHOFLOOR] = 0.;
   
   //total density
-  rho = pr[i][j][k][RHO];
-  ug = pr[i][j][k][UU];
+  rho = pr[RHO];
+  ug = pr[UU];
+    
+  // convert rho & ug & T into cgs from code units
+    rho *= conv_dens_CODE2CGS;
+    ug *= conv_ener_CODE2CGS * conv_dens_CODE2CGS;
+    
   //floor+ambient density
-  //rhofloor = pr[i][j][k][RHOFLOOR];
+  //rhofloor = pr[RHOFLOOR];
 
   //total physical density
   if (rho < 0.) rho = 0.;
  
-  fac = 1. / (pr[i][j][k][RHONP] + pr[i][j][k][RHOALPHA] + pr[i][j][k][AMB] + SMALL);
+  fac = 1. / (pr[RHONP] + pr[RHOALPHA] + pr[AMB] + SMALL);
  
   //rescale rho_alpha and rho_np to give the total density
-  pr[i][j][k][RHOALPHA] *= fac;
-  pr[i][j][k][AMB]      *= fac;
+  pr[RHOALPHA] *= fac;
+  pr[AMB]      *= fac;
  
   //advected mass fractions 
-  Xalpha = pr[i][j][k][RHOALPHA]; // / (rho+SMALL);
-  Xamb = pr[i][j][k][AMB]; // / (rho+SMALL);
+  Xalpha = pr[RHOALPHA]; // / (rho+SMALL);
+  Xamb = pr[AMB]; // / (rho+SMALL);
 
   //
   // End compute mass fractions
@@ -79,9 +229,9 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
   /////////
   
   //advected Ye
-  Ye = pr[i][j][k][YE];
+  Ye = pr[YE];
 
-  //compute temperature accounting for a mixture of gas and neutrinos
+  //compute temperature accounting for a mixture of gas and neutrinos & compute degeneracy
   T = compute_temperature (rho, (gam-1)*ug, Ye);
   
   if (T < SMALL) T = SMALL; //to avoid division by zero later on
@@ -94,7 +244,7 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
   eV_cgs = 1.6021772e-12; //erg/eV
   MeV_cgs = 1e-6 * k_cgs / eV_cgs;
   T_MeV = T * T_unit * MeV_cgs; //T in units of MeV
-  rho_10 = rho * rho_unit * 1.e-10; //rho in units of 1e10 g/cm^3
+  rho_10 = rho * 1.e-10; //rho in units of 1e10 g/cm^3
   T_10 = T * T_unit * 1.e-10; //T in units of 1e10 K
   Xwb = 15.58 * pow (T_MeV, 1.125) * pow (rho_10, -0.75) * exp (-7.074 / T_MeV);
 
@@ -117,8 +267,9 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
     Xp     /= fac;
     Xalpha /= fac;
     Xamb   /= fac;
-
-  } else {
+  }
+  
+  else {
     //abundances are frozen
     Xp = Ye - 0.5*Xalpha - Xamb;
     Xp = MY_MAX (Xp, 1.e-10);
@@ -134,23 +285,23 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
     Xp     /= fac;
     Xalpha /= fac;
     Xamb   /= fac;
-
   }
   
   
   //compute u^t = ucon[0] = dt/dtau
-  get_geometry (i, j, k, CENT, &geom) ;
-  ucon_calc (pr[i][j][k], &geom, ucon) ;
+  get_geometry (n, i, j, k, CENT, &geom) ;
+  ucon_calc (pr, &geom, ucon) ;
 
   //get the true density floor
-  get_phys_coord (i, j, k, &r, &th, &phi);
+    coord(n, i, j, k, CENT, X);
+    r = X[1]; th = X[2]; phi = X[3];
   get_rho_u_floor (r, th, phi, &rhofloor, &ufloor);
 
   //update the mass fractions
-  pr[i][j][k][RHONP]    = Xn + Xp; //*rho;
-  pr[i][j][k][RHOALPHA] = Xalpha; //*rho;
-  pr[i][j][k][AMB]      = Xamb; //*rho;
-  pr[i][j][k][RHOFLOOR] = rhofloor;
+  pr[RHONP]    = Xn + Xp; //*rho;
+  pr[RHOALPHA] = Xalpha; //*rho;
+  pr[AMB]      = Xamb; //*rho;
+  pr[RHOFLOOR] = rhofloor;
  
   //heat per unit mass converted to code units from cgs
   dqalpha = 6.8e18 * dXalpha;  //heating in a time step [erg/g]
@@ -159,7 +310,7 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
     dqalpha = 0.;
   } 
  
-  expmtaunu = exp (-rho * rho_unit / 1.e11);
+  expmtaunu = exp (-rho / 1.e11);
   G = 0.;
   if (rho > 10. * rhofloor) {
     G = 0.22 * pow (T_10, 5.) * D4 (etae, Xn, Xp) * expmtaunu; //[1/s]
@@ -177,9 +328,9 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
   G /= 6.77e4;
   Q /= 6.08e25;  //[code units of energy per unit mass per unit time]
   //save G and Q to an array that's going to be written out to disk
-  G_global[i][j][k] = G;
-  Q_global[i][j][k] = Q;
-  qalpha_global[i][j][k] = dqalpha*ucon[0]/Dt;
+//  G_global[i][j][k] = G;
+//  Q_global[i][j][k] = Q;
+//  qalpha_global[i][j][k] = dqalpha*ucon[0]/Dt;
   //convert per unit mass heating rate into volumetric heating rate
   Q *= rho;
   dqalpha *= rho;
@@ -188,17 +339,17 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
   dQ = Q * Dt / ucon[0];
 
   //apply nuclear heating directly to internal energy
-  //pr[i][j][k][UU] += dqalpha + dQ;
+  //pr[UU] += dqalpha + dQ;
 
-  pr[i][j][k][YE] += dG;
+  pr[YE] += dG;
 
   //implicit update of the internal energy when qalpha != 0.
   if (T_10 > 0.5) {
 
     Xalpha = Xalphanew - dXalpha;
-    qalpha_global[i][j][k] = 0.;
+//    qalpha_global[i][j][k] = 0.;
 
-    a_nr = (7.5657e-15 * T_unit * T_unit / rho_unit) * (T_unit * T_unit / 9e+20);
+    a_nr = (7.5657e-15 * T_unit * T_unit) * (T_unit * T_unit / 9e+20);
     b_nr = rho * 6.8e18 / 9e20;
     c_nr = ug + dQ - b_nr * Xalpha; //RHS
     d_nr = MY_MIN (2. * Ye, 2. * (1. - Ye));
@@ -216,7 +367,7 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
       Fnr = ug - b_nr * Xalphanew - c_nr; //function to zero
       if (Xwb >= 1.) {
         //Xalpha is constant and zero, update ug with cooling and return
-        pr[i][j][k][UU] += dQ;
+        pr[UU] += dQ;
         break;
       }
 
@@ -231,10 +382,10 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
       if (fabs (Fnr / dFnr) < 1e-8 * ug) {
 
         //converged, update ug, qalpha, and abundances
-        pr[i][j][k][UU] = ug;
+        pr[UU] = ug;
 
         dqalpha = b_nr / rho * (Xalphanew - Xalpha);
-        qalpha_global[i][j][k] = dqalpha * ucon[0] / Dt;
+//        qalpha_global[i][j][k] = dqalpha * ucon[0] / Dt;
 
         Xalpha = Xalphanew;
         Xp = Ye - 0.5 * Xalpha - Xamb;
@@ -247,9 +398,9 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
         Xp     /= fac;
         Xalpha /= fac;
         Xamb   /= fac;
-        pr[i][j][k][RHONP]      = Xn + Xp;
-        pr[i][j][k][RHOALPHA]   = Xalpha;
-        pr[i][j][k][AMB]        = Xamb;
+        pr[RHONP]      = Xn + Xp;
+        pr[RHOALPHA]   = Xalpha;
+        pr[AMB]        = Xamb;
 
         break;
 
@@ -258,7 +409,7 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
       ug = ug - Fnr / dFnr; //update ug
 
       if (ug < ufloor) {
-        pr[i][j][k][UU] = ufloor;
+        pr[UU] = ufloor;
         break;
       }
 
@@ -273,7 +424,7 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
 
     } else {
       //same as original, but dqalpha=0 for T_10 < 0.5
-      pr[i][j][k][UU] += dqalpha + dQ;
+      pr[UU] += dqalpha + dQ;
 
     } //end implicit update logical block
 
@@ -370,22 +521,8 @@ void nuc_evol (double pi[][N2M][N3M][NPR],double prh[][N2M][N3M][NPR], double pr
 
 }
 
-double compute_rhounit()
-{
-  const double Mbh_cgs = 3.*1.99e33;
-  const double mneutron_cgs = 1.6749286e-24;
-  const double mneutron = mneutron_cgs/Mbh_cgs;
-  const double G = 6.67259e-8;
-  const double c = 2.99792458e10;
-  const double hbar = 1.05457266e-27;
-  const double rg_cgs = G*Mbh_cgs/(c*c);
-  const double rho_unit = Mbh_cgs / (rg_cgs*rg_cgs*rg_cgs);
-  return( rho_unit );
-}
-
 double compute_dq_unit()
 {
-  const double Mbh_cgs = 3.*1.99e33;
   const double mneutron_cgs = 1.6749286e-24;
   const double mneutron = mneutron_cgs/Mbh_cgs;
   const double G = 6.67259e-8;
@@ -402,7 +539,6 @@ double compute_dq_unit()
 
 double compute_t_unit()
 {
-    const double Mbh_cgs = 3.*1.99e33;
     const double G = 6.67259e-8;
     const double c = 2.99792458e10;
     const double rg_cgs = G*Mbh_cgs/(c*c);
@@ -412,7 +548,6 @@ double compute_t_unit()
 
 double compute_M_unit()
 {
-    const double Mbh_cgs = 3.*1.99e33;
     return( Mbh_cgs );
 }
 
@@ -428,7 +563,6 @@ double compute_Tunit()
 
 double compute_L_unit()
 {
-    const double Mbh_cgs = 3 * 1.99e33;
     const double c = 2.99792458e10;
     const double G = 6.67259e-8;
     const double rg_cgs = G*Mbh_cgs/(c*c);
@@ -438,8 +572,6 @@ double compute_L_unit()
 double compute_temperature(double rho, double p, double Ye)
 {
   //COMPUTE THE TEMPERATURE (no nuclear recombination yet)
-  
-  const double Mbh_cgs = 3 * 1.99e33;
   const double mneutron_cgs = 1.6749286e-24;
   const double c = 2.99792458e10;
   const double G = 6.67259e-8;
@@ -480,7 +612,6 @@ double compute_temperature(double rho, double p, double Ye)
 double compute_degeneracy(double rho, double T, double Ye)
 {
   //Compute degeneracy parameter
-  const double Mbh_cgs = 3.*1.99e33;
   const double mneutron_cgs = 1.6749286e-24;
   const double mneutron = mneutron_cgs/Mbh_cgs;
   const double G = 6.67259e-8;
@@ -490,7 +621,7 @@ double compute_degeneracy(double rho, double T, double Ye)
   const double rho_unit = Mbh_cgs / (rg_cgs*rg_cgs*rg_cgs);
   const double k_cgs = 1.380658e-16;
   double ANN, BOB;
-  const double CHARLIE = (M_PI*M_PI*M_PI)*(M_PI*M_PI*M_PI)/27.;
+  const double charlie = (M_PI*M_PI*M_PI)*(M_PI*M_PI*M_PI)/27.;
   double pf_cgs = hbar * pow(3.*M_PI*M_PI*Ye*rho*rho_unit/mneutron_cgs,1./3.);
   double T_cgs = T*mneutron_cgs*c*c/k_cgs;
   double pfcokT = pf_cgs * c / (k_cgs * T_cgs);
@@ -500,7 +631,7 @@ double compute_degeneracy(double rho, double T, double Ye)
   
   if (T_cgs > 1.1604519308e+10) {
     ANN = 0.5*pfcokT3;
-    BOB = sqrt( 0.25*pfcokT6 + CHARLIE );
+    BOB = sqrt( 0.25*pfcokT6 + charlie );
     etae = pow(ANN+BOB,1./3.) - pow(BOB-ANN,1./3.);
   }
   else {

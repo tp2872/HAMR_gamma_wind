@@ -60,7 +60,7 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
 void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz);
 void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_geom *geom, double *utcon);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
-void set_mag(void);
+void set_mag(double beta, double rhomax, double umax);
 void set_mag_postmerger(double beta, double rhomax, double umax);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
@@ -391,7 +391,7 @@ void init_torus()
 	rmax = 12.;
   l = lfish_calc(rmax) ;
   kappa = 1.e-3 ;
-	beta = 1e20 ;
+	beta = 10. ;
 
 	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -486,6 +486,11 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+#if (DONUCLEAR)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.;  //ambient mass fraction (to be multiplied by rho later)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.;  //Ye = 1 outside the disk
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.;  //no nucleons
+#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -544,6 +549,12 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
 
+#if (DONUCLEAR)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0. ;  //ambient mass fraction vanishes
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1. ;  //all nucleons initially
+#endif
+        
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
 				#endif
@@ -556,15 +567,13 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;
 		}
 	}
-	a = temp;
-	#if (MPI_enable)
-	/*Share rhomax among MPI processes*/
+
+  a = temp;
+	
+  #if (MPI_enable)
+	/*Share info between the MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-  /*Share torus_mass among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
   
@@ -601,10 +610,7 @@ void init_torus()
   
   #else
   /* Normalize the densities so that max(rho) = 1 */
-  if (rank == 0){
-    fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
-    fprintf(stderr, "Normalizing by torus_mass = 0.001:\n");
-  }
+  if (rank == 0) fprintf(stderr, "Before normalization: rhomax: %g, umax: %g\n", rhomax, umax);
   
   //ZSLOOP(0,N1-1,0,N2-1) {
   rho_factor = 1.0 / rhomax;
@@ -613,27 +619,20 @@ void init_torus()
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] *= rho_factor;
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] *= rho_factor;
-      // check total mass of the disk after normalization
-      torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * dV;
     }
   }
   
   umax *= rho_factor;
   rhomax *= rho_factor;
   
-  if (rank == 0){
-    fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
-  }
+  if (rank == 0) fprintf(stderr, "After normalization: rhomax: %g, umax: %g\n", rhomax, umax);
   
   #endif
 
-  for (n = 0; n < n_active; n++){
-    fixup(p, n_ord[n]);
-  }
-  
-	bound_prim(p, 1);
+  for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+  bound_prim(p, 1);
 
-	//set_mag();
+	set_mag(beta, rhomax, umax);
 
 #if DOPARTICLES
   init_particles();
@@ -665,9 +664,9 @@ void init_torus()
     }
   }
 #endif
-  
-  //void check_inversions (void);
-  //check_inversions ();
+
+  for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+  bound_prim(p, 1);
 }
 
 void check_inversions (void) {
@@ -1640,11 +1639,11 @@ int interpolate_spec_var( double r, double th, double ph, extent ext, double *ic
 //undefine array shortcut to avoid name conflicts
 #undef d
 
-void set_mag(void){
+void set_mag(double beta, double rhomax, double umax){
 	int i, j, z, k, n;
-	double rhomax = 1., umax = 0.;
+//  double rhomax = 1., umax = 0., beta = 10.;
 	int i100 = 0;
-	double rho_av, q, beta = 10., bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
@@ -2806,9 +2805,6 @@ void calc_source(){
 #define DENSITY_NORMALIZATION NORMALIZE_BY_DENSITY_MAX
 #endif
 
-#if (DOHELM)
-#define DENSITY_NORMALIZATION NORMALIZE_BY_TORUS_MASS
-#endif
 //torus density normalization
 //////////////////////
 
@@ -3868,6 +3864,7 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 #if(DONUCLEAR)
   double fac1, fac2;
   double r0, rt, tnu;
+  double rhomax = 1.0; // Danat: please, change accordingly!
 #endif
 
 
