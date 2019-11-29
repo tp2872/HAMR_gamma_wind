@@ -287,7 +287,8 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
 			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 			primtoU(pi[nl[n]][index_3D(n, i, j, z)], &q, &geom, U);
-			ind0 = index_3D(n, i, j, z);
+            
+			ind0 = index_3D(n, i, j, z);            
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
@@ -319,7 +320,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			U[B3] = 0.5*(psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-			
+
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
 			if (pflag[nl[n]][ind0]) {
@@ -348,15 +349,16 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				}
 			}
 			#endif
-		}
-#if(DONUCLEAR)
-        int was_floor_activated = 0;
-#if(DOHELM)
-        nuc_evol_helm (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, k, was_floor_activated, n);
-#else
-        nuc_evol(pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n); //nuclear physics
-#endif
-#endif
+            
+            #if(DONUCLEAR)
+            int was_floor_activated = 0;
+            #if(DOHELM)
+            nuc_evol_helm (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n);
+            #else
+            nuc_evol (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n); //nuclear physics
+            #endif
+            #endif
+        }
 	}
 }
 
@@ -487,7 +489,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 						#if(!TRANS_BOUND)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1+REF_2,block[n][AMR_LEVEL]))) {
 							//#pragma ivdep
-							PLOOP F[nl[n]][ind0][k] = 0.;
+                            PLOOP F[nl[n]][ind0][k] = 0.;
 						}
 						#endif
 					}

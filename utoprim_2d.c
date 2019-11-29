@@ -73,8 +73,15 @@ FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
 static FTYPE vsq_calc(FTYPE W);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[]);
 static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR]);
+
+#if (DONUCLEAR)
+static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int, FTYPE, FTYPE, FTYPE, FTYPE, FTYPE), FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa);
+static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n, FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa);
+#else
 static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int));
 static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n);
+#endif
+                     
 static FTYPE x1_of_x0(FTYPE x0);
 static FTYPE pressure_W_vsq(FTYPE W, FTYPE vsq);
 static FTYPE dpdW_calc_vsq(FTYPE W, FTYPE vsq);
@@ -156,6 +163,12 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 	for (i = BCON1; i <= BCON3; i++) {
 		prim_tmp[i] = alpha*prim[i];
 	}
+#if (DONUCLEAR)
+     #pragma ivdep
+    for (i = BCON3 + 1; i <= NPR; i++) {
+        prim_tmp[i] = prim[i];
+    }
+#endif
 
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
 
@@ -177,6 +190,25 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
     prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
     prim[YE] = U[YE]/U[RHO];
     prim[AMB] = U[AMB]/U[RHO];
+    
+    // Danat: check the normalizations of the mass fractions and Ye
+    prim[YE] = MY_MAX(prim[YE], 1.0);
+    prim[YE] = MY_MIN(prim[YE], 1e-10);
+    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
+    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
+    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
+    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
+    prim[AMB] = MY_MAX(prim[AMB], 1.0);
+    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
+    
+    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
+    
+    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
+        
+        prim[RHONP] *= fac_norm;
+        prim[RHOALPHA] *= fac_norm;
+        prim[AMB] *= fac_norm;
+    }
 #endif
     
 	return(ret);
@@ -296,8 +328,30 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	rho0 = D / gamma;
 	u = prim[UU];
 
+#if (DONUCLEAR)
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+    
+    varye = prim[YE];
+    varxatm = prim[AMB];
+    varxa = prim[RHOALPHA];
+    varxnp = prim[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+#endif
+    
     #if DOHELM
+#if (DONUCLEAR)
+    eos_mode_dens_ener_nuclear(u / rho0, rho0, varye, varxatm, varxn, varxp, varxa, &p);
+#else
     eos_mode_dens_ener(u / rho0, rho0, 1.0, 1.0, &p);
+#endif
     #else
     p = pressure_rho0_u(rho0, u);
     #endif
@@ -320,7 +374,11 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
     
-	retval = general_newton_raphson(x_2d, n, func_vsq);
+#if (DONUCLEAR)
+    retval = general_newton_raphson(x_2d, n, func_vsq, varye, varxatm, varxn, varxp, varxa);
+#else
+    retval = general_newton_raphson(x_2d, n, func_vsq);
+#endif
 
 	W = x_2d[0];
 	vsq = x_2d[1];
@@ -458,7 +516,15 @@ general_newton_raphson():
 static int general_newton_raphson(FTYPE x[], int n,
 	void(*funcd) (FTYPE[], FTYPE[], FTYPE[],
 	FTYPE[][NEWT_DIM_2], FTYPE *,
-	FTYPE *, int))
+	FTYPE *, int
+#if (DONUCLEAR)
+    , FTYPE, FTYPE, FTYPE, FTYPE, FTYPE
+#endif
+    )
+#if (DONUCLEAR)
+    , FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa
+#endif
+    )
 {
 	FTYPE f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	FTYPE resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
@@ -483,7 +549,11 @@ static int general_newton_raphson(FTYPE x[], int n,
 	keep_iterating = 1;
 	while (keep_iterating) {
 
+#if (DONUCLEAR)
+        (*funcd) (x, dx, resid, jac, &f, &df, n, varye, varxatm, varxn, varxp, varxa);
+#else
 		(*funcd) (x, dx, resid, jac, &f, &df, n);  /* returns with new dx, f, df */
+#endif
 
 
 		/* Save old values before calculating the new: */
@@ -572,7 +642,11 @@ n    = dimension of x[];
 *********************************************************************************/
 
 static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
-	FTYPE jac[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n)
+	FTYPE jac[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n
+#if (DONUCLEAR)
+    , FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa
+#endif
+                     )
 {
 	FTYPE  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
 	FTYPE t11;
@@ -604,7 +678,11 @@ static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
     double enth = W / gamma_sq / rho;
     double dpdrho, dpdt, dedt, dpde_d;
     
+#if (DONUCLEAR)
+    eos_mode_dens_enth_nuclear (rho, varye, varxatm, varxn, varxp, varxa, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
+#else
     eos_mode_dens_enth(rho, 1.0, 1.0, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
+#endif
     
     double dpdeps_o_rho = dpde_d / rho;
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
@@ -747,7 +825,13 @@ int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYP
 	for (i = BCON1; i <= BCON3; i++) {
 		prim_tmp[i] = alpha*prim[i];
 	}
-	
+#if (DONUCLEAR)
+    #pragma ivdep
+    for (i = BCON3 + 1; i < NPR; i++) {
+        prim_tmp[i] = prim[i];
+    }
+#endif
+    
 	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
 
 	/* Transform new primitive variables back if there was no problem : */
@@ -762,12 +846,40 @@ int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYP
 	prim[KTOT] = U[KTOT] / U[RHO];
 	#endif
 
+#if(DONUCLEAR)
+    prim[RHONP] = U[RHONP]/U[RHO];
+    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
+    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
+    prim[YE] = U[YE]/U[RHO];
+    prim[AMB] = U[AMB]/U[RHO];
+    
+    // Danat: check the normalizations of the mass fractions and Ye
+    prim[YE] = MY_MAX(prim[YE], 1.0);
+    prim[YE] = MY_MIN(prim[YE], 1e-10);
+    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
+    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
+    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
+    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
+    prim[AMB] = MY_MAX(prim[AMB], 1.0);
+    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
+    
+    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
+    
+    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
+        
+        prim[RHONP] *= fac_norm;
+        prim[RHOALPHA] *= fac_norm;
+        prim[AMB] *= fac_norm;
+    }
+#endif
+    
 	return(ret);
 
 }
 
 static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
 {
+
 	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	FTYPE rho0, u, w,  gamma, vsq;
 	int i;
@@ -814,7 +926,29 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
     
     #if DOHELM
     xdens = prim[RHO];
+    
+#if (DONUCLEAR)
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+    
+    varye = prim[YE];
+    varxatm = prim[AMB];
+    varxa = prim[RHOALPHA];
+    varxnp = prim[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    
+    eos_get_min_pres_NH_nuclear (xdens, varye, varxatm, varxn, varxp, varxa, &xpres);
+#else
     eos_get_min_pres_NH (xdens, 1.0, 1.0, &xpres);
+#endif
+    
     p_array[0] = xpres;
     #else
     p_array[0] = (GAMMA - 1.)*prim[UU];
@@ -822,12 +956,15 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	
     p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
-    if (d < 1e-20) return(1); // Danat : edited for d very small (< 1e-30)
+//    if (d < 1e-20) return(1); // Danat : edited for d very small (< 1e-30)
 	do{
 		set_variables = 0;
 		a = -Qdotn + p_new + 0.5*Bsq;
 		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
 		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+        if (d < 1e-20) {
+            epsilon = a; // Danat: in case d = 0, epsilon = a
+        }
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
@@ -845,7 +982,13 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
         xenth = w / rho0;
         xpres = 0.0;
         xener = 0.0;
+        
+#if (DONUCLEAR)
+        eos_mode_dens_enth_NH_nuclear (rho0, varye, varxatm, varxn, varxp, varxa, &xpres, &xener, xenth);
+#else
         eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+#endif
+        
         u = rho0 * xener;
         #else
 		u = (w - rho0) / GAMMA;
@@ -880,6 +1023,9 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		a = -Qdotn + p_new + 0.5*Bsq;
 		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
 		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+        if (d < 1e-20) {
+            epsilon = a; // Danat: in case d = 0, epsilon = a
+        }
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
@@ -894,7 +1040,13 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
         xenth = w / rho0;
         xpres = 0.0;
         xener = 0.0;
+        
+#if (DONUCLEAR)
+        eos_mode_dens_enth_NH_nuclear (rho0, varye, varxatm, varxn, varxp, varxa, &xpres, &xener, xenth);
+#else
         eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+#endif
+        
         u = rho0 * xener;
         p_new = xpres;
         #else
@@ -916,5 +1068,6 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	/* done! */
+    
 	return(0);
 }

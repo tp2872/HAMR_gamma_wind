@@ -80,7 +80,8 @@ double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
 
 // Nuclear physics arrays
-#if(DONUCLEAR)
+#if(DONUCLEAR || DOHELM)
+double rhomax_nuclear;
 double (*G_global)[N2M][N3M];
 double (*Q_global)[N2M][N3M];
 double (*qalpha_global)[N2M][N3M];

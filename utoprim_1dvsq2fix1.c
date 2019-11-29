@@ -189,6 +189,25 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][ND
     prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
     prim[YE] = U[YE]/U[RHO];
     prim[AMB] = U[AMB]/U[RHO];
+    
+    // Danat: check the normalizations of the mass fractions and Ye
+    prim[YE] = MY_MAX(prim[YE], 1.0);
+    prim[YE] = MY_MIN(prim[YE], 1e-10);
+    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
+    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
+    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
+    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
+    prim[AMB] = MY_MAX(prim[AMB], 1.0);
+    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
+    
+    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
+    
+    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
+        
+        prim[RHONP] *= fac_norm;
+        prim[RHOALPHA] *= fac_norm;
+        prim[AMB] *= fac_norm;
+    }
 #endif
     
   return( ret ) ;

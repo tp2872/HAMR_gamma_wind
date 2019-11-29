@@ -391,7 +391,7 @@ void init_torus()
 	rmax = 12.;
   l = lfish_calc(rmax) ;
   kappa = 1.e-3 ;
-	beta = 10. ;
+	beta = 1e20 ;
 
 	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -487,9 +487,9 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
 #if (DONUCLEAR)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.;  //ambient mass fraction (to be multiplied by rho later)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.;  //Ye = 1 outside the disk
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.;  //no nucleons
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.0;  //ambient mass fraction (to be multiplied by rho later)
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.0;  //Ye = 1 outside the disk
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.0;  //no nucleons
 #endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
@@ -550,9 +550,9 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
 
 #if (DONUCLEAR)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0. ;  //ambient mass fraction vanishes
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0.0 ;  //ambient mass fraction vanishes
         p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1. ;  //all nucleons initially
+        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1.0 ;  //all nucleons initially
 #endif
         
 				/* convert from 4-vel to 3-vel */
@@ -564,7 +564,7 @@ void init_torus()
 			}
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;
 		}
 	}
 
@@ -577,7 +577,7 @@ void init_torus()
   MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#endif
   
-  #if DOHELM
+  #if (DOHELM || DONUCLEAR)
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
     fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
@@ -603,7 +603,11 @@ void init_torus()
 
 	umax *= rho_factor;
 	rhomax *= rho_factor;
-
+  
+#if (DONUCLEAR || DOHELM)
+  rhomax_nuclear = rhomax;
+#endif
+  
   if (rank == 0){
     fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
 	}
@@ -632,7 +636,7 @@ void init_torus()
   for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
   bound_prim(p, 1);
 
-	set_mag(beta, rhomax, umax);
+  set_mag(beta, rhomax, umax);
 
 #if DOPARTICLES
   init_particles();
@@ -650,16 +654,37 @@ void init_torus()
 #if DOHELM
   // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
   double den, ener, pres;
+#if (DONUCLEAR)
+  double varye, varxatm, varxa, varxn, varxp;
+#endif
   
   for (n = 0; n < n_active; n++) {
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
       ener = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU];
+      
+#if (DONUCLEAR)
+      varye = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][YE];
+      varxatm = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][AMB];
+      varxa = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHOALPHA];
+      varxn = 1.0 - varye - 0.5 * varxa;
+      varxp = varye - 0.5 * varxa;
+#endif
+      
       pres = ener * (gam - 1.0);
       ener /= den;
       coord(n_ord[n], i, j, z, CENT, X);
       bl_coord(X,&r,&th, &phi);
+      
+#if (DONUCLEAR)
+      eos_mode_dens_pres_nuclear(&ener, den, varye, pres, &varxatm, &varxn, &varxp, &varxa);
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][AMB] = varxatm;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHOALPHA] = varxa;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHONP] = varxn + varxp;
+#else
       eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
+#endif
+      
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
     }
   }
@@ -3013,7 +3038,7 @@ void init_torus_grb(){
 			//compute atmospheric values
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-			get_rho_u_floor(r, th, phi, &rhofloor, &ufloor);
+//      get_rho_u_floor(r, th, phi, &rhofloor, &ufloor); // DANAT: temporary fix
 
 			/* regions outside torus */
 			if (r < rin || isnan(eps) || eps < 0 || rho*rho_scale_factor < rhofloor) {
@@ -3864,7 +3889,9 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 #if(DONUCLEAR)
   double fac1, fac2;
   double r0, rt, tnu;
-  double rhomax = 1.0; // Danat: please, change accordingly!
+#endif
+#if (DONUCLEAR || DOHELM)
+  double rhomax = rhomax_nuclear; // Danat: please, change accordingly!
 #endif
 
 
@@ -3875,8 +3902,13 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 	else{
 		rhoscal = pow(r, -POWRHO);
 		uuscal = pow(rhoscal, gam); //rhoscal/r ;
-		rhoflr = RHOMIN*rhoscal; //this is Rodrigo's rhot
-		uuflr = UUMIN*uuscal;
+#if (DOHELM)
+		rhoflr = RHOMIN*rhoscal*rhomax; //this is Rodrigo's rhot
+		uuflr = UUMIN*uuscal*rhomax;
+#else
+    rhoflr = RHOMIN*rhoscal; //this is Rodrigo's rhot
+    uuflr = UUMIN*uuscal;
+#endif
 
 #if DONUCLEAR
     //uuscal = pow(r,-POWRHO*gam); //rhoscal/r ;

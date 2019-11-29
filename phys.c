@@ -59,7 +59,7 @@ struct of_geom * restrict geom, double * restrict flux)
 	double mhd[NDIM];
 
 	/* particle number flux */
-	flux[RHO] = pr[RHO]*q->ucon[dir] ;
+	flux[RHO] = pr[RHO]*q->ucon[dir] ; 
 	mhd_calc(pr, dir, q, mhd) ;
 
 	/* MHD stress-energy tensor w/ first index up, 
@@ -116,12 +116,33 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 {
 	int j ;
 	double r,u,P,w,bsq,eta,ptot ;
+#if (DONUCLEAR)
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+#endif
 
     r = pr[RHO] ;
     u = pr[UU] ;
     
     #if DOHELM
+#if (DONUCLEAR)
+    varye = pr[YE];
+    varxatm = pr[AMB];
+    varxa = pr[RHOALPHA];
+    varxnp = pr[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    
+    eos_mode_dens_ener_nuclear(u / r, r, varye, varxatm, varxn, varxp, varxa, &P);
+#else
     eos_mode_dens_ener(u / r, r, 1.0, 1.0, &P);
+#endif
     #else
     P = (gam - 1.)*u ;
     #endif
@@ -168,7 +189,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	double X[NDIM],r,th,phi;
 	coord(n, ii,jj, zz, CENT,X) ;
 	bl_coord(X,&r,&th, &phi) ;
-	misc_source(ph, ii, jj, geom, &q, dU,r, Dt) ;
+	misc_source(ph, ii, jj, geom, &q, dU, r, Dt) ;
 	#endif
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
@@ -265,6 +286,9 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
 	double Asq,Bsq,Au,Bu,AB,Au2,Bu2,AuBu,A,B,C ;
 	int j ;
+#if (DONUCLEAR)
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+#endif
 
 	 #pragma ivdep
 	DLOOPA Acov[j] = 0. ;
@@ -284,7 +308,24 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 #if DOHELM
     double xener = u / rho;
     double xpres;
+#if (DONUCLEAR)
+    varye = pr[YE];
+    varxatm = pr[AMB];
+    varxa = pr[RHOALPHA];
+    varxnp = pr[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    eos_calc_soundspeed_nuclear (xener, rho, varye, varxatm, varxn, varxp, varxa, &xpres, &cs2);
+#else
     eos_calc_soundspeed(xener, rho, 1.0, 1.0, &xpres, &cs2);
+#endif
     va2 = bsq/(bsq + rho + u + xpres);
 #else
     EF = rho + gam*u ;
@@ -328,7 +369,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	C =      Au2  - (Asq + Au2)*cms2 ;
 
 	discr = B*B - 4.*A*C ;
-	if((discr<0.0)&&(discr>-1.e-10)) discr=0.0;
+    if((discr<0.0)&&(discr>-1.e-10)) discr=0.0;
 	else if(discr < -1.e-10) {
 		fprintf(stderr,"\n\t %g %g %g %g %g\n",A,B,C,discr,cms2) ;
 		fprintf(stderr,"\n\t q->ucon: %g %g %g %g\n",q->ucon[0],q->ucon[1],

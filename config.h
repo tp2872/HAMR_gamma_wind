@@ -39,13 +39,19 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (0)
+#define DONUCLEAR (1)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#if((WHICHPROBLEM == POSTMERGER_PROBLEM) || (DOHELM && TORUS_PROBLEM))
+#if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
   #define RHOMIN  (1.e-26)
   #define UUMIN  (1.e-27)
   #define RHOMINLIMIT (1.e-40)
   #define UUMINLIMIT  (1.e-40)
+#elif ((DOHELM || DONUCLEAR) && (WHICHPROBLEM == TORUS_PROBLEM))
+    #define RHOMIN    (1.e-7)
+    #define UUMIN    (1.e-9)
+    #define RHOMINLIMIT (1.e-20)
+    #define UUMINLIMIT  (1.e-20)
 #else
   #define RHOMIN	(1.e-7)
   #define UUMIN	(1.e-9)
@@ -99,14 +105,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
+#define NB_1 4
+#define NB_2 4
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
-#define BS_3 4
+#define BS_1 8
+#define BS_2 8
+#define BS_3 2
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -114,7 +120,7 @@ Numerical Parameters section
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
 #define REF_2 1
-#define REF_3 0
+#define REF_3 0 // Danat: was 0
 
 /*Number of GPUs per MPI rank*/
 #define N_GPU 1
@@ -193,7 +199,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (0)
+#define TRANS_BOUND (1)
 #if(TRANS_BOUND && NB_3%2!=0)
 #undef TRANS_BOUND
 #define TRANS_BOUND (0)
@@ -246,7 +252,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define DOCYLINDRIFYCOORDS (0)
 
 /* enable nuclear physics */
-#define DONUCLEAR 1
+//#define DONUCLEAR 1
 
 /* enable MC particles */
 #define DOPARTICLES 0
@@ -274,7 +280,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 MNEMONICS SECTION
 *************************************************************************/
 /* mnemonics for primitive vars; conserved vars */
-#define RHO	(0)	
+#define RHO	(0)
 #define UU	(1)
 #define U1	(2)
 #define U2	(3)
@@ -294,7 +300,7 @@ MNEMONICS SECTION
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
 #define RIGHT (1)
-#define FACE1	(0)	
+#define FACE1	(0)
 #define FACE2	(1)
 #define CORN	(2)
 #define CENT	(3)
@@ -340,9 +346,9 @@ MNEMONICS SECTION
 #define REVERSE 2
 
 /*For Windows users*/
-#ifndef M_PI 
-#define M_PI 3.14159265358979323846264338327950288 
-#endif 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif
 
 /*Mnemonics for AMR parameters*/
 #define NV 183
@@ -538,7 +544,7 @@ Variable Inversion Section
 /* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
 #define USE_ISENTROPIC 1
 
-#if( USE_ISENTROPIC ) 
+#if( USE_ISENTROPIC )
 #define G_ATM GAMMA
 #else
 #define G_ATM G_ISOTHERMAL
@@ -573,7 +579,7 @@ Section with EOS constants
 #define MAXLEN (1024)
 
 // becomes true if variables for Aprox13t network are set
-#define bAprox13t (0) 
+#define bAprox13t (0)
 
 #define eos_coulombMult (0.0)
 #define eos_coulombAbort (1)
@@ -598,13 +604,14 @@ Section with EOS constants
 
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
-#define eos_qe (4.8032068e-10) 
+#define eos_qe (4.8032068e-10)
 #define esqu (eos_qe * eos_qe)
 
 // conversion factors for EOS
 // DANAT: finish!
 #define conv_T_CODE2CGS (1.0)
 #define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G_cgs^3 / M_bh^2
+#define conv_dens_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs) / (c_light * c_light * c_light * c_light * c_light * c_light)
 #define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs))
 #define conv_pres_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
 #define conv_ener_CODE2CGS (c_light * c_light)
@@ -613,12 +620,12 @@ Section with EOS constants
 
 //For the uniform background coulomb correction
 #define eos_a1 (-0.898004e0)
-#define eos_b1 (0.96786e0) 
-#define eos_c1 (0.220703e0) 
-#define d1cc (-0.86097e0) 
-#define e1cc (2.5269e0) 
-#define eos_a2 (0.29561e0) 
-#define eos_b2 (1.9885e0) 
+#define eos_b1 (0.96786e0)
+#define eos_c1 (0.220703e0)
+#define d1cc (-0.86097e0)
+#define e1cc (2.5269e0)
+#define eos_a2 (0.29561e0)
+#define eos_b2 (1.9885e0)
 #define eos_c2 (0.288675e0)
 #define third (1.0e0/3.0e0)
 #define forth (4.0e0/3.0e0)
@@ -770,11 +777,11 @@ Section with derived quantities
 #define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)//loop over all Dimensions; first rank loop */
 #define DLOOPA for(j=0;j<NDIM;j++) //loop over all Space dimensions; second rank loop */
 #define SLOOP  for(j=1;j<NDIM;j++) for(k=1;k<NDIM;k++) //loop over all Space dimensions; first rank loop */
-#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables 
+#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables
 #define MY_MIN(fval1,fval2) ( ((fval1) < (fval2)) ? (fval1) : (fval2))
 #define MY_MAX(fval1,fval2) ( ((fval1) > (fval2)) ? (fval1) : (fval2))
 #define delta(i,j) ( (i == j) ? 1. : 0.)
-#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]) 
+#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3])
 #define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
 #define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)
 #if (N3>1)

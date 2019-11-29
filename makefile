@@ -46,8 +46,8 @@
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = mpicc
-CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb -stdlib=libc++
+CC       = gcc-9 #mpicc
+CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb -fopenmp #-stdlib=libc++
 endif
 
 EXTRALIBS = -lm -L/usr/local/cuda/lib -lcudart -lmpi
