@@ -631,7 +631,6 @@ void eos_helm_nuclear(int calc_derivatives, double btemp, double den, double ye,
         *denerdt = deraddt + deiondt + deepdt + decouldt * local_coulombMult; //energy derivative vs temperature
         
         if (*denerdt != *denerdt || *dpresdt != *dpresdt) {
-            1 == 1;
             printf ("Danat: something is wrong with the derivatives of pressure/energy\n");
             printf ("%e %e %e %e\n", dpraddt, dpiondt, dpepdt, dpcouldt);
             printf ("%e %e %e %e\n", deraddt, deiondt, deepdt, decouldt);

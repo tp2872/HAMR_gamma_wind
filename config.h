@@ -38,7 +38,7 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
+#define DOHELM (1)
 #define DONUCLEAR (1)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
@@ -151,7 +151,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (20)
+#define DUMPFACTOR (1)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0

@@ -279,7 +279,7 @@ void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_act
     // Get the true density floor
     coord(n, i, j, k, CENT, X);
     r = X[1]; th = X[2]; phi = X[3];
-//    get_rho_u_floor (r, th, phi, &rhofloor, &ufloor);
+    get_rho_u_floor (r, th, phi, &rhofloor, &ufloor);
 
     // Update the mass fractions
     pr[RHONP]    = Xn + Xp;     // *rho;
@@ -326,6 +326,8 @@ void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_act
     // pr[UU] += dqalpha + dQ;
 
     pr[YE] += dG;
+    pr[YE] = MY_MAX(pr[YE], 1.0);
+    pr[YE] = MY_MIN(pr[YE], 1e-10);
 
     //implicit update of the internal energy when qalpha != 0.
     if (T_10 > 0.5) {
