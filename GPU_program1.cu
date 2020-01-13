@@ -3819,8 +3819,8 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			}
 			#if(N3G>0)
 			temp += Dt / ((double)zsize*dx_3)*(E_corn[2 * ksize + global_id - zoffset + D3*zsize] - E_corn[2 * ksize + global_id - zoffset]) ;
-			for (u = 0; u < zsize; u++)psf[global_id - zoffset + u] = temp / gdet_GPU[index1 - NSY*(zoffset - u)];
 			#endif
+			for (u = 0; u < zsize; u++)psf[global_id - zoffset + u] = temp / gdet_GPU[index1 - NSY*(zoffset - u)];
 		}
 	}
 	
@@ -3849,7 +3849,9 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			for (u = 0; u < zsize; u++){
 				temp += Dt / ((double)zsize*dx_1)*(E_corn[3 * ksize + global_id + isize - zoffset + u] - E_corn[3 * ksize + global_id - zoffset + u]) ;
 			}
+			#if(N3G>0)
 			temp += -Dt / ((double)zsize*dx_3)*(E_corn[1 * ksize + global_id - zoffset + D3*zsize] - E_corn[1 * ksize + global_id - zoffset]);
+			#endif
 			for (u = 0; u < zsize; u++)psf[1 * ksize + global_id - zoffset + u] = temp / gdet_GPU[index2 - NSY*(zoffset - u)];
 		}
 	}
