@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
-			//restart_write(); //do restart dump simultaneous with log
+			restart_write(); //do restart dump simultaneous with log
 			tlog += DTl;
 		}
 

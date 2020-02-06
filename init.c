@@ -396,8 +396,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-	rin = 6.0;
-	rmax = 12.;
+	rin = 20.0;
+	rmax = 41.;
     l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
