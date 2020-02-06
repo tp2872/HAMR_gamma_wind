@@ -991,6 +991,8 @@ void set_mag(void){
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
 			/* Cell centered vector potential */	
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
@@ -998,8 +1000,7 @@ void set_mag(void){
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){		
-				coord(n_ord[n], i, j, z, CENT, X);
-				bl_coord(X, &r, &th, &phi);
+				
 				#if(WHICHPROBLEM==THIN_PROBLEM)
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
