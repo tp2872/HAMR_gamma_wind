@@ -42,7 +42,7 @@ Physical Parameters section
 #define UUMINLIMIT  (1.e-20)
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (20.*FLOORFACTOR)
+#define BSQORHOMAX (100.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
 #define UORHOMAX (150.*FLOORFACTOR)
 
