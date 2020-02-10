@@ -1317,7 +1317,7 @@ void balance_load(void){
 	
 	if (n_active_local_max > MAX_BLOCKS) {
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
-		exit(0);
+		//exit(0);
 	}
 	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
 	
@@ -2140,7 +2140,7 @@ int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	int ref_1, ref_2, ref_3;
 
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > NB_LOCAL){
 		if (rank == 0 && numtasks<10) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
@@ -2820,7 +2820,12 @@ double calc_refcrit(int n){
 	double ref_val = 0.0, enth, bsq, r, th, phi, X[NDIM];
 	struct of_state q;
 	struct of_geom geom;
-	#if(REFINE_JET)
+
+	#if(REFINE_GIBWA)
+	if (block[n][AMR_COORD2]/pow(1+REF_2, block[n][AMR_LEVEL2]) == 1) {
+		ref_val = 100.0;
+	}
+	#elif(REFINE_JET)
 	if (block[n][AMR_NODE] == rank){
 		ZSLOOP3D(N1_GPU_offset[n], BS_1 + N1_GPU_offset[n] - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			coord(n, i, j, z, CENT, X);

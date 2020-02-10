@@ -396,8 +396,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-	rin = 20.0;
-	rmax = 41.;
+	rin = 6.0;
+	rmax = 12.;
     l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
@@ -993,11 +993,19 @@ void set_mag(void){
 			/* Cell centered vector potential */	
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
+			#if (TILTED)		
+			pos_new[1] = r;
+			pos_new[2] = th;
+			pos_new[3] = phi;
+			sph_to_cart(X_cart, &r, &th, &phi);
+			rotate_coord(X_cart, -tilt);
+			cart_to_sph(X_cart, &r, &th, &phi);
+			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
-			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){		
 				
@@ -1013,15 +1021,6 @@ void set_mag(void){
 			}
 			if (q > 0.) {
 				#if (TILTED)
-				coord(n_ord[n],i, j, z, CENT, X);
-				bl_coord(X, &r, &th, &phi);
-				pos_new[1] = r;
-				pos_new[2] = th;
-				pos_new[3] = phi;
-				sph_to_cart(X_cart, &r, &th, &phi);
-				rotate_coord(X_cart, -tilt);
-				cart_to_sph(X_cart, &r, &th, &phi);
-
 				V[1] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1];
 				V[2] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
 				V[3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];

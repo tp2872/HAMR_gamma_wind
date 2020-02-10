@@ -3380,7 +3380,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			F[k*(ksize)+global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
 			#endif
 		}
-
+		//if (dir == 2 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))) {
+		//	for (k = 0; k < NPR_U; k++) F[k*(ksize)+global_id] = 0.;
+		//}
 		#if(RAD_M1)
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
