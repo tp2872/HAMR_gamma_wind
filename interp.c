@@ -298,8 +298,8 @@ void average_grid(void){
 	double temp[NPR];
 
 	//Average primitive and staggered grid variables
-	#if(N_LEVELS_1D_INT>0 && D3>0)
 	for (n = 0; n < n_active; n++) {
+        #if(N_LEVELS_1D_INT>0 && D3>0)
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif
@@ -328,7 +328,7 @@ void average_grid(void){
 				#endif
 			}
 		}
-
+        #endif
 		#if(GPU_ENABLED || GPU_DEBUG )
 		#pragma omp parallel private(i, j, z, k)
 		{
@@ -350,7 +350,6 @@ void average_grid(void){
 		#endif
 		#endif
 	}
-	#endif
 }
 
 //Prolongs grid near pole: This is necessary for AMR in combination with internal derefinement

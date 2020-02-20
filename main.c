@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     set_AMR();
     
     eos_init();
-//    test_eos();
+   	// test_eos();
     
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)

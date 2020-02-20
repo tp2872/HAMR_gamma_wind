@@ -39,7 +39,7 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
-#define DONUCLEAR (1)
+#define DONUCLEAR (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
@@ -105,14 +105,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 4
+#define NB_1 1
+#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 8
-#define BS_2 8
-#define BS_3 2
+#define BS_1 16
+#define BS_2 16
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
