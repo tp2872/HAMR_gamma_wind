@@ -1,17 +1,23 @@
 #!/bin/bash
-# Begin LSF Directives
-#BSUB -P PHY129
-#BSUB -W 0:20
-#BSUB -nnodes 600
-#BSUB -alloc_flags "smt1"
-#BSUB -N matthewliska92@gmail.com
-#BSUB -J RunSim123
-#BSUB -o RunSim123.%J
-#BSUB -e RunSim123.%J
+#SBATCH --job-name="BART1024"
+#SBATCH --output="hellompi.%j.%N.out"
+#SBATCH --partition=gpu
+#SBATCH --reservation=bgpu
+#SBATCH --nodes=24
+#SBATCH --ntasks-per-node=40
+#SBATCH --mail-user=matthewliska92@gmail.com
+#SBATCH --export=ALL
+#SBATCH -t 24:00:00
+#SBATCH --gres=gpu:4
+#SBATCH --constraint=v100
 
-module load xl
-module load cuda 
-cd RHAMR
+module purge
+module load slurm
+module load intel/compiler intel/mpi
+module load cuda/10.1.243_418.87.00 
+
+cd /mnt/sdceph/users/bripperda/HAMR_TEST/
 make clean
 make -j
-jsrun --smpiargs "-gpu" -n600 -a6 -g6 -c42 -bpacked:7 ./harm
+EXPORT OMP_NUM_THREADS=10
+srun -n 96 --cpus-per-task=10 --gres=gpu:4 --mpi=pmi2 ./harm

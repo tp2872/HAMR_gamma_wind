@@ -77,14 +77,17 @@ int main(int argc, char *argv[])
 		#if(DEREFINE_POLE)
 		derefine_pole();
 		#endif
-		for (l = 0; l < N_LEVELS_3D; l++) {
+		for (l = 0; l < 1; l++) {
 			init();
 			average_grid();
 			#if(N_LEVELS_3D>1)
 			check_refcrit();
 			#endif
 		}	
-		//restart_write();
+		restart_write();
+		/* do final diagnostics */
+		diag(FINAL_OUT);
+		exit(0);
 	}
 	
 	/* do initial diagnostics */
@@ -99,8 +102,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 20.;
-	DTd = 20.;
+	DTl = 50.;
+	DTd = 10.;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -131,8 +134,8 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if (nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0){
-			end1 = get_wall_time();
+		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tref && nstep % (AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (AMR_SWITCHTIMELEVEL) == 0) || ((t >= tdump_reduced && nstep % (AMR_SWITCHTIMELEVEL) == 0) && DUMP_SMALL)){
+			if (nstep % (DUMPFACTOR*AMR_SWITCHTIMELEVEL) == 0) end1 = get_wall_time();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
@@ -141,7 +144,7 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (AMR_SWITCHTIMELEVEL) == 0) {
 			set_timelevel(1);
 			check_refcrit();
 			#if (GPU_ENABLED==1)
@@ -152,20 +155,20 @@ int main(int argc, char *argv[])
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tlog && nstep % (AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dump simultaneous with log
 			tlog += DTl;
 		}
 
 		/* Put out dump file*/
-		if (t >= tdump && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump && nstep % (AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}	
 
 		/* Put out reduced dump file*/
 		#if(DUMP_SMALL)
-		if (t >= tdump_reduced && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump_reduced && nstep % (AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT_REDUCED);
 			tdump_reduced += DTd_reduced;
 		}
