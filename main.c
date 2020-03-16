@@ -84,10 +84,10 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			#endif
 		}	
-		restart_write();
+		//restart_write();
 		/* do final diagnostics */
-		diag(FINAL_OUT);
-		exit(0);
+		//diag(FINAL_OUT);
+		//exit(0);
 	}
 	
 	/* do initial diagnostics */
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
-	diag(INIT_OUT);
+	//diag(INIT_OUT);
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tref && nstep % (AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (AMR_SWITCHTIMELEVEL) == 0) || ((t >= tdump_reduced && nstep % (AMR_SWITCHTIMELEVEL) == 0) && DUMP_SMALL)){
+		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (AMR_SWITCHTIMELEVEL) == 0) || ((t >= tdump_reduced && nstep % (AMR_SWITCHTIMELEVEL) == 0) && DUMP_SMALL)){
 			if (nstep % (DUMPFACTOR*AMR_SWITCHTIMELEVEL) == 0) end1 = get_wall_time();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
 			set_timelevel(1);
 			check_refcrit();
 			#if (GPU_ENABLED==1)
