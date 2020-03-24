@@ -17,10 +17,10 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Gibwa's refinement criterion*/
-#define REFINE_GIBWA (0)
+#define REFINE_GIBWA (1)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(13./9.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -45,7 +45,7 @@ Physical Parameters section
 #define UUMINLIMIT  (1.e-20)
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (100.*FLOORFACTOR)
+#define BSQORHOMAX (20.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
 #define UORHOMAX (150.*FLOORFACTOR)
 
@@ -62,9 +62,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 1
+#define GPU_ENABLED 0
 #define GPU_DEBUG 0
-#define CPU_OPENMP 0
+#define CPU_OPENMP 1
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -74,7 +74,7 @@ Numerical Parameters section
 #define V100 (1)
 
 /*Use NVIDIA GPU_DIRECT. Check availability on cluster and enable it in slurm job script, for mpich set MPICH_RDMA_ENABLED_CUDA=1*/
-#define GPU_DIRECT (1)
+#define GPU_DIRECT 0
 
 /*Maximum tag number for MPI messages so not to overflow*/
 #define MPI_TAG_MAX 1264576
@@ -90,17 +90,17 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 20
-#define NB_2 12
+#define NB_1 2
+#define NB_2 2
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 112
-#define BS_2 88
-#define BS_3 128
+#define BS_1 24
+#define BS_2 24
+#define BS_3 24
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 3
+#define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
@@ -118,10 +118,10 @@ Numerical Parameters section
 #define GPU_OPENMP 0
 
 /*Derefines the pole in the third dimension. Make sure REF_3==1 and NB_2=6,12,24,48 and NB_1=4 and NB_3>=2*/
-#define DEREFINE_POLE (1)
+#define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (4)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -152,7 +152,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 50.
+#define TREF 500.
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.9)
@@ -262,7 +262,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 //Abundace constants
 #define Z_AB (0.02)

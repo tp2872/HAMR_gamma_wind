@@ -2363,7 +2363,7 @@ int check_nesting(int n){
 #if WHICHPROBLEM==DISRUPTION_PROBLEM
 #define REFINEMENT_CUTOFF 0.0000001
 #else
-#define REFINEMENT_CUTOFF 10000000.0 //in this case density in code units, used for H/R=0.03 disk
+#define REFINEMENT_CUTOFF 0.200 //in this case density in code units, used for H/R=0.03 disk
 #endif
 
 //Refine on basis of some criteria ref_val (not necessary to use rho though, can also be something different)
@@ -2784,14 +2784,14 @@ int derefine_pole(void){
 		MPI_Barrier(mpi_cartcomm);
 		post_refine();
 		if (rank == 0)fprintf(stderr, "Derefinement at level %d complete! \n", l);
-		balance_load();
-		#if(GPU_ENABLED)
-		balance_load_gpu();
-		for (n = 0; n<n_active; n++) alloc_bounds_GPU(n_ord[n]);
-		GPU_boundprim(1);
-		#endif
-		set_corners(0);
 	}
+	balance_load();
+	#if(GPU_ENABLED)
+	balance_load_gpu();
+	for (n = 0; n<n_active; n++) alloc_bounds_GPU(n_ord[n]);
+	GPU_boundprim(1);
+	#endif
+	set_corners(0);
 	return 1;
 }
 
