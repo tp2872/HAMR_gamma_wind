@@ -515,9 +515,8 @@ void init_torus()
 					#pragma omp critical
 					rhomax = rho;
 				}
-        // DANAT: set rancval = 0 for debugging DONUCLEAR
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
-//        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
+
+        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
 				if(u > umax && r > rin){
 					#pragma omp critical
 					umax = u ;
@@ -556,7 +555,7 @@ void init_torus()
         p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
         p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1.0 ;  //all nucleons initially
 #endif
-        
+
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
 				#endif
@@ -571,14 +570,14 @@ void init_torus()
 	}
 
   a = temp;
-	
+
   #if (MPI_enable)
 	/*Share info between the MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
   MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	#endif
-  
+
   #if (DOHELM || DONUCLEAR)
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
@@ -605,17 +604,17 @@ void init_torus()
 
 	umax *= rho_factor;
 	rhomax *= rho_factor;
-  
+
   rhomax_nuclear = rhomax;
-  
+
   if (rank == 0){
     fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
 	}
-  
+
   #else
   /* Normalize the densities so that max(rho) = 1 */
   if (rank == 0) fprintf(stderr, "Before normalization: rhomax: %g, umax: %g\n", rhomax, umax);
-  
+
   //ZSLOOP(0,N1-1,0,N2-1) {
   rho_factor = 1.0 / rhomax;
   torus_mass = 0.0;
@@ -625,12 +624,12 @@ void init_torus()
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] *= rho_factor;
     }
   }
-  
+
   umax *= rho_factor;
   rhomax *= rho_factor;
-  
+
   if (rank == 0) fprintf(stderr, "After normalization: rhomax: %g, umax: %g\n", rhomax, umax);
-  
+
   #endif
 
   for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
@@ -650,19 +649,19 @@ void init_torus()
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
-  
+
 #if DOHELM
   // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
   double den, ener, pres;
 #if (DONUCLEAR)
   double varye, varxatm, varxa, varxn, varxp;
 #endif
-  
+
   for (n = 0; n < n_active; n++) {
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
       den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
       ener = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU];
-      
+
 #if (DONUCLEAR)
       varye = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][YE];
       varxatm = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][AMB];
@@ -670,12 +669,12 @@ void init_torus()
       varxn = 1.0 - varye - 0.5 * varxa;
       varxp = varye - 0.5 * varxa;
 #endif
-      
+
       pres = ener * (gam - 1.0);
       ener /= den;
       coord(n_ord[n], i, j, z, CENT, X);
       bl_coord(X,&r,&th, &phi);
-      
+
 #if (DONUCLEAR)
       eos_mode_dens_pres_nuclear(&ener, den, varye, pres, &varxatm, &varxn, &varxp, &varxa);
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][AMB] = varxatm;
@@ -684,40 +683,40 @@ void init_torus()
 #else
       eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
 #endif
-      
+
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
     }
   }
 #else
-  
+
 #if (DONUCLEAR)
     double temp_unit = 1.6749286e-24*2.99792458e10*2.99792458e10/1.380658e-16;
     double dens_unit = 3.*1.99e33*6.67259e-8/(2.99792458e10*2.99792458e10);
     dens_unit = 3.*1.99e33/(dens_unit*dens_unit*dens_unit);
-    
+
     double varye, varxatm;
     double Tnuc, Tmev, T10, rho10, Xwb, Xa, Xp, Xn;
     double rhofloor, ufloor;
-    
+
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-        
+
         p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOALPHA]   = 0.0;
-        
+
         rho = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
         u = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
         varye = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE];
         varxatm = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB];
-      
+
         get_geometry (n_ord[n], i, j, z, CENT, &geom);
         coord(n, i, j, z, CENT, X);
         bl_coord(X,&r,&th, &phi) ;
         get_rho_u_floor(r, th, phi, &rhofloor, &ufloor);
-        
+
         //floor values slightly elevated for Rodrigo
         rhofloor *= 1.5;
         ufloor *= 1.5;
-        
+
         if (varxatm > 0.5) {
             p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOFLOOR] = rhofloor/1.5;
             p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]=rhofloor;
@@ -730,34 +729,34 @@ void init_torus()
             p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]=rhofloor/(r+SMALL)/(gam-1.);
             //ambient u in HSE (Newtonian, yes, but hey...)
         }
-        
+
         //Compute source terms and abundances at t = 0
         if (varxatm < 0.5) {
-            
+
             Tnuc  = compute_temperature(rho, (gam-1)*u, varye);
             Tmev  = Tnuc*temp_unit*1.380658e-16/1.6021772e-6;
             T10   = Tnuc*temp_unit/1e+10;
             rho10 = rho*dens_unit/1e+10;
-            
+
             Xwb  = 15.58*pow(Tmev,1.125)*pow(rho10,-0.75)*exp(-7.074/Tmev);
             Xa   = MY_MIN(2.*varye,2.*(1.-varye)) * (1.-MY_MIN(1.,Xwb)) - varxatm;
             Xa   = MY_MAX(Xa, 1.e-10);
-            
+
             Xp = varye - 0.5*Xa - varxatm;
             Xp = MY_MAX(Xp, 1.e-10);
-            
+
             Xn = 1. -Xp -Xa -varxatm;
             Xn = MY_MAX(Xn, 1.e-10);
-            
+
             p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOALPHA] = Xa; //*p[i][j][k][RHO];
             p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = (Xn+Xp); //*p[i][j][k][RHO];
         }
-      
+
     }
   }
-  
+
 #endif
-  
+
 #endif
 
   for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
@@ -770,7 +769,7 @@ void check_inversions (void) {
   double double_size = sizeof(double);
   sprintf(filename, "check_inversions.bdat");
   f = fopen(filename, "wb");
-  
+
   int n, ind0;
   int i, j, z, k;
   struct of_geom geom;
@@ -781,7 +780,7 @@ void check_inversions (void) {
   int count_NM_failed = 0;
   int count_2d_failed = 0;
   int count_total = 0;
-  
+
   for (n = 0; n < n_active; n++) {
     ZSLOOP3D (N1_GPU_offset [n_ord[n]], N1_GPU_offset [n_ord[n]] + BS_1 - 1, N2_GPU_offset [n_ord[n]], N2_GPU_offset [n_ord[n]] + BS_2 - 1, N3_GPU_offset [n_ord[n]], N3_GPU_offset [n_ord[n]] + BS_3 - 1) {
       coord(n_ord[n], i, j, z, CENT, X);
@@ -790,14 +789,14 @@ void check_inversions (void) {
       ind0 = index_3D (n_ord [n], i, j, z);
       get_state (p [nl [n_ord[n]]] [ind0], &geom, &q);
       primtoflux (p [nl [n_ord[n]]] [ind0], &q, 0, &geom, U);
-      
+
       fprintf(stderr, "i:%d, j:%d, z:%d, rho=%e\n", i, j, z, p [nl [n_ord [n]]] [ind0] [RHO]);
-      
+
       fwrite(&r, double_size, 1, f);
       fwrite(&th, double_size, 1, f);
       fwrite(&phi, double_size, 1, f);
       PLOOP fwrite(&p [nl [n_ord [n]]] [ind0] [k], double_size, 1, f);
-      
+
       fprintf(stderr, "Newman-Hamlin starts\n");
       PLOOP U[k] *= 0.80;
       //retval = Utoprim_NM (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
@@ -816,9 +815,9 @@ void check_inversions (void) {
       fprintf(stderr, "retval = %d\n", retval);
     }
   }
-  
+
   fprintf(stderr, "failed NM = %d, failed 2d = %d out of %d\n", count_NM_failed, count_2d_failed, count_total);
-  
+
   fclose(f);
   exit(1);
 }
