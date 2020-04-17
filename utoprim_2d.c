@@ -74,7 +74,7 @@ static FTYPE vsq_calc(FTYPE W);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[]);
 static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR]);
 
-#if (DONUCLEAR)
+#if (DONUCLEAR && DOHELM)
 static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int, FTYPE, FTYPE, FTYPE, FTYPE, FTYPE), FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa);
 static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n, FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa);
 #else
@@ -184,13 +184,14 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
 	prim[KTOT] = U[KTOT] / U[RHO];
 	#endif
 
-#if(DONUCLEAR)
+#if (DONUCLEAR)
     prim[RHONP] = U[RHONP]/U[RHO];
     prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
     prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
     prim[YE] = U[YE]/U[RHO];
     prim[AMB] = U[AMB]/U[RHO];
     
+    #if 0 // DANAT: check how rho_amb factors into this
     // Danat: check the normalizations of the mass fractions and Ye
     prim[YE] = MY_MAX(prim[YE], 1.0);
     prim[YE] = MY_MIN(prim[YE], 1e-10);
@@ -209,6 +210,7 @@ int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
         prim[RHOALPHA] *= fac_norm;
         prim[AMB] *= fac_norm;
     }
+    #endif
 #endif
     
 	return(ret);
@@ -328,7 +330,12 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	rho0 = D / gamma;
 	u = prim[UU];
 
-#if (DONUCLEAR)
+    #if DOHELM
+    // Helmholtz EOS
+    
+    #if (DONUCLEAR)
+    // Nuclear physics
+    
     double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
     
     varye = prim[YE];
@@ -344,15 +351,16 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
     // Get xn, xp
     varxn = 1.0 - varye - 0.5 * varxa;
     varxp = varye - 0.5 * varxa;
-#endif
     
-    #if DOHELM
-#if (DONUCLEAR)
     eos_mode_dens_ener_nuclear(u / rho0, rho0, varye, varxatm, varxn, varxp, varxa, &p);
-#else
-    eos_mode_dens_ener(u / rho0, rho0, 1.0, 1.0, &p);
-#endif
+    
     #else
+    // Helmholtz EOS w/o nuclear physics
+    eos_mode_dens_ener(u / rho0, rho0, 1.0, 1.0, &p);
+    #endif
+    
+    #else
+    // Ideal gas EOS
     p = pressure_rho0_u(rho0, u);
     #endif
     
@@ -374,7 +382,7 @@ static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
     
-#if (DONUCLEAR)
+#if (DONUCLEAR && DOHELM)
     retval = general_newton_raphson(x_2d, n, func_vsq, varye, varxatm, varxn, varxp, varxa);
 #else
     retval = general_newton_raphson(x_2d, n, func_vsq);
@@ -517,11 +525,11 @@ static int general_newton_raphson(FTYPE x[], int n,
 	void(*funcd) (FTYPE[], FTYPE[], FTYPE[],
 	FTYPE[][NEWT_DIM_2], FTYPE *,
 	FTYPE *, int
-#if (DONUCLEAR)
+#if (DONUCLEAR && DOHELM)
     , FTYPE, FTYPE, FTYPE, FTYPE, FTYPE
 #endif
     )
-#if (DONUCLEAR)
+#if (DONUCLEAR && DOHELM)
     , FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa
 #endif
     )
@@ -549,7 +557,7 @@ static int general_newton_raphson(FTYPE x[], int n,
 	keep_iterating = 1;
 	while (keep_iterating) {
 
-#if (DONUCLEAR)
+#if (DONUCLEAR && DOHELM)
         (*funcd) (x, dx, resid, jac, &f, &df, n, varye, varxatm, varxn, varxp, varxa);
 #else
 		(*funcd) (x, dx, resid, jac, &f, &df, n);  /* returns with new dx, f, df */
@@ -643,7 +651,7 @@ n    = dimension of x[];
 
 static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
 	FTYPE jac[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n
-#if (DONUCLEAR)
+#if (DONUCLEAR && DOHELM)
     , FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa
 #endif
                      )
@@ -670,7 +678,8 @@ static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
 	Wsq = W*W;
 
-#if DOHELM
+    #if DOHELM
+    // Helmholtz EOS
     double w = W * (1.0 - vsq);
     double rho = D * sqrt(1.0 - vsq);
     double gamma_sq = 1.0/(1.0 - vsq);
@@ -678,11 +687,11 @@ static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
     double enth = W / gamma_sq / rho;
     double dpdrho, dpdt, dedt, dpde_d;
     
-#if (DONUCLEAR)
+    #if (DONUCLEAR)
     eos_mode_dens_enth_nuclear (rho, varye, varxatm, varxn, varxp, varxa, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
-#else
+    #else
     eos_mode_dens_enth(rho, 1.0, 1.0, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
-#endif
+    #endif
     
     double dpdeps_o_rho = dpde_d / rho;
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
@@ -691,11 +700,13 @@ static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
     double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
     
     dPdvsq = (dpdvsq_1 + dpde_d*dpdvsq_2)/(1+dpdeps_o_rho);
-#else
+    
+    #else
+    // Ideal gas EOS
     p_tmp = pressure_W_vsq(W, vsq);
     dPdW = dpdW_calc_vsq(W, vsq);
     dPdvsq = dpdvsq_calc(W, vsq);
-#endif
+    #endif
 
 	// These expressions were calculated using Mathematica, but made into efficient 
 	// code using Maple.  Since we know the analytic form of the equations, we can 
@@ -853,6 +864,7 @@ int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYP
     prim[YE] = U[YE]/U[RHO];
     prim[AMB] = U[AMB]/U[RHO];
     
+    #if 0 // DANAT: check how rho_amb factors into this
     // Danat: check the normalizations of the mass fractions and Ye
     prim[YE] = MY_MAX(prim[YE], 1.0);
     prim[YE] = MY_MIN(prim[YE], 1e-10);
@@ -871,6 +883,7 @@ int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYP
         prim[RHOALPHA] *= fac_norm;
         prim[AMB] *= fac_norm;
     }
+    #endif
 #endif
     
 	return(ret);
@@ -925,9 +938,11 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 	int set_variables = 0;
     
     #if DOHELM
+    // Helmholtz EOS
     xdens = prim[RHO];
     
-#if (DONUCLEAR)
+    #if (DONUCLEAR)
+    // Nuclear physics
     double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
     
     varye = prim[YE];
@@ -945,12 +960,16 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
     varxp = varye - 0.5 * varxa;
     
     eos_get_min_pres_NH_nuclear (xdens, varye, varxatm, varxn, varxp, varxa, &xpres);
-#else
+    
+    #else
+    // Helmholtz EOS w/o nuclear physics
     eos_get_min_pres_NH (xdens, 1.0, 1.0, &xpres);
-#endif
+    #endif
     
     p_array[0] = xpres;
+    
     #else
+    // Ideal gas EOS
     p_array[0] = (GAMMA - 1.)*prim[UU];
     #endif
 	
@@ -979,18 +998,24 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
         
         #if DOHELM
+        // Helmholtz EOS
         xenth = w / rho0;
         xpres = 0.0;
         xener = 0.0;
         
-#if (DONUCLEAR)
+        #if (DONUCLEAR)
+        // Nuclear physics
         eos_mode_dens_enth_NH_nuclear (rho0, varye, varxatm, varxn, varxp, varxa, &xpres, &xener, xenth);
-#else
+        
+        #else
+        // Helmholtz EOS w/o nuclear physics
         eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
-#endif
+        #endif
         
         u = rho0 * xener;
+        
         #else
+        // Ideal gas EOS
 		u = (w - rho0) / GAMMA;
         #endif
 
@@ -998,8 +1023,10 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		iter_tot++;
         
         #if DOHELM
+        // Helmholtz EOS
         p_array[iter] = xpres;
         #else
+        // Ideal gas EOS
 		p_array[iter] = (GAMMA - 1.)*u;
         #endif
         
@@ -1037,19 +1064,25 @@ static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM]
 		rho0 = D / gamma; //Watch out you may need this for a more complicated EOS
         
         #if DOHELM
+        // Helmholtz EOS
         xenth = w / rho0;
         xpres = 0.0;
         xener = 0.0;
         
-#if (DONUCLEAR)
+        #if (DONUCLEAR)
+        // Nuclear physics
         eos_mode_dens_enth_NH_nuclear (rho0, varye, varxatm, varxn, varxp, varxa, &xpres, &xener, xenth);
-#else
+        
+        #else
+        // Helmholtz EOS w/o nuclear physics
         eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
-#endif
+        #endif
         
         u = rho0 * xener;
         p_new = xpres;
+        
         #else
+        // Ideal gas EOS
         u = (w - rho0) / GAMMA;
         p_new = (GAMMA - 1.)*u;
         #endif

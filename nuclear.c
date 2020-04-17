@@ -198,7 +198,7 @@ void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_act
     if (pr[RHOFLOOR] < 0.)   pr[RHOFLOOR] = 0.;
 
     // Re-normalize the abundances
-    fac = 1.0 / (pr[RHONP] + pr[RHOALPHA] + pr[AMB] + SMALL);
+    fac = 1.0 / (pr[RHONP] + pr[RHOALPHA] + pr[AMB] + SMALL); // DANAT: why do we normalize with rho_amb?
     pr[RHOALPHA] *= fac;
     pr[AMB]      *= fac;
     pr[RHONP]    *= fac; //this does not matter since not used below
@@ -211,7 +211,7 @@ void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_act
     rho = pr[RHO];
     ug = pr[UU];
     Ye = pr[YE];
-    
+
     // If, for some reason, the density is negative, set it to zero
     if (rho < 0.0) rho = 0.0;
 
@@ -233,7 +233,7 @@ void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_act
     T_10 = T * T_unit * 1.0e-10;                 // T in units of 1e10 K
     Xwb = 15.58 * pow (T_MeV, 1.125) * pow (rho_10, -0.75) * exp (-7.074 / T_MeV);
 
-    if (Xamb < 1 && T_10 > 0.5) {
+    if (Xamb < 0.5 && T_10 > 0.5) {
         Xalphanew = MY_MIN (2.0 * Ye, 2.0 * (1.0 - Ye)) * (1. - MY_MIN (1.0, Xwb)) - Xamb;
         Xalphanew = MY_MAX (Xalphanew, 1.0e-10);
         dXalpha = Xalphanew - Xalpha;
@@ -326,9 +326,9 @@ void nuc_evol (double pr[NPR], double Dt, int i, int j, int k, int was_floor_act
     // pr[UU] += dqalpha + dQ;
 
     pr[YE] += dG;
-    pr[YE] = MY_MAX(pr[YE], 1.0);
     pr[YE] = MY_MIN(pr[YE], 1e-10);
-
+    pr[YE] = MY_MAX(pr[YE], 1.0);
+    
     //implicit update of the internal energy when qalpha != 0.
     if (T_10 > 0.5) {
 

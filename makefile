@@ -91,3 +91,4 @@ $(EXE): $(OBJS) $(INCS) makefile
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
+	/bin/rm -rf *dumps* reduced

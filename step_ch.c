@@ -49,7 +49,6 @@
  *
 **/
 #include "decs_MPI.h"
-#include "nuclear.h"
 /** algorithmic choices **/
 
 
@@ -122,7 +121,7 @@ void step_ch()
 
 	/* set next timestep */
 	if (ndt > SAFE*dt) ndt = SAFE*dt;
-	dt = ndt;
+    dt = ndt;
 
 	if (nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) set_timelevel(0);
 
@@ -351,12 +350,17 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
             
             #if(DONUCLEAR)
+            // Nuclear physics ON
+            
             int was_floor_activated = 0;
+            
+            // Helmholtz EOS
             #if(DOHELM)
             nuc_evol_helm (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n);
             #else
             nuc_evol (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n); //nuclear physics
             #endif
+            
             #endif
         }
 	}

@@ -105,8 +105,8 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
+#define NB_1 2
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
@@ -151,7 +151,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (1)
+#define DUMPFACTOR (20)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -250,9 +250,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
 #define DOCYLINDRIFYCOORDS (0)
-
-/* enable nuclear physics */
-//#define DONUCLEAR 1
 
 /* enable MC particles */
 #define DOPARTICLES 0

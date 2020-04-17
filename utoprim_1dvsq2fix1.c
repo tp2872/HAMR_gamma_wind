@@ -183,13 +183,14 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][ND
     }
   }
 
-#if(DONUCLEAR)
+    #if(DONUCLEAR)
     prim[RHONP] = U[RHONP]/U[RHO];
     prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
     prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
     prim[YE] = U[YE]/U[RHO];
     prim[AMB] = U[AMB]/U[RHO];
     
+    #if 0 // DANAT: check how rho_amb factors into this
     // Danat: check the normalizations of the mass fractions and Ye
     prim[YE] = MY_MAX(prim[YE], 1.0);
     prim[YE] = MY_MIN(prim[YE], 1e-10);
@@ -208,7 +209,8 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][ND
         prim[RHOALPHA] *= fac_norm;
         prim[AMB] *= fac_norm;
     }
-#endif
+    #endif
+    #endif
     
   return( ret ) ;
 

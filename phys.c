@@ -116,15 +116,18 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 {
 	int j ;
 	double r,u,P,w,bsq,eta,ptot ;
-#if (DONUCLEAR)
-    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
-#endif
 
     r = pr[RHO] ;
     u = pr[UU] ;
     
     #if DOHELM
-#if (DONUCLEAR)
+    // Helmholtz EOS
+
+    #if (DONUCLEAR)
+    // Nuclear physics
+    
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+
     varye = pr[YE];
     varxatm = pr[AMB];
     varxa = pr[RHOALPHA];
@@ -140,11 +143,16 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
     varxp = varye - 0.5 * varxa;
     
     eos_mode_dens_ener_nuclear(u / r, r, varye, varxatm, varxn, varxp, varxa, &P);
-#else
-    eos_mode_dens_ener(u / r, r, 1.0, 1.0, &P);
-#endif
+    
     #else
-    P = (gam - 1.)*u ;
+    
+    // Helmholtz EOS w/o nuclear physics
+    eos_mode_dens_ener(u / r, r, 1.0, 1.0, &P);
+    #endif
+    
+    #else
+    // Ideal gas EOS
+    P = (gam - 1.)*u;
     #endif
     
     w = P + r + u ;
@@ -286,9 +294,6 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
 	double Asq,Bsq,Au,Bu,AB,Au2,Bu2,AuBu,A,B,C ;
 	int j ;
-#if (DONUCLEAR)
-    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
-#endif
 
 	 #pragma ivdep
 	DLOOPA Acov[j] = 0. ;
@@ -305,10 +310,17 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	rho = pr[RHO] ;
 	u = pr[UU] ;
     
-#if DOHELM
+    #if DOHELM
+    // Helmholtz EOS
+    
     double xener = u / rho;
     double xpres;
-#if (DONUCLEAR)
+
+    #if (DONUCLEAR)
+    // Nuclear physics
+    
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+    
     varye = pr[YE];
     varxatm = pr[AMB];
     varxa = pr[RHOALPHA];
@@ -323,16 +335,23 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
     varxn = 1.0 - varye - 0.5 * varxa;
     varxp = varye - 0.5 * varxa;
     eos_calc_soundspeed_nuclear (xener, rho, varye, varxatm, varxn, varxp, varxa, &xpres, &cs2);
-#else
+    
+    #else
+    // Helmholtz EOS w/o nuclear physics
+    
     eos_calc_soundspeed(xener, rho, 1.0, 1.0, &xpres, &cs2);
-#endif
+    
+    #endif
+    
     va2 = bsq/(bsq + rho + u + xpres);
-#else
+    
+    #else
+    // Ideal gas EOS
     EF = rho + gam*u ;
     EE = bsq + EF ;
     va2 = bsq/EE ;
     cs2 = gam*(gam - 1.)*u/EF ;
-#endif
+    #endif
 	
 //	if(cs2 < 0.) cs2 = SMALL ;
 //	if(cs2 > 1.) cs2 = 1. ;

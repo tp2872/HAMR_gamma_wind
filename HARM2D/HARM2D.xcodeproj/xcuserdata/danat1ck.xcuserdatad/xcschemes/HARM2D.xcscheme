@@ -59,8 +59,12 @@
       </MacroExpansion>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "mpirun -np 4"
-            isEnabled = "YES">
+            argument = "-np 4"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/danat1ck/Work/code/HAMR/danat_summer/harm"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>

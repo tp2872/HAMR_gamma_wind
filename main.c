@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 			time_spent3 = 0.0;	
 
 			//Safe and exit at end of 24 hour runtime
-			if (dump_cnt-dump_cnt0>100){
+			if (dump_cnt-dump_cnt0>10000){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
 				//restart_write();
 				break;
