@@ -83,16 +83,12 @@ int main(int argc, char *argv[])
 		#endif
 		for (l = 0; l < N_LEVELS_3D; l++) {
 			init();
-			#if(N_LEVELS_1D_INT>0 && D3>0)
 			average_grid();
-			#else
-            #if(GPU_ENABLED)
-			for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
-            #endif
-			#endif
+			#if(N_LEVELS_3D>1)
 			check_refcrit();
-		}
-		restart_write();
+			#endif
+		}	
+		//restart_write();
 	}
 
 	/* do initial diagnostics */
@@ -105,8 +101,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 200.0;
-	DTd = 20.0;
+	DTl = 20.;
+	DTd = 20.;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -191,7 +187,7 @@ int main(int argc, char *argv[])
 			time_spent3 = 0.0;
 
 			//Safe and exit at end of 24 hour runtime
-			if (dump_cnt-dump_cnt0>10000){
+			if (dump_cnt-dump_cnt0>50000){
 				if(rank==0) fprintf(stderr, "Finishing simulation after 24 hour time period! \n");
 				//restart_write();
 				break;
@@ -366,7 +362,7 @@ void set_arrays(int n)
 	gcon[nl[n]] = (double(*)[NPG][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPG][NDIM][NDIM]));
 	gdet[nl[n]] = (double(*)[NPG])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPG]));
 	#endif
-	#if(HLLC)
+	#if(FRAME_TRANSFORM)
 	Mud[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
 	Mud_inv[nl[n]] = (double(*)[NDIM][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM][NDIM][NDIM]));
 	#endif
@@ -957,7 +953,7 @@ void free_arrays(int n){
 	free(gcov[nl[n]]);
 	free(gcon[nl[n]]);
 	free(gdet[nl[n]]);
-	#if(HLLC)
+	#if(FRAME_TRANSFORM)
 	free(Mud[nl[n]]);
 	free(Mud_inv[nl[n]]);
 	#endif
@@ -1378,7 +1374,7 @@ void set_grid(int n)
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);
 		}
 	}
-	#if(HLLC)
+	#if(FRAME_TRANSFORM)
 	set_Mud(n);
 	#endif
 	#if(LEER)

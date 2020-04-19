@@ -60,7 +60,7 @@ Physical Parameters section
 #endif
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (20.*FLOORFACTOR)
+#define BSQORHOMAX (100.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
 #define UORHOMAX (150.*FLOORFACTOR)
 
@@ -120,7 +120,11 @@ Numerical Parameters section
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #define REF_1 1
 #define REF_2 1
-#define REF_3 0 // Danat: was 0
+#if(BS_3==1)
+#define REF_3 0
+#else
+#define REF_3 1
+#endif
 
 /*Number of GPUs per MPI rank*/
 #define N_GPU 1
@@ -166,15 +170,18 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 50.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.8)
+#define COUR (0.9)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
 
-/*Enable/disable PPM/van Leer spatial reconstruction. Never enable both*/
+/*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)
-#define LEER (0)
+#define PPM_FLATTENER (0)
+
+/*Enable/disable van Leer spatial reconstruction. Never enable both*/
+#define LEER (0) //Not working
 
 /*Wheter to set floors in ZAMO frame*/
 #define ZAMO_FLOOR (0)
@@ -185,8 +192,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Whether or not to allow inflow for fluxes (see fix_flux())*/
 #define INFLOW 0
 
-/*Enable or disable the HLLC solver. Does not work yet!*/
+/*Enable or disable the HLLC solver.*/
 #define HLLC (0)
+
+/*Enable or disable the HLLD solver. Does not work yet!*/
+#define HLLD (0)
 
 /*Whether or not to use a staggered grid*/
 #define STAGGERED (1)
@@ -272,6 +282,37 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
+
+//Abundace constants
+#define Z_AB (0.02)
+#define Y_AB (0.28)
+#define X_AB (0.70)
+
+// CGS constants needed for radiation
+#define ARAD (7.5657e-15) /*Radiation density constant*/
+#define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
+#define MMW (1.69) /*Mean molecular weight*/
+#define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
+#define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
+#define PLANCK_CGS (6.6260755e-27) /*Planck's constant*/
+#define STEFAN_CGS (5.67051e-5) /*Stefan-Boltzmann constant*/
+#define FINE_CGS (7.29735308e-3)
+#define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
+#define E_CGS (4.80320427e-10) /*Elementary charge*/
+#define C_CGS (2.99792458e10) /*Speed of light*/
+#define M_SGRA_SOLAR (1.0e1) /* Solar masses */
+#define M_SOLAR_CGS (1.998e33) /* Solar mass */
+#define G_CGS (6.67259e-8) /* Gravitational constant */
+#define BASIC (0)
+#define TYPE2 (1)
+
+// Scaling from code units to cgs units
+#define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
+#define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
+#define MASS_DENSITY_SCALE (1.0)
+#define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
+#define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
+#define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 
 /*************************************************************************
 MNEMONICS SECTION
@@ -679,15 +720,20 @@ Section with derived quantities
 #define D2 (N2>1)
 #define D3 (N3>1)
 
-/*Set variable numbers*/
 #if(DONUCLEAR)
-#define NPR        (13+DOKTOT)       /* number of primitive variables */
+#define NPRDUMP    14
 #else
-#define NPR        (8+DOKTOT)        /* number of primitive variables */
+#define NPRDUMP    9
 #endif
-#define NPRDUMP    (NPR)
+
+/*Set variable numbers*/
+#define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
+#define NPR_NUC    (5)        /* number of primitive variables for DONUCLEAR */
+#define NPR        (NPR_U + DONUCLEAR*NPR_NUC)        /* total number of primitive variables */
+
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
+#define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
@@ -763,6 +809,12 @@ Section with derived quantities
 #elif(N_LEVELS==5)
 #define NB (NB_1*NB_2*NB_3*(2*(2*(2*(2+1)+1)+1)+1))
 #endif
+#endif
+
+#if(HLLC==1 || HLLD==1)
+#define FRAME_TRANSFORM (1)
+#else
+#define FRAME_TRANSFORM (0)
 #endif
 
 /*Define offset to make GPU memory access coalesced*/

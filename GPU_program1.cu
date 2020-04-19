@@ -21,6 +21,13 @@ __device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qts
 __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 	double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
 __device__ int gnr2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
+__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
+
+/*Matrix Inversion*/
+__device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]);
+__device__ int LU_decompose(double A[][NDIM], int permute[]);
+__device__ void LU_substitution(double A[][NDIM], double B[], int permute[]);
 
 /*Declare other functions*/
 __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q);
@@ -28,27 +35,318 @@ __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
+__device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU);
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam);
 __device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam);
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,
-struct of_state *  q, double a, double r);
-__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,
-	double a, double gam, double r, double Dt);
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,struct of_state *  q, double a, double r);
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	double a, double gam, double r, double Dt);
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
-__device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq);
+__device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
+__device__ double Drel(int dir, double v, double *  ucon, double *  bcon, double E, double vasq, double csq);
 __device__ double readImageDouble(int4 a);
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
+__device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd);
 
-__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
-__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
 
+
+/*************************************************************************/
+/*************************************************************************
+
+invert_matrix():
+
+Uses LU decomposition and back substitution to invert a matrix
+A[][] and assigns the inverse to Ainv[][].  This routine does not
+destroy the original matrix A[][].
+
+Returns (1) if a singular matrix is found,  (0) otherwise.
+
+*************************************************************************/
+
+
+__device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM])
+{
+	int i, j;
+	int n = NDIM;
+	int permute[NDIM];
+	double dxm[NDIM], Amtmp[NDIM][NDIM];
+
+	for (i = 0; i < NDIM*NDIM; i++) { Amtmp[0][i] = Am[0][i]; }
+
+	// Get the LU matrix:
+	if (LU_decompose(Amtmp, permute) != 0) {
+		//fprintf(stderr, "invert_matrix(): singular matrix encountered! \n");
+		return(1);
+	}
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) { dxm[j] = 0.; }
+		dxm[i] = 1.;
+
+		/* Solve the linear system for the i^th column of the inverse matrix: :  */
+		LU_substitution(Amtmp, dxm, permute);
+
+		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
+
+	}
+
+	return(0);
+}
+
+/*************************************************************************/
+/*************************************************************************
+
+LU_decompose():
+
+Performs a LU decomposition of the matrix A using Crout's method
+with partial implicit pivoting.  The exact LU decomposition of the
+matrix can be reconstructed from the resultant row-permuted form via
+the integer array permute[]
+
+The algorithm closely follows ludcmp.c of "Numerical Recipes
+in C" by Press et al. 1992.
+
+This will be used to solve the linear system  A.x = B
+
+Returns (1) if a singular matrix is found,  (0) otherwise.
+
+*************************************************************************/
+
+
+
+__device__ int LU_decompose(double A[][NDIM], int permute[])
+{
+	double row_norm[NDIM];
+
+	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+
+	double  absmax, maxtemp, mintemp;
+
+	int i, j, k, max_row;
+	int n = NDIM;
+
+
+	max_row = 0;
+
+	/* Find the maximum elements per row so that we can pretend later
+	we have unit-normalized each equation: */
+
+	for (i = 0; i < n; i++) {
+		absmax = 0.;
+
+		for (j = 0; j < n; j++) {
+
+			maxtemp = fabs(A[i][j]);
+
+			if (maxtemp > absmax) {
+				absmax = maxtemp;
+			}
+		}
+
+		/* Make sure that there is at least one non-zero element in this row: */
+		if (absmax == 0.) {
+			return(1);
+		}
+
+		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	}
+
+
+	/* The following the calculates the matrix composed of the sum
+	of the lower (L) tridagonal matrix and the upper (U) tridagonal
+	matrix that, when multiplied, form the original maxtrix.
+	This is what we call the LU decomposition of the maxtrix.
+	It does this by a recursive procedure, starting from the
+	upper-left, proceding down the column, and then to the next
+	column to the right.  The decomposition can be done in place
+	since element {i,j} require only those elements with {<=i,<=j}
+	which have already been computed.
+	See pg. 43-46 of "Num. Rec." for a more thorough description.
+	*/
+
+	/* For each of the columns, starting from the left ... */
+	for (j = 0; j < n; j++) {
+
+		/* For each of the rows starting from the top.... */
+
+		/* Calculate the Upper part of the matrix:  i < j :   */
+		for (i = 0; i < j; i++) {
+			for (k = 0; k < i; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+		}
+
+		absmax = 0.0;
+
+		/* Calculate the Lower part of the matrix:  i <= j :   */
+
+		for (i = j; i < n; i++) {
+
+			for (k = 0; k < j; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+
+			/* Find the maximum element in the column given the implicit
+			unit-normalization (represented by row_norm[i]) of each row:
+			*/
+			maxtemp = fabs(A[i][j]) * row_norm[i];
+
+			if (maxtemp >= absmax) {
+				absmax = maxtemp;
+				max_row = i;
+			}
+
+		}
+
+		/* Swap the row with the largest element (of column j) with row_j.  absmax
+		This is the partial pivoting procedure that ensures we don't divide
+		by 0 (or a small number) when we solve the linear system.
+		Also, since the procedure starts from left-right/top-bottom,
+		the pivot values are chosen from a pool involving all the elements
+		of column_j  in rows beneath row_j.  This ensures that
+		a row  is not permuted twice, which would mess things up.
+		*/
+		if (max_row != j) {
+
+			/* Don't swap if it will send a 0 to the last diagonal position.
+			Note that the last column cannot pivot with any other row,
+			so this is the last chance to ensure that the last two
+			columns have non-zero diagonal elements.
+			*/
+
+			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+				max_row = j;
+			}
+			else {
+				for (k = 0; k < n; k++) {
+
+					maxtemp = A[j][k];
+					A[j][k] = A[max_row][k];
+					A[max_row][k] = maxtemp;
+
+				}
+
+				/* Don't forget to swap the normalization factors, too...
+				but we don't need the jth element any longer since we
+				only look at rows beneath j from here on out.
+				*/
+				row_norm[max_row] = row_norm[j];
+			}
+		}
+
+		/* Set the permutation record s.t. the j^th element equals the
+		index of the row swapped with the j^th row.  Note that since
+		this is being done in successive columns, the permutation
+		vector records the successive permutations and therefore
+		index of permute[] also indexes the chronology of the
+		permutations.  E.g. permute[2] = {2,1} is an identity
+		permutation, which cannot happen here though.
+		*/
+
+		permute[j] = max_row;
+
+		if (A[j][j] == 0.) {
+			A[j][j] = absmin;
+		}
+
+
+		/* Normalize the columns of the Lower tridiagonal part by their respective
+		diagonal element.  This is not done in the Upper part because the
+		Lower part's diagonal elements were set to 1, which can be done w/o
+		any loss of generality.
+		*/
+		if (j != (n - 1)) {
+			maxtemp = 1. / A[j][j];
+
+			for (i = (j + 1); i < n; i++) {
+				A[i][j] *= maxtemp;
+			}
+		}
+
+	}
+
+	return(0);
+
+	/* End of LU_decompose() */
+
+}
+
+
+/************************************************************************
+/************************************************************************
+
+LU_substitution():
+
+Performs the forward (w/ the Lower) and backward (w/ the Upper)
+substitutions using the LU-decomposed matrix A[][] of the original
+matrix A' of the linear equation:  A'.x = B.  Upon entry, A[][]
+is the LU matrix, B[] is the source vector, and permute[] is the
+array containing order of permutations taken to the rows of the LU
+matrix.  See LU_decompose() for further details.
+
+Upon exit, B[] contains the solution x[], A[][] is left unchanged.
+
+************************************************************************/
+
+
+__device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
+{
+	int i, j;
+	int n = NDIM;
+	double tmpvar, tmpvar2;
+
+
+	/* Perform the forward substitution using the LU matrix.
+	*/
+	for (i = 0; i < n; i++) {
+
+		/* Before doing the substitution, we must first permute the
+		B vector to match the permutation of the LU matrix.
+		Since only the rows above the currrent one matter for
+		this row, we can permute one at a time.
+		*/
+		tmpvar = B[permute[i]];
+		B[permute[i]] = B[i];
+		for (j = (i - 1); j >= 0; j--) {
+			tmpvar -= A[i][j] * B[j];
+		}
+		B[i] = tmpvar;
+	}
+
+
+	/* Perform the backward substitution using the LU matrix.
+	*/
+	for (i = (n - 1); i >= 0; i--) {
+		for (j = (i + 1); j < n; j++) {
+			B[i] -= A[i][j] * B[j];
+		}
+		B[i] /= A[i][i];
+	}
+
+	/* End of LU_substitution() */
+
+}
+
+__device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F);
+__device__ void vchar_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double *vmax, double *vmin);
+__device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *vmax, double *vmin);
+__device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
+__device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
+__device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]);
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar);
 
 __device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]){
 
@@ -1315,6 +1613,11 @@ struct of_geom {
 	double g;
 };
 
+struct of_trans {
+	double Mud[NDIM][NDIM];
+	double Mud_inv[NDIM][NDIM];
+};
+
 struct of_state {
 	double ucon[NDIM];
 	double ucov[NDIM];
@@ -1372,8 +1675,7 @@ __device__ void primtoU(double *pr, struct of_state *q, struct of_geom *geom, do
 }
 
 /* add in source terms to equations of motion */
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam,
-	const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
 {
 	double mhd[NDIM][NDIM];
 	int k, j, dir;
@@ -1483,12 +1785,13 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
 	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
 	double bsq = dot(q->bcon,q->bcov);
-	if (bsq / ph[RHO]<1.){
+	if (bsq / ph[RHO]<1. || r<10.){
 		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
 			dU[UU] += -q->ucov[0] * lambda;
 			dU[U1] += -q->ucov[1] * lambda;
 			dU[U2] += -q->ucov[2] * lambda;
 			dU[U3] += -q->ucov[3] * lambda;
+			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) *(GAMMA - 1.) * lambda;
 		}
 		else{
 			lambda *= (0.1*fabs(int_energy)) / (fabs(q->ucov[0] * lambda)*Dt);
@@ -1496,9 +1799,29 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 			dU[U1] += -q->ucov[1] * lambda;
 			dU[U2] += -q->ucov[2] * lambda;
 			dU[U3] += -q->ucov[3] * lambda;
+			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) *(GAMMA - 1.) * lambda;
 		}
 	}
 }
+
+/* MHD stress tensor, with first index up, second index down */
+__device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd)
+{
+	int j;
+	double r, u, P, w, bsq, eta, ptot;
+
+	r = pr[RHO];
+	u = pr[UU];
+	P = (GAMMA - 1.)*u;
+	w = P + r + u;
+	bsq = dot(q->bcon, q->bcov);
+	eta = w + bsq;
+	ptot = P + 0.5*bsq;
+
+	/* single row of mhd stress tensor, first index up, second index down */
+	DLOOPA mhd[j] = eta*q->ucon[dir] * q->ucov[j] + ptot*delta(dir, j) - q->bcon[dir] * q->bcov[j];
+}
+
 
 __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam)
 {
@@ -1631,14 +1954,6 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct o
 		vp = -(-B + discr) / (2.*A);
 		vm = -(-B - discr) / (2.*A);
 
-		#if( FULL_DISP ) 
-		double vp2, vm2;
-		vp2 = NewtonRaphson(vp, 1, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-		vm2 = NewtonRaphson(vm, 1, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-		vp = vp2;
-		vm = vm2;
-		#endif
-
 		*vmax = MY_MAX(vp, vm);
 		*vmin = MY_MIN(vp, vm);
 	}
@@ -1646,46 +1961,59 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct o
 }
 
 
-__device__ double NewtonRaphson(double start, size_t max_count, int dir, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq)
+__device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq)
 {
-	size_t count = 0;
-	double dx = start / 100.0;
-	double x = start;
-	double diff, derivative;
-	do{
-		diff = Drel(dir, x, ucon, ucov, bcon, geom, E, vasq, csq);
-		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / (dx + SMALL);
+	int count = 0;
+	int keep_looping = 1;
+	double dx;
+	double x;
+	double error_1, error_2, derror_dx;
+
+	x = start;
+	error_1 = Drel(dir, x, ucon, bcon, E, vasq, csq);
+
+	while (keep_looping) {
+		error_2 = Drel(dir, x + x*pow(10., -6.), ucon, bcon, E, vasq, csq);
+		derror_dx = (error_2 - error_1) / (x*pow(10., -6.));
+		dx = error_1 / (derror_dx);
+		x = x - dx;
+		error_1 = Drel(dir, x, ucon, bcon, E, vasq, csq);
+
+		if ((count >= max_count) || fabs(dx / x) < fabs(x)*pow(10., -4.)) keep_looping = 0;
 		count++;
-		x = x - diff / (derivative + SMALL);
-	} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
-	if (count >= max_count){
+	}
+
+	if ((count >= max_count) || (fabs(x)>fabs(start))) {
 		x = start;
 	}
 	return x;
 }
 
-__device__ double Drel(int dir, double v, double *  ucon, double *  ucov, double *  bcon, struct of_geom *  geom, double E, double vasq, double csq){
+__device__ double Drel(int dir, double v, double *  ucon, double *  bcon, double E, double vasq, double csq) {
 	double kcov[NDIM], kcon[NDIM], Kcov[NDIM], Kcon[NDIM];
 	double om, omsq, ksq, kvasq, cfsq, result;
 	int i;
-	kcov[0] = -v; kcov[1] = 0.0; kcov[2] = 0.0; kcov[3] = 0.0;
-	if (dir == 1){
+	kcov[0] = -v; kcov[1] = 0.0; kcov[2] = 0.0; kcov[3] = 0.0, kcon[0] = v;
+	if (dir == 1) {
 		kcov[1] = 1.0;
+		kcon[1] = 1.;
 	}
-	else if (dir == 2){
+	else if (dir == 2) {
 		kcov[2] = 1.0;
+		kcon[2] = 1.;
 	}
-	else if (dir == 3){
+	else if (dir == 3) {
 		kcov[3] = 1.0;
+		kcon[3] = 1.;
 	}
-	raise(kcov, geom->gcon, kcon);
 	om = dot(ucon, kcov);
 	omsq = pow(om, 2.0);
-	#pragma unroll 4
-	for (i = 0; i < NDIM; i++){
-		Kcov[i] = kcov[i] + ucov[i] * om;
+
+	for (i = 0; i < NDIM; i++) {
 		Kcon[i] = kcon[i] + ucon[i] * om;
+		Kcov[i] = kcon[i] + ucon[i] * om;
 	}
+	Kcov[0] *= -1.;
 	ksq = dot(Kcov, Kcon);
 	kvasq = pow(dot(kcov, bcon), 2.0) / (E + SMALL);
 	cfsq = vasq + csq*(1.0 - vasq);
@@ -1849,8 +2177,6 @@ __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma)
 
 	if (qsq < 0.){
 		if (fabs(qsq) > 1.E-10){ // then assume not just machine precision
-			//fprintf(stderr,"gamma_calc():  failed: i,j,qsq = %d %d %28.18e \n", icurr,jcurr,qsq);
-			// fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
 			*gamma = 1.;
 			return (1);
 		}
@@ -1916,6 +2242,31 @@ __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  g
 	geom->gcon[9] = gcon_GPU[9 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
 	geom->gcov[9] = gcov_GPU[9 * NPG * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
 	geom->g = gdet_GPU[kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	#endif
+}
+
+/* load local orthonormal tetrad transformation matrix for HLLC/HLLD solvers*/
+__device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans *trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU)
+{
+	int i, j;
+	#if(NSY)
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id = ii*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jj*(BS_3 + 2 * N3G) + zz;
+	#else
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id = ii*(BS_2 + 2 * N2G) + jj;
+	#endif	
+	
+	#if(NSY)
+	for (i = 0; i < NDIM; i++)for (j = 0; j < NDIM; j++) {
+		trans->Mud[i][j] = Mud_GPU[(i*NDIM + j) * NSOLVER*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		trans->Mud_inv[i][j] = Mud_inv_GPU[(i*NDIM + j) * NSOLVER*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	}
+	#else
+	for (i = 0; i < NDIM; i++)for (j = 0; j < NDIM; j++) {
+		trans->Mud[i][j] = Mud_GPU[(i*NDIM + j) * NSOLVER * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		trans->Mud_inv[i][j] = Mud_inv_GPU[(i*NDIM + j) * NSOLVER * ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
+	}
 	#endif
 }
 
@@ -2034,6 +2385,15 @@ __device__ void para(double x1, double x2, double x3, double x4, double x5, doub
 	lout[0] = l;   //a_L,j
 	rout[0] = r;
 }
+
+__device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F) {
+	double Sp;
+	
+	Sp = (x4 - x2) / (x5 - x1);
+	F[0] = MY_MAX(0., MY_MIN(1., 10.*(Sp - 0.75)));
+	if (fabs(x4 - x2) / MY_MIN(x4, x2) < 0.33) F[0] = 0;
+}
+
 
 /* returns b^2 (i.e., twice magnetic pressure) */
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom)
@@ -2157,7 +2517,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	int idel, jdel, zdel;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int zsize = 1, zlevel = 0, zoffset = 0, z1 = -2, z2 = -1, z3 = 0, z4 = 1, z5 = 2;
-	double x1, x2, x3, x4, x5;
+	double x1, x2, x3, x4, x5, FF=0.;
 	double temp, result;
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
 	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; }
@@ -2216,6 +2576,17 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	#endif
 	if (k == 1){
 		#if(PPM)
+			#if(PPM_FLATTENER)
+			x1 = p[MY_MAX(RHO*(ksize)+global_id + z1*zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
+			x2 = p[MY_MAX(RHO*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x3 = p[RHO*(ksize)+global_id + z3*zdel];
+			x4 = p[MY_MIN(RHO*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			x5 = p[MY_MIN(RHO*(ksize)+global_id + z5*zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			calculate_flattener(x1, x2, x3, x4, x5, &FF);
+			x2 = p[MY_MAX((UU + dir)*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
+			x4 = p[MY_MIN((UU + dir)*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
+			if (x4 - x2 > 0.) FF = 0.;
+			#endif
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			x1 = p[MY_MAX(k*(ksize)+global_id + z1*zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
@@ -2224,8 +2595,8 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			x4 = p[MY_MIN(k*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			x5 = p[MY_MIN(k*(ksize)+global_id + z5*zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			para(x1, x2, x3, x4, x5, &result, &temp);		
-			dq1[k*(ksize)+global_id] = result;
-			dq2[k*(ksize)+global_id] = temp;
+			dq1[k*(ksize)+global_id] = FF*x3 + (1. - FF)*result;
+			dq2[k*(ksize)+global_id] = FF*x3 + (1. - FF)*temp;
 		}
 		#else
 		#pragma unroll 9	
@@ -2245,14 +2616,14 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
-	isize = (BS_3)*(BS_2);
+	isize = (BS_3)*(BS_2 + 2 * D2);
 	zcurr = (global_id % (isize)) % (BS_3);
 	jcurr = ((global_id - zcurr) % (isize)) / (BS_3);
 	icurr = (global_id - (jcurr*(BS_3) + zcurr)) / (isize);
 	zcurr += N3G;
-	jcurr += N2G;
-	icurr += N1G;
-	if (global_id<(BS_1) * (BS_2) * (BS_3)) k = 1;
+	jcurr += D2;
+	icurr += D1;
+	if (global_id<(BS_1 + 2 * D1) * (BS_2 + 2 * D2) * (BS_3)) k = 1;
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
@@ -2286,23 +2657,25 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 		}
 
 		#if(N_LEVELS_1D_INT>0 && D3>0)
-		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - (BS_3 + 2 * N3G) - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - D2 - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 		zsize = (int)(0.001+pow(2.0, (double)zlevel));
 		zoffset = (zcurr - N3G) % zsize;
 		if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
-		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr + (BS_3 + 2 * N3G) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+		if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel2 = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr + D2 - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 		zsize2 = (int)(0.001 + pow(2.0, (double)zlevel2));
 		zoffset2 = (zcurr - N3G) % zsize2;
 		#endif
-		if (zoffset == 0){
-			if ((POLE_1 == 1 && jcurr - N2G < BS_2 / 2) && (jcurr!=N2G)){
+		if (zoffset2 == 0) {
+			if ((POLE_1 == 1 && jcurr - N2G < BS_2 / 2) && (jcurr != N2G)) {
 				temp[1] = ps[1 * (ksize)+global_id - zoffset2];
-				for (u = 0; u < zsize2; u++){
+				for (u = 0; u < zsize2; u++) {
 					ps[1 * ksize + global_id - zoffset2 + u] = temp[1] + (((double)u + 0.5) - 0.5*(double)zsize2) / ((double)zsize)*0.5*(dq2[B2*(ksize)+global_id - (BS_3 + 2 * N3G) - zoffset] - dq1[B2*(ksize)+global_id - (BS_3 + 2 * N3G) - zoffset]);
 					ps[1 * ksize + global_id - zoffset2 + u] += (((double)u + 0.5) - 0.5*(double)zsize2) / ((double)zsize2)*0.5*(dq2[B2*(ksize)+global_id - zoffset2] - dq1[B2*(ksize)+global_id - zoffset2]);
 				}
 			}
+		}
+		if (zoffset == 0) {
 			if ((POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) && (jcurr + D2 != BS_2 + N2G)){
 				temp[1] = ps[1 * (ksize)+global_id + (BS_3 + 2 * N3G) - zoffset];
 				for (u = 0; u < zsize; u++){
@@ -2339,10 +2712,10 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	int face;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor;
-	double cmax_r, cmin_r, cmax, cmin;
+    double cmax_r, cmin_r, cmax, cmin;
 	double ctop;
 	double temp3[NPR], temp4[NPR];
-	double cmax_l, cmin_l;
+    double cmax_l, cmin_l;
 	double p[NPR];
 	double temp1[NPR], temp2[NPR];
 	struct of_geom geom;
@@ -2396,7 +2769,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l, gam);
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l, gam);
 		//vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
-	
+
 		if (zoffset != 0 && dir == 3){
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
@@ -2432,7 +2805,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 		ctop = MY_MAX(cmax, cmin);
 		#pragma unroll 9	
-		for (k = 0; k<NPR; k++){
+		for (k = 0; k<NPR_U; k++){
 			#if(HLLF)
 			F[k*(ksize)+global_id] = (cmax*temp1[k] + cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
 			#else
@@ -2440,6 +2813,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#endif
 		}
 
+		
 		local_dtij[local_id] = factor / ctop;
 	}
 	if (calc_time == 1){
@@ -2454,6 +2828,189 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			dtij[group_id] = MY_MIN(local_dtij[0], local_dtij[1]);
 		}
 	}
+}
+
+__device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR])
+{
+	int j, k;
+	double  P, w, bsq, eta, ptot;
+
+	/* particle number flux */
+	flux[RHO] = pr[RHO] * ucon[dir];
+
+	/* MHD stress tensor, with first index up, second index down */
+	P = (GAMMA - 1.)*pr[UU];
+	w = P + pr[RHO] + pr[UU];
+	bsq = -bcon[0] * bcon[0] + bcon[1] * bcon[1] + bcon[2] * bcon[2] + bcon[3] * bcon[3];
+	eta = w + bsq;
+	ptot = P + 0.5*bsq;
+
+	/* single row of mhd stress tensor, first index up, second index down */
+	flux[UU] = -eta*ucon[dir] * ucon[0] + ptot*delta(dir, 0) + bcon[dir] * bcon[0];
+	for (j = 1; j < NDIM; j++)flux[UU + j] = eta*ucon[dir] * ucon[j] + ptot*delta(dir, j) - bcon[dir] * bcon[j];
+
+	/* dual of Maxwell tensor */
+	for (k = B1; k <= B3; k++) {
+		flux[k] = bcon[k - 4] * ucon[dir] - bcon[dir] * ucon[k - 4];
+	}
+	#if(DOKTOT )
+	flux[KTOT] = flux[RHO] * pr[KTOT];
+	#endif
+}
+
+__device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int dir, double *vmax, double *vmin)
+{
+	double discr, vp, vm, bsq, EE, EF, va2, cs2, cms2;
+	double Asq, Bsq, Au, Bu, Au2, Bu2, AuBu, A, B, C;
+	int j;
+
+	/* find fast magnetosonic speed */
+	bsq = -bcon[0] * bcon[0] + bcon[1] * bcon[1] + bcon[2] * bcon[2] + bcon[3] * bcon[3];
+	#if AMD
+	EF = fma(gam, pr[UU], pr[RHO]);
+	#else
+	EF = pr[RHO] + GAMMA* pr[UU];
+	#endif
+	EE = bsq + EF;
+
+	/* find fast magnetosonic speed */
+	cs2 = GAMMA*(GAMMA - 1.)*pr[UU] / EF;
+	va2 = bsq / EE;
+	cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
+
+	/* check on it! */
+	if (cms2 < 0.) {
+		cms2 = SMALL;
+	}
+	if (cms2 > 1.) {
+		cms2 = 1.;
+	}
+
+	/* now require that speed of wave measured by observer q->ucon is cms2 */
+	Asq = 1.;
+	Bsq = -1.;
+	Au = ucon[dir];
+	Bu = ucon[0];
+	Au2 = Au*Au;
+	Bu2 = Bu*Bu;
+	AuBu = Au*Bu;
+
+	#if AMD
+	A = fma(-(Bsq + Bu2), cms2, Bu2);
+	B = 2.* fma(-(AuBu), cms2, AuBu);
+	C = fma(-(Asq + Au2), cms2, Au2);
+	discr = fma(B, B, -4.*A*C);
+	#else
+	A = Bu2 - (Bsq + Bu2)*cms2;
+	B = 2.*(AuBu - (AuBu)*cms2);
+	C = Au2 - (Asq + Au2)*cms2;
+	discr = B*B - 4.*A*C;
+	#endif
+
+	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
+	else if (discr < -1.e-10) {
+		discr = 0.;
+	}
+
+	discr = sqrt(discr);
+	vp = -(-B + discr) / (2.*A);
+	vm = -(-B - discr) / (2.*A);
+
+	#if( FULL_DISP ) 
+	double vp2, vm2;
+	vp2 = NewtonRaphson(vp, 5, dir, ucon, bcon, EE, va2, cs2);
+	vm2 = NewtonRaphson(vm, 5, dir, ucon, bcon, EE, va2, cs2);
+	if (fabs(vp2 - vm2) > pow(10., -4.)) {
+		vp = vp2;
+		vm = vm2;
+	}
+	#endif
+
+	if (vp > vm) {
+		*vmax = vp;
+		*vmin = vm;
+	}
+	else {
+		*vmax = vm;
+		*vmin = vp;
+	}
+
+	return;
+}
+
+__device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *vmax, double *vmin)
+{
+	double discr, vp, vm, va2, cs2, cms2;
+	double bsq, eta, w;
+	double Acon_0, Acon_js;
+	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
+	if (dir == 1) {
+		Acon_0 = geom->gcon[1];
+		Acon_js = geom->gcon[4];
+	}
+	else if (dir == 2) {
+		Acon_0 = geom->gcon[2];
+		Acon_js = geom->gcon[7];
+	}
+	else if (dir == 3) {
+		Acon_0 = geom->gcon[3];
+		Acon_js = geom->gcon[9];
+	}
+
+	/* find fast magnetosonic speed */
+	#if AMD
+	w = fma(gam, pr[UU], pr[RHO]);
+	#else
+	w = pr[RHO] + GAMMA*pr[UU];
+	#endif
+	bsq = dot(q->bcon, q->bcov);
+	eta = w + bsq;
+	cs2 = GAMMA*(GAMMA - 1.)*pr[UU] / w;
+	va2 = bsq / eta;
+	cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
+
+	/* check on it! */
+	if (cms2 < 0.) {
+		//fail(FAIL_COEFF_NEG) ;
+		cms2 = SMALL;
+	}
+	if (cms2 > 1.) {
+		//fail(FAIL_COEFF_SUP) ;
+		cms2 = 1.;
+	}
+
+	/* now require that speed of wave measured by observer
+	q->ucon is cms2 */
+	Asq = Acon_js;
+	Bsq = geom->gcon[0];// dot(Bcon, Bcov);
+	Au = q->ucon[dir];
+	Bu = q->ucon[0];
+	AB = Acon_0;
+	Au2 = Au*Au;
+	Bu2 = Bu*Bu;
+	AuBu = Au*Bu;
+	#if AMD
+	A = fma(-(Bsq + Bu2), cms2, Bu2);
+	B = 2.* fma(-(AB + AuBu), cms2, AuBu);
+	C = fma(-(Asq + Au2), cms2, Au2);
+	discr = fma(B, B, -4.*A*C);
+	#else
+	A = Bu2 - (Bsq + Bu2)*cms2;
+	B = 2.*(AuBu - (AB + AuBu)*cms2);
+	C = Au2 - (Asq + Au2)*cms2;
+	discr = B*B - 4.*A*C;
+	#endif
+	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
+	else if (discr < -1.e-10) discr = 0.;
+
+	discr = sqrt(discr);
+	vp = -(-B + discr) / (2.*A);
+	vm = -(-B - discr) / (2.*A);
+
+	*vmax = MY_MAX(vp, vm);
+	*vmin = MY_MIN(vp, vm);
+
+	return;
 }
 
 __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, int NBR_2, int NBR_3, int NBR_4)
@@ -2680,8 +3237,8 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			}
 			#if(N3G>0)
 			temp += Dt / ((double)zsize*dx_3)*(E_corn[2 * ksize + global_id - zoffset + D3*zsize] - E_corn[2 * ksize + global_id - zoffset]) ;
-			for (u = 0; u < zsize; u++)psf[global_id - zoffset + u] = temp / gdet_GPU[index1 - NSY*(zoffset - u)];
 			#endif
+			for (u = 0; u < zsize; u++)psf[global_id - zoffset + u] = temp / gdet_GPU[index1 - NSY*(zoffset - u)];
 		}
 	}
 	
@@ -2710,7 +3267,9 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			for (u = 0; u < zsize; u++){
 				temp += Dt / ((double)zsize*dx_1)*(E_corn[3 * ksize + global_id + isize - zoffset + u] - E_corn[3 * ksize + global_id - zoffset + u]) ;
 			}
+			#if(N3G>0)
 			temp += -Dt / ((double)zsize*dx_3)*(E_corn[1 * ksize + global_id - zoffset + D3*zsize] - E_corn[1 * ksize + global_id - zoffset]);
+			#endif
 			for (u = 0; u < zsize; u++)psf[1 * ksize + global_id - zoffset + u] = temp / gdet_GPU[index2 - NSY*(zoffset - u)];
 		}
 	}
@@ -4029,4 +4588,836 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 			#endif
 		}
 	}
+}
+
+__global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
+	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double dx_1, double dx_2, double dx_3, int calc_time)
+{
+	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
+	int local_id = threadIdx.x;
+	int group_id = blockIdx.x;
+	int local_size = blockDim.x;
+	__shared__ double local_dtij[LOCAL_WORK_SIZE];
+	int k = 0;
+	int isize, icurr, jcurr, zcurr;
+	isize = (BS_3 + 2 * D3 - (dir == 3))*(BS_2 + 2 * D2 - (dir == 2));
+	zcurr = (global_id % (isize)) % (BS_3 + 2 * D3 - (dir == 3));
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * D3 - (dir == 3));
+	icurr = (global_id - (jcurr*(BS_3 + 2 * D3 - (dir == 3)) + zcurr)) / (isize);
+	zcurr += (N3G - 1)*D3 + (dir == 3);
+	jcurr += (N2G - 1)*D2 + (dir == 2);
+	icurr += (N1G - 1)*D1 + (dir == 1);
+	if (global_id<(BS_1 + 2 * D1 - (dir == 1)) * (BS_2 + 2 * D2 - (dir == 2)) * (BS_3 + 2 * D3 - (dir == 3))) k = 1;
+	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
+	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int idel, jdel, zdel, i, i1, j1, j2;
+	int face;
+	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
+	int zsize = 1, zlevel = 0, zoffset = 0;
+	double factor;
+	double cmax_r, cmin_r, ctop, cmax_l, cmin_l, cmax[2], cmin[2], cmax_roe, cmin_roe;
+	double p_l[NPR], p_r[NPR], F1[NPR], F_FT[2][NPR], F_HLL[2][NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR];
+	double l_ucon[NDIM], r_ucon[NDIM], l_bcon[NDIM], r_bcon[NDIM], int_velocity;
+	struct of_geom geom;
+	struct of_state state_l, state_r;
+	struct of_trans trans;
+	local_dtij[local_id] = 1.e9;
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
+	else if (dir == 3) {idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3*((double)zsize);}
+
+	if (k == 1) {
+		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
+
+		if (zoffset != 0 && dir == 3) {
+			#pragma unroll 9	
+			for (k = 0; k < NPR; k++) {
+				p_l[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id - D3]);
+				p_r[k] = p_l[k];
+			}
+		}
+		else {
+			#pragma unroll 9	
+			for (k = 0; k < NPR; k++) {
+				p_l[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
+				p_r[k] = dq1[k*(ksize)+global_id];
+			}
+		}
+		#if(STAGGERED)
+		for (k = B1; k <= B3; k++) {
+			if ((dir == 1 && k == B1) || (dir == 2 && k == B2) || (dir == 3 && k == B3)) {
+				p_l[k] = ps[(k - B1)*(ksize)+global_id];
+				p_r[k] = p_l[k];
+			}
+
+			if (dir == 2 && k == B1 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))) {
+				p_l[k] = 0.;
+				p_r[k] = 0.;
+			}
+		}
+		#endif
+
+		//Get interface velocity
+		int_velocity = geom.gcon[dir] / (sqrt(geom.gcon[dir] * geom.gcon[dir] - geom.gcon[0] * geom.gcon[4 * (dir == 1) + 7 * (dir == 2) + 9 * (dir == 3)]));
+
+		//First calculate HLL fluxes for F[B1], F[B2] and F[B3]
+		get_state(p_l, &geom, &state_l);
+		get_state(p_r, &geom, &state_r);
+
+		vchar(p_l, &state_l, &geom, dir, &(cmax_l), &(cmin_l));
+		vchar(p_r, &state_r, &geom, dir, &(cmax_r), &(cmin_r));
+
+		cmax[1] = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
+		cmin[1] = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
+		ctop = MY_MAX(cmax[1], cmin[1]);
+
+		//Transform 4 velocities and 4 magnetic fields to orthonormal frame
+		get_trans(icurr, jcurr, zcurr, dir, &trans, Mud, Mud_inv);
+		for (i1 = 0; i1 < NDIM; i1++) {
+			l_ucon[i1] = 0.0;
+			l_bcon[i1] = 0.0;
+			r_ucon[i1] = 0.0;
+			r_bcon[i1] = 0.0;
+			for (j1 = 0; j1 < NDIM; j1++) {
+				l_ucon[i1] += state_l.ucon[j1] * trans.Mud_inv[i1][j1];
+				l_bcon[i1] += state_l.bcon[j1] * trans.Mud_inv[i1][j1];
+				r_ucon[i1] += state_r.ucon[j1] * trans.Mud_inv[i1][j1];
+				r_bcon[i1] += state_r.bcon[j1] * trans.Mud_inv[i1][j1];
+			}
+		}
+
+		primtoflux_FT(p_l, l_ucon, l_bcon, dir, F_l);
+		primtoflux_FT(p_r, r_ucon, r_bcon, dir, F_r);
+		primtoflux_FT(p_l, l_ucon, l_bcon, 0, U_l);
+		primtoflux_FT(p_r, r_ucon, r_bcon, 0, U_r);
+
+		vchar_FT(p_l, l_ucon, l_bcon, dir, &(cmax_l), &(cmin_l));
+		vchar_FT(p_r, r_ucon, r_bcon, dir, &(cmax_r), &(cmin_r));
+
+		//Get wavespeed defined as maximum of left and right state
+		cmax_roe = MY_MAX(cmax_r, cmax_l);
+		cmin_roe = MY_MIN(cmin_r, cmin_l);
+
+		//Get interface velocity
+		int_velocity = geom.gcon[dir] / (sqrt(geom.gcon[dir] * geom.gcon[dir] - geom.gcon[0] * geom.gcon[4 * (dir == 1) + 7 * (dir == 2) + 9 * (dir == 3)]));
+
+		//Get HLL fluxes and conserved states
+		if (cmax_roe <= int_velocity) {
+			for (k = 0; k < NPR; k++) F_FT[0][k] = U_r[k];
+			for (k = 0; k < NPR; k++) F_FT[1][k] = F_r[k];
+		}
+		else if (cmin_roe >= int_velocity) {
+			for (k = 0; k < NPR; k++) F_FT[0][k] = U_l[k];
+			for (k = 0; k < NPR; k++) F_FT[1][k] = F_l[k];
+		}
+		else {
+			for (k = 0; k < NPR; k++) F_HLL[0][k] = (F_l[k] - F_r[k] + cmax_roe*U_r[k] - cmin_roe*U_l[k]) / (cmax_roe - cmin_roe + SMALL);
+			for (k = 0; k < NPR; k++) F_HLL[1][k] = ((cmax_roe * F_l[k] - cmin_roe * F_r[k] + cmax_roe * cmin_roe * (U_r[k] - U_l[k])) / (cmax_roe - cmin_roe + SMALL));
+
+			int do_hydro = (fabs(F_HLL[0][dir + B1 -1] * F_HLL[0][dir + B1 - 1] * l_ucon[0] * r_ucon[0]) < pow(10., -14.)*fabs(F_HLL[0][UU]));
+
+			if (do_hydro) {
+				calc_HLLC_hydro(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
+			}
+			else {
+				#if(HLLD)
+				calc_HLLD(dir, cmin_roe, cmax_roe, int_velocity, l_ucon, r_ucon, F_FT, F_HLL, F_l, F_r, U_l, U_r);
+				#elif(HLLC)
+				calc_HLLC(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
+				#else
+				for (k = 0; k < NPR; k++) {
+					F_FT[0][k] = F_HLL[0][k];
+					F_FT[1][k] = F_HLL[1][k];
+				}
+				#endif
+			}
+		}
+
+		//Transform stress energy tensor from orthonormal frame to coordinate basis
+		for (j1 = 0; j1<NDIM; j1++) {
+			F1[j1 + UU] = 0.;
+			for (j2 = 0; j2<NDIM; j2++) {
+				F1[j1 + UU] += F_FT[0][j2 + UU] * trans.Mud[dir][0] * trans.Mud_inv[j2][j1];
+				F1[j1 + UU] += F_FT[1][j2 + UU] * trans.Mud[dir][dir] * trans.Mud_inv[j2][j1];
+			}
+		}
+
+		//Transform (dual) Maxwell tensor from orthonormal frame to coordinate basis. First set 0 component div.B=0 based on values from solver (e.g. HLL)
+		F_FT[0][U3] = 0.;
+		F_FT[1][U3] = -F_FT[0][B1 - 1 + dir];
+		for (j1 = 1; j1<NDIM; j1++) {
+			F1[j1 + U3] = 0.;
+			for (j2 = 0; j2<NDIM; j2++) {
+				F1[j1 + U3] += F_FT[0][j2 + U3] * trans.Mud[dir][0] * trans.Mud[j1][j2];
+				F1[j1 + U3] += F_FT[1][j2 + U3] * trans.Mud[dir][dir] * trans.Mud[j1][j2];
+			}
+		}
+
+		//Transform mass and entropy flux from orthonormal frame to coordinate basis
+		F1[RHO] = F_FT[0][RHO] * trans.Mud[dir][0];
+		F1[RHO] += F_FT[1][RHO] * trans.Mud[dir][dir];
+		F1[KTOT] = F_FT[0][KTOT] * trans.Mud[dir][0];
+		F1[KTOT] += F_FT[1][KTOT] * trans.Mud[dir][dir];
+
+		//Make conserved quantity consisten with H-AMR
+		F1[UU] += F1[RHO];
+
+		for (k = 0; k<NPR; k++) F[k*(ksize)+global_id] = geom.g*F1[k];
+
+		local_dtij[local_id] = factor / ctop;
+	}
+	if (calc_time == 1) {
+		__syncthreads();
+		for (i = local_size / 2; i > 1; i = i / 2) {
+			if (local_id < i) {
+				local_dtij[local_id] = MY_MIN(local_dtij[local_id], local_dtij[local_id + i]);
+			}
+			__syncthreads();
+		}
+		if (local_id == 0) {
+			dtij[group_id] = MY_MIN(local_dtij[0], local_dtij[1]);
+		}
+	}
+}
+
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
+	double A, B, C, D, vcon, ptot;
+	int k, fail_HLLC = 0;
+	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+
+	if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	//Calculate x-component 3-velocity
+	A = -F_HLL[1][UU];
+	B = -F_HLL[1][UGEN_1] + F_HLL[0][UU];
+	C = F_HLL[0][UGEN_1];
+	D = B*B - 4.*A*C;
+	vcon = (-B - sqrt(D)) / (2.*A);
+
+	//Calculate total pressure ptot=pgas+0.5*bsq
+	ptot = -(-F_HLL[1][UU])*vcon + F_HLL[1][UGEN_1];
+	if (!(fabs(ptot) > 0.) || (vcon < cmin_roe) || (vcon > cmax_roe) || !(fabs(vcon) > 0.)) fail_HLLC = 1;
+
+	if (cmax_roe > int_velocity && vcon <= int_velocity && fail_HLLC == 0) {
+		//Set Rankine-Hugoniot jump conditions
+		F_FT[0][RHO] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[RHO];
+		F_FT[0][UU] = (cmax_roe*U_r[UU] + U_r[UGEN_1] - ptot*vcon) / (cmax_roe - vcon + SMALL);
+		F_FT[0][UGEN_1] = (-F_FT[0][UU] + ptot)*vcon;
+		F_FT[0][UGEN_2] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[UGEN_2];
+		F_FT[0][UGEN_3] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[UGEN_3];
+		F_FT[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_FT[0][BGEN_2] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[BGEN_2];
+		F_FT[0][BGEN_3] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[BGEN_3];
+		F_FT[0][KTOT] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[KTOT];
+
+		//Calculate HLLC flux
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
+	}
+	else if (cmin_roe < int_velocity && vcon >= int_velocity && fail_HLLC == 0) {
+		//Set Rankine-Hugoniot jump conditions
+		F_FT[0][RHO] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[RHO];
+		F_FT[0][UU] = (cmin_roe*U_l[UU] + U_l[UGEN_1] - ptot*vcon) / (cmin_roe - vcon + SMALL);
+		F_FT[0][UGEN_1] = (-F_FT[0][UU] + ptot)*vcon;
+		F_FT[0][UGEN_2] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[UGEN_2];
+		F_FT[0][UGEN_3] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[UGEN_3];
+		F_FT[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_FT[0][BGEN_2] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[BGEN_2];
+		F_FT[0][BGEN_3] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[BGEN_3];
+		F_FT[0][KTOT] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[KTOT];
+
+		//Calculate HLLC flux
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
+	}
+	else {
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_HLL[0][k];
+			F_FT[1][k] = F_HLL[1][k];
+		}
+	}
+}
+
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
+	double A, B, C, D, vcon[NDIM], gammasq, ptot, v_dot_B;
+	int k, fail_HLLC = 0;
+	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+
+	if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	//Calculate x-component 3-velocity
+	A = -F_HLL[1][UU] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
+	B = -F_HLL[1][UGEN_1] + F_HLL[0][UU] + (F_HLL[0][BGEN_2] * F_HLL[0][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[0][BGEN_3]) + (F_HLL[1][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[1][BGEN_3] * F_HLL[1][BGEN_3]);
+	C = F_HLL[0][UGEN_1] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
+	D = B*B - 4.*A*C;
+	vcon[GEN_1] = (-B - sqrt(D)) / (2.*A);
+
+	//Calculate other components 3-velocity
+	vcon[GEN_2] = (F_HLL[0][BGEN_2] * vcon[GEN_1] - F_HLL[1][BGEN_2]) / F_HLL[0][BGEN_1];
+	vcon[GEN_3] = (F_HLL[0][BGEN_3] * vcon[GEN_1] - F_HLL[1][BGEN_3]) / F_HLL[0][BGEN_1];
+
+	//Calculate gamma factor
+	gammasq = 1. / (1. - (vcon[1] * vcon[1] + vcon[2] * vcon[2] + vcon[3] * vcon[3]));
+
+	//Calculate total pressure ptot=pgas+0.5*bsq
+	v_dot_B = (vcon[1] * F_HLL[0][B1] + vcon[2] * F_HLL[0][B2] + vcon[3] * F_HLL[0][B3]);
+	ptot = -(-F_HLL[1][UU] - F_HLL[0][BGEN_1] * (v_dot_B))*vcon[dir] + F_HLL[1][UGEN_1] + pow(F_HLL[0][BGEN_1], 2.0) / gammasq;
+
+	if (!(fabs(ptot) > 0.) || (vcon[GEN_1] < cmin_roe) || (vcon[GEN_1] > cmax_roe) || !(fabs(vcon[GEN_1]) > 0.)) {
+		fail_HLLC = 1;
+	}
+
+	if (cmax_roe > int_velocity && vcon[dir] <= int_velocity && fail_HLLC == 0) {
+		//Set Rankine-Hugoniot jump conditions
+		F_FT[0][RHO] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon[dir] + SMALL)*U_r[RHO];
+		F_FT[0][UU] = (cmax_roe*U_r[UU] + U_r[UGEN_1] - ptot*vcon[dir] + v_dot_B*F_HLL[0][BGEN_1]) / (cmax_roe - vcon[dir] + SMALL);
+		F_FT[0][UGEN_1] = (-F_FT[0][UU] + ptot)*vcon[dir] - v_dot_B*F_HLL[0][BGEN_1];
+		F_FT[0][UGEN_2] = (-F_HLL[0][BGEN_1] * (F_HLL[0][BGEN_2] / (gammasq)+v_dot_B*vcon[GEN_2]) + cmax_roe*U_r[UGEN_2] - F_r[UGEN_2]) / (cmax_roe - vcon[dir] + SMALL);
+		F_FT[0][UGEN_3] = (-F_HLL[0][BGEN_1] * (F_HLL[0][BGEN_3] / (gammasq)+v_dot_B*vcon[GEN_3]) + cmax_roe*U_r[UGEN_3] - F_r[UGEN_3]) / (cmax_roe - vcon[dir] + SMALL);
+		F_FT[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_FT[0][BGEN_2] = F_HLL[0][BGEN_2];
+		F_FT[0][BGEN_3] = F_HLL[0][BGEN_3];
+		F_FT[0][KTOT] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon[dir] + SMALL)*U_r[KTOT];
+
+		//Calculate HLLC flux
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
+	}
+	else if (cmin_roe < int_velocity && vcon[dir] >= int_velocity && fail_HLLC == 0) {
+		//Set Rankine-Hugoniot jump conditions
+		F_FT[0][RHO] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon[dir] + SMALL)*U_l[RHO];
+		F_FT[0][UU] = (cmin_roe*U_l[UU] + U_l[UGEN_1] - ptot*vcon[dir] + v_dot_B*F_HLL[0][BGEN_1]) / (cmin_roe - vcon[dir] + SMALL);
+		F_FT[0][UGEN_1] = (-F_FT[0][UU] + ptot)*vcon[dir] - v_dot_B*F_HLL[0][BGEN_1];
+		F_FT[0][UGEN_2] = (-F_HLL[0][BGEN_1] * (F_HLL[0][BGEN_2] / (gammasq)+v_dot_B*vcon[GEN_2]) + cmin_roe*U_l[UGEN_2] - F_l[UGEN_2]) / (cmin_roe - vcon[dir] + SMALL);
+		F_FT[0][UGEN_3] = (-F_HLL[0][BGEN_1] * (F_HLL[0][BGEN_3] / (gammasq)+v_dot_B*vcon[GEN_3]) + cmin_roe*U_l[UGEN_3] - F_l[UGEN_3]) / (cmin_roe - vcon[dir] + SMALL);
+		F_FT[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_FT[0][BGEN_2] = F_HLL[0][BGEN_2];
+		F_FT[0][BGEN_3] = F_HLL[0][BGEN_3];
+		F_FT[0][KTOT] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon[dir] + SMALL)*U_l[KTOT];
+
+		//Calculate HLLC flux
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
+	}
+	else {
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_HLL[0][k];
+			F_FT[1][k] = F_HLL[1][k];
+		}
+	}
+}
+
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
+	double K_al[NDIM], B_al[NDIM], K_ar[NDIM], B_ar[NDIM], vcon_al[NDIM], vcon_ar[NDIM], eta_l, eta_r, w_al, w_ar, vcon_cl[NDIM], vcon_cr[NDIM], B_c[NDIM], R_l[NPR], R_r[NPR], ptot;
+	int k, fail_HLLC = 0, fail_HLLD = 0;
+
+	for (k = 0; k < NPR; k++) R_l[k] = (cmin_roe*U_l[k] - F_l[k]);
+	for (k = 0; k < NPR; k++) R_r[k] = (cmax_roe*U_r[k] - F_r[k]);
+
+	//Calculate necessary pressure using Newton Raphson solve
+	ptot = calc_HLLD_pres(dir, &fail_HLLC, &fail_HLLD, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, K_al, B_al, K_ar, B_ar, vcon_al, vcon_ar, &eta_l, &eta_r, &w_al, &w_ar, vcon_cl, vcon_cr, F_FT, F_HLL, F_l, F_r, U_l, U_r, R_l, R_r, B_c);
+
+	//Check generated parameters for consistency if previous line did not fail
+	if (fail_HLLD == 0) check_HLLD_par(dir, &fail_HLLD, cmin_roe, cmax_roe, ptot, w_al, w_ar, eta_l, eta_r, vcon_cl, vcon_cr, vcon_al, vcon_ar, K_al, K_ar, B_c);
+
+	if (fail_HLLD == 0) { //Calculate state using HLLD solver
+		calc_HLLD_state(dir, l_ucon, r_ucon, ptot, int_velocity, cmin_roe, cmax_roe, K_al, B_al, K_ar, B_ar, vcon_al, vcon_ar, eta_l, eta_r, w_al, w_ar, vcon_cl, vcon_cr, F_FT, F_HLL, F_l, F_r, U_l, U_r, R_l, R_r, B_c);
+	}
+	else if (fail_HLLC == 0) { //Calculate using HLLC solver
+		calc_HLLC(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
+	}
+	else { //Calculate using HLL solver
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_HLL[0][k];
+			F_FT[1][k] = F_HLL[1][k];
+		}
+	}
+}
+
+__device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
+	double A, B, C, D, gammasq, vcon[NDIM], ptot_HLLC, ptot, v_dot_B;
+	int keep_iterating = 1;
+	int n_iter = 0;
+	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+
+	if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	/*Provide estimate for ptot from HLLC solver*/
+	//Calculate x-component 3-velocity
+	A = -F_HLL[1][UU] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
+	B = -F_HLL[1][UGEN_1] + F_HLL[0][UU] + (F_HLL[0][BGEN_2] * F_HLL[0][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[0][BGEN_3]) + (F_HLL[1][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[1][BGEN_3] * F_HLL[1][BGEN_3]);
+	C = F_HLL[0][UGEN_1] - (F_HLL[0][BGEN_2] * F_HLL[1][BGEN_2] + F_HLL[0][BGEN_3] * F_HLL[1][BGEN_3]);
+	D = B*B - 4.*A*C;
+	vcon[GEN_1] = (-B - sqrt(MY_MAX(0.,D))) / (2.*A);
+
+	//Calculate other components 3-velocity
+	vcon[GEN_2] = (F_HLL[0][BGEN_2] * vcon[GEN_1] - F_HLL[1][BGEN_2]) / F_HLL[0][BGEN_1];
+	vcon[GEN_3] = (F_HLL[0][BGEN_3] * vcon[GEN_1] - F_HLL[1][BGEN_3]) / F_HLL[0][BGEN_1];
+
+	//Calculate lorentz factor
+	gammasq = 1. / (1. - (vcon[1] * vcon[1] + vcon[2] * vcon[2] + vcon[3] * vcon[3]));
+
+	//If vcon unphysical fail HLLC solver. Still try to obtain HLLD solution
+	if ((vcon[dir] < cmin_roe) || (vcon[dir] > cmax_roe) || !(fabs(vcon[dir]) > 0.)) fail_HLLC[0] = 1;
+
+	//Calculate total pressure ESTIMATE based on HLLC solver value: ptot=pgas+0.5*bsq
+	v_dot_B = (vcon[1] * F_HLL[0][B1] + vcon[2] * F_HLL[0][B2] + vcon[3] * F_HLL[0][B3]);
+	ptot_HLLC = -(-F_HLL[1][UU] - F_HLL[0][BGEN_1] * (v_dot_B))*vcon[dir] + F_HLL[1][UGEN_1] + pow(F_HLL[0][BGEN_1], 2.0) / gammasq;
+	ptot = ptot_HLLC;
+
+	//If ptot invalid, tell the code not to use the HLLC solver and revert to hydro estimate for HLLD solver
+	if (!(fabs(ptot) > 0.)) {
+		fail_HLLC[0] = 1;
+		A = 1.;
+		B = (-F_HLL[0][UU] - F_HLL[1][UGEN_1]);
+		C = -F_HLL[0][UGEN_1] * F_HLL[1][UU] + F_HLL[1][UGEN_1] * F_HLL[0][UU];
+		D = B*B - 4.*A*C;
+		ptot = (-B + sqrt(MY_MAX(0., D))) / (2.*A);
+		if (!(fabs(ptot) > 0.)) {
+			fail_HLLD[0] = 1;
+			return -10.;
+		}
+	}
+
+	//Newton Raphson loop to find pressure of intermediate states in HLLD solver
+	double error_1, error_2;
+	double ptot_old, de_dptot, de_dlptot, dlptot, lptot, d_ptot = 0.;
+	error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
+
+	while (keep_iterating) {
+		//Calculate error and error/d_ptot
+		error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -8.)*ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
+
+		//Save old value of ptot
+		ptot_old = ptot;
+
+		//Make the newton step in log-space
+		//de_dptot = (error_2 - error_1) / (pow(10., -8.)*ptot);
+		//de_dlptot = de_dptot*ptot;
+		//dlptot = error_1 / de_dlptot;
+		//lptot = log(ptot_old) - dlptot;
+		//ptot = exp(lptot);
+		//d_ptot = ptot - ptot_old;
+
+		de_dptot = (error_2 - error_1) / (pow(10., -8.)*ptot);
+		d_ptot = error_1 / de_dptot;
+		ptot = ptot - d_ptot;
+
+		//Calculate updated value of ptot
+		error_2 = error_1;
+		error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
+
+		if ((fabs(d_ptot) <= pow(10., -7.)*ptot) || n_iter > 10) {
+			keep_iterating = 0;
+		}
+
+		n_iter++;
+	}
+
+	//If Newton-Raphson solver did not converge, reset ptot to ptot_HLLC and tag fail_HLLD
+	if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -6.)*ptot))) {
+		ptot = ptot_HLLC;
+		fail_HLLD[0] = 1;
+	}
+
+	return ptot;
+}
+
+__device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
+	double v_dot_B, F_al[2][NPR], F_ar[2][NPR], F_cl[2][NPR], F_cr[2][NPR];
+	int k, GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+
+	if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	//Calculate state between outer waves and alfven waves according to equations 32-34
+	if ((cmin_roe < int_velocity) && (int_velocity <= vcon_cl[dir])) {
+		v_dot_B = vcon_al[1] * B_al[1] + vcon_al[2] * B_al[2] + vcon_al[3] * B_al[3];
+		F_al[0][RHO] = R_l[RHO] / (cmin_roe - vcon_al[GEN_1]);
+		F_al[0][UU] = (R_l[UU] - ptot*vcon_al[GEN_1] + v_dot_B*B_al[GEN_1]) / (cmin_roe - vcon_al[GEN_1] + SMALL);
+		F_al[0][UGEN_1] = (-F_al[0][UU] + ptot)*vcon_al[GEN_1] - v_dot_B*B_al[GEN_1];
+		F_al[0][UGEN_2] = (-F_al[0][UU] + ptot)*vcon_al[GEN_2] - v_dot_B*B_al[GEN_2];
+		F_al[0][UGEN_3] = (-F_al[0][UU] + ptot)*vcon_al[GEN_3] - v_dot_B*B_al[GEN_3];
+		F_al[0][BGEN_1] = F_HLL[0][BGEN_1]; //Check this logic
+		F_al[0][BGEN_2] = B_al[GEN_2];
+		F_al[0][BGEN_3] = B_al[GEN_3];
+		F_al[0][KTOT] = R_l[KTOT] / (cmin_roe - vcon_al[GEN_1]);
+	}
+
+	if ((cmax_roe > int_velocity) && (vcon_cl[dir] <= int_velocity)) {
+		v_dot_B = vcon_ar[1] * B_ar[1] + vcon_ar[2] * B_ar[2] + vcon_ar[3] * B_ar[3];
+		F_ar[0][RHO] = R_r[RHO] / (cmax_roe - vcon_ar[GEN_1]);
+		F_ar[0][UU] = (R_r[UU] - ptot*vcon_ar[GEN_1] + v_dot_B*B_ar[GEN_1]) / (cmax_roe - vcon_ar[GEN_1] + SMALL);
+		F_ar[0][UGEN_1] = (-F_ar[0][UU] + ptot)*vcon_ar[GEN_1] - v_dot_B*B_ar[GEN_1];
+		F_ar[0][UGEN_2] = (-F_ar[0][UU] + ptot)*vcon_ar[GEN_2] - v_dot_B*B_ar[GEN_2];
+		F_ar[0][UGEN_3] = (-F_ar[0][UU] + ptot)*vcon_ar[GEN_3] - v_dot_B*B_ar[GEN_3];
+		F_ar[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_ar[0][BGEN_2] = B_ar[GEN_2];
+		F_ar[0][BGEN_3] = B_ar[GEN_3];
+		F_ar[0][KTOT] = R_r[KTOT] / (cmax_roe - vcon_ar[GEN_1]);
+	}
+
+	if ((K_al[dir] < int_velocity) && (int_velocity <= vcon_cl[dir])) {
+		v_dot_B = vcon_cl[1] * B_c[1] + vcon_cl[2] * B_c[2] + vcon_cl[3] * B_c[3];
+		F_cl[0][RHO] = F_al[0][RHO] * (K_al[GEN_1] - vcon_al[GEN_1]) / (K_al[GEN_1] - vcon_cl[GEN_1]);
+		F_cl[0][UU] = -(-K_al[GEN_1] * F_al[0][UU] - F_al[0][UGEN_1] + ptot*vcon_cl[GEN_1] - v_dot_B*F_al[0][BGEN_1]) / (K_al[GEN_1] - vcon_cl[GEN_1]);
+		F_cl[0][UGEN_1] = (-F_al[0][UU] + ptot)*vcon_cl[GEN_1] - v_dot_B*B_c[GEN_1];
+		F_cl[0][UGEN_2] = (-F_al[0][UU] + ptot)*vcon_cl[GEN_2] - v_dot_B*B_c[GEN_2];
+		F_cl[0][UGEN_3] = (-F_al[0][UU] + ptot)*vcon_cl[GEN_3] - v_dot_B*B_c[GEN_3];
+		F_cl[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_cl[0][BGEN_2] = B_c[GEN_2];
+		F_cl[0][BGEN_3] = B_c[GEN_3];
+		F_cl[0][KTOT] = F_al[0][KTOT] * (K_al[GEN_1] - vcon_al[GEN_1]) / (K_al[GEN_1] - vcon_cl[GEN_1]);
+	}
+
+	if ((vcon_cr[dir] <= int_velocity) && (int_velocity < K_ar[dir])) {
+		v_dot_B = vcon_cr[1] * B_c[1] + vcon_cr[2] * B_c[2] + vcon_cr[3] * B_c[3];
+		F_cr[0][RHO] = F_ar[0][RHO] * (K_ar[GEN_1] - vcon_ar[GEN_1]) / (K_ar[GEN_1] - vcon_cr[GEN_1]);
+		F_cr[0][UU] = -(-K_ar[GEN_1] * F_ar[0][UU] - F_ar[0][UGEN_1] + ptot*vcon_cr[GEN_1] - v_dot_B*F_ar[0][BGEN_1]) / (K_ar[GEN_1] - vcon_cr[GEN_1]);
+		F_cr[0][UGEN_1] = (-F_ar[0][UU] + ptot)*vcon_cr[GEN_1] - v_dot_B*B_c[GEN_1];
+		F_cr[0][UGEN_2] = (-F_ar[0][UU] + ptot)*vcon_cr[GEN_2] - v_dot_B*B_c[GEN_2];
+		F_cr[0][UGEN_3] = (-F_ar[0][UU] + ptot)*vcon_cr[GEN_3] - v_dot_B*B_c[GEN_3];
+		F_cr[0][BGEN_1] = F_HLL[0][BGEN_1];
+		F_cr[0][BGEN_2] = B_c[GEN_2];
+		F_cr[0][BGEN_3] = B_c[GEN_3];
+		F_cr[0][KTOT] = F_ar[0][KTOT] * (K_ar[GEN_1] - vcon_ar[GEN_1]) / (K_ar[GEN_1] - vcon_cr[GEN_1]);
+	}
+
+	if ((cmin_roe < int_velocity) && (int_velocity <= K_al[dir])) {
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_al[0][k];
+			F_FT[1][k] = F_l[k] + cmin_roe * (F_al[0][k] - U_l[k]);
+		}
+	}
+	else if ((K_al[dir] < int_velocity) && (int_velocity <= vcon_cl[dir])) {
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_cl[0][k];
+			F_FT[1][k] = F_l[k] + cmin_roe * (F_al[0][k] - U_l[k]) + K_al[dir] * (F_cl[0][k] - F_al[0][k]);
+		}
+	}
+	else if ((vcon_cr[dir] <= int_velocity) && (int_velocity < K_ar[dir])) {
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_cr[0][k];
+			F_FT[1][k] = F_r[k] + cmax_roe * (F_ar[0][k] - U_r[k]) + K_ar[dir] * (F_cr[0][k] - F_ar[0][k]);
+		}
+	}
+	else if (((cmax_roe > int_velocity) && (int_velocity > K_ar[dir]))) {
+		for (k = 0; k < NPR; k++) {
+			F_FT[0][k] = F_ar[0][k];
+			F_FT[1][k] = F_r[k] + cmax_roe * (F_ar[0][k] - U_r[k]);
+		}
+	}
+}
+
+//Calculates speed of contact mode and checks that all speeds and parameters of the solution are physical
+__device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]) {
+	double vsq;
+	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+
+	if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	vcon_cl[dir] = (vcon_cl[dir] + vcon_cr[dir])*0.5;
+	vcon_cr[dir] = vcon_cl[dir];
+	vcon_cl[GEN_2] = (vcon_cl[GEN_2] + vcon_cr[GEN_2])*0.5;
+	vcon_cr[GEN_2] = vcon_cl[GEN_2];
+	vcon_cl[GEN_3] = (vcon_cl[GEN_3] + vcon_cr[GEN_3])*0.5;
+	vcon_cr[GEN_3] = vcon_cl[GEN_3];
+
+	//Check that contact wave lies between inner and outer Alfven speed
+	if (vcon_cl[dir] < K_al[dir] || vcon_cl[dir] < cmin_roe) fail_HLLD[0] = 1;
+	if (vcon_cl[dir] > K_ar[dir] || vcon_cl[dir] > cmax_roe) fail_HLLD[0] = 1;
+
+	//Check that contact wave is going slower than v=0.99c
+	vsq = (vcon_cl[1] * vcon_cl[1] + vcon_cl[2] * vcon_cl[2] + vcon_cl[3] * vcon_cl[3]);
+	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+
+	//If wavefan inconsisten revert to HLLC
+	if (fabs(w_al) <= fabs(ptot) || vcon_al[dir] <= cmin_roe || K_al[dir] <= cmin_roe || w_al <= 0.) fail_HLLD[0] = 1;
+	if (fabs(w_ar) <= fabs(ptot) || vcon_ar[dir] >= cmax_roe || K_ar[dir] >= cmax_roe || w_ar <= 0.) fail_HLLD[0] = 1;
+
+	//Check that v_al is going slower than v=0.99c
+	vsq = (vcon_al[1] * vcon_al[1] + vcon_al[2] * vcon_al[2] + vcon_al[3] * vcon_al[3]);
+	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+
+	//Check that v_ar is going slower than v=0.99c
+	vsq = (vcon_ar[1] * vcon_ar[1] + vcon_ar[2] * vcon_ar[2] + vcon_ar[3] * vcon_al[3]);
+	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+
+	//Check that left Alfven wave is going slower than v=0.99c
+	vsq = (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]);
+	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+
+	//Check that left Alfven wave is going slower than v=0.99c
+	vsq = (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]);
+	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+}
+
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {
+	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+	double A, C, G, X, Q, error = 0.;
+	double delta_Kx, Y_l, Y_r, B_hat[NDIM];
+
+	if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	//Calculate left wave speed in Riemann fan and w=rho+p+u+b^2
+	A = R_l[UGEN_1] + cmin_roe*R_l[UU] + ptot * (1. - cmin_roe*cmin_roe);
+	G = R_l[BGEN_2] * R_l[BGEN_2] + R_l[BGEN_3] + R_l[BGEN_3];
+	C = R_l[UGEN_2] * R_l[BGEN_2] + R_l[UGEN_3] * R_l[BGEN_3];
+	Q = -A - G + (BX * BX) * (1. - cmin_roe*cmin_roe);
+	X = BX * (A*cmin_roe*BX + C) - (A + G)*(cmin_roe*ptot - R_l[UU]);
+	vcon_al[GEN_1] = (BX * (A*BX + cmin_roe*C) - (A + G)*(ptot + R_l[UGEN_1])) ;
+	vcon_al[GEN_2] = (Q*R_l[UGEN_2] + R_l[BGEN_2] * (C + BX * (cmin_roe*R_l[UGEN_1] + R_l[UU]))) ;
+	vcon_al[GEN_3] = (Q*R_l[UGEN_3] + R_l[BGEN_3] * (C + BX * (cmin_roe*R_l[UGEN_1] + R_l[UU]))) ;
+	w_al[0] = ptot + (-R_l[UU] * X - (vcon_al[GEN_1] * R_l[UGEN_1] + vcon_al[GEN_2] * R_l[UGEN_2] + vcon_al[GEN_3] * R_l[UGEN_3])) / (cmin_roe*X - vcon_al[GEN_1] + SMALL);
+	vcon_al[GEN_1] = vcon_al[GEN_1] / X;
+	vcon_al[GEN_2] = vcon_al[GEN_2] / X;
+	vcon_al[GEN_3] = vcon_al[GEN_3] / X;
+
+	//Calculate magnetic fields according to eq. 21
+	B_al[GEN_1] = BX;
+	B_al[GEN_2] = -(R_l[BGEN_2] * (cmin_roe*ptot - R_l[UU]) - BX*R_l[UGEN_2]) / A;
+	B_al[GEN_3] = -(R_l[BGEN_3] * (cmin_roe*ptot - R_l[UU]) - BX*R_l[UGEN_3]) / A;
+
+	//Calculate right wave speed in Riemann fan and w=rho+p+u+b^2
+	A = R_r[UGEN_1] + cmax_roe*R_r[UU] + ptot * (1. - cmax_roe*cmax_roe);
+	G = R_r[BGEN_2] * R_r[BGEN_2] + R_r[BGEN_3] + R_r[BGEN_3];
+	C = R_r[UGEN_2] * R_r[BGEN_2] + R_r[UGEN_3] * R_r[BGEN_3];
+	Q = -A - G + (BX * BX) * (1. - cmax_roe*cmax_roe);
+	X = BX * (A*cmax_roe*BX + C) - (A + G)*(cmax_roe*ptot - R_r[UU]);
+	vcon_ar[GEN_1] = (BX * (A*BX + cmax_roe*C) - (A + G)*(ptot + R_r[UGEN_1])) ;
+	vcon_ar[GEN_2] = (Q*R_r[UGEN_2] + R_r[BGEN_2] * (C + BX * (cmax_roe*R_r[UGEN_1] + R_r[UU]))) ;
+	vcon_ar[GEN_3] = (Q*R_r[UGEN_3] + R_r[BGEN_3] * (C + BX * (cmax_roe*R_r[UGEN_1] + R_r[UU]))) ;
+	w_ar[0] = ptot + (-R_r[UU] * X - (vcon_ar[GEN_1] * R_r[UGEN_1] + vcon_ar[GEN_2] * R_r[UGEN_2] + vcon_ar[GEN_3] * R_r[UGEN_3])) / (cmax_roe*X - vcon_ar[GEN_1] + SMALL);
+	vcon_ar[GEN_1] = vcon_ar[GEN_1] / X;
+	vcon_ar[GEN_2] = vcon_ar[GEN_2] / X;
+	vcon_ar[GEN_3] = vcon_ar[GEN_3] / X;
+
+	//Calculate magnetic fields according to eq. 21
+	B_ar[GEN_1] = BX;
+	B_ar[GEN_2] = -(R_r[BGEN_2] * (cmax_roe*ptot - R_r[UU]) - BX*R_r[UGEN_2]) / A;
+	B_ar[GEN_3] = -(R_r[BGEN_3] * (cmax_roe*ptot - R_r[UU]) - BX*R_r[UGEN_3]) / A;
+
+	//B_al[GEN_1] = BX;
+	//B_al[GEN_2] = (R_l[BGEN_2] - B_al[GEN_1] * vcon_al[GEN_2]) / (cmin_roe - vcon_al[GEN_1]);
+	//B_al[GEN_3] = (R_l[BGEN_3] - B_al[GEN_1] * vcon_al[GEN_3]) / (cmin_roe - vcon_al[GEN_1]);
+
+	//B_ar[GEN_1] = BX;
+	//B_ar[GEN_2] = (R_r[BGEN_2] - B_ar[GEN_1] * vcon_ar[GEN_2]) / (cmax_roe - vcon_ar[GEN_1]);
+	//B_ar[GEN_3] = (R_r[BGEN_3] - B_ar[GEN_1] * vcon_ar[GEN_3]) / (cmax_roe - vcon_ar[GEN_1]);
+
+	//Calculate K-vector according to eq. 43
+	eta_l[0] = -((double)(BX > 0.0) - (double)(BX <= 0.0))*sqrt(w_al[0]);
+	K_al[GEN_1] = (R_l[UGEN_1] + ptot + R_l[BGEN_1] * eta_l[0]) / (cmin_roe * ptot - R_l[UU] + BX * eta_l[0]);
+	K_al[GEN_2] = (R_l[UGEN_2] + R_l[BGEN_2] * eta_l[0]) / (cmin_roe * ptot - R_l[UU] + BX * eta_l[0]);
+	K_al[GEN_3] = (R_l[UGEN_3] + R_l[BGEN_3] * eta_l[0]) / (cmin_roe * ptot - R_l[UU] + BX * eta_l[0]);
+
+	eta_r[0] = ((double)(BX>0.0) - (double)(BX <= 0.0))*sqrt(w_ar[0]);
+	K_ar[GEN_1] = (R_r[UGEN_1] + ptot + R_r[BGEN_1] * eta_r[0]) / (cmax_roe * ptot - R_r[UU] + BX * eta_r[0]);
+	K_ar[GEN_2] = (R_r[UGEN_2] + R_r[BGEN_2] * eta_r[0]) / (cmax_roe * ptot - R_r[UU] + BX * eta_r[0]);
+	K_ar[GEN_3] = (R_r[UGEN_3] + R_r[BGEN_3] * eta_r[0]) / (cmax_roe * ptot - R_r[UU] + BX * eta_r[0]);
+	delta_Kx = (K_ar[dir] - K_al[dir]) + pow(10., -12.);
+
+	//Calculate magnetic field between alfven waves and contact discontinuity according to eq. 45
+	B_c[GEN_1] = BX*delta_Kx;
+	B_c[GEN_2] = ((B_ar[GEN_2] * (K_ar[GEN_1] - vcon_ar[dir]) + B_ar[dir] * vcon_ar[GEN_2]) - (B_al[GEN_2] * (K_al[GEN_1] - vcon_al[dir]) + B_al[dir] * vcon_al[GEN_2]));
+	B_c[GEN_3] = ((B_ar[GEN_3] * (K_ar[GEN_1] - vcon_ar[dir]) + B_ar[dir] * vcon_ar[GEN_3]) - (B_al[GEN_3] * (K_al[GEN_1] - vcon_al[dir]) + B_al[dir] * vcon_al[GEN_3]));
+
+	//Calculate error for Newton step
+	//B_hat[1] = delta_Kx*B_c[1];
+	//B_hat[2] = delta_Kx*B_c[2];
+	//B_hat[3] = delta_Kx*B_c[3];
+	//Y_l = (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3])) / (eta_l[0] * delta_Kx - (K_al[1] * B_hat[1] + K_al[2] * B_hat[2] + K_al[3] * B_hat[3]));
+	//Y_r = (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3])) / (eta_r[0] * delta_Kx - (K_ar[1] * B_hat[1] + K_ar[2] * B_hat[2] + K_ar[3] * B_hat[3]));
+	//error = delta_Kx*(1. - B_ar[dir] * (Y_r - Y_l));
+	
+	//Calculate state around contact discontiuity according to equations 47, 50-52
+	vcon_cl[GEN_1] = (K_al[GEN_1] - (B_c[GEN_1] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] * delta_Kx - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
+	vcon_cl[GEN_2] = (K_al[GEN_2] - (B_c[GEN_2] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] * delta_Kx - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
+	vcon_cl[GEN_3] = (K_al[GEN_3] - (B_c[GEN_3] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] * delta_Kx - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
+	vcon_cr[GEN_1] = (K_ar[GEN_1] - (B_c[GEN_1] * (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]))) / (eta_r[0] * delta_Kx - (K_ar[1] * B_c[1] + K_ar[2] * B_c[2] + K_ar[3] * B_c[3])));
+	vcon_cr[GEN_2] = (K_ar[GEN_2] - (B_c[GEN_2] * (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]))) / (eta_r[0] * delta_Kx - (K_ar[1] * B_c[1] + K_ar[2] * B_c[2] + K_ar[3] * B_c[3])));
+	vcon_cr[GEN_3] = (K_ar[GEN_3] - (B_c[GEN_3] * (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]))) / (eta_r[0] * delta_Kx - (K_ar[1] * B_c[1] + K_ar[2] * B_c[2] + K_ar[3] * B_c[3])));
+
+	B_c[GEN_1] = BX;
+	B_c[GEN_2] = B_c[GEN_2] / delta_Kx;
+	B_c[GEN_3] = B_c[GEN_3] / delta_Kx;
+	
+	return (vcon_cr[GEN_1] - vcon_cl[GEN_1]);
+
+	/*if (dir == 1) {
+		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
+		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
+	}
+	else if (dir == 2) {
+		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
+		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
+	}
+	else if (dir == 3) {
+		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
+		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
+	}
+
+	//Calculate left wave speed in Riemann fan and w=rho+p+u+b^2
+	A = R_l[UGEN_1] + cmin_roe*R_l[UU] + ptot * (1. - cmin_roe*cmin_roe);
+	G = R_l[BGEN_2] * R_l[BGEN_2] + R_l[BGEN_3] + R_l[BGEN_3];
+	C = R_l[UGEN_2] * R_l[BGEN_2] + R_l[UGEN_3] * R_l[BGEN_3];
+	Q = -A - G + (BX * BX) * (1. - cmin_roe*cmin_roe);
+	X = BX * (A*cmin_roe*BX + C) - (A + G)*(cmin_roe*ptot - R_l[UU]);
+	vcon_al[GEN_1] = (BX * (A*BX + cmin_roe*C) - (A + G)*(ptot + R_l[UGEN_1])) / (X);
+	vcon_al[GEN_2] = (Q*R_l[UGEN_2] + R_l[BGEN_2] * (C + BX * (cmin_roe*R_l[UGEN_1] + R_l[UU]))) / (X);
+	vcon_al[GEN_3] = (Q*R_l[UGEN_3] + R_l[BGEN_3] * (C + BX * (cmin_roe*R_l[UGEN_1] + R_l[UU]))) / (X);
+	w_al[0] = ptot + (-R_l[UU] - (vcon_al[GEN_1] * R_l[UGEN_1] + vcon_al[GEN_2] * R_l[UGEN_2] + vcon_al[GEN_3] * R_l[UGEN_3])) / (cmin_roe - vcon_al[GEN_1] + SMALL);
+
+	//Calculate right wave speed in Riemann fan and w=rho+p+u+b^2
+	A = R_r[UGEN_1] + cmax_roe*R_r[UU] + ptot * (1. - cmax_roe*cmax_roe);
+	G = R_r[BGEN_2] * R_r[BGEN_2] + R_r[BGEN_3] + R_r[BGEN_3];
+	C = R_r[UGEN_2] * R_r[BGEN_2] + R_r[UGEN_3] * R_r[BGEN_3];
+	Q = -A - G + (BX * BX) * (1. - cmax_roe*cmax_roe);
+	X = BX * (A*cmax_roe*BX + C) - (A + G)*(cmax_roe*ptot - R_r[UU]);
+	vcon_ar[GEN_1] = (BX * (A*BX + cmax_roe*C) - (A + G)*(ptot + R_r[UGEN_1])) / (X);
+	vcon_ar[GEN_2] = (Q*R_r[UGEN_2] + R_r[BGEN_2] * (C + BX * (cmax_roe*R_r[UGEN_1] + R_r[UU]))) / (X);
+	vcon_ar[GEN_3] = (Q*R_r[UGEN_3] + R_r[BGEN_3] * (C + BX * (cmax_roe*R_r[UGEN_1] + R_r[UU]))) / (X);
+	w_ar[0] = ptot + (-R_r[UU] - (vcon_ar[GEN_1] * R_r[UGEN_1] + vcon_ar[GEN_2] * R_r[UGEN_2] + vcon_ar[GEN_3] * R_r[UGEN_3])) / (cmax_roe - vcon_ar[GEN_1] + SMALL);
+
+	//Calculate magnetic fields according to eq. 21
+	B_al[GEN_1] = BX;
+	B_al[GEN_2] = (R_l[BGEN_2] - B_al[GEN_1] * vcon_al[GEN_2]) / (cmin_roe - vcon_al[GEN_1]);
+	B_al[GEN_3] = (R_l[BGEN_3] - B_al[GEN_1] * vcon_al[GEN_3]) / (cmin_roe - vcon_al[GEN_1]);
+
+	B_ar[GEN_1] = BX;
+	B_ar[GEN_2] = (R_r[BGEN_2] - B_ar[GEN_1] * vcon_ar[GEN_2]) / (cmax_roe - vcon_ar[GEN_1]);
+	B_ar[GEN_3] = (R_r[BGEN_3] - B_ar[GEN_1] * vcon_ar[GEN_3]) / (cmax_roe - vcon_ar[GEN_1]);
+
+	//Calculate K-vector according to eq. 43
+	eta_l[0] = -((double)(BX > 0.0) - (double)(BX <= 0.0))*sqrt(fabs(w_al[0]));
+	K_al[GEN_1] = (R_l[UGEN_1] + ptot + R_l[BGEN_1] * eta_l[0]) / (cmin_roe * ptot - R_l[UU] + BX * eta_l[0]);
+	K_al[GEN_2] = (R_l[UGEN_2] + R_l[BGEN_2] * eta_l[0]) / (cmin_roe * ptot - R_l[UU] + BX * eta_l[0]);
+	K_al[GEN_3] = (R_l[UGEN_3] + R_l[BGEN_3] * eta_l[0]) / (cmin_roe * ptot - R_l[UU] + BX * eta_l[0]);
+
+	eta_r[0] = ((double)(BX>0.0) - (double)(BX <= 0.0))*sqrt(fabs(w_ar[0]));
+	K_ar[GEN_1] = (R_r[UGEN_1] + ptot + R_r[BGEN_1] * eta_r[0]) / (cmax_roe * ptot - R_r[UU] + BX * eta_r[0]);
+	K_ar[GEN_2] = (R_r[UGEN_2] + R_r[BGEN_2] * eta_r[0]) / (cmax_roe * ptot - R_r[UU] + BX * eta_r[0]);
+	K_ar[GEN_3] = (R_r[UGEN_3] + R_r[BGEN_3] * eta_r[0]) / (cmax_roe * ptot - R_r[UU] + BX * eta_r[0]);
+
+	//Calculate magnetic field between alfven waves and contact discontinuity according to eq. 45
+	B_c[GEN_1] = BX;
+	B_c[GEN_2] = ((B_ar[GEN_2] * (K_ar[GEN_1] - vcon_ar[dir]) + B_ar[dir] * vcon_ar[GEN_2]) - (B_al[GEN_2] * (K_al[GEN_1] - vcon_al[dir]) + B_al[dir] * vcon_al[GEN_2])) / (K_ar[dir] - K_al[dir] + pow(10., -12.));
+	B_c[GEN_3] = ((B_ar[GEN_3] * (K_ar[GEN_1] - vcon_ar[dir]) + B_ar[dir] * vcon_ar[GEN_3]) - (B_al[GEN_3] * (K_al[GEN_1] - vcon_al[dir]) + B_al[dir] * vcon_al[GEN_3])) / (K_ar[dir] - K_al[dir] + pow(10., -12.));
+
+	//Calculate error for Newton step
+	delta_Kx = (K_ar[dir] - K_al[dir]);
+	B_hat[1] = delta_Kx*B_c[1];
+	B_hat[2] = delta_Kx*B_c[2];
+	B_hat[3] = delta_Kx*B_c[3];
+	Y_l = (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3])) / (eta_l[0] * delta_Kx - (K_al[1] * B_hat[1] + K_al[2] * B_hat[2] + K_al[3] * B_hat[3]));
+	Y_r = (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3])) / (eta_r[0] * delta_Kx - (K_ar[1] * B_hat[1] + K_ar[2] * B_hat[2] + K_ar[3] * B_hat[3]));
+	error = delta_Kx*(1. - B_ar[dir] * (Y_r - Y_l));
+
+	//Calculate state around contact discontiuity according to equations 47, 50-52
+	vcon_cl[GEN_1] = (K_al[GEN_1] - (B_c[GEN_1] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
+	vcon_cl[GEN_2] = (K_al[GEN_2] - (B_c[GEN_2] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
+	vcon_cl[GEN_3] = (K_al[GEN_3] - (B_c[GEN_3] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
+	vcon_cr[GEN_1] = (K_ar[GEN_1] - (B_c[GEN_1] * (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]))) / (eta_r[0] - (K_ar[1] * B_c[1] + K_ar[2] * B_c[2] + K_ar[3] * B_c[3])));
+	vcon_cr[GEN_2] = (K_ar[GEN_2] - (B_c[GEN_2] * (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]))) / (eta_r[0] - (K_ar[1] * B_c[1] + K_ar[2] * B_c[2] + K_ar[3] * B_c[3])));
+	vcon_cr[GEN_3] = (K_ar[GEN_3] - (B_c[GEN_3] * (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]))) / (eta_r[0] - (K_ar[1] * B_c[1] + K_ar[2] * B_c[2] + K_ar[3] * B_c[3])));
+
+	vcon_cl[dir] = (vcon_cl[dir] + vcon_cr[dir])*0.5;
+	vcon_cr[dir] = vcon_cl[dir];
+	
+	return error;*/
 }

@@ -252,9 +252,6 @@ void init_thindisk()
 			if (r > 4*rmax || r < 2.0) {
 				rho = 1.e-7*RHOMIN;
 				u = 1.e-7*UUMIN;
-
-
-
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
@@ -347,7 +344,7 @@ void init_thindisk()
 	}
 	bound_prim(p, 1);
 
-	//set_mag();
+  //set_mag();
 
 	#if( DO_FONT_FIX )
 	set_Katm();
@@ -2053,7 +2050,8 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.05;
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){
 				coord(n_ord[n], i, j, z, CENT, X);
@@ -2062,7 +2060,7 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
+				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q;// pow(q, 2.0) * pow(r, 3.0); //MAD
 				#endif
 			}
 			else{
@@ -2809,7 +2807,9 @@ void elliptical_vector(double X_cart[NDIM], double V_old[NDIM], double V_new[NDI
 }
 
 void calc_source(){
-	int i, j, z, k, n;
+	if(rank==0)fprintf(stderr, "Calc_source does not work!");
+	exit(0);
+	/*int i, j, z, k, n;
 	double a_radius, b_radius, epsilon;
 	struct of_geom geom;
 	struct of_state q;
@@ -2867,7 +2867,7 @@ void calc_source(){
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
-	bound_prim(p, 1);
+	bound_prim(p, 1);*/
 }
 
 /////////////////////

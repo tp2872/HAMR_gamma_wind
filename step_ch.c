@@ -285,12 +285,13 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			get_geometry(n, i, j, z, CENT, &geom);
 			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
 			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-			primtoU(pi[nl[n]][index_3D(n, i, j, z)], &q, &geom, U);
+            primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, 0, &geom, U);
             
-			ind0 = index_3D(n, i, j, z);            
+			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
+
 			#pragma ivdep
 			PLOOP{
 				U[k] += Dt*(
@@ -378,8 +379,8 @@ slope_lim();
 ***********************************************************************************************/
 double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
-	#if(HLLC)
-	ndt = fluxcalc_hllc(pr, F, dir, flag, n);
+	#if(FRAME_TRANSFORM)
+	ndt = fluxcalc_hlld(pr, F, dir, flag, n);
 	return ndt;
 	#endif
 	int i, j, z, k, idel, jdel, zdel, face;
@@ -448,7 +449,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 
 					#if(STAGGERED)
-						if ((dir == 2) && ((j == 0 && (block[n][AMR_NBR1]<0 || block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) || (j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2])) && (block[n][AMR_NBR3]<0 || block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)))){
+					if ((dir == 2) && ((j == 0 && (block[n][AMR_NBR1]<0 || block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3)) || (j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2])) && (block[n][AMR_NBR3]<0 || block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3)))){
 						p_r[B1] = 0.;
 						p_l[B1] = 0.;
 					}
@@ -462,7 +463,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					get_state(p_l, &geom, &state_l);
 					get_state(p_r, &geom, &state_r);
-
+					
 					primtoflux(p_l, &state_l, dir, &geom, F_l);
 					primtoflux(p_r, &state_r, dir, &geom, F_r);
 
@@ -477,7 +478,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					ctop = MY_MAX(cmax, cmin);
 
 					#pragma ivdep
-					PLOOP{
+					for (k = 0; k <= KTOT;k++) {
 						#if(HLLF)
 						F[nl[n]][ind0][k] = (cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
 						#else

@@ -78,11 +78,11 @@ FTYPE pressure_rho0_w(FTYPE rho0, FTYPE w);
 **************************************************************************/
 
 void primtoU_g(
-	       FTYPE prim[NPR],       /* primitive variables */
+	       FTYPE prim[NPR_U],       /* primitive variables */
 	       FTYPE gcov[NDIM][NDIM],    /* covariant (index dn) form of metric */
 	       FTYPE gcon[NDIM][NDIM],    /* contravariant (index up) form of metric */
 	       FTYPE gdet,                /* sqrt of -1 times det(g_{\mu \nu}) */
-	       FTYPE U[NPR]           /* matrix of derivatives */
+	       FTYPE U[NPR_U]           /* matrix of derivatives */
 	       ) {
   int i,j ;
   FTYPE rho0 ;
@@ -130,7 +130,7 @@ void primtoU_g(
   U[BCON2] = prim[BCON2] ;
   U[BCON3] = prim[BCON3] ;
    #pragma ivdep
-  for(i = 0; i < NPR; i++ ) {
+  for(i = 0; i < NPR_U; i++ ) {
     U[i] *= gdet;
   }
 
@@ -157,7 +157,7 @@ void primtoU_g(
              \   B^i         /
 
 ******************************************************************/
-void ucon_calc_g(FTYPE prim[NPR],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
+void ucon_calc_g(FTYPE prim[NPR_U],FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM],
 		 FTYPE ucon[NDIM])
 {
   FTYPE u_tilde_con[4] ;
@@ -274,7 +274,7 @@ void ncov_calc(FTYPE gcon[NDIM][NDIM],FTYPE ncov[NDIM])
 
 
 ******************************************************************/
-void bcon_calc_g(FTYPE prim[NPR],FTYPE ucon[NDIM],FTYPE ucov[NDIM],
+void bcon_calc_g(FTYPE prim[NPR_U],FTYPE ucon[NDIM],FTYPE ucov[NDIM],
 		 FTYPE ncov[NDIM],FTYPE bcon[NDIM]) 
 {
   FTYPE Bcon[NDIM] ;

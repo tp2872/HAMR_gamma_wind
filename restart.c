@@ -302,13 +302,13 @@ int restart_read_param(void)
 	}
 }
 
-void param_read(FILE *fp){
+void param_read(FILE *fp) {
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
 	int u, n, n2;
 	double dummy;
 	u = rdump_cnt + 1;
-	 //Print out essential stuff for restart
+	//Print out essential stuff for restart
 	fread(&t, double_size, 1, fp);
 	fread(&n_active, int_size, 1, fp);
 	fread(&n_active_total, int_size, 1, fp);
@@ -389,10 +389,12 @@ void param_read(FILE *fp){
 		fread(&n2, int_size, 1, fp);
 		block[n2][AMR_ACTIVE] = 1;
 		fread(&block[n2][AMR_TIMELEVEL], int_size, 1, fp);
+		fread(&block[n2][AMR_NODE], int_size, 1, fp);
+		block[n2][AMR_NODE] = -1;
 	}
 
-	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3){
-		if(rank==0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
+	if (BS1_print != BS_1 || BS2_print != BS_2 || BS3_print != BS_3 || NB1_print != NB_1 || NB2_print != NB_2 || NB3_print != NB_3) {
+		if (rank == 0) fprintf(stderr, "Error reading in input paramters. Your code will probably segfault. Make sure the restart file is compatible with the present code and grid parameters! \n");
 	}
 
 	//Set nstep to 0 for convenience

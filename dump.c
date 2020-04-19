@@ -146,13 +146,13 @@ void dump_new_reduced(void) {
 	//for (n = 0; n < n_active_total; n++) {
 	//	for (u = 0; u<u_max; u++)if (n >= u*u_stride && n<(u + 1)*u_stride) {
 	//		if (block[n_ord_total[n]][AMR_NODE] == rank) {
-	//			MPI_File_seek(fdump_reduced[u], (n - u*u_stride) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
+	//			MPI_File_seek(fdump_reduced[u], (n - u*u_stride) * NPRDUMP * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
 	//			dump_block_reduced(&fdump_reduced[u], n_ord_total[n]);
 	//		}
 	//	}
 	//}
 	for (n = 0; n < n_active; n++) {
-		MPI_File_seek(fdump_reduced[0], (n) * 9 * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
+		MPI_File_seek(fdump_reduced[0], (n) * (NPRDUMP) * BS_1 / REDUCE_FACTOR1 * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 * sizeof(float), MPI_SEEK_SET);
 		dump_block_reduced(&fdump_reduced[0], n_ord[n]);
 	}
 	dump_cnt_reduced++;
@@ -212,7 +212,7 @@ void close_dump_reduced(void) {
 
 void dump_params(FILE *fp, int dump_reduced)
 {
-	int u,n;
+	int u, n;
 	int int_size = sizeof(int);
 	int double_size = sizeof(double);
 	int BS1_print, BS2_print, BS3_print;
@@ -242,7 +242,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	int rd = dump_reduced;
 	int rt = RTRANS;
 	int rb = RB;
-	int docyl = DOCYLINDRIFYCOORDS;
+	int docyl = 0;
 	int dk = DOKTOT;
 
 	//Print out essential stuff for restart
@@ -298,9 +298,12 @@ void dump_params(FILE *fp, int dump_reduced)
 	fwrite(&dk, int_size, 1, fp);
 
 	//Print AMR grid hierarchy
-	for (n = 0; n < n_active_total; n++) {
-		fwrite(&n_ord_total[n], int_size, 1, fp);
-		fwrite(&block[n_ord_total[n]][AMR_TIMELEVEL], int_size, 1, fp);
+	for (u = 0; u < numtasks; u++) {
+		for (n = 0; n < n_active_node[u]; n++) {
+			fwrite(&n_ord_node[u][n], int_size, 1, fp);
+			fwrite(&block[n_ord_node[u][n]][AMR_TIMELEVEL], int_size, 1, fp);
+			fwrite(&block[n_ord_node[u][n]][AMR_NODE], int_size, 1, fp);
+		}
 	}
 }
 

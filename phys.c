@@ -52,22 +52,15 @@
         
 ***********************************************************************************************/
 
-void primtoflux(double * restrict pr, struct of_state * restrict q, int dir,
-struct of_geom * restrict geom, double * restrict flux)
+void primtoflux(double * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
-	double mhd[NDIM];
 
 	/* particle number flux */
-	flux[RHO] = pr[RHO]*q->ucon[dir] ; 
-	mhd_calc(pr, dir, q, mhd) ;
+	flux[RHO] = pr[RHO]*q->ucon[dir] ;
 
-	/* MHD stress-energy tensor w/ first index up, 
-	 * second index down. */
-	#pragma ivdep
-	for (k = 0; k < 4; k++){
-		flux[k+1] = mhd[k] ;
-	}
+	/* MHD stress-energy tensor w/ first index up, * second index down. */
+	mhd_calc(pr, dir, q, &flux[UU]) ;
 	flux[UU] += flux[RHO];
 
 	/* dual of Maxwell tensor */
@@ -75,6 +68,8 @@ struct of_geom * restrict geom, double * restrict flux)
 	for (k = B1; k <= B3; k++){
 		flux[k] = q->bcon[k-4] * q->ucon[dir] - q->bcon[dir] * q->ucon[k-4];
 	}
+
+	//Entropy advection
 	#if(DOKTOT )
 	flux[KTOT] = flux[RHO] * pr[KTOT];
 	#endif
@@ -88,14 +83,6 @@ struct of_geom * restrict geom, double * restrict flux)
 #endif
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
-}
-
-/* calculate "conserved" quantities; provided strictly for
- * historical reasons */
-void primtoU(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U)
-{
-	primtoflux(pr,q,0,geom, U) ;
-	return ;
 }
 
 /* calculate magnetic field four-vector */
@@ -160,19 +147,15 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	eta = w + bsq ;
 	ptot = P + 0.5*bsq;
 
-	/* single row of mhd stress tensor, 
-	 * first index up, second index down */
+	/* single row of mhd stress tensor, first index up, second index down */
 	#pragma ivdep
-	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j]
-		+ ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
-
+	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j] + ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
 }
 
-/* add in source terms to equations of motion */
-void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU,
-		double Dt)
+/* add in (explicit) geometricc source terms to equations of motion */
+void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
 {
-	double mhd[NDIM][NDIM] ;
+	double mhd[NDIM][NDIM];
 	int j,k ;
 	struct of_state q ;
 
@@ -182,28 +165,29 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	mhd_calc(ph, 2, &q, mhd[2]) ;
 	mhd_calc(ph, 3, &q, mhd[3]) ;
 
-	/* contract mhd stress tensor with connection */
-	 #pragma ivdep
-	PLOOP dU[k] = 0. ;
-
+	#pragma ivdep
+	PLOOP dU[k] = 0.;
+	
+	//contract mhd stress tensor with connection
 	DLOOP {
-		dU[UU] += mhd[j][k] * conn[nl[n]][index_2D(n,ii,jj,zz)][k][0][j] ;
+		dU[UU] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][0][j];
 		dU[U1] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][1][j];
 		dU[U2] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][2][j];
 		dU[U3] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
-		//fprintf(stderr, "(%d,%d,%f):%f\n", j, k, gcon[index_2D(ii, jj)][0][k][j] / gcon[index_2D(ii, jj)][0][j][k], log(fabs(gcon[index_2D(ii, jj)][0][k][j])));
 	}
+
+	//Add disk cooling term
 	#if(COOL_DISK)
 	double X[NDIM],r,th,phi;
 	coord(n, ii,jj, zz, CENT,X) ;
 	bl_coord(X,&r,&th, &phi) ;
 	misc_source(ph, ii, jj, geom, &q, dU, r, Dt) ;
 	#endif
+
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
-
-	/* done! */
 }
+
 
 /* returns b^2 (i.e., twice magnetic pressure) */
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom)
@@ -256,15 +240,10 @@ void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_s
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {
         double qsq ;
-        qsq =     geom->gcov[1][1]*pr[U1]*pr[U1]
-                + geom->gcov[2][2]*pr[U2]*pr[U2]
-                + geom->gcov[3][3]*pr[U3]*pr[U3]
-            + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]
-                + geom->gcov[1][3]*pr[U1]*pr[U3]
-                + geom->gcov[2][3]*pr[U2]*pr[U3]) ;
+        qsq =  geom->gcov[1][1]*pr[U1]*pr[U1]  + geom->gcov[2][2]*pr[U2]*pr[U2] + geom->gcov[3][3]*pr[U3]*pr[U3] + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]+ geom->gcov[1][3]*pr[U1]*pr[U3] + geom->gcov[2][3]*pr[U2]*pr[U3]);
         if( qsq < 0. ){
           if( fabs(qsq) > 1.E-10 ){ // then assume not just machine precision
-            fprintf(stderr,"gamma_calc():  failed: i,j,qsq = %d %d %28.18e \n", icurr,jcurr,qsq);
+            fprintf(stderr,"gamma_calc():  failed: qsq = %28.18e \n", qsq);
             fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
 	    *gamma = 1.;
 	    return (1);
@@ -287,8 +266,7 @@ int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * re
  * 
  */
 
-void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,
-	double * restrict vmax, double * restrict vmin, int a, int b, int c)
+void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin, int a, int b, int c)
 {
 	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2,rho,u ;
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
@@ -360,8 +338,6 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 
 	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */
 
-	//cms2 *= 1.1 ;
-
 	/* check on it! */
 	if(cms2 < 0.) {
 		fail(FAIL_COEFF_NEG) ;
@@ -372,8 +348,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 		cms2 = 1. ;
 	}
 
-	/* now require that speed of wave measured by observer 
-	   q->ucon is cms2 */
+	/* now require that speed of wave measured by observer q->ucon is cms2 */
 	Asq = dot(Acon,Acov) ;
 	Bsq = dot(Bcon,Bcov) ;
 	Au =  dot(Acov,q->ucon) ;
@@ -406,14 +381,6 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	discr = sqrt(discr) ;
 	vp = -(-B + discr) / (2.*A);
 	vm = -(-B - discr) / (2.*A);
-	
-	#if( FULL_DISP ) 
-	double vp2, vm2;
-	vp2 = NewtonRaphson(vp, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vm2 = NewtonRaphson(vm, 5, js, q->ucon, q->ucov, q->bcon, geom, EE, va2, cs2);
-	vp = vp2;
-	vm = vm2;
-	#endif
 
 	if(vp > vm) {
 		*vmax = vp ;
@@ -453,53 +420,4 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 			dU[U3] += -q->ucov[3] * lambda;
 		}
 	}
-}
-
-double NewtonRaphson(double start, int max_count, int dir, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq)
-{
-	int count = 0;
-	double dx = start/1000000.0;
-	double x = start;
-	double diff, derivative;
-	do{
-		diff = Drel(dir, x, ucon, ucov, bcon, geom, E, vasq, csq);
-		derivative = (Drel(dir, x + dx, ucon, ucov, bcon, geom, E, vasq, csq) - diff) / dx;
-		count++;
-		x = x - diff / (derivative);
-	} while (Drel(dir, x*0.99999, ucon, ucov, bcon, geom, E, vasq, csq)*Drel(dir, x*1.00001, ucon, ucov, bcon, geom, E, vasq, csq)>0.0 && (count < max_count));
-	if (count >= 3){
-		x = start;
-	}
-	return x;
-}
-
-/*Calculate soundspeed*/
-double Drel(int dir, double v, double *ucon, double *ucov, double *bcon, struct of_geom *geom, double E, double vasq, double csq){
-	double kcov[NDIM], kcon[NDIM], Kcov[NDIM], Kcon[NDIM];
-	double om, omsq, ksq, kvasq, cfsq, result;
-	int i;
-	kcov[0] = -v; kcov[1] = 0.0; kcov[2] = 0.0; kcov[3] = 0.0;
-	if (dir == 1){
-		kcov[1] = 1.0;
-	}
-	if (dir == 2){
-		kcov[2] = 1.0;
-	}
-	if (dir == 3){
-		kcov[3] = 1.0;
-	}
-	raise(kcov, geom, kcon);
-	om = dot(ucon, kcov);
-	omsq = pow(om, 2.0);
-	#pragma ivdep
-	for (i = 0; i < NDIM; i++){
-		Kcov[i] = kcov[i] + ucov[i] * om;
-		Kcon[i] = kcon[i] + ucon[i] * om;
-	}
-	ksq = dot(Kcov, Kcon);
-	kvasq = pow(dot(kcov, bcon), 2.0) / E;
-	cfsq = vasq + csq*(1.0 - vasq);
-
-	result = 0.5*(cfsq*ksq + csq*kvasq + sqrt(pow(cfsq*ksq + csq*kvasq, 2.0) - 4.0*ksq*csq*kvasq)) - omsq;
-	return result;
 }

@@ -66,26 +66,26 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
-FTYPE Bsq, QdotBsq, Qtsq, Qdotn, D;
+double Bsq, QdotBsq, Qtsq, Qdotn, D;
 #pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
 
-// Declarations: 
-static FTYPE vsq_calc(FTYPE W);
-static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[]);
-static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR]);
+// Declarations:
+static double vsq_calc(double W);
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[]);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR]);
 
 #if (DONUCLEAR && DOHELM)
-static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int, FTYPE, FTYPE, FTYPE, FTYPE, FTYPE), FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa);
-static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n, FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa);
+static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int, double, double, double, double, double), double varye, double varxatm, double varxn, double varxp, double varxa);
+static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n, double varye, double varxatm, double varxn, double varxp, double varxa);
 #else
-static int general_newton_raphson(FTYPE x[], int n, void(*funcd) (FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *, FTYPE *, int));
-static void func_vsq(FTYPE[], FTYPE[], FTYPE[], FTYPE[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n);
+static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int));
+static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n);
 #endif
                      
-static FTYPE x1_of_x0(FTYPE x0);
-static FTYPE pressure_W_vsq(FTYPE W, FTYPE vsq);
-static FTYPE dpdW_calc_vsq(FTYPE W, FTYPE vsq);
-static FTYPE dpdvsq_calc(FTYPE W, FTYPE vsq);
+static double x1_of_x0(double x0);
+static double pressure_W_vsq(double W, double vsq);
+static double dpdW_calc_vsq(double W, double vsq);
+static double dpdvsq_calc(double W, double vsq);
 
 /**********************************************************************/
 /******************************************************************
@@ -121,13 +121,13 @@ gcov = gcon = diag(-1,1,1,1)  and gdet = 1.  ;
 
 ******************************************************************/
 
-int Utoprim_2d(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
-	FTYPE gdet, FTYPE prim[NPR])
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],
+	double gdet, double prim[NPR])
 {
 
-	FTYPE U_tmp[NPR], U_tmp2[NPR], prim_tmp[NPR];
+	double U_tmp[NPR_U], U_tmp2[NPR_U], prim_tmp[NPR_U];
 	int i, j, ret;
-	FTYPE alpha;
+	double alpha;
 
 
 	if (U[0] <= 0.) {
@@ -258,13 +258,13 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],
-	FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM],
+	double gcon[NDIM][NDIM], double gdet, double prim[NPR_U])
 {
-    FTYPE x_2d[NEWT_DIM_2];
+    double x_2d[NEWT_DIM_2];
     
-	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
-	FTYPE rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
+	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
 	int i, j, n, retval, i_increase;
 	n = NEWT_DIM_2;
 
@@ -452,9 +452,9 @@ vsq_calc():
 W = \gamma^2 w
 
 ****************************************************************************/
-static FTYPE vsq_calc(FTYPE W)
+static double vsq_calc(double W)
 {
-	FTYPE Wsq, Xsq;
+	double Wsq, Xsq;
 
 	Wsq = W*W;
 	Xsq = (Bsq + W) * (Bsq + W);
@@ -473,10 +473,10 @@ x1_of_x0():
 
 *********************************************************************/
 
-static FTYPE x1_of_x0(FTYPE x0)
+static double x1_of_x0(double x0)
 {
-	FTYPE x1, vsq;
-	FTYPE dv = 1.e-15;
+	double x1, vsq;
+	double dv = 1.e-15;
 
 
 	vsq = fabs(vsq_calc(x0)); // guaranteed to be positive 
@@ -495,10 +495,10 @@ their definitions:
 
 *********************************************************************/
 
-static void validate_x(FTYPE x[2], FTYPE x0[2])
+static void validate_x(double x[2], double x0[2])
 {
 
-	FTYPE dv = 1.e-15;
+	double dv = 1.e-15;
 
 	/* Always take the absolute value of x[0] and check to see if it's too big:  */
 	x[0] = fabs(x[0]);
@@ -521,24 +521,24 @@ general_newton_raphson():
 -- inspired in part by Num. Rec.'s routine newt();
 
 *****************************************************************/
-static int general_newton_raphson(FTYPE x[], int n,
-	void(*funcd) (FTYPE[], FTYPE[], FTYPE[],
-	FTYPE[][NEWT_DIM_2], FTYPE *,
-	FTYPE *, int
+static int general_newton_raphson(double x[], int n,
+	void(*funcd) (double[], double[], double[],
+	double[][NEWT_DIM_2], double *,
+	double *, int
 #if (DONUCLEAR && DOHELM)
-    , FTYPE, FTYPE, FTYPE, FTYPE, FTYPE
+    , double, double, double, double, double
 #endif
     )
 #if (DONUCLEAR && DOHELM)
-    , FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa
+    , double varye, double varxatm, double varxn, double varxp, double varxa
 #endif
     )
 {
-	FTYPE f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
-	FTYPE resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
-	FTYPE errx, x_orig[NEWT_DIM_2];
+	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
+	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
+	double errx, x_orig[NEWT_DIM_2];
 	int    n_iter, id, jd, i_extra, doing_extra;
-	FTYPE dW, dvsq, vsq_old, vsq, W, W_old;
+	double dW, dvsq, vsq_old, vsq, W, W_old;
 
 	int   keep_iterating;
 
@@ -649,28 +649,28 @@ df    = -2*f;  (on output)
 n    = dimension of x[];
 *********************************************************************************/
 
-static void func_vsq(FTYPE x[], FTYPE dx[], FTYPE resid[],
-	FTYPE jac[][NEWT_DIM_2], FTYPE *f, FTYPE *df, int n
+static void func_vsq(double x[], double dx[], double resid[],
+	double jac[][NEWT_DIM_2], double *f, double *df, int n
 #if (DONUCLEAR && DOHELM)
-    , FTYPE varye, FTYPE varxatm, FTYPE varxn, FTYPE varxp, FTYPE varxa
+    , double varye, double varxatm, double varxn, double varxp, double varxa
 #endif
                      )
 {
-	FTYPE  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
-	FTYPE t11;
-	FTYPE t16;
-	FTYPE t18;
-	FTYPE t2;
-	FTYPE t21;
-	FTYPE t23;
-	FTYPE t24;
-	FTYPE t25;
-	FTYPE t3;
-	FTYPE t35;
-	FTYPE t36;
-	FTYPE t4;
-	FTYPE t40;
-	FTYPE t9;
+	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
+	double t11;
+	double t16;
+	double t18;
+	double t2;
+	double t21;
+	double t23;
+	double t24;
+	double t25;
+	double t3;
+	double t35;
+	double t36;
+	double t4;
+	double t40;
+	double t9;
 
 
 	W = x[0];
@@ -760,9 +760,9 @@ pressure_W_vsq():
 -- Gamma-law equation of state;
 -- pressure as a function of W, vsq, and D:
 **********************************************************************/
-static FTYPE pressure_W_vsq(FTYPE W, FTYPE vsq)
+static double pressure_W_vsq(double W, double vsq)
 {
-	FTYPE gtmp;
+	double gtmp;
 	gtmp = 1. - vsq;
 	return((GAMMA - 1.) * (W * gtmp - D * sqrt(gtmp)) / GAMMA);
 }
@@ -774,7 +774,7 @@ dpdW_calc_vsq():
 
 -- partial derivative of pressure with respect to W;
 **********************************************************************/
-static FTYPE dpdW_calc_vsq(FTYPE W, FTYPE vsq)
+static double dpdW_calc_vsq(double W, double vsq)
 {
     return((GAMMA - 1.) * (1. - vsq) / GAMMA);
 }
@@ -785,7 +785,7 @@ dpdvsq_calc():
 
 -- partial derivative of pressure with respect to vsq
 **********************************************************************/
-static FTYPE dpdvsq_calc(FTYPE W, FTYPE vsq)
+static double dpdvsq_calc(double W, double vsq)
 {
     return((GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA);
 }
@@ -797,11 +797,11 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYPE gdet, FTYPE prim[NPR])
+int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR_U])
 {
-	FTYPE U_tmp[NPR], prim_tmp[NPR];
+	double U_tmp[NPR_U], prim_tmp[NPR_U];
 	int i, ret;
-	FTYPE alpha;
+	double alpha;
 
 	if (U[0] <= 0.) {
 		return(-100);
@@ -890,11 +890,11 @@ int Utoprim_NM(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],FTYP
 
 }
 
-static int Utoprim_NM_calc(FTYPE U[NPR], FTYPE gcov[NDIM][NDIM],FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR])
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_U])
 {
 
-	FTYPE QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
-	FTYPE rho0, u, w,  gamma, vsq;
+	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+	double rho0, u, w,  gamma, vsq;
 	int i;
 
 	#pragma ivdep

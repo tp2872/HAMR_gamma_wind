@@ -69,7 +69,7 @@ int invert_matrix( double Am[][NDIM], double Aminv[][NDIM] )
 
   // Get the LU matrix:
   if( LU_decompose( Amtmp,  permute ) != 0  ) { 
-    fprintf(stderr, "invert_matrix(): singular matrix encountered! \n");
+   // fprintf(stderr, "invert_matrix(): singular matrix encountered! \n");
     return(1);
   }
 
@@ -138,7 +138,7 @@ int LU_decompose( double A[][NDIM], int permute[] )
 
     /* Make sure that there is at least one non-zero element in this row: */
     if( absmax == 0. ) { 
-     fprintf(stderr, "LU_decompose(): row-wise singular matrix!\n");
+     //fprintf(stderr, "LU_decompose(): row-wise singular matrix!\n");
       return(1);
     }
 

@@ -43,6 +43,8 @@
 ***********************************************************************************/
 #include "decs_MPI.h"
 
+void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double *u_floor);
+
 #define FLOOP for(k=0;k<B1;k++)
 
 /* apply floors to density, internal energy */
@@ -88,20 +90,18 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
   bsq = bsq_calc(pv,&geom) ;
   
   //tie floors to the local values of magnetic field and internal energy density
-#if(1)
+	#if(1)
   if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
   if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
-    if( rhoflr < pv[UU] / UORHOMAX ) {
-        rhoflr = pv[UU] / UORHOMAX;
-    }
-#endif
+  if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+	#endif
 
-  if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
-  if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
+	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
+	if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
 
-  /* floor on density and internal energy density (momentum *not* conserved) */
-   #pragma ivdep
-  PLOOP pv_prefloor[k] = pv[k];
+	/* floor on density and internal energy density (momentum *not* conserved) */
+	#pragma ivdep
+	PLOOP pv_prefloor[k] = pv[k];
 	if (pv[RHO] < rhoflr){
 		pv[RHO] = rhoflr;
 		dofloor = 1;
