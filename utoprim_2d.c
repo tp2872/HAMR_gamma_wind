@@ -415,9 +415,20 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM],
 	rho0 = D * gtmp;
 
 	w = W * (1. - vsq);
-	p = pressure_rho0_w(rho0, w);
-	u = w - (rho0 + p);
-
+    
+    #if (DOHELM)
+    // Helmholtz EOS
+    double xenth = w / rho0;
+    double xener, xpres;
+    eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+    p = xpres;
+    u = xener * rho0;
+    #else
+    // Ideal gas EOS
+    p = pressure_rho0_w(rho0, w); // DANAT: change this for Helmholtz EOS! say, find p and u as f(rho0, w)
+    u = w - (rho0 + p);
+    #endif
+    
 	// User may want to handle this case differently, e.g. do NOT return upon 
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
 	if ((rho0 <= 0.) || (u <= 0.)) {
@@ -975,7 +986,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	
     p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
-//    if (d < 1e-20) return(1); // Danat : edited for d very small (< 1e-30)
+//    if (d < 1e-20) return(1); // DANAT : edited for d very small (< 1e-30)
 	do{
 		set_variables = 0;
 		a = -Qdotn + p_new + 0.5*Bsq;

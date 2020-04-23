@@ -518,6 +518,327 @@ void eos_helm (int calc_derivatives, double btemp, double den, double abar, doub
     return;
 }
 
+
+void eos_calc_soundspeed(double ener_goal, double den, double abar, double zbar, double *pres, double *cs2) {
+    
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    double tolerance_e = 1.0e-5;
+    
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (ener_goal <= 0.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+    
+    double deni = 1.0 / den;
+    double temp_new, temp_old;
+    double ener_tmp, ener_old, entr;
+    double dpdt, dedt, dpdrho, dsdt, dsdd;
+    
+    double error, error_e;
+    int i;
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    
+    temp_old = temp_ini_guess;
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(1, temp_old, den, abar, zbar, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+        
+        //do not allow temp to change more than 2. times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
+        temp_old = temp_new;
+        
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_e < tolerance_e) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+    
+    //    *cs2 = (dpdrho - dpdt * dsdd / dsdt) / (1.0 + ener_goal + (*pres) * deni);
+    *cs2 = ((*pres) * temp_old * (deni * deni) * dpdt * (dpdt / dedt) + dpdrho) / (1.0 + ener_goal + (*pres) * deni);
+}
+
+void eos_mode_dens_ener(double ener_goal, double den, double abar, double zbar, double *pres) {
+    
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    double tolerance_e = 1.0e-5;
+    
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (ener_goal <= 0.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+    
+    double temp_new, temp_old;
+    double ener_tmp, ener_old, entr;
+    double dpdt, dedt, dpdrho, dsdt, dsdd;
+    
+    double error, error_e;
+    int i;
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    
+    temp_old = temp_ini_guess;
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(1, temp_old, den, abar, zbar, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+        
+        //do not allow temp to change more than 2. times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
+        temp_old = temp_new;
+        
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_e < tolerance_e) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+}
+
+void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d) {
+    
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    double tolerance_h = 1.0e-5;
+    
+    double deni = 1.0 / den;
+    
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    
+    double temp_new, temp_old;
+    double ener_old, pres_old;
+    double dpresdener_d, dhdtemp, dsdt, dsdd;
+    double h_tmp, entr;
+    
+    double error, error_h;
+    int i;
+    
+    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+    double xpres = *pres;
+    double xener = 0.0;
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    
+    temp_old = temp_ini_guess;
+    
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(1, temp_old, den, abar, zbar, pres, &xener, &entr, dpdt, dedt, dpdrho, &dsdt, &dsdd);
+        
+        h_tmp = xener + (*pres) * deni;
+        dhdtemp = (*dedt) + (*dpdt) * deni;
+        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
+        
+        // do not allow temp to change more than 10 times in one iteration
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_h = fabs((h_tmp - xenth) / xenth);
+        
+        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, xener);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
+        temp_old = temp_new;
+        if(error < tolerance && error_h < tolerance_h) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+    
+    *dpde_d = (*dpdt) / (*dedt);
+}
+
+void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal) {
+    // implementation in Newman-Hamlin inversion
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    double tolerance_h = 1.0e-5;
+    
+    double deni = 1.0 / den;
+    
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
+    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    
+    double temp_new, temp_old;
+    double ener_old, pres_old;
+    double dpresdener_d, dhdtemp;
+    double h_tmp, entr;
+    double dpdrho, dpdt, dedt, dpde_d, dsdt, dsdd;
+    
+    double error, error_h;
+    int i;
+    
+    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    
+    temp_old = temp_ini_guess;
+    
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(1, temp_old, den, abar, zbar, pres, ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+        
+        h_tmp = *ener + (*pres) * deni;
+        dhdtemp = dedt + dpdt * deni;
+        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
+        
+        // do not allow temp to change more than 10 times in one iteration
+        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_h = fabs((h_tmp - xenth) / xenth);
+        
+        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, *ener);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
+        temp_old = temp_new;
+        if(error < tolerance && error_h < tolerance_h) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+}
+
+void eos_get_min_pres_NH (double den, double abar, double zbar, double *pres) {
+    // implementation in Newman-Hamlin inversion
+    // Parameters of Newton-Raphson iterations
+    double temp = 1.0e4;
+    double ener, entr, dpdt, dedt, dpdrho, dsdt, dsdd;
+    eos_helm(1, temp, den, abar, zbar, pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+}
+
+void eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal) {
+    
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = 50;
+    double tolerance = 1.0e-5;
+    double tolerance_p = 1.0e-5;
+    
+    double deni = 1.0 / den;
+    
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (p_goal <= 0.0) temp_ini_guess = 1.0e4;
+    temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
+    
+    double temp_new, temp_old;
+    double p_tmp, entr;
+    
+    double error, error_p;
+    int i;
+    
+    double dpdt, dedt, dpdrho, dsdt, dsdd;
+    
+    temp_old = temp_ini_guess;
+    
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    for(i = 0; i < max_iterations; i++){
+        
+        eos_helm(1, temp_old, den, abar, zbar, &p_tmp, ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+        
+        temp_new = temp_old - (p_tmp - p_goal) / dpdt;
+        
+        // do not allow temp to change more than 2 times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+        
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_p = fabs((p_tmp - p_goal) / p_goal);
+        
+        //printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
+        if (temp_new < 1.0e4) temp_new = 1.0e4;
+        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        
+        temp_old = temp_new;
+        
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_p < tolerance_p) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+}
+
+void test_eos(void) {
+    double temp, den;
+    double abar=1.0, zbar=1.0;
+    double pres, ener, entr, dedt, dpdt, dpdrho, dpresdener, dsdt, dsdd, etaele, ye, xx_atm, xxn, xxp, xxa;
+    double h_goal = 0.0;
+    eos_init();
+    
+#if 0
+    ye = 0.9997513515148767;
+    xxp = 0.59236411574360348;
+    xxn = 0.0000000001;
+    xxa = 0.81477447154254645;
+    xx_atm = 0.0;
+    eos_helm_nuclear(1, btemp, den, ye, &xx_atm, &xxn, &xxp, &xxa, &etaele, &pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+    exit(1);
+#endif
+#if 0
+    FILE *f_testeos;
+    
+    f_testeos = fopen("./test_eos.bdat", "wb");
+    ye = 1.0;
+    xxp = 0.0;
+    xxn = 0.0;
+    xxa = 0.0;
+    xx_atm = 1.0;
+    int N = 1000;
+    double cs2, cs2_RF;
+    
+    for (int i = 0; i < N; i++) {
+        
+        den = pow (10.0, -10.0 + i * (21.0) / (N - 1)) * conv_dens_CGS2CODE;
+        for (int j = 0; j < N; j++) {
+            
+            temp = pow (10.0, 4.0 + j * (7.0) / (N - 1));
+            
+            eos_helm_nuclear(1, temp, den, ye, &xx_atm, &xxn, &xxp, &xxa, &etaele, &pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
+            
+            cs2 = (dpdrho - dpdt * dsdd / dsdt) / (1.0 + ener + pres / den);
+            cs2_RF = (pres * temp / (den * den) * dpdt * (dpdt / dedt) + dpdrho) / (1.0 + ener + pres / den);
+            
+            fwrite(&den, 1, sizeof(double), f_testeos);
+            fwrite(&temp, 1, sizeof(double), f_testeos);
+            fwrite(&cs2, 1, sizeof(double), f_testeos);
+            fwrite(&cs2_RF, 1, sizeof(double), f_testeos);
+        }
+    }
+    
+    fclose(f_testeos);
+    exit(0);
+#endif
+}
+
+
 #if (DONUCLEAR)
 // DANAT: When DONUCLEAR = 1; abar stands for Ye and zbar - for xx_atm
 void eos_helm_nuclear(int calc_derivatives, double btemp, double den, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd)
@@ -1217,329 +1538,6 @@ void eos_mode_dens_pres_nuclear(double *ener, double den, double ye, double p_go
 }
 
 
-// End of DONUCLEAR
-#endif
-
-void eos_calc_soundspeed(double ener_goal, double den, double abar, double zbar, double *pres, double *cs2) {
-
-    // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_e = 1.0e-5;
-
-    // initial guess : temperature
-    double temp_ini_guess;
-    if (ener_goal <= 0.0) temp_ini_guess = 1.0e4;
-    else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
-
-    double deni = 1.0 / den;
-    double temp_new, temp_old;
-    double ener_tmp, ener_old, entr;
-    double dpdt, dedt, dpdrho, dsdt, dsdd;
-
-    double error, error_e;
-    int i;
-
-    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-
-    temp_old = temp_ini_guess;
-    for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
-
-        //do not allow temp to change more than 2. times in one iteration
-        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
-        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
-
-        error = fabs((temp_new - temp_old) / temp_old);
-        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        if (temp_new > 1.0e11) temp_new = 1.0e11;
-
-        temp_old = temp_new;
-
-        // more iterations after reached below tolerance
-        if(error < tolerance && error_e < tolerance_e) {
-            more_iterations -= 1;
-            if (more_iterations == 0) break;
-        }
-    }
-
-//    *cs2 = (dpdrho - dpdt * dsdd / dsdt) / (1.0 + ener_goal + (*pres) * deni);
-    *cs2 = ((*pres) * temp_old * (deni * deni) * dpdt * (dpdt / dedt) + dpdrho) / (1.0 + ener_goal + (*pres) * deni);
-}
-
-void eos_mode_dens_ener(double ener_goal, double den, double abar, double zbar, double *pres) {
-
-    // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_e = 1.0e-5;
-
-    // initial guess : temperature
-    double temp_ini_guess;
-    if (ener_goal <= 0.0) temp_ini_guess = 1.0e4;
-    else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
-
-    double temp_new, temp_old;
-    double ener_tmp, ener_old, entr;
-    double dpdt, dedt, dpdrho, dsdt, dsdd;
-
-    double error, error_e;
-    int i;
-
-    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-
-    temp_old = temp_ini_guess;
-    for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
-
-        //do not allow temp to change more than 2. times in one iteration
-        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
-        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
-
-        error = fabs((temp_new - temp_old) / temp_old);
-        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        if (temp_new > 1.0e11) temp_new = 1.0e11;
-
-        temp_old = temp_new;
-
-        // more iterations after reached below tolerance
-        if(error < tolerance && error_e < tolerance_e) {
-            more_iterations -= 1;
-            if (more_iterations == 0) break;
-        }
-    }
-}
-
-void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d) {
-
-    // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_h = 1.0e-5;
-
-    double deni = 1.0 / den;
-
-    // initial guess : temperature
-    double temp_ini_guess;
-    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
-    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
-
-    double temp_new, temp_old;
-    double ener_old, pres_old;
-    double dpresdener_d, dhdtemp, dsdt, dsdd;
-    double h_tmp, entr;
-
-    double error, error_h;
-    int i;
-
-    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
-    double xpres = *pres;
-    double xener = 0.0;
-
-    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-
-    temp_old = temp_ini_guess;
-
-    for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, pres, &xener, &entr, dpdt, dedt, dpdrho, &dsdt, &dsdd);
-
-        h_tmp = xener + (*pres) * deni;
-        dhdtemp = (*dedt) + (*dpdt) * deni;
-        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
-
-        // do not allow temp to change more than 10 times in one iteration
-        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
-        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
-
-        error = fabs((temp_new - temp_old) / temp_old);
-        error_h = fabs((h_tmp - xenth) / xenth);
-
-        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, xener);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        if (temp_new > 1.0e11) temp_new = 1.0e11;
-
-        temp_old = temp_new;
-        if(error < tolerance && error_h < tolerance_h) {
-            more_iterations -= 1;
-            if (more_iterations == 0) break;
-        }
-    }
-
-    *dpde_d = (*dpdt) / (*dedt);
-}
-
-void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal) {
-    // implementation in Newman-Hamlin inversion
-    // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_h = 1.0e-5;
-
-    double deni = 1.0 / den;
-
-    // initial guess : temperature
-    double temp_ini_guess;
-    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
-    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
-
-    double temp_new, temp_old;
-    double ener_old, pres_old;
-    double dpresdener_d, dhdtemp;
-    double h_tmp, entr;
-    double dpdrho, dpdt, dedt, dpde_d, dsdt, dsdd;
-
-    double error, error_h;
-    int i;
-
-    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
-
-    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-
-    temp_old = temp_ini_guess;
-
-    for(i = 0; i < max_iterations; i++){
-        eos_helm(1, temp_old, den, abar, zbar, pres, ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-
-        h_tmp = *ener + (*pres) * deni;
-        dhdtemp = dedt + dpdt * deni;
-        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
-
-        // do not allow temp to change more than 10 times in one iteration
-        if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
-        if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
-
-        error = fabs((temp_new - temp_old) / temp_old);
-        error_h = fabs((h_tmp - xenth) / xenth);
-
-        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, *ener);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        if (temp_new > 1.0e11) temp_new = 1.0e11;
-
-        temp_old = temp_new;
-        if(error < tolerance && error_h < tolerance_h) {
-            more_iterations -= 1;
-            if (more_iterations == 0) break;
-        }
-    }
-}
-
-void eos_get_min_pres_NH (double den, double abar, double zbar, double *pres) {
-    // implementation in Newman-Hamlin inversion
-    // Parameters of Newton-Raphson iterations
-    double temp = 1.0e4;
-    double ener, entr, dpdt, dedt, dpdrho, dsdt, dsdd;
-    eos_helm(1, temp, den, abar, zbar, pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-}
-
-void eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal) {
-
-    // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_p = 1.0e-5;
-
-    double deni = 1.0 / den;
-
-    // initial guess : temperature
-    double temp_ini_guess;
-    if (p_goal <= 0.0) temp_ini_guess = 1.0e4;
-    temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
-
-    double temp_new, temp_old;
-    double p_tmp, entr;
-
-    double error, error_p;
-    int i;
-
-    double dpdt, dedt, dpdrho, dsdt, dsdd;
-
-    temp_old = temp_ini_guess;
-
-    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-    for(i = 0; i < max_iterations; i++){
-
-        eos_helm(1, temp_old, den, abar, zbar, &p_tmp, ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-
-        temp_new = temp_old - (p_tmp - p_goal) / dpdt;
-
-        // do not allow temp to change more than 2 times in one iteration
-        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
-        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
-
-        error = fabs((temp_new - temp_old) / temp_old);
-        error_p = fabs((p_tmp - p_goal) / p_goal);
-
-        //printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        if (temp_new > 1.0e11) temp_new = 1.0e11;
-
-        temp_old = temp_new;
-
-        // more iterations after reached below tolerance
-        if(error < tolerance && error_p < tolerance_p) {
-            more_iterations -= 1;
-            if (more_iterations == 0) break;
-        }
-    }
-}
-
-void test_eos(void) {
-	double temp, den;
-	double abar=1.0, zbar=1.0;
-	double pres, ener, entr, dedt, dpdt, dpdrho, dpresdener, dsdt, dsdd, etaele, ye, xx_atm, xxn, xxp, xxa;
-    double h_goal = 0.0;
-    eos_init();
-    
-#if 0
-    ye = 0.9997513515148767;
-    xxp = 0.59236411574360348;
-    xxn = 0.0000000001;
-    xxa = 0.81477447154254645;
-    xx_atm = 0.0;
-    eos_helm_nuclear(1, btemp, den, ye, &xx_atm, &xxn, &xxp, &xxa, &etaele, &pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-    exit(1);
-#endif
-#if 0
-    FILE *f_testeos;
-    
-    f_testeos = fopen("./test_eos.bdat", "wb");
-    ye = 1.0;
-    xxp = 0.0;
-    xxn = 0.0;
-    xxa = 0.0;
-    xx_atm = 1.0;
-    int N = 1000;
-    double cs2, cs2_RF;
-    
-    for (int i = 0; i < N; i++) {
-        
-        den = pow (10.0, -10.0 + i * (21.0) / (N - 1)) * conv_dens_CGS2CODE;
-        for (int j = 0; j < N; j++) {
-            
-            temp = pow (10.0, 4.0 + j * (7.0) / (N - 1));
-            
-            eos_helm_nuclear(1, temp, den, ye, &xx_atm, &xxn, &xxp, &xxa, &etaele, &pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &dsdt, &dsdd);
-            
-            cs2 = (dpdrho - dpdt * dsdd / dsdt) / (1.0 + ener + pres / den);
-            cs2_RF = (pres * temp / (den * den) * dpdt * (dpdt / dedt) + dpdrho) / (1.0 + ener + pres / den);
-            
-            fwrite(&den, 1, sizeof(double), f_testeos);
-            fwrite(&temp, 1, sizeof(double), f_testeos);
-            fwrite(&cs2, 1, sizeof(double), f_testeos);
-            fwrite(&cs2_RF, 1, sizeof(double), f_testeos);
-        }
-    }
-    
-    fclose(f_testeos);
-    exit(0);
-#endif
-}
-
-#if DONUCLEAR
 //!RF:
 //!------------------------------------------------
 //!NSE abundance (n,p,alphas)
@@ -1591,7 +1589,7 @@ void nse_derivatives (double dens, double temp, double xn, double xp, double xa,
 
     return;
 }
-// End fo DONUCLEAR
+// End of DONUCLEAR
 #endif
 
 #endif

@@ -322,6 +322,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
   //   i.e. you don't get positive values for dP/d(vsq) . 
   rho0 = D_2 / gamma ;
   u = prim[UU] ;
+    // DANAT: add EOS p as function of rho0 and u
   p = pressure_rho0_u(rho0,u) ;
   w = rho0 + u + p ;
 
@@ -349,6 +350,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
   }
 
   // Find W from this vsq:
+    // DANAT:
   W = W_of_vsq(vsq, &p, &rho0, &u);
 
 
