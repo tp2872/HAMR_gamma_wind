@@ -668,7 +668,6 @@ void init_torus()
 #endif
 
       pres = ener * (gam - 1.0);
-      ener /= den;
       coord(n_ord[n], i, j, z, CENT, X);
       bl_coord(X,&r,&th, &phi);
 
@@ -678,10 +677,10 @@ void init_torus()
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHOALPHA] = varxa;
       p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHONP] = varxn + varxp;
 #else
-      eos_mode_dens_pres(&ener, den, 1.0, 1.0, pres);
+      eos_mode_rhopres_u (den, pres, &ener);
 #endif
 
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener * den;
+      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener;
     }
   }
 #else

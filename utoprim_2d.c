@@ -356,7 +356,7 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM],
     
     #else
     // Helmholtz EOS w/o nuclear physics
-    eos_mode_dens_ener(u / rho0, rho0, 1.0, 1.0, &p);
+    eos_mode_rhou_pres (rho0, u, &p);
     #endif
     
     #else
@@ -418,11 +418,7 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM],
     
     #if (DOHELM)
     // Helmholtz EOS
-    double xenth = w / rho0;
-    double xener, xpres;
-    eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
-    p = xpres;
-    u = xener * rho0;
+    eos_mode_rhow_pres_u (rho0, w, &p, &u);
     #else
     // Ideal gas EOS
     p = pressure_rho0_w(rho0, w); // DANAT: change this for Helmholtz EOS! say, find p and u as f(rho0, w)
@@ -695,22 +691,20 @@ static void func_vsq(double x[], double dx[], double resid[],
     double rho = D * sqrt(1.0 - vsq);
     double gamma_sq = 1.0/(1.0 - vsq);
     double gamma = sqrt(gamma_sq);
-    double enth = W / gamma_sq / rho;
-    double dpdrho, dpdt, dedt, dpde_d;
+    double dpdrho, dpde_d;
     
     #if (DONUCLEAR)
     eos_mode_dens_enth_nuclear (rho, varye, varxatm, varxn, varxp, varxa, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
     #else
-    eos_mode_dens_enth(rho, 1.0, 1.0, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
+    // Helmholtz EOS
+    eos_mode_rhow_pres_dpdrho_dpde_d (rho, w, &p_tmp, &dpdrho, &dpde_d);
     #endif
     
     double dpdeps_o_rho = dpde_d / rho;
-    dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
-    
     double dpdvsq_1 = -0.5*D*gamma*dpdrho;
     double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
-    
-    dPdvsq = (dpdvsq_1 + dpde_d*dpdvsq_2)/(1+dpdeps_o_rho);
+    dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
+    dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
     
     #else
     // Ideal gas EOS
@@ -943,12 +937,13 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	Qtsq = Qsq + Qdotn*Qdotn;
 
 	//Start inversion scheme AKA Newman et al
-	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new, xdens, xpres, xener, xenth;
+	double a, d, z, phi, R, Wsq, p_array[MAX_NEWT_ITER], epsilon, p_old, p_new;
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
     
     #if DOHELM
+    double xdens, xpres, xener, xenth;
     // Helmholtz EOS
     xdens = prim[RHO];
     
@@ -974,7 +969,8 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     
     #else
     // Helmholtz EOS w/o nuclear physics
-    eos_get_min_pres_NH (xdens, 1.0, 1.0, &xpres);
+    // -- to get min. pressure for a given density, set T = T_min = 1e4 K
+    eos_mode_rhotemp_pres_min (xdens, &xpres);
     #endif
     
     p_array[0] = xpres;
@@ -1008,11 +1004,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		gamma = 1. / sqrt(1. - vsq);
 		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
         
-        #if DOHELM
-        // Helmholtz EOS
-        xenth = w / rho0;
-        xpres = 0.0;
-        xener = 0.0;
+        #if (DOHELM)
         
         #if (DONUCLEAR)
         // Nuclear physics
@@ -1020,10 +1012,8 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         
         #else
         // Helmholtz EOS w/o nuclear physics
-        eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+        eos_mode_rhow_pres_u (rho0, w, &xpres, &u);
         #endif
-        
-        u = rho0 * xener;
         
         #else
         // Ideal gas EOS
@@ -1074,11 +1064,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		gamma = sqrt(Wsq);
 		rho0 = D / gamma; //Watch out you may need this for a more complicated EOS
         
-        #if DOHELM
-        // Helmholtz EOS
-        xenth = w / rho0;
-        xpres = 0.0;
-        xener = 0.0;
+        #if (DOHELM)
         
         #if (DONUCLEAR)
         // Nuclear physics
@@ -1086,10 +1072,9 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         
         #else
         // Helmholtz EOS w/o nuclear physics
-        eos_mode_dens_enth_NH(rho0, 1.0, 1.0, &xpres, &xener, xenth);
+        eos_mode_rhow_pres_u (rho0, w, &xpres, &u);
         #endif
         
-        u = rho0 * xener;
         p_new = xpres;
         
         #else

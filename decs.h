@@ -104,6 +104,7 @@ extern double xcon_p[NPTOT][NDIM];
 extern double pcov_p[NPTOT][NDIM];
 #endif
 
+#if (DOHELM)
 /*EOS CPU arrays*/
 extern double eos_f[EOSIMAX*EOSJMAX];
 extern double eos_fd[EOSIMAX*EOSJMAX];
@@ -130,6 +131,7 @@ extern double eos_t[EOSJMAX];
 extern double eos_d[EOSIMAX];
 extern double eos_dd[EOSIMAX];
 extern double eos_dt[EOSJMAX];
+#endif
 
 /*GPU transfer arrays*/
 extern double *F1_1[NB_LOCAL];
@@ -1193,17 +1195,19 @@ void set_Mud(int n);
 double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 
+#if (DOHELM)
 //EOS related
 void eos_init(void);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
-void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd);
-void eos_calc_soundspeed(double ener_goal, double den, double abar, double zbar, double *pres, double *cs2);
-void eos_mode_dens_ener(double ener, double den, double abar, double zbar, double *pres);
-void eos_mode_dens_pres(double *ener, double den, double abar, double zbar, double p_goal);
-void eos_mode_dens_enth(double den, double abar, double zbar, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);
-void eos_mode_dens_enth_NH (double den, double abar, double zbar, double *pres, double *ener, double h_goal);
-void eos_get_min_pres_NH (double den, double abar, double zbar, double *pres);
+void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *dpresdt, double *denerdt, double *dpresdd, double *cs2);
+void eos_mode_rhou_pres (double den, double u_goal, double *pres);
+void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2);
+void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, double *dpdrho, double *dpde_d);
+void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u);
+void eos_mode_rhotemp_pres_min (double den, double *pres);
+void eos_mode_rhopres_u (double den, double p_goal, double *u);
+#endif
 
 #if DONUCLEAR
 void eos_helm_nuclear(int calc_derivatives, double btemp, double den, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd);

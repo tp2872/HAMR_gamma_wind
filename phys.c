@@ -134,7 +134,7 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
     #else
     
     // Helmholtz EOS w/o nuclear physics
-    eos_mode_dens_ener(u / r, r, 1.0, 1.0, &P);
+    eos_mode_rhou_pres (r, u, &P);
     #endif
     
     #else
@@ -315,9 +315,9 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
     eos_calc_soundspeed_nuclear (xener, rho, varye, varxatm, varxn, varxp, varxa, &xpres, &cs2);
     
     #else
-    // Helmholtz EOS w/o nuclear physics
     
-    eos_calc_soundspeed(xener, rho, 1.0, 1.0, &xpres, &cs2);
+    // Helmholtz EOS w/o nuclear physics
+    eos_mode_rhou_pres_cs2 (rho, u, &xpres, &cs2);
     
     #endif
     

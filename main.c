@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
 
     #if (DOHELM)
     eos_init();
-   	// test_eos();
     #endif
 
 	if (!restart_read()) {
