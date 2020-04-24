@@ -63,6 +63,7 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 ******************************************************************************/
 #include "u2p_util.h"
+#include "decs.h"
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */

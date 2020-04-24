@@ -767,6 +767,11 @@ extern double * BufferrecE3corn3_62[NB_LOCAL];
 extern double * BufferrecE3corn4_72[NB_LOCAL];
 extern double * BufferrecE3corn4_82[NB_LOCAL];
 
+#if (DOHELM)
+extern double * eos_table[NB_LOCAL];
+extern double * GPU_eos_table[NB_LOCAL];
+#endif
+
 /*************************************************************************
 GLOBAL VARIABLES SECTION
 *************************************************************************/
