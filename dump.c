@@ -119,7 +119,7 @@ void dump_new_reduced(void) {
 	first_dump_reduced = 1;
 
 	if (rank == 0 % numtasks) {
-		#if defined(WIN32)
+		#if defined(_WIN32)
 		sprintf(dirpath, "mkdir reduced\\dumps%d", dump_cnt_reduced);
 		#else
 		sprintf(dirpath, "mkdir -p reduced/dumps%d", dump_cnt_reduced);

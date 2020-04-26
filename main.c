@@ -67,14 +67,15 @@ int main(int argc, char *argv[])
 	defcon = 1.;
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
+
+	#if (DOHELM)
+	eos_init();
+	#endif
+
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
     set_AMR();
-
-    #if (DOHELM)
-    eos_init();
-    #endif
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
@@ -271,7 +272,7 @@ void MPI_initialize(int argc, char *argv[])
 
 	if (rank == 0){
 		system("mkdir dumps gdumps rdumps0 rdumps1 reduced");
-		#if defined(WIN32)
+		#if defined(_WIN32)
 		system("mkdir reduced\\gdumps");
 		#else
 		system("mkdir -p reduced/gdumps");

@@ -533,6 +533,11 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+
+		// DANAT: add this - therefore rho0 is nan
+		if (fabs(vsq) < 1e-15) vsq = 0.0;
+		if (fabs(vsq) >= 1.0) return(1);
+
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
 		gamma = sqrt(Wsq);
@@ -6003,6 +6008,12 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
 
+	if (den > 1.0e11 || den < 1.0e-11) 
+		return;
+
+	if (btemp > 1.0e11 || btemp < 1.0e4)
+		return;
+
     // Useful relations
     ytot1 = 1.0 / abar;
     ye = ytot1 * zbar;
@@ -6071,7 +6082,7 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 
     // assume that NaN always compares as false in an inequality
     if (!(prad + pion + pele + pcoul*eos_coulombMult > 0.0)) {
-        printf("[eos_helm] Negative total pressure.\n");
+        printf("[eos_helm] Negative total pressure. %e %e %e %e\n", prad + pion + pele, pcoul);
         printf("%s %e %e\n", " values: dens,temp: ",den,btemp);
         printf("%s %e %e\n", " values: abar,zbar: ",abar,zbar);
         printf("%s %e\n", " coulomb coupling parameter Gamma: ",plasg);
@@ -6245,6 +6256,7 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
         temp_ini_guess = 1.0e4;
     else
         temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > 1e11) temp_ini_guess = 1e11;
 
     double temp_new, temp_old;
     double ener_tmp, ener_old;
@@ -6295,6 +6307,7 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
         temp_ini_guess = 1.0e4;
     else
         temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > 1e11) temp_ini_guess = 1e11;
 
     double temp_new, temp_old;
     double ener_tmp, ener_old;
@@ -6344,6 +6357,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
 
     if (h_goal < 1.0) temp_ini_guess = 1.0e4;
     else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > 1e11) temp_ini_guess = 1e11;
 
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -6405,6 +6419,7 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
 
     if (h_goal < 1.0) temp_ini_guess = 1.0e4;
     else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > 1e11) temp_ini_guess = 1e11;
 
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -6473,6 +6488,7 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
     double temp_ini_guess;
     if (p_goal <= 0.0) temp_ini_guess = 1.0e4;
     temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
+	if (temp_ini_guess > 1e11) temp_ini_guess = 1e11;
 
     double temp_new, temp_old;
     double p_tmp;
