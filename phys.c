@@ -157,7 +157,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	misc_source(ph, ii, jj, geom, &q, dU,r, Dt) ;
 	#endif
 
-	//Add M1 radiation terms
+	//Add M1 radiation source terms
 	#if(RAD_M1)
 	get_state_rad(ph, geom, &q_rad);
 	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
