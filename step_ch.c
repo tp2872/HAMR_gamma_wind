@@ -279,11 +279,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
 			#if(RAD_M1)
 			get_state_rad(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
-			#endif
-			primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U);
-			#if(RAD_M1)
 			source_rad(pb[nl[n]][index_3D(n, i, j, z)], &geom, dU_RAD);
 			#endif
+			primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U);
+
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
@@ -301,10 +300,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				#if( N3G > 0 )
 				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif
-				+ dU[k]);
 				#if(RAD_M1)
-				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+				+ dU_RAD[k]
 				#endif
+				+ dU[k]);
+				
 			}
 
 			#if(ELLIPTICAL2)
@@ -354,7 +354,6 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 			#if(RAD_M1)
-
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
 			//pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
 			//if (pflag[nl[n]][index_3D(n, i, j, z)]) {
