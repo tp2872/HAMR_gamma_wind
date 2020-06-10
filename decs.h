@@ -866,6 +866,7 @@ void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom *
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
 void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
+int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
 int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
 int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double Dt);
 void u_to_v(double *pr, int i, int j);

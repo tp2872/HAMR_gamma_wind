@@ -11,22 +11,22 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 	fraction = 0.25;
 	remainder = 1.;
 
-	while (keep_iterating && nstep<1000) {
+	while (keep_iterating && nstep < 1000) {
 		source_rad(pb, &geom, dU);
 
-		if (fraction*MY_MIN(U[UU], U[UU_RAD]) >= fabs(dU[UU_RAD] * Dt)) keep_iterating = 0;
-		factor = MY_MIN(fraction*MY_MIN(U[UU], U[UU_RAD]) / fabs(dU[UU_RAD] * Dt), remainder);
+		if (fraction * MY_MIN(U[UU], U[UU_RAD]) >= fabs(dU[UU_RAD] * Dt)) keep_iterating = 0;
+		factor = MY_MIN(fraction * MY_MIN(U[UU], U[UU_RAD]) / fabs(dU[UU_RAD] * Dt), remainder);
 		remainder -= factor;
 
 		source_rad(pb, &geom, dU);
-		U[UU_RAD] += factor*Dt*dU[UU_RAD];
-		U[U1_RAD] += factor*Dt*dU[U1_RAD];
-		U[U2_RAD] += factor*Dt*dU[U2_RAD];
-		U[U3_RAD] += factor*Dt*dU[U3_RAD];
-		U[UU] += factor*Dt*dU[UU];
-		U[U1] += factor*Dt*dU[U1];
-		U[U2] += factor*Dt*dU[U2];
-		U[U3] += factor*Dt*dU[U3];
+		U[UU_RAD] += factor * Dt * dU[UU_RAD];
+		U[U1_RAD] += factor * Dt * dU[U1_RAD];
+		U[U2_RAD] += factor * Dt * dU[U2_RAD];
+		U[U3_RAD] += factor * Dt * dU[U3_RAD];
+		U[UU] += factor * Dt * dU[UU];
+		U[U1] += factor * Dt * dU[U1];
+		U[U2] += factor * Dt * dU[U2];
+		U[U3] += factor * Dt * dU[U3];
 
 		flag = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pb);
 #if(DO_FONT_FIX)
@@ -47,14 +47,14 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 
 		if (flag) {
 			remainder += factor;
-			U[UU_RAD] -= factor*Dt*dU[UU_RAD];
-			U[U1_RAD] -= factor*Dt*dU[U1_RAD];
-			U[U2_RAD] -= factor*Dt*dU[U2_RAD];
-			U[U3_RAD] -= factor*Dt*dU[U3_RAD];
-			U[UU] -= factor*Dt*dU[UU];
-			U[U1] -= factor*Dt*dU[U1];
-			U[U2] -= factor*Dt*dU[U2];
-			U[U3] -= factor*Dt*dU[U3];
+			U[UU_RAD] -= factor * Dt * dU[UU_RAD];
+			U[U1_RAD] -= factor * Dt * dU[U1_RAD];
+			U[U2_RAD] -= factor * Dt * dU[U2_RAD];
+			U[U3_RAD] -= factor * Dt * dU[U3_RAD];
+			U[UU] -= factor * Dt * dU[UU];
+			U[U1] -= factor * Dt * dU[U1];
+			U[U2] -= factor * Dt * dU[U2];
+			U[U3] -= factor * Dt * dU[U3];
 			fraction = 0.05;
 		}
 		nstep++;
@@ -68,7 +68,16 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 	}
 }
 
-// This method iterates Ebar and u^mu bar rad
+int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt) {
+	if (U[UU]) / U[UU_RAD] > 1.0){
+		implicit_rad_solve_PMHD(pb, U, geom, dU, Dt);
+	}
+	else {
+		implicit_rad_solve_PRAD(pb, U, geom, dU, Dt);
+	}
+}
+
+// This method iterates E_RAD an U_rad
 int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb[NPR], dEdpb[4][4], dEdpb_inv[4][4], bsq, errx;
 	struct of_state q;
@@ -82,9 +91,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 		pb_new[k] = pb[k];
 		dpb[k] = 0.;
 	}
-	k = UU;
-	pb_old[k] = 10 * pb[k];
-	pb_new[k] = 10 * pb[k];
+
 	n_iter = 0;
 	U[UU] = U[UU] - U[RHO]; // Why this step??
 	errx = 1000000000000000.0;
@@ -92,17 +99,13 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 	keep_iterating = 1;
 	while (keep_iterating) {
 		//Calculate jacobian dEdpb
-		get_state(pb_old, &geom, &q);
-		mhd_calc(pb_old, 0, &q, &U_old[UU]); // First calculate old T^t_mu
-		for (k = UU; k <= U3; k++)U_old[k] *= geom.g; //BEV: should this be /= geom.g ?
 		for (i = UU; i <= U3; i++) {
-			//bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 			if (i == UU) {
-				for (k = UU; k <= U3; k++) dpb[k] = 0.;
+				for (k = UU_RAD; k <= U3_RAD; k++) dpb[k] = 0.;
 				dpb[i] = pow(10., -9.)*(pb_old[UU]);
 			}
 			else {
-				for (k = UU; k <= U3; k++) dpb[k] = 0.;
+				for (k = UU_RAD; k <= U3_RAD; k++) dpb[k] = 0.;
 				dpb[i] = pow(10., -9.) / sqrt(fabs(geom.gcov[i - UU][i - UU]));
 			}
 
@@ -110,7 +113,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			for (k = 0; k < NPR; k++) pb_new[k] = pb_old[k] + dpb[k];
 
 			// Step 1: Compute R^t,_mu from radiation P_(i+1)
-			get_state(pb_new, &geom, &q_rad);
+			get_state_rad(pb_new, &geom, &q_rad);
 			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 
 			// Step 2: Estimate G_s using old prims P_n
@@ -118,30 +121,32 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			//BEV Q: do I have to do anything separately to get G_s?
 
 			// Step 3: Set DeltaTumu = -DeltaRtmu
-			U_new[UU] = U[UU] - (U_new[UU_RAD] - U[UU_RAD]);
-			U_new[U1] = U[U1] - (U_new[U1_RAD] - U[U1_RAD]);
-			U_new[U2] = U[U2] - (U_new[U2_RAD] - U[U2_RAD]);
-			U_new[U3] = U[U3] - (U_new[U3_RAD] - U[U3_RAD]);
+			U_new[UU_RAD] = U[UU] - (U_new[UU_RAD] - U[UU_RAD]);
+			U_new[U1_RAD] = U[U1] - (U_new[U1_RAD] - U[U1_RAD]);
+			U_new[U2_RAD] = U[U2] - (U_new[U2_RAD] - U[U2_RAD]);
+			U_new[U3_RAD] = U[U3] - (U_new[U3_RAD] - U[U3_RAD]);
 
 			// Step 4: Invert T^t_mu to gas prims (latest gas variables in P_i+1)
 			// BEV: which function does this? There are multiple utoprims
-			Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new);
+			Rtoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new);
 
 			// Step 5: Recompute T^t_mu for consistency
-			get_state(pb_new, &geom, &q);
+			get_state_rad(pb_new, &geom, &q_rad);
 			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+			source_rad(pb_new, &geom, dU_new);
 
 			// This loop specific to the solver: what prims are iterated
 			for (k = UU_RAD; k <= U3_RAD; k++) {
-				//dU_old[k] = 0.;
-				//dU_new[k] = 0.;
 				E_old[k] = (U_old[k] - U[k] - Dt*dU_old[k]);
 				E_new[k] = (U_new[k] - U[k] - Dt*dU_new[k]);
 				dEdpb[k - UU_RAD][i - UU_RAD] = (E_new[k] - E_old[k]) / dpb[i];
 			}
 		}
 
-		if (invert_matrix(dEdpb, dEdpb_inv) == 1) break;;
+		if (invert_matrix(dEdpb, dEdpb_inv) == 1) {
+			fprintf(stderr, "Error prad \n");
+			break;;
+		}
 
 		//Tg = (GAMMA - 1.)*pb_new[UU] / pb_new[RHO];
 		//error += fabs((U_new[KTOT] - U[KTOT])*Tg + Dt*dU_new[KTOT]);
@@ -380,7 +385,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			//bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 			if (i == UU) {
 				for (k = UU; k <= U3; k++) dpb[k] = 0.;
-				dpb[i] = pow(10., -9.)*(pb_old[UU]);
+				dpb[i] = pow(10., -9.) * (pb_old[UU]);
 			}
 			else {
 				for (k = UU; k <= U3; k++) dpb[k] = 0.;
@@ -421,13 +426,16 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			for (k = UU; k <= U3; k++) {
 				//dU_old[k] = 0.;
 				//dU_new[k] = 0.;
-				E_old[k] = (U_old[k] - U[k] - Dt*dU_old[k]);
-				E_new[k] = (U_new[k] - U[k] - Dt*dU_new[k]);
+				E_old[k] = (U_old[k] - U[k] - Dt * dU_old[k]);
+				E_new[k] = (U_new[k] - U[k] - Dt * dU_new[k]);
 				dEdpb[k - UU][i - UU] = (E_new[k] - E_old[k]) / dpb[i];
 			}
 		}
 
-		if (invert_matrix(dEdpb, dEdpb_inv) == 1) break;;
+		if (invert_matrix(dEdpb, dEdpb_inv) == 1){
+			fprintf(stderr, "Implicit rad solve error \n");
+			break;;
+		}
 
 		//Tg = (GAMMA - 1.)*pb_new[UU] / pb_new[RHO];
 		//error += fabs((U_new[KTOT] - U[KTOT])*Tg + Dt*dU_new[KTOT]);

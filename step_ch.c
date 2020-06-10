@@ -353,13 +353,14 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			//Beverly: Here you call the radiation inversion of conserved to primitive variables
 			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
+
 			#if(RAD_M1)
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
-			//pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
+			/*pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
 			//if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-				//pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
-			//	if(pflag[nl[n]][index_3D(n, i, j, z)])failimage[nl[n]][index_3D(n, i, j, z)][2]++;
-			//}
+			//	pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
+				if(pflag[nl[n]][index_3D(n, i, j, z)])failimage[nl[n]][index_3D(n, i, j, z)][2]++;
+			//}&/
 			#endif
 			}
 	}
