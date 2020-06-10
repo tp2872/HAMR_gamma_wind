@@ -264,13 +264,13 @@ double advance(int flag)
 void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {
 	int i, j, z, k;
-	double ndt, ndt1, ndt2, ndt3, U[NPR], dU[NPR];
+	double ndt, ndt1, ndt2, ndt3, U[NPR], dU[NPR], dU_RAD[NPR];
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU,dU_RAD, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
@@ -281,7 +281,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			get_state_rad(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
 			#endif
 			primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U);
-
+			#if(RAD_M1)
+			source_rad(pb[nl[n]][index_3D(n, i, j, z)], &geom, dU_RAD);
+			#endif
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
@@ -300,6 +302,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif
 				+ dU[k]);
+				#if(RAD_M1)
+				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+				#endif
 			}
 
 			#if(ELLIPTICAL2)
@@ -351,7 +356,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#if(RAD_M1)
 
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
-			pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
+			//pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve_PMHD(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
 			//if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 				//pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
 			//	if(pflag[nl[n]][index_3D(n, i, j, z)])failimage[nl[n]][index_3D(n, i, j, z)][2]++;
