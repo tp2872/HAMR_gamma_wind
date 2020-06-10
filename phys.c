@@ -186,6 +186,8 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	int j, k;
 	struct of_state_rad q_rad;
 	
+	PLOOP dU[k] = 0.;
+
 	//Add M1 radiation terms
 	get_state_rad(ph, geom, &q_rad);
 	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
