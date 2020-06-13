@@ -323,8 +323,9 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 		Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new);
 
 		// Step 5: Recompute T^t_mu for consistency
-		get_state(pb_new, &geom, &q);
+		get_state_rad(pb_new, &geom, &q_rad);
 		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		source_rad(pb_new, &geom, dU_new);
 
 		//for (k = UU; k <= U3; k++) {
 		//printf("test2: %f \n", log(fabs(Dt*dU_new[k] / U_new[k])) / log(10.));
