@@ -5,20 +5,53 @@ void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
 void ncov_calc(double gcon[][NDIM], double ncov[]); int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
 
 int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double Dt) {
-	double factor, remainder, dU[NPR], fraction;
-	int flag, keep_iterating = 1, nstep = 0;
+	double factor, remainder=1.0, dU[NPR], Uh[NPR], ph[NPR], fraction;
+	int flag=0, keep_iterating = 1, nstep = 0, k;
 
+	//Something like Courant number in implicity scheme; e.g. we do not let the source term in each step be bigger than this
 	fraction = 0.25;
-	remainder = 1.;
+
+	//Set halfstep variables
+	for (k = 0; k < NPR; k++) ph[k] = pb[k];
 
 	while (keep_iterating && nstep < 1000) {
-		source_rad(pb, &geom, dU);
+		
 
+		//Set size of timestep
 		if (fraction * MY_MIN(U[UU], U[UU_RAD]) >= fabs(dU[UU_RAD] * Dt)) keep_iterating = 0;
 		factor = MY_MIN(fraction * MY_MIN(U[UU], U[UU_RAD]) / fabs(dU[UU_RAD] * Dt), remainder);
 		remainder -= factor;
 
+		//Half step in 2nd order scheme
 		source_rad(pb, &geom, dU);
+
+		Uh[UU_RAD] += factor * Dt * dU[UU_RAD];
+		Uh[U1_RAD] += factor * Dt * dU[U1_RAD];
+		Uh[U2_RAD] += factor * Dt * dU[U2_RAD];
+		Uh[U3_RAD] += factor * Dt * dU[U3_RAD];
+		Uh[UU] += factor * Dt * dU[UU];
+		Uh[U1] += factor * Dt * dU[U1];
+		Uh[U2] += factor * Dt * dU[U2];
+		Uh[U3] += factor * Dt * dU[U3];
+
+		flag = Utoprim_2d(Uh, geom.gcov, geom.gcon, geom.g, ph);
+		#if(DO_FONT_FIX)
+		if (flag) {
+			#if DOKTOT
+			flag = Utoprim_1dvsq2fix1(Uh, geom.gcov, geom.gcon, geom.g, ph, ph[KTOT]);
+			#endif
+			if (flag) {
+				if (flag) {
+					flag = Utoprim_1dfix1(Uh, geom.gcov, geom.gcon, geom.g, ph, ph[KTOT]);
+				}
+			}
+		}
+		#endif
+
+		Rtoprim(Uh, geom.gcov, geom.gcon, geom.g, ph, BASIC);
+
+		//Full step in 2nd order scheme
+		source_rad(ph, &geom, dU);
 		U[UU_RAD] += factor * Dt * dU[UU_RAD];
 		U[U1_RAD] += factor * Dt * dU[U1_RAD];
 		U[U2_RAD] += factor * Dt * dU[U2_RAD];
@@ -31,34 +64,20 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 		flag = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pb);
 		#if(DO_FONT_FIX)
 		if (flag) {
-	#if DOKTOT
+			#if DOKTOT
 			flag = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pb, pb[KTOT]);
-#endif
+			#endif
 			if (flag) {
 				if (flag) {
 					flag = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pb, pb[KTOT]);
 				}
 			}
 		}
-#endif
-#if(RAD_M1)
-		if (!flag)Rtoprim(U, geom.gcov, geom.gcon, geom.g, pb, BASIC);
-#endif
+		#endif
 
-		if (flag) {
-			remainder += factor;
-			U[UU_RAD] -= factor * Dt * dU[UU_RAD];
-			U[U1_RAD] -= factor * Dt * dU[U1_RAD];
-			U[U2_RAD] -= factor * Dt * dU[U2_RAD];
-			U[U3_RAD] -= factor * Dt * dU[U3_RAD];
-			U[UU] -= factor * Dt * dU[UU];
-			U[U1] -= factor * Dt * dU[U1];
-			U[U2] -= factor * Dt * dU[U2];
-			U[U3] -= factor * Dt * dU[U3];
-			fraction = 0.05;
-		}
+		Rtoprim(U, geom.gcov, geom.gcon, geom.g, pb, BASIC);
+
 		nstep++;
-		//printf("nstep: %d\ n", nstep);
 	}
 	if (nstep >= 1000) {
 		return 1;
@@ -69,11 +88,13 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 }
 
 int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt) {
-	if ((U[UU] / U[UU_RAD]) > 1.0){
-		implicit_rad_solve_PMHD(pb, U, geom, dU, Dt);
+	double error;
+
+	if ((U[UU] / U[UU_RAD]) > 1.0) {
+		error = implicit_rad_solve_PMHD(pb, U, geom, dU, Dt);
 	}
 	else {
-		implicit_rad_solve_PRAD(pb, U, geom, dU, Dt);
+		subcycle_rad_solve(pb[NPR], U[NPR], geom, Dt);
 	}
 }
 
@@ -113,16 +134,6 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			else {
 				for (k = UU; k <= U3; k++) dpb[k] = 0.;
 				dpb[i] = pow(10., -9.) / sqrt(fabs(geom.gcov[i - UU][i - UU]));
-			}
-
-			for (k = 0; k < NPR; k++) {
-				if isnan(pb_old[k]) {
-					//fprintf(stderr, "PMHD gets NaN prim: %d\n", k);
-				}
-				pb_new[k] = pb_old[k] + dpb[k];
-				if isnan(pb_new[k]) {
-					//fprintf(stderr, "PMHD makes NaN prim 1: %d\n", k);
-				}
 			}
 
 			get_state(pb_new, &geom, &q);
@@ -334,7 +345,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
-		errx = 0.25*(fabs(U_new[UU_RAD] - U[UU_RAD] - Dt*dU_new[UU_RAD]) / fabs(U[UU_RAD]));
+		errx = 0.25 * (fabs(U_new[UU_RAD] - U[UU_RAD] - Dt*dU_new[UU_RAD]) / fabs(U[UU_RAD]));
 		errx += 0.25 * (fabs(U_new[U1_RAD] - U[U1_RAD] - Dt * dU_new[U1_RAD]) / fabs(U[UU_RAD]));
 		errx += 0.25 * (fabs(U_new[U2_RAD] - U[U2_RAD] - Dt * dU_new[U2_RAD]) / fabs(U[UU_RAD]));
 		errx += 0.25 * (fabs(U_new[U3_RAD] - U[U3_RAD] - Dt * dU_new[U3_RAD]) / fabs(U[UU_RAD]));
