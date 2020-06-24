@@ -71,9 +71,9 @@ double Bsq, QdotBsq, Qtsq, Qdotn, D;
 
 // Declarations: 
 static double vsq_calc(double W);
-static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[]);
-static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR]);
-static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int));
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance);
+static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int), double tolerance);
 static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n);
 static double x1_of_x0(double x0);
 static double pressure_W_vsq(double W, double vsq);
@@ -114,8 +114,7 @@ gcov = gcon = diag(-1,1,1,1)  and gdet = 1.  ;
 
 ******************************************************************/
 
-int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],
-	double gdet, double prim[NPR])
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance)
 {
 
 	double U_tmp[NPR_U], U_tmp2[NPR_U], prim_tmp[NPR_U];
@@ -157,7 +156,7 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],
 		prim_tmp[i] = alpha*prim[i];
 	}
 
-	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
+	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
@@ -216,8 +215,7 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM],
-	double gcon[NDIM][NDIM], double gdet, double prim[NPR_U])
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance)
 {
 
 	double x_2d[NEWT_DIM_2];
@@ -305,7 +303,7 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM],
 	// Calculate W and vsq: 
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
-	retval = general_newton_raphson(x_2d, n, func_vsq);
+	retval = general_newton_raphson(x_2d, n, func_vsq, tolerance);
 
 	W = x_2d[0];
 	vsq = x_2d[1];
@@ -440,10 +438,7 @@ general_newton_raphson():
 -- inspired in part by Num. Rec.'s routine newt();
 
 *****************************************************************/
-static int general_newton_raphson(double x[], int n,
-	void(*funcd) (double[], double[], double[],
-	double[][NEWT_DIM_2], double *,
-	double *, int))
+static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int), double tolerance)
 {
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
@@ -501,13 +496,13 @@ static int general_newton_raphson(double x[], int n,
 		/*  before stopping                                                          */
 		/*****************************************************************************/
 
-		if ((fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
+		if ((fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
 			doing_extra = 1;
 		}
 
 		if (doing_extra == 1) i_extra++;
 
-		if (((fabs(errx) <= NEWT_TOL) && (doing_extra == 0))
+		if (((fabs(errx) <= tolerance) && (doing_extra == 0))
 			|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
@@ -523,13 +518,13 @@ static int general_newton_raphson(double x[], int n,
 	}
 
 
-	if (fabs(errx) > MIN_NEWT_TOL){
+	if (fabs(errx) > tolerance){
 		return(1);
 	}
-	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
+	if ((fabs(errx) <= tolerance) && (fabs(errx) > tolerance)){
 		return(0);
 	}
-	if (fabs(errx) <= NEWT_TOL){
+	if (fabs(errx) <= tolerance){
 		return(0);
 	}
 
@@ -714,7 +709,7 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 		prim_tmp[i] = alpha*prim[i];
 	}
 	
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp,NEWT_TOL);
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
@@ -732,7 +727,7 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 
 }
 
-static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_U])
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance)
 {
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, w,  gamma, vsq;
@@ -812,7 +807,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 
 			}
 		}
-	} while (fabs(p_new - p_old) > 0.01*NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
+	} while (fabs(p_new - p_old) > 0.01*tolerance*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
 	
 	if (set_variables == 1){
 		a = -Qdotn + p_new + 0.5*Bsq;

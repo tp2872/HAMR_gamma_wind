@@ -11,7 +11,7 @@ int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 
 	//Check if fluid is in extreme radiation subdominant regime
 	if ((U[UU_RAD] / U[UU]) < 10.0 * MACHINE_PREC || (pb[UU_RAD] / pb[UU]) < 10.0 * MACHINE_PREC) {
-		implicit_rad_solve_URAD(pb, U, geom, dU, Dt, &error_t);
+		//implicit_rad_solve_URAD(pb, U, geom, dU, Dt, &error_t);
 
 		//If error is below set margin, accept solution, otherwise try PRAD
 		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U, geom, dU, Dt, &error_t);
@@ -26,7 +26,7 @@ int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom geom, doubl
 		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U, geom, dU, Dt, &error_t);
 
 		//If error is still below set margin, accept solution, otherwise try URAD
-		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U, geom, dU, Dt, &error_t);
+		//if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U, geom, dU, Dt, &error_t);
 	}
 
 	//As final resort attempt subcycling
@@ -146,7 +146,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			for (k = UU; k <= U3; k++) dpb[k] = 0.;
 			do {
 				if (i == UU) {
-					dpb[i] = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) *((double)(n_iter_jacob/2))) * (pb_old[UU]);
+					dpb[i] = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
 					pb_new[i] = pb[i] + dpb[i];
 				}
 				else {
@@ -155,7 +155,6 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 				}
 
 				get_state(pb_new, &geom, &q);
-				pb_new[RHO] = U[RHO] / q.ucon[0] / geom.g; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 				mhd_calc(pb_new, 0, &q, &U_new[UU]); // Compute (new converved vars) S u^t and T^+mu from gas P_i+1
 				for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
 
@@ -163,6 +162,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 				U_new[U1_RAD] = U[U1_RAD] - (U_new[U1] - U[U1]);
 				U_new[U2_RAD] = U[U2_RAD] - (U_new[U2] - U[U2]);
 				U_new[U3_RAD] = U[U3_RAD] - (U_new[U3] - U[U3]);
+				pb_new[RHO] = U_new[RHO] / q.ucon[0] / geom.g; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 
 				fail = Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, TYPE2);
 
@@ -209,6 +209,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 		U_new[U3_RAD] = U[U3_RAD] - (U_new[U3] - U[U3]);
 
 		//Get new radiation primitives
+		pb_new[RHO] = U_new[RHO] / q.ucon[0] / geom.g; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 		Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, TYPE2);
 		source_rad(pb_new, &geom, dU_new);
 
@@ -227,13 +228,16 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			keep_iterating = 0;
 		}
 		
-		//If error increasing stop iterating
-		if(n_iter>4 && (error_new[(n_iter-2) % 5]))
-
+		
 		if (keep_iterating) {
 			for (k = 0; k < NPR; k++) pb_old[k] = pb_new[k];
 		}
 		n_iter++;
+
+		//If error increasing stop iterating
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5]+ error_new[(n_iter - 3) % 5]+ error_new[(n_iter - 2) % 5])<0.25*(error_new[(n_iter - 1) % 5]+ error_new[(n_iter - 0) % 5]))) {
+			keep_iterating=0;
+		}
 	}
 
 	//Recalculate radiation energy density with BASIC limiter if radiation energy density turns negatie
@@ -305,7 +309,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 			U_new[U3] = U[U3] - (U_new[U3_RAD] - U[U3_RAD]);
 
 			// Step 4: Invert T^t_mu to gas prims (latest gas variables in P_i+1)
-			Utoprim_2d(U_new, geom.gcov, geom.gcon, geom.g, pb_new);
+			Utoprim_2d(U_new, geom.gcov, geom.gcon, geom.g, pb_new, NEWT_TOL);
 
 			// Step 5: Recompute R^t_mu for consistency
 			get_state_rad(pb_new, &geom, &q_rad);
@@ -354,7 +358,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U[NPR], struct of_geom geom, 
 
 		// Step 4: Invert T^t_mu to gas prims (latest gas variables in P_i+1_
 		// BEV: which function does this? There are multiple utoprims
-		Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new);
+		Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new,NEWT_TOL);
 
 		// Step 5: Recompute T^t_mu for consistency
 		get_state_rad(pb_new, &geom, &q_rad);
@@ -443,7 +447,7 @@ int implicit_rad_solve_entropy_UMHD(double pb[NPR], double U[NPR], struct of_geo
 
 			// Invert S u^t and T^t,_i to gas primitive
 			// BEV: which utoprim function?
-			Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new);
+			Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new,NEWT_TOL);
 
 			// Recompute full T^t,_mu
 			get_state(pb_old, &geom, &q);
@@ -483,7 +487,7 @@ int implicit_rad_solve_entropy_UMHD(double pb[NPR], double U[NPR], struct of_geo
 
 		// Invert S u^t and T^t,_i to gas primitive
 		// BEV: which utoprim function?
-		Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new);
+		Utoprim_2d(U_old, geom.gcov, geom.gcon, geom.g, pb_new,NEWT_TOL);
 
 		// Recompute full T^t,_mu
 		get_state(pb_old, &geom, &q);
@@ -565,7 +569,6 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 		for (i = 0; i <= U3_RAD - UU_RAD; i++) {
 			prim[i + NPR_U] = prim_tmp[i];
 		}
-		prim[UU_RAD] = MY_MAX(prim[UU_RAD], 0.001*prim[UU]);
 	}
 
 	return(ret);
