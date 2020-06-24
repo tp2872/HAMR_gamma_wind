@@ -270,6 +270,52 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
+	#if(RAD_M1)
+	double U_M1[NPR];
+	if(flag==0){
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU,dU_RAD, ind0, ind1, ind2,ind3)
+		{
+			#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
+			ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+				get_geometry(n, i, j, z, CENT, &geom);
+				get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
+				#if(RAD_M1)
+				get_state_rad(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
+				source_rad(pb[nl[n]][index_3D(n, i, j, z)], &geom, dU_RAD);
+				#endif
+				primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U0);
+
+				ind0 = index_3D(n, i, j, z);
+				ind1 = index_3D(n, i + D1, j, z);
+				ind2 = index_3D(n, i, j + D2, z);
+				ind3 = index_3D(n, i, j, z + D3);
+
+				pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(pb[nl[n]][index_3D(n, i, j, z)], U, geom, dU_RAD0, Dt);
+
+				PLOOP{
+					U[k] += Dt * (dU_RAD0[k]);
+				}
+
+				#if( DO_FONT_FIX ) 
+					if (pflag[nl[n]][index_3D(n, i, j, z)]) {
+						failimage[nl[n]][index_3D(n, i, j, z)][0]++;
+						#if DOKTOT
+						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pi[nl[n]][index_3D(n, i, j, z)], pi[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
+						#endif
+						if (pflag[nl[n]][index_3D(n, i, j, z)]) {
+							failimage[nl[n]][index_3D(n, i, j, z)][1]++;
+							if (pflag[nl[n]][index_3D(n, i, j, z)]) {
+								pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pi[nl[n]][index_3D(n, i, j, z)], pi[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
+								pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+								failimage[nl[n]][index_3D(n, i, j, z)][2]++;
+							}
+						}
+					}
+					#endif
+				Rtoprim(U, geom.gcov, geom.gcon, geom.g, pi[nl[n]][ind0], BASIC);
+			}
+		}
+	#endif
 	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU,dU_RAD, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
@@ -288,6 +334,8 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
+			#if(RAD_M1)
+			#else
 			#pragma ivdep
 			PLOOP{
 				U[k] += Dt*(
@@ -305,11 +353,6 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				#endif
 				+ dU[k]);
 				
-			}
-
-			#if(ELLIPTICAL2)
-			if(z==0){
-				PLOOP U[k] += Dt*(dU_s[nl[n]][index_2D(n,i,j,z)][k]);
 			}
 			#endif
 
@@ -349,15 +392,15 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				}
 			}
 			#endif
-			#if(RAD_M1)
+			//#if(RAD_M1)
 			//Beverly: Here you call the radiation inversion of conserved to primitive variables
-			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
-			#endif
+			//Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
+			//#endif
 
 			#if(RAD_M1)
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
 			if (pflag[nl[n]][index_3D(n, i, j, z)] == 0) {
-				//pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
+				pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
 			}
 			#endif
 			}
