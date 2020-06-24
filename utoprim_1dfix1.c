@@ -81,10 +81,10 @@ FTYPE W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old;
 static FTYPE vsq_calc(FTYPE W);
 static FTYPE u_of_p(FTYPE p);
 static FTYPE pressure_of_rho(FTYPE rho0);
-static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM],  FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[]);
+static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM],  FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance);
 static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
 static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int) );
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance);
 static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
 static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int) );
 
@@ -132,8 +132,7 @@ static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
 
 ******************************************************************/
 
-int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
-	       FTYPE gdet, FTYPE prim[NPR_U], FTYPE K )
+int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], FTYPE K, double tolerance)
 {
 
   FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
@@ -171,7 +170,7 @@ int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM
     prim_tmp[i] = alpha*prim[i];
   }
 
-  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
+  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
   /* Transform new primitive variables back if there was no problem : */ 
   if( ret == 0 ) { 
@@ -225,8 +224,7 @@ return:  (i*100 + j)  where
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
-			    FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U])
+static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U], double tolerance)
 {
 
   FTYPE x_1d[1];
@@ -317,28 +315,28 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
   // Calculate W: 
   x_1d[0] = W_last;
   
-#if( USE_ISENTROPIC )   
-  retval = general_newton_raphson( x_1d, 1, func_1d_orig1);
-#else
+    #if( USE_ISENTROPIC )   
+  retval = general_newton_raphson( x_1d, 1, func_1d_orig1, tolerance);
+    #else
   retval = general_newton_raphson( x_1d, 1, func_1d_orig2);
-#endif
+    #endif
 
   W = x_1d[0];
 
   /* Problem with solver, so return denoting error before doing anything further */
   if( (retval != 0) || (W == FAIL_VAL) ) {
     retval = retval*100+1;
-#if(LTRACE)
+    #if(LTRACE)
     fprintf(stderr,"fix1: retval, W, rho = %d %26.20e %26.20e \n", retval,W, rho_for_gnr2);fflush(stderr);
-#endif
+    #endif
     return(retval);
   }
   else{
     if(W <= 0. || W > W_TOO_BIG) {
       retval = 3;
-#if(LTRACE)
+        #if(LTRACE)
       fprintf(stderr,"fix1: retval, W, rho = %d %26.20e %26.20e \n", retval,W, rho_for_gnr2);fflush(stderr);
-#endif
+        #endif
       return(retval) ;
     }
   }
@@ -444,10 +442,7 @@ static FTYPE dvsq_dW(FTYPE W)
        -- funcd = name of function that calculates residuals, etc.;
 
 *****************************************************************/
-static int general_newton_raphson( FTYPE x[], int n, 
-				   void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
-						  FTYPE [][NEWT_DIM_1], FTYPE *, 
-						  FTYPE *, int) )
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance )
 {
   FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
     jac[NEWT_DIM_1][NEWT_DIM_1];
@@ -515,13 +510,13 @@ static int general_newton_raphson( FTYPE x[], int n,
     /*  before stopping                                                          */
     /*****************************************************************************/
     
-    if( (fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) {
+    if( (fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) {
       doing_extra = 1;
     }
 
     if( doing_extra == 1 ) i_extra++ ;
 
-    if( ((fabs(errx) <= NEWT_TOL)&&(doing_extra == 0)) || 
+    if( ((fabs(errx) <= tolerance)&&(doing_extra == 0)) ||
 	(i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER-1)) ) {
       keep_iterating = 0;
     }
@@ -541,17 +536,17 @@ static int general_newton_raphson( FTYPE x[], int n,
   }
 
 
-  if( fabs(errx) > MIN_NEWT_TOL){
+  if( fabs(errx) > tolerance){
 #if(LTRACE)
     fprintf(stderr," totalcount = %d   0   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
 #endif
     return(1);
   }
-  if( (fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL) ){
+  if( (fabs(errx) <= tolerance) && (fabs(errx) > tolerance) ){
     //fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
     return(0);
   }
-  if( fabs(errx) <= NEWT_TOL ){
+  if( fabs(errx) <= tolerance){
     //fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
     return(0);
   }

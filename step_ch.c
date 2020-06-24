@@ -322,14 +322,14 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 
 			#if(NEWMAN)
-			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			if (pflag[nl[n]][ind0]) {
-				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			}
 			#else
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			//if (pflag[nl[n]][ind0]) {
-			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			//}
 			#endif
 
@@ -337,12 +337,12 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
 				#if DOKTOT
-				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT]);
+				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
 				#endif
 				if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 					failimage[nl[n]][index_3D(n, i, j, z)][1]++;
 					if (pflag[nl[n]][index_3D(n, i, j, z)]){
-						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT]);
+						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
 						failimage[nl[n]][index_3D(n, i, j, z)][2]++;
 					}
@@ -356,11 +356,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 
 			#if(RAD_M1)
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
-			/*pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
-			//if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-			//	pflag[nl[n]][index_3D(n, i, j, z)] = subcycle_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, Dt);
-				if(pflag[nl[n]][index_3D(n, i, j, z)])failimage[nl[n]][index_3D(n, i, j, z)][2]++;
-			//}&/
+			if (pflag[nl[n]][index_3D(n, i, j, z)] == 0) {
+				//pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(pf[nl[n]][index_3D(n, i, j, z)], U, geom, dU, Dt);
+			}
 			#endif
 			}
 	}

@@ -86,9 +86,9 @@ static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u);
 static FTYPE u_of_p(FTYPE p);
 static FTYPE pressure_of_rho(FTYPE rho0);
 static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p);
-static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[]);
+static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance);
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int) );
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance );
 
 /**********************************************************************/
 /******************************************************************
@@ -133,8 +133,7 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
 
 ******************************************************************/
 
-int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM],
-		   FTYPE gdet, FTYPE prim[NPR_U], FTYPE K )
+int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], FTYPE K, double tolerance)
 {
 
   FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
@@ -174,7 +173,7 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
     prim_tmp[i] = alpha*prim[i];
   }
 
-  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
+  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
   /* Transform new primitive variables back if there was no problem : */ 
   if( ret == 0 ) {
@@ -228,8 +227,7 @@ return:  (i*100 + j)  where
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
-			    FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U])
+static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U], double tolerance)
 {
 
   FTYPE x_1d[1];
@@ -304,7 +302,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM],
 
 
   // Find vsq via Newton-Raphson:
-  retval = general_newton_raphson( x_1d, 1, func_1d_gnr) ; 
+  retval = general_newton_raphson( x_1d, 1, func_1d_gnr, tolerance) ; 
 
   /* Problem with solver, so return denoting error before doing anything further */
   if( retval != 0 ) { 
@@ -393,10 +391,7 @@ static void validate_x(FTYPE x[1], FTYPE x0[1] )
        -- funcd = name of function that calculates residuals, etc.;
 
 *****************************************************************/
-static int general_newton_raphson( FTYPE x[], int n, 
-				   void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
-						  FTYPE [][NEWT_DIM_1], FTYPE *, 
-						  FTYPE *, int) )
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [],  FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance)
 {
   FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
     jac[NEWT_DIM_1][NEWT_DIM_1];
@@ -463,14 +458,14 @@ static int general_newton_raphson( FTYPE x[], int n,
     /*   before stopping                                                         */
     /*****************************************************************************/
     
-    if( (fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) {
+    if( (fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) {
       doing_extra = 1;
     }
 
     if( doing_extra == 1 ) i_extra++ ;
 
     // See if we've done the extra iterations, or have done too many iterations:
-    if( ((fabs(errx) <= NEWT_TOL)&&(doing_extra == 0)) 
+    if( ((fabs(errx) <= tolerance)&&(doing_extra == 0))
 	|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER-1)) ) {
       keep_iterating = 0;
     }
@@ -486,17 +481,17 @@ static int general_newton_raphson( FTYPE x[], int n,
   }
 
   // Return in different ways depending on whether a solution was found:
-  if( fabs(errx) > MIN_NEWT_TOL){
-#if(LTRACE)
+  if( fabs(errx) > tolerance){
+    #if(LTRACE)
     fprintf(stderr," totalcount = %d   0   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);                      
-#endif
+    #endif
     return(1);
   }
-  if( (fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL) ){
+  if( (fabs(errx) <= tolerance) && (fabs(errx) > tolerance) ){
     //fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
     return(0);
   }
-  if( fabs(errx) <= NEWT_TOL ){
+  if( fabs(errx) <= tolerance){
     //fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
     return(0);
   }
