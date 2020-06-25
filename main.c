@@ -325,6 +325,11 @@ void set_arrays(int n)
 	Katm[nl[n]] = (double(*))malloc((BS_1 + 2 * N1G) * sizeof(double));
 	p[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	ph[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	#if(RAD_M1)
+	U[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	dU_RAD0[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	dU_RAD1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	#endif
 	#if(STAGGERED)
 	ps[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
 	psh[nl[n]] = (double(*)[NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NDIM]));
@@ -929,6 +934,11 @@ void free_arrays(int n){
 	#if(STAGGERED)
 	free(ps[nl[n]]);
 	free(psh[nl[n]]);
+	#endif
+	#if(RAD_M1)
+	free(U[nl[n]]);
+	free(dU_RAD0[nl[n]]);
+	free(dU_RAD1[nl[n]]);
 	#endif
 	free(dq[nl[n]]);
 	free(F1[nl[n]]);
