@@ -299,7 +299,7 @@ void utoprim_M1_0(double Dt, int n)
 			primtoflux(p[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U[nl[n]][index_3D(n, i, j, z)]);
 
 
-			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][index_3D(n, i, j, z)], U, geom, dU_RAD0[nl[n]][index_3D(n, i, j, z)], Dt*y);
+			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][index_3D(n, i, j, z)], U, &geom, dU_RAD0[nl[n]][index_3D(n, i, j, z)], Dt*y);
 
 		}
 	}
@@ -383,7 +383,7 @@ void utoprim_M1_1( double Dt, int n)
 
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
 			if (pflag[nl[n]][index_3D(n, i, j, z)] == 0) {
-				pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(ph[nl[n]][index_3D(n, i, j, z)], U, geom, dU_RAD1[nl[n]][index_3D(n, i, j, z)], Dt);
+				pflag[nl[n]][index_3D(n, i, j, z)]=implicit_rad_solve(ph[nl[n]][index_3D(n, i, j, z)], U, &geom, dU_RAD1[nl[n]][index_3D(n, i, j, z)], Dt);
 			}
 		}
 	}
