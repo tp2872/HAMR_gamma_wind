@@ -196,6 +196,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom *geom,
 	}
 
 	//Set norm for error calculation
+	source_rad(pb_old, &geom, dU_new);
 	norm = 0.25 * (fabs(U[UU_RAD]) + fabs(U[UU]) + fabs(U_new[UU_RAD]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU_RAD]) + fabs(Dt * dU_new[UU]));
 
 	//If error allready small skip the implicit solve
@@ -209,6 +210,10 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom *geom,
 	error_new[0] += 0.25 * (fabs(U_new[U1] - U[U1] - Dt * dU_new[U1]) / norm);
 	error_new[0] += 0.25 * (fabs(U_new[U2] - U[U2] - Dt * dU_new[U2]) / norm);
 	error_new[0] += 0.25 * (fabs(U_new[U3] - U[U3] - Dt * dU_new[U3]) / norm);
+	//If we've reached the tolerance level, stop iterating
+	if ((fabs(error_new[n_iter % 5]) <= pow(10, -12.)) || (n_iter >= 20)) {
+		return 0;
+	}
 
 	/* Start the Newton-Raphson iterations : */
 	n_iter = 0;
@@ -323,6 +328,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom *geom,
 		source_rad(pb_new, &geom, dU_new);
 
 		//Calculate iterated error
+		norm = 0.25 * (fabs(U[UU_RAD]) + fabs(U[UU]) + fabs(U_new[UU_RAD]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU_RAD]) + fabs(Dt * dU_new[UU]));
 		T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
 		if (do_entropy == 1) error_new[n_iter % 5] = 0.25 * T_GAS* (fabs(U_new[KTOT] - U[KTOT] - Dt * dU_new[KTOT]) / (norm));
 		else error_new[n_iter % 5] = 0.25 * (fabs(U_new[UU_RAD] - U[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);

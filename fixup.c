@@ -177,7 +177,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	#if DOKTOT
-	pv[KTOT] = (gam - 1.)*pv[UU] * pow(pv[RHO], -gam);
+	pv[KTOT] = (GAMMA - 1.)*pv[UU] * pow(pv[RHO], -GAMMA);
 	#endif
 	/* limit gamma wrt normal observer */
 
@@ -190,10 +190,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	else { 
 		if(gamma > GAMMAMAX) {
-			f = sqrt(
-				(GAMMAMAX*GAMMAMAX - 1.)/
-				(gamma*gamma - 1.)
-				) ;
+			f = sqrt((GAMMAMAX*GAMMAMAX - 1.)/(gamma*gamma - 1.)) ;
 			pv[U1] *= f ;	
 			pv[U2] *= f ;	
 			pv[U3] *= f ;	

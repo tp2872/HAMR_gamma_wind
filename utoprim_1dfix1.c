@@ -134,53 +134,51 @@ static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
 
 int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], FTYPE K, double tolerance)
 {
+    FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
+    int i, j, ret;
+    FTYPE alpha;
 
-  FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
-  int i, j, ret; 
-  FTYPE alpha;
-
-
-  if( U[0] <= 0. ) { 
-    return(-100);
-  }
-
-  K_atm3 = K ; 
-
-  /* First update the primitive B-fields */
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
-
-  /* Set the geometry variables: */
-  alpha = 1.0/sqrt(-gcon[0][0]);
-  
-  /* Transform the CONSERVED variables into the new system */
-  U_tmp[RHO] = alpha * U[RHO] / gdet;
-  U_tmp[UU]  = alpha * (U[UU] - U[RHO])  / gdet ;
-  for( i = UTCON1; i <= UTCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
-  }
-  for( i = BCON1; i <= BCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
-  }
-
-  /* Transform the PRIMITIVE variables into the new system */
-  for( i = 0; i < BCON1; i++ ) {
-    prim_tmp[i] = prim[i];
-  }
-  for( i = BCON1; i <= BCON3; i++ ) {
-    prim_tmp[i] = alpha*prim[i];
-  }
-
-  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
-
-  /* Transform new primitive variables back if there was no problem : */ 
-  if( ret == 0 ) { 
-    for( i = 0; i < BCON1; i++ ) {
-      prim[i] = prim_tmp[i];
+    if (U[0] <= 0.) {
+        return(-100);
+        //U[0] = prim[RHO] * gdet;
     }
-  }
 
-  return( ret ) ;
+    /* First update the primitive B-fields */
+    for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
+    /* Set the geometry variables: */
+    alpha = 1.0 / sqrt(-gcon[0][0]);
+
+    /* Transform the CONSERVED variables into the new system */
+    U_tmp[RHO] = alpha * U[RHO] / gdet;
+    U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
+    for (i = UTCON1; i <= UTCON3; i++) {
+        U_tmp[i] = alpha * U[i] / gdet;
+    }
+    for (i = BCON1; i <= BCON3; i++) {
+        U_tmp[i] = alpha * U[i] / gdet;
+    }
+    U_tmp[KTOT] = U[KTOT] / gdet;
+
+    /* Transform the PRIMITIVE variables into the new system */
+    for (i = 0; i < BCON1; i++) {
+        prim_tmp[i] = prim[i];
+    }
+    for (i = BCON1; i <= BCON3; i++) {
+        prim_tmp[i] = alpha * prim[i];
+    }
+
+    ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
+
+    /* Transform new primitive variables back if there was no problem : */
+    if (ret == 0) {
+        for (i = 0; i < BCON1; i++) {
+            prim[i] = prim_tmp[i];
+        }
+        prim[KTOT] = prim_tmp[KTOT];
+    }
+
+    return(ret);
 }
 
 

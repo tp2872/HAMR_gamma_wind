@@ -55,7 +55,7 @@
 void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
-
+	double n = 1. / (GAMMA - 1.);
 	/* particle number flux */
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
 
@@ -76,7 +76,8 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 
 	//Entropy advection
 	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * pr[KTOT];
+	flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
+	//flux[KTOT] = flux[RHO] * pr[KTOT];
 	#endif
 
 	#pragma ivdep

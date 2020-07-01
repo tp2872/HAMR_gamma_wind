@@ -84,7 +84,7 @@ FTYPE Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2 ;
 static FTYPE vsq_calc(FTYPE W);
 static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u);
 static FTYPE u_of_p(FTYPE p);
-static FTYPE pressure_of_rho(FTYPE rho0);
+static FTYPE pressure_of_rho(FTYPE rho0, FTYPE U[NPR]);
 static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance);
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
@@ -133,7 +133,7 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
 
 ******************************************************************/
 
-int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], FTYPE K, double tolerance)
+int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], double tolerance)
 {
 
   FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
@@ -146,8 +146,6 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
 	  //U[0] = prim[RHO] * gdet;
   }
 
-  K_atm2 = K ; 
-
   /* First update the primitive B-fields */
   for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
 
@@ -157,13 +155,14 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
   
   /* Transform the CONSERVED variables into the new system */
   U_tmp[RHO] = alpha * U[RHO] / gdet;
-  U_tmp[UU]  = alpha * (U[UU] - U[RHO])  / gdet ;
+  U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
   for( i = UTCON1; i <= UTCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
+    U_tmp[i] = alpha * U[i] / gdet;
   }
   for( i = BCON1; i <= BCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
+    U_tmp[i] = alpha * U[i] / gdet;
   }
+  U_tmp[KTOT] = U[KTOT] / gdet;
 
   /* Transform the PRIMITIVE variables into the new system */
   for( i = 0; i < BCON1; i++ ) {
@@ -180,6 +179,7 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
     for( i = 0; i < BCON1; i++ ) {
       prim[i] = prim_tmp[i];
     }
+    prim[KTOT] = prim_tmp[KTOT];
   }
 
   return( ret ) ;
@@ -564,11 +564,9 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
 pressure as a function of rho0 and w = rho0 + u + p 
 this is used by primtoU and Utoprim_1D
 */
-static FTYPE pressure_of_rho(FTYPE rho0)
+static FTYPE pressure_of_rho(FTYPE rho0, FTYPE U[NPR])
 {
-
-  return( K_atm2 * pow( rho0, G_ATM )  );
-
+    return(pow(exp(U[KTOT] / U[RHO]) * pow(rho0, 1. / (GAMMA - 1.) + 1.), GAMMA - 1.));
 }
 
 /* 
