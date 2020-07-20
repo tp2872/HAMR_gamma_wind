@@ -2027,6 +2027,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct o
     // 1. Helmholtz EOS
     double cs2_helm;
     eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], &P, &cs2_helm);
+	w = pr[RHO] + pr[UU] + P;
     #else
     // 2. Ideal gas EOS
     P = (gam - 1.)*pr[UU];
@@ -2529,8 +2530,8 @@ __device__  double slope_lim(double y1, double y2, double y3, int dir)
 {
 	double Dqm, Dqp, Dqc, s;
 	/* woodward, or monotonized central, slope limiter */
-	Dqm = (1.5)*(y2 - y1);
-	Dqp = (1.5)*(y3 - y2);
+	Dqm = (2.0)*(y2 - y1); // Danat: changed the coefficient from 1.5 to 2.0 for comparison between CPU and GPU codes
+	Dqp = (2.0)*(y3 - y2);
 	Dqc = 0.5*(y3 - y1);
 	s = Dqm*Dqp;
 	if (s <= 0.) return 0.;
@@ -3905,9 +3906,13 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
                                         , gpu_eos_table
                                         #endif
                                         );
-		//if (pflag[global_id]) {
-		//	pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-		//}
+		if (pflag[global_id]) {
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+										#if (DOHELM)
+										, gpu_eos_table
+										#endif
+			);
+		}
 		#endif
 		//compute the square of fluid frame magnetic field (twice magnetic pressure)
 		#if( DO_FONT_FIX )
@@ -6340,6 +6345,8 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
             if (more_iterations == 0) break;
         }
     }
+
+	return;
 }
 
 __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *dpdrho, double *dpde_d) {

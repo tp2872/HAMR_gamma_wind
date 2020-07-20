@@ -1035,7 +1035,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_old = p_array[iter - 1];
 		p_new = p_array[iter];
 		if (iter >= 2) {
-			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
+			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2] + 1e-20); // Danat: what if p_array[iter-1] = p_array[iter-2]? Added 1e-20 in the denominator
 
 			if (R<1. && R>0.) {
 				set_variables = 1;

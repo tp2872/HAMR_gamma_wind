@@ -33,7 +33,7 @@
 
     HARM is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURpos_newE.  See the
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
@@ -513,7 +513,7 @@ void init_torus()
 					rhomax = rho;
 				}
 
-        p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u; // *(1. + 4.e-2 * (ranc(0) - 0.5));
 				if(u > umax && r > rin){
 					#pragma omp critical
 					umax = u ;
