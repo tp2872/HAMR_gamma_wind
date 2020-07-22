@@ -291,6 +291,13 @@ void eos_helm (int calc_derivatives, double btemp, double den, double abar, doub
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
 
+    // Danat: addition to match EOS on GPU
+    if (den > 1.0e11 || den < 1.0e-11)
+        return;
+
+    if (btemp > 1.0e11 || btemp < 1.0e4)
+        return;
+
 	// Useful relations
     ytot1 = 1.0 / abar;
     ye = ytot1 * zbar;

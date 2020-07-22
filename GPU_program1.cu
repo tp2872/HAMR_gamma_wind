@@ -69,7 +69,11 @@ __device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  ge
                         , const  double* __restrict__ gpu_eos_table
                         #endif
                         );
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,struct of_state *  q, double a, double r);
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,struct of_state *  q, double a, double r
+						#if (DOHELM)
+						, const  double* __restrict__ gpu_eos_table
+						#endif
+);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	double a, double gam, double r, double Dt);
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
@@ -1849,7 +1853,11 @@ __device__ void primtoU(double *pr, struct of_state *q, struct of_geom *geom, do
 }
 
 /* add in source terms to equations of motion */
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+)
 {
 	double mhd[NDIM][NDIM];
 	int k, j, dir;
@@ -1862,7 +1870,13 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	int global_id = icurr*(BS_2 + 2 * N2G) + jcurr;
 	#endif
 
+	#if (DOHELM)
+	// Helmholtz EOS
+	eos_mode_rhou_pres(gpu_eos_table, ph[RHO], ph[UU], &P);
+	#else
+	// Ideal gas EOS
 	P = (gam - 1.)*ph[UU];
+	#endif
 	w = P + ph[RHO] + ph[UU];
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
@@ -3038,6 +3052,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 		ctop = MY_MAX(cmax, cmin);
+
 		#pragma unroll 9
 		for (k = 0; k<NPR_U; k++){
 			#if(HLLF)
@@ -3854,7 +3869,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		}
 
-		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]);
+		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -3936,8 +3955,15 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		rhoscal = pow(r, -POWRHO);
 		uuscal = pow(rhoscal, gam);
 
-		rhoflr = RHOMIN*rhoscal;
-		uuflr = UUMIN*uuscal;
+		// Danat: multiply by max. density; change to a device global variable later 
+		#if (DOHELM)
+		double rhomax_helm = 1e-7;
+		rhoflr = RHOMIN * rhoscal * rhomax_helm;
+		uuflr = UUMIN * uuscal * rhomax_helm;
+		#else
+		rhoflr = RHOMIN * rhoscal;
+		uuflr = UUMIN * uuscal;
+		#endif
 
 		ucon_calc(pf, &geom, q.ucon);
 		lower(q.ucon, geom.gcov, q.ucov);
@@ -4341,8 +4367,15 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			rhoscal = pow(r, -POWRHO);
 			uuscal = pow(rhoscal, gam);
 
+			// Danat: multiply by max. density; change to a device global variable later 
+			#if (DOHELM)
+			double rhomax_helm = 1e-7;
+			rhoflr = RHOMIN * rhoscal * rhomax_helm;
+			uuflr = UUMIN * uuscal * rhomax_helm;
+			#else
 			rhoflr = RHOMIN*rhoscal;
 			uuflr = UUMIN*uuscal;
+			#endif
 
 			ucon_calc(pf, &geom, q.ucon);
 			lower(q.ucon, geom.gcov, q.ucov);

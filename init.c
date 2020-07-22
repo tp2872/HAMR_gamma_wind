@@ -3959,7 +3959,7 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
   double r0, rt, tnu;
 #endif
 #if (DONUCLEAR || DOHELM)
-  double rhomax = rhomax_nuclear; // Danat: please, change accordingly!
+  double rhomax = 1e-7; // Danat: please, change accordingly!
 #endif
 
 
