@@ -328,9 +328,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
-			//if (pflag[nl[n]][ind0]) {
-			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
-			//}
+			if (pflag[nl[n]][ind0]) {
+				pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
+			}
 			#endif
 
 			#if( DO_FONT_FIX ) 
