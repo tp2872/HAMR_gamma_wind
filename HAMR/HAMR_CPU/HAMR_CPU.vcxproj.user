@@ -1,8 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommand>C:\Program Files %28x86%29\IntelSWTools\compilers_and_libraries_2019.1.144\windows\mpi\intel64\bin\mpiexec.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>-np 4 "$(TargetPath)"</LocalDebuggerCommandArguments>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
-</Project>
