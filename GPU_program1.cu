@@ -3957,7 +3957,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		// Danat: multiply by max. density; change to a device global variable later 
 		#if (DOHELM)
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+		double rhomax_helm = 1.0;
+#else
 		double rhomax_helm = 1e-7;
+#endif
 		rhoflr = RHOMIN * rhoscal * rhomax_helm;
 		uuflr = UUMIN * uuscal * rhomax_helm;
 		#else
@@ -4369,7 +4373,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 
 			// Danat: multiply by max. density; change to a device global variable later 
 			#if (DOHELM)
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+			double rhomax_helm = 1.0;
+#else
 			double rhomax_helm = 1e-7;
+#endif
 			rhoflr = RHOMIN * rhoscal * rhomax_helm;
 			uuflr = UUMIN * uuscal * rhomax_helm;
 			#else
@@ -6290,8 +6298,8 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
 
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_e = 1.0e-5;
+    double tolerance = EOS_TEMP_TOL;
+    double tolerance_e = EOS_TOL;
 
     // initial guess : temperature
     double temp_ini_guess;
@@ -6341,8 +6349,8 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
 
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_e = 1.0e-5;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_e = EOS_TOL;
 
     // initial guess : temperature
     double temp_ini_guess;
@@ -6393,8 +6401,8 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
 
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_h = 1.0e-5;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_h = EOS_TOL;
 
     double deni = 1.0 / den;
 
@@ -6455,8 +6463,8 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
     // implementation in Newman-Hamlin inversion
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_h = 1.0e-5;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_h = EOS_TOL;
 
     double deni = 1.0 / den;
 
@@ -6526,8 +6534,8 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
 
     // Parameters of Newton-Raphson iterations
     int max_iterations = 50;
-    double tolerance = 1.0e-5;
-    double tolerance_p = 1.0e-5;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_p = EOS_TOL;
 
     double deni = 1.0 / den;
 

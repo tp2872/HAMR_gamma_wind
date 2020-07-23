@@ -13,7 +13,7 @@ Physical Parameters section
 #define THIN_PROBLEM 9
 #define POSTMERGER_PROBLEM 10
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM POSTMERGER_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -43,10 +43,10 @@ Physical Parameters section
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
-  #define RHOMIN  (1.e-26)
-  #define UUMIN  (1.e-27)
-  #define RHOMINLIMIT (1.e-40)
-  #define UUMINLIMIT  (1.e-40)
+  #define RHOMIN (1.e-14)      //(1.e-26)
+  #define UUMIN (1.e-16)       //(1.e-27)
+  #define RHOMINLIMIT (1.e-27) //(1.e-40)
+  #define UUMINLIMIT (1.e-27)  //(1.e-40)
 #elif ((DOHELM || DONUCLEAR) && (WHICHPROBLEM == TORUS_PROBLEM))
     #define RHOMIN    (1.e-7)
     #define UUMIN    (1.e-9)
@@ -149,10 +149,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 16
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (20)
@@ -620,6 +620,10 @@ Section with EOS constants
 #define eos_dlo (-10.0)
 #define MAXLEN (1024)
 
+// tolerances 
+#define EOS_TEMP_TOL (1.e-5)
+#define EOS_TOL (1.e-10)
+
 // becomes true if variables for Aprox13t network are set
 #define bAprox13t (0)
 
@@ -641,7 +645,13 @@ Section with EOS constants
 #define asoli3 (asol / 3.0e0)
 #define asoli3_inv (3.0e0 / asol)
 #define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
+
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#define Mbh_cgs (8.07 * 1.99e33)
+#else
 #define Mbh_cgs (3 * 1.99e33)
+#endif 
+
 #define G_cgs (6.67259e-8)
 
 #define third (1.0e0/3.0e0)

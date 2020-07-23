@@ -906,10 +906,10 @@ void init_postmerger()
 
   /* output choices */
   tf = 200000000.0 ;
-  DTd = 25.0;  /* dumping frequency, in units of M */
-  DTl = 50.0;  /* logfile frequency, in units of M */
-  DTi = 100.0;   /* image file frequ., in units of M */
-  DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
+  // DTd = 25.0;  /* dumping frequency, in units of M */
+  // DTl = 50.0;  /* logfile frequency, in units of M */
+  // DTi = 100.0;   /* image file frequ., in units of M */
+  // DTr = 5.0 * 1000.;   /* restart file frequ., in timesteps */
 
   /* start diagnostic counters */
   dump_cnt = 0 ;
@@ -1183,8 +1183,10 @@ void init_postmerger()
 
 
       if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
-        rho = 1.e-30/(r*r);
-        u = 1.e-31/(r*r*r*r);
+        // rho = 1.e-30/(r*r);
+        // u = 1.e-31/(r*r*r*r);
+		rho = 1.e-7 * RHOMIN;
+		u = 1.e-7 * UUMIN;
 
         ur = 0. ;
         uh = 0. ;
@@ -1244,7 +1246,7 @@ void init_postmerger()
   }
   bound_prim(p,1);
 
-  set_mag_postmerger(beta, rhomax, umax);
+  set_mag(beta, rhomax, umax);
 
 #if( DO_FONT_FIX )
   set_Katm();
@@ -1255,10 +1257,31 @@ void init_postmerger()
   calc_source();
 #endif
 
+#if DOHELM
+  // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+  double den, ener, pres;
 
-#if (GPU_ENABLED)
-  for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
+  for (n = 0; n < n_active; n++) {
+	  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+		  den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+		  ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+		  pres = ener * (gam - 1.0);
+		  coord(n_ord[n], i, j, z, CENT, X);
+		  bl_coord(X, &r, &th, &phi);
+		  eos_mode_rhopres_u(den, pres, &ener);
+		  p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+	  }
+  }
 #endif
+
+  for (n = 0; n < n_active; n++) {
+	  fixup(p, n_ord[n]);
+  }
+  bound_prim(p, 1);
+
+// #if (GPU_ENABLED)
+//   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?
+// #endif
 }
 
 //returns the pointer to the first non-comment line in the file fp
@@ -3960,7 +3983,11 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
   double r0, rt, tnu;
 #endif
 #if (DONUCLEAR || DOHELM)
-  double rhomax = 1e-7; // Danat: please, change accordingly!
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+  double rhomax = 1.0;
+#else
+  double rhomax = 1e-7;
+#endif
 #endif
 
 

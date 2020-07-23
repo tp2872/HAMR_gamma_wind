@@ -331,8 +331,8 @@ void set_points(int n)
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-    Rin = 0.5; // DANAT: 0.9*(1. + sqrt(1. - a * a));
-    Rout = 100.; // DANAT: used to be 100000.
+    Rin = 0.8; // DANAT: 0.9*(1. + sqrt(1. - a * a));
+    Rout = 100000.; // DANAT: used to be 100000.
     lim = MC;
 	failed = 0;
 	cour = COUR;
@@ -358,8 +358,8 @@ void set_gridparam(void) {
   double x1max0, dxmax;
   int iter;
   
-  Rin = 0.87*(1. + sqrt(1. - a*a)) ;  //.98
-  Rout = 1e5;
+  Rin = 0.87 * (1. + sqrt(1. - a * a));  //.98
+  Rout = 1e4;
   x1br = log( rbr - R0 );
   
   if( Rout < rbr ) {

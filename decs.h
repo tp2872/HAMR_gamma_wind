@@ -780,7 +780,7 @@ extern double a;
 extern double gam;
 
 /* numerical parameters */
-extern double Rin, Rout, R0, fractheta, x1br, rbr, npow2, cpow2;
+extern double Rin, Rout, R0, fractheta, x1br, rbr, npow2, cpow2, x1max;
 extern double cour;
 extern double dV, dx[NB_LOCAL][NPR], startx[NPR];
 extern double dt, bdt[NB_LOCAL][4];
