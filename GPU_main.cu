@@ -196,18 +196,6 @@ void set_arrays_GPU(int n, int device){
 
 	status = cudaGetLastError();
 	if (cudaSuccess != status) fprintf(stderr, "Error in setting kernel arguments 4.6: %d \n", status);
-
-    // Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
-    #if (DOHELM)
-    int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE;
-
-    cudaMallocHost(&eos_table[nl[n]], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
-    cudaMalloc(&GPU_eos_table[nl[n]], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double)); // same here regarding the OFFSET
-
-    // Check for errors: EOS array allocation
-    status = cudaGetLastError();
-    if (cudaSuccess != status) fprintf(stderr, "Error in setting EOS: %d \n", status);
-    #endif
 }
 
 //Set arrays for boundary cell transfer on GPU
@@ -1233,6 +1221,56 @@ void alloc_bounds_GPU(int n){
 }
 double check = 1.0;
 
+void eos_init_GPU(void) {
+	int i, j;
+	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
+	#if(N_GPU>1)
+	cudaSetDevice(0);
+	#endif
+
+	// Setting EOS arrays: the dumbest way - to copy EOS table for each block individually
+	cudaMallocHost(&eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // should I add? OFFSET = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE
+	cudaMalloc(&GPU_eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double)); // same here regarding the OFFSET
+
+	// Check for errors: EOS array allocation
+	status = cudaGetLastError();
+	if (cudaSuccess != status) fprintf(stderr, "Error in setting EOS: %d \n", status);
+
+	// Write EOS table for each block individually
+	// fill in the host array
+	for (i = 0; i < EOSIMAX; i++) for (j = 0; j < EOSJMAX; j++) {
+		// helmholtz free energy table (total: 9 items)
+		eos_table[0][0 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_f[i * EOSJMAX + j];
+		eos_table[0][1 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fd[i * EOSJMAX + j];
+		eos_table[0][2 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ft[i * EOSJMAX + j];
+		eos_table[0][3 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdd[i * EOSJMAX + j];
+		eos_table[0][4 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ftt[i * EOSJMAX + j];
+		eos_table[0][5 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdt[i * EOSJMAX + j];
+		eos_table[0][6 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddt[i * EOSJMAX + j];
+		eos_table[0][7 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fdtt[i * EOSJMAX + j];
+		eos_table[0][8 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_fddtt[i * EOSJMAX + j];
+
+		// pressure derivative with density table (total: 4 items)
+		eos_table[0][9 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdf[i * EOSJMAX + j];
+		eos_table[0][10 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfd[i * EOSJMAX + j];
+		eos_table[0][11 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdft[i * EOSJMAX + j];
+		eos_table[0][12 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_dpdfdt[i * EOSJMAX + j];
+
+		// electron chemical potential table (total: 4 items)
+		eos_table[0][13 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_ef[i * EOSJMAX + j];
+		eos_table[0][14 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efd[i * EOSJMAX + j];
+		eos_table[0][15 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_eft[i * EOSJMAX + j];
+		eos_table[0][16 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_efdt[i * EOSJMAX + j];
+
+		// number denisty table (total: 4 items)
+		eos_table[0][17 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xf[i * EOSJMAX + j];
+		eos_table[0][18 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfd[i * EOSJMAX + j];
+		eos_table[0][19 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xft[i * EOSJMAX + j];
+		eos_table[0][20 * (EOSIMAX * EOSJMAX + eos_offset) + i * EOSJMAX + j] = eos_xfdt[i * EOSJMAX + j];
+	}
+	cudaMemcpy(GPU_eos_table[0], eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), cudaMemcpyHostToDevice);
+}
+
 void GPU_write(int n)
 {
 	int i, j, z, k;
@@ -1240,47 +1278,6 @@ void GPU_write(int n)
 	#if(N_GPU>1)
 	cudaSetDevice(block[n][AMR_GPU]);
 	#endif
-
-    // Write EOS table for each block individually
-    #if (DOHELM)
-    int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX * 21) % LOCAL_WORK_SIZE;
-
-    // fill in the host array
-    for (i = 0; i < EOSIMAX; i++) for (j = 0; j < EOSJMAX; j++)  {
-
-        // helmholtz free energy table (total: 9 items)
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 0] = eos_f[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 1] = eos_fd[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 2] = eos_ft[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 3] = eos_fdd[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 4] = eos_ftt[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 5] = eos_fdt[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 6] = eos_fddt[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 7] = eos_fdtt[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 8] = eos_fddtt[i * EOSJMAX + j];
-
-        // pressure derivative with density table (total: 4 items)
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 9] = eos_dpdf[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 10] = eos_dpdfd[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 11] = eos_dpdft[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 12] = eos_dpdfdt[i * EOSJMAX + j];
-
-        // electron chemical potential table (total: 4 items)
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 13] = eos_ef[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 14] = eos_efd[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 15] = eos_eft[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 16] = eos_efdt[i * EOSJMAX + j];
-
-        // number denisty table (total: 4 items)
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 17] = eos_xf[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 18] = eos_xfd[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 19] = eos_xft[i * EOSJMAX + j];
-        eos_table[nl[n]][i * EOSJMAX * 21 + j * 21 + 20] = eos_xfdt[i * EOSJMAX + j];
-
-    }
-
-    cudaMemcpyAsync(GPU_eos_table[nl[n]], eos_table[nl[n]], (EOSIMAX * EOSJMAX * 21 + eos_offset) * sizeof(double), cudaMemcpyHostToDevice, commandQueueGPU[nl[n]]);
-    #endif
 
 	for (i = N1_GPU_offset[n] - N1G; i < N1_GPU_offset[n] + BS_1 + N1G; i++){
 		coord(n, i, 0, 0, CENT, X);
@@ -1534,7 +1531,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
             #if (DOHELM)
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				lim, dir, gam, cour, dtij1_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[nl[n]]);
+				dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[0]);
             #else
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				lim, dir, gam, cour, dtij1_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
@@ -1553,7 +1550,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
             #if (DOHELM)
 			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij2_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[nl[n]]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[0]);
             #else
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij2_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
@@ -1572,7 +1569,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
             #if (DOHELM)
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
                  lim, dir, gam, cour, dtij3_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-                 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[nl[n]]);
+                 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[0]);
             #else
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferph_1[nl[n]], Bufferpsh_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij3_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
@@ -1593,7 +1590,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
             #if (DOHELM)
 			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij1_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[nl[n]]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[0]);
             #else
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF1_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij1_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
@@ -1612,7 +1609,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
             #if (DOHELM)
 			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij2_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[nl[n]]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[0]);
             #else
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF2_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij2_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
@@ -1631,7 +1628,7 @@ void GPU_fluxcalc2D(int dir, int flag, int n)
             #if (DOHELM)
 			fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
 				 lim, dir, gam, cour, dtij3_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
-				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[nl[n]]);
+				 dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], block[n][AMR_NSTEP] % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1, GPU_eos_table[0]);
             #else
             fluxcalc2D2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferF3_1[nl[n]], Bufferdq_1[nl[n]], Bufferstorage1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]],
                  lim, dir, gam, cour, dtij3_GPU[nl[n]], block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3),
@@ -2030,7 +2027,7 @@ void GPU_fixup(int flag, int n, double Dt)
 	if (flag == 0){
         #if (DOHELM)
         fixup << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-            Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), GPU_eos_table[nl[n]]);
+            Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), GPU_eos_table[0]);
         #else
 		fixup << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
@@ -2039,7 +2036,7 @@ void GPU_fixup(int flag, int n, double Dt)
 	else{
         #if (DOHELM)
         fixup << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-            Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), GPU_eos_table[nl[n]]);
+            Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), GPU_eos_table[0]);
         #else
 		fixup << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, flag, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
@@ -2092,7 +2089,7 @@ void GPU_fixup_post(int n, double Dt)
 
     #if (DOHELM)
     fixup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-        Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, 1, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), GPU_eos_table[nl[n]]);
+        Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, 1, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3), GPU_eos_table[0]);
     #else
 	fixup_post << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], BufferKatm[nl[n]], gam, dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], a, Dt, 1, block[n][AMR_NBR1]<0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3]<0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
@@ -2499,11 +2496,6 @@ void GPU_finish(int n, int force_delete)
 	cudaFreeHost(Mud_inv_GPU[nl[n]]);
 	#endif
 	cudaFreeHost(gdet_GPU[nl[n]]);
-
-    #if (DOHELM)
-    cudaFreeHost(eos_table[nl[n]]);
-    cudaFree(GPU_eos_table[nl[n]]);
-    #endif
 
     status += cudaFreeHost(dtij1_GPU[nl[n]]);
 	status += cudaFreeHost(dtij2_GPU[nl[n]]);

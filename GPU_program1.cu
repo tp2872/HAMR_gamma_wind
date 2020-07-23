@@ -5817,58 +5817,59 @@ __device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, doubl
     double xt, xd, mxt, mxd;
     double si0t, si1t, si2t, si0mt, si1mt, si2mt, si0d, si1d, si2d, si0md, si1md, si2md;
     double dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt;
+	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
 
-    //  hash locate this temperature and density
+	//  hash locate this temperature and density
     jat = (int)((log10(btemp) - eos_tlo)*(double)(EOSJMAX - 1) / (11.0 - eos_tlo)) + 1;
     jat = MY_MAX(1, MY_MIN(jat, EOSJMAX - 1)) - 1;
     iat = (int)((log10(din) - eos_dlo)*(double)(EOSIMAX - 1) / (11.0 - eos_dlo)) + 1;
     iat = MY_MAX(1, MY_MIN(iat, EOSIMAX - 1)) - 1;
 
     //  access the table locations only once
-    fi[0] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 0];
-    fi[1] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 0];
-    fi[2] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 0];
-    fi[3] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 0];
+    fi[0] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[1] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[2] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[3] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[4] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 2];
-    fi[5] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 2];
-    fi[6] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 2];
-    fi[7] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 2];
+    fi[4] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[5] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[6] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[7] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[8] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 4];
-    fi[9] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 4];
-    fi[10] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 4];
-    fi[11] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 4];
+    fi[8] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[9] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[10] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[11] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[12] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 1];
-    fi[13] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 1];
-    fi[14] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 1];
-    fi[15] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 1];
+    fi[12] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat) ];
+    fi[13] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[14] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[15] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[16] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 3];
-    fi[17] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 3];
-    fi[18] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 3];
-    fi[19] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 3];
+    fi[16] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[17] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[18] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[19] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[20] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 5];
-    fi[21] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 5];
-    fi[22] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 5];
-    fi[23] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 5];
+    fi[20] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[21] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[22] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[23] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[24] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 6];
-    fi[25] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 6];
-    fi[26] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 6];
-    fi[27] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 6];
+    fi[24] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[25] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[26] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[27] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[28] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 7];
-    fi[29] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 7];
-    fi[30] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 7];
-    fi[31] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 7];
+    fi[28] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[29] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[30] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[31] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
-    fi[32] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 8];
-    fi[33] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 8];
-    fi[34] = gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 8];
-    fi[35] = gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 8];
+    fi[32] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[33] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[34] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[35] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
 
     double tstp = (11.0 - eos_tlo)/(double)(EOSJMAX-1);
     double dstp  = (11.0 - eos_dlo)/(double)(EOSIMAX-1);
@@ -5957,22 +5958,25 @@ __device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, doubl
     si1md = -xpsi1(mxd)*eos_dd_iat; // fix here
 
     //  pressure derivative with density
-    *dpepdd =   gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 9] * si0d * si0t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 9] * si0md * si0t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 9] * si0d * si0mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 9] * si0md * si0mt +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 11] * si0d * si1t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 11] * si0md * si1t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 11] * si0d * si1mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 11] * si0md * si1mt +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 10] * si1d * si0t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 10] * si1md * si0t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 10] * si1d * si0mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 10] * si1md * si0mt +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 12] * si1d * si1t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 12] * si1md * si1t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 12] * si1d * si1mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 12] * si1md * si1mt;
+    *dpepdd =   gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si0t +
+                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si0t +
+                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si0mt +
+                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si0mt +
+
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si1t +
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si1t +
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si1mt +
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si1mt +
+
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si0t +
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si0t +
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si0mt +
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si0mt +
+
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si1t +
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si1t +
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si1mt +
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si1mt;
 
     // h3dpd(iat,jat,
     //      si0t,   si1t,   si0mt,   si1mt,
@@ -5982,22 +5986,25 @@ __device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, doubl
     *dpepdd = MY_MAX(ye * (*dpepdd), 0.0);
 
     //  electron chemical potential etaele
-    *etaele =   gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 13] * si0d * si0t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 13] * si0md * si0t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 13] * si0d * si0mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 13] * si0md * si0mt +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 15] * si0d * si1t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 15] * si0md * si1t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 15] * si0d * si1mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 15] * si0md * si1mt +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 14] * si1d * si0t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 14] * si1md * si0t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 14] * si1d * si0mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 14] * si1md * si0mt +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat) * 21 + 16] * si1d * si1t +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat) * 21 + 16] * si1md * si1t +
-                gpu_eos_table[(iat) * EOSJMAX * 21 + (jat + 1) * 21 + 16] * si1d * si1mt +
-                gpu_eos_table[(iat + 1) * EOSJMAX * 21 + (jat + 1) * 21 + 16] * si1md * si1mt;
+    *etaele =   gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si0t +
+                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si0t +
+                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si0mt +
+                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si0mt +
+
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si1t +
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si1t +
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si1mt +
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si1mt +
+
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si0t +
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si0t +
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si0mt +
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si0mt +
+
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si1t +
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si1t +
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si1mt +
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si1mt;
 
     // h3e(iat,jat,
     //                si0t,   si1t,   si0mt,   si1mt,

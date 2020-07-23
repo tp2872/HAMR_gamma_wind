@@ -768,8 +768,8 @@ extern double * BufferrecE3corn4_72[NB_LOCAL];
 extern double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
-extern double * eos_table[NB_LOCAL];
-extern double * GPU_eos_table[NB_LOCAL];
+extern double * eos_table[1];
+extern double * GPU_eos_table[1];
 #endif
 
 /*************************************************************************
@@ -1203,6 +1203,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 #if (DOHELM)
 //EOS related
 void eos_init(void);
+void eos_init_GPU(void);
 void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
 void test_eos(void);
 void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double *dpresdt, double *denerdt, double *dpresdd, double *cs2);

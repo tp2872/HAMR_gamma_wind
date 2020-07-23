@@ -755,8 +755,8 @@ double * BufferrecE3corn4_72[NB_LOCAL];
 double * BufferrecE3corn4_82[NB_LOCAL];
 
 #if (DOHELM)
-double * eos_table[NB_LOCAL];
-double * GPU_eos_table[NB_LOCAL];
+double * eos_table[1];
+double * GPU_eos_table[1];
 #endif
 
 /*************************************************************************
