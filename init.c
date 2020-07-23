@@ -388,7 +388,7 @@ void init_torus()
 	rmax = 12.;
   l = lfish_calc(rmax) ;
   kappa = 1.e-3 ;
-	beta = 1e20 ;
+	beta = 10 ;
 
 	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -483,11 +483,12 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+				
 #if (DONUCLEAR)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.0;  //ambient mass fraction (to be multiplied by rho later)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.0;  //Ye = 1 outside the disk
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.0;  //no nucleons
-#endif
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.0;  //ambient mass fraction (to be multiplied by rho later)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.0;  //Ye = 1 outside the disk
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.0;  //no nucleons
+				#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -547,11 +548,11 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
 
-#if (DONUCLEAR)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0.0 ;  //ambient mass fraction vanishes
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1.0 ;  //all nucleons initially
-#endif
+				#if (DONUCLEAR)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0.0 ;  //ambient mass fraction vanishes
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1.0 ;  //all nucleons initially
+				#endif
 
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);

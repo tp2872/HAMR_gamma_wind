@@ -517,9 +517,9 @@ void GPU_step_ch()
 	double ndt, inmsg;
 	int i, j, z, k, n, uu;
 
-	//if (rank == 0){
-	//	fprintf(stderr, "h");
-	//}
+	if (rank == 0){
+		fprintf(stderr, "h");
+	}
 	for (n = 0; n < n_active; n++){
 		block[n_ord[n]][AMR_PRESTEP] = 0;
 	}
@@ -545,9 +545,9 @@ void GPU_step_ch()
 	}
 
 	/* Repeat and rinse for the full time (aka corrector) step:  */
-	//if (rank == 0){
-	//	fprintf(stderr, "f");
-	//}
+	if (rank == 0){
+		fprintf(stderr, "f");
+	}
 
 	/* Determine next time increment based on current characteristic speeds: */
 	if (dt < 1.e-9) {
