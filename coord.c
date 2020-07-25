@@ -358,8 +358,8 @@ void set_gridparam(void) {
   double x1max0, dxmax;
   int iter;
   
-  Rin = 0.87 * (1. + sqrt(1. - a * a));  //.98
-  Rout = 1e4;
+  Rin = 0.98; // 0.87 * (1. + sqrt(1. - a * a));  //.98
+  Rout = 1e5;
   x1br = log( rbr - R0 );
   
   if( Rout < rbr ) {

@@ -871,9 +871,21 @@ void init_postmerger()
   int nvars, nx, ny, nz;
   int res;
   double *icdata;
+
+#if (READBINARY)
+  char fname1[] = "PointsToInterpolateHAMR_bin_x4.bdat";
+  char fname2[] = "HARM_DataWithMap_27Jul2018_bin_x4.bdat";
+  int mult = 4;
+#else
   char fname1[] = "PointsToInterpolateHAMR.dat";
   char fname2[] = "HARM_DataWithMap_27Jul2018.dat";
-  int mult = 4;
+
+  // In case you want to read the whole ICs table -- set all of them to 1.
+  // Initial resolution is 512 x 256 x 128
+  int stride1 = 4;
+  int stride2 = 2; 
+  int stride3 = 1;
+#endif
   char first_line[MAXLEN], last_line[MAXLEN], buf1[MAXLEN], buf2[MAXLEN], buf3[MAXLEN], *ptr1, *ptr2;
   size_t memsize, nitems, nread;
   double prim[NPR];
@@ -920,8 +932,6 @@ void init_postmerger()
   //read ICs from file
   //for this, loop over all MPI processes
   //and let them read the IC data from file, one by one
-
-#define READBINARY (0)
 
 #if (READBINARY)
   for (ind=0; ind<numtasks; ind++) {
@@ -1020,8 +1030,8 @@ void init_postmerger()
       */
 
       if(ferror(fp1) || ferror(fp2) ||
-         (NULL == ptr1 && !feof(fp1)) ||
-         (NULL == ptr2 && !feof(fp2)) ) {
+         (!feof(fp1)) ||
+         (!feof(fp2)) ) {
         fprintf(stderr,"[%5d] Error reading from file(s)\n", rank);
       }
       fclose(fp1); fp1 = NULL;
@@ -1085,12 +1095,17 @@ void init_postmerger()
                 fname1, fname2);
         fflush(stderr);
       }
+
+	  ext.nx = ext.nx / stride1;
+	  ext.ny = ext.ny / stride2;
+	  ext.nz = ext.nz / stride3;
+
       nx = ext.nx;
       ny = ext.ny;
       nz = ext.nz;
       nvars = ext.nvars;
       nitems = (size_t)nvars*nx*ny*nz;
-      memsize = sizeof(double)*nitems;
+	  memsize = sizeof(double) * nitems;
       icdata = malloc(memsize);
       if(NULL == icdata) {
         fprintf(stderr,"[%5d] could not allocate memory of size %ld\n", rank, memsize);
@@ -1104,20 +1119,32 @@ void init_postmerger()
         //first file, containing grid information
         ptr1 = fgets(buf1, MAXLEN, fp1);
         if(NULL == ptr1) break;
+
+		//second file, containing data information
+		ptr2 = fgets(buf2, MAXLEN, fp2);
+		if (NULL == ptr2) break;
+
         nitems_read = sscanf(ptr1, "%d %d %d ", &ii, &jj, &kk);
         nitems_expected = 3;
         if(nitems_expected != nitems_read) break;
-        dd(ii,jj,kk,VARI) = (double)ii;
+
+		if (ii % stride1 != 0 || jj % stride2 != 0 || kk % stride3 != 0) 
+			continue;
+        
+		ii = ii / stride1;
+		jj = jj / stride2;
+		kk = kk / stride3;
+
+		dd(ii,jj,kk,VARI) = (double)ii;
         dd(ii,jj,kk,VARJ) = (double)jj;
         dd(ii,jj,kk,VARK) = (double)kk;
+
         nitems_read = sscanf(ptr1, "%*d %*d %*d %lf %lf %lf \n",
                &dd(ii,jj,kk,VARR), &dd(ii,jj,kk,VARTHETA), &dd(ii,jj,kk,VARPHI));
         dd(ii,jj,kk,VARR) /= r_unit;
         nitems_expected = 3;
         if(nitems_expected != nitems_read) break;
-        //second file, containing data information
-        ptr2 = fgets(buf2, MAXLEN, fp2);
-        if(NULL == ptr2) break;
+
         nitems_read = sscanf(ptr2, "%lf %lf %lf %lf %lf %lf %lf %lf \n",
                              &dd(ii,jj,kk,VARRHO), &dd(ii,jj,kk,VARP), &dd(ii,jj,kk,VARYE), &dd(ii,jj,kk,VARMUDT), &dd(ii,jj,kk,VARUDPHI), &dd(ii,jj,kk,VARVUR), &dd(ii,jj,kk,VARVUTHETA), &dd(ii,jj,kk,VARVUPHI));
         nitems_expected = 8;
@@ -1183,10 +1210,8 @@ void init_postmerger()
 
 
       if( (0.==prim[U1] && 0.==prim[U2] && 0.==prim[U3]) ) {
-        // rho = 1.e-30/(r*r);
-        // u = 1.e-31/(r*r*r*r);
-		rho = 1.e-7 * RHOMIN;
-		u = 1.e-7 * UUMIN;
+        rho = 1.e-30/(r*r);
+        u = 1.e-31/(r*r*r*r);
 
         ur = 0. ;
         uh = 0. ;
@@ -1272,12 +1297,12 @@ void init_postmerger()
 		  p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 	  }
   }
-#endif
 
   for (n = 0; n < n_active; n++) {
 	  fixup(p, n_ord[n]);
   }
   bound_prim(p, 1);
+#endif
 
 // #if (GPU_ENABLED)
 //   for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need to keep this?

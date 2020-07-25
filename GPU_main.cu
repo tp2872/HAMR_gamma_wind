@@ -1221,6 +1221,7 @@ void alloc_bounds_GPU(int n){
 }
 double check = 1.0;
 
+#if(DOHELM)
 void eos_init_GPU(void) {
 	int i, j;
 	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
@@ -1270,6 +1271,7 @@ void eos_init_GPU(void) {
 	}
 	cudaMemcpy(GPU_eos_table[0], eos_table[0], ((EOSIMAX * EOSJMAX + eos_offset) * 21) * sizeof(double), cudaMemcpyHostToDevice);
 }
+#endif
 
 void GPU_write(int n)
 {

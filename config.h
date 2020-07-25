@@ -43,20 +43,28 @@ Physical Parameters section
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
-  #define RHOMIN (1.e-14)      //(1.e-26)
-  #define UUMIN (1.e-16)       //(1.e-27)
-  #define RHOMINLIMIT (1.e-27) //(1.e-40)
-  #define UUMINLIMIT (1.e-27)  //(1.e-40)
+#if (DOHELM)
+// Danat: otherwise EOS fails, since the densities are too low outside the torus
+    #define RHOMIN (1.e-14)     
+    #define UUMIN (1.e-16)      
+    #define RHOMINLIMIT (1.e-20)
+    #define UUMINLIMIT (1.e-20) 
+#else
+    #define RHOMIN      (1.e-26)
+    #define UUMIN       (1.e-27)
+    #define RHOMINLIMIT (1.e-40)
+    #define UUMINLIMIT  (1.e-40)
+#endif
 #elif ((DOHELM || DONUCLEAR) && (WHICHPROBLEM == TORUS_PROBLEM))
     #define RHOMIN    (1.e-7)
     #define UUMIN    (1.e-9)
     #define RHOMINLIMIT (1.e-20)
     #define UUMINLIMIT  (1.e-20)
 #else
-  #define RHOMIN	(1.e-7)
-  #define UUMIN	(1.e-9)
-  #define RHOMINLIMIT (1.e-20)
-  #define UUMINLIMIT  (1.e-20)
+    #define RHOMIN	(1.e-7)
+    #define UUMIN	(1.e-9)
+    #define RHOMINLIMIT (1.e-20)
+    #define UUMINLIMIT  (1.e-20)
 #endif
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
@@ -69,6 +77,9 @@ Physical Parameters section
 
 /*Runtime in hours*/
 #define RUNTIME (24.0)
+
+/* Post-merger problem, whether to read the binary IC file or not */
+#define READBINARY (0)
 
 /*************************************************************************
 Numerical Parameters section
@@ -105,13 +116,13 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 2
+#define NB_1 4
+#define NB_2 4
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 64
+#define BS_1 32
+#define BS_2 32
 #define BS_3 64
 
 /*Set the maximum number of refinement levels*/
@@ -149,10 +160,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 1
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (20)

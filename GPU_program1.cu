@@ -6061,7 +6061,7 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
 
-	if (den > 1.0e11 || den < 1.0e-11) 
+	if (den > 1.0e11 || den < 1.0e-10) 
 		return;
 
 	if (btemp > 1.0e11 || btemp < 1.0e4)
