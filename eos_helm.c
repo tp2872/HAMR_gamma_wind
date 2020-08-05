@@ -292,7 +292,7 @@ void eos_helm (int calc_derivatives, double btemp, double den, double abar, doub
     den *= conv_dens_CODE2CGS;
 
     // Danat: addition to match EOS on GPU
-    if (den > 1.0e11 || den < 1.0e-11)
+    if (den > 1.0e11 || den < 1.0e-10)
         return;
 
     if (btemp > 1.0e11 || btemp < 1.0e4)
@@ -455,7 +455,7 @@ void eos_helm (int calc_derivatives, double btemp, double den, double abar, doub
 			decouldt = 3.0*dpcouldt*deni;
 		}
 		*dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * local_coulombMult; //pressure derivative vs density
-		*dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; //pressure derivative vs temperature
+        *dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * local_coulombMult; //pressure derivative vs temperature
 
 		//Calculate energy derivatives
 		deiondd = (1.5 * dpiondd - eion)*deni;

@@ -638,7 +638,14 @@ Section with EOS constants
 // becomes true if variables for Aprox13t network are set
 #define bAprox13t (0)
 
+// Use linear interpolation of the EOS table
+#define EOS_LINEAR (1)
+
+// if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
+// otherwise, set EOS_COULOMB_CORR to 0
 #define eos_coulombMult (0.0)
+#define EOS_COULOMB_CORR (0)
+
 #define eos_coulombAbort (1)
 
 // from eos_helmConstData
