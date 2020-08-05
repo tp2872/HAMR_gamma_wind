@@ -413,6 +413,7 @@ void eos_helm (int calc_derivatives, double btemp, double den, double abar, doub
 	*ener = erad + eion + eele + ecoul * local_coulombMult;
 
 	sion = (pion*deni + eion)*tempi + kavoy*log(pow(abar, 2.5) * deni*avoinv *pow(sioncon * btemp, 1.5));
+    sion = MY_MAX(sion, 0.0);
 
 	entr = srad + sion + sele + scoul * local_coulombMult;
 
