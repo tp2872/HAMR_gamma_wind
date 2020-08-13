@@ -284,11 +284,12 @@ void utoprim_M1_0(double Dt, int n)
 {
 	int i, j, z, k, ind0;
 	double y = 1.0 - 1.0 / sqrt(2.0);
+	double cell_size;
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U0, dU,dU_RAD0, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U0, dU,dU_RAD0, ind0, ind1, ind2,ind3, cell_size)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n]-N1G, N1_GPU_offset[n] + BS_1 + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 +N3G - 1) {
@@ -298,7 +299,7 @@ void utoprim_M1_0(double Dt, int n)
 			get_state_rad(p[nl[n]][ind0], &geom, &q_rad);
 			primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
-
+			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
 			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt*y);
 			PLOOP U_n[nl[n]][ind0][k] = U_n[nl[n]][ind0][k];
 		}
@@ -308,12 +309,13 @@ void utoprim_M1_0(double Dt, int n)
 void utoprim_M1_1( double Dt, int n)
 	int i, j, z, k;
 	double y = 1.0 - 1.0 / sqrt(2.0);
+	double cell_size;
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int ind0;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU,dU_RAD, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU,dU_RAD, ind0, ind1, ind2,ind3, cell_size)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
@@ -348,7 +350,8 @@ void utoprim_M1_1( double Dt, int n)
 			#endif
 
 			//Beverly: Here you should call the wrapper function that either selects (;for the moment) PMHD or PRAD (and later the other solvers)
-			implicit_rad_solve(ph[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt);
+			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
+			implicit_rad_solve(ph[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
 		}
 	}
 }

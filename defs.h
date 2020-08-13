@@ -739,6 +739,7 @@ int reduce_timestep;
 int nthreads;
 int gpu, gpu_offset;
 int status;
+double y_max;
 
 /* output parameters */
 double DTd;

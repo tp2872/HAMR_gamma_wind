@@ -297,6 +297,10 @@ void set_AMR(void){
 		i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag;
 	int y;
 
+	#if(RAD_M1)
+	calc_ymax();
+	#endif
+
 	//Allocate arrays that are not block-specific and thus only need to be allocated at the start of a run and not between refinement steps
 	block = (int(*)[NV])calloc(NB+1, sizeof(int[NV]));
 	n_ord_node= (int(*)[NB_LOCAL])calloc(numtasks, sizeof(int[NB_LOCAL]));

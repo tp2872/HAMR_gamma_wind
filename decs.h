@@ -749,6 +749,7 @@ extern int reduce_timestep;
 extern int nthreads,numdevices;
 extern int gpu, gpu_offset;
 extern int status;
+extern double y_max;
 
 /* output parameters */
 extern double DTd;
@@ -871,11 +872,12 @@ void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom *
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
 void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
-int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt);
-int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, int do_entropy, int do_staged);
-int implicit_rad_solve_PRAD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, int do_entropy, int do_staged);
-int implicit_rad_solve_UMHD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, int do_entropy, int do_staged);
-int implicit_rad_solve_URAD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, int do_entropy, int do_staged);
+void calc_ymax(void);
+int implicit_rad_solve(double pb[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
+int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_PRAD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_UMHD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_URAD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, double cell_size, int do_entropy, int do_staged);
 int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom *geom, double Dt);
 void u_to_v(double *pr, int i, int j);
 void fixup(double((*restrict pv[NB_LOCAL])[NPR]), int n);
