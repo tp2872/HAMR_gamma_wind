@@ -27,7 +27,7 @@ int implicit_rad_solve(double pb[NPR], double U_i[NPR], double U[NPR], struct of
 		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is below set margin, accept solution, otherwise try PRAD
-		//if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t,cell_size, 0, 0);
+		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t,cell_size, 0, 0);
 
 		//If error is below set margin, accept solution, otherwise try PRAD with entropy
 		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 0);
@@ -35,8 +35,26 @@ int implicit_rad_solve(double pb[NPR], double U_i[NPR], double U[NPR], struct of
 		//If error is still below set margin, accept solution, otherwise try URAD with entropy
 		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
-		//If error is below set margin, accept solution, otherwise try PRAD with entropy
-		//if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t,cell_size, 1, 0);
+		//If error is below set margin, accept solution, otherwise try PMHDwith entropy
+		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t,cell_size, 1, 0);
+
+		//If error is still below set margin, accept solution, otherwise try URAD staged
+		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 1);
+
+		//If error is still below set margin, accept solution, otherwise try URAD staged
+		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 1);
+
+		//If error is below set margin, accept solution, otherwise try PRAD staged
+		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 1);
+
+		//If error is still below set margin, accept solution, otherwise try URAD with entropy staged
+		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 1);
+
+		//If error is still below set margin, accept solution, otherwise try URAD with entropy staged
+		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 1);
+
+		//If error is below set margin, accept solution, otherwise try PRAD with entropy staged
+		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 1);
 	}
 	else {
 		//If error is below set margin, accept solution, otherwise try PRAD
@@ -57,23 +75,6 @@ int implicit_rad_solve(double pb[NPR], double U_i[NPR], double U[NPR], struct of
 		//If error is still below set margin, accept solution, otherwise try URAD with entropy
 		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
-		//If error is below set margin, accept solution, otherwise try PRAD staged
-		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 1);
-
-		//If error is still below set margin, accept solution, otherwise try URAD staged
-		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 1);
-
-		//If error is still below set margin, accept solution, otherwise try URAD staged
-		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 0, 1);
-
-		//If error is below set margin, accept solution, otherwise try PRAD with entropy staged
-		if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 1);
-
-		//If error is still below set margin, accept solution, otherwise try URAD with entropy staged
-		if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 1);
-
-		//If error is still below set margin, accept solution, otherwise try URAD with entropy staged
-		if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb, U_i, U, geom, dU, Dt, &error_t, cell_size, 1, 1);
 	}
 
 	//As final resort attempt subcycling
@@ -166,7 +167,7 @@ int subcycle_rad_solve(double pb[NPR], double U[NPR], struct of_geom *geom, doub
 
 int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], struct of_geom *geom, double dU[NPR], double Dt, double *error_t, double cell_size, int do_entropy, int do_staged) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb[NPR], dEdpb[4][4], dEdpb_inv[4][4], bsq, error_new[5], offset= pow(10., -8.);
-	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es;
+	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, keep_iterating = 1, fail, n_iter_jacob, flag, count_increase = 0;
@@ -195,8 +196,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], stru
 				}
 			}
 		}	
-		#endif
-		 
+		#endif	 
 		if (flag == 0)Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
 		kappa_abs = calc_kappa_abs(pb_old);
@@ -325,12 +325,17 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], stru
 
 		/* Make the newton step: */
 		if (do_staged == 0) {
+			D = 1.;
 			for (k = 0; k < 4; k++) {
-				dpb[k + 1] = -(E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
+				dpb[k + 1] = -D*(E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
 				pb_new[k + 1] = pb_old[k + 1] + dpb[k + 1];
 			}
 		}
 		else {
+			if (n_iter == 0 || n_iter == 4) D = 0.5;
+			else if( n_iter == 8) D = 0.25;
+			else D = 1.;
+
 			if (n_iter/4 == 0) { //momentum only step
 				for (k = 0; k < 4; k++) {
 					dpb[k + 1] = -(E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]); 
@@ -371,6 +376,11 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], stru
 		Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, TYPE2);
 		source_rad(pb_new, &geom, dU_new);
 
+		//Recompute R_t^mu for consistency
+		get_state_rad(pb_new, &geom, &q_rad);
+		mhd_calc_rad(pb_new, 0, &q, &U_new[UU_RAD]);
+		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+
 		//Calculate iterated error
 		norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));	
 		error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
@@ -382,13 +392,13 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], stru
 		if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
 		else offset = pow(10., -8.);
 		
-		//If we've reached the tolerance level, stop iterating
+		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
 		if ((fabs(error_new[n_iter % 5]) <= pow(10,-12.)) || (n_iter >= 20)) {
 			keep_iterating = 0;
 		}
 				
 		//If the residual drops below machine precision, stop iterating
-		if ((fabs(U_new[UU_RAD] - U_i[UU_RAD])) + (fabs(pb_new[UU_RAD] / pb_old[UU_RAD]) - 1.0) < 10.*epsem) {
+		if (((fabs(pb_new[UU] / pb_old[UU]) - 1.0) + (fabs(pb_new[U1] / pb_old[U1]) - 1.0) + (fabs(pb_new[U2] / pb_old[U2]) - 1.0) + (fabs(pb_new[U3] / pb_old[U3]) - 1.0)) < 10.*epsem) {
 			keep_iterating = 0;
 		}
 
@@ -422,7 +432,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_i[NPR], double U[NPR], stru
 	}
 	n_iter--;
 
-	//Recalculate radiation energy density with BASIC limiter if radiation energy density turns negatie
+	//Recalculate radiation energy density with BASIC limiter if radiation energy density turns negative. Only for PMHD and UMHD methods!
 	if (pb_new[UU_RAD] < 0.0) Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, BASIC);
 
 	//Calculate total error
