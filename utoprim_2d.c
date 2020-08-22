@@ -167,7 +167,7 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	}
 
 	#if(DOKTOT)
-	prim[KTOT] = pow(U[KTOT] / U[RHO], GAMMA-1.);
+	prim[KTOT] = pow(exp(U[KTOT] / U[RHO]), GAMMA-1.);
 	#endif
 
 	return(ret);

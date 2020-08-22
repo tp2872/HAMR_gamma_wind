@@ -521,7 +521,7 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
  *********************************************************************************/
 
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, double *U)
+			FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
   FTYPE vsq,W,W0,Wsq,W3,dWdvsq , dpdrho, fact_tmp, rho, p, u  ;
   int retval, iters; 
@@ -530,7 +530,7 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
   vsq = x[0];
 
   // Calculate best value for W given current guess for vsq: 
-  W = W_of_vsq(vsq, &p, &rho, &u, U);
+  W = W_of_vsq(vsq, &p, &rho, &u);
   Wsq = W*W;
   W3 = W*Wsq;
 

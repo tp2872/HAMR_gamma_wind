@@ -86,7 +86,7 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT
 static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
 static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance);
 static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
-static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int, FTYPE *));
+static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int));
 
 /**********************************************************************/
 /******************************************************************
@@ -285,7 +285,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[N
   // Always calculate rho from D and gamma so that using D in EOS remains consistent
   //   i.e. you don't get positive values for dP/d(vsq) . 
   rho0 = D_3 / gamma ;
-  p = pressure_of_rho(rho0, U);
+  p = pressure_of_rho(rho0);
   u = u_of_p(p);
   w = rho0 + u + p ;
 
@@ -358,7 +358,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[N
 
   w = W * (1. - vsq) ;
 
-  p = pressure_of_rho(rho0, U);
+  p = pressure_of_rho(rho0);
   u = u_of_p(p);
 
   // User may want to handle this case differently, e.g. do NOT return upon 
