@@ -84,11 +84,11 @@ FTYPE Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2 ;
 static FTYPE vsq_calc(FTYPE W);
 static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u);
 static FTYPE u_of_p(FTYPE p);
-static FTYPE pressure_of_rho(FTYPE rho0, FTYPE U[NPR]);
+static FTYPE pressure_of_rho(FTYPE rho0);
 static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance);
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance );
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance);
 
 /**********************************************************************/
 /******************************************************************
@@ -172,6 +172,7 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
     prim_tmp[i] = alpha*prim[i];
   }
 
+  K_atm2 = pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
   ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
   /* Transform new primitive variables back if there was no problem : */ 
@@ -520,7 +521,7 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
  *********************************************************************************/
 
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
+			FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, double *U)
 {
   FTYPE vsq,W,W0,Wsq,W3,dWdvsq , dpdrho, fact_tmp, rho, p, u  ;
   int retval, iters; 
@@ -529,7 +530,7 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
   vsq = x[0];
 
   // Calculate best value for W given current guess for vsq: 
-  W = W_of_vsq(vsq, &p, &rho, &u);
+  W = W_of_vsq(vsq, &p, &rho, &u, U);
   Wsq = W*W;
   W3 = W*Wsq;
 
@@ -564,26 +565,21 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
 pressure as a function of rho0 and w = rho0 + u + p 
 this is used by primtoU and Utoprim_1D
 */
-static FTYPE pressure_of_rho(FTYPE rho0, FTYPE U[NPR])
-{
-    return(pow(exp(U[KTOT] / U[RHO]) * pow(rho0, 1. / (GAMMA - 1.) + 1.), GAMMA - 1.));
+static FTYPE pressure_of_rho(FTYPE rho0){
+    return(K_atm2 * pow(rho0, G_ATM));
 }
 
 /* 
 internal energy density as a function of the pressure
 */
-static FTYPE u_of_p(FTYPE p)
-{
-  
+static FTYPE u_of_p(FTYPE p){
   return( p / (GAMMA - 1.) ) ;
-
 }
 
 /* 
 W as a function of v^2
 */
-static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u)
-{
+static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u){
   FTYPE gtmp;
 
   gtmp = (1. - vsq);
@@ -598,11 +594,8 @@ static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u)
 /* 
 dW/dvsq as a function of v^2, rho, p
 */
-static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p)
-{
-
-  return(  ( GAMMA*(2.-G_ATM)*p   + (GAMMA-1.)*rho ) / ( 2.*(GAMMA-1.)*(1.-vsq)*(1.-vsq) )   ) ;
-  
+static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p){
+  return(  ( GAMMA*(2.-G_ATM)*p   + (GAMMA-1.)*rho ) / ( 2.*(GAMMA-1.)*(1.-vsq)*(1.-vsq) )   ) ; 
 }
 
 

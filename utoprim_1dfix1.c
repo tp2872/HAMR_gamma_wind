@@ -80,13 +80,13 @@ FTYPE W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old;
 // Declarations: 
 static FTYPE vsq_calc(FTYPE W);
 static FTYPE u_of_p(FTYPE p);
-static FTYPE pressure_of_rho(FTYPE rho0, FTYPE U[NPR]);
+static FTYPE pressure_of_rho(FTYPE rho0);
 static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM],  FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance);
-static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, FTYPE U[NPR]);
-static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, FTYPE U[NPR]);
+static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
+static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
 static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance);
-static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, FTYPE U[NPR]);
-static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int, FTYPE *), FTYPE U[NPR]);
+static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
+static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int, FTYPE *));
 
 /**********************************************************************/
 /******************************************************************
@@ -168,6 +168,7 @@ int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM
         prim_tmp[i] = alpha * prim[i];
     }
 
+    K_atm3 = pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
     ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
     /* Transform new primitive variables back if there was no problem : */
@@ -316,7 +317,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[N
     #if( USE_ISENTROPIC )   
   retval = general_newton_raphson( x_1d, 1, func_1d_orig1, tolerance);
     #else
-  retval = general_newton_raphson( x_1d, 1, func_1d_orig2);
+  //retval = general_newton_raphson( x_1d, 1, func_1d_orig2, tolerance);
     #endif
 
   W = x_1d[0];
@@ -440,7 +441,7 @@ static FTYPE dvsq_dW(FTYPE W)
        -- funcd = name of function that calculates residuals, etc.;
 
 *****************************************************************/
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance )
+static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance)
 {
   FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
     jac[NEWT_DIM_1][NEWT_DIM_1];
@@ -564,7 +565,7 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
 *****************************************************************/
 static int gnr2( FTYPE x[], int n, 
 			    void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
-					 FTYPE [][NEWT_DIM_1],FTYPE *,FTYPE *,int, FTYPE *), FTYPE U[NPR] )
+					 FTYPE [][NEWT_DIM_1],FTYPE *,FTYPE *,int))
 {
   FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
     jac[NEWT_DIM_1][NEWT_DIM_1];
@@ -588,7 +589,7 @@ static int gnr2( FTYPE x[], int n,
   keep_iterating = 1;
   while( keep_iterating ) { 
 
-    (*funcd) (x, dx, resid, jac, &f, &df, n, U);  /* returns with new dx, f, df */
+    (*funcd) (x, dx, resid, jac, &f, &df, n);  /* returns with new dx, f, df */
 
     /* Save old values before calculating the new: */
     errx = 0.;
@@ -629,7 +630,6 @@ static int gnr2( FTYPE x[], int n,
     n_iter++;
 
   }  
-
 
   /*  Check for bad untrapped divergences : */
   if( (isfinite(f)==0) || (isfinite(df)==0) || (isfinite(x[0])==0)  ) {
@@ -679,7 +679,7 @@ static int gnr2( FTYPE x[], int n,
          n    = dimension of x[];
  *********************************************************************************/
 //isentropic version:   eq.  (27)
-static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, FTYPE U[NPR])
+static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
   int retval, ntries;
   FTYPE  Dc, t1, t10,  t2 ,  t21,  t23,  t26,  t29,  t3 ,  t30;
@@ -694,7 +694,7 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT
   rho_g = x_rho[0] = rho_for_gnr2;
   
   ntries = 0;
-  while (  (retval = gnr2( x_rho, 1, func_gnr2_rho, U)) &&  ( ntries++ < 10 )  ) {
+  while (  (retval = gnr2( x_rho, 1, func_gnr2_rho)) &&  ( ntries++ < 10 )  ) {
     rho_g *= 10.;
     x_rho[0] = rho_g;
   }
@@ -726,8 +726,6 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT
   t26 = 1/t1;
   resid[0] = (t3+(2.0*t2+((Qtsq3-t5)*t1
 			  +(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq3+W)*W)*t21*t23)*t26/t21;
-  pressure = pow(exp(U[KTOT] / U[RHO]) * pow(rho, 1. / (GAMMA - 1.) + 1.), GAMMA - 1.);
-  K_atm3 = pressure / pow(rho, G_ATM);
   t29 = t1*t1;
   t30 = QdotBsq3*t29;
   t32 = GAMMA*K_atm3;
@@ -752,7 +750,7 @@ static void func_1d_orig1(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT
 
 //isothermal version:  eq. (27)
 static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			  FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, FTYPE U[NPR])
+			  FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
   double Dc ,   t1 ,   t10,   t2 ,   t21,   t23,   t26,   t3 ,   t5 ,   t8, W, rho ;
   double pressure;
@@ -766,8 +764,6 @@ static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[],
   t8 = t1*Bsq3;
   t10 = t1*W;
   t21 = W*W;
-  pressure = pow(exp(U[KTOT] / U[RHO]) * pow(rho, 1. / (GAMMA - 1.) + 1.), GAMMA - 1.);
-  K_atm3 = pressure / pow(rho, G_ATM);
   rho = t1 * ( 1. + GAMMA*K_atm3/(GAMMA-1.) ) / W;
   t23 = rho*rho;
   t26 = 1/t1;
@@ -781,8 +777,6 @@ static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
   return;
 }
-
-
 
 /**********************************************************************/
 /*********************************************************************************
@@ -803,18 +797,16 @@ static void func_1d_orig2(FTYPE x[], FTYPE dx[], FTYPE resid[],
  *********************************************************************************/
 // for the isentropic version:   eq.  (27)
 static void func_gnr2_rho(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			 FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n, FTYPE U[NPR])
+			 FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
 {
 
   FTYPE A, B, C, rho, W, B0;
-  double pressure;
 
-  pressure = pow(exp(U[KTOT] / U[RHO]) * pow(rho, 1. / (GAMMA - 1.) + 1.), GAMMA - 1.);
-  K_atm3 = pressure / pow(rho, G_ATM);
+  rho = x[0];
+
   A = D_3*D_3;
   B0 = A * GAMMA * K_atm3 ;
   B  =  B0 / (GAMMA - 1.);
-  rho = x[0];
   W = W_for_gnr2;
   C = pow( rho, GAMMA - 1. );
 
@@ -855,12 +847,9 @@ int get_G_ATM( FTYPE *g_tmp )
 pressure as a function of rho0 and w = rho0 + u + p 
 this is used by primtoU and Utoprim_1D
 */
-static FTYPE pressure_of_rho(FTYPE rho0, FTYPE U[NPR])
+static FTYPE pressure_of_rho(FTYPE rho0)
 {
-    double pressure;
-    pressure = pow(exp(U[KTOT] / U[RHO]) * pow(rho0, 1. / (GAMMA - 1.) + 1.), GAMMA - 1.);
-
-    return(pressure);
+    return(K_atm3 * pow(rho0, G_ATM));
 }
 
 /* 
