@@ -857,6 +857,8 @@ void   flux_ct(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL
 void const_transport1(double(*restrict p[NB_LOCAL])[NPR], int n);
 void const_transport_bound(void);
 void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
+void const_transport2_M1_1(double Dt, int n);
+void const_transport2_M1_2(double Dt, int n);
 void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
 void utoprim_M1_0(double Dt, int n);
 void utoprim_M1_1(double Dt, int n);

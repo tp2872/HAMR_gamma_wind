@@ -93,7 +93,7 @@ int implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 
 int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom *geom, double dU[NPR], double Dt, double *error_t, double cell_size, int do_entropy, int do_staged) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb[NPR], dEdpb[4][4], dEdpb_inv[4][4], bsq, error_new[5], offset= pow(10., -8.);
-	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D;
+	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D, n;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, keep_iterating = 1, fail, n_iter_jacob, flag=0,flag_rad=0,count_increase = 0;
@@ -152,7 +152,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			error_t[0] = error_new[0];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_old[k];
-				U_f[k] = U_old[k] + Dt * dU[k];
+				U_f[k] = U_old[k] + Dt * dU_old[k];
 				dU[k] = dU_old[k];
 			}
 			return 0;
@@ -280,7 +280,8 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0] ;
 		mhd_calc(pb_new, 0, &q, &U_new[UU]);
 		for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
-		U_new[KTOT] = geom->g*(pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+		n = 1. / (GAMMA - 1.);
+		U_new[KTOT] = geom->g*(pb_new[RHO] * q.ucon[0] * log(pow((GAMMA - 1.0) * pb_new[UU], n) / pow(pb_new[RHO], n + 1)));
 
 		//Derive new conserved quantaties for radiation variables
 		U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -376,7 +377,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		for (k = 0; k < NPR; k++) {
 			pb[k] = pb_new[k];
 			U_f[k] = U_new[k];
-			dU[k] = dU_new[k];
+			dU[k] = (U_new[k] - U_i[k]) / Dt;
 		}
 	}
 	return(0);
@@ -444,7 +445,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			error_t[0] = error_new[0];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_old[k];
-				U_f[k] = U_old[k] + Dt * dU[k];
+				U_f[k] = U_old[k] + Dt * dU_old[k];
 				dU[k] = dU_old[k];
 			}
 			return 0;
@@ -685,7 +686,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		for (k = 0; k < NPR; k++) {
 			pb[k] = pb_new[k];
 			U_f[k] = U_new[k];
-			dU[k] = dU_new[k];
+			dU[k] = (U_new[k] - U_i[k]) / Dt;
 		}
 	}
 	return(0);
@@ -753,7 +754,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			error_t[0] = error_new[0];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_old[k];
-				U_f[k] = U_old[k] + Dt * dU[k];
+				U_f[k] = U_old[k] + Dt * dU_old[k];
 				dU[k] = dU_old[k];
 			}
 			return 0;
@@ -1001,7 +1002,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		for (k = 0; k < NPR; k++) {
 			pb[k] = pb_new[k];
 			U_f[k] = U_new[k];
-			dU[k] = dU_new[k];
+			dU[k] = (U_new[k]- U_i[k])/Dt;
 		}
 	}
 	return(0);
@@ -1261,25 +1262,28 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 
 void calc_ymax(void) {
 	int keep_iterating, n_iter;
-	double E, errx, dEdy, y_new, y_old;
+	double E_old, E_new, errx, dEdy, y_new, y_old;
 	keep_iterating = 1;
 	n_iter = 0;
 	y_old = 0.98; //Gives gamma=25
 
-	while (keep_iterating) {
-		//Calculate deviation from 0
-		E = GAMMAMAX * GAMMAMAX - (2.0 - y_old+sqrt(4.0-3.0*y_old)) / (4.0-4.0*y_old);
-		
+	//Calculate deviation from 0
+	E_old = GAMMAMAX * GAMMAMAX - (2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old);
+
+	while (keep_iterating) {	
 		//Calculate gradient dEdy
-		dEdy = (0.375*y_old-0.25*sqrt(4.0-3.0*y_old-0.625)/(sqrt(4.0-3.0*y_old)*(1.0-y_old)*(1.0-y_old)));
+		dEdy = (0.375 * y_old - 0.25 * sqrt(4.0 - 3.0 * y_old - 0.625) / (sqrt(4.0 - 3.0 * y_old) * (1.0 - y_old) * (1.0 - y_old)));
 
 		/* Make the newton step: */
-		y_new = y_old - (E) / dEdy;
+		y_new = y_old - (E_old) / dEdy;
+
+		//Calculate deviation from 0
+		E_new = GAMMAMAX * GAMMAMAX - (2.0 - y_new + sqrt(4.0 - 3.0 * y_new)) / (4.0 - 4.0 * y_new);
 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
-		errx = fabs(y_new - y_old) / (fabs(y_new)+fabs(y_old));
+		errx = fabs(E_new) / (GAMMAMAX * GAMMAMAX);
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
@@ -1290,6 +1294,7 @@ void calc_ymax(void) {
 		}
 
 		y_old = y_new;
+		E_old = E_new;
 
 		n_iter++;
 	}   // END of while(keep_iterating)

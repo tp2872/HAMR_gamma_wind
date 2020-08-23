@@ -165,7 +165,9 @@ double advance(int flag)
 
 	#if(RAD_M1)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		}
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) {
 			utoprim_M1_0(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		}
 	}
@@ -236,17 +238,24 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fix_flux(F1, F2, F3, n_ord[n]);
 	#endif
 	#if(!STAGGERED)
-	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1)  flux_ct(F1, F2, F3, n_ord[n]);
+	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_ct(F1, F2, F3, n_ord[n]);
 	#else
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport1(ph, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
 	const_transport_bound();
+	#if(RAD_M1)
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport2_M1_1(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_2(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+	#else
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport2(ps, ps, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, psh, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
+	#endif
 	#endif
 	#if(RAD_M1)
 	for (n = 0; n < n_active; n++) {
@@ -336,7 +345,7 @@ void utoprim_M1_1(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-				U_1[nl[n]][ind0][k] = (1.-2.*y)/y*U_0[nl[n]][ind0][k]+ (3.*y-1.)/y*U_n[nl[n]][ind0][k] + Dt*(
+				U_1[nl[n]][ind0][k] = (3. * y - 1.) / y * U_n[nl[n]][ind0][k] + (1. - 2. * y) / y * U_0[nl[n]][ind0][k] + Dt * (
 				#if( N1G > 0 )
 				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
 				#endif
@@ -346,7 +355,7 @@ void utoprim_M1_1(double Dt, int n){
 				#if( N3G > 0 )
 				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif	
-				+ dU[k]);		
+				+ dU[k]);
 			}
 
 			#if STAGGERED
@@ -358,7 +367,7 @@ void utoprim_M1_1(double Dt, int n){
 			#endif
 
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
+			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
 		}
 	}
 }
@@ -384,7 +393,7 @@ void utoprim_M1_2(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-				U_2[k] = 0.5 * U_n[nl[n]][ind0][k] + 0.5 * U_1[nl[n]][ind0][k] + Dt / 2.0 * (
+				U_2[k] = 0.5 * U_n[nl[n]][ind0][k] + 0.5 * U_1[nl[n]][ind0][k] + Dt * 0.5 * (
 				#if( N1G > 0 )
 				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
 				#endif
@@ -433,7 +442,7 @@ void utoprim_M1_2(double Dt, int n){
 				}
 			}
 			#endif
-			Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], BASIC);
+			if(!pflag[nl[n]][index_3D(n, i, j, z)]) Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], BASIC);
 		}
 	}
 }

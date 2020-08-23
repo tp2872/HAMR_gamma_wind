@@ -399,7 +399,7 @@ void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G
 
 void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n){
 	int i, j, z, k, ind0;
-	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psi,psf, dx,Dt, p, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
+	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psf,psi, dx,Dt, p, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
 	{
 		//update the staggered field components
 		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
@@ -433,6 +433,77 @@ void const_transport2(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict ps
 	}
 }
 
+void const_transport2_M1_1(double Dt, int n) {
+	int i, j, z, k, ind0;
+	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psh,ps, dx,Dt, p, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
+	{
+		//update the staggered field components
+		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			ind0 = index_3D(n, i, j, z);
+			psh[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, j, z)][1] - Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+			#if(N3G>0)
+			psh[nl[n]][index_3D(n, i, j, z)][1] += Dt / dx[nl[n]][3] * (E_corn[nl[n]][index_3D(n, i, j, z + D3)][2] - E_corn[nl[n]][ind0][2]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+			#endif
+		}
+
+		//update the staggered field components
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2+D2)*(BS_3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			ind0 = index_3D(n, i, j, z);
+			psh[nl[n]][index_3D(n, i, j, z)][2] = ps[nl[n]][index_3D(n, i, j, z)][2] + Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+			#if(N3G>0)
+			psh[nl[n]][index_3D(n, i, j, z)][2] += -Dt / dx[nl[n]][3] * (E_corn[nl[n]][index_3D(n, i, j, z + D3)][1] - E_corn[nl[n]][ind0][1]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+			#endif		
+		}
+
+		//update the staggered field components
+		#if(N3G>0)
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3+D3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], (N3_GPU_offset[n] + BS_3) * D3) {
+			ind0 = index_3D(n, i, j, z);
+			psh[nl[n]][index_3D(n, i, j, z)][3] = ps[nl[n]][index_3D(n, i, j, z)][3] - Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][2] - E_corn[nl[n]][ind0][2]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
+			psh[nl[n]][index_3D(n, i, j, z)][3] += Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][1] - E_corn[nl[n]][ind0][1]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
+		}
+		#endif
+	}
+}
+
+void const_transport2_M1_2(double Dt, int n) {
+	int i, j, z, k, ind0;
+	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psh,ps, dx,Dt, p, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
+	{
+		//update the staggered field components
+		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			ind0 = index_3D(n, i, j, z);
+			ps[nl[n]][index_3D(n, i, j, z)][1] = 0.5* psh[nl[n]][index_3D(n, i, j, z)][1] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][3] - 0.5 * Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+			#if(N3G>0)
+			ps[nl[n]][index_3D(n, i, j, z)][1] += 0.5 * Dt / dx[nl[n]][3] * (E_corn[nl[n]][index_3D(n, i, j, z + D3)][2] - E_corn[nl[n]][ind0][2]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+			#endif
+		}
+
+		//update the staggered field components
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2+D2)*(BS_3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			ind0 = index_3D(n, i, j, z);
+			ps[nl[n]][index_3D(n, i, j, z)][2] = 0.5 * psh[nl[n]][index_3D(n, i, j, z)][2] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][3] + 0.5 * Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+			#if(N3G>0)
+			ps[nl[n]][index_3D(n, i, j, z)][2] += -0.5 * Dt / dx[nl[n]][3] * (E_corn[nl[n]][index_3D(n, i, j, z + D3)][1] - E_corn[nl[n]][ind0][1]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+			#endif		
+		}
+
+		//update the staggered field components
+		#if(N3G>0)
+		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2)*(BS_3+D3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], (N3_GPU_offset[n] + BS_3) * D3) {
+			ind0 = index_3D(n, i, j, z);
+			ps[nl[n]][index_3D(n, i, j, z)][3] = 0.5 * psh[nl[n]][index_3D(n, i, j, z)][3] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][3] - 0.5 * Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][2] - E_corn[nl[n]][ind0][2]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
+			ps[nl[n]][index_3D(n, i, j, z)][3] += 0.5 * Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][1] - E_corn[nl[n]][ind0][1]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE3];
+		}
+		#endif
+	}
+}
 /***********************************************************************************************/
 /***********************************************************************************************
 flux_ct():
