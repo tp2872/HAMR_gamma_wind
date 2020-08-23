@@ -17,7 +17,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Gibwa's refinement criterion*/
-#define REFINE_GIBWA (1)
+#define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(4./3.)
@@ -92,12 +92,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 2
 #define NB_2 2
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 24
-#define BS_2 24
-#define BS_3 24
+#define BS_1 80
+#define BS_2 80
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -194,7 +194,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1)
+#define TRANS_BOUND (1*((BS_3*NB_3)>1))
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -262,7 +262,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 //Abundace constants
 #define Z_AB (0.02)

@@ -12,9 +12,9 @@ __device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], d
 __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
 __device__ void validate_x2(double x[1], double x0[1]);
 __device__ int general_newton_raphson2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
-__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K);
+__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
 __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double D, double K_atm, double W_for_gnr2);
-__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K);
+__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
 __device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K_atm);
 __device__ double vsq_calc3(double W, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
 __device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
@@ -458,7 +458,6 @@ __device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], doubl
 	int i, ret;
 	double alpha;
 
-
 	if (U[0] <= 0.) {
 		return(-100);
 	}
@@ -496,8 +495,6 @@ __device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], doubl
 		}
 	}
 
-	prim[KTOT] = U[KTOT] / U[RHO];
-
 	return(ret);
 
 }
@@ -507,7 +504,6 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u,  w,  gamma,   vsq;
 	double Bsq, QdotBsq, Qtsq, Qdotn;
-
 	int i;
 
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
@@ -617,7 +613,7 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 }
 
 
-__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K)
+__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
 {
 	double U_tmp[NPR], prim_tmp[NPR];
 	int i, ret;
@@ -626,7 +622,6 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 	if (U[0] <= 0.) {
 		return(-100);
 	}
-	K_atm = K;
 
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
@@ -640,6 +635,7 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 	for (i = BCON1; i <= BCON3; i++) {
 		U_tmp[i] = alpha * U[i] / gdet;
 	}
+	U_tmp[KTOT] = U_tmp[KTOT] / gdet;
 
 	for (i = 0; i < BCON1; i++) {
 		prim_tmp[i] = prim[i];
@@ -648,16 +644,13 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 		prim_tmp[i] = alpha*prim[i];
 	}
 
+	K_atm= pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
 	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
 	if (ret == 0) {
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
 	}
-
-	#if(DOKTOT )
-	prim[KTOT] = U[KTOT] / U[RHO];
-	#endif
 
 	return(ret);
 }
@@ -1004,11 +997,11 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[],
 	return;
 }
 
-__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K)
+__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
 {
 	double U_tmp[NPR], prim_tmp[NPR];
 	int i, ret;
-	double alpha;
+	double alpha, K_atm;
 
 	if (U[0] <= 0.) {
 		return(-100);
@@ -1032,6 +1025,7 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 	for (i = BCON1; i <= BCON3; i++) {
 		U_tmp[i] = alpha * U[i] / gdet;
 	}
+	U_tmp[KTOT] = U_tmp[KTOT] / gdet;
 
 	/* Transform the PRIMITIVE variables into the new system */
 	#pragma unroll 5
@@ -1043,7 +1037,8 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 		prim_tmp[i] = alpha*prim[i];
 	}
 
-	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K);
+	K_atm = pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
+	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
@@ -1052,10 +1047,6 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 			prim[i] = prim_tmp[i];
 		}
 	}
-
-	#if(DOKTOT )
-	prim[KTOT] = U[KTOT] / U[RHO];
-	#endif
 
 	return(ret);
 }
@@ -1361,10 +1352,6 @@ __device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10],
 			prim[i] = prim_tmp[i];
 		}
 	}
-
-	#if(DOKTOT )
-	prim[KTOT] = U[KTOT] / U[RHO];
-	#endif
 
 	return(ret);
 }
@@ -2189,6 +2176,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 	int j, k;
 	double mhd[NDIM];
 	double P, w, bsq, eta, ptot;
+	double n = 1. / (GAMMA - 1.);
 
 	/*Calculate misc quantities*/
 	P = (gam - 1.)*pr[UU];
@@ -2241,7 +2229,8 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 	#endif
 
 	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * pr[KTOT];
+	//flux[KTOT] = flux[RHO] * pr[KTOT];
+	flux[KTOT] = flux[RHO] * log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
 	#endif
 
 	#pragma unroll 9
@@ -3418,6 +3407,7 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 {
 	int j, k;
 	double  P, w, bsq, eta, ptot;
+	double n = 1. / (GAMMA - 1.);
 
 	/* particle number flux */
 	flux[RHO] = pr[RHO] * ucon[dir];
@@ -3437,8 +3427,9 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	for (k = B1; k <= B3; k++) {
 		flux[k] = bcon[k - 4] * ucon[dir] - bcon[dir] * ucon[k - 4];
 	}
+
 	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * pr[KTOT];
+	flux[KTOT] = flux[RHO] * log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
 	#endif
 }
 
@@ -4222,7 +4213,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 		}
 		#else
-		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf); //Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 		//if (pflag[global_id]) {
 		//	pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
 		//}
@@ -4232,11 +4223,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		if (pflag[global_id]) {
 			failimage[global_id]++;
 			#if DOKTOT
-			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
 			#endif
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
-				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
 				if (pflag[global_id]){
 					pflag[0] = global_id;
 					failimage[2 * (ksize)+global_id]++;
@@ -4384,24 +4375,16 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 			#if(NEWMAN)
 			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]){
-				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			}
 			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]) {
-				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-			}
 			#endif
 			if (pflag[global_id]){
 				failimage[global_id]++;
 				#if( DO_FONT_FIX ) 
-				U[KTOT] = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
-				pf[KTOT] = U[KTOT] / U[RHO];
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
 					if (pflag[global_id]){
 						pflag[0] = 100;
 						failimage[2 * (ksize)+global_id]++;
@@ -4422,21 +4405,15 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			failimage[3 * (ksize)+global_id]++;
 		}
 		else {
-			if (gamma > GAMMAMAX) {
-				f = sqrt(
-					(GAMMAMAX*GAMMAMAX - 1.) /
-					(gamma*gamma - 1.)
-					);
+			if (gamma > GAMMAMAX) {f = sqrt((GAMMAMAX*GAMMAMAX - 1.) /(gamma*gamma - 1.));
 				pf[U1] *= f;
 				pf[U2] *= f;
 				pf[U3] *= f;
 			}
 		}
-		#if DOKTOT
-		pf_i[KTOT*(ksize)+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
-		#endif
+
 		#pragma unroll 9	
-		for (k = 0; k< NPR - DOKTOT; k++){
+		for (k = 0; k< NPR; k++){
 			pf_i[k*(ksize)+global_id] = pf[k];
 		}
 	}
@@ -4529,7 +4506,6 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 
 	if (k > 0){
 		if (icurr >= N1G  && jcurr >= N2G + (ki == 1 || ki == 2) && zcurr >= N3G + (ki == 1 || ki == 2) + (ki == 3 || ki == 4) && icurr < BS_1 + N1G && jcurr < BS_2 + N2G - (ki == 1 || ki == 2) && zcurr < BS_3 + N3G - (ki == 1 || ki == 2) - (ki == 3 || ki == 4)){
-
 			get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
 
 			for (k = 0; k < NPR; k++){
@@ -4599,11 +4575,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			if (pflag[global_id]) {
 				failimage[global_id]++;
 				#if DOKTOT
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
 				#endif
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
 					if (pflag[global_id]){
 						pflag[0] = global_id;
 						failimage[2 * (ksize)+global_id]++;
@@ -4751,12 +4727,10 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				if (pflag[global_id]){
 					failimage[global_id]++;
 					#if( DO_FONT_FIX ) 
-					U[KTOT] = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
-					pf[KTOT] = U[KTOT] / U[RHO];
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
 					if (pflag[global_id]) {
 						failimage[1 * (ksize)+global_id]++;
-						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
 						if (pflag[global_id]){
 							pflag[0] = 100;
 							failimage[2 * (ksize)+global_id]++;
@@ -4787,11 +4761,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 					pf[U3] *= f;
 				}
 			}
-			#if DOKTOT
-			pf_i[KTOT*(ksize)+global_id] = (gam - 1.)*pf[UU] * pow(pf[RHO], -gam);
-			#endif
+
 			#pragma unroll 9	
-			for (k = 0; k < NPR - DOKTOT; k++){
+			for (k = 0; k < NPR; k++){
 				pf_i[k*(ksize)+global_id] = pf[k];
 			}
 		}

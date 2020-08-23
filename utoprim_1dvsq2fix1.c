@@ -143,12 +143,10 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
 
   if( U[0] <= 0. ) { 
     return(-100);
-	  //U[0] = prim[RHO] * gdet;
   }
 
   /* First update the primitive B-fields */
   for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
-
 
   /* Set the geometry variables: */
   alpha = 1.0/sqrt(-gcon[0][0]);
@@ -162,7 +160,6 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
   for( i = BCON1; i <= BCON3; i++ ) {
     U_tmp[i] = alpha * U[i] / gdet;
   }
-  U_tmp[KTOT] = U[KTOT] / gdet;
 
   /* Transform the PRIMITIVE variables into the new system */
   for( i = 0; i < BCON1; i++ ) {
@@ -180,7 +177,6 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
     for( i = 0; i < BCON1; i++ ) {
       prim[i] = prim_tmp[i];
     }
-    prim[KTOT] = prim_tmp[KTOT];
   }
 
   return( ret ) ;

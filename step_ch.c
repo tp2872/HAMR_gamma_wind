@@ -241,13 +241,13 @@ double advance(int flag)
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_ct(F1, F2, F3, n_ord[n]);
 	#else
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport1(ph, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(ph, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
 	const_transport_bound();
 	#if(RAD_M1)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport2_M1_1(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_1(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_2(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	#else
@@ -430,12 +430,12 @@ void utoprim_M1_2(double Dt, int n){
 			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
 				#if DOKTOT
-				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], p[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
+				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
 				#endif
 				if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 					failimage[nl[n]][index_3D(n, i, j, z)][1]++;
 					if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], p[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
+						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
 						failimage[nl[n]][index_3D(n, i, j, z)][2]++;
 					}
@@ -513,12 +513,12 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
 				#if DOKTOT
-				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
+				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
 				#endif
 				if (pflag[nl[n]][index_3D(n, i, j, z)]) {
 					failimage[nl[n]][index_3D(n, i, j, z)][1]++;
 					if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], pf[nl[n]][index_3D(n, i, j, z)][KTOT], NEWT_TOL);
+						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
 						failimage[nl[n]][index_3D(n, i, j, z)][2]++;
 					}

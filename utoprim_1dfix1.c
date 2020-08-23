@@ -132,7 +132,7 @@ static int gnr2( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], 
 
 ******************************************************************/
 
-int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], FTYPE K, double tolerance)
+int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], double tolerance)
 {
     FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
     int i, j, ret;
@@ -140,7 +140,6 @@ int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM
 
     if (U[0] <= 0.) {
         return(-100);
-        //U[0] = prim[RHO] * gdet;
     }
 
     /* First update the primitive B-fields */
@@ -158,7 +157,6 @@ int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM
     for (i = BCON1; i <= BCON3; i++) {
         U_tmp[i] = alpha * U[i] / gdet;
     }
-    U_tmp[KTOT] = U[KTOT] / gdet;
 
     /* Transform the PRIMITIVE variables into the new system */
     for (i = 0; i < BCON1; i++) {
@@ -176,7 +174,6 @@ int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM
         for (i = 0; i < BCON1; i++) {
             prim[i] = prim_tmp[i];
         }
-        prim[KTOT] = prim_tmp[KTOT];
     }
 
     return(ret);
@@ -226,165 +223,164 @@ return:  (i*100 + j)  where
 static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U], double tolerance)
 {
 
-  FTYPE x_1d[1];
-  FTYPE QdotB,Bcon[NDIM],Bcov[NDIM],Qcov[NDIM],Qcon[NDIM],ncov[NDIM],ncon[NDIM],Qsq,Qtcon[NDIM];
-  FTYPE rho0,u,p,w,gammasq,gamma,gtmp,W_last,W,utsq,vsq,tmpdiff ;
-  int i,j, retval, i_increase ;
+      FTYPE x_1d[1];
+      FTYPE QdotB,Bcon[NDIM],Bcov[NDIM],Qcov[NDIM],Qcon[NDIM],ncov[NDIM],ncon[NDIM],Qsq,Qtcon[NDIM];
+      FTYPE rho0,u,p,w,gammasq,gamma,gtmp,W_last,W,utsq,vsq,tmpdiff ;
+      int i,j, retval, i_increase ;
 
-  // Assume ok initially:
-  retval = 0;
+      // Assume ok initially:
+      retval = 0;
 
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
+      for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
 
-  // Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
-  Bcon[0] = 0. ;
-  for(i=1;i<4;i++) Bcon[i] = U[BCON1+i-1] ;
+      // Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
+      Bcon[0] = 0. ;
+      for(i=1;i<4;i++) Bcon[i] = U[BCON1+i-1] ;
 
-  lower_g(Bcon,gcov,Bcov) ;
+      lower_g(Bcon,gcov,Bcov) ;
 
-  for(i=0;i<4;i++) Qcov[i] = U[QCOV0+i] ;
-  raise_g(Qcov,gcon,Qcon) ;
+      for(i=0;i<4;i++) Qcov[i] = U[QCOV0+i] ;
+      raise_g(Qcov,gcon,Qcon) ;
 
 
-  Bsq3 = 0. ;
-  for(i=1;i<4;i++) Bsq3 += Bcon[i]*Bcov[i] ;
+      Bsq3 = 0. ;
+      for(i=1;i<4;i++) Bsq3 += Bcon[i]*Bcov[i] ;
 
-  QdotB = 0. ;
-  for(i=0;i<4;i++) QdotB += Qcov[i]*Bcon[i] ;
-  QdotBsq3 = QdotB*QdotB ;
+      QdotB = 0. ;
+      for(i=0;i<4;i++) QdotB += Qcov[i]*Bcon[i] ;
+      QdotBsq3 = QdotB*QdotB ;
   
-  ncov_calc(gcon,ncov) ;
-  raise_g(ncov,gcon,ncon);
+      ncov_calc(gcon,ncov) ;
+      raise_g(ncov,gcon,ncon);
 
-  Qdotn3 = Qcon[0]*ncov[0] ;
+      Qdotn3 = Qcon[0]*ncov[0] ;
 
-  Qsq = 0. ;
-  for(i=0;i<4;i++) Qsq += Qcov[i]*Qcon[i] ;
+      Qsq = 0. ;
+      for(i=0;i<4;i++) Qsq += Qcov[i]*Qcon[i] ;
 
-  Qtsq3 = Qsq + Qdotn3*Qdotn3 ;
+      Qtsq3 = Qsq + Qdotn3*Qdotn3 ;
 
-  D_3 = U[RHO] ;
+      D_3 = U[RHO] ;
 
-  /* calculate W from last timestep and use for guess */
-  utsq = 0. ;
-  for(i=1;i<4;i++)
-    for(j=1;j<4;j++) utsq += gcov[i][j]*prim[UTCON1+i-1]*prim[UTCON1+j-1] ;
+      /* calculate W from last timestep and use for guess */
+      utsq = 0. ;
+      for(i=1;i<4;i++)
+        for(j=1;j<4;j++) utsq += gcov[i][j]*prim[UTCON1+i-1]*prim[UTCON1+j-1] ;
 
 
-  if( (utsq < 0.) && (fabs(utsq) < 1.0e-13) ) { 
-    utsq = fabs(utsq);
-  }
-  if(utsq < 0. || utsq > UTSQ_TOO_BIG) {
-    retval = 2;
-    return(retval) ;
-  }
+      if( (utsq < 0.) && (fabs(utsq) < 1.0e-13) ) { 
+        utsq = fabs(utsq);
+      }
+      if(utsq < 0. || utsq > UTSQ_TOO_BIG) {
+        retval = 2;
+        return(retval) ;
+      }
 
-  gammasq = 1. + utsq ;
-  gamma  = sqrt(gammasq);
+      gammasq = 1. + utsq ;
+      gamma  = sqrt(gammasq);
 	
-  // Always calculate rho from D and gamma so that using D in EOS remains consistent
-  //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D_3 / gamma ;
-  p = pressure_of_rho(rho0);
-  u = u_of_p(p);
-  w = rho0 + u + p ;
+      // Always calculate rho from D and gamma so that using D in EOS remains consistent
+      //   i.e. you don't get positive values for dP/d(vsq) . 
+      rho0 = D_3 / gamma ;
+      p = pressure_of_rho(rho0);
+      u = u_of_p(p);
+      w = rho0 + u + p ;
 
 
-#if(LTRACE)
-  if( rho0 <= 0. ) { 
-    fprintf(stderr,"beg neg rho fix1, rho,D,gamma = %26.20e %26.20e %26.20e \n", rho0, D, gamma); fflush(stderr);
-    rho0 = fabs(rho0);
-  }
-#endif 
-    
-  W_last = w*gammasq ;
-
-  // Make sure that W is large enough so that v^2 < 1 : 
-  i_increase = 0;
-  while( (( W_last*W_last*W_last * ( W_last + 2.*Bsq3 ) 
-	    - QdotBsq3*(2.*W_last + Bsq3) ) <= W_last*W_last*(Qtsq3-Bsq3*Bsq3))
-	 && (i_increase < 10) ) {
-    W_last *= 10.;
-    i_increase++;
-  }
-  
-  W_for_gnr2 = W_for_gnr2_old = W_last;
-  rho_for_gnr2 = rho_for_gnr2_old = rho0;
-
-  // Calculate W: 
-  x_1d[0] = W_last;
-  
-    #if( USE_ISENTROPIC )   
-  retval = general_newton_raphson( x_1d, 1, func_1d_orig1, tolerance);
-    #else
-  //retval = general_newton_raphson( x_1d, 1, func_1d_orig2, tolerance);
-    #endif
-
-  W = x_1d[0];
-
-  /* Problem with solver, so return denoting error before doing anything further */
-  if( (retval != 0) || (W == FAIL_VAL) ) {
-    retval = retval*100+1;
     #if(LTRACE)
-    fprintf(stderr,"fix1: retval, W, rho = %d %26.20e %26.20e \n", retval,W, rho_for_gnr2);fflush(stderr);
-    #endif
-    return(retval);
-  }
-  else{
-    if(W <= 0. || W > W_TOO_BIG) {
-      retval = 3;
-        #if(LTRACE)
-      fprintf(stderr,"fix1: retval, W, rho = %d %26.20e %26.20e \n", retval,W, rho_for_gnr2);fflush(stderr);
+      if( rho0 <= 0. ) { 
+        fprintf(stderr,"beg neg rho fix1, rho,D,gamma = %26.20e %26.20e %26.20e \n", rho0, D, gamma); fflush(stderr);
+        rho0 = fabs(rho0);
+      }
+    #endif 
+    
+      W_last = w*gammasq ;
+
+      // Make sure that W is large enough so that v^2 < 1 : 
+      i_increase = 0;
+      while( (( W_last*W_last*W_last * ( W_last + 2.*Bsq3 ) 
+	        - QdotBsq3*(2.*W_last + Bsq3) ) <= W_last*W_last*(Qtsq3-Bsq3*Bsq3))
+	     && (i_increase < 10) ) {
+        W_last *= 10.;
+        i_increase++;
+      }
+  
+      W_for_gnr2 = W_for_gnr2_old = W_last;
+      rho_for_gnr2 = rho_for_gnr2_old = rho0;
+
+      // Calculate W: 
+      x_1d[0] = W_last;
+  
+        #if( USE_ISENTROPIC )   
+        retval = general_newton_raphson( x_1d, 1, func_1d_orig1, tolerance);
+        #else
+        retval = general_newton_raphson( x_1d, 1, func_1d_orig2, tolerance);
         #endif
-      return(retval) ;
-    }
-  }
+
+      W = x_1d[0];
+
+      /* Problem with solver, so return denoting error before doing anything further */
+      if( (retval != 0) || (W == FAIL_VAL) ) {
+        retval = retval*100+1;
+        #if(LTRACE)
+        fprintf(stderr,"fix1: retval, W, rho = %d %26.20e %26.20e \n", retval,W, rho_for_gnr2);fflush(stderr);
+        #endif
+        return(retval);
+      }
+      else{
+        if(W <= 0. || W > W_TOO_BIG) {
+          retval = 3;
+            #if(LTRACE)
+          fprintf(stderr,"fix1: retval, W, rho = %d %26.20e %26.20e \n", retval,W, rho_for_gnr2);fflush(stderr);
+            #endif
+          return(retval) ;
+        }
+      }
 
 
-  // Calculate v^2 : 
-  vsq = vsq_calc(W) ;
-  if( vsq >= 1. ) {
-    retval = 4;
-#if(LTRACE)
-    fprintf(stderr,"fix1: retval, W, rho,vsq = %d %26.20e %26.20e %26.20e \n", retval,W, rho_for_gnr2,vsq);fflush(stderr);
-#endif
-    return(retval) ;
-  }
+      // Calculate v^2 : 
+      vsq = vsq_calc(W) ;
+      if( vsq >= 1. ) {
+        retval = 4;
+        #if(LTRACE)
+        fprintf(stderr,"fix1: retval, W, rho,vsq = %d %26.20e %26.20e %26.20e \n", retval,W, rho_for_gnr2,vsq);fflush(stderr);
+        #endif
+        return(retval) ;
+      }
 
-  // Recover the primitive variables from the scalars and conserved variables:
-  gtmp = sqrt(1. - vsq);
-  gamma = 1./gtmp ;
-  rho0 = D_3 * gtmp;
+      // Recover the primitive variables from the scalars and conserved variables:
+      gtmp = sqrt(1. - vsq);
+      gamma = 1./gtmp ;
+      rho0 = D_3 * gtmp;
 
-  w = W * (1. - vsq) ;
+      w = W * (1. - vsq) ;
 
-  p = pressure_of_rho(rho0);
-  u = u_of_p(p);
+      p = pressure_of_rho(rho0);
+      u = u_of_p(p);
 
-  // User may want to handle this case differently, e.g. do NOT return upon 
-  // a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-  if( (rho0 <= 0.) || (u <= 0.) ) { 
-    retval = 5;
-#if(LTRACE)
-    fprintf(stderr,"fix1: retval, W, rho,vsq,u = %d %26.20e %26.20e %26.20e %26.20e \n", retval,W, rho0,vsq,u);fflush(stderr);
-#endif
-    return(retval) ;
-  }
+      // User may want to handle this case differently, e.g. do NOT return upon 
+      // a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
+      if( (rho0 <= 0.) || (u <= 0.) ) { 
+        retval = 5;
+        #if(LTRACE)
+        fprintf(stderr,"fix1: retval, W, rho,vsq,u = %d %26.20e %26.20e %26.20e %26.20e \n", retval,W, rho0,vsq,u);fflush(stderr);
+        #endif
+        return(retval) ;
+      }
 
-  prim[RHO] = rho0 ;
-  prim[UU] = u ;
+      prim[RHO] = rho0 ;
+      prim[UU] = u ;
 
 
-  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn3;
-  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq3) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
+      for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn3;
+      for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq3) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
 	
-  /* set field components */
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
+      /* set field components */
+      for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
 
 
-  /* done! */
-  return(retval) ;
-
+      /* done! */
+      return(retval) ;
 }
 
 

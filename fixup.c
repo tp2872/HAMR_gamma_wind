@@ -86,9 +86,9 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
   //tie floors to the local values of magnetic field and internal energy density
 	#if(1)
-  if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
-  if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
-  if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+	  if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
+	  if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
+	  if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
 	#endif
 
 	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
@@ -176,11 +176,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 
-	#if DOKTOT
-	pv[KTOT] = (GAMMA - 1.)*pv[UU] * pow(pv[RHO], -GAMMA);
-	#endif
 	/* limit gamma wrt normal observer */
-
 	if( gamma_calc(pv,&geom,&gamma) ) { 
 		/* Treat gamma failure here as "fixable" for fixup_utoprim() */
 			fprintf(stderr, "Gamma fail: %d %d %d %d \n",n, i, j, z);

@@ -114,11 +114,11 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#if(DO_FONT_FIX)
 		if (flag) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 			#endif
 			if (flag) {
 				if (flag) {
-					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 				}
 			}
 		}	
@@ -407,11 +407,11 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#if(DO_FONT_FIX)
 		if (flag) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 			#endif
 			if (flag) {
 				if (flag) {
-					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 				}
 			}
 		}
@@ -488,11 +488,11 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				#if(DO_FONT_FIX)
 				if (flag) {
 					#if DOKTOT
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 					#endif
 					if (flag) {
 						if (flag) {
-							flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+							flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 						}
 					}
 				}
@@ -582,11 +582,11 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#if(DO_FONT_FIX)
 		if (flag) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 			#endif
 			if (flag) {
 				if (flag) {
-					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 				}
 			}
 		}
@@ -716,11 +716,11 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#if(DO_FONT_FIX)
 		if (flag) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 			#endif
 			if (flag) {
 				if (flag) {
-					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 				}
 			}
 		}
@@ -814,11 +814,11 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				#if(DO_FONT_FIX)
 				if (flag) {
 					#if DOKTOT
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 					#endif
 					if (flag) {
 						if (flag) {
-							flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+							flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 						}
 					}
 				}
@@ -909,11 +909,11 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#if(DO_FONT_FIX)
 		if (flag) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 			#endif
 			if (flag) {
 				if (flag) {
-					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 				}
 			}
 		}
@@ -1022,11 +1022,11 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 	#if(DO_FONT_FIX)
 	if (flag) {
 		#if DOKTOT
-		flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+		flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 		#endif
 		if (flag) {
 			if (flag) {
-				flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, pb_old[KTOT], NEWT_TOL);
+				flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL);
 			}
 		}
 	}
@@ -1074,11 +1074,11 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 			#if(DO_FONT_FIX)
 			if (flag) {
 				#if DOKTOT
-				flag = Utoprim_1dvsq2fix1(Uh, geom->gcov, geom->gcon, geom->g, ph, ph[KTOT], NEWT_TOL);
+				flag = Utoprim_1dvsq2fix1(Uh, geom->gcov, geom->gcon, geom->g, ph, NEWT_TOL);
 				#endif
 				if (flag) {
 					if (flag) {
-						flag = Utoprim_1dfix1(Uh, geom->gcov, geom->gcon, geom->g, ph, ph[KTOT], NEWT_TOL);
+						flag = Utoprim_1dfix1(Uh, geom->gcov, geom->gcon, geom->g, ph, NEWT_TOL);
 					}
 				}
 			}
@@ -1101,11 +1101,11 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 				#if(DO_FONT_FIX)
 				if (flag) {
 					#if DOKTOT
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 					#endif
 					if (flag) {
 						if (flag) {
-							flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, pb_new[KTOT], NEWT_TOL);
+							flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL);
 						}
 					}
 				}

@@ -56,6 +56,7 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 {
 	int j,k ;
 	double n = 1. / (GAMMA - 1.);
+
 	/* particle number flux */
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
 
@@ -223,13 +224,14 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 //Calculate radiation 4-force
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
 	int i;
-	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM];
+	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad;
 	kappa_abs = calc_kappa_abs(ph);
 	kappa_emmit =calc_kappa_emmit(ph);
 	kappa_es = calc_kappa_es(ph);
+	arad = ARAD / (MASS_DENSITY_SCALE * C_CGS * C_CGS / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 
 	Tg = (GAMMA - 1.)*ph[UU] / ph[RHO];
-	lambda = kappa_emmit*ARAD*pow(Tg,4.);
+	lambda = kappa_abs*arad*pow(Tg,4.);
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);

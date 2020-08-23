@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if (nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0){
+		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
 			end1 = get_wall_time();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
