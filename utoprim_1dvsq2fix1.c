@@ -135,52 +135,57 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
 
 int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], double tolerance)
 {
+      FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
+      int i, j, ret; 
+      FTYPE alpha;
 
-  FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
-  int i, j, ret; 
-  FTYPE alpha;
 
+      if( U[0] <= 0. ) { 
+        return(-100);
+      }
 
-  if( U[0] <= 0. ) { 
-    return(-100);
-  }
+      /* First update the primitive B-fields */
+      for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
 
-  /* First update the primitive B-fields */
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
-
-  /* Set the geometry variables: */
-  alpha = 1.0/sqrt(-gcon[0][0]);
+      /* Set the geometry variables: */
+      alpha = 1.0/sqrt(-gcon[0][0]);
   
-  /* Transform the CONSERVED variables into the new system */
-  U_tmp[RHO] = alpha * U[RHO] / gdet;
-  U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
-  for( i = UTCON1; i <= UTCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet;
-  }
-  for( i = BCON1; i <= BCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet;
-  }
+      /* Transform the CONSERVED variables into the new system */
+      U_tmp[RHO] = alpha * U[RHO] / gdet;
+      U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
+      for( i = UTCON1; i <= UTCON3; i++ ) {
+        U_tmp[i] = alpha * U[i] / gdet;
+      }
+      for( i = BCON1; i <= BCON3; i++ ) {
+        U_tmp[i] = alpha * U[i] / gdet;
+      }
 
-  /* Transform the PRIMITIVE variables into the new system */
-  for( i = 0; i < BCON1; i++ ) {
-    prim_tmp[i] = prim[i];
-  }
-  for( i = BCON1; i <= BCON3; i++ ) {
-    prim_tmp[i] = alpha*prim[i];
-  }
+      /* Transform the PRIMITIVE variables into the new system */
+      for( i = 0; i < BCON1; i++ ) {
+        prim_tmp[i] = prim[i];
+      }
+      for( i = BCON1; i <= BCON3; i++ ) {
+        prim_tmp[i] = alpha*prim[i];
+      }
 
-  K_atm2 = pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
-  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
+      #if(DOKTOT)
+      #if(FULL_ENTROPY)
+      K_atm2 = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+      #else
+      K_atm2 = U[KTOT] / U[RHO];
+      #endif
+      #endif
 
-  /* Transform new primitive variables back if there was no problem : */ 
-  if( ret == 0 ) {
-    for( i = 0; i < BCON1; i++ ) {
-      prim[i] = prim_tmp[i];
-    }
-  }
+      ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
-  return( ret ) ;
+      /* Transform new primitive variables back if there was no problem : */ 
+      if( ret == 0 ) {
+        for( i = 0; i < BCON1; i++ ) {
+          prim[i] = prim_tmp[i];
+        }
+      }
 
+      return( ret ) ;
 }
 
 

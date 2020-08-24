@@ -76,11 +76,42 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	}
 
 	//Entropy advection
-	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
-	//flux[KTOT] = flux[RHO] * pr[KTOT];
+	#if(FULL_ENTROPY)
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA));
+	#else
+	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
 	#endif
 
+	//double temp1 = flux[KTOT] / flux[RHO];
+	//flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
+	//double temp2 = exp((flux[KTOT] / flux[RHO]) * (GAMMA - 1.));
+	//fprintf(stderr, "old: %f new: %f \n", log10(temp1), log10(temp2));
+	//K_atm3 = (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
+
+	//flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
+	//flux[KTOT] / flux[RHO]= 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
+	//(flux[KTOT] / flux[RHO])*(GAMMA - 1.) =  log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
+	//exp((flux[KTOT] / flux[RHO])*(GAMMA - 1.))=(GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA)
+
+	//K_atm3 = (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
+
+	//flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
+	//flux[KTOT] / flux[RHO]= log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
+	//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1);
+	//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], 1. / (GAMMA - 1.)) / pow(pr[RHO], 1. / (GAMMA - 1.) + 1);
+	//pow(exp(flux[KTOT] / flux[RHO]), GAMMA -1.)=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
+
+	//XX= P / rho ^ gamma
+	//K = rho*uu* XX
+	//S = rho*uu/(gamma-1)*log(XX)
+
+	//dK / dt = dK / dS * dS / dT;
+	//dK / dS=(GAMMA-1.)d(XX)/d(log(XX)); !!!
+	//dK / dS=(GAMMA-1.)*XX; !!!
+		//dK / dS=(GAMMA-1.)*P / rho ^ gamma; !!!
+
+
+	//d(log(XX))/d(XX)=1/XX;
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }
@@ -213,8 +244,16 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	dU[U2_RAD] = -Gcov[2];
 	dU[U3_RAD] = -Gcov[3];
 
+	#if(DOKTOT)
 	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
+	
+	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	#else
+	double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (ph[UU]) / pow(ph[RHO],GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	#endif
+	#endif
 
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g;

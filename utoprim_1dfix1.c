@@ -166,7 +166,14 @@ int Utoprim_1dfix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM
         prim_tmp[i] = alpha * prim[i];
     }
 
-    K_atm3 = pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
+    #if(DOKTOT)
+    #if(FULL_ENTROPY)
+    K_atm3 = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+    #else
+    K_atm3 = U[KTOT] / U[RHO];
+    #endif
+    #endif
+
     ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
 
     /* Transform new primitive variables back if there was no problem : */

@@ -484,9 +484,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				#if( N3G > 0 )
 				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif
-
 				+ dU[k]);
-
 			}
 
 			#if STAGGERED
@@ -496,14 +494,14 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			U[B3] = 0.5 * (psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-
+			
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			if (pflag[nl[n]][ind0]) {
 				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			}
 			#else
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
+			pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			//if (pflag[nl[n]][ind0]) {
 			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			//}

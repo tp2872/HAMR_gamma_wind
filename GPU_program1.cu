@@ -644,7 +644,14 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 		prim_tmp[i] = alpha*prim[i];
 	}
 
-	K_atm= pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
+	#if(DOKTOT)
+	#if(FULL_ENTROPY)
+	K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+	#else
+	K_atm = U[KTOT] / U[RHO];
+	#endif
+	#endif
+
 	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
 	if (ret == 0) {
 		for (i = 0; i < BCON1; i++) {
@@ -1037,7 +1044,14 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 		prim_tmp[i] = alpha*prim[i];
 	}
 
-	K_atm = pow(exp(U[KTOT] / U[RHO]), GAMMA - 1.);
+	#if(DOKTOT)
+	#if(FULL_ENTROPY)
+	K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+	#else
+	K_atm = U[KTOT] / U[RHO];
+	#endif
+	#endif
+
 	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
 
 	/* Transform new primitive variables back if there was no problem : */
@@ -2176,7 +2190,6 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 	int j, k;
 	double mhd[NDIM];
 	double P, w, bsq, eta, ptot;
-	double n = 1. / (GAMMA - 1.);
 
 	/*Calculate misc quantities*/
 	P = (gam - 1.)*pr[UU];
@@ -2229,8 +2242,11 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 	#endif
 
 	#if(DOKTOT )
-	//flux[KTOT] = flux[RHO] * pr[KTOT];
-	flux[KTOT] = flux[RHO] * log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
+	#if(FULL_ENTROPY)
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+	#else
+	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	#endif
 	#endif
 
 	#pragma unroll 9
@@ -3428,8 +3444,12 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 		flux[k] = bcon[k - 4] * ucon[dir] - bcon[dir] * ucon[k - 4];
 	}
 
-	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
+	#if(DOKTOT)
+	#if(FULL_ENTROPY)
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+	#else
+	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	#endif
 	#endif
 }
 
@@ -4213,12 +4233,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 		}
 		#else
-		pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf); //Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
 		//if (pflag[global_id]) {
 		//	pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
 		//}
 		#endif
-		//compute the square of fluid frame magnetic field (twice magnetic pressure)
+
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
@@ -4233,18 +4253,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					failimage[2 * (ksize)+global_id]++;
 				}
 			}
-		}
-		#endif
-
-		#if(RAD_M1)
-		double pf_temp[NPR], sum;
-		sum = 0.;
-		Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf, BASIC);
-		for (k = 0; k < NPR; k++)pf_temp[k] = pf[k];
-		implicit_rad_solve_PMHD(pf_temp, U, geom, dU, Dt);
-		for (k = 0; k < NPR; k++) sum += pf_temp[k];
-		if (sum == 100.1) {
-			for (k = 0; k < NPR; k++)pf[k] = pf_temp[k];
 		}
 		#endif
 
@@ -4565,9 +4573,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			}
 			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]) {
-				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-			}
+			//if (pflag[global_id]) {
+				//pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+			//}
 			#endif
 
 			//compute the square of fluid frame magnetic field (twice magnetic pressure)

@@ -232,8 +232,13 @@ void primtoflux_FT(double * restrict pr, double ucon[NDIM], double bcon[NDIM], i
 	for (k = B1; k <= B3; k++) {
 		flux[k] = bcon[k - 4] * ucon[dir] - bcon[dir] * ucon[k - 4];
 	}
-	#if(DOKTOT )
-	flux[KTOT] = flux[RHO] * pr[KTOT];
+
+	#if(DOKTOT)
+	#if(FULL_ENTROPY)
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+	#else
+	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	#endif
 	#endif
 }
 
