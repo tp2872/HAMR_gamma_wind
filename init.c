@@ -435,7 +435,7 @@ void init_torus()
 	#endif
 	eccentricity = 0.0;
 	for (n = 0; n < n_active; n++){
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, taumax, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
+		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X,&r,&th, &phi) ;
@@ -566,18 +566,6 @@ void init_torus()
 			#if(RAD_M1)
 			//Solve for radiation pressure in ICs
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			
-			//Calculate optical depth of one cell
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
-			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_emmit = calc_kappa_emmit(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_abs + kappa_emmit + kappa_es) * cell_size;
-			if (tau > taumax) {
-				#pragma omp critical
-				taumax = tau;
-			}
 			#endif
 		}
 	}
@@ -588,17 +576,45 @@ void init_torus()
 
 	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-	//Calculate maximum optical depth in once cell
-	#if(RAD_M1)
-	MPI_Allreduce(MPI_IN_PLACE, &taumax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	#endif
-	#endif
-
+	
 	/* Normalize the densities so that max(rho) = 1 */
 	if (rank == 0){
 		fprintf(stderr, "rhomax: %g\n", rhomax);
 	}
+	#endif
+
+	for (n = 0; n < n_active; n++){
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+			
+			//Calculate optical depth of one cell
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			#if(D3>1)
+			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
+			#else
+			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			#endif
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			kappa_emmit = calc_kappa_emmit(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			tau = (kappa_es+ kappa_abs+ kappa_emmit)*cell_size;
+			if (tau > taumax) {
+				#pragma omp critical
+				taumax = tau;
+			}
+		}
+
+	}
+	umax /= rhomax ;
+	rhomax = 1. ;
+
+	//Calculate maximum optical depth in once cell
+	#if (MPI_enable)
+	#if(RAD_M1)
+	MPI_Allreduce(MPI_IN_PLACE, &taumax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	#endif
+	#endif
 
 	#if(RAD_M1)
 	//Print maximum optical depth in grid
@@ -607,14 +623,6 @@ void init_torus()
 	}
 	#endif
 
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-		}
-	}
-	umax /= rhomax ;
-	rhomax = 1. ;
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
@@ -672,9 +680,10 @@ void init_rad_pres(double pi[NPR]) {
 		pi[UU_RAD] = 0.;
 	}
 	else {
-		pi[UU] = 1. / (GAMMA-1.)*pi[RHO]*T_new;
-		pi[UU_RAD] = arad*pow(T_new,4.);
+		pi[UU] = pi[RHO]*T_new;
+		pi[UU_RAD] = 1. / 3. * arad*pow(T_new,4.);
 	}
+	//if(pi[RHO]>0.1)fprintf(stderr, "arad: %f old: %f new: %f test: %f \n",log10(T_new*C_CGS*C_CGS* MH_CGS/BOLTZ_CGS), ptot, pi[UU_RAD]+ pi[UU], log10(pi[UU] / pi[UU_RAD]));
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];

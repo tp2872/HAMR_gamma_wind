@@ -22,15 +22,15 @@ int implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 	//Check if fluid is in extreme radiation subdominant regime
 	if (((U_n[UU_RAD] / U_n[UU]) < 10.0 * epsem) || ((pb[UU_RAD] / pb[UU]) < 10.0 * epsem) || (fabs(delta_Ur) < 10.0 * fabs(delta_U) * epsem)) {
 		//If error is below set margin, accept solution, otherwise try PRAD
-		flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
+		//flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is below set margin, accept solution, otherwise try PRAD
 		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t,cell_size, 0, 0);
 
-		//If error is below set margin, accept solution, otherwise try PRAD with entropy
+		/*//If error is below set margin, accept solution, otherwise try PRAD with entropy
 		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD with entropy
@@ -55,39 +55,41 @@ int implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 1);
 
 		//If error is below set margin, accept solution, otherwise try PRAD with entropy staged
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 1);
+		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 1);*/
 	}
 	else {
 		//If error is below set margin, accept solution, otherwise try PRAD
 		flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is below set margin, accept solution, otherwise try PRAD with entropy
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD with entropy
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD with entropy
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, 1, 0);
 	}
 
 	//As final resort attempt subcycling
 	if (error_t > pow(10., -7.) || flag) {
 		PLOOP U_ft[k] = U_i[k];
-		if (subcycle_rad_solve(pb, U_n, U_i, U_ft, geom, dU, Dt, cell_size) != 0) return 1;
-		else {
-			PLOOP U_f[k] = U_ft[k];
-		}
+		//if (subcycle_rad_solve(pb, U_n, U_i, U_ft, geom, dU, Dt, cell_size) != 0) return 1;
+		//else {
+		//	PLOOP U_f[k] = U_ft[k];
+		//}
 	}
 	else {
 		PLOOP U_f[k] = U_ft[k];
 	}
+	PLOOP U_f[k] = U_ft[k];
+
 	return 0;
 }
 
