@@ -477,7 +477,7 @@ void const_transport2_M1_2(double Dt, int n) {
 		#pragma omp for collapse(3) schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			ind0 = index_3D(n, i, j, z);
-			ps[nl[n]][index_3D(n, i, j, z)][1] = 0.5* psh[nl[n]][index_3D(n, i, j, z)][1] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][3] - 0.5 * Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
+			ps[nl[n]][index_3D(n, i, j, z)][1] = 0.5* psh[nl[n]][index_3D(n, i, j, z)][1] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][1] - 0.5 * Dt / dx[nl[n]][2] * (E_corn[nl[n]][index_3D(n, i, j + D2, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
 			#if(N3G>0)
 			ps[nl[n]][index_3D(n, i, j, z)][1] += 0.5 * Dt / dx[nl[n]][3] * (E_corn[nl[n]][index_3D(n, i, j, z + D3)][2] - E_corn[nl[n]][ind0][2]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE1];
 			#endif
@@ -487,7 +487,7 @@ void const_transport2_M1_2(double Dt, int n) {
 		#pragma omp for collapse(3) schedule(static,(BS_1)*(BS_2+D2)*(BS_3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			ind0 = index_3D(n, i, j, z);
-			ps[nl[n]][index_3D(n, i, j, z)][2] = 0.5 * psh[nl[n]][index_3D(n, i, j, z)][2] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][3] + 0.5 * Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
+			ps[nl[n]][index_3D(n, i, j, z)][2] = 0.5 * psh[nl[n]][index_3D(n, i, j, z)][2] + 0.5 * ps[nl[n]][index_3D(n, i, j, z)][2] + 0.5 * Dt / dx[nl[n]][1] * (E_corn[nl[n]][index_3D(n, i + D1, j, z)][3] - E_corn[nl[n]][ind0][3]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
 			#if(N3G>0)
 			ps[nl[n]][index_3D(n, i, j, z)][2] += -0.5 * Dt / dx[nl[n]][3] * (E_corn[nl[n]][index_3D(n, i, j, z + D3)][1] - E_corn[nl[n]][ind0][1]) / gdet[nl[n]][index_2D(n, i, j, z)][FACE2];
 			#endif		

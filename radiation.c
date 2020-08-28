@@ -147,6 +147,9 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1_RAD]) / norm);
 		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2_RAD]) / norm);
 		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3_RAD]) / norm);
+		
+		//fprintf(stderr, "test: %f \n", log10(fabs(dU_old[UU])));
+		error_new[0] = pow(10, -13.);
 
 		//If we've reached the tolerance level, exit immediately
 		if ((fabs(error_new[0]) <= pow(10, -12.))) {

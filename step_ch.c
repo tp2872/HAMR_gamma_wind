@@ -247,8 +247,8 @@ double advance(int flag)
 	const_transport_bound();
 	#if(RAD_M1)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_1(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_2(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_2(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_1(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	#else
 	for (n = 0; n < n_active; n++){
@@ -303,9 +303,9 @@ void utoprim_M1_0(double Dt, int n)
 		#pragma omp for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n]-N1G, N1_GPU_offset[n] + BS_1 + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 +N3G - 1) {
 			k = 1;
-			if (((i < N1_GPU_offset[n] - D1) && ((j < N2_GPU_offset[n] - D2))) || ((i < N1_GPU_offset[n] - D1) && ((j > N2_GPU_offset[n] + BS_2))) || (((i > N1_GPU_offset[n] + BS_1) && ((j < N2_GPU_offset[n] - D2)))) || ((i > N1_GPU_offset[n] + BS_1) && ((j > N2_GPU_offset[n] + BS_2)))) k = 0;
-			if (((i < N1_GPU_offset[n] - D1) && ((z < N3_GPU_offset[n] - D3))) || ((i < N1_GPU_offset[n] - D1) && ((z > N3_GPU_offset[n] + BS_3))) || (((i > N1_GPU_offset[n] + BS_1) && ((z < N3_GPU_offset[n] - D3)))) || ((i > N1_GPU_offset[n] + BS_1) && ((z > N3_GPU_offset[n] + BS_3)))) k = 0;
-			if (((j < N2_GPU_offset[n] - D2) && ((z < N3_GPU_offset[n] - D3))) || ((j < N2_GPU_offset[n] - D2) && ((z > N3_GPU_offset[n] + BS_3))) || (((j > N2_GPU_offset[n] + BS_2) && ((z < N3_GPU_offset[n] - D3)))) || ((j > N2_GPU_offset[n] + BS_2) && ((z > N3_GPU_offset[n] + BS_3)))) k = 0;
+			//if (((i < N1_GPU_offset[n] - D1) && ((j < N2_GPU_offset[n] - D2))) || ((i < N1_GPU_offset[n] - D1) && ((j > N2_GPU_offset[n] + BS_2))) || (((i > N1_GPU_offset[n] + BS_1) && ((j < N2_GPU_offset[n] - D2)))) || ((i > N1_GPU_offset[n] + BS_1) && ((j > N2_GPU_offset[n] + BS_2)))) k = 0;
+			//if (((i < N1_GPU_offset[n] - D1) && ((z < N3_GPU_offset[n] - D3))) || ((i < N1_GPU_offset[n] - D1) && ((z > N3_GPU_offset[n] + BS_3))) || (((i > N1_GPU_offset[n] + BS_1) && ((z < N3_GPU_offset[n] - D3)))) || ((i > N1_GPU_offset[n] + BS_1) && ((z > N3_GPU_offset[n] + BS_3)))) k = 0;
+			//if (((j < N2_GPU_offset[n] - D2) && ((z < N3_GPU_offset[n] - D3))) || ((j < N2_GPU_offset[n] - D2) && ((z > N3_GPU_offset[n] + BS_3))) || (((j > N2_GPU_offset[n] + BS_2) && ((z < N3_GPU_offset[n] - D3)))) || ((j > N2_GPU_offset[n] + BS_2) && ((z > N3_GPU_offset[n] + BS_3)))) k = 0;
 
 			if (k == 1) {
 				ind0 = index_3D(n, i, j, z);
@@ -315,9 +315,15 @@ void utoprim_M1_0(double Dt, int n)
 				get_state_rad(p[nl[n]][ind0], &geom, &q_rad);				
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
-				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-				pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
-				PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
+				//cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
+				//pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
+
+				//Debug code, remove!
+				PLOOP{
+					U_0[nl[n]][ind0][k] = U_n[nl[n]][ind0][k];
+					dU_RAD0[nl[n]][ind0][k] = 0.;
+					ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
+				}
 			}
 		}
 	}
@@ -366,8 +372,32 @@ void utoprim_M1_1(double Dt, int n){
 			#endif
 			#endif
 
-			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
+			//cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
+			//pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
+			
+			//Debug code, remove!
+			pflag[nl[n]][ind0] = Utoprim_2d(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
+			#if( DO_FONT_FIX ) 
+			if (pflag[nl[n]][ind0]) {
+				failimage[nl[n]][ind0][0]++;
+				#if DOKTOT
+				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
+				#endif
+				if (pflag[nl[n]][ind0]) {
+					failimage[nl[n]][ind0][1]++;
+					if (pflag[nl[n]][ind0]) {
+						pflag[nl[n]][ind0] = Utoprim_1dfix1(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
+						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+						failimage[nl[n]][ind0][2]++;
+					}
+				}
+			}
+			#endif
+
+			//Debug code, remove!
+			PLOOP{
+				dU_RAD1[nl[n]][ind0][k] = 0.;
+			}
 		}
 	}
 }
@@ -379,17 +409,17 @@ void utoprim_M1_2(double Dt, int n){
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, ind0, ind1, ind2, ind3)
+	#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, dU, U_2, geom, ind0, ind1, ind2, ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			get_geometry(n, i, j, z, CENT, &geom);
-			source(ph[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
 
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
+			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
 
 			#pragma ivdep
 			PLOOP{
@@ -407,42 +437,31 @@ void utoprim_M1_2(double Dt, int n){
 			}
 
 			#if STAGGERED
-			U_2[B1] = 0.5 * (ps[nl[n]][index_3D(n, i, j, z)][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + ps[nl[n]][index_3D(n, i + D1, j, z)][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
-			U_2[B2] = 0.5 * (ps[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + ps[nl[n]][index_3D(n, i, j + D2, z)][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
+			U_2[B1] = 0.5 * (ps[nl[n]][ind0][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + ps[nl[n]][ind1][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
+			U_2[B2] = 0.5 * (ps[nl[n]][ind0][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + ps[nl[n]][ind2][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
 			#if(N3G>0)
-			U_2[B3] = 0.5 * (ps[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + ps[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
+			U_2[B3] = 0.5 * (ps[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + ps[nl[n]][ind3][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
 
-			#if(NEWMAN)
-			pflag[nl[n]][ind0] = Utoprim_NM(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
-			if (pflag[nl[n]][ind0]) {
-				pflag[nl[n]][ind0] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
-			}
-			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
-			//if (pflag[nl[n]][ind0]) {
-			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
-			//}
-			#endif
-
 			#if( DO_FONT_FIX ) 
-			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
+			if (pflag[nl[n]][ind0]) {
+				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
-				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
+				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
 				#endif
-				if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-					failimage[nl[n]][index_3D(n, i, j, z)][1]++;
-					if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
+				if (pflag[nl[n]][ind0]) {
+					failimage[nl[n]][ind0][1]++;
+					if (pflag[nl[n]][ind0]) {
+						pflag[nl[n]][ind0] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-						failimage[nl[n]][index_3D(n, i, j, z)][2]++;
+						failimage[nl[n]][ind0][2]++;
 					}
 				}
 			}
 			#endif
-			if(!pflag[nl[n]][index_3D(n, i, j, z)]) Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][index_3D(n, i, j, z)], BASIC);
+			if(!pflag[nl[n]][ind0]) Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
 		}
 	}
 }
@@ -462,15 +481,16 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			get_geometry(n, i, j, z, CENT, &geom);
-			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
-			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-			get_state_rad(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
-			primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, &q_rad, 0, &geom, U);
 
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
+
+			source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
+			get_state(pi[nl[n]][ind0], &geom, &q);
+			get_state_rad(pi[nl[n]][ind0], &geom, &q_rad);
+			primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U);
 
 			#pragma ivdep
 			PLOOP{
@@ -488,10 +508,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 
 			#if STAGGERED
-			U[B1] = 0.5 * (psf[nl[n]][index_3D(n, i, j, z)][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + psf[nl[n]][index_3D(n, i + D1, j, z)][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
-			U[B2] = 0.5 * (psf[nl[n]][index_3D(n, i, j, z)][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + psf[nl[n]][index_3D(n, i, j + D2, z)][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
+			U[B1] = 0.5 * (psf[nl[n]][ind0][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + psf[nl[n]][ind1][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
+			U[B2] = 0.5 * (psf[nl[n]][ind0][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + psf[nl[n]][ind2][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
 			#if(N3G>0)
-			U[B3] = 0.5 * (psf[nl[n]][index_3D(n, i, j, z)][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
+			U[B3] = 0.5 * (psf[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][ind3][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
 			
@@ -501,24 +521,24 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			}
 			#else
-			pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
+			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			//if (pflag[nl[n]][ind0]) {
 			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			//}
 			#endif
 
 			#if( DO_FONT_FIX ) 
-			if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-				failimage[nl[n]][index_3D(n, i, j, z)][0]++;
+			if (pflag[nl[n]][ind0]) {
+				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
-				pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
+				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 				#endif
-				if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-					failimage[nl[n]][index_3D(n, i, j, z)][1]++;
-					if (pflag[nl[n]][index_3D(n, i, j, z)]) {
-						pflag[nl[n]][index_3D(n, i, j, z)] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][index_3D(n, i, j, z)], NEWT_TOL);
+				if (pflag[nl[n]][ind0]) {
+					failimage[nl[n]][ind0][1]++;
+					if (pflag[nl[n]][ind0]) {
+						pflag[nl[n]][ind0] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-						failimage[nl[n]][index_3D(n, i, j, z)][2]++;
+						failimage[nl[n]][ind0][2]++;
 					}
 				}
 			}
