@@ -372,7 +372,7 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 
 	ucon[0] = gamma/alpha ;
 	#pragma ivdep
-	SLOOPA ucon[j] = pr[U1+j-1] - gamma*beta[j]/alpha ;
+	SLOOPA ucon[j] = pr[U1 + j - 1] - gamma * beta[j] / alpha;
 
 	return ;
 }
@@ -390,7 +390,7 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 
 	if (gamma_calc_rad(pr, geom, &gamma_rad)) {
 		fflush(stderr);
-		fprintf(stderr, "\nucon_calc(): gamma_rad failure \n");
+		fprintf(stderr, "\nucon_calc_rad(): gamma_rad failure \n");
 		fflush(stderr);
 		fail(FAIL_GAMMA);
 	}
@@ -554,7 +554,7 @@ void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struc
 	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
 	tau = kappa_tot*sqrt(geom->gcov[js][js])*dx;
 	crad = MY_MIN(1.0 / 3.0, pow(4. / (3. * tau), 2.));
-	crad2 = crad * crad;
+	crad2 = 1.0 / 3.0;
 
 	/* check on it! */
 	if (crad2 < 0.) {

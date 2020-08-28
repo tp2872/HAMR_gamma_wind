@@ -456,7 +456,7 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G; j++){
 						//#pragma omp   simd
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1 , (z + BS_3 / 2) % BS_3)][k];
-						prim[nl[n]][index_3D(n, i, j , z)][U2] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
 						#if(RAD_M1)
 						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.0;

@@ -309,7 +309,6 @@ void utoprim_M1_0(double Dt, int n)
 
 			if (k == 1) {
 				ind0 = index_3D(n, i, j, z);
-
 				get_geometry(n, i, j, z, CENT, &geom);
 				get_state(p[nl[n]][ind0], &geom, &q);
 				get_state_rad(p[nl[n]][ind0], &geom, &q_rad);				
@@ -351,7 +350,6 @@ void utoprim_M1_1(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-				//if (k <= KTOT) {
 					U_1[nl[n]][ind0][k] = (3. * y - 1.) / y * U_n[nl[n]][ind0][k] + (1. - 2. * y) / y * U_0[nl[n]][ind0][k] + Dt * (
 					#if( N1G > 0 )
 					- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
@@ -363,7 +361,6 @@ void utoprim_M1_1(double Dt, int n){
 					- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 					#endif	
 					+ dU[k]);
-				//}
 			}
 
 			#if STAGGERED
@@ -431,7 +428,6 @@ void utoprim_M1_2(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-				//if (k <= KTOT) {
 					U_2[k] = 0.5 * U_n[nl[n]][ind0][k] + 0.5 * U_1[nl[n]][ind0][k] + Dt * 0.5 * (
 					#if( N1G > 0 )
 					- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
@@ -443,9 +439,7 @@ void utoprim_M1_2(double Dt, int n){
 					- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 					#endif	
 					+ dU[k] + 2.0 * y * dU_RAD0[nl[n]][ind0][k] + (1.0 - y) * dU_RAD1[nl[n]][ind0][k]);
-				//}
 			}
-
 
 			#if STAGGERED
 			U_2[B1] = 0.5 * (ps[nl[n]][ind0][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + ps[nl[n]][ind1][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
@@ -528,16 +522,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
-			if (pflag[nl[n]][ind0]) {
-				pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
-			}
 			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
-			//if (pflag[nl[n]][ind0]) {
-			//	pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
-			//}
 			#endif
-
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
@@ -553,6 +540,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 					}
 				}
 			}
+			#endif
+			#if(RAD_M1)
+			if (!pflag[nl[n]][ind0]) Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 		}
 	}

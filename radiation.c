@@ -1212,50 +1212,47 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
 	y = Qtsq / (Qdotn * Qdotn); //Definition from McKinney2013. Should only range [0,1].
-	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y); 
+	gammasq = (2. - y + sqrt(fabs(4. - 3. * y))) / (4. - 4. * y); 
 
 	// Get Ebar and p_rad as usual
 	pressure = -Qdotn / (4. * gammasq - 1.);
 	prim[0] = pressure * 3.; // Erad = 3*p_rad
 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
-	for (i = 1; i < 4; i++)prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+	for (i = 1; i < 4; i++)prim[i] = sqrt(fabs(gammasq)) * Qtcon[i] / (4. * pressure * gammasq);
 	
-	if (-Qdotn <= 0.) {
+	if ((-Qdotn) <= 0.) {
 		prim[0] = pow(10., -300.);
-		for (i = 1; i < 4; i++)prim[i] = 0.0;
+		for (i = 1; i < 4; i++) prim[i] = 0.0;
 		returnval = 1;
 	}
-	if (y<0 && y>-epsem) {
-		for (i = 1; i < 4; i++)prim[i] = 0.0;
+	if (y<=0.){
+		prim[0] = pow(10., -300.);
+		for (i = 1; i < 4; i++) prim[i] = 0.0;
 	}
-
 	if (y >= y_max) {
 		if (lim == BASIC) {
-			if (gammasq > GAMMAMAX * GAMMAMAX) {
-				f = sqrt((GAMMAMAX * GAMMAMAX - 1.) / (gammasq - 1.));
-				prim[1] *= f;
-				prim[2] *= f;
-				prim[3] *= f;
-			}
+			prim[0] = pow(10., -300.);
+			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+			prim[1] *= f;
+			prim[2] *= f;
+			prim[3] *= f;	
 		}
 		else if (lim == TYPE2) {
 			Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + pow(10., -150.));
 			for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
 			
 			qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-			if (qsq < 0.) qsq = 1.E-10; // set floor
+
 			gammasq = sqrt(1. + qsq);
 
-			if (gammasq > GAMMAMAX * GAMMAMAX) {
-				f = sqrt((GAMMAMAX * GAMMAMAX - 1.) / (gammasq - 1.));
-				prim[1] *= f;
-				prim[2] *= f;
-				prim[3] *= f;
-			}
+			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+			prim[1] *= f;
+			prim[2] *= f;
+			prim[3] *= f;
 			
 			Qdotn = -(pow(10., -150.) + sqrt(Qtsq / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX * GAMMAMAX - 1.);
+			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad
 		}
 	}
@@ -1266,12 +1263,12 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 void calc_ymax(void) {
 	int keep_iterating, n_iter;
 	double E_old, E_new, errx, dEdy, y_new, y_old;
-	keep_iterating = 1;
+	keep_iterating = 0;
 	n_iter = 0;
-	y_old = 0.98; //Gives gamma=25
+	y_old = 0.999998; //Gives gamma=25
 
 	//Calculate deviation from 0
-	E_old = GAMMAMAX * GAMMAMAX - (2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old);
+	E_old = GAMMAMAX_RAD * GAMMAMAX_RAD - (2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old);
 
 	while (keep_iterating) {	
 		//Calculate gradient dEdy
@@ -1281,12 +1278,12 @@ void calc_ymax(void) {
 		y_new = y_old - (E_old) / dEdy;
 
 		//Calculate deviation from 0
-		E_new = GAMMAMAX * GAMMAMAX - (2.0 - y_new + sqrt(4.0 - 3.0 * y_new)) / (4.0 - 4.0 * y_new);
+		E_new = GAMMAMAX_RAD * GAMMAMAX_RAD - (2.0 - y_new + sqrt(4.0 - 3.0 * y_new)) / (4.0 - 4.0 * y_new);
 
 		/****************************************/
 		/* Calculate the convergence criterion for iterated variables */
 		/****************************************/
-		errx = fabs(E_new) / (GAMMAMAX * GAMMAMAX);
+		errx = fabs(E_new) / (GAMMAMAX_RAD * GAMMAMAX_RAD);
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
@@ -1301,5 +1298,7 @@ void calc_ymax(void) {
 
 		n_iter++;
 	}   // END of while(keep_iterating)
-	y_max = y_new;
+	y_max = y_old;
+
+	fprintf(stderr, "y_max set to %f and %f \n", y_max, sqrt((2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old)));
 }

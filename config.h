@@ -51,6 +51,7 @@ Physical Parameters section
 
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
+#define GAMMAMAX_RAD (500.)
 
 /*Runtime in hours*/
 #define RUNTIME (24.0)
@@ -155,7 +156,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 500.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.9)
+#define COUR (0.8)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -188,8 +189,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (1)
-#define LAXF  (0)
+#define HLLF  (0)
+#define LAXF  (1)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)

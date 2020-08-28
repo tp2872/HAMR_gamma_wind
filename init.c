@@ -250,6 +250,12 @@ void init_thindisk()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+				#if(RAD_M1)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = pow(10., -300.);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
+				#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			* Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -497,6 +503,12 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
+				#if(RAD_M1)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = pow(10., -5.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
+				#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -554,6 +566,9 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
+				#if(RAD_M1)
+				//init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+				#endif
 
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
@@ -561,12 +576,7 @@ void init_torus()
 			}
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;
-
-			#if(RAD_M1)
-			//Solve for radiation pressure in ICs
-			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			#endif
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;	
 		}
 	}
 	a = temp;
@@ -587,7 +597,17 @@ void init_torus()
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-			
+
+			#if(RAD_M1)
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] /= rhomax;
+			//Solve for radiation pressure in ICs
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1];
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2];
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3];
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			#endif
+
 			//Calculate optical depth of one cell
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			#if(D3>1)
@@ -596,9 +616,8 @@ void init_torus()
 			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
 			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_emmit = calc_kappa_emmit(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_es+ kappa_abs+ kappa_emmit)*cell_size;
+			tau = (kappa_es+ kappa_abs)*cell_size;
 			if (tau > taumax) {
 				#pragma omp critical
 				taumax = tau;
@@ -683,7 +702,7 @@ void init_rad_pres(double pi[NPR]) {
 		pi[UU] = pi[RHO]*T_new;
 		pi[UU_RAD] = 1. / 3. * arad*pow(T_new,4.);
 	}
-	//if(pi[RHO]>0.1)fprintf(stderr, "arad: %f old: %f new: %f test: %f \n",log10(T_new*C_CGS*C_CGS* MH_CGS/BOLTZ_CGS), ptot, pi[UU_RAD]+ pi[UU], log10(pi[UU] / pi[UU_RAD]));
+
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
