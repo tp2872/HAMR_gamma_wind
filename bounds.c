@@ -168,10 +168,6 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 			for (j = N2_GPU_offset[n]-N2G; j < N2_GPU_offset[n] + BS_2+N2G; j++){
 				for (z = N3_GPU_offset[n]-N3G; z < N3_GPU_offset[n] + BS_3+N3G; z++){
-					#if( RESCALE )
-					get_geometry(0, j, CENT, &geom);
-					rescale(prim[0][j], FORWARD, 1, 0, j, CENT, &geom);
-					#endif
 					//#pragma omp   simd
 					for (i = -N1G; i < 0; i++){
 						for (k = 0; k < NPR; k++){
@@ -184,14 +180,6 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						#endif
 						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, 0, j, z)];
 					}
-					#if( RESCALE )
-					get_geometry(0, j, CENT, &geom);
-					rescale(prim[0][j], REVERSE, 1, 0, j, CENT, &geom);
-					get_geometry(-1, j, CENT, &geom);
-					rescale(prim[-1][j], REVERSE, 1, -1, j, CENT, &geom);
-					get_geometry(-2, j, CENT, &geom);
-					rescale(prim[-2][j], REVERSE, 1, -2, j, CENT, &geom);
-					#endif
 				}
 			}
 		}
@@ -204,11 +192,6 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 			#pragma omp for collapse(2) schedule(static, (BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)	
 			for (j = N2_GPU_offset[n] - N2G; j < N2_GPU_offset[n] + BS_2 + N2G; j++){
 				for (z = N3_GPU_offset[n] - N3G; z < N3_GPU_offset[n] + BS_3 + N3G; z++){
-					#if( RESCALE )
-					get_geometry(N1 - 1, j, CENT, &geom);
-					rescale(prim[N1 - 1][j], FORWARD, 1, N1 - 1, j, CENT, &geom);
-					#endif
-					
 					for (i = N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]); i < N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) + N1G; i++){
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)][k];
 						pflag[nl[n]][index_3D(n, i, j, z)] = pflag[nl[n]][index_3D(n, N1 * pow(1 + REF_1, block[n][AMR_LEVEL1]) - 1, j, z)];
@@ -218,14 +201,6 @@ void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 						}
 						#endif
 					}
-					#if( RESCALE )
-					get_geometry(N1 - 1, j, CENT, &geom);
-					rescale(prim[N1 - 1][j], REVERSE, 1, N1 - 1, j, CENT, &geom);
-					get_geometry(N1, j, CENT, &geom);
-					rescale(prim[N1][j], REVERSE, 1, N1, j, CENT, &geom);
-					get_geometry(N1 + 1, j, CENT, &geom);
-					rescale(prim[N1 + 1][j], REVERSE, 1, N1 + 1, j, CENT, &geom);
-					#endif
 				}
 			}
 		}
@@ -409,6 +384,9 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 					for (j = -N2G; j < 0; j++) {
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.;
+						#if(RAD_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.;
+						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
 					}
 				}
@@ -423,6 +401,9 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 				for (z = -N3G + N3_GPU_offset[n]; z < BS_3 + N3_GPU_offset[n] + N3G; z++) {
 					for (j = N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]); j < N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) + N2G; j++) {
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.;
+						#if(RAD_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.;
+						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.;
 					}
 				}
@@ -447,6 +428,10 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, -j - 1, (z + BS_3 / 2) % BS_3)][k];
 						prim[nl[n]][index_3D(n, i, j, z)][U2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
+						#if(RAD_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] *= -1.0;
+						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
 
@@ -473,9 +458,13 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 						PLOOP prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1 , (z + BS_3 / 2) % BS_3)][k];
 						prim[nl[n]][index_3D(n, i, j , z)][U2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][U3] *= -1.0;
+						#if(RAD_M1)
+						prim[nl[n]][index_3D(n, i, j, z)][U2_RAD] *= -1.0;
+						prim[nl[n]][index_3D(n, i, j, z)][U3_RAD] *= -1.0;
+						#endif
 						prim[nl[n]][index_3D(n, i, j, z)][B2] *= -1.0;
 						prim[nl[n]][index_3D(n, i, j, z)][B3] *= -1.0;
-
+						#
 						#if(STAGGERED)
 						ps[nl[n]][index_3D(n, i, j, z)][1] = ps[nl[n]][index_3D(n, i, 2 * N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - j - 1, (z + BS_3 / 2) % BS_3)][1];
 						#if(N3>1)
@@ -491,7 +480,7 @@ void bound_prim_trans(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps
 
 void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type){
     struct of_geom geom ;
-    double ucon[NDIM] ;
+    double ucon[NDIM];
     int j,k ;
     double alpha,beta1,gamma,vsq ;
 
@@ -527,8 +516,37 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 
 		/* done */
 	}
-	else{
-		return;
+
+	#if(RAD_M1)
+	double ucon_rad[NDIM], gamma_rad, vsq_rad;
+	ucon_calc_rad(pr, &geom, ucon_rad);
+	if (((ucon_rad[1] > 0.) && (type == 0)) || ((ucon_rad[1] < 0.) && (type == 1))) {
+		/* find gamma and remove it from primitives */
+		if (gamma_calc_rad(pr, &geom, &gamma_rad)) {
+			fprintf(stderr, "\ninflow_check(): gamma failure \n");
+			fail(FAIL_GAMMA);
+		}
+		pr[U1_RAD] /= gamma_rad;
+		pr[U2_RAD] /= gamma_rad;
+		pr[U3_RAD] /= gamma_rad;
+
+		/* reset radial velocity so radial 4-velocity is zero */
+		pr[U1_RAD] = beta1 / alpha;
+
+		/* now find new gamma and put it back in */
+		vsq_rad = 0.;
+		SLOOP vsq_rad += geom.gcov[j][k] * pr[U1_RAD + j - 1] * pr[U1_RAD + k - 1];
+		if (fabs(vsq_rad) < 1.e-13)  vsq_rad = 1.e-13;
+		if (vsq_rad >= 1.) {
+			vsq_rad = 1. - 1. / (GAMMAMAX * GAMMAMAX);
+		}
+		gamma_rad = 1. / sqrt(1. - vsq_rad);
+		pr[U1_RAD] *= gamma_rad;
+		pr[U2_RAD] *= gamma_rad;
+		pr[U3_RAD] *= gamma_rad;
+
+		/* done */
 	}
+	#endif
 }
 

@@ -182,14 +182,6 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 		dU[U3] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
 	}
 
-	//Add disk cooling term
-	#if(COOL_DISK)
-	double X[NDIM],r,th,phi;
-	coord(n, ii,jj, zz, CENT,X) ;
-	bl_coord(X,&r,&th, &phi) ;
-	misc_source(ph, ii, jj, geom, &q, dU,r, Dt) ;
-	#endif
-
 	//Add M1 radiation source terms
 	#if(RAD_M1)
 	get_state_rad(ph, geom, &q_rad);
@@ -207,11 +199,19 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	}
 	#endif
 
+	//Add disk cooling term
+	#if(COOL_DISK)
+	double X[NDIM], r, th, phi;
+	coord(n, ii, jj, zz, CENT, X);
+	bl_coord(X, &r, &th, &phi);
+	misc_source(ph, ii, jj, geom, &q, dU, r, Dt);
+	#endif
+
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
 }
 
-/* add in (implicit) radiation 4-force source term to equations of motion */
+/* Add implicit radiation 4-force source term to equations of motion */
 void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU)
 {
 	#if(RAD_M1)
@@ -246,7 +246,6 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 
 	#if(DOKTOT)
 	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
-	
 	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#else
@@ -361,18 +360,18 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	int j ;
 
 	alpha = 1./sqrt(-geom->gcon[0][0]) ;
-	 #pragma ivdep
+	#pragma ivdep
 	SLOOPA beta[j] = geom->gcon[0][j]*alpha*alpha ;
 
 	if( gamma_calc(pr,geom,&gamma) ) { 
-	  fflush(stderr);
-	  fprintf(stderr,"\nucon_calc(): gamma failure \n");
-	  fflush(stderr);
-	  fail(FAIL_GAMMA);
+		fflush(stderr);
+		fprintf(stderr,"\nucon_calc(): gamma failure \n");
+		fflush(stderr);
+		fail(FAIL_GAMMA);
 	}
 
 	ucon[0] = gamma/alpha ;
-	 #pragma ivdep
+	#pragma ivdep
 	SLOOPA ucon[j] = pr[U1+j-1] - gamma*beta[j]/alpha ;
 
 	return ;
@@ -406,21 +405,21 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 /* find gamma-factor wrt normal observer */
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {
-        double qsq ;
-        qsq =  geom->gcov[1][1]*pr[U1]*pr[U1]  + geom->gcov[2][2]*pr[U2]*pr[U2] + geom->gcov[3][3]*pr[U3]*pr[U3] + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]+ geom->gcov[1][3]*pr[U1]*pr[U3] + geom->gcov[2][3]*pr[U2]*pr[U3]);
-        if( qsq < 0. ){
-          if( fabs(qsq) > 1.E-10 ){ // then assume not just machine precision
-            fprintf(stderr,"gamma_calc():  failed: qsq = %28.18e \n", qsq);
-            fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
-	    *gamma = 1.;
-	    return (1);
-	  }
-          else qsq=1.E-10; // set floor
-        }
+	double qsq ;
+	qsq =  geom->gcov[1][1]*pr[U1]*pr[U1]  + geom->gcov[2][2]*pr[U2]*pr[U2] + geom->gcov[3][3]*pr[U3]*pr[U3] + 2.*(geom->gcov[1][2]*pr[U1]*pr[U2]+ geom->gcov[1][3]*pr[U1]*pr[U3] + geom->gcov[2][3]*pr[U2]*pr[U3]);
+	if( qsq < 0. ){
+		if( fabs(qsq) > 1.E-10 ){ // then assume not just machine precision
+			fprintf(stderr,"gamma_calc():  failed: qsq = %28.18e \n", qsq);
+			fprintf(stderr,"v[1-3] = %28.18e %28.18e %28.18e  \n",pr[U1],pr[U2],pr[U3]);
+			*gamma = 1.;
+			return (1);
+		}
+		else qsq=1.E-10; // set floor
+	}
 
-        *gamma = sqrt(1. + qsq) ;
+	*gamma = sqrt(1. + qsq) ;
 
-        return(0) ;
+	return(0) ;
 }
 
 /* find gamma-factor wrt normal observer */
@@ -455,7 +454,7 @@ int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 
 void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin, int a, int b, int c)
 {
-	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2,rho,u ;
+	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2;
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
 	double Asq,Bsq,Au,Bu,AB,Au2,Bu2,AuBu,A,B,C ;
 	int j ;
@@ -472,12 +471,10 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon,q->bcov) ;
-	rho = pr[RHO] ;
-	u = pr[UU] ;
-	EF = rho + gam*u ;
+	EF = pr[RHO] + GAMMA* pr[UU];
 	EE = bsq + EF ;
 	va2 = bsq/EE ;
-	cs2 = gam*(gam - 1.)*u/EF ;
+	cs2 = GAMMA*(GAMMA - 1.)* pr[UU] /EF ;
 	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */
 
 	/* check on it! */
@@ -538,7 +535,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 
 //Calculate radiative wave velocity
 void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
-	double discr, vp, vm, tau, kappa_tot, crad2;
+	double discr, vp, vm, tau, kappa_tot, crad, crad2;
 	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	int j;
@@ -556,7 +553,8 @@ void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struc
 	/* find radiation wave speed */
 	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
 	tau = kappa_tot*sqrt(geom->gcov[js][js])*dx;
-	crad2 = MY_MIN(1.0 / 3.0, pow(4. / (3.*tau),2.));
+	crad = MY_MIN(1.0 / 3.0, pow(4. / (3. * tau), 2.));
+	crad2 = crad * crad;
 
 	/* check on it! */
 	if (crad2 < 0.) {
@@ -585,7 +583,14 @@ void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struc
 	discr = B*B - 4.*A*C;
 	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
 	else if (discr < -1.e-10) {
-		fprintf(stderr, "Failed in vchar_rad");
+		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, crad2);
+		fprintf(stderr, "\n\t q->ucon_rad: %g %g %g %g\n", q_rad->ucon[0], q_rad->ucon[1],
+			q_rad->ucon[2], q_rad->ucon[3]);
+		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
+			Acon[2], Acon[3]);
+		fprintf(stderr, "\n\t Bcon: %g %g %g %g\n", Bcon[0], Bcon[1],
+			Bcon[2], Bcon[3]);
+		fail(FAIL_VCHAR_DISCR);
 		exit(0);
 		discr = 0.;
 	}

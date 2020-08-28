@@ -351,17 +351,19 @@ void utoprim_M1_1(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-				U_1[nl[n]][ind0][k] = (3. * y - 1.) / y * U_n[nl[n]][ind0][k] + (1. - 2. * y) / y * U_0[nl[n]][ind0][k] + Dt * (
-				#if( N1G > 0 )
-				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
-				#endif
-				#if( N2G > 0 )
-				- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
-				#endif
-				#if( N3G > 0 )
-				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
-				#endif	
-				+ dU[k]);
+				//if (k <= KTOT) {
+					U_1[nl[n]][ind0][k] = (3. * y - 1.) / y * U_n[nl[n]][ind0][k] + (1. - 2. * y) / y * U_0[nl[n]][ind0][k] + Dt * (
+					#if( N1G > 0 )
+					- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
+					#endif
+					#if( N2G > 0 )
+					- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
+					#endif
+					#if( N3G > 0 )
+					- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+					#endif	
+					+ dU[k]);
+				//}
 			}
 
 			#if STAGGERED
@@ -393,6 +395,7 @@ void utoprim_M1_1(double Dt, int n){
 				}
 			}
 			#endif
+			if (!pflag[nl[n]][ind0]) Rtoprim(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], BASIC);
 
 			//Debug code, remove!
 			PLOOP{
@@ -407,9 +410,11 @@ void utoprim_M1_2(double Dt, int n){
 	double ndt, ndt1, ndt2, ndt3, U_2[NPR], dU[NPR];
 	double y = 1.0 - 1.0 / sqrt(2.0);
 	struct of_geom geom;
+	struct of_state q;
+	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, dU, U_2, geom, ind0, ind1, ind2, ind3)
+	#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, q, q_rad, dU, U_2, geom, ind0, ind1, ind2, ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -420,21 +425,27 @@ void utoprim_M1_2(double Dt, int n){
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
+			get_state(ph[nl[n]][ind0], &geom, &q);
+			get_state_rad(ph[nl[n]][ind0], &geom, &q_rad);
+			primtoflux(ph[nl[n]][ind0], &q, &q_rad, 0, &geom, U_1[nl[n]][ind0]);
 
 			#pragma ivdep
 			PLOOP{
-				U_2[k] = 0.5 * U_n[nl[n]][ind0][k] + 0.5 * U_1[nl[n]][ind0][k] + Dt * 0.5 * (
-				#if( N1G > 0 )
-				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
-				#endif
-				#if( N2G > 0 )
-				- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
-				#endif
-				#if( N3G > 0 )
-				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
-				#endif	
-				+ dU[k] + 2.0 * y * dU_RAD0[nl[n]][ind0][k] + (1.0 - y) * dU_RAD1[nl[n]][ind0][k]);
+				//if (k <= KTOT) {
+					U_2[k] = 0.5 * U_n[nl[n]][ind0][k] + 0.5 * U_1[nl[n]][ind0][k] + Dt * 0.5 * (
+					#if( N1G > 0 )
+					- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
+					#endif
+					#if( N2G > 0 )
+					- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
+					#endif
+					#if( N3G > 0 )
+					- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+					#endif	
+					+ dU[k] + 2.0 * y * dU_RAD0[nl[n]][ind0][k] + (1.0 - y) * dU_RAD1[nl[n]][ind0][k]);
+				//}
 			}
+
 
 			#if STAGGERED
 			U_2[B1] = 0.5 * (ps[nl[n]][ind0][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + ps[nl[n]][ind1][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);

@@ -1184,10 +1184,8 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp, lim);
 
 	/* Transform new primitive variables back if there was no problem : */
-	if (ret == 0) {
-		for (i = 0; i <= U3_RAD - UU_RAD; i++) {
-			prim[i + NPR_U] = prim_tmp[i];
-		}
+	for (i = 0; i <= U3_RAD - UU_RAD; i++) {
+		prim[i + NPR_U] = prim_tmp[i];
 	}
 
 	return(ret);

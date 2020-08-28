@@ -329,7 +329,7 @@ void dump_block(MPI_File *fp, int n)
 
 		#if(RAD_M1)
 		get_state_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, &q_rad);
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + 9] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_RAD];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + 9] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_RAD];
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + 10] = (float)q_rad.ucon[0];
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + 11] = (float)q_rad.ucon[1];
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + 12] = (float)q_rad.ucon[2];
