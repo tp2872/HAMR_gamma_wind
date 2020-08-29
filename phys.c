@@ -534,12 +534,13 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 }
 
 //Calculate radiative wave velocity
-void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
-	double discr, vp, vm, tau, kappa_tot, crad, crad2;
+void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
+	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd;
 	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	int j;
 
+	/*Do preliminary calculations*/
 	#pragma ivdep
 	DLOOPA Acov[j] = 0.;
 	Acov[js] = 1.;
@@ -550,10 +551,13 @@ void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struc
 	Bcov[0] = 1.;
 	raise(Bcov, geom, Bcon);
 
+	Asq = dot(Acon, Acov);
+	Bsq = dot(Bcon, Bcov);
+	AB = dot(Acon, Bcov);
+
 	/* find radiation wave speed */
 	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
 	tau = kappa_tot*sqrt(geom->gcov[js][js])*dx;
-	crad = MY_MIN(1.0 / 3.0, pow(4. / (3. * tau), 2.));
 	crad2 = 1.0 / 3.0;
 
 	/* check on it! */
@@ -567,11 +571,10 @@ void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struc
 	}
 
 	/* now require that speed of wave measured by observer q->ucon is crad2 */
-	Asq = dot(Acon, Acov);
-	Bsq = dot(Bcon, Bcov);
+
 	Au = dot(Acov, q_rad->ucon);
 	Bu = dot(Bcov, q_rad->ucon);
-	AB = dot(Acon, Bcov);
+
 	Au2 = Au*Au;
 	Bu2 = Bu*Bu;
 	AuBu = Au*Bu;
@@ -600,13 +603,71 @@ void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struc
 	vm = -(-B - discr) / (2.*A);
 
 	if (vp > vm) {
-		*vmax = vp;
-		*vmin = vm;
+		cmax_rad = vp;
+		cmin_rad = vm;
 	}
 	else {
-		*vmax = vm;
-		*vmin = vp;
+		cmax_rad = vm;
+		cmin_rad = vp;
 	}
+
+	/* find radiation wave speed */
+	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
+	tau = kappa_tot * sqrt(geom->gcov[js][js]) * dx;
+	crad2 = MY_MIN(pow(4. / (3. * tau), 2.), 0.999999999);
+
+	/* check on it! */
+	if (crad2 < 0.) {
+		fail(FAIL_COEFF_NEG);
+		crad2 = SMALL;
+	}
+	if (crad2 > 1.) {
+		fail(FAIL_COEFF_SUP);
+		crad2 = 1.;
+	}
+
+	/* now require that speed of wave measured by observer q->ucon is crad2 */
+	Au = dot(Acov, q->ucon);
+	Bu = dot(Bcov, q->ucon);
+	Au2 = Au * Au;
+	Bu2 = Bu * Bu;
+	AuBu = Au * Bu;
+
+	A = Bu2 - (Bsq + Bu2) * crad2;
+	B = 2. * (AuBu - (AB + AuBu) * crad2);
+	C = Au2 - (Asq + Au2) * crad2;
+
+	discr = B * B - 4. * A * C;
+	if ((discr < 0.0) && (discr > -1.e-10)) discr = 0.0;
+	else if (discr < -1.e-10) {
+		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, crad2);
+		fprintf(stderr, "\n\t q->ucon_rad: %g %g %g %g\n", q_rad->ucon[0], q_rad->ucon[1],
+			q_rad->ucon[2], q_rad->ucon[3]);
+		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
+			Acon[2], Acon[3]);
+		fprintf(stderr, "\n\t Bcon: %g %g %g %g\n", Bcon[0], Bcon[1],
+			Bcon[2], Bcon[3]);
+		fail(FAIL_VCHAR_DISCR);
+		exit(0);
+		discr = 0.;
+	}
+
+	discr = sqrt(discr);
+	vp = -(-B + discr) / (2. * A);
+	vm = -(-B - discr) / (2. * A);
+
+	if (vp > vm) {
+		cmax_mhd = vp;
+		cmin_mhd = vm;
+	}
+	else {
+		cmax_mhd = vm;
+		cmin_mhd = vp;
+	}
+
+	/*Set velocity as minimum of optically thin and optically thick limit*/
+	*vmax = MY_MIN(cmax_mhd, cmax_rad);
+	*vmin = MY_MAX(cmin_mhd, cmin_rad);
 
 	return;
 }

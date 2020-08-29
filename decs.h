@@ -912,7 +912,7 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance);
 void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, int a, int b, int c);
-void vchar_rad(double * restrict pr, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx);
+void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx);
 void step_ch_debug();
 void GPU_benchmark(void);
 void GPU_init(void);

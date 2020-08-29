@@ -1204,7 +1204,7 @@ int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
-	y = Qtsq / (Qdotn*Qdotn); //Definition from McKinney2013. Should only range [0,1].
+	y = Qtsq / (Qdotn*Qdotn+pow(10.,-50)); //Definition from McKinney2013. Should only range [0,1].
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y); 
 
 	// Get Ebar and p_rad as usual
@@ -1232,39 +1232,18 @@ int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	//	//returnval = 1;
 	}
 	if (y > y_max ) {
-		if (lim == BASIC) {
-			/*qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
-			gammasq = 1. + qsq;
-			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-			
-			prim[1] *= f;
-			prim[2] *= f;
-			prim[3] *= f;	*/
+		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + pow(10., -150.));
+		for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
+		qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
+		if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+		gammasq = 1. + qsq;
 
-			Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + pow(10., -150.));
-			for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
-			qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
-			gammasq = 1. + qsq;
+		f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+		prim[1] *= f;
+		prim[2] *= f;
+		prim[3] *= f;
 
-			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-			prim[1] *= f;
-			prim[2] *= f;
-			prim[3] *= f;
-		}
-		else{
-			Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + pow(10., -150.));
-			for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
-			qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
-			gammasq = 1. + qsq;
-			
-			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-			prim[1] *= f;
-			prim[2] *= f;
-			prim[3] *= f;
-			
+		if (lim == TYPE2) {
 			Qdotn = -(pow(10., -150.) + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad		

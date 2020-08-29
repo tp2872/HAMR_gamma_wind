@@ -653,8 +653,8 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 
 					#if(RAD_M1)
-					vchar_rad(p_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
-					vchar_rad(p_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
+					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
+					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
 
 					cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
