@@ -81,12 +81,19 @@ void step_ch()
 		}
 
 		/*for (n = 0; n < n_active; n++){
-			if (pflag[n_ord[n]][index_3D(n_ord[n], N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] == 100){
-				if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
-				else fixup_utoprim(ph, n_ord[n]);
-				pflag[n_ord[n]][index_3D(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
-			}
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
+			else fixup_utoprim(ph, n_ord[n]);
+			pflag[n_ord[n]][index_3D(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
 		}*/
+
+		#if(RAD_M1)
+		for (n = 0; n < n_active; n++){
+			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim_rad(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
+			else fixup_utoprim_rad(ph, n_ord[n]);
+			pflag_rad[n_ord[n]][index_3D(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
+		}
+		#endif
+
 		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
 		nstep++;
 	}
@@ -315,14 +322,7 @@ void utoprim_M1_0(double Dt, int n)
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
 				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-				pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
-
-				/*//Debug code, remove!
-				PLOOP{
-					U_0[nl[n]][ind0][k] = U_n[nl[n]][ind0][k];
-					dU_RAD0[nl[n]][ind0][k] = 0.;
-					ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
-				}*/
+				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
 			}
 		}
 	}
@@ -372,32 +372,7 @@ void utoprim_M1_1(double Dt, int n){
 			#endif
 
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
-			
-			//Debug code, remove!
-			/*pflag[nl[n]][ind0] = Utoprim_2d(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
-			#if( DO_FONT_FIX ) 
-			if (pflag[nl[n]][ind0]) {
-				failimage[nl[n]][ind0][0]++;
-				#if DOKTOT
-				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
-				#endif
-				if (pflag[nl[n]][ind0]) {
-					failimage[nl[n]][ind0][1]++;
-					if (pflag[nl[n]][ind0]) {
-						pflag[nl[n]][ind0] = Utoprim_1dfix1(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
-						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-						failimage[nl[n]][ind0][2]++;
-					}
-				}
-			}
-			#endif
-			if (!pflag[nl[n]][ind0]) Rtoprim(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], BASIC);
-
-			//Debug code, remove!
-			PLOOP{
-				dU_RAD1[nl[n]][ind0][k] = 0.;
-			}*/
+			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
 		}
 	}
 }
@@ -466,7 +441,7 @@ void utoprim_M1_2(double Dt, int n){
 				}
 			}
 			#endif
-			Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
+			pflag_rad[nl[n]][ind0] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
 		}
 	}
 }
@@ -474,14 +449,14 @@ void utoprim_M1_2(double Dt, int n){
 void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {
 	int i, j, z, k;
-	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR], pi_tmp[NPR];
+	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR];
 	double y = 1.0 - 1.0 / sqrt(2.0);
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, pi_tmp, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -520,15 +495,12 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			#endif
 			
-
-
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			#endif
 
-			PLOOP pi_tmp[k] = pi[nl[n]][ind0][k] + pb[nl[n]][ind0][k];
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
@@ -546,7 +518,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#endif
 			#if(RAD_M1)
-			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
+			pflag_rad[nl[n]][ind0] = Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 		}
 	}

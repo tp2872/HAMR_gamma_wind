@@ -75,6 +75,7 @@ double(*restrict F1[NB_LOCAL])[NPR];
 double(*restrict F2[NB_LOCAL])[NPR];
 double(*restrict F3[NB_LOCAL])[NPR];
 int(*restrict pflag[NB_LOCAL]);
+int(*restrict pflag_rad[NB_LOCAL]);
 double(*restrict conn[NB_LOCAL])[NDIM][NDIM][NDIM];
 double(*restrict gcon[NB_LOCAL])[NPG][NDIM][NDIM];
 double(*restrict gcov[NB_LOCAL])[NPG][NDIM][NDIM];

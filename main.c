@@ -347,6 +347,9 @@ void set_arrays(int n)
 	F2[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	F3[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	pflag[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(int));
+	#if(RAD_M1)
+	pflag_rad[nl[n]] = (int(*))malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(int));
+	#endif
 	#if(CPU_OPENMP || 1)
 	#if(STAGGERED)
 	dE[nl[n]] = (double(*)[2][NDIM][NDIM])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[2][NDIM][NDIM]));
@@ -946,6 +949,7 @@ void free_arrays(int n){
 	free(U_1[nl[n]]);
 	free(dU_RAD0[nl[n]]);
 	free(dU_RAD1[nl[n]]);
+	free(pflag_rad[nl[n]]);
 	#else
 	free(U[nl[n]]);
 	#endif

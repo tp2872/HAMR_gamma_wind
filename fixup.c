@@ -261,7 +261,7 @@ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 /* 2468+cells in 3rd dimension  */
 #define AVG6_1(pr,i,j,z,k, n) (1./6.*(pr[nl[n]][index_3D(n ,i,j+1,z)][k]+pr[nl[n]][index_3D(n ,i,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j,z)][k]+pr[nl[n]][index_3D(n ,i+1,j,z)][k] +pr[nl[n]][index_3D(n ,i,j,z+1)][k]+pr[nl[n]][index_3D(n ,i,j,z-1)][k]))
 
-/* 2468+cells in 3rd dimension  */
+/* 1357+cells in 3rd dimension  */
 #define AVG6_2(pr,i,j,z,k, n) (1./6.*(pr[nl[n]][index_3D(n ,i+1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i+1,j-1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j+1,z)][k]+pr[nl[n]][index_3D(n ,i-1,j-1,z)][k] +pr[nl[n]][index_3D(n ,i,j,z+1)][k]+pr[nl[n]][index_3D(n ,i,j,z-1)][k]))
 
 /* + shaped,  Linear interpolation in X1 or X2 directions using only neighbors in these direction */
@@ -303,14 +303,10 @@ void fixup_utoprim(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) 	{
 			if (pflag[nl[n]][index_3D(n ,i, j, z)] != 0) {
 				//fprintf(stderr, "i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);
-				pf[1] = !pflag[nl[n]][index_3D(n ,i - 1, j + 1, z)];   pf[2] = !pflag[nl[n]][index_3D(n ,i, j + 1, z)];  pf[3] = !pflag[nl[n]][index_3D(n ,i + 1, j + 1, z)];
+				pf[1] = !pflag[nl[n]][index_3D(n ,i - 1, j + 1, z)];   pf[2] = !pflag[nl[n]][index_3D(n ,i, j + 1, z)];  pf[3] = !pflag[nl[n]][index_3D(n ,i + D1, j + D2, z)];
 				pf[8] = !pflag[nl[n]][index_3D(n ,i - 1, j, z)];                           pf[4] = !pflag[nl[n]][index_3D(n ,i + 1, j, z)];
-				pf[7] = !pflag[nl[n]][index_3D(n ,i - 1, j - 1, z)];   pf[6] = !pflag[nl[n]][index_3D(n ,i, j - 1, z)];  pf[5] = !pflag[nl[n]][index_3D(n ,i + 1, j - 1, z)];
-				#if(N3>1)
-				pf[9] = !pflag[nl[n]][index_3D(n ,i, j, z + 1)]; pf[10] = !pflag[nl[n]][index_3D(n ,i, j, z - 1)];
-				#else
-				pf[9]=0;						      pf[10]=0;
-				#endif
+				pf[7] = !pflag[nl[n]][index_3D(n ,i - 1, j - 1, z)];   pf[6] = !pflag[nl[n]][index_3D(n ,i, j - 1, z)];  pf[5] = !pflag[nl[n]][index_3D(n ,i + D1, j - D2, z)];
+				pf[9] = !pflag[nl[n]][index_3D(n ,i, j, z + D3)]; pf[10] = !pflag[nl[n]][index_3D(n ,i, j, z - D3)];
 				/* Now the pf's  are true if they represent good points */
 
 				//      if(      pf[1]&&pf[2]&&pf[3]&&pf[4]&&pf[5]&&pf[6]&&pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = AVG8(            pv,i,j,k)                   ; }
@@ -361,6 +357,75 @@ void fixup_utoprim(double((* restrict pv[NB_LOCAL])[NPR]), int n)
   return;
 }
 
+void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n)
+{
+	int i, j, z, k;
+	int pf[11];
+
+	/* Fix the interior points first */
+	#pragma omp parallel shared(pflag, pv) private(i,j,z,k, pf)
+	{
+		#pragma omp for schedule(static,(BS_1+D1)*(BS_2)*(BS_3)/nthreads)
+		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
+			if (pflag_rad[nl[n]][index_3D(n, i, j, z)] != 0) {
+				//fprintf(stderr, "i: %d j: %d, pflag: %d \n", i, j, pflag[i][j]);
+				pf[1] = !pflag_rad[nl[n]][index_3D(n, i - 1, j + 1, z)];   pf[2] = !pflag_rad[nl[n]][index_3D(n, i, j + 1, z)];  pf[3] = !pflag[nl[n]][index_3D(n, i + D1, j + D2, z)];
+				pf[8] = !pflag_rad[nl[n]][index_3D(n, i - 1, j, z)];                           pf[4] = !pflag_rad[nl[n]][index_3D(n, i + 1, j, z)];
+				pf[7] = !pflag_rad[nl[n]][index_3D(n, i - 1, j - 1, z)];   pf[6] = !pflag_rad[nl[n]][index_3D(n, i, j - 1, z)];  pf[5] = !pflag[nl[n]][index_3D(n, i + D1, j - D2, z)];
+				pf[9] = !pflag_rad[nl[n]][index_3D(n, i, j, z + D3)]; pf[10] = !pflag_rad[nl[n]][index_3D(n, i, j, z - D3)];
+
+
+				/* Now the pf's  are true if they represent good points */
+
+				//      if(      pf[1]&&pf[2]&&pf[3]&&pf[4]&&pf[5]&&pf[6]&&pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = AVG8(            pv,i,j,k)                   ; }
+				//      else if(        pf[2]&&       pf[4]&&       pf[6]&&       pf[8] ){ FLOOP pv[i][j][k] = AVG4_1(          pv,i,j,k)                   ; }
+				//      else if( pf[1]&&       pf[3]&&       pf[5]&&       pf[7]        ){ FLOOP pv[i][j][k] = AVG4_2(          pv,i,j,k)                   ; }
+				//      else if(               pf[3]&&pf[4]&&              pf[7]&&pf[8] ){ FLOOP pv[i][j][k] = 0.5*(AVG2_1_X1X2(pv,i,j,k)+AVG2_X1(pv,i,j,k)); }
+				//      else if(        pf[2]&&pf[3]&&              pf[6]&&pf[7]        ){ FLOOP pv[i][j][k] = 0.5*(AVG2_1_X1X2(pv,i,j,k)+AVG2_X2(pv,i,j,k)); }
+				//      else if( pf[1]&&              pf[4]&&pf[5]&&              pf[8] ){ FLOOP pv[i][j][k] = 0.5*(AVG2_2_X1X2(pv,i,j,k)+AVG2_X1(pv,i,j,k)); }
+				//      else if( pf[1]&&pf[2]&&              pf[5]&&pf[6]               ){ FLOOP pv[i][j][k] = 0.5*(AVG2_2_X1X2(pv,i,j,k)+AVG2_X2(pv,i,j,k)); }
+				//      else if(               pf[3]&&                     pf[7]        ){ FLOOP pv[i][j][k] = AVG2_1_X1X2(     pv,i,j,k)                   ; }
+				//      else if( pf[1]&&                     pf[5]                      ){ FLOOP pv[i][j][k] = AVG2_2_X1X2(     pv,i,j,k)                   ; }
+				//      else if(        pf[2]&&                     pf[6]               ){ FLOOP pv[i][j][k] = AVG2_X2(         pv,i,j,k)                   ; }
+				//      else if(                      pf[4]&&                     pf[8] ){ FLOOP pv[i][j][k] = AVG2_X1(         pv,i,j,k)                   ; }
+
+				// Old way:
+				if (pf[2] && pf[4] && pf[6] && pf[8] && pf[9] && pf[10]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG6_1(pv, i, j, z, k, n);
+				}
+				else if (pf[1] && pf[3] && pf[5] && pf[7] && pf[9] && pf[10]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG6_2(pv, i, j, z, k, n);
+				}
+				else if (pf[2] && pf[4] && pf[6] && pf[8]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG4_1(pv, i, j, z, k, n);
+				}
+				else if (pf[1] && pf[3] && pf[5] && pf[7]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG4_2(pv, i, j, z, k, n);
+				}
+				else if (pf[2] && pf[6]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG2_X1(pv, i, j, z, k, n);
+				}
+				else if (pf[4] && pf[8]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG2_X2(pv, i, j, z, k, n);
+				}
+				else if (pf[9] && pf[10]) {
+					for (k = UU_RAD; k <= U3_RAD; k++) pv[nl[n]][index_3D(n, i, j, z)][k] = AVG2_X3(pv, i, j, z, k, n);
+				}
+				else {
+					failimage[nl[n]][index_3D(n, i, j, z)][4]++;
+					
+					/* if nothing better to do, then floor values*/
+					pv[nl[n]][index_3D(n, i, j, z)][UU_RAD] = pow(10.,-36.);
+					pv[nl[n]][index_3D(n, i, j, z)][U1_RAD] = 0.;
+					pv[nl[n]][index_3D(n, i, j, z)][U2_RAD] = 0.;
+					pv[nl[n]][index_3D(n, i, j, z)][U3_RAD] = 0.;
+				}
+				pflag_rad[nl[n]][index_3D(n, i, j, z)] = 0;                /* The cell has been fixed so we can use it for interpolation elsewhere */
+			}
+		}
+	}
+	return;
+}
 
 #if( DO_FONT_FIX ) 
 /***********************************************************************
