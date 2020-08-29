@@ -4,7 +4,7 @@
 void raise_g(double vcov[], double gcon[][NDIM], double vcon[]);
 void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
 void ncov_calc(double gcon[][NDIM], double ncov[]); 
-int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
+int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
 
 int implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom *geom, double dU[NPR], double Dt, double cell_size) {
 	double error_t=pow(10., 9.);
@@ -130,7 +130,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		//Calculate source term for U_i
 		source_rad(pb_old, geom, dU_old);
 
-		//Calculate itereated error at start of iteration
+		//Calculate iterated error at start of iteration
 		norm = (fabs(U_i[UU]) + fabs(U_i[UU]) + fabs(Dt * dU_old[UU])) * geom->g;
 		error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1]) / norm);
 		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2]) / norm);
@@ -148,9 +148,6 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2_RAD]) / norm);
 		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3_RAD]) / norm);
 		
-		//fprintf(stderr, "test: %f \n", log10(fabs(dU_old[UU])));
-		error_new[0] = pow(10, -13.);
-
 		//If we've reached the tolerance level, exit immediately
 		if ((fabs(error_new[0]) <= pow(10, -12.))) {
 			keep_iterating = 0;
@@ -1192,11 +1189,11 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 }
 
 // Limits radiation with either BASIC or TYPE2 approaches
-int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim)
+int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim)
 {
 	double Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq=0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
-	double gammasq, y, pressure, f, ymax;
+	double gammasq, gammasq2, y, pressure, f, ymax;
 	int i, returnval=0;
 
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
@@ -1211,41 +1208,51 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
-	y = Qtsq / (Qdotn * Qdotn); //Definition from McKinney2013. Should only range [0,1].
-	gammasq = (2. - y + sqrt(fabs(4. - 3. * y))) / (4. - 4. * y); 
+	y = Qtsq / (Qdotn*Qdotn); //Definition from McKinney2013. Should only range [0,1].
+	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y); 
 
 	// Get Ebar and p_rad as usual
 	pressure = -Qdotn / (4. * gammasq - 1.);
 	prim[0] = pressure * 3.; // Erad = 3*p_rad
 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
-	for (i = 1; i < 4; i++)prim[i] = sqrt(fabs(gammasq)) * Qtcon[i] / (4. * pressure * gammasq);
-	
-	if ((-Qdotn) <= 0.) {
-		prim[0] = pow(10., -300.);
-		for (i = 1; i < 4; i++) prim[i] = 0.0;
+	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+
+	if ((-Qdotn) <= 0. || isnan(-Qdotn)) {
+		prim[0] = pow(10., -36.);
+		y = 0.;
 		returnval = 1;
 	}
 	if (y<=0.){
-		prim[0] = pow(10., -300.);
 		for (i = 1; i < 4; i++) prim[i] = 0.0;
+		y = 0.;
 	}
-	if (y >= y_max) {
+	if (y > 1. || isnan(y)) {
+		prim[0] = pow(10., -36.);
+		prim[1] = 0.;
+		prim[2] = 0.;
+		prim[3] = 0.;
+		y = 0.;
+	}
+	if (y > y_max) {
+		returnval = 3;
 		if (lim == BASIC) {
-			prim[0] = pow(10., -300.);
+			qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
+			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+			gammasq = 1. + qsq;
 			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+			
 			prim[1] *= f;
 			prim[2] *= f;
 			prim[3] *= f;	
 		}
-		else if (lim == TYPE2) {
+		else{
 			Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + pow(10., -150.));
 			for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
-			
 			qsq = gcov[1][1] * prim[1] * prim[1] + gcov[2][2] * prim[2] * prim[2] + gcov[3][3] * prim[3] * prim[3] + 2. * (gcov[1][2] * prim[1] * prim[2] + gcov[1][3] * prim[1] * prim[3] + gcov[2][3] * prim[2] * prim[3]);
-
-			gammasq = sqrt(1. + qsq);
-
+			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+			gammasq = 1. + qsq;
+			
 			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
 			prim[1] *= f;
 			prim[2] *= f;
@@ -1253,10 +1260,9 @@ int Rtoprim_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 			
 			Qdotn = -(pow(10., -150.) + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-		}
+			prim[0] = pressure * 3.; // Erad = 3*p_rad		
+		}		
 	}
-
 	return(returnval);
 }
 
@@ -1275,7 +1281,7 @@ void calc_ymax(void) {
 		dEdy = (0.375 * y_old - 0.25 * sqrt(4.0 - 3.0 * y_old - 0.625) / (sqrt(4.0 - 3.0 * y_old) * (1.0 - y_old) * (1.0 - y_old)));
 
 		/* Make the newton step: */
-		y_new = y_old - (E_old) / dEdy;
+		y_new = MY_MIN(y_old - (E_old) / dEdy,0.99999999999999999999999);
 
 		//Calculate deviation from 0
 		E_new = GAMMAMAX_RAD * GAMMAMAX_RAD - (2.0 - y_new + sqrt(4.0 - 3.0 * y_new)) / (4.0 - 4.0 * y_new);
@@ -1298,7 +1304,7 @@ void calc_ymax(void) {
 
 		n_iter++;
 	}   // END of while(keep_iterating)
-	y_max = y_old;
+	y_max = 0.999998;
 
-	fprintf(stderr, "y_max set to %f and %f \n", y_max, sqrt((2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old)));
+	fprintf(stderr, "y_max set to %f and gamma_rad becomes %f \n", y_max, sqrt((2.0 - y_max + sqrt(4.0 - 3.0 * y_max)) / (4.0 - 4.0 * y_max)));
 }

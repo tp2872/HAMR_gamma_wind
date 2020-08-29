@@ -448,7 +448,7 @@ __global__ void unpackreceive2(int i1, int i2, int i_offset, int j1, int j2, int
 			for (k = 0; k < NPR; k++){
 				//#pragma unroll NG
 				for (j = j1; j < j2; j++){
-					if (k == 3 || k == 4 || k == 6 || k == 7) factor = -1.;
+					if (k == U2 || k == U3 || k == U3_RAD || k == U2_RAD || k == B2 || k == B3) factor = -1.;
 					else factor = 1.;
 					p[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = factor*receive[k*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];
 					ph[k*(ksize)+icurr*isize + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = factor*receive[k*isize2*zsize2*(j2 - j1) + (j2 - j - 1)*isize2*zsize2 + (icurr - i1 - N1G + i_offset * 2 * D1 / (1 + ref_1))*zsize2 + (zcurr - z1 - N3G + z_offset * 2 * D3 / (1 + ref_3))];

@@ -566,12 +566,13 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
-				#if(RAD_M1)
-				//init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-				#endif
 
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
+				#endif
+
+				#if(RAD_M1)
+				init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 				#endif
 			}
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
@@ -597,15 +598,8 @@ void init_torus()
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-
 			#if(RAD_M1)
-			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] /= rhomax;
-			//Solve for radiation pressure in ICs
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1];
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2];
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3];
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] /= rhomax;
 			#endif
 
 			//Calculate optical depth of one cell

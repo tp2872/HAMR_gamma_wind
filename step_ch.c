@@ -314,15 +314,15 @@ void utoprim_M1_0(double Dt, int n)
 				get_state_rad(p[nl[n]][ind0], &geom, &q_rad);				
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
-				//cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-				//pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
+				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
+				pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
 
-				//Debug code, remove!
+				/*//Debug code, remove!
 				PLOOP{
 					U_0[nl[n]][ind0][k] = U_n[nl[n]][ind0][k];
 					dU_RAD0[nl[n]][ind0][k] = 0.;
 					ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
-				}
+				}*/
 			}
 		}
 	}
@@ -371,11 +371,11 @@ void utoprim_M1_1(double Dt, int n){
 			#endif
 			#endif
 
-			//cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			//pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
+			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
+			pflag[nl[n]][index_3D(n, i, j, z)] = implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
 			
 			//Debug code, remove!
-			pflag[nl[n]][ind0] = Utoprim_2d(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
+			/*pflag[nl[n]][ind0] = Utoprim_2d(U_1[nl[n]][ind0], geom.gcov, geom.gcon, geom.g, ph[nl[n]][ind0], NEWT_TOL);
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
@@ -397,7 +397,7 @@ void utoprim_M1_1(double Dt, int n){
 			//Debug code, remove!
 			PLOOP{
 				dU_RAD1[nl[n]][ind0][k] = 0.;
-			}
+			}*/
 		}
 	}
 }
@@ -466,7 +466,7 @@ void utoprim_M1_2(double Dt, int n){
 				}
 			}
 			#endif
-			if(!pflag[nl[n]][ind0]) Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
+			Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
 		}
 	}
 }
@@ -474,14 +474,14 @@ void utoprim_M1_2(double Dt, int n){
 void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {
 	int i, j, z, k;
-	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR];
+	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR], pi_tmp[NPR];
 	double y = 1.0 - 1.0 / sqrt(2.0);
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, pi_tmp, U, dU, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -520,11 +520,15 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			#endif
 			
+
+
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
 			#endif
+
+			PLOOP pi_tmp[k] = pi[nl[n]][ind0][k] + pb[nl[n]][ind0][k];
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
@@ -542,7 +546,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#endif
 			#if(RAD_M1)
-			if (!pflag[nl[n]][ind0]) Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
+			Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 		}
 	}
@@ -577,7 +581,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	int max_i, max_j, max_z;
 	double val;
 	ndt = 1.e9;
-	int ind0, ind1;
+	int ind0, ind1, ind2;
 	int fail_HLLC=0;
 	int counter0 = 0;
 	int counter1 = 0;
@@ -588,7 +592,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; }
 	else { exit(10); }
 	
-		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_l_rad, state_r_rad,state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin,cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad, cmax_roe, cmin_roe, ctop,ctop_rad, dtij, ind0, ind1, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
+		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_l_rad, state_r_rad,state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin,cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad, cmax_roe, cmin_roe, ctop,ctop_rad, dtij, ind0, ind1, ind2, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
 		{
 			ndt_thread = 1.e9;
 
@@ -596,8 +600,11 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 			#pragma omp for collapse(3) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)*(BS_3+2*D3)/nthreads)
 			ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + BS_3 - 1 + D3){
 				// #pragma ivdep
+				ind0 = index_3D(n, i, j, z);
+				ind1 = index_3D(n, i - idel, j - jdel, z - zdel);
+				ind2 = index_3D(n, i + idel, j + jdel, z + zdel);
 				PLOOP{
-					dq[nl[n]][index_3D(n, i, j, z)][k] = slope_lim(pr[nl[n]][index_3D(n, i - idel, j - jdel, z - zdel)][k], pr[nl[n]][index_3D(n, i, j, z)][k], pr[nl[n]][index_3D(n, i + idel, j + jdel, z + zdel)][k]);
+					dq[nl[n]][ind0][k] = slope_lim(pr[nl[n]][ind1][k], pr[nl[n]][ind0][k], pr[nl[n]][ind2][k]);
 				}
 			}
 
@@ -652,10 +659,10 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					get_state_rad(p_r, &geom, &state_r_rad);
 					#endif
 					primtoflux(p_l, &state_l, &state_l_rad, dir, &geom, F_l);
-					primtoflux(p_r, &state_r, &state_l_rad, dir, &geom, F_r);
+					primtoflux(p_r, &state_r, &state_r_rad, dir, &geom, F_r);
 
 					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l);
-					primtoflux(p_r, &state_r, &state_l_rad, 0, &geom, U_r);
+					primtoflux(p_r, &state_r, &state_r_rad, 0, &geom, U_r);
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);

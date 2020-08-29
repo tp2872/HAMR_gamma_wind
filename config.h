@@ -51,7 +51,7 @@ Physical Parameters section
 
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
-#define GAMMAMAX_RAD (500.)
+#define GAMMAMAX_RAD (500.000625)
 
 /*Runtime in hours*/
 #define RUNTIME (24.0)
@@ -91,13 +91,13 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 2
+#define NB_1 1
+#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 80
-#define BS_2 80
+#define BS_1 160
+#define BS_2 160
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -189,8 +189,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (0)
-#define LAXF  (1)
+#define HLLF  (1)
+#define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
