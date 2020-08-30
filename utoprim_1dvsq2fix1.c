@@ -86,7 +86,7 @@ static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u);
 static FTYPE u_of_p(FTYPE p);
 static FTYPE pressure_of_rho(FTYPE rho0);
 static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p);
-static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance);
+static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance, int lim);
 static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
 static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance);
 
@@ -133,7 +133,7 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
 
 ******************************************************************/
 
-int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], double tolerance)
+int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], double tolerance, int lim)
 {
       FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
       int i, j, ret; 
@@ -176,7 +176,7 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
       #endif
       #endif
 
-      ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance);
+      ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
       /* Transform new primitive variables back if there was no problem : */ 
       if( ret == 0 ) {
@@ -229,7 +229,7 @@ return:  (i*100 + j)  where
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U], double tolerance)
+static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U], double tolerance, int lim)
 {
 
   FTYPE x_1d[1];
@@ -332,7 +332,7 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[N
 
   // User may want to handle this case differently, e.g. do NOT return upon 
   // a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-  if( (rho0 <= 0.) || (u <= 0.) ) { 
+  if( (rho0 <= 0.) || (u <= 0.) && (lim==BASIC)) { 
     retval = 5;
     return(retval) ;
   }

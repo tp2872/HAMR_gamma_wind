@@ -582,21 +582,28 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 		}
 	} while (fabs(p_new - p_old) > 0.01*NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
 
-	if (set_variables == 1){
-		a = -Qdotn + p_new + 0.5*Bsq;
-		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
-		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+	if (iter_tot >= MAX_NEWT_ITER) return(1);
+
+	if (set_variables == 1) {
+		a = -Qdotn + p_new + 0.5 * Bsq;
+		phi = acos(1. / a * sqrt((27. * d) / (4. * a)));
+		epsilon = a / 3. - 2. / 3. * a * cos(2. / 3. * phi + 2. / 3. * M_PI);
 		z = epsilon - Bsq;
 
-		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+		vsq = (Qtsq * z * z + QdotBsq * (Bsq + 2. * z)) / (z * z * pow(Bsq + z, 2.));
 		Wsq = 1. / (1. - vsq);
-		w = z * (1. - vsq);
+		w = z / Wsq;
+		if (vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG) {
+			return(1);
+		}
 		gamma = sqrt(Wsq);
+
 		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
 		u = (w - rho0) / GAMMA;
-		p_new = (GAMMA - 1.)*u;
+		p_new = (GAMMA - 1.) * u;
 	}
-	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq>=1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG ||gamma>GAMMAMAX || gamma<1.){
+
+	if ((p_new < 0.0 || rho0 < 0.0)) {
 		return(1);
 	}
 

@@ -424,17 +424,17 @@ void utoprim_M1_2(double Dt, int n){
 			#endif
 			#endif
 
-			pflag[nl[n]][ind0] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
+			pflag[nl[n]][ind0] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC);
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
-				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
+				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC);
 				#endif
 				if (pflag[nl[n]][ind0]) {
 					failimage[nl[n]][ind0][1]++;
 					if (pflag[nl[n]][ind0]) {
-						pflag[nl[n]][ind0] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL);
+						pflag[nl[n]][ind0] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
 						failimage[nl[n]][ind0][2]++;
 					}
@@ -496,21 +496,21 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			
 			#if(NEWMAN)
-			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
+			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#else
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
+			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#endif
 
 			#if( DO_FONT_FIX ) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
-				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
+				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 				#endif
 				if (pflag[nl[n]][ind0]) {
 					failimage[nl[n]][ind0][1]++;
 					if (pflag[nl[n]][ind0]) {
-						pflag[nl[n]][ind0] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL);
+						pflag[nl[n]][ind0] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
 						failimage[nl[n]][ind0][2]++;
 					}
