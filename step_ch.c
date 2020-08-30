@@ -321,7 +321,7 @@ void utoprim_M1_0(double Dt, int n)
 				get_state_rad(p[nl[n]][ind0], &geom, &q_rad);				
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
-				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
+				cell_size = 100.0;// MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
 				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * y, cell_size);
 			}
 		}
@@ -335,7 +335,6 @@ void utoprim_M1_1(double Dt, int n){
 	double dU[NPR];
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
-
 	#pragma omp  parallel shared(n, gdet, psh, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, dU, ind0, ind1, ind2, ind3, cell_size)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)

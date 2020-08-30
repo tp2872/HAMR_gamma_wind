@@ -392,7 +392,7 @@ void init_torus()
 	/* for disk interior */
 	double l,rin,lnh,expm2chi,up1 ;
 	double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
-	double kappa,hm1 ;
+	double kappa,hm1, gam_local ;
 
 	/*For MPI*/
 	double inmsg;
@@ -408,7 +408,13 @@ void init_torus()
     l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
+	#if(RAD_M1)
+	gam_local = 4. / 3.;
+	#else
+	gam_local = GAMMA;
+	#endif
 
+	//Check if there are enough cells within event horizon
 	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 	if (rank == 0) {
@@ -515,9 +521,9 @@ void init_torus()
 			 * so it needs to be transformed at the end */
 			else { 
 				hm1 = exp(lnh) - 1. ;
-				rho = pow(hm1*(gam - 1.)/(kappa*gam),
-							1./(gam - 1.)) ; 
-				u = kappa*pow(rho,gam)/(gam - 1.) ;
+				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),
+							1./(gam_local - 1.)) ;
+				u = kappa*pow(rho, gam_local)/(gam_local - 1.) ;
 				ur = 0. ;
 				uh = 0. ;
 
@@ -570,10 +576,6 @@ void init_torus()
 				/* convert from 4-vel to 3-vel */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
 				#endif
-
-				#if(RAD_M1)
-				init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-				#endif
 			}
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
@@ -599,7 +601,7 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
 			#if(RAD_M1)
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] /= rhomax;
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
 
 			//Calculate optical depth of one cell
