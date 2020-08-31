@@ -7,7 +7,7 @@ void ncov_calc(double gcon[][NDIM], double ncov[]);
 int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
 
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size) {
-	double error_t=pow(10., 9.);
+	double error_t=pow(10., -3.99999);
 	int flag=0, k;
 	double delta_U, delta_Ur, U_ft[NPR], pb_i[NPR];
 
@@ -23,7 +23,7 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 	//Check if fluid is in extreme radiation subdominant regime
 	if (((U_n[UU_RAD] / U_n[UU]) < 10.0 * epsem) || ((pb[UU_RAD] / pb[UU]) < 10.0 * epsem) || (fabs(delta_Ur) < 10.0 * fabs(delta_U) * epsem)) {
 		//If error is below set margin, accept solution, otherwise try PRAD
-		flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, pflag, pflag_rad,geom, dU, Dt, &error_t, cell_size, 0, 0);
+		//flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, pflag, pflag_rad,geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD
 		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
@@ -66,7 +66,7 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_URAD(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is still below set margin, accept solution, otherwise try URAD
-		if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 		//If error is below set margin, accept solution, otherwise try PRAD with entropy
 		//if (error_t > pow(10, -9.) || flag) flag = implicit_rad_solve_PMHD(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
@@ -81,21 +81,21 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 	//As final resort attempt subcycling
 	if (error_t > pow(10., -7.) || flag) {
 		PLOOP{
-			U_ft[k] = U_i[k];
-		    dU[k] = 0.;
-			pb[k] = pb_i[k];
+			//U_ft[k] = U_i[k];
+		  //  dU[k] = 0.;
+		//	pb[k] = pb_i[k];
 		}
 		//if (subcycle_rad_solve(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, cell_size) != 0) return 1;
 		//else {
 		//	PLOOP U_f[k] = U_ft[k];
 		//}
 	}
-	else {
+	//else {
 		PLOOP{
 			U_f[k] = U_ft[k];
 			dU[k] = (U_ft[k] - U_i[k]) / Dt;
 		}
-	}
+	//}
 }
 
 int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double *error_t, double cell_size, int do_entropy, int do_staged) {
@@ -152,15 +152,17 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3_RAD]) / norm);
 
 		//If we've reached the tolerance level, exit immediately
-		if ((fabs(error_new[0]) <= pow(10, -12.))) {
-			keep_iterating = 0;
+		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
 			error_t[0] = error_new[0];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_old[k];
 				U_f[k] = U_old[k] + Dt * dU_old[k];
 				dU[k] = dU_old[k];
 			}
-			return 0;
+			if ((fabs(error_new[0]) < pow(10, -12.))) {
+				keep_iterating = 0;
+				return 0;
+			}
 		}
 		else { //Determine the estimate for the implicit solver
 			kappa_abs = calc_kappa_abs(pb_old);
@@ -222,7 +224,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				U_new[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
 				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
-				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, BASIC);
+				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, TYPE2);
 
 				//Calculate source function and jacobian
 				source_rad(pb_new, geom, dU_new);
@@ -461,15 +463,17 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3]) / norm);
 
 		//If we've reached the tolerance level, exit immediately
-		if ((fabs(error_new[0]) <= pow(10, -9.))) {
-			keep_iterating = 0;
+		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
 			error_t[0] = error_new[0];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_old[k];
 				U_f[k] = U_old[k] + Dt * dU_old[k];
 				dU[k] = dU_old[k];
 			}
-			return 0;
+			if ((fabs(error_new[0]) < pow(10, -12.))) {
+				keep_iterating = 0;
+				return 0;
+			}
 		}
 	}
 
@@ -790,15 +794,17 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3]) / norm);
 
 		//If we've reached the tolerance level, exit immediately
-		if ((fabs(error_new[0]) <= pow(10, -9.))) {
-			keep_iterating = 0;
+		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
 			error_t[0] = error_new[0];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_old[k];
 				U_f[k] = U_old[k] + Dt * dU_old[k];
 				dU[k] = dU_old[k];
 			}
-			return 0;
+			if ((fabs(error_new[0]) < pow(10, -12.))) {
+				keep_iterating = 0;
+				return 0;
+			}
 		}
 		else { //Determine the estimate for the implicit solver
 			kappa_abs = calc_kappa_abs(pb_old);
