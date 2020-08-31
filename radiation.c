@@ -9,12 +9,13 @@ int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size) {
 	double error_t=pow(10., 9.);
 	int flag=0, k;
-	double delta_U, delta_Ur, U_ft[NPR];
+	double delta_U, delta_Ur, U_ft[NPR], pb_i[NPR];
 
 	//Initialize variables
 	PLOOP{
 		dU[k] = 0.;
 		U_ft[k] = U_i[k];
+		pb_i[k] = pb[k];
 	}
 	delta_U = (U_n[UU] - U_i[UU] + pow(10.,-150.)) / (fabs(U_i[UU]) + fabs(U_n[UU]));
 	delta_Ur = (U_n[UU_RAD] - U_i[UU_RAD] + pow(10., -150.)) / (fabs(U_i[UU_RAD]) + fabs(U_n[UU_RAD]));
@@ -81,7 +82,8 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 	if (error_t > pow(10., -7.) || flag) {
 		PLOOP{
 			U_ft[k] = U_i[k];
-		dU[k] = (U_ft[k] - U_i[k]) / Dt;
+		    dU[k] = 0.;
+			pb[k] = pb_i[k];
 		}
 		//if (subcycle_rad_solve(pb, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, cell_size) != 0) return 1;
 		//else {
@@ -94,7 +96,6 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 			dU[k] = (U_ft[k] - U_i[k]) / Dt;
 		}
 	}
-	PLOOP U_f[k] = U_ft[k];
 }
 
 int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double *error_t, double cell_size, int do_entropy, int do_staged) {
@@ -114,7 +115,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		dU_old[k] = dU[k];
 	}
 
-	if (error_t[0] > pow(10., -4.) || 1) {
+	if (error_t[0] > pow(10., -4.)) {
 		//Set guess values for primitives after implicit step based on optical depth
 		pflag[0] = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
@@ -240,11 +241,11 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					flag = invert_matrix(dEdpb, dEdpb_inv);
 				}
 				n_iter_jacob++;
-			} while (flag && n_iter_jacob<10);
+			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.3));
 		}
 
-		if (n_iter_jacob == 10 || flag) {
-			fprintf(stderr, "Implicit rad Jacobian error \n");
+		if (flag) {
+			//fprintf(stderr, "Implicit rad Jacobian error \n");
 			return 1;
 		}
 
@@ -332,9 +333,9 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		//fprintf(stderr, "error: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
 
 		//If the residual drops below machine precision, stop iterating
-		if (((fabs(pb_new[UU] / pb_old[UU]) - 1.0) + (fabs(pb_new[U1] / pb_old[U1]) - 1.0) + (fabs(pb_new[U2] / pb_old[U2]) - 1.0) + (fabs(pb_new[U3] / pb_old[U3]) - 1.0)) < 10.*epsem) {
-			keep_iterating = 0;
-		}
+		//if (((fabs(pb_new[UU] / pb_old[UU]) - 1.0) + (fabs(pb_new[U1] / pb_old[U1]) - 1.0) + (fabs(pb_new[U2] / pb_old[U2]) - 1.0) + (fabs(pb_new[U3] / pb_old[U3]) - 1.0)) < 10.*epsem) {
+			//keep_iterating = 0;
+		//}
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5]+ error_new[(n_iter - 3) % 5]+ error_new[(n_iter - 2) % 5])<1.0*(error_new[(n_iter - 1) % 5]+ error_new[(n_iter - 0) % 5]))) {
@@ -421,7 +422,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		dU_old[k] = dU[k];
 	}
 
-	if (error_t[0] > pow(10., -4.) || 1) {
+	if (error_t[0] > pow(10., -4.)) {
 		//Set guess values for primitives after implicit step based on optical depth
 		flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
@@ -550,11 +551,11 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					flag = invert_matrix(dEdUb, dEdUb_inv);
 				}
 				n_iter_jacob++;
-			} while (flag && n_iter_jacob < 10);
+			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.3));
 		}
 
-		if (n_iter_jacob == 10 || flag) {
-			fprintf(stderr, "Implicit rad Jacobian error \n");
+		if (flag) {
+			//fprintf(stderr, "Implicit rad Jacobian error \n");
 			return 1;
 		}
 
@@ -673,9 +674,9 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		}
 
 		//If the residual drops below machine precision, stop iterating
-		if (((fabs(U_new[UU_RAD] / U_old[UU_RAD]) - 1.0) + (fabs(U_new[U1_RAD] / U_old[U1_RAD]) - 1.0) + (fabs(U_new[U2_RAD] / U_old[U2_RAD]) - 1.0) + (fabs(U_new[U3_RAD] / U_old[U3_RAD]) - 1.0)) < 10. * epsem) {
-			keep_iterating = 0;
-		}
+		//if (((fabs(U_new[UU_RAD] / U_old[UU_RAD]) - 1.0) + (fabs(U_new[U1_RAD] / U_old[U1_RAD]) - 1.0) + (fabs(U_new[U2_RAD] / U_old[U2_RAD]) - 1.0) + (fabs(U_new[U3_RAD] / U_old[U3_RAD]) - 1.0)) < 10. * epsem) {
+			//keep_iterating = 0;
+		//}
 
 		//fprintf(stderr, "error: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
 
@@ -750,7 +751,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		dU_old[k] = (U_f[k]-U_i[k])/Dt;
 	}
 
-	if (error_t[0] > pow(10., -4.) || 1) {
+	if (error_t[0] > pow(10., -4.)) {
 		//Set guess values for primitives after implicit step based on optical depth
 		flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, lim);
 		#if(DO_FONT_FIX)
@@ -812,7 +813,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			}
 		}
 	}
-
+	double error_temp = error_new[0];
 	/* Start the Newton-Raphson iterations : */
 	while (keep_iterating) {
 		//Calculate jacobian dEdpb
@@ -857,7 +858,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				#endif
 
 				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
-				#if(DO_FONT_FIX)
+				/*#if(DO_FONT_FIX)
 				if (flag) {
 					#if DOKTOT
 					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
@@ -868,7 +869,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 						}
 					}
 				}
-				#endif	 
+				#endif*/
 
 				if (flag == 0) {
 					//Calculate source function and jacobian
@@ -883,16 +884,15 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					}
 					else E_new[0] = (U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]);
 					dEdpb[0][i - UU_RAD] = (E_new[0] - E_old[0]) / dpb;
-				}
-
-				if (flag == 0) {
+		
+					//Try to find Jacobian
 					flag = invert_matrix(dEdpb, dEdpb_inv);
 				}
 				n_iter_jacob++;
-			} while (flag && n_iter_jacob < 10);
+			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.3));
 		}
 
-		if (n_iter_jacob == 10 || flag) {
+		if (flag) {
 			//fprintf(stderr, "Implicit rad Jacobian error \n");
 			return 1;
 		}
@@ -955,7 +955,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 
 		//Get MHD primitives
 		flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
-		#if(DO_FONT_FIX)
+		/*#if(DO_FONT_FIX)
 		if (flag) {
 			#if DOKTOT
 			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
@@ -966,7 +966,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				}
 			}
 		}
-		#endif	 
+		#endif	*/ 
 		
 		if (flag == 0) {
 			//Recompute T_t^mu for consistency
@@ -1005,13 +1005,14 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		//In case of inversion failure exit iteration
 		if (flag != 0) {
 			keep_iterating = 0;
+			//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob,  log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
 		}
 
 		//If the residual drops below machine precision, stop iterating
-		if (((fabs(pb_new[UU_RAD] / pb_old[UU_RAD]) - 1.0) + (fabs(pb_new[U1_RAD] / pb_old[U1_RAD]) - 1.0) + (fabs(pb_new[U2_RAD] / pb_old[U2_RAD]) - 1.0) + (fabs(pb_new[U3_RAD] / pb_old[U3_RAD]) - 1.0)) < 10. * epsem) {
+		//if (((fabs(pb_new[UU_RAD] / pb_old[UU_RAD]) - 1.0) + (fabs(pb_new[U1_RAD] / pb_old[U1_RAD]) - 1.0) + (fabs(pb_new[U2_RAD] / pb_old[U2_RAD]) - 1.0) + (fabs(pb_new[U3_RAD] / pb_old[U3_RAD]) - 1.0)) < 10. * epsem) {
 			//keep_iterating = 0;
-		}
-		//fprintf(stderr, "error: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
+
+		//}
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.25 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
@@ -1315,7 +1316,7 @@ int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		prim[2] *= f;
 		prim[3] *= f;
 
-		if (lim == TYPE2+3) {
+		if (lim == TYPE2) {
 			Qdotn = -(pow(10., -150.) + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad		
