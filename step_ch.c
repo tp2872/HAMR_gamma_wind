@@ -306,9 +306,9 @@ void utoprim_M1_0(double Dt, int n)
 	struct of_state q;
 	struct of_state_rad q_rad;
 
-	//#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom, q, q_rad, ind0, cell_size)
+	#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom, q, q_rad, ind0, cell_size)
 	{
-		//#pragma omp for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n]-N1G, N1_GPU_offset[n] + BS_1 + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 +N3G - 1) {
 			k = 1;
 			//if (((i < N1_GPU_offset[n] - D1) && ((j < N2_GPU_offset[n] - D2))) || ((i < N1_GPU_offset[n] - D1) && ((j > N2_GPU_offset[n] + BS_2))) || (((i > N1_GPU_offset[n] + BS_1) && ((j < N2_GPU_offset[n] - D2)))) || ((i > N1_GPU_offset[n] + BS_1) && ((j > N2_GPU_offset[n] + BS_2)))) k = 0;

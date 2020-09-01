@@ -263,8 +263,8 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
 	int i;
 	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad;
-	kappa_abs = calc_kappa_abs(ph);
-	kappa_emmit = calc_kappa_emmit(ph);
+	kappa_abs = 0.;// calc_kappa_abs(ph);
+	kappa_emmit = 0.;// calc_kappa_emmit(ph);
 	kappa_es = calc_kappa_es(ph);
 	arad = ARAD / (MASS_DENSITY_SCALE * C_CGS * C_CGS / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 
@@ -288,7 +288,7 @@ double calc_kappa_abs(double * restrict ph) {
 	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg));
 	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg))*(1. + 4.4*pow(10., -10.)*Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = 1.7*ph[RHO]*pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS,-2.);
+	kappa_abs = 1.7*pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS,-2.);
 
 	return(kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS);
 }
@@ -306,7 +306,7 @@ double calc_kappa_emmit(double * restrict ph) {
 	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6);
 	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6)*(1. + 4.4*pow(10., -10.)*Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = 1.7*ph[RHO] *pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS, -2.);
+	kappa_abs = 1.7 *pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS, -2.);
 
 	return( kappa_abs* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
 }
