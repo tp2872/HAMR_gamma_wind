@@ -146,7 +146,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			//Calculate total error at start of iteration
 			if (do_entropy == 1) {
 				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-				error_new[0] += 0.25 * T_GAS * (fabs(Dt * dU_old[KTOT]) / (norm));
+				error_new[0] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / (norm + fabs(U_i[KTOT]) + fabs(U_old[KTOT]) + fabs(Dt * dU_old[KTOT])));
 			}
 			norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
 			if (do_entropy == 0 && pflag_rad[0] == 0) error_new[0] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
@@ -343,11 +343,11 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		//else offset = pow(10., -8.);
 		
 		//Calculate total error
+		norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
+			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm + fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 		}
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 		if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
@@ -476,7 +476,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
 			if (do_entropy == 1) {
 				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
+				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / (norm + fabs(U_i[KTOT]) + fabs(U_old[KTOT]) + fabs(Dt * dU_old[KTOT])));
 			}
 			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
@@ -692,7 +692,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 				if (do_entropy == 1) {
 					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / (norm + fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT])));
 				}
 				if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
@@ -807,9 +807,9 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
 			if (do_entropy == 1) {
 				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
+				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / (norm + fabs(U_i[KTOT]) + fabs(U_old[KTOT]) + fabs(Dt * dU_old[KTOT])));
 			}
-			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
+			if (do_entropy == 0 && pflag_rad[0] == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
@@ -1038,7 +1038,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 				if (do_entropy == 1) {
 					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / (norm + fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT])));;
 				}
 				if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
