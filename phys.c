@@ -292,7 +292,7 @@ double calc_kappa_abs(double * restrict ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7*pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS,-2.);
 
-	return(0. * kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS);
+	return(kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -310,7 +310,7 @@ double calc_kappa_emmit(double * restrict ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7 *pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS, -2.);
 
-	return(0.*kappa_abs* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
+	return(kappa_abs* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
 }
 
 //Calculate total (electron) scattering opacity
