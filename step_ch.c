@@ -371,6 +371,7 @@ void utoprim_M1_1(double Dt, int n){
 			#endif
 			#endif
 
+			//PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
 			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
 		}
