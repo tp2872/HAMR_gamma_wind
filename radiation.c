@@ -132,49 +132,51 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#endif	 
 		pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
-		//Calculate source term for U_i
-		source_rad(pb_old, geom, dU_old);
+		if (!pflag[0]) {
+			//Calculate source term for U_i
+			source_rad(pb_old, geom, dU_old);
 
-		//Calculate iterated error at start of iteration
-		norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
-		error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
-		if (do_entropy == 0) error_new[0] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
+			//Calculate iterated error at start of iteration
+			norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
+			error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
+			error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
+			error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
+			if (do_entropy == 0) error_new[0] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
 
-		//Calculate total error at start of iteration
-		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-			error_new[0] += 0.25 * T_GAS * (fabs(Dt * dU_old[KTOT]) / (norm));
-		}
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
-		if (do_entropy == 0 && pflag_rad[0] == 0) error_new[0] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
-
-		//If we've reached the tolerance level, exit immediately
-		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
-			error_t[0] = error_new[0];
-			for (k = 0; k < NPR; k++) {
-				pb[k] = pb_old[k];
-				U_f[k] = U_old[k] + Dt * dU_old[k];
-				dU[k] = dU_old[k];
+			//Calculate total error at start of iteration
+			if (do_entropy == 1) {
+				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+				error_new[0] += 0.25 * T_GAS * (fabs(Dt * dU_old[KTOT]) / (norm));
 			}
-			if ((fabs(error_new[0]) < pow(10, -12.))) {
-				keep_iterating = 0;
-				return 0;
-			}
-		}
-		else { //Determine the estimate for the implicit solver
-			kappa_abs = calc_kappa_abs(pb);
-			//kappa_emmit = calc_kappa_emmit(pb_old);
-			kappa_es = calc_kappa_es(pb);
-			tau = (kappa_abs + kappa_es) * cell_size;
-			if (tau > 0.66) {
+			norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
+			if (do_entropy == 0 && pflag_rad[0] == 0) error_new[0] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
+			error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
+			error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
+			error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
+
+			//If we've reached the tolerance level, exit immediately
+			if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
+				error_t[0] = error_new[0];
 				for (k = 0; k < NPR; k++) {
-					//pb_old[k] = pb[k];
-					//U_old[k] = U_i[k];
+					pb[k] = pb_old[k];
+					U_f[k] = U_old[k];
+					dU[k] = dU_old[k];
+				}
+				if ((fabs(error_new[0]) < pow(10, -12.))) {
+					keep_iterating = 0;
+					return 0;
+				}
+			}
+			else { //Determine the estimate for the implicit solver
+				kappa_abs = calc_kappa_abs(pb);
+				//kappa_emmit = calc_kappa_emmit(pb_old);
+				kappa_es = calc_kappa_es(pb);
+				tau = (kappa_abs + kappa_es) * cell_size;
+				if (tau > 0.66) {
+					for (k = 0; k < NPR; k++) {
+						//pb_old[k] = pb[k];
+						//U_old[k] = U_i[k];
+					}
 				}
 			}
 		}
@@ -429,7 +431,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, keep_iterating = 1, fail, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
+	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, fail, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -459,38 +461,40 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		#endif	 
 		pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
-		//Calculate source term for U_i
-		source_rad(pb_old, geom, dU_old);
+		if (!pflag[0]) {
+			//Calculate source term for U_i
+			source_rad(pb_old, geom, dU_old);
 
-		//Calculate iterated error
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
-		error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
-		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
+			//Calculate iterated error
+			norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
+			error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
+			if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
 
-		//Calculate total error
-		norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
-		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
-		}
-		if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
-
-		//If we've reached the tolerance level, exit immediately
-		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
-			error_t[0] = error_new[0];
-			for (k = 0; k < NPR; k++) {
-				pb[k] = pb_old[k];
-				U_f[k] = U_old[k] + Dt * dU_old[k];
-				dU[k] = dU_old[k];
+			//Calculate total error
+			norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
+			if (do_entropy == 1) {
+				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
 			}
-			if ((fabs(error_new[0]) < pow(10, -12.))) {
-				keep_iterating = 0;
-				return 0;
+			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
+
+			//If we've reached the tolerance level, exit immediately
+			if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
+				error_t[0] = error_new[0];
+				for (k = 0; k < NPR; k++) {
+					pb[k] = pb_old[k];
+					U_f[k] = U_old[k];
+					dU[k] = dU_old[k];
+				}
+				if ((fabs(error_new[0]) < pow(10, -12.))) {
+					keep_iterating = 0;
+					return 0;
+				}
 			}
 		}
 	}
@@ -542,7 +546,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 						}
 					}
 				}
-				#endif*/	 
+				#endif*/
 
 				if (flag == 0) {
 					Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, TYPE2);
@@ -579,170 +583,172 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			}
 		}
 
-		/* Make the newton step: */
-		if (do_staged == 0) {
-			D = 1.;
-			for (k = 0; k < 4; k++) {
-				dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
-				U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
-			}
-		}
-		else {
-			//Set damping factor for Newton Raphson method
-			if (n_iter == 0 || n_iter == 4) D = 0.5;
-			else if (n_iter == 8) D = 0.25;
-			else D = 1.;
-
-			if ((n_iter / 4) == 0) { //momentum only step
+		n_iter_fail = 0;
+		while(n_iter_fail<10){
+			/* Make the newton step: */
+			if (do_staged == 0) {
+				D = 1. / pow(2.0, (double)n_iter_fail);
 				for (k = 0; k < 4; k++) {
-					dUb = -D * (E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
-					U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
-				}
-			}
-			if ((n_iter / 4) == 1) {
-				for (k = 0; k < 4; k++) { //energy only step
-					dUb = -D * (E_old[0] * dEdUb_inv[k][0]);
-					U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
-				}
-			}
-			else {
-				for (k = 0; k < 4; k++) { //full 4d step
 					dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
 					U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
 				}
 			}
-		}
+			else {
+				//Set damping factor for Newton Raphson method
+				if (n_iter == 0 || n_iter == 4) D = 0.5 / pow(2.0, (double)n_iter_fail);
+				else if (n_iter == 8) D = 0.25 / pow(2.0, (double)n_iter_fail);
+				else D = 1. / pow(2.0, (double)n_iter_fail);
 
-		//Derive new conserved quantaties for MHD variables
-		U_new[UU] = U_i[UU] - (U_new[UU_RAD] - U_i[UU_RAD]);
-		U_new[U1] = U_i[U1] - (U_new[U1_RAD] - U_i[U1_RAD]);
-		U_new[U2] = U_i[U2] - (U_new[U2_RAD] - U_i[U2_RAD]);
-		U_new[U3] = U_i[U3] - (U_new[U3_RAD] - U_i[U3_RAD]);
+				if ((n_iter / 4) == 0) { //momentum only step
+					for (k = 0; k < 4; k++) {
+						dUb = -D * (E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
+						U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
+					}
+				}
+				if ((n_iter / 4) == 1) {
+					for (k = 0; k < 4; k++) { //energy only step
+						dUb = -D * (E_old[0] * dEdUb_inv[k][0]);
+						U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
+					}
+				}
+				else {
+					for (k = 0; k < 4; k++) { //full 4d step
+						dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
+						U_new[k + UU_RAD] = U_old[k + UU_RAD] + dUb;
+					}
+				}
+			}
 
-		//Estimate conserved entropy
-		source_rad(pb_old, geom, dU_old);
-		U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
+			//Derive new conserved quantaties for MHD variables
+			U_new[UU] = U_i[UU] - (U_new[UU_RAD] - U_i[UU_RAD]);
+			U_new[U1] = U_i[U1] - (U_new[U1_RAD] - U_i[U1_RAD]);
+			U_new[U2] = U_i[U2] - (U_new[U2_RAD] - U_i[U2_RAD]);
+			U_new[U3] = U_i[U3] - (U_new[U3_RAD] - U_i[U3_RAD]);
 
-		//Reset variables in case inversion fails
-		PLOOP{
-			pb_new[k] = pb_old[k];
-			dU_new[k] = dU_old[k];
-		}
+			//Estimate conserved entropy
+			source_rad(pb_old, geom, dU_old);
+			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
-		flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
-		/*#if(DO_FONT_FIX)
-		if (flag) {
-			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
-			#endif
+			//Reset variables in case inversion fails
+			PLOOP{
+				pb_new[k] = pb_old[k];
+				dU_new[k] = dU_old[k];
+			}
+
+			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+			/*#if(DO_FONT_FIX)
 			if (flag) {
+				#if DOKTOT
+				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+				#endif
 				if (flag) {
-					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+					if (flag) {
+						flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+					}
 				}
 			}
-		}
-		#endif */
+			#endif */
 
-		if (flag == 0) {
-			//Get new radiation primitives using TYPE2 limiter
-			flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, TYPE2);
+			if (flag == 0) {
+				//Get new radiation primitives using TYPE2 limiter
+				flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, TYPE2);
 
-			//Make sure that internal energy stays positive
-			if (pb_new[UU_RAD] < 0.0) pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
+				//Make sure that internal energy stays positive
+				if (pb_new[UU_RAD] < 0.0) pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
 
-			//Recompute T_t^mu for consistency
-			U_new[RHO] = U_i[RHO];
-			get_state(pb_new, geom, &q);
-			mhd_calc(pb_new, 0, &q, &U_new[UU]);
-			for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
-			U_new[UU] += U_new[RHO];
+				//Recompute T_t^mu for consistency
+				U_new[RHO] = U_i[RHO];
+				get_state(pb_new, geom, &q);
+				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
+				U_new[UU] += U_new[RHO];
 
-			#if(FULL_ENTROPY)
-			U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-			#else
-			U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-			#endif
+				#if(FULL_ENTROPY)
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+				#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				#endif
 
-			//Recompute R_t^mu for consistency
-			get_state_rad(pb_new, geom, &q_rad);
-			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-			for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+				//Recompute R_t^mu for consistency
+				get_state_rad(pb_new, geom, &q_rad);
+				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
-			//Get radiative source term
-			source_rad(pb_new, geom, dU_new);
+				//Get radiative source term
+				source_rad(pb_new, geom, dU_new);
 
-			//Calculate iterated error
-			norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
-			error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
-			if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
+				//Calculate iterated error
+				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+				error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
+				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 
-			//Set correct offset for Jacobian for next iteration
-			if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
-			else offset = pow(10., -8.);
+				//Set correct offset for Jacobian for next iteration
+				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
+				else offset = pow(10., -8.);
 
-			//Calculate total error	
-			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
-			if (do_entropy == 1) {
-				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
-			}
-			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
-	
-			//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-			if ((fabs(error_new[n_iter % 5]) <= pow(10, -9.)) || (n_iter >= 20)) {
-				keep_iterating = 0;
-			}
-
-			//If the residual drops below machine precision, stop iterating
-			//if (((fabs(U_new[UU_RAD] / U_old[UU_RAD]) - 1.0) + (fabs(U_new[U1_RAD] / U_old[U1_RAD]) - 1.0) + (fabs(U_new[U2_RAD] / U_old[U2_RAD]) - 1.0) + (fabs(U_new[U3_RAD] / U_old[U3_RAD]) - 1.0)) < 10. * epsem) {
-				//keep_iterating = 0;
-			//}
-
-			//fprintf(stderr, "error: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
-
-			//If error increasing stop iterating
-			if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-				keep_iterating = 0;
-			}
-
-			//If error increased more than 4 times stop iterating
-			if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-				count_increase++;
-				if (count_increase >= 5) keep_iterating = 0;
-			}
-
-			if (keep_iterating) {
-				for (k = 0; k < NPR; k++) {
-					U_old[k] = U_new[k];
-					pb_old[k] = pb_new[k];
-					dU_old[k] = dU_new[k];
-				}
-
-				for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+				//Calculate total error	
+				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_old[UU_RAD] / pb_old[RHO];
-					E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
 				}
-				else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
-			}
+				if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 
-			//If error decreased compared to start value, update variables
-			if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5]) < pow(10., -4.)) {
-				error_t[0] = error_new[n_iter % 5];
-				for (k = 0; k < NPR; k++) {
-					pb[k] = pb_new[k];
-					U_f[k] = U_new[k];
-					dU[k] = dU_new[k];
+				//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
+				if ((fabs(error_new[n_iter % 5]) <= pow(10, -9.)) || (n_iter >= 20)) {
+					keep_iterating = 0;
+				}
+
+				//If the residual drops below machine precision, stop iterating
+				//if (((fabs(U_new[UU_RAD] / U_old[UU_RAD]) - 1.0) + (fabs(U_new[U1_RAD] / U_old[U1_RAD]) - 1.0) + (fabs(U_new[U2_RAD] / U_old[U2_RAD]) - 1.0) + (fabs(U_new[U3_RAD] / U_old[U3_RAD]) - 1.0)) < 10. * epsem) {
+					//keep_iterating = 0;
+				//}
+
+				//fprintf(stderr, "error: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
+
+				//If error increasing stop iterating
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
+					keep_iterating = 0;
+				}
+
+				//If error increased more than 4 times stop iterating
+				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+					count_increase++;
+					if (count_increase >= 5) keep_iterating = 0;
+				}
+
+				if (keep_iterating) {
+					for (k = 0; k < NPR; k++) {
+						U_old[k] = U_new[k];
+						pb_old[k] = pb_new[k];
+						dU_old[k] = dU_new[k];
+					}
+
+					for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+					if (do_entropy == 1) {
+						T_GAS = (GAMMA - 1.) * pb_old[UU_RAD] / pb_old[RHO];
+						E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
+					}
+					else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
+				}
+
+				//If error decreased compared to start value, update variables
+				if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5]) < pow(10., -4.)) {
+					error_t[0] = error_new[n_iter % 5];
+					for (k = 0; k < NPR; k++) {
+						pb[k] = pb_new[k];
+						U_f[k] = U_new[k];
+						dU[k] = dU_new[k];
+					}
 				}
 			}
-		}
-		else {
-			keep_iterating = 0;
+			n_iter_fail++;
+			if (n_iter_fail == 10) return(1);
 		}
 		n_iter++;
 	}
@@ -756,7 +762,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, keep_iterating = 1, fail, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
+	int i, k, n_iter = 0, n_iter_fail=0, keep_iterating = 1, fail, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -783,51 +789,54 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			}
 		}
 		#endif	 
-		pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
-		//Calculate source term for U_i
-		source_rad(pb_old, geom, dU_old);
+		if (!pflag[0]) {
+			pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
-		//Calculate iterated error
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
-		error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
-		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
+			//Calculate source term for U_i
+			source_rad(pb_old, geom, dU_old);
 
-		//Calculate total error
-		norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
-		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
-		}
-		if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
-		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
+			//Calculate iterated error
+			norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
+			error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
+			if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
 
-		//If we've reached the tolerance level, exit immediately
-		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
-			error_t[0] = error_new[0];
-			for (k = 0; k < NPR; k++) {
-				pb[k] = pb_old[k];
-				U_f[k] = U_old[k] + Dt * dU_old[k];
-				dU[k] = dU_old[k];
+			//Calculate total error
+			norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
+			if (do_entropy == 1) {
+				T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
 			}
-			if ((fabs(error_new[0]) < pow(10, -12.))) {
-				keep_iterating = 0;
-				return 0;
-			}
-		}
-		else { //Determine the estimate for the implicit solver
-			kappa_abs = calc_kappa_abs(pb_old);
-			kappa_emmit = calc_kappa_emmit(pb_old);
-			kappa_es = calc_kappa_es(pb_old);
-			tau = (kappa_abs + kappa_es) * cell_size;
-			if (tau > 0.66) {
+			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
+			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
+
+			//If we've reached the tolerance level, exit immediately
+			if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
+				error_t[0] = error_new[0];
 				for (k = 0; k < NPR; k++) {
-					//pb_old[k] = pb[k];
-					//U_old[k] = U_i[k];
+					pb[k] = pb_old[k];
+					U_f[k] = U_old[k];
+					dU[k] = dU_old[k];
+				}
+				if ((fabs(error_new[0]) < pow(10, -12.))) {
+					keep_iterating = 0;
+					return 0;
+				}
+			}
+			else { //Determine the estimate for the implicit solver
+				kappa_abs = calc_kappa_abs(pb_old);
+				kappa_emmit = calc_kappa_emmit(pb_old);
+				kappa_es = calc_kappa_es(pb_old);
+				tau = (kappa_abs + kappa_es) * cell_size;
+				if (tau > 0.66) {
+					for (k = 0; k < NPR; k++) {
+						//pb_old[k] = pb[k];
+						//U_old[k] = U_i[k];
+					}
 				}
 			}
 		}
@@ -921,173 +930,173 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			}
 		}
 
-		//Set primitive variables before Newton step
-		PLOOP{ 
-			pb_new[k] = pb_old[k];
-			U_new[k] = U_old[k];
-		}
-
-		/* Make the newton step: */
-		if (do_staged == 0) {
-			D = 1.;
-			for (k = 0; k < 4; k++) {
-				dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
-				pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
+		n_iter_fail = 0;
+		while (n_iter_fail < 10) {
+			//Set primitive variables before Newton step
+			PLOOP{
+				pb_new[k] = pb_old[k];
+				U_new[k] = U_old[k];
 			}
-		}
-		else {
-			//Set damping factor for Newton Raphson method
-			if (n_iter == 0 || n_iter == 4) D = 0.5;
-			else if (n_iter == 8) D = 0.25;
-			else D = 1.;
 
-			if (n_iter / 4 == 0) { //momentum only step
+			/* Make the newton step: */
+			if (do_staged == 0) {
+				D = 1. / pow(2.0, (double)n_iter_fail);
 				for (k = 0; k < 4; k++) {
-					dpb = -D * (E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
-					pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
-				}
-			}
-			if (n_iter / 4 == 1) {
-				for (k = 0; k < 4; k++) { //energy only step
-					dpb = -D * (E_old[0] * dEdpb_inv[k][0]);
-					pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
-				}
-			}
-			else {
-				for (k = 0; k < 4; k++) { //full 4d step
 					dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
 					pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
 				}
 			}
-		}
+			else {
+				//Set damping factor for Newton Raphson method
+				if (n_iter == 0 || n_iter == 4) D = 0.5 / pow(2.0, (double)n_iter_fail);
+				else if (n_iter == 8) D = 0.25 / pow(2.0, (double)n_iter_fail);
+				else D = 1. / pow(2.0, (double)n_iter_fail);
 
-		//Make sure that radiation internal energy stays positive
-		if (pb_new[UU_RAD] < 0.0) pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
+				if (n_iter / 4 == 0) { //momentum only step
+					for (k = 0; k < 4; k++) {
+						dpb = -D * (E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
+						pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
+					}
+				}
+				if (n_iter / 4 == 1) {
+					for (k = 0; k < 4; k++) { //energy only step
+						dpb = -D * (E_old[0] * dEdpb_inv[k][0]);
+						pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
+					}
+				}
+				else {
+					for (k = 0; k < 4; k++) { //full 4d step
+						dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
+						pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
+					}
+				}
+			}
 
-		//Obtain new radiation conserved quantaties from radiation primitive variables
-		get_state_rad(pb_new, geom, &q_rad);
-		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+			//Make sure that radiation internal energy stays positive
+			if (pb_new[UU_RAD] < 0.0) pb_new[UU_RAD] = 0.5 * fabs(pb_new[UU_RAD]);
 
-		//Derive new MHD conserved quantaties for radiation variables
-		U_new[RHO] = U_i[RHO];
-		U_new[UU] = U_i[UU] - (U_new[UU_RAD] - U_i[UU_RAD]);
-		U_new[U1] = U_i[U1] - (U_new[U1_RAD] - U_i[U1_RAD]);
-		U_new[U2] = U_i[U2] - (U_new[U2_RAD] - U_i[U2_RAD]);
-		U_new[U3] = U_i[U3] - (U_new[U3_RAD] - U_i[U3_RAD]);
+			//Obtain new radiation conserved quantaties from radiation primitive variables
+			get_state_rad(pb_new, geom, &q_rad);
+			mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+			for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
-		//Estimate conserved entropy
-		source_rad(pb_old, geom, dU_old);
-		U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
+			//Derive new MHD conserved quantaties for radiation variables
+			U_new[RHO] = U_i[RHO];
+			U_new[UU] = U_i[UU] - (U_new[UU_RAD] - U_i[UU_RAD]);
+			U_new[U1] = U_i[U1] - (U_new[U1_RAD] - U_i[U1_RAD]);
+			U_new[U2] = U_i[U2] - (U_new[U2_RAD] - U_i[U2_RAD]);
+			U_new[U3] = U_i[U3] - (U_new[U3_RAD] - U_i[U3_RAD]);
 
-		//Get MHD primitives
-		flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
-		/*#if(DO_FONT_FIX)
-		if (flag) {
-			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
-			#endif
+			//Estimate conserved entropy
+			source_rad(pb_old, geom, dU_old);
+			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
+
+			//Get MHD primitives
+			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+			/*#if(DO_FONT_FIX)
 			if (flag) {
+				#if DOKTOT
+				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+				#endif
 				if (flag) {
-					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+					if (flag) {
+						flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+					}
 				}
 			}
-		}
-		#endif	*/ 
-		
-		if (flag == 0) {
-			//Recompute T_t^mu for consistency
-			get_state(pb_new, geom, &q);
-			mhd_calc(pb_new, 0, &q, &U_new[UU]);
-			for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
-			U_new[UU] += U_i[RHO];
+			#endif	*/
 
-			//Compute new entropy from MHD variables
-			#if(FULL_ENTROPY)
-			U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-			#else
-			U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-			#endif
+			if (flag == 0) {
+				//Recompute T_t^mu for consistency
+				get_state(pb_new, geom, &q);
+				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
+				U_new[UU] += U_i[RHO];
 
-			//Get radiative source term
-			source_rad(pb_new, geom, dU_new);
+				//Compute new entropy from MHD variables
+				#if(FULL_ENTROPY)
+				U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
+				#else
+				U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+				#endif
 
-			//Calculate iterated error
-			norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
-			error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
-			if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
+				//Get radiative source term
+				source_rad(pb_new, geom, dU_new);
 
-			//Set correct offset for Jacobian for next iteration
-			if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
-			else offset = pow(10., -8.);
+				//Calculate iterated error
+				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+				error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
+				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 
-			//Calculate total error
-			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
-			if (do_entropy == 1) {
-				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
-			}
-			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
-			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
+				//Set correct offset for Jacobian for next iteration
+				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
+				else offset = pow(10., -8.);
 
-			//If iterated error increasing stop iterating
-			if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.25 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-				keep_iterating = 0;
-				//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
-			}
-
-			//If error increased more than 4 times stop iterating
-			if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-				count_increase++;
-				if (count_increase >= 5) keep_iterating = 0;
-				//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
-			}
-
-			//If we've reached the tolerance level in total error or we exceeded more than 20 iterations, stop iterating
-			if ((fabs(error_new[n_iter % 5]) <= pow(10, -9.)) || (n_iter >= 20)) {
-				keep_iterating = 0;
-				//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
-			}
-
-			//If the residual drops below machine precision, stop iterating
-			//if (((fabs(pb_new[UU_RAD] / pb_old[UU_RAD]) - 1.0) + (fabs(pb_new[U1_RAD] / pb_old[U1_RAD]) - 1.0) + (fabs(pb_new[U2_RAD] / pb_old[U2_RAD]) - 1.0) + (fabs(pb_new[U3_RAD] / pb_old[U3_RAD]) - 1.0)) < 10. * epsem) {
-				//keep_iterating = 0;
-
-			//}
-	
-			if (keep_iterating) {
-				for (k = 0; k < NPR; k++) {
-					U_old[k] = U_new[k];
-					pb_old[k] = pb_new[k];
-					dU_old[k] = dU_new[k];
-				}
-
-				for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+				//Calculate total error
+				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-					E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
 				}
-				else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
-			}
+				if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
+				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 
-			//If error decreased compared to start value, update variables
-			if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5]) < pow(10., -4.)) {
-				error_t[0] = error_new[n_iter % 5];
-				for (k = 0; k < NPR; k++) {
-					pb[k] = pb_new[k];
-					U_f[k] = U_new[k];
-					dU[k] = dU_new[k];
+				//If iterated error increasing stop iterating
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.25 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
+					keep_iterating = 0;
+					//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
+				}
+
+				//If error increased more than 4 times stop iterating
+				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+					count_increase++;
+					if (count_increase >= 5) keep_iterating = 0;
+					//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
+				}
+
+				//If we've reached the tolerance level in total error or we exceeded more than 20 iterations, stop iterating
+				if ((fabs(error_new[n_iter % 5]) <= pow(10, -9.)) || (n_iter >= 20)) {
+					keep_iterating = 0;
+					//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
+				}
+
+				//If the residual drops below machine precision, stop iterating
+				//if (((fabs(pb_new[UU_RAD] / pb_old[UU_RAD]) - 1.0) + (fabs(pb_new[U1_RAD] / pb_old[U1_RAD]) - 1.0) + (fabs(pb_new[U2_RAD] / pb_old[U2_RAD]) - 1.0) + (fabs(pb_new[U3_RAD] / pb_old[U3_RAD]) - 1.0)) < 10. * epsem) {
+					//keep_iterating = 0;
+
+				//}
+
+				if (keep_iterating) {
+					for (k = 0; k < NPR; k++) {
+						U_old[k] = U_new[k];
+						pb_old[k] = pb_new[k];
+						dU_old[k] = dU_new[k];
+					}
+
+					for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+					if (do_entropy == 1) {
+						T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+						E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
+					}
+					else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
+				}
+
+				//If error decreased compared to start value, update variables
+				if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5]) < pow(10., -4.)) {
+					error_t[0] = error_new[n_iter % 5];
+					for (k = 0; k < NPR; k++) {
+						pb[k] = pb_new[k];
+						U_f[k] = U_new[k];
+						dU[k] = dU_new[k];
+					}
 				}
 			}
-		}
-		else {
-			//In case of inversion failure exit iteration
-			keep_iterating = 0;
-			//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));		
+			n_iter_fail++;
+			if (n_iter_fail == 10) return(1);
 		}
 		n_iter++;
 	}
