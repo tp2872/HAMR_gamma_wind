@@ -116,40 +116,42 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	if (error_t[0] > pow(10., -4.)) {
+		PLOOP U_old[k] = U_i[k];
+
 		//Set guess values for primitives after implicit step based on optical depth
-		pflag[0] = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+		pflag[0] = Utoprim_2d(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
 		if (pflag[0]) {
 			#if DOKTOT
-			pflag[0] = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+			pflag[0] = Utoprim_1dvsq2fix1(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 			#endif
 			if (pflag[0]) {
-				pflag[0] = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+				pflag[0] = Utoprim_1dfix1(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 			}
 		}	
 		#endif	 
-		pflag_rad[0] = Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
+		pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
 		//Calculate source term for U_i
 		source_rad(pb_old, geom, dU_old);
 
 		//Calculate iterated error at start of iteration
-		norm = (fabs(U_i[UU]) + fabs(U_i[UU]) + fabs(Dt * dU_old[UU]));
-		error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3]) / norm);
-		if (do_entropy == 0) error_new[0] += 0.25 * (fabs(Dt * dU_old[UU]) / norm);
+		norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
+		error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
+		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
+		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
+		if (do_entropy == 0) error_new[0] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
 
 		//Calculate total error at start of iteration
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
 			error_new[0] += 0.25 * T_GAS * (fabs(Dt * dU_old[KTOT]) / (norm));
 		}
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_i[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
-		if (do_entropy == 0 && pflag_rad[0] == 0) error_new[0] += 0.25 * (fabs(Dt * dU_old[UU_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3_RAD]) / norm);
+		norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
+		if (do_entropy == 0 && pflag_rad[0] == 0) error_new[0] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
+		error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
+		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
+		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
 
 		//If we've reached the tolerance level, exit immediately
 		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
@@ -165,9 +167,9 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			}
 		}
 		else { //Determine the estimate for the implicit solver
-			kappa_abs = calc_kappa_abs(pb_old);
+			kappa_abs = calc_kappa_abs(pb);
 			//kappa_emmit = calc_kappa_emmit(pb_old);
-			kappa_es = calc_kappa_es(pb_old);
+			kappa_es = calc_kappa_es(pb);
 			tau = (kappa_abs + kappa_es) * cell_size;
 			if (tau > 0.66) {
 				for (k = 0; k < NPR; k++) {
@@ -440,42 +442,43 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	if (error_t[0] > pow(10., -4.)) {
+		//Add source term
+		PLOOP U_new[k] = U_i[k];// +Dt * dU_old[k];
+
 		//Set guess values for primitives after implicit step based on optical depth
-		flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+		pflag[0] = Utoprim_2d(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
-		if (flag) {
+		if (pflag[0]) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+			pflag[0] = Utoprim_1dvsq2fix1(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 			#endif
-			if (flag) {
-				if (flag) {
-					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
-				}
+			if (pflag[0]) {
+				pflag[0] = Utoprim_1dfix1(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 			}
 		}
 		#endif	 
-		flag_rad = Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
+		pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
 		//Calculate source term for U_i
 		source_rad(pb_old, geom, dU_old);
 
-		//Calculate itereated error at start of iteration
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_i[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
-		error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3_RAD]) / norm);
-		if (do_entropy == 0) error_new[0] += 0.25 * (fabs(Dt * dU_old[UU_RAD]) / norm);
+		//Calculate iterated error
+		norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
+		error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
+		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
 
-		//Calculate total error at start of iteration
+		//Calculate total error
+		norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-			error_new[0] += 0.25 * T_GAS * (fabs(Dt * dU_old[KTOT]) / (norm));
+			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
 		}
-		norm = (fabs(U_i[UU]) + fabs(U_i[UU]) + fabs(Dt * dU_old[UU]));
-		if (do_entropy == 0 && flag_rad == 0) error_new[0] += 0.25 * (fabs(Dt * dU_old[UU]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3]) / norm);
+		if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
 
 		//If we've reached the tolerance level, exit immediately
 		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
@@ -679,12 +682,12 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
 			else offset = pow(10., -8.);
 
-			//Calculate total error
+			//Calculate total error	
+			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 			if (do_entropy == 1) {
 				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
 				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
 			}
-			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
@@ -766,42 +769,42 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	if (error_t[0] > pow(10., -4.)) {
+		PLOOP U_new[k] = U_i[k];// +Dt * dU_old[k];
+
 		//Set guess values for primitives after implicit step based on optical depth
-		flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+		pflag[0] = Utoprim_2d(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
-		if (flag) {
+		if (pflag[0]) {
 			#if DOKTOT
-			flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
+			pflag[0] = Utoprim_1dvsq2fix1(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 			#endif
-			if (flag) {
-				if (flag) {
-					flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
-				}
+			if (pflag[0]) {
+				pflag[0] = Utoprim_1dfix1(U_old, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 			}
 		}
 		#endif	 
-		if (flag == 0) flag_rad = Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
+		pflag_rad[0] = Rtoprim(U_old, geom->gcov, geom->gcon, geom->g, pb_old, BASIC);
 
 		//Calculate source term for U_i
 		source_rad(pb_old, geom, dU_old);
 
-		//Calculate itereated error at start of iteration
-		norm = (fabs(U_i[UU_RAD]) + fabs(U_i[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
-		error_new[0] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2_RAD]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3_RAD]) / norm);
-		if (do_entropy == 0) error_new[0] += 0.25 * (fabs(Dt * dU_old[UU_RAD]) / norm);
+		//Calculate iterated error
+		norm = (fabs(U_i[UU_RAD]) + fabs(U_old[UU_RAD]) + fabs(Dt * dU_old[UU_RAD]));
+		error_new[n_iter % 5] = 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1_RAD] - U_i[U1_RAD] - Dt * dU_old[U1_RAD]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2_RAD] - U_i[U2_RAD] - Dt * dU_old[U2_RAD]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3_RAD] - U_i[U3_RAD] - Dt * dU_old[U3_RAD]) / norm);
+		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]) / norm);
 
-		//Calculate total error at start of iteration
+		//Calculate total error
+		norm = (fabs(U_i[UU]) + fabs(U_old[UU]) + fabs(Dt * dU_old[UU]));
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
-			error_new[0] += 0.25 * T_GAS * (fabs(Dt * dU_old[KTOT]) / (norm));
+			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]) / norm);
 		}
-		norm = (fabs(U_i[UU]) + fabs(U_i[UU]) + fabs(Dt * dU_old[UU]));
-		if (do_entropy == 0 && flag_rad == 0) error_new[0] += 0.25 * (fabs(Dt * dU_old[UU]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(Dt * dU_old[U1]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(Dt * dU_old[U2]) / norm);
-		error_new[0] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(Dt * dU_old[U3]) / norm);
+		if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_old[UU] - U_i[UU] - Dt * dU_old[UU]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_old[U1] - U_i[U1] - Dt * dU_old[U1]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_old[U2] - U_i[U2] - Dt * dU_old[U2]) / norm);
+		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[3][3]) * (fabs(U_old[U3] - U_i[U3] - Dt * dU_old[U3]) / norm);
 
 		//If we've reached the tolerance level, exit immediately
 		if (((fabs(error_new[0]) < pow(10, -4.)) && (fabs(error_new[0]) < error_t[0]))) {
@@ -1021,11 +1024,11 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			else offset = pow(10., -8.);
 
 			//Calculate total error
+			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 			if (do_entropy == 1) {
 				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
 				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / norm);
 			}
-			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 			if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[1][1]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
 			error_new[n_iter % 5] += 0.25 * sqrt(geom->gcov[2][2]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);

@@ -611,8 +611,8 @@ void init_torus()
 			#else
 			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
-			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]) / R_G_CGS;
-			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]) / R_G_CGS;
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			tau = (kappa_es+ kappa_abs)*cell_size;
 			if (tau > taumax) {
 				#pragma omp critical
