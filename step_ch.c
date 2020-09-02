@@ -88,9 +88,9 @@ void step_ch()
 
 		#if(RAD_M1)
 		for (n = 0; n < n_active; n++){
-			if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim_rad(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
-			else fixup_utoprim_rad(ph, n_ord[n]);
-			pflag_rad[n_ord[n]][index_3D(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
+			//if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) fixup_utoprim_rad(p, n_ord[n]);  //Fix the failure points using interpolation and updated ghost zone values
+			//else fixup_utoprim_rad(ph, n_ord[n]);
+			//pflag_rad[n_ord[n]][index_3D(n_ord[n] ,N1_GPU_offset[n_ord[n]] - N1G, N2_GPU_offset[n_ord[n]] - N2G, N3_GPU_offset[n_ord[n]] - N3G)] = 0;
 		}
 		#endif
 
