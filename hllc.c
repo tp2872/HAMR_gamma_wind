@@ -379,12 +379,12 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 	int N_HLLC = 0;
 	int N_HLLD = 0;
 
-	//#pragma omp parallel private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_roe, state_l_FT, state_r_FT,F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ctop, dtij, ind0, ind1, U_HLL, F_HLL, vcon, A, B, C, D, v_dot_B, U_i, bsq, fail_HLLC,fail_HLLD, test, ptot, F_FT,i1,i2,j1,j2,bcon, ucon, l_bcon, l_ucon, r_bcon, r_ucon, trans, F1, R_l, R_r)
+	#pragma omp parallel private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_roe, state_l_FT, state_r_FT,F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ctop, dtij, ind0, ind1, U_HLL, F_HLL, vcon, A, B, C, D, v_dot_B, U_i, bsq, fail_HLLC,fail_HLLD, test, ptot, F_FT,i1,i2,j1,j2,bcon, ucon, l_bcon, l_ucon, r_bcon, r_ucon, trans, F1, R_l, R_r)
 	{
 		ndt_thread = 1.e9;
 
 		/* then evaluate slopes */
-		//#pragma omp for collapse(2) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)/nthreads)
+		#pragma omp for collapse(2) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n] - D1, N1_GPU_offset[n] + BS_1 - 1 + D1, N2_GPU_offset[n] - D2, N2_GPU_offset[n] + BS_2 - 1 + D2, N3_GPU_offset[n] - D3, N3_GPU_offset[n] + BS_3 - 1 + D3) {
 			// #pragma ivdep
 			PLOOP{
@@ -392,7 +392,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 			}
 		}
 
-		//#pragma omp for collapse(2) schedule(static,(BS_1+jdel+zdel+1)*(BS_2+idel+zdel+1)/nthreads)
+		#pragma omp for collapse(2) schedule(static,(BS_1+jdel+zdel+1)*(BS_2+idel+zdel+1)/nthreads)
 		ZSLOOP((N1_GPU_offset[n] - jdel - zdel)*D1, (N1_GPU_offset[n] + BS_1)*D1, (N2_GPU_offset[n] - idel - zdel)*D2, (N2_GPU_offset[n] + BS_2)*D2) {
 			for (z = (N3_GPU_offset[n] - idel - jdel)*D3; z <= (N3_GPU_offset[n] + BS_3)*D3; z++) {
 				fail_HLLD = 0;
@@ -810,7 +810,7 @@ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDI
 
 	while (keep_iterating) {
 		//Calculate error and error/d_ptot
-		error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -8.)*ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, eta_l, eta_r, w_al, w_ar);
+		error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -11.)*(ptot+ F_HLL[0][UU]), cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, eta_l, eta_r, w_al, w_ar);
 
 		//Save old value of ptot
 		ptot_old = ptot;
@@ -831,7 +831,7 @@ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDI
 		error_2 = error_1;
 		error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, eta_l, eta_r, w_al, w_ar);
 
-		if ((fabs(d_ptot) <= pow(10., -7.)*ptot_old) || n_iter > 10) {
+		if ((fabs(d_ptot) <= pow(10., -7.) * (fabs(ptot) + fabs(F_HLL[0][UU]))) || n_iter > 10) {
 			keep_iterating = 0;
 		}
 
@@ -986,7 +986,7 @@ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, 
 
 	//Check that contact wave is going slower than v=0.99c
 	vsq = (vcon_cl[1] * vcon_cl[1]+ vcon_cl[2] * vcon_cl[2]+ vcon_cl[3] * vcon_cl[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//If wavefan inconsisten revert to HLLC
 	if (fabs(w_al) <= fabs(ptot) || vcon_al[dir] <= cmin_roe || K_al[dir] <= cmin_roe || w_al <= 0.) fail_HLLD[0] = 1;
@@ -994,19 +994,19 @@ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, 
 
 	//Check that v_al is going slower than v=0.99c
 	vsq = (vcon_al[1] * vcon_al[1] + vcon_al[2] * vcon_al[2] + vcon_al[3] * vcon_al[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//Check that v_ar is going slower than v=0.99c
 	vsq = (vcon_ar[1] * vcon_ar[1] + vcon_ar[2] * vcon_ar[2] + vcon_ar[3] * vcon_al[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//Check that left Alfven wave is going slower than v=0.99c
 	vsq = (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//Check that left Alfven wave is going slower than v=0.99c
 	vsq = (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 }
 
 double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {

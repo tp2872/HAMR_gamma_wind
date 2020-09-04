@@ -5624,7 +5624,7 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 
 	while (keep_iterating) {
 		//Calculate error and error/d_ptot
-		error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -8.)*ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
+		error_2 = calc_error_HLLD(dir, 0, ptot + pow(10., -10.)*fabs(ptot), cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
 		//Save old value of ptot
 		ptot_old = ptot;
@@ -5637,15 +5637,18 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 		//ptot = exp(lptot);
 		//d_ptot = ptot - ptot_old;
 
-		de_dptot = (error_2 - error_1) / (pow(10., -8.)*ptot);
+		de_dptot = (error_2 - error_1) / (pow(10., -10.) * fabs(ptot ));
 		d_ptot = error_1 / de_dptot;
 		ptot = ptot - d_ptot;
+
+
+		if (ptot < 0.)ptot = 0.5 * fabs(ptot);
 
 		//Calculate updated value of ptot
 		error_2 = error_1;
 		error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
-		if ((fabs(d_ptot) <= pow(10., -7.)*ptot) || n_iter > 10) {
+		if ((fabs(d_ptot) <= pow(10., -8.) * fabs(ptot)) || n_iter > 10) {
 			keep_iterating = 0;
 		}
 
@@ -5653,7 +5656,7 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 	}
 
 	//If Newton-Raphson solver did not converge, reset ptot to ptot_HLLC and tag fail_HLLD
-	if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -6.)*ptot))) {
+	if (!(fabs(ptot) > 0.) || ((fabs(d_ptot) > pow(10., -8.) * fabs(ptot)))) {
 		ptot = ptot_HLLC;
 		fail_HLLD[0] = 1;
 	}
@@ -5796,7 +5799,7 @@ __device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double
 
 	//Check that contact wave is going slower than v=0.99c
 	vsq = (vcon_cl[1] * vcon_cl[1] + vcon_cl[2] * vcon_cl[2] + vcon_cl[3] * vcon_cl[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//If wavefan inconsisten revert to HLLC
 	if (fabs(w_al) <= fabs(ptot) || vcon_al[dir] <= cmin_roe || K_al[dir] <= cmin_roe || w_al <= 0.) fail_HLLD[0] = 1;
@@ -5804,19 +5807,19 @@ __device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double
 
 	//Check that v_al is going slower than v=0.99c
 	vsq = (vcon_al[1] * vcon_al[1] + vcon_al[2] * vcon_al[2] + vcon_al[3] * vcon_al[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//Check that v_ar is going slower than v=0.99c
 	vsq = (vcon_ar[1] * vcon_ar[1] + vcon_ar[2] * vcon_ar[2] + vcon_ar[3] * vcon_al[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//Check that left Alfven wave is going slower than v=0.99c
 	vsq = (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//Check that left Alfven wave is going slower than v=0.99c
 	vsq = (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3]);
-	if (!(vsq < 0.99)) fail_HLLD[0] = 1;
+	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 }
 
 __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {
@@ -5824,7 +5827,7 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 	double A, C, G, X, Q, error = 0.;
 	double delta_Kx, Y_l, Y_r, B_hat[NDIM];
 
-	if (dir == 1) {
+	/*if (dir == 1) {
 		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
 		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
 		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
@@ -5923,9 +5926,9 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 	B_c[GEN_2] = B_c[GEN_2] / delta_Kx;
 	B_c[GEN_3] = B_c[GEN_3] / delta_Kx;
 	
-	return (vcon_cr[GEN_1] - vcon_cl[GEN_1]);
+	return (vcon_cr[GEN_1] - vcon_cl[GEN_1]);*/
 
-	/*if (dir == 1) {
+	if (dir == 1) {
 		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
 		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
 		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
@@ -6008,5 +6011,5 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 	vcon_cl[dir] = (vcon_cl[dir] + vcon_cr[dir])*0.5;
 	vcon_cr[dir] = vcon_cl[dir];
 	
-	return error;*/
+	return error;
 }
