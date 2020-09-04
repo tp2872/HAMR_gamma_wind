@@ -40,10 +40,10 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 			//implicit_rad_solve_PRAD(pb, U_n, U_i, U_ft, pflag, pflag_rad,geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
-			if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			//if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD with entropy
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
@@ -74,10 +74,10 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 		}
 		else {
 			//If error is below set margin, accept solution, otherwise try PRAD
-			implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			//if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
@@ -197,6 +197,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		pb_old[k] = pb[k];
 		U_old[k] = U_f[k];
 		dU_old[k] = dU[k];
+		U_new[k] = U_old[k];
 	}
 
 	double error_start;
@@ -204,6 +205,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	while (keep_iterating) {
 		//if (n_iter == 0) error_start= error_new[0];
 		//if (n_iter == 0)fprintf(stderr, "error_start: %f, n_iter: %d \n", log10(error_new[0]), n_iter);
+		//PLOOP 
 
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
@@ -272,7 +274,7 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				flag = invert_matrix(dEdpb, dEdpb_inv);
 				
 				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.3));
+			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
 			if (flag) {
 				return 1;
@@ -287,8 +289,8 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			D = 1.0;
 			for (k = 0; k < 4; k++) {
 				dpb = -D*(E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
-				if (k == 0) dpb = MY_MIN(0.5*pb_old[UU], fabs(dpb))*fabs(dpb)/dpb;
-				else dpb = MY_MIN(0.5 * pb_old[k+UU], dpb);
+				//if (k == 0) dpb = MY_MIN(0.5*pb_old[UU], fabs(dpb))*fabs(dpb)/dpb;
+				//else dpb = MY_MIN(0.5 * pb_old[k+UU], dpb);
 				pb_new[k + UU] = pb_old[k + UU] + dpb;
 			}
 		}
@@ -540,7 +542,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					flag = invert_matrix(dEdUb, dEdUb_inv);
 				}
 				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.3));
+			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
 
 			if (flag) {
 				return 1;
