@@ -100,10 +100,19 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1);
 	//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], 1. / (GAMMA - 1.)) / pow(pr[RHO], 1. / (GAMMA - 1.) + 1);
 	//pow(exp(flux[KTOT] / flux[RHO]), GAMMA -1.)=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
+	//exp((flux[S] / flux[RHO])*(GAMMA -1.))=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
+	//exp((flux[S] / flux[RHO])*(GAMMA -1.))=flux(KTOT)/flux(RHO)
+	//(flux[S] / flux[RHO])* (GAMMA - 1.)=log(flux(KTOT) / flux(RHO))
+	//flux(S)=flux(RHO)/(GAMMA-1.)*log(flux(KTOT) / flux(RHO))
 
 	//XX= P / rho ^ gamma
 	//K = rho*uu* XX
+	//flux(K)/flux(RHO)=xx
+	//log(flux(K) / flux(K))=log(xx)
+	//flux(rho)*log(flux(K) / flux(RHO))=rho*uu*log(xx)
 	//S = rho*uu/(gamma-1)*log(XX)
+
+	//dS/dT=
 
 	//dK / dt = dK / dS * dS / dT;
 	//dK / dS=(GAMMA-1.)d(XX)/d(log(XX)); !!!
@@ -249,7 +258,7 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#else
-	double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (ph[UU]) / pow(ph[RHO],GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	double dK_dS = (GAMMA - 1.)* (GAMMA - 1.)* (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
 	dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#endif
 	#endif
