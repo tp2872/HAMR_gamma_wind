@@ -45,14 +45,14 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 			//If error is still below set margin, accept solution, otherwise try URAD
 			if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
+			//If error is below set margin, accept solution, otherwise try PMHDwith entropy
+			if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
+
 			//If error is below set margin, accept solution, otherwise try PRAD with entropy
 			if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD with entropy
 			if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
-
-			//If error is below set margin, accept solution, otherwise try PMHDwith entropy
-			if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t,cell_size, 1, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD staged
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 1);
@@ -277,8 +277,6 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			D = 1.0;
 			for (k = 0; k < 4; k++) {
 				dpb = -D*(E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
-				//if (k == 0) dpb = MY_MIN(0.5*pb_old[UU], fabs(dpb))*fabs(dpb)/dpb;
-				//else dpb = MY_MIN(0.5 * pb_old[k+UU], dpb);
 				pb_new[k + UU] = pb_old[k + UU] + dpb;
 			}
 		}
@@ -429,7 +427,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1,  n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
+	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1,  n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -676,6 +674,12 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					if (count_increase >= 5) keep_iterating = 0;
 				}
 
+				//If gas negative more than 2 times stop iterating
+				if (pb_new[UU]<0.) {
+					count_increase_gas++;
+					if (count_increase > 2) keep_iterating = 0;
+				}
+
 				//Reset variables if Newton step succesfull
 				if (keep_iterating) {
 					for (k = 0; k < NPR; k++) {
@@ -713,7 +717,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	double T_GAS, norm, tau, kappa_abs, kappa_emmit, kappa_es, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, n_iter_fail=0, keep_iterating = 1, flag, n_iter_jacob, flag_rad = 0, count_increase = 0;
+	int i, k, n_iter = 0, n_iter_fail=0, keep_iterating = 1, flag, n_iter_jacob, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -944,6 +948,12 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					count_increase++;
 					if (count_increase >= 5) keep_iterating = 0;
 					//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
+				}
+
+				//If gas negative more than 2 times stop iterating
+				if (pb_new[UU] < 0.) {
+					count_increase_gas++;
+					if (count_increase > 2) keep_iterating = 0;
 				}
 
 				//If we've reached the tolerance level in total error or we exceeded more than 20 iterations, stop iterating
