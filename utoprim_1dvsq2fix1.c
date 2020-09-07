@@ -77,18 +77,18 @@ utoprim_1dvsq2fix1.c:
 
 /* these variables need to be shared between the functions
    Utoprim_1D, residual, and utsq */
-FTYPE Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2 ;
+double Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2 ;
 #pragma omp threadprivate(Bsq2,QdotBsq2,Qtsq2,Qdotn2,D_2, K_atm2)
 
 // Declarations: 
-static FTYPE vsq_calc(FTYPE W);
-static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u);
-static FTYPE u_of_p(FTYPE p);
-static FTYPE pressure_of_rho(FTYPE rho0);
-static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p);
-static int Utoprim_new_body(FTYPE U[], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[], double tolerance, int lim);
-static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n);
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [], FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance);
+static double vsq_calc(double W);
+static double W_of_vsq(double vsq, double *p, double *rho, double *u);
+static double u_of_p(double p);
+static double pressure_of_rho(double rho0);
+static double dWdvsq_calc(double vsq, double rho, double p);
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet,  double prim[], double tolerance, int lim);
+static void func_1d_gnr(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df);
+static int general_newton_raphson( double x[],  void (*funcd) (double [], double [], double [], double [][NEWT_DIM_1], double *, double *), double tolerance);
 
 /**********************************************************************/
 /******************************************************************
@@ -133,34 +133,29 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
 
 ******************************************************************/
 
-int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet, FTYPE prim[NPR_U], double tolerance, int lim)
+int Utoprim_1dvsq2fix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance, int lim)
 {
-      FTYPE U_tmp[NPR_U], prim_tmp[NPR_U];
+      double U_tmp[NPR_U], prim_tmp[NPR_U];
       int i, j, ret; 
-      FTYPE alpha;
-
+      double alpha;
 
       if( U[0] <= 0. ) { 
         return(-100);
       }
 
-      /* First update the primitive B-fields */
+      //First update the primitive B-fields
       for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet ;
 
-      /* Set the geometry variables: */
+      //Set the geometry variables
       alpha = 1.0/sqrt(-gcon[0][0]);
   
-      /* Transform the CONSERVED variables into the new system */
+      //Transform the CONSERVED variables into the new system
       U_tmp[RHO] = alpha * U[RHO] / gdet;
       U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
-      for( i = UTCON1; i <= UTCON3; i++ ) {
-        U_tmp[i] = alpha * U[i] / gdet;
-      }
-      for( i = BCON1; i <= BCON3; i++ ) {
-        U_tmp[i] = alpha * U[i] / gdet;
-      }
+      for( i = UTCON1; i <= UTCON3; i++ ) U_tmp[i] = alpha * U[i] / gdet;
+      for( i = BCON1; i <= BCON3; i++ ) U_tmp[i] = alpha * U[i] / gdet;
 
-      /* Transform the PRIMITIVE variables into the new system */
+      //Transform the PRIMITIVE variables into the new system
       for( i = 0; i < BCON1; i++ ) {
         prim_tmp[i] = prim[i];
       }
@@ -178,10 +173,10 @@ int Utoprim_1dvsq2fix1(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][
 
       ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
-      /* Transform new primitive variables back if there was no problem : */ 
+      //Transform new primitive variables back if there was no problem 
       if( ret == 0 ) {
-        for( i = 0; i < BCON1; i++ ) {
-          prim[i] = prim_tmp[i];
+        for(i = 0; i < BCON1; i++) {
+            prim[i] = prim_tmp[i];
         }
       }
 
@@ -223,134 +218,119 @@ return:  (i*100 + j)  where
          j = 0 -> success 
              1 -> failure: some sort of failure in Newton-Raphson; 
              2 -> failure: utsq<0 w/ initial p[] guess;
-	     3 -> failure: W<0 or W>W_TOO_BIG
-             4 -> failure: v^2 > 1 
+         3 -> failure: W<0 or W>W_TOO_BIG
+             4 -> failure: v^2 > 1
              5 -> failure: rho,uu <= 0 ;
 
 **********************************************************************************/
 
-static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[NDIM][NDIM], FTYPE gdet,  FTYPE prim[NPR_U], double tolerance, int lim)
-{
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim) {
+    double x_1d[1];
+    double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
+    double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
+    int i, j, retval = 0, retval2, i_increase;
 
-  FTYPE x_1d[1];
-  FTYPE QdotB,Bcon[NDIM],Bcov[NDIM],Qcov[NDIM],Qcon[NDIM],ncov[NDIM],ncon[NDIM],Qsq,Qtcon[NDIM];
-  FTYPE rho0,u,p,w,gammasq,gamma,gtmp,W_last,W,utsq,vsq,tmpdiff ;
-  int    i,j, retval, retval2, i_increase ;
+    //Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
+    Bcon[0] = 0.;
+    for (i = 1; i < 4; i++) Bcon[i] = U[BCON1 + i - 1];
+    lower_g(Bcon, gcov, Bcov);
 
+    for (i = 0; i < 4; i++) Qcov[i] = U[QCOV0 + i];
+    raise_g(Qcov, gcon, Qcon);
 
-  // Assume ok initially:
-  retval = 0 ;
+    Bsq2 = 0.;
+    for (i = 1; i < 4; i++) Bsq2 += Bcon[i] * Bcov[i];
 
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
+    QdotB = 0.;
+    for (i = 0; i < 4; i++) QdotB += Qcov[i] * Bcon[i];
+    QdotBsq2 = QdotB * QdotB;
 
-  // Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
-  Bcon[0] = 0. ;
-  for(i=1;i<4;i++) Bcon[i] = U[BCON1+i-1] ;
+    ncov_calc(gcon, ncov);
+    raise_g(ncov, gcon, ncon);
 
-  lower_g(Bcon,gcov,Bcov) ;
+    Qdotn2 = Qcon[0] * ncov[0];
 
-  for(i=0;i<4;i++) Qcov[i] = U[QCOV0+i] ;
-  raise_g(Qcov,gcon,Qcon) ;
+    Qsq = 0.;
+    for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 
+    Qtsq2 = Qsq + Qdotn2 * Qdotn2;
 
-  Bsq2 = 0. ;
-  for(i=1;i<4;i++) Bsq2 += Bcon[i]*Bcov[i] ;
+    D_2 = U[RHO];
 
-  QdotB = 0. ;
-  for(i=0;i<4;i++) QdotB += Qcov[i]*Bcon[i] ;
-  QdotBsq2 = QdotB*QdotB ;
+    //calculate W from last timestep and use for guess
+    utsq = 0.;
+    for (i = 1; i < 4; i++) {
+        for (j = 1; j < 4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+    }
 
-  ncov_calc(gcon,ncov) ;
-  raise_g(ncov,gcon,ncon);
+    if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) {
+        utsq = fabs(utsq);
+    }
+    if (utsq < 0. || utsq > UTSQ_TOO_BIG) {
+        retval = 2;
+        return(retval);
+    }
 
-  Qdotn2 = Qcon[0]*ncov[0] ;
+    gammasq = (1. + utsq);
+    gamma = sqrt(gammasq);
 
-  Qsq = 0. ;
-  for(i=0;i<4;i++) Qsq += Qcov[i]*Qcon[i] ;
+    //Always calculate rho from D and gamma so that using D in EOS remains consistent; i.e. you don't get positive values for dP/d(vsq) . 
+    rho0 = D_2 / gamma;
+    u = prim[UU];
+    p = pressure_rho0_u(rho0, u);
+    w = rho0 + u + p;
+    W_last = w * gammasq;
 
-  Qtsq2 = Qsq + Qdotn2*Qdotn2 ;
+    //Initialize independent variables for Newton-Raphson:
+    x_1d[0] = 1. - 1. / gammasq;
 
-  D_2 = U[RHO] ;
+    //Find vsq via Newton-Raphson:
+    retval = general_newton_raphson(x_1d, func_1d_gnr, tolerance);
 
-  /* calculate W from last timestep and use  for guess */
-  utsq = 0. ;
-  for(i=1;i<4;i++)
-    for(j=1;j<4;j++) utsq += gcov[i][j]*prim[UTCON1+i-1]*prim[UTCON1+j-1] ;
+    //Problem with solver, so return denoting error before doing anything further/
+    if (retval != 0) {
+        retval = retval * 100 + 1;
+        return(retval);
+    }
 
+    //Calculate v^2 :
+    vsq = x_1d[0];
+    if ((vsq >= 1.) || (vsq < 0.)) {
+        retval = 4;
+        return(retval);
+    }
 
-  if( (utsq < 0.) && (fabs(utsq) < 1.0e-13) ) { 
-    utsq = fabs(utsq);
-  }
-  if(utsq < 0. || utsq > UTSQ_TOO_BIG) {
-    retval = 2;
+    //Find W from this vsq:
+    W = W_of_vsq(vsq, &p, &rho0, &u);
+
+    //Recover the primitive variables from the scalars and conserved variables:
+    gtmp = sqrt(1. - vsq);
+    gamma = 1. / gtmp;
+
+    w = W * (1. - vsq);
+
+    //Return for negative density or internal energy
+    if ((rho0 <= 0.)) {
+        retval = 5;
+        return(retval);
+    }
+
+    if ((u <= 0.) && (lim == BASIC)){
+        retval = 6;
+        return(retval);
+    }
+
+    //Set primitive density and internal energy
+    prim[RHO] = rho0;
+    prim[UU] = u;
+
+    //Set relative 4-velocities
+    for (i = 1; i < 4; i++) {
+        Qtcon[i] = Qcon[i] + ncon[i] * Qdotn2;
+        prim[UTCON1 + i - 1] = gamma / (W + Bsq2) * (Qtcon[i] + QdotB * Bcon[i] / W);
+    }
+
     return(retval) ;
-  }
-
-  gammasq = 1. + utsq ;
-  gamma  = sqrt(gammasq);
-	
-  // Always calculate rho from D and gamma so that using D in EOS remains consistent
-  //   i.e. you don't get positive values for dP/d(vsq) . 
-  rho0 = D_2 / gamma ;
-  u = prim[UU] ;
-  p = pressure_rho0_u(rho0,u) ;
-  w = rho0 + u + p ;
-
-  W_last = w*gammasq ;
-
-
-  // Initialize independent variables for Newton-Raphson:
-  x_1d[0] = 1. - 1. / gammasq ; 
-
-
-  // Find vsq via Newton-Raphson:
-  retval = general_newton_raphson( x_1d, 1, func_1d_gnr, tolerance) ; 
-
-  /* Problem with solver, so return denoting error before doing anything further */
-  if( retval != 0 ) { 
-    retval = retval*100+1;
-    return(retval);
-  }
-
-  // Calculate v^2 :
-  vsq = x_1d[0];
-  if( (vsq >= 1.) || (vsq < 0.) ) {
-    retval = 4;
-    return(retval) ;
-  }
-
-  // Find W from this vsq:
-  W = W_of_vsq(vsq, &p, &rho0, &u);
-
-
-  // Recover the primitive variables from the scalars and conserved variables:
-  gtmp = sqrt(1. - vsq);
-  gamma = 1./gtmp ;
-
-  w = W * (1. - vsq) ;
-
-
-  // User may want to handle this case differently, e.g. do NOT return upon 
-  // a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-  if( (rho0 <= 0.) || (u <= 0.) && (lim==BASIC)) { 
-    retval = 5;
-    return(retval) ;
-  }
-
-  prim[RHO] = rho0 ;
-  prim[UU] = u ;
-
-
-  for(i=1;i<4;i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn2;
-  for(i=1;i<4;i++) prim[UTCON1+i-1] = gamma/(W+Bsq2) * ( Qtcon[i] + QdotB*Bcon[i]/W ) ;
-	
-  /* set field components */
-  for(i = BCON1; i <= BCON3; i++) prim[i] = U[i] ;
-
-
-  /* done! */
-  return(retval) ;
-    
 }
   
 /**********************************************************************/
@@ -363,17 +343,15 @@ static int Utoprim_new_body(FTYPE U[NPR_U], FTYPE gcov[NDIM][NDIM], FTYPE gcon[N
 
 *********************************************************************/
 
-static void validate_x(FTYPE x[1], FTYPE x0[1] ) 
-{
-  
-  FTYPE small = 1.e-10;
+static void validate_x(double x[1], double x0[1] ) 
+{ 
+  double small = 1.e-10;
 
   x[0] = (x[0] >= 1.0)    ?  ( 0.5*(x0[0] + 1.) )    : x[0];
   x[0] = (x[0] <  -small) ?  ( 0.5*x0[0] )           : x[0];
   x[0] = fabs(x[0]);
 
   return;
-
 }
 
 
@@ -393,116 +371,75 @@ static void validate_x(FTYPE x[1], FTYPE x0[1] )
        -- funcd = name of function that calculates residuals, etc.;
 
 *****************************************************************/
-static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FTYPE [], FTYPE [],  FTYPE [][NEWT_DIM_1], FTYPE *, FTYPE *, int), double tolerance)
-{
-  FTYPE f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], 
-    jac[NEWT_DIM_1][NEWT_DIM_1];
-  FTYPE errx, x_orig[NEWT_DIM_1];
-  int    n_iter, id, jd, i_extra, doing_extra;
-  FTYPE dW,dvsq,vsq_old,vsq,W,W_old, rho,p,u;
+static int general_newton_raphson( double x[], void (*funcd) (double [], double [], double [],  double [][NEWT_DIM_1], double *, double *), double tolerance){
+      double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
+      double errx, x_orig[NEWT_DIM_1];
+      int    n_iter=0, i_extra, doing_extra;
+      double W,W_old, rho,p,u;
 
-  int   keep_iterating;
+      int   keep_iterating;
 
+      //Initialize various parameters and variables:
+      errx = 1. ; 
+      df =  f = 1.;
+      i_extra = doing_extra = 0;
 
-  // Initialize various parameters and variables:
-  errx = 1. ; 
-  df =  f = 1.;
-  i_extra = doing_extra = 0;
+      x_old[0] = x_orig[0] = x[0];
 
-  for( id = 0; id < n ; id++)  x_old[id] = x_orig[id] = x[id] ;
+      W = W_old = 0.;
 
-  vsq_old = vsq = W = W_old = 0.;
+      //Start the Newton-Raphson iterations
+      keep_iterating = 1;
+      while( keep_iterating ) { 
+            (*funcd) (x, dx, resid, jac, &f, &df);  //returns with new dx, f, df
 
-  n_iter = 0;
+            //Save old values before calculating the new
+            errx = 0.;
+            x_old[0] = x[0];
 
+            //Make the Newton step
+            x[0] += dx[0];
 
-  /* Start the Newton-Raphson iterations : */
-  keep_iterating = 1;
-  while( keep_iterating ) { 
+            /****************************************/
+            /* Make sure that the new x[] is physical : */
+            /****************************************/
+            validate_x(x, x_old );
 
-    (*funcd) (x, dx, resid, jac, &f, &df, n);  /* returns with new dx, f, df */
+            /****************************************/
+            /* Calculate the convergence criterion */
+            /****************************************/
+            W_old = W;
+            W = W_of_vsq(x[0], &p, &rho, &u);
+            errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
+            errx += (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
-
-    /* Save old values before calculating the new: */
-    errx = 0.;
-    for( id = 0; id < n ; id++) {
-      x_old[id] = x[id] ;
-    }
-
-    for( id = 0; id < n ; id++) {
-      x[id] += dx[id]  ;
-    }
-
-    /****************************************/
-    /* Make sure that the new x[] is physical : */
-    /****************************************/
-    // METHOD specific
-    validate_x( x, x_old );
-
-
-    /****************************************/
-    /* Calculate the convergence criterion */
-    /****************************************/
-
-    /* For the new criterion, always look at error in "W" : */
-    // METHOD specific
-    W_old = W;
-    W = W_of_vsq( x[0], &p, &rho, &u);
-    errx  = (W==0.) ?  fabs(W-W_old) : fabs((W-W_old)/W);
-    errx += (x[0]==0.) ?  fabs(x[0]-x_old[0]) : fabs((x[0]-x_old[0])/x[0]);
-
-
-//    fprintf(stderr,"NR: %26.20e  %26.20e  %26.20e  %26.20e  %26.20e  \n", x_old[0], x[0], resid[0], jac[0][0], errx);
-//    fflush(stderr);
-
-    /*****************************************************************************/
-    /* If we've reached the tolerance level, then just do a few extra iterations */
-    /*   before stopping                                                         */
-    /*****************************************************************************/
+            /*****************************************************************************/
+            /* If we've reached the tolerance level, then just do a few extra iterations */
+            /*   before stopping                                                         */
+            /*****************************************************************************/
     
-    if( (fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) {
-      doing_extra = 1;
-    }
+            if( (fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0) ) doing_extra = 1;
 
-    if( doing_extra == 1 ) i_extra++ ;
+            if (doing_extra == 1) i_extra++;
 
-    // See if we've done the extra iterations, or have done too many iterations:
-    if( ((fabs(errx) <= tolerance)&&(doing_extra == 0))
-	|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER-1)) ) {
-      keep_iterating = 0;
-    }
+            // See if we've done the extra iterations, or have done too many iterations:
+            if(((fabs(errx) <= tolerance)&&(doing_extra == 0)) || (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER-1))){
+              keep_iterating = 0;
+            }
 
-    n_iter++;
+            n_iter++;
+      } 
 
-  }   // END of while(keep_iterating)
+      //Check for bad untrapped divergences
+      if((isfinite(f)==0) || (isfinite(df)==0)) return(2);
+      
+      //Return in different ways depending on tolerance and minimum tolerance
+      if (fabs(errx) > MY_MIN(tolerance, MIN_NEWT_TOL)) return(1);
+      if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > tolerance)) return(0);
+      if (fabs(errx) <= tolerance) return(0);
 
-
-  /*  Check for bad untrapped divergences : */
-  if( (isfinite(f)==0) || (isfinite(df)==0) ) {
-    return(2);
-  }
-
-  // Return in different ways depending on whether a solution was found:
-  if( fabs(errx) > tolerance){
-    #if(LTRACE)
-    fprintf(stderr," totalcount = %d   0   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);                      
-    #endif
-    return(1);
-  }
-  if( (fabs(errx) <= tolerance) && (fabs(errx) > tolerance) ){
-    //fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
-    return(0);
-  }
-  if( fabs(errx) <= tolerance){
-    //fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
-    return(0);
-  }
-
-  return(0);
-
+      return(0);
 }
-
-
 
 /********************************************************************************/
 /********************************************************************** 
@@ -521,12 +458,9 @@ static int general_newton_raphson( FTYPE x[], int n, void (*funcd) (FTYPE [], FT
          n    = dimension of x[];
  *********************************************************************************/
 
-static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[], 
-			FTYPE jac[][NEWT_DIM_1], FTYPE *f, FTYPE *df, int n)
-{
-  FTYPE vsq,W,W0,Wsq,W3,dWdvsq , dpdrho, fact_tmp, rho, p, u  ;
+static void func_1d_gnr(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df){
+  double vsq,W,W0,Wsq,W3,dWdvsq , dpdrho, fact_tmp, rho, p, u  ;
   int retval, iters; 
-
 
   vsq = x[0];
 
@@ -536,7 +470,6 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
   W3 = W*Wsq;
 
   // Doing this assuming  P = (G-1) u :
-
   dWdvsq = dWdvsq_calc(vsq, rho, p);
 
   fact_tmp = (Bsq2 + W) ;
@@ -548,8 +481,8 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
 
   *f = 0.5*resid[0]*resid[0];
   *df = -2. * (*f);
-
 }
+
 /********************************************************************** 
  ********************************************************************** 
    
@@ -566,37 +499,36 @@ static void func_1d_gnr(FTYPE x[], FTYPE dx[], FTYPE resid[],
 pressure as a function of rho0 and w = rho0 + u + p 
 this is used by primtoU and Utoprim_1D
 */
-static FTYPE pressure_of_rho(FTYPE rho0){
-    return(K_atm2 * pow(rho0, G_ATM));
+static double pressure_of_rho(double rho0){
+    return(K_atm2 * pow(rho0, GAMMA));
 }
 
 /* 
 internal energy density as a function of the pressure
 */
-static FTYPE u_of_p(FTYPE p){
-  return( p / (GAMMA - 1.) ) ;
+static double u_of_p(double p){
+    return(p / (GAMMA - 1.));
 }
 
 /* 
 W as a function of v^2
 */
-static FTYPE W_of_vsq(FTYPE vsq, FTYPE *p, FTYPE *rho, FTYPE *u){
-  FTYPE gtmp;
+static double W_of_vsq(double vsq, double *p, double *rho, double *u){
+    double gtmp;
 
-  gtmp = (1. - vsq);
-  *rho = D_2 * sqrt(gtmp);
-  *p = pressure_of_rho(*rho);
-  *u = u_of_p(*p);
+    gtmp = (1. - vsq);
+    *rho = D_2 * sqrt(gtmp);
+    *p = pressure_of_rho(*rho);
+    *u = u_of_p(*p);
   
-  return( (*rho + *u + *p ) / gtmp  );
-
+    return( (*rho + *u + *p ) / gtmp  );
 }
 
 /* 
 dW/dvsq as a function of v^2, rho, p
 */
-static FTYPE dWdvsq_calc(FTYPE vsq, FTYPE rho, FTYPE p){
-  return(  ( GAMMA*(2.-G_ATM)*p   + (GAMMA-1.)*rho ) / ( 2.*(GAMMA-1.)*(1.-vsq)*(1.-vsq) )   ) ; 
+static double dWdvsq_calc(double vsq, double rho, double p){
+    return((GAMMA * (2. - G_ATM) * p + (GAMMA - 1.) * rho) / (2. * (GAMMA - 1.) * (1. - vsq) * (1. - vsq)));
 }
 
 

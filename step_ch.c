@@ -306,9 +306,9 @@ void utoprim_M1_0(double Dt, int n)
 	struct of_state q;
 	struct of_state_rad q_rad;
 
-	//#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom, q, q_rad, ind0, cell_size)
+	#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom, q, q_rad, ind0, cell_size)
 	{
-		//#pragma omp for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
+		#pragma omp for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n]-N1G, N1_GPU_offset[n] + BS_1 + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 +N3G - 1) {
 			k = 1;
 			//if (((i < N1_GPU_offset[n] - D1) && ((j < N2_GPU_offset[n] - D2))) || ((i < N1_GPU_offset[n] - D1) && ((j > N2_GPU_offset[n] + BS_2))) || (((i > N1_GPU_offset[n] + BS_1) && ((j < N2_GPU_offset[n] - D2)))) || ((i > N1_GPU_offset[n] + BS_1) && ((j > N2_GPU_offset[n] + BS_2)))) k = 0;
@@ -336,9 +336,9 @@ void utoprim_M1_1(double Dt, int n){
 	double dU[NPR];
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
-	//#pragma omp  parallel shared(n, gdet, psh, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, dU, ind0, ind1, ind2, ind3, cell_size)
+	#pragma omp  parallel shared(n, gdet, psh, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, dU, ind0, ind1, ind2, ind3, cell_size)
 	{
-		//#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
+		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
 			source(p[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
@@ -387,9 +387,9 @@ void utoprim_M1_2(double Dt, int n){
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	//#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, q, q_rad, dU, U_2, geom, ind0, ind1, ind2, ind3)
+	#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, q, q_rad, dU, U_2, geom, ind0, ind1, ind2, ind3)
 	{
-		//#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
+		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			get_geometry(n, i, j, z, CENT, &geom);
 
@@ -617,11 +617,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 					#endif
 
-					#if(RESCALE)
-					get_geometry(n,i, j,z, CENT, &geom);
-					rescale(p_l, REVERSE, dir, i, j, face, &geom);
-					rescale(p_r, REVERSE, dir, i, j, face, &geom);
-					#endif
+			
 
 					get_state(p_l, &geom, &state_l);
 					get_state(p_r, &geom, &state_r);

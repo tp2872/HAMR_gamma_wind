@@ -427,48 +427,6 @@ void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n)
 	return;
 }
 
-#if( DO_FONT_FIX ) 
-/***********************************************************************
-   set_Katm():
-
-       -- sets the EOS constant used for Font's fix. 
-
-       -- see utoprim_1dfix1.c and utoprim_1dvsq2fix1.c  for more
-           information. 
-
-       -- uses the initial floor values of rho/u determined by fixup1zone()
-
-       -- we assume here that Constant X1,r is independent of theta,X2
-
-***********************************************************************/
-void set_Katm( void )
-{
-  int i, j, k, G_type, n ;
-  double prim[NPR], G_tmp;
-
-  G_type = get_G_ATM( &G_tmp );
-
-  if (rank == 0){
-	  fprintf(stderr, "G_tmp = %26.20e \n", G_tmp);
-  }
-
-  for (n = 0; n < n_active; n++){
-	  j = N2_GPU_offset[n_ord[n]];
-	  for (i = N1_GPU_offset[n_ord[n]]-N1G; i < N1_GPU_offset[n_ord[n]] + BS_1+N1G; i++) {
-		  PLOOP prim[k] = 0.;
-		  prim[RHO] = prim[UU] = -1.;
-
-		  fixup1zone(i, j, N3_GPU_offset[n_ord[n]], n_ord[n], prim);
-		  Katm[nl[n_ord[n]]][i - (N1_GPU_offset[n_ord[n]]-N1G)] = (gam - 1.) * prim[UU] / pow(prim[RHO], G_tmp);
-	  }
-  }
-  return;
-}
-#endif
-
-
-#undef FLOOP 
-
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n)
 {
 	int i, j, z, k;
@@ -533,58 +491,4 @@ void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL]
 		}
 	}
 	return;
-}
-
-void rescale(double *pr, int which, int dir, int n, int ii, int jj, int zz, int face, struct of_geom *geom)
-{
-	double scale[NPR], r, th, phi, X[NDIM];
-	int k;
-
-	coord(n, ii, jj, zz, face, X);
-	bl_coord(X, &r, &th, &phi);
-
-	if (dir == 1) {
-		// optimized for pole
-		scale[RHO] = pow(r, 1.5);
-		scale[UU] = scale[RHO] * r;
-		scale[U1] = scale[RHO];
-		scale[U2] = 1.0;
-		scale[U3] = r * r;
-		scale[B1] = r * r;
-		scale[B2] = r * r;
-		scale[B3] = r * r;
-	}
-	else if (dir == 2) {
-		scale[RHO] = 1.0;
-		scale[UU] = 1.0;
-		scale[U1] = 1.0;
-		scale[U2] = 1.0;
-		scale[U3] = 1.0;
-		scale[B1] = 1.0;
-		scale[B2] = 1.0;
-		scale[B3] = 1.0;
-	}
-	else if (dir == 3) {
-		scale[RHO] = 1.0;
-		scale[UU] = 1.0;
-		scale[U1] = 1.0;
-		scale[U2] = 1.0;
-		scale[U3] = 1.0;
-		scale[B1] = 1.0;
-		scale[B2] = 1.0;
-		scale[B3] = 1.0;
-	}
-
-	if (which == FORWARD) {	// rescale before interpolation
-		PLOOP pr[k] *= scale[k];
-	}
-	else if (which == REVERSE) {	// unrescale after interpolation
-		PLOOP pr[k] /= scale[k];
-	}
-	else {
-		if (rank == 0){
-			fprintf(stderr, "no such rescale type!\n");
-		}
-		exit(100);
-	}
 }

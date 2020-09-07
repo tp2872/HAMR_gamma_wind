@@ -368,10 +368,6 @@ void init_thindisk()
 	#endif*/
 	set_mag();
 
-	#if( DO_FONT_FIX ) 
-	set_Katm();
-	#endif 
-
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)
 	calc_source();
@@ -646,10 +642,6 @@ void init_torus()
 
 	set_mag();
 
-	#if( DO_FONT_FIX ) 
-	set_Katm();
-	#endif 
-
 	sourceflag=0.;
 	#if(ELLIPTICAL2)
 	calc_source();
@@ -898,11 +890,7 @@ void init_disruption()
   bound_prim(p,1);
 
   //set_mag();
-  
-	#if( DO_FONT_FIX ) 
-  set_Katm();
-	#endif 
-  
+
   sourceflag=0.;
 	#if(ELLIPTICAL2)
   calc_source();
@@ -2075,13 +2063,10 @@ void init_torus_grb(){
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p, 1);
 
-#if( DO_FONT_FIX )
-	set_Katm();
-#endif 
 
-#if (GPU_ENABLED)
+	#if (GPU_ENABLED)
 	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
-#endif
+	#endif
 }
 
 //note that only axisymmetric A is supported

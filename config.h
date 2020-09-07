@@ -63,9 +63,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 0
+#define GPU_ENABLED 1
 #define GPU_DEBUG 0
-#define CPU_OPENMP 1
+#define CPU_OPENMP 0
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -98,7 +98,7 @@ Numerical Parameters section
 /*Set block size in each dimension*/
 #define BS_1 160
 #define BS_2 160
-#define BS_3 1
+#define BS_3 160
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -141,7 +141,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (40)
+#define DUMPFACTOR (320)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -161,7 +161,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
-#define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)
@@ -257,14 +257,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Whether to dump diag file*/
 #define DUMP_DIAG (0)
 
-/* whether or not to rescale primitive variables before interpolating them for flux/BC's. Is not implemented on GPU and dperacated/unlikely to work correctly on CPU */
-#define RESCALE     (0)
-
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 //Abundace constants
 #define Z_AB (0.02)
@@ -358,10 +355,6 @@ MNEMONICS SECTION
 #define FAIL_COEFF_SUP	    (4)
 #define FAIL_GAMMA          (5)
 #define FAIL_METRIC         (6)
-
-/* For rescale() operations: */
-#define FORWARD 1
-#define REVERSE 2
 
 /*For Windows users*/
 #ifndef M_PI 
@@ -569,7 +562,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (0)
+#define NEWMAN (1)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */
@@ -618,6 +611,7 @@ Section with derived quantities
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
+#define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */

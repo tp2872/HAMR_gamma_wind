@@ -72,9 +72,9 @@ double Bsq, QdotBsq, Qtsq, Qdotn, D;
 // Declarations: 
 static double vsq_calc(double W);
 static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim);
-static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
-static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int), double tolerance);
-static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim);
+static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance);
+static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df);
 static double x1_of_x0(double x0);
 static double pressure_W_vsq(double W, double vsq);
 static double dpdW_calc_vsq(double W, double vsq);
@@ -114,51 +114,37 @@ gcov = gcon = diag(-1,1,1,1)  and gdet = 1.  ;
 
 ******************************************************************/
 
-int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim)
-{
-
-	double U_tmp[NPR_U], U_tmp2[NPR_U], prim_tmp[NPR_U];
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim){
+	double U_tmp[NPR_U],  prim_tmp[NPR_HD];
 	int i, j, ret;
 	double alpha;
 
-
 	if (U[0] <= 0.) {
 		return(-100);
-		//U[0] = 0.01;
 	}
 
-	/* First update the primitive B-fields */
+	//First update the primitive B-fields
 	 #pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
-	/* Set the geometry variables: */
+	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0][0]);
 
-	/* Transform the CONSERVED variables into the new system */
+	//Transform the CONSERVED variables into the new system
 	U_tmp[RHO] = alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
-	 #pragma ivdep
-	for (i = UTCON1; i <= UTCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
-	 #pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	#pragma ivdep
+	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
-	/* Transform the PRIMITIVE variables into the new system */
-	 #pragma ivdep
-	for (i = 0; i < BCON1; i++) {
-		prim_tmp[i] = prim[i];
-	}
-	 #pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) {
-		prim_tmp[i] = alpha*prim[i];
-	}
+	//Transform the PRIMITIVE variables into the new system
+	#pragma ivdep
+	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
-	/* Transform new primitive variables back if there was no problem : */
+	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
 		 #pragma ivdep
 		for (i = 0; i < BCON1; i++) {
@@ -210,31 +196,26 @@ j = 0 -> success
 
 **********************************************************************************/
 
-static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance, int lim)
+static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim)
 {
-
 	double x_2d[NEWT_DIM_2];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
 	int i, j, n, retval, i_increase;
 	n = NEWT_DIM_2;
 
-	// Assume ok initially:
+	//Assume ok initially:
 	retval = 0;
 	
-	 #pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
-
-	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
+	//Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
-	 #pragma ivdep
+	#pragma ivdep
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
-
 	lower_g(Bcon, gcov, Bcov);
-	 #pragma ivdep
+
+	#pragma ivdep
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
 	raise_g(Qcov, gcon, Qcon);
-
 
 	Bsq = 0.;
 	/*#pragma ivdepreduction(+:Bsq)*/
@@ -258,12 +239,11 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 
 	D = U[RHO];
 
-	/* calculate W from last timestep and use for guess */
+	//calculate W from last timestep and use for guess
 	utsq = 0.;
-	for (i = 1; i<4; i++)
-		//#pragma ivdepreduction(+:utsq)
-		for (j = 1; j<4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
-
+	for (i = 1; i < 4; i++) {
+		for (j = 1; j < 4; j++) utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+	}
 
 	if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) {
 		utsq = fabs(utsq);
@@ -276,34 +256,29 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 	gammasq = 1. + utsq;
 	gamma = sqrt(gammasq);
 
-	// Always calculate rho from D and gamma so that using D in EOS remains consistent
-	//   i.e. you don't get positive values for dP/d(vsq) . 
+	//Always calculate rho from D and gamma so that using D in EOS remains consistent; i.e. you don't get positive values for dP/d(vsq) . 
 	rho0 = D / gamma;
 	u = prim[UU];
 	p = pressure_rho0_u(rho0, u);
 	w = rho0 + u + p;
-
 	W_last = w*gammasq;
 
-
-	// Make sure that W is large enough so that v^2 < 1 : 
+	//Make sure that W is large enough so that v^2 < 1 : 
 	i_increase = 0;
-	while (((W_last*W_last*W_last * (W_last + 2.*Bsq)
-		- QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq))
-		&& (i_increase < 10)) {
+	while (((W_last*W_last*W_last * (W_last + 2.*Bsq)- QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq)) && (i_increase < 10)) {
 		W_last *= 10.;
 		i_increase++;
 	}
 
-	// Calculate W and vsq: 
+	//Calculate W and vsq: 
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
-	retval = general_newton_raphson(x_2d, n, func_vsq, tolerance);
+	retval = general_newton_raphson(x_2d, func_vsq, tolerance);
 
 	W = x_2d[0];
 	vsq = x_2d[1];
 
-	/* Problem with solver, so return denoting error before doing anything further */
+	//Problem with solver, so return denoting error before doing anything further
 	if ((retval != 0) || (W == FAIL_VAL)) {
 		retval = retval * 100 + 1;
 		return(retval);
@@ -332,27 +307,25 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 
 	// User may want to handle this case differently, e.g. do NOT return upon 
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-	if ((rho0 <= 0.) || (u <= 0.) && (lim==BASIC)) {
+	if ((rho0 <= 0.) ) {
 		retval = 5;
+		return(retval);
+	}
+	if ((u <= 0.) && (lim == BASIC)) {
+		retval = 6;
 		return(retval);
 	}
 
 	prim[RHO] = rho0;
 	prim[UU] = u;
 
-	 #pragma ivdep
+	#pragma ivdep
 	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-	 #pragma ivdep
+	#pragma ivdep
 	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
-
-	/* set field components */
-	 #pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
-
 
 	/* done! */
 	return(retval);
-
 }
 
 
@@ -364,8 +337,7 @@ vsq_calc():
 W = \gamma^2 w
 
 ****************************************************************************/
-static double vsq_calc(double W)
-{
+static double vsq_calc(double W){
 	double Wsq, Xsq;
 
 	Wsq = W*W;
@@ -385,17 +357,12 @@ x1_of_x0():
 
 *********************************************************************/
 
-static double x1_of_x0(double x0)
-{
+static double x1_of_x0(double x0){
 	double x1, vsq;
-	double dv = 1.e-15;
-
 
 	vsq = fabs(vsq_calc(x0)); // guaranteed to be positive 
 
-
-	return((vsq > 1.) ? (1.0 - dv) : vsq);
-
+	return((vsq > 1.) ? (1.0 - 1.e-15) : vsq);
 }
 
 /********************************************************************
@@ -407,21 +374,16 @@ their definitions:
 
 *********************************************************************/
 
-static void validate_x(double x[2], double x0[2])
-{
-
-	double dv = 1.e-15;
-
+static void validate_x(double x[2], double x0[2]){
 	/* Always take the absolute value of x[0] and check to see if it's too big:  */
 	x[0] = fabs(x[0]);
 	x[0] = (x[0] > W_TOO_BIG) ? x0[0] : x[0];
 
 
 	x[1] = (x[1] < 0.) ? 0. : x[1];  /* if it's too small */
-	x[1] = (x[1] > 1.) ? (1. - dv) : x[1];  /* if it's too big   */
+	x[1] = (x[1] > 1.) ? (1. - 1.e-15) : x[1];  /* if it's too big   */
 
 	return;
-
 }
 
 /************************************************************
@@ -433,98 +395,76 @@ general_newton_raphson():
 -- inspired in part by Num. Rec.'s routine newt();
 
 *****************************************************************/
-static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int), double tolerance)
+static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance)
 {
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
 	double errx, x_orig[NEWT_DIM_2];
-	int    n_iter, id, jd, i_extra, doing_extra;
-	double dW, dvsq, vsq_old, vsq, W, W_old;
+	int    n_iter, id,  i_extra, doing_extra;
+	double  W, W_old;
+	int  keep_iterating;
 
-	int   keep_iterating;
-
-
-	// Initialize various parameters and variables:
+	//Initialize various parameters and variables:
 	errx = 1.;
 	df = f = 1.;
 	i_extra = doing_extra = 0;
-	 #pragma ivdep
-	for (id = 0; id < n; id++)  x_old[id] = x_orig[id] = x[id];
+	
+	#pragma ivdep
+	for (id = 0; id < NEWT_DIM_2; id++)  x_old[id] = x_orig[id] = x[id];
 
-	vsq_old = vsq = W = W_old = 0.;
+	W = W_old = 0.;
 	n_iter = 0;
 
-	/* Start the Newton-Raphson iterations : */
+	//Start the Newton-Raphson iterations
 	keep_iterating = 1;
 	while (keep_iterating) {
+		//returns with new dx, f, df
+		(*funcd) (x, dx, resid, jac, &f, &df);  
 
-		(*funcd) (x, dx, resid, jac, &f, &df, n);  /* returns with new dx, f, df */
-
-
-		/* Save old values before calculating the new: */
+		//Save old values before calculating the new
 		errx = 0.;
-		 #pragma ivdep
-		for (id = 0; id < n; id++) {
-			x_old[id] = x[id];
-		}
-
-		/* Make the newton step: */
-		 #pragma ivdep
-		for (id = 0; id < n; id++) {
-			x[id] += dx[id];
-		}
-
-		/****************************************/
-		/* Calculate the convergence criterion */
-		/****************************************/
-		errx = (x[0] == 0.) ? fabs(dx[0]) : fabs(dx[0] / x[0]);
-
+		#pragma ivdep
+		for (id = 0; id < NEWT_DIM_2; id++) x_old[id] = x[id];
+		#pragma ivdep
+		for (id = 0; id < NEWT_DIM_2; id++) x[id] += dx[id];
 
 		/****************************************/
 		/* Make sure that the new x[] is physical : */
 		/****************************************/
 		validate_x(x, x_old);
 
+		/****************************************/
+		/* Calculate the convergence criterion */
+		/****************************************/
+		errx = (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
 		/*  before stopping                                                          */
 		/*****************************************************************************/
 
-		if ((fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
-			doing_extra = 1;
-		}
+		if ((fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) doing_extra = 1;
 
 		if (doing_extra == 1) i_extra++;
 
-		if (((fabs(errx) <= tolerance) && (doing_extra == 0))
-			|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		if (((fabs(errx) <= tolerance) && (doing_extra == 0))|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
 
 		n_iter++;
+	} 
 
-	}   // END of while(keep_iterating)
-
-
-	/*  Check for bad untrapped divergences : */
+	//Check for bad untrapped divergences
 	if ((isfinite(f) == 0) || (isfinite(df) == 0)) {
 		return(2);
 	}
 
-
-	if (fabs(errx) > tolerance){
-		return(1);
-	}
-	if ((fabs(errx) <= tolerance) && (fabs(errx) > tolerance)){
-		return(0);
-	}
-	if (fabs(errx) <= tolerance){
-		return(0);
-	}
+	// Return in different ways depending on whether a solution was found:
+	if (fabs(errx) > MY_MIN(tolerance, MIN_NEWT_TOL)) return(1);
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > tolerance)) return(0);
+	if (fabs(errx) <= tolerance) return(0);
 
 	return(0);
-
 }
 
 
@@ -546,31 +486,14 @@ df    = -2*f;  (on output)
 n    = dimension of x[];
 *********************************************************************************/
 
-static void func_vsq(double x[], double dx[], double resid[],
-	double jac[][NEWT_DIM_2], double *f, double *df, int n)
-{
+static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df){
 	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
-	double t11;
-	double t16;
-	double t18;
-	double t2;
-	double t21;
-	double t23;
-	double t24;
-	double t25;
-	double t3;
-	double t35;
-	double t36;
-	double t4;
-	double t40;
-	double t9;
+	double t11, t16, t18, t2, t21, t23, t24, t25, t3, t35, t36, t4, t40, t9;
 
-
+	//Set initial values
 	W = x[0];
 	vsq = x[1];
-
 	Wsq = W*W;
-
 	p_tmp = pressure_W_vsq(W, vsq);
 	dPdW = dpdW_calc_vsq(W, vsq);
 	dPdvsq = dpdvsq_calc(W, vsq);
@@ -627,8 +550,7 @@ pressure_W_vsq():
 -- Gamma-law equation of state;
 -- pressure as a function of W, vsq, and D:
 **********************************************************************/
-static double pressure_W_vsq(double W, double vsq)
-{
+static double pressure_W_vsq(double W, double vsq){
 	double gtmp;
 	gtmp = 1. - vsq;
 	return((GAMMA - 1.) * (W * gtmp - D * sqrt(gtmp)) / GAMMA);
@@ -641,8 +563,7 @@ dpdW_calc_vsq():
 
 -- partial derivative of pressure with respect to W;
 **********************************************************************/
-static double dpdW_calc_vsq(double W, double vsq)
-{
+static double dpdW_calc_vsq(double W, double vsq){
 	return((GAMMA - 1.) * (1. - vsq) / GAMMA);
 }
 
@@ -652,8 +573,7 @@ dpdvsq_calc():
 
 -- partial derivative of pressure with respect to vsq
 **********************************************************************/
-static double dpdvsq_calc(double W, double vsq)
-{
+static double dpdvsq_calc(double W, double vsq){
 	return((GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA);
 }
 
@@ -664,9 +584,8 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR_U], int lim)
-{
-	double U_tmp[NPR_U], prim_tmp[NPR_U];
+int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR_U], int lim){
+	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
 
@@ -674,39 +593,28 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 		return(-100);
 	}
 
-	/* First update the primitive B-fields */
+	//First update the primitive B-fields
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
-	/* Set the geometry variables: */
+	//Set the geometry variables: */
 	alpha = 1.0 / sqrt(-gcon[0][0]);
 
-	/* Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
-	D = alpha * U[RHO] / gdet; //W=ucon[0]*alpha
-	U_tmp[RHO]=D;
+	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha
+	U_tmp[RHO]= alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
 	#pragma ivdep
-	for (i = UTCON1; i <= UTCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 	#pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
-	/* Transform the PRIMITIVE variables into the new system */
+	//Transform the PRIMITIVE variables into the new system
 	#pragma ivdep
-	for (i = 0; i < BCON1; i++) {
-		prim_tmp[i] = prim[i];
-	}
-	#pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) {
-		prim_tmp[i] = alpha*prim[i];
-	}
+	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 	
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp,NEWT_TOL, lim);
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, NEWT_TOL, lim);
 
-	/* Transform new primitive variables back if there was no problem : */
+	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
 		#pragma ivdep
 		for (i = 0; i < BCON1; i++) {
@@ -719,17 +627,12 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	#endif
 
 	return(ret);
-
 }
 
-static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_U], double tolerance, int lim)
-{
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[5], double tolerance, int lim){
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
-	double rho0, u, w,  gamma, vsq;
+	double rho0, u, w,  gamma, vsq, errx=10000.;
 	int i;
-
-	#pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
@@ -742,11 +645,9 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	raise_g(Qcov, gcon, Qcon);
 
 	Bsq = 0.;
-	/*#pragma ivdepreduction(+:Bsq)*/
 	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
 
 	QdotB = 0.;
-	//#pragma ivdepreduction(+:QdotB)
 	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
 	QdotBsq = QdotB*QdotB;
 
@@ -755,10 +656,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	Qdotn = Qcon[0] * ncov[0];
 
 	#pragma ivdep
-	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-		
 	Qsq = 0.;
-	//#pragma ivdepreduction(+:Qsq)
 	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn*Qdotn;
 
@@ -782,8 +680,8 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
 		gamma = 1. / sqrt(1. - vsq);
-		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
-		u = (w - rho0) / GAMMA;
+		rho0 = U[RHO] / gamma; 
+		u = (w - rho0) / GAMMA; //Watch out you may need this for a more complicated EOS
 
 		iter++;
 		iter_tot++;
@@ -799,12 +697,13 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 				p_old = p_array[iter];
 				iter = 0.;
 				p_array[iter] = p_new;
-
 			}
 		}
-	} while (fabs(p_new - p_old) > 0.01*tolerance*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
-	
-	if (iter_tot >= MAX_NEWT_ITER) return(1);
+		errx = fabs(p_new - p_old) / fabs(p_new + p_old);
+	} while (errx > tolerance && iter_tot < MAX_NEWT_ITER);
+
+	//Return in different ways depending on tolerance and minimum tolerance
+	if (fabs(errx) > MIN_NEWT_TOL) return(1);
 
 	if (set_variables == 1){
 		a = -Qdotn + p_new + 0.5*Bsq;
@@ -815,8 +714,8 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
 		Wsq = 1. / (1. - vsq);
 		w = z / Wsq;
-		if (vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG) {
-			return(1);
+		if (vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG || !isfinite(vsq) || !isfinite(z)) {
+			return(4);
 		}
 		gamma = sqrt(Wsq);
 
@@ -825,18 +724,19 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		p_new = (GAMMA - 1.)*u;
 	}
 
-	if((p_new < 0.0 || rho0<0.0) && (lim==BASIC )){
-		return(1);
-	}
+	//If density or internal energy is negative return error code
+	if ((rho0 < 0.0)) return(5);
+	if ((p_new < 0.0) && (lim == BASIC)) return(6);
 
 	prim[RHO] = rho0;
 	prim[UU] = u;
-	#pragma ivdep
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (z + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / z);
 
-	/* set field components */
+	//Set 4-velocities
 	#pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+	for (i = 1; i < 4; i++) {
+		Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+		prim[UTCON1 + i - 1] = gamma / (z + Bsq) * (Qtcon[i] + QdotB * Bcon[i] / z);
+	}
 
 	/* done! */
 	return(0);

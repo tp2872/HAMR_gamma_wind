@@ -152,14 +152,11 @@ int restart_read(void)
 		if (rank == 0) fprintf(stderr, "No active blocks in rdump file %s\n", filename);
 		return 0;
 	}
+
 	/*Disable injection of matter after restart for elliptical orbits*/
 	#if (ELLIPTICAL2)
 	sourceflag = 0.;
 	#endif
-
-	#if( DO_FONT_FIX ) 
-	set_Katm();
-	#endif 
 
 	if (rank == 0){
 		fprintf(stderr, "done with restart init %s \n", filename);

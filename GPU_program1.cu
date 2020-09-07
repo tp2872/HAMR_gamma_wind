@@ -1,55 +1,65 @@
 #include "config.h"
 
-/*Declerations of functions for Utoprim*/
+/*Declerations of functions for Utoprim2D*/
+__device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim);
+__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance);
 __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
-__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[]);
-__device__ int general_newton_raphson(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
-__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
+__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
+
+/*Declerations of functions for Utoprim_1dvsq2fix1*/
+__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
 __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm);
 __device__ double dWdvsq_calc2(double vsq, double rho, double p);
-__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm);
-__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
+__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim);
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
 __device__ void validate_x2(double x[1], double x0[1]);
-__device__ int general_newton_raphson2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
-__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
-__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double D, double K_atm, double W_for_gnr2);
-__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
-__device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K_atm);
-__device__ double vsq_calc3(double W, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
-__device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
-__device__ void func_1d_orig1(double x[], double dx[], double resid[],
-	double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
-__device__ int gnr2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
-__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
-__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]);
+__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance);
+__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2);
+
+/*Declerations of functions for Utoprim_1dfix1*/
+__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+__device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K_atm, double tolerance, int lim);
+__device__ int general_newton_raphson3(double x[],  double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance);
+__device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
+__device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
+
+/*Declerations of functions for Utoprim_NM*/
+__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+
+/*Declerations of functions related to (M1) radiation scheme*/
 __device__ int Rtoprim(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], int lim);
 __device__ int Rtoprim_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR_R], int lim);
 __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
+__device__ void vchar_rad(double* pr, struct of_state_rad* q_rad, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx);
+__device__ double calc_kappa_abs(double* ph);
+__device__ double calc_kappa_emmit(double* ph);
+__device__ double calc_kappa_es(double* ph);
+__device__ void mhd_calc_rad(double* pr, int dir, struct of_state_rad* q_rad, double* mhd_rad);
+__device__ void ucon_calc_rad(double* pr, struct of_geom* geom, double* ucon_rad);
+__device__ void get_state_rad(double* pr, struct of_geom* geom, struct of_state_rad* q_rad);
 
 /*Matrix Inversion*/
 __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]);
 __device__ int LU_decompose(double A[][NDIM], int permute[]);
 __device__ void LU_substitution(double A[][NDIM], double B[], int permute[]);
+__device__ void source_rad(double* ph, struct of_geom* geom, double* dU);
+__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
+__device__ int gamma_calc_rad(double* pr, struct of_geom* geom, double* gamma_rad);
 
 /*Declare other functions*/
 __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state *  q);
-__device__ void get_state_rad(double * pr, struct of_geom * geom, struct of_state_rad * q_rad);
 __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
-__device__ void ucon_calc_rad(double * pr, struct of_geom * geom, double *ucon_rad);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
-__device__ int gamma_calc_rad(double *  pr, struct of_geom *  geom, double *  gamma_rad);
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
 __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU);
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_rad *  q_rad, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam);
-__device__ void vchar_rad(double * pr, struct of_state_rad * q_rad, struct of_geom * geom, int dir, double * vmax, double * vmin, double dx);
-__device__ double calc_kappa_abs(double * ph);
-__device__ double calc_kappa_emmit(double * ph);
-__device__ double calc_kappa_es(double * ph);
 __device__ void primtoU(double *  pr, struct of_state *  q, struct of_state_rad *  q_rad, struct of_geom *  geom, double *U, double gam);
 __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,struct of_state *  q, double a, double r);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	double a, double gam, double r, double Dt);
@@ -61,11 +71,7 @@ __device__ double readImageDouble(int4 a);
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
-__device__ void mhd_calc_rad(double * pr, int dir, struct of_state_rad * q_rad, double * mhd_rad);
 __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd);
-__device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU);
-__device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
-
 
 
 /*************************************************************************/
@@ -81,31 +87,24 @@ Returns (1) if a singular matrix is found,  (0) otherwise.
 
 *************************************************************************/
 
-
-__device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM])
-{
+__device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]){
 	int i, j;
-	int n = NDIM;
 	int permute[NDIM];
 	double dxm[NDIM], Amtmp[NDIM][NDIM];
 
-	for (i = 0; i < NDIM*NDIM; i++) { Amtmp[0][i] = Am[0][i]; }
+	for (i = 0; i < NDIM*NDIM; i++) Amtmp[0][i] = Am[0][i];
 
-	// Get the LU matrix:
-	if (LU_decompose(Amtmp, permute) != 0) {
-		//fprintf(stderr, "invert_matrix(): singular matrix encountered! \n");
-		return(1);
-	}
+	//Get the LU matrix:
+	if (LU_decompose(Amtmp, permute) != 0) return(1);
 
-	for (i = 0; i < n; i++) {
-		for (j = 0; j < n; j++) { dxm[j] = 0.; }
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) { dxm[j] = 0.; }
 		dxm[i] = 1.;
 
-		/* Solve the linear system for the i^th column of the inverse matrix: :  */
+		//Solve the linear system for the i^th column of the inverse matrix
 		LU_substitution(Amtmp, dxm, permute);
 
-		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
-
+		for (j = 0; j < NDIM; j++) Aminv[j][i] = dxm[j];
 	}
 
 	return(0);
@@ -130,43 +129,28 @@ Returns (1) if a singular matrix is found,  (0) otherwise.
 
 *************************************************************************/
 
-
-
-__device__ int LU_decompose(double A[][NDIM], int permute[])
-{
+__device__ int LU_decompose(double A[][NDIM], int permute[]){
 	double row_norm[NDIM];
-
-	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
-
 	double  absmax, maxtemp, mintemp;
-
 	int i, j, k, max_row;
-	int n = NDIM;
-
 
 	max_row = 0;
 
-	/* Find the maximum elements per row so that we can pretend later
-	we have unit-normalized each equation: */
+	//Find the maximum elements per row so that we can pretend late we have unit-normalized each equation
 
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < NDIM; i++) {
 		absmax = 0.;
 
-		for (j = 0; j < n; j++) {
-
+		for (j = 0; j < NDIM; j++) {
 			maxtemp = fabs(A[i][j]);
 
-			if (maxtemp > absmax) {
-				absmax = maxtemp;
-			}
+			if (maxtemp > absmax) absmax = maxtemp;
 		}
 
-		/* Make sure that there is at least one non-zero element in this row: */
-		if (absmax == 0.) {
-			return(1);
-		}
+		//Make sure that there is at least one non-zero element in this row:
+		if (absmax == 0.) return(1);
 
-		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+		row_norm[i] = 1. / absmax; //Set the row's normalization factor.
 	}
 
 
@@ -183,26 +167,20 @@ __device__ int LU_decompose(double A[][NDIM], int permute[])
 	*/
 
 	/* For each of the columns, starting from the left ... */
-	for (j = 0; j < n; j++) {
+	for (j = 0; j < NDIM; j++) {
 
 		/* For each of the rows starting from the top.... */
 
 		/* Calculate the Upper part of the matrix:  i < j :   */
 		for (i = 0; i < j; i++) {
-			for (k = 0; k < i; k++) {
-				A[i][j] -= A[i][k] * A[k][j];
-			}
+			for (k = 0; k < i; k++) A[i][j] -= A[i][k] * A[k][j];
 		}
 
 		absmax = 0.0;
 
 		/* Calculate the Lower part of the matrix:  i <= j :   */
-
-		for (i = j; i < n; i++) {
-
-			for (k = 0; k < j; k++) {
-				A[i][j] -= A[i][k] * A[k][j];
-			}
+		for (i = j; i < NDIM; i++) {
+			for (k = 0; k < j; k++) A[i][j] -= A[i][k] * A[k][j];
 
 			/* Find the maximum element in the column given the implicit
 			unit-normalization (represented by row_norm[i]) of each row:
@@ -225,23 +203,17 @@ __device__ int LU_decompose(double A[][NDIM], int permute[])
 		a row  is not permuted twice, which would mess things up.
 		*/
 		if (max_row != j) {
-
 			/* Don't swap if it will send a 0 to the last diagonal position.
 			Note that the last column cannot pivot with any other row,
 			so this is the last chance to ensure that the last two
 			columns have non-zero diagonal elements.
 			*/
-
-			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
-				max_row = j;
-			}
+			if ((j == (NDIM - 2)) && (A[j][j + 1] == 0.)) max_row = j;
 			else {
-				for (k = 0; k < n; k++) {
-
+				for (k = 0; k < NDIM; k++) {
 					maxtemp = A[j][k];
 					A[j][k] = A[max_row][k];
 					A[max_row][k] = maxtemp;
-
 				}
 
 				/* Don't forget to swap the normalization factors, too...
@@ -263,30 +235,22 @@ __device__ int LU_decompose(double A[][NDIM], int permute[])
 
 		permute[j] = max_row;
 
-		if (A[j][j] == 0.) {
-			A[j][j] = absmin;
-		}
-
+		if (A[j][j] == 0.) A[j][j] = 1.e-30;
 
 		/* Normalize the columns of the Lower tridiagonal part by their respective
 		diagonal element.  This is not done in the Upper part because the
 		Lower part's diagonal elements were set to 1, which can be done w/o
 		any loss of generality.
 		*/
-		if (j != (n - 1)) {
+		if (j != (NDIM - 1)) {
 			maxtemp = 1. / A[j][j];
 
-			for (i = (j + 1); i < n; i++) {
-				A[i][j] *= maxtemp;
-			}
+			for (i = (j + 1); i < NDIM; i++) A[i][j] *= maxtemp;
 		}
-
 	}
 
 	return(0);
-
 	/* End of LU_decompose() */
-
 }
 
 
@@ -310,13 +274,12 @@ Upon exit, B[] contains the solution x[], A[][] is left unchanged.
 __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 {
 	int i, j;
-	int n = NDIM;
 	double tmpvar, tmpvar2;
 
 
 	/* Perform the forward substitution using the LU matrix.
 	*/
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < NDIM; i++) {
 
 		/* Before doing the substitution, we must first permute the
 		B vector to match the permutation of the LU matrix.
@@ -334,8 +297,8 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 
 	/* Perform the backward substitution using the LU matrix.
 	*/
-	for (i = (n - 1); i >= 0; i--) {
-		for (j = (i + 1); j < n; j++) {
+	for (i = (NDIM - 1); i >= 0; i--) {
+		for (j = (i + 1); j < NDIM; j++) {
 			B[i] -= A[i][j] * B[j];
 		}
 		B[i] /= A[i][i];
@@ -344,8 +307,6 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 	/* End of LU_substitution() */
 
 }
-
-
 
 //Inversion from radiation conserved to primitive quantities
 __device__ int Rtoprim(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], int lim){
@@ -452,43 +413,32 @@ __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 __device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]);
 __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar);
 
-__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]){
-
-	double U_tmp[NPR], prim_tmp[NPR];
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
 
-	if (U[0] <= 0.) {
-		return(-100);
-	}
+	//If mass flux negative, return immediately
+	if (U[0] <= 0.) return(-100);
 
-	/* First update the primitive B-fields */
+	//First update the primitive B-fields
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
-	/* Set the geometry variables: */
+	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0]);
 
-	/* Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
+	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
 	U_tmp[RHO] = alpha * U[RHO] / gdet; //W=ucon[0]*alpha
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
-	for (i = UTCON1; i <= UTCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
-	for (i = BCON1; i <= BCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
+	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
-	/* Transform the PRIMITIVE variables into the new system */
-	for (i = 0; i < BCON1; i++) {
-		prim_tmp[i] = prim[i];
-	}
-	for (i = BCON1; i <= BCON3; i++) {
-		prim_tmp[i] = alpha*prim[i];
-	}
+	//Transform the PRIMITIVE variables into the new system
+	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
-	/* Transform new primitive variables back if there was no problem : */
+	//Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
@@ -496,17 +446,13 @@ __device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], doubl
 	}
 
 	return(ret);
-
 }
 
-__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
-{
+__device__ int Utoprim_NM_calc(double U[NPR_U], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double tolerance, int lim){
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
-	double rho0, u,  w,  gamma,   vsq;
+	double rho0, u,  w,  gamma,   vsq, errx;
 	double Bsq, QdotBsq, Qtsq, Qdotn;
 	int i;
-
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
@@ -532,8 +478,6 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 	ncon[3] = gcon[3] * ncov;
 
 	Qdotn = Qcon[0] * ncov;
-
-	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
 	
 	Qsq = 0.;
 
@@ -549,40 +493,41 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 	p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
 	if (d < 0.0) return(1);
-
-	do{
+	do {
 		set_variables = 0;
-		p_old = p_array[iter%3];
-		a = -Qdotn + p_new + 0.5*Bsq;
-		if (a < pow(27.*d/4.,1./3.)) return 1;
-		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
-		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+		a = -Qdotn + p_new + 0.5 * Bsq;
+		phi = acos(1. / a * sqrt((27. * d) / (4. * a)));
+		epsilon = a / 3. - 2. / 3. * a * cos(2. / 3. * phi + 2. / 3. * M_PI);
 		z = epsilon - Bsq;
 
-		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+		vsq = (Qtsq * z * z + QdotBsq * (Bsq + 2. * z)) / (z * z * pow(Bsq + z, 2.));
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
-		gamma = sqrt(Wsq);
-		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
-		u = (w - rho0) / GAMMA;
+		gamma = 1. / sqrt(1. - vsq);
+		rho0 = U[RHO] / gamma;
+		u = (w - rho0) / GAMMA; //Watch out you may need this for a more complicated EOS
 
 		iter++;
 		iter_tot++;
-		p_array[iter % 3] = (GAMMA - 1.)*u;
-		p_new = p_array[iter % 3];
+		p_array[iter] = (GAMMA - 1.) * u;
+		p_old = p_array[iter - 1];
+		p_new = p_array[iter];
 		if (iter >= 2) {
-			R = (p_array[iter % 3] - p_array[(iter - 1) % 3]) / (p_array[(iter - 1) % 3] - p_array[(iter - 2) % 3]);
+			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
 
-			if (R<1. && R>0.) {
+			if (R < 1. && R>0.) {
 				set_variables = 1;
-				p_new = p_array[(iter - 1) % 3] + (p_array[iter % 3] - p_array[(iter - 1) % 3]) / (1. - R);
+				p_new = p_array[iter - 1] + (p_array[iter] - p_array[iter - 1]) / (1. - R);
+				p_old = p_array[iter];
 				iter = 0.;
-				p_array[iter % 3] = p_new;
+				p_array[iter] = p_new;
 			}
 		}
-	} while (fabs(p_new - p_old) > 0.01*NEWT_TOL*(p_new + p_old) && iter_tot < MAX_NEWT_ITER);
+		errx = fabs(p_new - p_old) / fabs(p_new + p_old);
+	} while (errx > tolerance && iter_tot < MAX_NEWT_ITER);
 
-	if (iter_tot >= MAX_NEWT_ITER) return(1);
+	//Return in different ways depending on tolerance and minimum tolerance
+	if (fabs(errx) > MY_MIN(tolerance, MIN_NEWT_TOL)) return(1);
 
 	if (set_variables == 1) {
 		a = -Qdotn + p_new + 0.5 * Bsq;
@@ -593,8 +538,8 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 		vsq = (Qtsq * z * z + QdotBsq * (Bsq + 2. * z)) / (z * z * pow(Bsq + z, 2.));
 		Wsq = 1. / (1. - vsq);
 		w = z / Wsq;
-		if (vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG) {
-			return(1);
+		if (vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG || !isfinite(vsq) || !isfinite(z)) {
+			return(4);
 		}
 		gamma = sqrt(Wsq);
 
@@ -603,53 +548,44 @@ __device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], 
 		p_new = (GAMMA - 1.) * u;
 	}
 
-	if ((p_new < 0.0 || rho0 < 0.0)) {
-		return(1);
-	}
+	//If density or internal energy is negative return error code
+	if ((rho0 < 0.0)) return(5);
+	if ((p_new < 0.0) && (lim == BASIC)) return(6);
 
 	prim[RHO] = rho0;
 	prim[UU] = u;
 
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (z + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / z);
-
-	/* set field components */
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+	//Set 4-velocities
+	for (i = 1; i < 4; i++) {
+		Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+		prim[UTCON1 + i - 1] = gamma / (z + Bsq) * (Qtcon[i] + QdotB * Bcon[i] / z);
+	}
 
 	/* done! */
 	return(0);
 }
 
-
-__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
-{
-	double U_tmp[NPR], prim_tmp[NPR];
+__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
 
-	if (U[0] <= 0.) {
-		return(-100);
-	}
+	if (U[0] <= 0.) return(-100);
 
+	//First update the primitive B-fields
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
+	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0]);
 
+	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
 	U_tmp[RHO] = alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
-	for (i = UTCON1; i <= UTCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
-	for (i = BCON1; i <= BCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
-	U_tmp[KTOT] = U_tmp[KTOT] / gdet;
+	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
+	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
-	for (i = 0; i < BCON1; i++) {
-		prim_tmp[i] = prim[i];
-	}
-	for (i = BCON1; i <= BCON3; i++) {
-		prim_tmp[i] = alpha*prim[i];
-	}
+	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha */
+	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
 	#if(DOKTOT)
 	#if(FULL_ENTROPY)
@@ -659,7 +595,7 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 	#endif
 	#endif
 
-	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
+	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim);
 	if (ret == 0) {
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
@@ -669,34 +605,27 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 	return(ret);
 }
 
-
-__device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K_atm)
-{
-
+__device__ int Utoprim_new_body3(double U[NPR_U], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double K_atm, double tolerance, int lim){
 	double x_1d[1];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
-	int i, retval, i_increase;
+	int i, retval=0, i_increase;
 	double W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old;
 	double Bsq, QdotBsq, Qtsq, Qdotn, D;
-	retval = 0;
-
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	Bcon[0] = 0.;
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
-
 	lower(Bcon, gcov, Bcov);
 
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
 	raise(Qcov, gcon, Qcon);
-
 
 	Bsq = 0.;
 	for (i = 1; i<4; i++) Bsq += Bcon[i] * Bcov[i];
 
 	QdotB = 0.;
 	for (i = 0; i<4; i++) QdotB += Qcov[i] * Bcon[i];
+	
 	QdotBsq = QdotB*QdotB;
 
 	ncov=-sqrt(-1. / gcon[0]);
@@ -734,16 +663,14 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10]
 	gamma = sqrt(gammasq);
 
 	rho0 = D / gamma;
-	p = K_atm * pow(rho0, G_ATM);
+	p = K_atm * pow(rho0, GAMMA);
 	u = p / (GAMMA - 1.);
 	w = rho0 + u + p;
 
 	W_last = w*gammasq;
 
 	i_increase = 0;
-	while (((W_last*W_last*W_last * (W_last + 2.*Bsq)
-		- QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq))
-		&& (i_increase < 10)) {
+	while (((W_last*W_last*W_last * (W_last + 2.*Bsq) - QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq)) && (i_increase < 10)) {
 		W_last *= 10.;
 		i_increase++;
 	}
@@ -752,13 +679,12 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10]
 	rho_for_gnr2 = rho_for_gnr2_old = rho0;
 
 	x_1d[0] = W_last;
-	retval = general_newton_raphson3(x_1d, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);
+	retval = general_newton_raphson3(x_1d, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old, tolerance);
 
 	W = x_1d[0];
 
 	if ((retval != 0) || (W == FAIL_VAL)) {
 		retval = retval * 100 + 1;
-
 		return(retval);
 	}
 	else{
@@ -768,7 +694,7 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10]
 		}
 	}
 
-	vsq = vsq_calc3(W, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);
+	vsq = vsq_calc(W, Bsq, Qtsq, QdotBsq);
 	if (vsq >= 1.) {
 		retval = 4;
 		return(retval);
@@ -783,74 +709,64 @@ __device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10]
 	p = K_atm * pow(rho0, G_ATM);
 	u = p / (GAMMA - 1.);
 
-	if ((rho0 <= 0.) || (u <= 0.)) {
+	if ((rho0 <= 0.)) {
 		retval = 5;
+		return(retval);
+	}
+
+	if ((u <= 0.) && (lim==BASIC)) {
+		retval = 6;
 		return(retval);
 	}
 
 	prim[RHO] = rho0;
 	prim[UU] = u;
 
-	for (i = 1; i<4; i++) Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+	for (i = 1; i < 4; i++) {
+		Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+		prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB * Bcon[i] / W);
+	}
+
 	return(retval);
 }
 
-
-__device__ double vsq_calc3(double W, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm)
-{
-	double Wsq, Xsq;
-	Wsq = W*W;
-	Xsq = (Bsq + W) * (Bsq + W);
-	return((Wsq * Qtsq + QdotBsq * (Bsq + 2.*W)) / (Wsq*Xsq));
-}
-
-__device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old)
-{
-	double f, df, dx[NEWT_DIM_1], resid[NEWT_DIM_1],
-		jac[NEWT_DIM_1][NEWT_DIM_1];
+__device__ int general_newton_raphson3(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance){
+	double f, df, x_old[NEWT_DIM_1], dx[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
-	int    n_iter, id, i_extra, doing_extra;
-	int   keep_iterating, i_increase;
+	int n_iter=0,  i_extra=0, doing_extra=0;
+	int keep_iterating, i_increase;
 
 	errx = 1.;
 	df = f = 1.;
-	i_extra = doing_extra = 0;
-
-
 	n_iter = 0;
 
 	keep_iterating = 1;
 	while (keep_iterating) {
-	#if( USE_ISENTROPIC )   
-		func_1d_orig1(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);  /* returns with new dx, f, df */
+		#if(USE_ISENTROPIC)   
+		func_1d_orig1(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);  /* returns with new dx, f, df */
 		#endif
 
-		errx = 0.;
+		//Save old values before calculating the new
+		x_old[0] = x[0];
 
-		for (id = 0; id < n; id++) {
-			x[id] += dx[id];
-		}
+		//Make Newton step
+		x[0] += dx[0];
 
 		i_increase = 0;
-		while (((x[0] * x[0] * x[0] * (x[0] + 2.*Bsq) -
-			QdotBsq*(2.*x[0] + Bsq)) <= x[0] * x[0] * (Qtsq - Bsq*Bsq))
-			&& (i_increase < 10)) {
+		while (((x[0] * x[0] * x[0] * (x[0] + 2.*Bsq) - QdotBsq*(2.*x[0] + Bsq)) <= x[0] * x[0] * (Qtsq - Bsq*Bsq)) && (i_increase < 10)) {
 			x[0] -= (1.*i_increase) * dx[0] / 10.;
 			i_increase++;
 		}
-		errx = (x[0] == 0.) ? fabs(dx[0]) : fabs(dx[0] / x[0]);
+
+		//Make sure value remains physical
 		x[0] = fabs(x[0]);
 
-		if ((fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
-			doing_extra = 1;
-		}
+		//Calculate the convergence criterion
+		errx = (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
+		if ((fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) doing_extra = 1;
 		if (doing_extra == 1) i_extra++;
-
-		if (((fabs(errx) <= NEWT_TOL) && (doing_extra == 0)) ||
-			(i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		if (((fabs(errx) <= tolerance) && (doing_extra == 0)) || (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
 		n_iter++;
@@ -860,26 +776,18 @@ __device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qts
 		return(2);
 	}
 
+	if (fabs(errx) > MY_MIN(tolerance, MIN_NEWT_TOL)) return(1);
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > tolerance)) return(0);
+	if (fabs(errx) <= tolerance) return(0);
 
-	if (fabs(errx) > MIN_NEWT_TOL){
-		return(1);
-	}
-	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
-		return(0);
-	}
-	if (fabs(errx) <= NEWT_TOL){
-		return(0);
-	}
 	return(0);
 }
 
-__device__ int gnr2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2)
-{
-	double f, df, dx[NEWT_DIM_1], resid[NEWT_DIM_1],
-		jac[NEWT_DIM_1][NEWT_DIM_1];
+__device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2){
+	double f, df, x_old[NEWT_DIM_1], dx[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
-	int    n_iter, id, i_extra, doing_extra;
-	int   keep_iterating;
+	int n_iter, i_extra, doing_extra;
+	int keep_iterating;
 
 	errx = 1.;
 	df = f = 1.;
@@ -888,70 +796,54 @@ __device__ int gnr2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, 
 
 	keep_iterating = 1;
 	while (keep_iterating) {
-		func_gnr2_rho(x, dx, resid, jac, &f, &df, n, D, K_atm, W_for_gnr2);  /* returns with new dx, f, df */
+		func_gnr2_rho(x, dx, resid, jac, &f, &df, D, K_atm, W_for_gnr2);  /* returns with new dx, f, df */
+		
+		//Save old values before calculating the new
+		x_old[0] = x[0];
 
-		errx = 0.;
+		//Make the newton step
+		x[0] += dx[0];
 
-		/* Make the newton step: */
-		for (id = 0; id < n; id++) {
-			x[id] += dx[id];
-		}
-
-		/* Calculate the convergence criterion */
-		for (id = 0; id < n; id++) {
-			errx += (x[id] == 0.) ? fabs(dx[id]) : fabs(dx[id] / x[id]);
-		}
-		errx /= 1.*n;
-
+		//Make sure x[0] is physical
 		x[0] = fabs(x[0]);
 
-		if ((fabs(errx) <= NEWT_TOL2) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
-			doing_extra = 0;
-		}
+		//Calculate the convergence criterion
+		errx = (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
+		if ((fabs(errx) <= NEWT_TOL2) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) doing_extra = 0;
 		if (doing_extra == 1) i_extra++;
-
-		if (((fabs(errx) <= NEWT_TOL2) && (doing_extra == 0)) ||
-			(i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		if (((fabs(errx) <= NEWT_TOL2) && (doing_extra == 0)) || (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
 
 		n_iter++;
-
 	}
 
 	if ((isfinite(f) == 0) || (isfinite(df) == 0) || (isfinite(x[0]) == 0)) {
 		return(2);
 	}
 
-	if (fabs(errx) > MIN_NEWT_TOL){
-		return(1);
-	}
-	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
-		return(0);
-	}
-	if (fabs(errx) <= NEWT_TOL){
-		return(0);
-	}
+	if (fabs(errx) > MIN_NEWT_TOL2)return(1);
+	if ((fabs(errx) <= MIN_NEWT_TOL2) && (fabs(errx) > NEWT_TOL2))return(0);
+	if (fabs(errx) <= NEWT_TOL2)return(0);
+
 	return(0);
 }
 
 //isentropic version:   eq.  (27)
-__device__ void func_1d_orig1(double x[], double dx[], double resid[],
-	double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old)
-{
+__device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old){
 	int ntries;
 	double  Dc, t1, t10, t2, t21, t23, t26, t29, t3, t30;
-	double  t32, t33, t34, t38, t5, t51, t67, t8, W, x_rho[1], rho, rho_g;
+	double  t32, t33, t34, t38, t5, t51, t67, t8,  x_rho[1], rho, rho_g;
 
-	W = x[0];
-	W_for_gnr2 = W;
+	//W = x[0];
+	W_for_gnr2 = x[0];
 
 	// get rho from NR:
 	rho_g = x_rho[0] = rho_for_gnr2;
 
 	ntries = 0;
-	while ((gnr2(x_rho, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2)) && (ntries++ < 10)) {
+	while ((gnr2(x_rho, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2)) && (ntries++ < 10)) {
 		rho_g *= 10.;
 		x_rho[0] = rho_g;
 	}
@@ -964,12 +856,11 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 	t3 = t2*Bsq;
 	t5 = Bsq*Bsq;
 	t8 = t1*Bsq;
-	t10 = t1*W;
-	t21 = W*W;
+	t10 = t1* x[0];
+	t21 = x[0] * x[0];
 	t23 = rho*rho;
-	t26 = 1 / t1;
-	resid[0] = (t3 + (2.0*t2 + ((Qtsq - t5)*t1
-		+ (-2.0*t8 - t10)*W)*W)*W + (t5 + (2.0*Bsq + W)*W)*t21*t23)*t26 / t21;
+	t26 = 1. / t1;
+	resid[0] = (t3 + (2.0*t2 + ((Qtsq - t5)*t1 + (-2.0*t8 - t10)* x[0])* x[0])* x[0] + (t5 + (2.0*Bsq + x[0])* x[0])*t21*t23)*t26 / t21;
 	t29 = t1*t1;
 	t30 = QdotBsq*t29;
 	t32 = GAMMA*K_atm;
@@ -977,14 +868,10 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 	t34 = t32*t33;
 	t38 = t23 * t33;
 	t51 = GAMMA*t1*K_atm*t33;
-	t67 = t21*W;
-	jac[0][0] = -2.0*(t30*Bsq*t34 + (t30*t34
-		+ ((-t38*Bsq*t32 + Bsq*GAMMA*t1*K_atm*t33)*t1
-		+ (-t38*GAMMA*K_atm + t51)*t1*W)*t21)*W
-		+ ((-t3 + (-t2 + (-t8 - t10)*t21)*W)*W + (-t5 - Bsq*W)*t67*t23)*t23)*t26 / (t51 - W*t23) / t67;
+	t67 = t21* x[0];
 
+	jac[0][0] = -2.0*(t30*Bsq*t34 + (t30*t34+ ((-t38*Bsq*t32 + Bsq*GAMMA*t1*K_atm*t33)*t1+ (-t38*GAMMA*K_atm + t51)*t1* x[0])*t21)* x[0] + ((-t3 + (-t2 + (-t8 - t10)*t21)* x[0])* x[0] + (-t5 - Bsq* x[0])*t67*t23)*t23)*t26 / (t51 - x[0] *t23) / t67;
 	dx[0] = -resid[0] / jac[0][0];
-
 	*f = 0.5*resid[0] * resid[0];
 	*df = -2. * (*f);
 
@@ -992,9 +879,7 @@ __device__ void func_1d_orig1(double x[], double dx[], double resid[],
 }
 
 // for the isentropic version:   eq.  (27)
-__device__ void func_gnr2_rho(double x[], double dx[], double resid[],
-	double jac[][NEWT_DIM_1], double *f, double *df, int n, double D, double K_atm, double W_for_gnr2)
-{
+__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2){
 	double A, B, C, rho, W, B0;
 
 	A = D*D;
@@ -1011,9 +896,8 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[],
 	return;
 }
 
-__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
-{
-	double U_tmp[NPR], prim_tmp[NPR];
+__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
 
@@ -1021,35 +905,24 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 		return(-100);
 	}
 
-	/* First update the primitive B-fields */
+	//First update the primitive B-fields
 	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
-	/* Set the geometry variables: */
+	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0]);
 
-	/* Transform the CONSERVED variables into the new system */
+	//Transform the CONSERVED variables into the new system
 	U_tmp[RHO] = alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
 	#pragma unroll 3
-	for (i = UTCON1; i <= UTCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 	#pragma unroll 3
-	for (i = BCON1; i <= BCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
-	U_tmp[KTOT] = U_tmp[KTOT] / gdet;
+	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
-	/* Transform the PRIMITIVE variables into the new system */
+	//Transform the PRIMITIVE variables into the new system
 	#pragma unroll 5
-	for (i = 0; i < BCON1; i++) {
-		prim_tmp[i] = prim[i];
-	}
-	#pragma unroll 3
-	for (i = BCON1; i <= BCON3; i++) {
-		prim_tmp[i] = alpha*prim[i];
-	}
+	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
 	#if(DOKTOT)
 	#if(FULL_ENTROPY)
@@ -1059,9 +932,9 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 	#endif
 	#endif
 
-	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm);
+	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim);
 
-	/* Transform new primitive variables back if there was no problem : */
+	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
 		#pragma unroll 5
 		for (i = 0; i < BCON1; i++) {
@@ -1072,26 +945,19 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 	return(ret);
 }
 
-__device__ int Utoprim_new_body2(double U[NPR], double gcov[10],
-	double gcon[10], double gdet, double prim[NPR], double K_atm)
-{
+__device__ int Utoprim_new_body2(double U[NPR_U], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double K_atm, double tolerance, int lim){
 	double x_1d[1];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, gammasq, gamma, gtmp, W, utsq, vsq;
-	int    i, retval;
+	int    i, retval=0;
 	double Bsq, QdotBsq, Qtsq, Qdotn, D;
-
-	// Assume ok initially:
-	retval = 0;
-	#pragma unroll 3
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
 	#pragma unroll 3
 	for (i = 1; i<4; i++) Bcon[i] = U[BCON1 + i - 1];
-
 	lower(Bcon, gcov, Bcov);
+
 	#pragma unroll 4
 	for (i = 0; i<4; i++) Qcov[i] = U[QCOV0 + i];
 	raise(Qcov, gcon, Qcon);
@@ -1121,7 +987,7 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[10],
 
 	D = U[RHO];
 
-	/* calculate W from last timestep and use  for guess */
+	//Calculate W from last timestep and use  for guess */
 	utsq = gcov[4] * prim[UTCON1 + 1 - 1] * prim[UTCON1 + 1 - 1]; //1,1
 	utsq += 2.*gcov[5] * prim[UTCON1 + 2 - 1] * prim[UTCON1 + 1 - 1]; //1,2
 	utsq += 2.*gcov[6] * prim[UTCON1 + 3 - 1] * prim[UTCON1 + 1 - 1]; //1,3
@@ -1146,11 +1012,11 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[10],
 	u = prim[UU];
 	p = (GAMMA - 1.)*u;
 
-	// Initialize independent variables for Newton-Raphson:
+	//Initialize independent variables for Newton-Raphson:
 	x_1d[0] = 1. - 1. / gammasq;
 
-	// Find vsq via Newton-Raphson:
-	retval = general_newton_raphson2(x_1d, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);
+	//Find vsq via Newton-Raphson:
+	retval = general_newton_raphson2(x_1d, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, tolerance);
 
 	/* Problem with solver, so return denoting error before doing anything further */
 	if (retval != 0) {
@@ -1165,17 +1031,22 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[10],
 		return(retval);
 	}
 
-	// Find W from this vsq:
+	//Find W from this vsq:
 	W = W_of_vsq2(vsq, &p, &rho0, &u, D, K_atm);
 
-	// Recover the primitive variables from the scalars and conserved variables:
+	//Recover the primitive variables from the scalars and conserved variables:
 	gtmp = sqrt(1. - vsq);
 	gamma = 1. / gtmp;
 
 	// User may want to handle this case differently, e.g. do NOT return upon 
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-	if ((rho0 <= 0.) || (u <= 0.)) {
+	if ((rho0 <= 0.)) {
 		retval = 5;
+		return(retval);
+	}
+
+	if ((u <= 0.) && (lim==BASIC)) {
+		retval = 6;
 		return(retval);
 	}
 
@@ -1183,99 +1054,77 @@ __device__ int Utoprim_new_body2(double U[NPR], double gcov[10],
 	prim[UU] = u;
 
 	#pragma unroll 3
-	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-	#pragma unroll 3
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
-
-	/* set field components */
-	#pragma unroll 3
-	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
+	for (i = 1; i < 4; i++) {
+		Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+		prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB * Bcon[i] / W);
+	}
 
 	/* done! */
 	return(retval);
 }
 
-__device__ int general_newton_raphson2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm)
-{
-	double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1],
-		jac[NEWT_DIM_1][NEWT_DIM_1];
+__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance){
+	double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
 	double errx;
-	int    n_iter, id, i_extra, doing_extra;
+	int    n_iter,  i_extra, doing_extra;
 	double W, W_old, rho, p, u;
-
 	int   keep_iterating;
 
-	// Initialize various parameters and variables:
+	//Initialize various parameters and variables:
 	errx = 1.;
 	df = f = 1.;
 	i_extra = doing_extra = 0;
 
-	for (id = 0; id < n; id++)  x_old[id] = x[id];
+	x_old[0] = x[0];
 
 	W = W_old = 0.;
 
 	n_iter = 0;
 
-	/* Start the Newton-Raphson iterations : */
+	//Start the Newton-Raphson iterations
 	keep_iterating = 1;
 	while (keep_iterating) {
+		func_1d_gnr2(x, dx, resid, jac, &f, &df,Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);/* returns with new dx, f, df */
 
-		func_1d_gnr2(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);/* returns with new dx, f, df */
-
+		//Set old values
 		errx = 0.;
-		for (id = 0; id < n; id++) {
-			x_old[id] = x[id];
-		}
+		x_old[0] = x[0];
 
-		for (id = 0; id < n; id++) {
-			x[id] += dx[id];
-		}
+		//Make Newton step
+		x[0] += dx[0];
 
 		validate_x2(x, x_old);
 
+		//Calculate W=w*gamma
 		W_old = W;
 		W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm);
 		errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
 		errx += (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
-		if ((fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
-			doing_extra = 1;
-		}
+		if ((fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) doing_extra = 1;
 
 		if (doing_extra == 1) i_extra++;
 
-		// See if we've done the extra iterations, or have done too many iterations:
-		if (((fabs(errx) <= NEWT_TOL) && (doing_extra == 0))
-			|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		//See if we've done the extra iterations, or have done too many iterations:
+		if (((fabs(errx) <= tolerance) && (doing_extra == 0)) || (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
 
 		n_iter++;
-	}   // END of while(keep_iterating)
+	} 
 
-	/*  Check for bad untrapped divergences : */
-	if ((isfinite(f) == 0) || (isfinite(df) == 0)) {
-		return(2);
-	}
+	//Check for bad untrapped divergences
+	if ((isfinite(f) == 0) || (isfinite(df) == 0))return(2);
 
 	// Return in different ways depending on whether a solution was found:
-	if (fabs(errx) > MIN_NEWT_TOL){
+	if (fabs(errx) > MY_MIN(tolerance, MIN_NEWT_TOL)) return(1);
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > tolerance)) return(0);
+	if (fabs(errx) <= tolerance) return(0);
 
-		return(1);
-	}
-	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
-		//fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
-		return(0);
-	}
-	if (fabs(errx) <= NEWT_TOL){
-		//fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr); 
-		return(0);
-	}
 	return(0);
 }
 
-__device__ void validate_x2(double x[1], double x0[1])
-{
+__device__ void validate_x2(double x[1], double x0[1]){
 	double small = 1.e-10;
 	x[0] = (x[0] >= 1.0) ? (0.5*(x0[0] + 1.)) : x[0];
 	x[0] = (x[0] <  -small) ? (0.5*x0[0]) : x[0];
@@ -1283,51 +1132,40 @@ __device__ void validate_x2(double x[1], double x0[1])
 	return;
 }
 
-__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm)
-{
-	double vsq, W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
-	vsq = x[0];
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm){
+	double W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
+	//vsq = x[0];
 
 	// Calculate best value for W given current guess for vsq: 
-	W = W_of_vsq2(vsq, &p, &rho, &u, D, K_atm);
+	W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm);
 	Wsq = W*W;
 	W3 = W*Wsq;
 
 	// Doing this assuming  P = (G-1) u :
-
-	dWdvsq = dWdvsq_calc2(vsq, rho, p);
-
+	dWdvsq = dWdvsq_calc2(x[0], rho, p);
 	fact_tmp = (Bsq + W);
-
-	resid[0] = Qtsq - vsq * fact_tmp * fact_tmp + QdotBsq * (Bsq + 2.*W) / Wsq;
-	jac[0][0] = -fact_tmp * (fact_tmp + 2. * dWdvsq * (vsq + QdotBsq / W3));
-
+	resid[0] = Qtsq - x[0] * fact_tmp * fact_tmp + QdotBsq * (Bsq + 2.*W) / Wsq;
+	jac[0][0] = -fact_tmp * (fact_tmp + 2. * dWdvsq * (x[0] + QdotBsq / W3));
 	dx[0] = -resid[0] / jac[0][0];
-
 	*f = 0.5*resid[0] * resid[0];
 	*df = -2. * (*f);
 }
 
-__device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm)
-{
+__device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm){
 	double gtmp;
 	gtmp = (1. - vsq);
 	*rho = D * sqrt(gtmp);
-	*p = K_atm * pow(*rho, G_ATM);
+	*p = K_atm * pow(*rho, GAMMA);
 	*u = *p / (GAMMA - 1.);
 	return((*rho + *u + *p) / gtmp);
 }
 
-__device__ double dWdvsq_calc2(double vsq, double rho, double p)
-{
+__device__ double dWdvsq_calc2(double vsq, double rho, double p){
 	return((GAMMA*(2. - G_ATM)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
 }
 
-
-__device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10],
-	double gdet, double prim[NPR])
-{
-	double U_tmp[NPR], prim_tmp[NPR];
+__device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
 
@@ -1346,25 +1184,15 @@ __device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10],
 	U_tmp[RHO] = alpha * U[RHO] / gdet;
 	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
 	#pragma unroll 3
-	for (i = UTCON1; i <= UTCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 	#pragma unroll 3
-	for (i = BCON1; i <= BCON3; i++) {
-		U_tmp[i] = alpha * U[i] / gdet;
-	}
+	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
 	/* Transform the PRIMITIVE variables into the new system */
 	#pragma unroll 5
-	for (i = 0; i < BCON1; i++) {
-		prim_tmp[i] = prim[i];
-	}
-	#pragma unroll 3
-	for (i = BCON1; i <= BCON3; i++) {
-		prim_tmp[i] = alpha*prim[i];
-	}
+	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
-	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
+	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
@@ -1378,20 +1206,12 @@ __device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10],
 }
 #include <stdio.h>
 
-__device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR])
-{
+__device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double tolerance, int lim){
 	double x_2d[NEWT_DIM_2];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
-	int i, n, retval, i_increase;
+	int i, retval=0, i_increase;
 	double Bsq, QdotBsq, Qtsq, Qdotn, D;
-
-	n = NEWT_DIM_2;
-
-	// Assume ok initially:
-	retval = 0;
-	//#pragma unroll 3
-	//for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
@@ -1460,9 +1280,7 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10],
 
 	// Make sure that W is large enough so that v^2 < 1 : 
 	i_increase = 0;
-	while (((W_last*W_last*W_last * (W_last + 2.*Bsq)
-		- QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq))
-		&& (i_increase < 10)) {
+	while (((W_last*W_last*W_last * (W_last + 2.*Bsq) - QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq))&& (i_increase < 10)) {
 		W_last *= 10.;
 		i_increase++;
 	}
@@ -1470,12 +1288,12 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10],
 	// Calculate W and vsq: 
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last, Bsq, Qtsq, QdotBsq);
-	retval = general_newton_raphson(x_2d, n, Bsq, Qtsq, QdotBsq, Qdotn, D);
+	retval = general_newton_raphson(x_2d, Bsq, Qtsq, QdotBsq, Qdotn, D, tolerance);
 
 	W = x_2d[0];
 	vsq = x_2d[1];
 
-	/* Problem with solver, so return denoting error before doing anything further */
+	//Problem with solver, so return denoting error before doing anything further */
 	if ((retval != 0) || (W == FAIL_VAL)) {
 		retval = retval * 100 + 1;
 		return(retval);
@@ -1487,13 +1305,13 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10],
 		}
 	}
 
-	// Calculate v^2:
+	//Calculate v^2:
 	if (vsq >= 1.) {
 		retval = 4;
 		return(retval);
 	}
 
-	// Recover the primitive variables from the scalars and conserved variables:
+	//Recover the primitive variables from the scalars and conserved variables:
 	gtmp = sqrt(1. - vsq);
 	gamma = 1. / gtmp;
 	rho0 = D * gtmp;
@@ -1504,8 +1322,12 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10],
 
 	// User may want to handle this case differently, e.g. do NOT return upon 
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
-	if ((rho0 <= 0.) || (u <= 0.)) {
+	if ((rho0 <= 0.)) {
 		retval = 5;
+		return(retval);
+	}
+	if ((u <= 0.) && (lim==BASIC)) {
+		retval = 6;
 		return(retval);
 	}
 
@@ -1514,25 +1336,23 @@ __device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10],
 
 	#if AMD
 	#pragma unroll 3
-	for (i = 1; i<4; i++)  Qtcon[i] = fma(ncon[i], Qdotn, Qcon[i]);
-	#pragma unroll 3
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (fma(QdotB, Bcon[i] / W, Qtcon[i]));
+	for (i = 1; i < 4; i++) {
+		Qtcon[i] = fma(ncon[i], Qdotn, Qcon[i]);
+		prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (fma(QdotB, Bcon[i] / W, Qtcon[i]));
+	}
 	#else
 	#pragma unroll 3
-	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
-	#pragma unroll 3
-	for (i = 1; i<4; i++) prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB*Bcon[i] / W);
+	for (i = 1; i < 4; i++) {
+		Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+		prim[UTCON1 + i - 1] = gamma / (W + Bsq) * (Qtcon[i] + QdotB * Bcon[i] / W);
+	}
 	#endif
-	/* set field components */
-	//#pragma unroll 3
-	//for (i = BCON1; i <= BCON3; i++) prim[i] = U[i];
 
 	/* done! */
 	return(retval);
 }
 
-__device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq)
-{
+__device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq){
 	double Wsq, Xsq;
 	Wsq = W*W;
 	Xsq = (Bsq + W) * (Bsq + W);
@@ -1543,145 +1363,121 @@ __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq)
 	#endif
 }
 
-__device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq)
-{
+__device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq){
 	double vsq;
-	double dv = 1.e-15;
+
 	vsq = fabs(vsq_calc(x0, Bsq, Qtsq, QdotBsq)); // guaranteed to be positive 
-	return((vsq > 1.) ? (1.0 - dv) : vsq);
+	return((vsq > 1.) ? (1.0 - 1.e-15) : vsq);
 }
 
-__device__ void validate_x(double x[2], double x0[2])
-{
-	double dv = 1.e-15;
+__device__ void validate_x(double x[2], double x0[2]){
 
 	/* Always take the absolute value of x[0] and check to see if it's too big:  */
 	x[0] = fabs(x[0]);
 	x[0] = (x[0] > W_TOO_BIG) ? x0[0] : x[0];
 
 	x[1] = (x[1] < 0.) ? 0. : x[1];  /* if it's too small */
-	x[1] = (x[1] > 1.) ? (1. - dv) : x[1];  /* if it's too big   */
+	x[1] = (x[1] > 1.) ? (1. - 1.e-15) : x[1];  /* if it's too big   */
 	return;
 }
 
-__device__ int general_newton_raphson(double x[], int n,
-	double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D)
-{
+__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance){
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
 	double errx;
-	int    n_iter, id, i_extra, doing_extra;
-
-	int   keep_iterating;
+	int n_iter, id, i_extra, doing_extra, keep_iterating;
 
 	// Initialize various parameters and variables:
 	errx = 1.;
 	df = f = 1.;
 	i_extra = doing_extra = 0;
-	for (id = 0; id < n; id++)  x_old[id] = x[id];
+	for (id = 0; id < NEWT_DIM_2; id++)  x_old[id] = x[id];
 
 	n_iter = 0;
 
-	/* Start the Newton-Raphson iterations : */
+	//Start the Newton-Raphson iterations
 	keep_iterating = 1;
 	while (keep_iterating) {
-		func_vsq(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D);  /* returns with new dx, f, df */
+		func_vsq(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D);  /* returns with new dx, f, df */
 
-		/* Save old values before calculating the new: */
+		//Save old values before calculating the new
 		errx = 0.;
-		for (id = 0; id < n; id++) {
-			x_old[id] = x[id];
-		}
+		for (id = 0; id < NEWT_DIM_2; id++) x_old[id] = x[id];
 
-		/* Make the newton step: */
-		for (id = 0; id < n; id++) {
-			x[id] += dx[id];
-		}
-		errx = (x[0] == 0.) ? fabs(dx[0]) : fabs(dx[0] / x[0]);
+		//Make the newton step
+		for (id = 0; id < NEWT_DIM_2; id++) x[id] += dx[id];
 
+		/****************************************/
+		/* Make sure that the new x[] is physical : */
+		/****************************************/
 		validate_x(x, x_old);
 
-		if ((fabs(errx) <= NEWT_TOL) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0)) {
-			doing_extra = 1;
-		}
+		/****************************************/
+		/* Calculate the convergence criterion */
+		/****************************************/
+		errx = (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
+		/*****************************************************************************/
+		/* If we've reached the tolerance level, then just do a few extra iterations */
+		/*  before stopping                                                          */
+		/*****************************************************************************/
+
+		if ((fabs(errx) <= tolerance) && (doing_extra == 0) && (EXTRA_NEWT_ITER > 0))doing_extra = 1;
 		if (doing_extra == 1) i_extra++;
-
-		if (((fabs(errx) <= NEWT_TOL) && (doing_extra == 0))
-			|| (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
+		if (((fabs(errx) <= tolerance) && (doing_extra == 0)) || (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
 
 		n_iter++;
+	} 
 
-	}   // END of while(keep_iterating)
+	//Check for bad untrapped divergences
+	if ((isfinite(f) == 0) || (isfinite(df) == 0)) return(2);
 
-	/*  Check for bad untrapped divergences : */
-	if ((isfinite(f) == 0) || (isfinite(df) == 0)) {
-		return(2);
-	}
-
-	if (fabs(errx) > MIN_NEWT_TOL){
-		return(1);
-	}
-	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
-		return(0);
-	}
-	if (fabs(errx) <= NEWT_TOL){
-		return(0);
-	}
+	//Depending on error return OK or error
+	if (fabs(errx) > MY_MIN(tolerance, MIN_NEWT_TOL)) return(1);
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > tolerance)) return(0);
+	if (fabs(errx) <= tolerance)return(0);
+	
 	return(0);
 }
 
-__device__ void func_vsq(double x[], double dx[], double resid[],
-	double jac[][NEWT_DIM_2], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D)
-{
-	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, gtmp;
-	double t11;
-	double t16;
-	double t18;
-	double t2;
-	double t21;
-	double t23;
-	double t24;
-	double t25;
-	double t3;
-	double t35;
-	double t36;
-	double t4;
-	double t40;
-	double t9;
+__device__ void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D){
+	double Wsq, p_tmp, dPdvsq, dPdW, gtmp;
+	double t11, t16, t18, t2, t21, t23,t24, t25, t3, t35, t36, t4, t40, t9;
 
-	W = x[0];
-	vsq = x[1];
+	//W = x[0];
+	//vsq = x[1];
 
-	Wsq = W*W;
-	gtmp = 1. - vsq;
+	Wsq = x[0] * x[0];
+	gtmp = 1. - x[1];
+	#if(AMD)
+	p_tmp = (GAMMA - 1.) * (fma(x[0], gtmp, -D * sqrt(gtmp))) / GAMMA;
+	dPdW = (GAMMA - 1.) * (1. - x[1]) / GAMMA;
+	dPdvsq = (GAMMA - 1.) * (fma(0.5, D / sqrt(1. - x[1]), -x[0])) / GAMMA;
+	#else
+	p_tmp = (GAMMA - 1.) * (fma(x[0], gtmp, -D * sqrt(gtmp))) / GAMMA;
+	dPdW = (GAMMA - 1.) * (1. - x[1]) / GAMMA;
+	dPdvsq = (GAMMA - 1.) * (fma(0.5, D / sqrt(1. - x[1]), -x[0])) / GAMMA;
+	#endif
 
-	p_tmp = (GAMMA - 1.) * (fma(W, gtmp, -D * sqrt(gtmp))) / GAMMA;
-	dPdW = (GAMMA - 1.) * (1. - vsq) / GAMMA;
-	dPdvsq = (GAMMA - 1.) * (fma(0.5, D / sqrt(1. - vsq), -W)) / GAMMA;
-
-	// These expressions were calculated using Mathematica, but fmae into efficient 
-	// code using Maple.  Since we know the analytic form of the equations, we can 
-	// explicitly calculate the Newton-Raphson step: 
-
-	#if AMD
+	// These expressions were calculated using Mathematica, but fmae into efficient  code using Maple.  Since we know the analytic form of the equations, we can explicitly calculate the Newton-Raphson step: 
+	#if(AMD)
 	t2 = fma(-0.5, Bsq, dPdvsq);
-	t3 = Bsq + W;
+	t3 = Bsq + x[0];
 	t4 = t3*t3;
-	t9 = 1 / Wsq;
-	t11 = fma(QdotBsq, (Bsq + 2.0*W)*t9, fma(-vsq, t4, Qtsq));
+	t9 = 1. / Wsq;
+	t11 = fma(QdotBsq, (Bsq + 2.0* x[0])*t9, fma(-x[1], t4, Qtsq));
 	t16 = QdotBsq*t9;
-	t18 = -fma(0.5, Bsq*(1.0 + vsq), Qdotn) + fma(0.5, t16, -W + p_tmp);
-	t21 = 1 / t3;
-	t23 = 1 / W;
+	t18 = -fma(0.5, Bsq*(1.0 + x[1]), Qdotn) + fma(0.5, t16, -x[0] + p_tmp);
+	t21 = 1. / t3;
+	t23 = 1. / x[0];
 	t24 = t16*t23;
 	t25 = -1.0 + dPdW - t24;
-	t35 = fma(t25, t3, (fma(-2.0, dPdvsq, Bsq))*(fma(vsq, Wsq*W, QdotBsq))*t9*t23);
-	t36 = 1 / t35;
+	t35 = fma(t25, t3, (fma(-2.0, dPdvsq, Bsq))*(fma(x[1], Wsq* x[0], QdotBsq))*t9*t23);
+	t36 = 1. / t35;
 	dx[0] = -(fma(t2, t11, t4*t18))*t21*t36;
-	t40 = (vsq + t24)*t3;
+	t40 = (x[1] + t24)*t3;
 	dx[1] = -(-fma(t25, t11, 2.0*t40*t18))*t21*t36;
 	jac[0][0] = -2.0*t40;
 	jac[0][1] = -t4;
@@ -1692,20 +1488,20 @@ __device__ void func_vsq(double x[], double dx[], double resid[],
 	*df = fma(-resid[0], resid[0], -resid[1] * resid[1]);
 	#else
 	t2 = -0.5*Bsq + dPdvsq;
-	t3 = Bsq + W;
+	t3 = Bsq + x[0];
 	t4 = t3*t3;
-	t9 = 1 / Wsq;
-	t11 = Qtsq - vsq*t4 + QdotBsq*(Bsq + 2.0*W)*t9;
+	t9 = 1. / Wsq;
+	t11 = Qtsq - x[1] *t4 + QdotBsq*(Bsq + 2.0* x[0])*t9;
 	t16 = QdotBsq*t9;
-	t18 = -Qdotn - 0.5*Bsq*(1.0 + vsq) + 0.5*t16 - W + p_tmp;
-	t21 = 1 / t3;
-	t23 = 1 / W;
+	t18 = -Qdotn - 0.5*Bsq*(1.0 + x[1]) + 0.5*t16 - x[0] + p_tmp;
+	t21 = 1. / t3;
+	t23 = 1. / x[0];
 	t24 = t16*t23;
 	t25 = -1.0 + dPdW - t24;
-	t35 = t25*t3 + (Bsq - 2.0*dPdvsq)*(QdotBsq + vsq*Wsq*W)*t9*t23;
-	t36 = 1 / t35;
+	t35 = t25*t3 + (Bsq - 2.0*dPdvsq)*(QdotBsq + x[1] *Wsq* x[0])*t9*t23;
+	t36 = 1. / t35;
 	dx[0] = -(t2*t11 + t4*t18)*t21*t36;
-	t40 = (vsq + t24)*t3;
+	t40 = (x[1] + t24)*t3;
 	dx[1] = -(-t25*t11 - 2.0*t40*t18)*t21*t36;
 	jac[0][0] = -2.0*t40;
 	jac[0][1] = -t4;
@@ -1743,7 +1539,6 @@ struct of_state_rad {
 	double bcon[NDIM];
 	double bcov[NDIM];
 };
-
 
 __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb[NPR], dEdpb[4][4], dEdpb_inv[4][4], bsq, errx;
@@ -4235,26 +4030,20 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 
 		#if(NEWMAN)
-		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-		if (pflag[global_id]){
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-		}
+		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 		#else
-		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-		//if (pflag[global_id]) {
-		//	pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-		//}
+		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 		#endif
 
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
 			#if DOKTOT
-			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
+			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 			#endif
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
-				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
+				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 				if (pflag[global_id]){
 					pflag[0] = global_id;
 					failimage[2 * (ksize)+global_id]++;
@@ -4389,17 +4178,17 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			PLOOP U[k] = U_prefloor[k] + dU[k];
 
 			#if(NEWMAN)
-			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 			#else
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 			#endif
 			if (pflag[global_id]){
 				failimage[global_id]++;
 				#if( DO_FONT_FIX ) 
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 					if (pflag[global_id]){
 						pflag[0] = 100;
 						failimage[2 * (ksize)+global_id]++;
@@ -4574,15 +4363,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			#endif
 
 			#if(NEWMAN)
-			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-			if (pflag[global_id]){
-				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			}
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 			#else
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-			//if (pflag[global_id]) {
-				//pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-			//}
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 			#endif
 
 			//compute the square of fluid frame magnetic field (twice magnetic pressure)
@@ -4590,11 +4373,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			if (pflag[global_id]) {
 				failimage[global_id]++;
 				#if DOKTOT
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 				#endif
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 					if (pflag[global_id]){
 						pflag[0] = global_id;
 						failimage[2 * (ksize)+global_id]++;
@@ -4729,23 +4512,17 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				PLOOP U[k] = U_prefloor[k] + dU[k];
 
 				#if(NEWMAN)
-				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-				if (pflag[global_id]){
-					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-				}
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 				#else
-				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf);
-				if (pflag[global_id]) {
-					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf);
-				}
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 				#endif
 				if (pflag[global_id]){
 					failimage[global_id]++;
 					#if( DO_FONT_FIX ) 
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf);
+					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 					if (pflag[global_id]) {
 						failimage[1 * (ksize)+global_id]++;
-						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf);
+						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 						if (pflag[global_id]){
 							pflag[0] = 100;
 							failimage[2 * (ksize)+global_id]++;
