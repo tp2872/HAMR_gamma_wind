@@ -72,6 +72,7 @@ __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
 __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q);
 
 
 /*************************************************************************/
@@ -131,7 +132,7 @@ Returns (1) if a singular matrix is found,  (0) otherwise.
 
 __device__ int LU_decompose(double A[][NDIM], int permute[]){
 	double row_norm[NDIM];
-	double  absmax, maxtemp, mintemp;
+	double  absmax, maxtemp;
 	int i, j, k, max_row;
 
 	max_row = 0;
@@ -274,7 +275,7 @@ Upon exit, B[] contains the solution x[], A[][] is left unchanged.
 __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 {
 	int i, j;
-	double tmpvar, tmpvar2;
+	double tmpvar;
 
 
 	/* Perform the forward substitution using the LU matrix.
@@ -1541,128 +1542,162 @@ struct of_state_rad {
 };
 
 __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb[NPR], dEdpb[4][4], dEdpb_inv[4][4], bsq, errx;
-	struct of_state q;
-	struct of_state_rad q_rad;
-	int i, k, n_iter, keep_iterating;
-	pb[UU_RAD] = MY_MAX(pb[UU_RAD], 0.001*pb[UU]);
+	return 1;
+}
 
-	// Initialize various parameters and variables:
-	for (k = 0; k < NPR; k++) {
-		pb_old[k] = pb[k];
-		pb_new[k] = pb[k];
-		dpb[k] = 0.;
+//Apply floors to a cell
+__device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, struct of_state* q) {
+	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
+	double pf_prefloor[NPR_U], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
+	int dofloor=0, flag = 0, m, k;
+
+	rhoscal = pow(r, -POWRHO);
+	uuscal = pow(rhoscal, GAMMA);
+
+	rhoflr = RHOMIN * rhoscal;
+	uuflr = UUMIN * uuscal;
+
+	get_state(pf, geom, q);
+	bsq = dot(q->bcon, q->bcov);
+
+	//tie floors to the local values of magnetic field and internal energy density
+	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
+
+	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+
+	//floor on density and internal energy density (momentum *not* conserved) 
+	#pragma unroll 9
+	PLOOP pf_prefloor[k] = pf[k];
+	if (pf[RHO] < rhoflr) {
+		pf[RHO] = rhoflr;
+		dofloor = 1;
 	}
-	k = UU;
-	pb_old[k] = 10 * pb[k];
-	pb_new[k] = 10 * pb[k];
-	n_iter = 0;
-	U[UU] = U[UU] - U[RHO];
-
-	/* Start the Newton-Raphson iterations : */
-	keep_iterating = 1;
-	while (keep_iterating) {
-		//Calculate jacobian dEdpb
-		get_state(pb_old, &geom, &q);
-		mhd_calc(pb_old, 0, &q, &U_old[UU]);
-		for (k = UU; k <= U3; k++)U_old[k] *= geom.g;
-		for (i = UU; i <= U3; i++) {
-			//bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
-			if (i == UU) {
-				for (k = UU; k <= U3; k++) dpb[k] = 0.;
-				dpb[i] = pow(10., -9.)*(pb_old[UU]);
-			}
-			else {
-				for (k = UU; k <= U3; k++) dpb[k] = 0.;
-				dpb[i] = pow(10., -11.) / sqrt(fabs(geom.gcov[4*(i==1)+7*(i==2)+9*(i==3)]));
-			}
-			for (k = 0; k < NPR; k++) pb_new[k] = pb_old[k] + dpb[k];
-
-			get_state(pb_new, &geom, &q);
-			mhd_calc(pb_new, 0, &q, &U_new[UU]);
-			for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
-
-			U_new[UU_RAD] = U[UU_RAD] - (U_new[UU] - U[UU]);
-			U_new[U1_RAD] = U[U1_RAD] - (U_new[U1] - U[U1]);
-			U_new[U2_RAD] = U[U2_RAD] - (U_new[U2] - U[U2]);
-			U_new[U3_RAD] = U[U3_RAD] - (U_new[U3] - U[U3]);
-			//printf("teste1: %f \n", log(fabs(U[UU_RAD])) / log(10.));
-			//printf("teste1: %f \n", log(fabs(U_new[U1_RAD])) / log(10.));
-
-			Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
-			//printf("teste2: %f \n", log(fabs(pb_new[UU_RAD])) / log(10.));
-
-			source_rad(pb_old, &geom, dU_old);
-			source_rad(pb_new, &geom, dU_new);
-
-			for (k = UU; k <= U3; k++) {
-				//dU_old[k] = 0.;
-				//dU_new[k] = 0.;
-				E_old[k] = (U_old[k] - U[k] - Dt*dU_old[k]);
-				E_new[k] = (U_new[k] - U[k] - Dt*dU_new[k]);
-				dEdpb[k - UU][i - UU] = (E_new[k] - E_old[k]) / dpb[i];
-			}
-		}
-
-		invert_matrix(dEdpb, dEdpb_inv);
-
-		//Tg = (GAMMA - 1.)*pb_new[UU] / pb_new[RHO];
-		//error += fabs((U_new[KTOT] - U[KTOT])*Tg + Dt*dU_new[KTOT]);
-		//norm += U[KTOT] * Tg;
-		//error_norm = error / norm;
-
-		/* Make the newton step: */
-		for (k = 0; k < 4; k++) {
-			dpb[k + 1] = -(E_old[1] * dEdpb_inv[k][0] + E_old[2] * dEdpb_inv[k][1] + E_old[3] * dEdpb_inv[k][2] + E_old[4] * dEdpb_inv[k][3]);
-			pb_new[k + 1] = pb_old[k + 1] + dpb[k + 1];
-		}
-
-		get_state(pb_new, &geom, &q);
-		mhd_calc(pb_new, 0, &q, &U_new[UU]);
-		for (k = UU; k <= U3; k++)U_new[k] *= geom.g;
-
-		//get_state_rad(pb_new, &geom, &q_rad);
-		//mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-		//for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom.g;
-
-		U_new[UU_RAD] = U[UU_RAD] - (U_new[UU] - U[UU]);
-		U_new[U1_RAD] = U[U1_RAD] - (U_new[U1] - U[U1]);
-		U_new[U2_RAD] = U[U2_RAD] - (U_new[U2] - U[U2]);
-		U_new[U3_RAD] = U[U3_RAD] - (U_new[U3] - U[U3]);
-		Rtoprim(U_new, geom.gcov, geom.gcon, geom.g, pb_new, BASIC);
-		source_rad(pb_new, &geom, dU_new);
-
-		/****************************************/
-		/* Calculate the convergence criterion for iterated variables */
-		/****************************************/
-		errx = 0.25*(fabs(U_new[UU] - U[UU] - Dt*dU_new[UU]) / fabs(U[UU]));
-		//if (n_iter >= 0)printf("iter: %d test: %f \n", n_iter, log(errx) / log(10.));
-
-		/*****************************************************************************/
-		/* If we've reached the tolerance level, then just do a few extra iterations */
-		/*  before stopping                                                          */
-		/*****************************************************************************/
-		if ( (n_iter >= (3 - 1))) {
-			keep_iterating = 0;
-		}
-		else {
-			keep_iterating = 1;
-			for (k = 0; k < NPR; k++) pb_old[k] = pb_new[k];
-		}
-
-		n_iter++;
-	}   // END of while(keep_iterating)
-
-	if (fabs(errx) > MIN_NEWT_TOL*1000.) {
-		for (k = 0; k < NPR; k++) pb[k] = pb_new[k];
-		return(1);
-	}
-	if (fabs(errx) <= NEWT_TOL*1000.) {
-		for (k = 0; k < NPR; k++) pb[k] = pb_new[k];
-		return(0);
+	if (pf[UU] < uuflr) {
+		pf[UU] = uuflr;
+		dofloor = 1;
 	}
 
-	return(0);
+	#if( DRIFT_FLOOR )
+	trans = 10. * bsq / MY_MIN(pf[RHO], pf[UU]) - 1.;
+	if (dofloor && (trans) > 0.) {
+		if (trans > 1.) trans = 1.;
+		betapar = -q->bcon[0] / ((bsq + SMALL) * q->ucon[0]);
+		betasq = betapar * betapar * bsq;
+		betasqmax = 1. - 1. / (GAMMAMAX * GAMMAMAX);
+		if (betasq > betasqmax) {
+			betasq = betasqmax;
+		}
+		gamma = 1. / sqrt(1 - betasq);
+		#pragma unroll 4
+		for (m = 0; m < NDIM; m++) {
+			ucondr[m] = gamma * (q->ucon[m] + betapar * q->bcon[m]);
+		}
+
+		Bcon[0] = 0.;
+
+		#pragma unroll 3
+		for (m = 1; m < NDIM; m++) {
+			Bcon[m] = pf[B1 - 1 + m];
+		}
+
+		lower(Bcon, geom->gcov, Bcov);
+		udotB = dot(q->ucon, Bcov);
+		Bsq = dot(Bcon, Bcov);
+		B = sqrt(Bsq);
+
+		//enthalpy before the floors
+		wold = pf_prefloor[RHO] + pf_prefloor[UU] * GAMMA;
+
+		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
+		QdotB = udotB * wold * q->ucon[0];
+
+		//enthalpy after the floors
+		wnew = pf[RHO] + pf[UU] * GAMMA;
+
+		x = 2. * QdotB / (B * wnew * ucondr[0] + SMALL);
+
+		//new parallel velocity
+		vpar = x / (ucondr[0] * (1. + sqrt(1. + x * x)));
+
+		one_over_ucondr_t = 1. / ucondr[0];
+
+		//new contravariant 3-velocity, v^i
+		vcon[0] = 1.;
+
+		#pragma unroll 3
+		for (m = 1; m < NDIM; m++) {
+			//parallel (to B) plus perpendicular (to B) velocities
+			vcon[m] = vpar * Bcon[m] / (B + SMALL) + ucondr[m] * one_over_ucondr_t;
+		}
+
+		//compute u^t corresponding to the new v^i
+		ut_calc_3vel(vcon, geom, &ut);
+
+		#pragma unroll 4
+		for (m = 0; m < NDIM; m++) {
+			ucon[m] = ut * vcon[m];
+		}
+		ucon_to_utcon(ucon,geom, utcon);
+
+		//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
+		//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
+		#pragma unroll 3
+		for (m = 1; m < NDIM; m++) {
+			pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
+		}
+	}
+	#elif(ZAMO_FLOOR)
+	if (dofloor == 1) {
+		double dpf[NPR], U_prefloor[NPR], Xtransone_over_ucondr;
+		struct of_state_rad q_rad;
+		#pragma unroll 9
+		PLOOP dpf[k] = pf[k] - pf_prefloor[k];
+
+		//compute the conserved quantity associated with floor addition
+		get_state(dpf, geom, q);
+		primtoU(dpf, q, q_rad, geom, dU, gam);
+
+		//compute the prefloor conserved quantity
+		get_state(pf_prefloor, geom, q);
+		primtoU(pf_prefloor, q, q_rad, geom, U_prefloor, gam);
+
+		//add U_added to the current conserved quantity
+		#pragma unroll 9
+		PLOOP U[k] = U_prefloor[k] + dU[k];
+
+		#if(NEWMAN)
+		flag = Utoprim_NM(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC);
+		#else
+		flag = Utoprim_2d(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC);
+		#endif
+		if (pflag[global_id]) {
+			#if( DO_FONT_FIX ) 
+			flag = Utoprim_1dvsq2fix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC);
+			if (pflag[global_id]) {
+				flag = Utoprim_1dfix1(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC);
+			}
+			#endif	
+		}
+	}
+	#endif
+
+	// limit gamma wrt normal observer 
+	if (gamma_calc(pf, geom, &gamma)) {
+		flag = 4;
+	}
+	else {
+		if (gamma > GAMMAMAX) {
+			f = sqrt((GAMMAMAX * GAMMAMAX - 1.) / (gamma * gamma - 1.));
+			pf[U1] *= f;
+			pf[U2] *= f;
+			pf[U3] *= f;
+		}
+	}
+
+	return flag;
 }
 
 
@@ -1718,10 +1753,9 @@ __device__ void primtoU(double *pr, struct of_state *q, struct of_state_rad *q_r
 /* add in source terms to equations of motion */
 __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
 {
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM];
+	double mhd[NDIM][NDIM];
 	int k, j, dir;
 	double conn, P, w, bsq, eta, ptot;
-	struct of_state_rad q_rad;
 	#if(NSY)
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
@@ -1813,6 +1847,8 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 
 	//Add M1 radiation terms
 	#if(RAD_M1)
+	double mhd_rad[NDIM][NDIM];
+	struct of_state_rad q_rad;
 	get_state_rad(ph, geom, &q_rad);
 	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
 	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
@@ -1937,8 +1973,8 @@ __device__ void mhd_calc_rad(double * pr, int dir, struct of_state_rad * q_rad, 
 
 __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU)
 {
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
-	int j, k;
+	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
+	int  k;
 	struct of_state_rad q_rad;
 
 	//Add M1 radiation terms
@@ -2054,7 +2090,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 	#pragma unroll 9
 	PLOOP flux[k] *= geom->g;
 
-	/*Calculate wavespeed*/
+	//Calculate wavespeed
 	if (dir != 0){
 		double discr, vp, vm, va2, cs2, cms2;
 		double Acon_0, Acon_js;
@@ -2072,23 +2108,16 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 			Acon_js = geom->gcon[9];
 		}
 
-		/* find fast magnetosonic speed */
+		//find fast magnetosonic speed
 		cs2 = gam*(gam - 1.)*pr[UU] / w;
 		va2 = bsq / eta;
 		cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
 
-		/* check on it! */
-		if (cms2 < 0.) {
-			//fail(FAIL_COEFF_NEG) ;
-			cms2 = SMALL;
-		}
-		if (cms2 > 1.) {
-			//fail(FAIL_COEFF_SUP) ;
-			cms2 =1.;
-		}
+		//check on it!
+		if (cms2 < 0.) cms2 = SMALL;
+		if (cms2 > 1.) cms2 =1.;
 
-		/* now require that speed of wave measured by observer
-		q->ucon is cms2 */
+		//now require that speed of wave measured by observer q->ucon is cms2
 		Asq = Acon_js;
 		Bsq = geom->gcon[0];// dot(Bcon, Bcov);
 		Au = q->ucon[dir];
@@ -2109,19 +2138,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_r
 		discr = B*B - 4.*A*C;
 		#endif
 		if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
-		else if (discr < -1.e-10) {
-			/*fprintf(stderr,"\n\t %g %g %g %g %g\n",A,B,C,discr,cms2) ;
-			fprintf(stderr,"\n\t q->ucon: %g %g %g %g\n",q->ucon[0],q->ucon[1],
-			q->ucon[2],q->ucon[3]) ;
-			fprintf(stderr,"\n\t q->bcon: %g %g %g %g\n",q->bcon[0],q->bcon[1],
-			q->bcon[2],q->bcon[3]) ;
-			fprintf(stderr,"\n\t Acon: %g %g %g %g\n",Acon[0],Acon[1],
-			Acon[2],Acon[3]) ;
-			fprintf(stderr,"\n\t Bcon: %g %g %g %g\n",Bcon[0],Bcon[1],
-			Bcon[2],Bcon[3]) ;
-			fail(FAIL_VCHAR_DISCR) ;*/
-			discr = 0.;
-		}
+		else if (discr < -1.e-10) discr = 0.;
 
 		discr = sqrt(discr);
 		vp = -(-B + discr) / (2.*A);
@@ -2141,6 +2158,7 @@ __device__ void vchar_rad(double * pr, struct of_state_rad * q_rad, struct of_ge
 
 	/* find radiation wave speed */
 	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
+	tau = 1;
 	crad2 = MY_MIN(1.0 / 3.0, pow(4. / (3.*tau), 2.));
 
 	if (dir == 1) {
@@ -2805,7 +2823,7 @@ __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restr
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0, zoffset = 0, z2 = 0, z3 = 0, z4 = 0;
+	int zsize = 1, zoffset = 0, z2 = 0, z3 = 0, z4 = 0;
 	double x2, x3, x4;
 	double temp;
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
@@ -2813,6 +2831,7 @@ __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restr
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int  zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -2882,7 +2901,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int idel, jdel, zdel;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0, zoffset = 0, z1 = -2, z2 = -1, z3 = 0, z4 = 1, z5 = 2;
+	int  z1 = -2, z2 = -1, z3 = 0, z4 = 1, z5 = 2;
 	double x1, x2, x3, x4, x5, FF=0.;
 	double temp, result;
 	if (dir == 1) { idel = 1; jdel = 0; zdel = 0; }
@@ -2890,6 +2909,7 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; }
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zsize = 1, zlevel = 0, zoffset = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -2993,14 +3013,14 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0, zoffset = 0, u;
-	int zsize2 = 1, zlevel2 = 0, zoffset2 = 0;
+	int zsize = 1, zoffset = 0, u;
+	int zsize2 = 1, zoffset2 = 0;
 	double temp[NPR];
 
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int  zlevel = 0, zlevel2 = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -3088,9 +3108,10 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	struct of_state state;
 	struct of_state_rad state_rad;
 	local_dtij[local_id] = 1.e9;
-	int zsize = 1, zlevel = 0, zoffset = 0;
+	int zsize = 1, zoffset = 0;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -3225,7 +3246,6 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 {
 	int j, k;
 	double  P, w, bsq, eta, ptot;
-	double n = 1. / (GAMMA - 1.);
 
 	/* particle number flux */
 	flux[RHO] = pr[RHO] * ucon[dir];
@@ -3259,7 +3279,6 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 {
 	double discr, vp, vm, bsq, EE, EF, va2, cs2, cms2;
 	double Asq, Bsq, Au, Bu, Au2, Bu2, AuBu, A, B, C;
-	int j;
 
 	/* find fast magnetosonic speed */
 	bsq = -bcon[0] * bcon[0] + bcon[1] * bcon[1] + bcon[2] * bcon[2] + bcon[3] * bcon[3];
@@ -3605,10 +3624,11 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel=0, zoffset=0, u;
+	int zsize = 1, zoffset=0, u;
 	double temp;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -3731,10 +3751,11 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel=0, zoffset=0, u;
+	int zsize = 1,  zoffset=0, u;
 	double temp;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -3931,16 +3952,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
+	double pf[NPR],  dU[NPR], U[NPR];
 
-	int  dofloor = 0, m;
-	double r, uuscal, rhoscal, rhoflr, uuflr;
-	double f, gamma, bsq;
-	double pf[NPR], pf_prefloor[NPR], dU[NPR], U[NPR];
-	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
-	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
-	int zsize = 1, zlevel = 0, zoffset = 0, u;
+	int zsize = 1, zoffset = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -3956,9 +3973,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0/((double)zsize))*pi_i[k*(ksize)+global_id-zoffset+u];
 				}
 			}
-			#if(RAD_M1)
-			get_state_rad(pf, &geom, &q_rad);
-			#endif
+
 			get_state(pf, &geom, &q);
 			primtoU(pf, &q, &q_rad, &geom, U, gam);
 			#pragma unroll 9	
@@ -3977,10 +3992,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0 / ((double)zsize))*pb_i[k*(ksize)+global_id - zoffset + u];
 				}
 			}
-			if (full_step == 1){
-				get_state(pf, &geom, &q);
-			}
+			get_state(pf, &geom, &q);
 		}
+
 		#pragma unroll 9	
 		for (k = 0; k<NPR; k++){
 			for (u = 0; u < zsize; u++){
@@ -4008,8 +4022,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		U[B2] = 0.0;
 		#if(STAGGERED)
 		for (u = 0; u < zsize; u++){
-			U[B1] = (psf[0 * ksize + global_id - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
-			U[B2] = (psf[1 * ksize + global_id - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+			U[B1] += (psf[0 * ksize + global_id - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+			U[B2] += (psf[1 * ksize + global_id - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
 		}
 		#if(N3G>0)
 		U[B3] = (psf[2 * ksize + global_id - zoffset] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset] + psf[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr - zoffset + zsize * D3)]) / 2.0;
@@ -4052,168 +4066,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		}
 		#endif
 
-		r = radius[icurr];
-		rhoscal = pow(r, -POWRHO);
-		uuscal = pow(rhoscal, gam);
-
-		rhoflr = RHOMIN*rhoscal;
-		uuflr = UUMIN*uuscal;
-
-		ucon_calc(pf, &geom, q.ucon);
-		lower(q.ucon, geom.gcov, q.ucov);
-		bcon_calc(pf, q.ucon, q.ucov, q.bcon);
-		lower(q.bcon, geom.gcov, q.bcov);
-		bsq = dot(q.bcon, q.bcov);
-
-		//tie floors to the local values of magnetic field and internal energy density
-		if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
-		if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-		if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
-
-		if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
-		if (uuflr  < UUMINLIMIT) uuflr = UUMINLIMIT;
-
-		//floor on density and internal energy density (momentum *not* conserved) 
-		#pragma unroll 9
-		PLOOP pf_prefloor[k] = pf[k];
-		if (pf[RHO] <rhoflr){
-			pf[RHO] = rhoflr;
-			dofloor = 1;
-		}
-		if (pf[UU] < uuflr){
-			pf[UU] = uuflr;
-			dofloor = 1;
-		}
-
-		#if( DRIFT_FLOOR )
-		if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
-			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
-			//lower(q.ucon, geom.gcov, q.ucov) ;
-			if (trans > 1.) {
-				trans = 1.;
-			}
-
-			betapar = -q.bcon[0] / ((bsq + SMALL)*q.ucon[0]);
-			betasq = betapar*betapar*bsq;
-			betasqmax = 1. - 1. / (GAMMAMAX*GAMMAMAX);
-			if (betasq > betasqmax) {
-				betasq = betasqmax;
-			}
-			gamma = 1. / sqrt(1 - betasq);
-			#pragma unroll 4
-			for (m = 0; m < NDIM; m++) {
-				ucondr[m] = gamma*(q.ucon[m] + betapar*q.bcon[m]);
-			}
-
-			Bcon[0] = 0.;
-
-			#pragma unroll 3
-			for (m = 1; m < NDIM; m++) {
-				Bcon[m] = pf[B1 - 1 + m];
-			}
-
-			lower(Bcon, geom.gcov, Bcov);
-			udotB = dot(q.ucon, Bcov);
-			Bsq = dot(Bcon, Bcov);
-			B = sqrt(Bsq);
-
-			//enthalpy before the floors
-			wold = pf_prefloor[RHO] + pf_prefloor[UU] * gam;
-
-			//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
-			QdotB = udotB*wold*q.ucon[0];
-
-			//enthalpy after the floors
-			wnew = pf[RHO] + pf[UU] * gam;
-			//wnew = wold;
-
-			x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
-
-			//new parallel velocity
-			vpar = x / (ucondr[0] * (1. + sqrt(1. + x*x)));
-
-			one_over_ucondr_t = 1. / ucondr[0];
-
-			//new contravariant 3-velocity, v^i
-			vcon[0] = 1.;
-
-			#pragma unroll 3
-			for (m = 1; m < NDIM; m++) {
-				//parallel (to B) plus perpendicular (to B) velocities
-				vcon[m] = vpar*Bcon[m] / (B + SMALL) + ucondr[m] * one_over_ucondr_t;
-			}
-
-			//compute u^t corresponding to the new v^i
-			ut_calc_3vel(vcon, &geom, &ut);
-
-			#pragma unroll 4
-			for (m = 0; m < NDIM; m++) {
-				ucon[m] = ut*vcon[m];
-			}
-			ucon_to_utcon(ucon, &geom, utcon);
-
-			//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
-			//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
-			#pragma unroll 3
-			for (m = 1; m < NDIM; m++) {
-				pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
-			}
-		}
-		#elif(ZAMO_FLOOR)
-		if (dofloor == 1) {
-			double dpf[NPR], U_prefloor[NPR],Xtransone_over_ucondr;
-			#pragma unroll 9
-			PLOOP dpf[k] = pf[k] - pf_prefloor[k];
-
-			//compute the conserved quantity associated with floor addition
-			get_state(dpf, &geom, &q);
-			primtoU(dpf, &q, &q_rad, &geom, dU, gam);
-
-			//compute the prefloor conserved quantity
-			get_state(pf_prefloor, &geom, &q);
-			primtoU(pf_prefloor, &q, &q_rad, &geom, U_prefloor, gam);
-
-			//add U_added to the current conserved quantity
-			#pragma unroll 9
-			PLOOP U[k] = U_prefloor[k] + dU[k];
-
-			#if(NEWMAN)
-			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-			#else
-			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-			#endif
-			if (pflag[global_id]){
-				failimage[global_id]++;
-				#if( DO_FONT_FIX ) 
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-				if (pflag[global_id]) {
-					failimage[1 * (ksize)+global_id]++;
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-					if (pflag[global_id]){
-						pflag[0] = 100;
-						failimage[2 * (ksize)+global_id]++;
-					}
-				}
-				#else
-				pflag[0] = 100;
-				#endif	
-			}
-		}
-		#endif
-
-		// limit gamma wrt normal observer 
-		if (gamma_calc(pf, &geom, &gamma)) {
-			// Treat gamma failure here as "fixable" for fixup_utoprim() 
+		//Apply floors in ZAMO frame or drift frame
+		if (fixup_cell(pf, radius[icurr], &geom, &q)) {
 			pflag[global_id] = -333;
 			pflag[0] = global_id;;
 			failimage[3 * (ksize)+global_id]++;
-		}
-		else {
-			if (gamma > GAMMAMAX) {f = sqrt((GAMMAMAX*GAMMAMAX - 1.) /(gamma*gamma - 1.));
-				pf[U1] *= f;
-				pf[U2] *= f;
-				pf[U3] *= f;
-			}
 		}
 
 		#pragma unroll 9	
@@ -4289,19 +4146,14 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	#endif
 	ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int  dofloor = 0, m;
-	double r, uuscal, rhoscal, rhoflr, uuflr;
-	double f, gamma, bsq;
-	double pf[NPR], pf_prefloor[NPR], U[NPR];
-	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
-	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
-	int zsize = 1, zlevel = 0, zoffset = 0, u;
+	double pf[NPR], U[NPR];
+	int zsize = 1, zoffset = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
@@ -4341,8 +4193,8 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			U[B2] = 0.0;
 			#if(STAGGERED)
 			for (u = 0; u < zsize; u++){
-				U[B1] = (psf[0 * ksize + global_id - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
-				U[B2] = (psf[1 * ksize + global_id - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+				U[B1] += (psf[0 * ksize + global_id - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1)*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+				U[B2] += (psf[1 * ksize + global_id - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset + u] + psf[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + D2)*(BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
 			}
 			#if(N3G>0)
 			U[B3] = (psf[2 * ksize + global_id - zoffset] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr - zoffset] + psf[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr - zoffset + zsize * D3)]) / 2.0;
@@ -4386,172 +4238,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			}
 			#endif
 
-			r = radius[icurr];
-			rhoscal = pow(r, -POWRHO);
-			uuscal = pow(rhoscal, gam);
-
-			rhoflr = RHOMIN*rhoscal;
-			uuflr = UUMIN*uuscal;
-
-			ucon_calc(pf, &geom, q.ucon);
-			lower(q.ucon, geom.gcov, q.ucov);
-			bcon_calc(pf, q.ucon, q.ucov, q.bcon);
-			lower(q.bcon, geom.gcov, q.bcov);
-			bsq = dot(q.bcon, q.bcov);
-
-			//tie floors to the local values of magnetic field and internal energy density
-			if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
-			if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
-			if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
-
-			if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
-			if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
-
-			//floor on density and internal energy density (momentum *not* conserved) 
-			#pragma unroll 9
-			PLOOP pf_prefloor[k] = pf[k];
-			if (pf[RHO] < rhoflr){
-				pf[RHO] = rhoflr;
-				dofloor = 1;
-			}
-			if (pf[UU] < uuflr){
-				pf[UU] = uuflr;
-				dofloor = 1;
-			}
-
-			#if( DRIFT_FLOOR )
-			if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
-				//ucon_calc(pf_prefloor, &geom, q.ucon) ;
-				//lower(q.ucon, geom.gcov, q.ucov) ;
-				if (trans > 1.) {
-					trans = 1.;
-				}
-
-				betapar = -q.bcon[0] / ((bsq + SMALL)*q.ucon[0]);
-				betasq = betapar*betapar*bsq;
-				betasqmax = 1. - 1. / (GAMMAMAX*GAMMAMAX);
-				if (betasq > betasqmax) {
-					betasq = betasqmax;
-				}
-				gamma = 1. / sqrt(1 - betasq);
-				#pragma unroll 4
-				for (m = 0; m < NDIM; m++) {
-					ucondr[m] = gamma*(q.ucon[m] + betapar*q.bcon[m]);
-				}
-
-				Bcon[0] = 0.;
-
-				#pragma unroll 3
-				for (m = 1; m < NDIM; m++) {
-					Bcon[m] = pf[B1 - 1 + m];
-				}
-
-				lower(Bcon, geom.gcov, Bcov);
-				udotB = dot(q.ucon, Bcov);
-				Bsq = dot(Bcon, Bcov);
-				B = sqrt(Bsq);
-
-				//enthalpy before the floors
-				wold = pf_prefloor[RHO] + pf_prefloor[UU] * gam;
-
-				//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
-				QdotB = udotB*wold*q.ucon[0];
-
-				//enthalpy after the floors
-				wnew = pf[RHO] + pf[UU] * gam;
-				//wnew = wold;
-
-				x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
-
-				//new parallel velocity
-				vpar = x / (ucondr[0] * (1. + sqrt(1. + x*x)));
-
-				one_over_ucondr_t = 1. / ucondr[0];
-
-				//new contravariant 3-velocity, v^i
-				vcon[0] = 1.;
-
-				#pragma unroll 3
-				for (m = 1; m < NDIM; m++) {
-					//parallel (to B) plus perpendicular (to B) velocities
-					vcon[m] = vpar*Bcon[m] / (B + SMALL) + ucondr[m] * one_over_ucondr_t;
-				}
-
-				//compute u^t corresponding to the new v^i
-				ut_calc_3vel(vcon, &geom, &ut);
-
-				#pragma unroll 4
-				for (m = 0; m < NDIM; m++) {
-					ucon[m] = ut*vcon[m];
-				}
-				ucon_to_utcon(ucon, &geom, utcon);
-
-				//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
-				//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
-				#pragma unroll 3
-				for (m = 1; m < NDIM; m++) {
-					pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
-				}
-			}
-			#elif(ZAMO_FLOOR)
-			if (dofloor == 1) {
-				double dpf[NPR], U_prefloor[NPR], Xtransone_over_ucondr;
-				#pragma unroll 9
-				PLOOP dpf[k] = pf[k] - pf_prefloor[k];
-
-				//compute the conserved quantity associated with floor addition
-				get_state(dpf, &geom, &q);
-				primtoU(dpf, &q, &q_rad, &geom, dU, gam);
-
-				//compute the prefloor conserved quantity
-				get_state(pf_prefloor, &geom, &q);
-				primtoU(pf_prefloor, &q, &q_rad, &geom, U_prefloor, gam);
-
-				//add U_added to the current conserved quantity
-				#pragma unroll 9
-				PLOOP U[k] = U_prefloor[k] + dU[k];
-
-				#if(NEWMAN)
-				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-				#else
-				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-				#endif
-				if (pflag[global_id]){
-					failimage[global_id]++;
-					#if( DO_FONT_FIX ) 
-					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-					if (pflag[global_id]) {
-						failimage[1 * (ksize)+global_id]++;
-						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
-						if (pflag[global_id]){
-							pflag[0] = 100;
-							failimage[2 * (ksize)+global_id]++;
-						}
-					}
-					#else
-					pflag[0] = 100;
-					#endif	
-				}
-			}
-			#endif
-
-			// limit gamma wrt normal observer 
-			if (gamma_calc(pf, &geom, &gamma)) {
-				// Treat gamma failure here as "fixable" for fixup_utoprim() 
+			//Apply floors in ZAMO frame or drift frame
+			if (fixup_cell(pf, radius[icurr], &geom, &q)){
 				pflag[global_id] = -333;
 				pflag[0] = global_id;;
 				failimage[3 * (ksize)+global_id]++;
-			}
-			else {
-				if (gamma > GAMMAMAX) {
-					f = sqrt(
-						(GAMMAMAX*GAMMAMAX - 1.) /
-						(gamma*gamma - 1.)
-						);
-					pf[U1] *= f;
-					pf[U2] *= f;
-					pf[U3] *= f;
-				}
 			}
 
 			#pragma unroll 9	
@@ -4980,7 +4671,7 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 	int idel, jdel, zdel, i, i1, j1, j2;
 	int face;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0, zoffset = 0;
+	int zsize = 1, zoffset = 0;
 	double factor;
 	double cmax_r, cmin_r, ctop, cmax_l, cmin_l, cmax[2], cmin[2], cmax_roe, cmin_roe;
 	double p_l[NPR], p_r[NPR], F1[NPR], F_FT[2][NPR], F_HLL[2][NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR];
@@ -4991,6 +4682,7 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 	local_dtij[local_id] = 1.e9;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
@@ -5158,20 +4850,17 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
 	double A, B, C, D, vcon, ptot;
 	int k, fail_HLLC = 0;
-	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+	int UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
 
 	if (dir == 1) {
-		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
 		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
 		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
 	}
 	else if (dir == 2) {
-		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
 		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
 		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
 	}
 	else if (dir == 3) {
-		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
 		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
 		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
 	}
@@ -5339,21 +5028,21 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 	double A, B, C, D, gammasq, vcon[NDIM], ptot_HLLC, ptot, v_dot_B;
 	int keep_iterating = 1;
 	int n_iter = 0;
-	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+	int GEN_1, GEN_2, GEN_3, UGEN_1, BGEN_1, BGEN_2, BGEN_3;
 
 	if (dir == 1) {
 		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
-		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
+		UGEN_1 = U1;
 		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
 	}
 	else if (dir == 2) {
 		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
-		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
+		UGEN_1 = U2; 
 		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
 	}
 	else if (dir == 3) {
 		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
-		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
+		UGEN_1 = U3;
 		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
 	}
 
@@ -5396,7 +5085,7 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 
 	//Newton Raphson loop to find pressure of intermediate states in HLLD solver
 	double error_1, error_2;
-	double ptot_old, de_dptot, de_dlptot, dlptot, lptot, d_ptot = 0.;
+	double ptot_old, de_dptot, d_ptot = 0.;
 	error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
 	while (keep_iterating) {
@@ -5425,7 +5114,7 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 		error_2 = error_1;
 		error_1 = calc_error_HLLD(dir, 0, ptot, cmin_roe, cmax_roe, F_HLL[0][BGEN_1], R_l, R_r, B_al, B_ar, B_c, vcon_al, vcon_ar, K_al, K_ar, vcon_cl, vcon_cr, eta_l, eta_r, w_al, w_ar);
 
-		if ((fabs(d_ptot) <= pow(10., -8.) * fabs(ptot)) || n_iter > 10) {
+		if ((fabs(ptot-ptot_old) <= pow(10., -8.) * fabs(ptot)) || n_iter > 10) {
 			keep_iterating = 0;
 		}
 
@@ -5545,42 +5234,36 @@ __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 //Calculates speed of contact mode and checks that all speeds and parameters of the solution are physical
 __device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]) {
 	double vsq;
-	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
+	int GEN_1, GEN_2, GEN_3;
 
 	if (dir == 1) {
 		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
-		UGEN_1 = U1; UGEN_2 = U2; UGEN_3 = U3;
-		BGEN_1 = B1; BGEN_2 = B2; BGEN_3 = B3;
 	}
 	else if (dir == 2) {
 		GEN_1 = 2; GEN_2 = 3; GEN_3 = 1;
-		UGEN_1 = U2; UGEN_2 = U3; UGEN_3 = U1;
-		BGEN_1 = B2; BGEN_2 = B3; BGEN_3 = B1;
 	}
 	else if (dir == 3) {
 		GEN_1 = 3; GEN_2 = 1; GEN_3 = 2;
-		UGEN_1 = U3; UGEN_2 = U1; UGEN_3 = U2;
-		BGEN_1 = B3; BGEN_2 = B1; BGEN_3 = B2;
 	}
 
-	vcon_cl[dir] = (vcon_cl[dir] + vcon_cr[dir])*0.5;
-	vcon_cr[dir] = vcon_cl[dir];
+	vcon_cl[GEN_1] = (vcon_cl[GEN_1] + vcon_cr[GEN_1])*0.5;
+	vcon_cr[GEN_1] = vcon_cl[GEN_1];
 	vcon_cl[GEN_2] = (vcon_cl[GEN_2] + vcon_cr[GEN_2])*0.5;
 	vcon_cr[GEN_2] = vcon_cl[GEN_2];
 	vcon_cl[GEN_3] = (vcon_cl[GEN_3] + vcon_cr[GEN_3])*0.5;
 	vcon_cr[GEN_3] = vcon_cl[GEN_3];
 
 	//Check that contact wave lies between inner and outer Alfven speed
-	if (vcon_cl[dir] < K_al[dir] || vcon_cl[dir] < cmin_roe) fail_HLLD[0] = 1;
-	if (vcon_cl[dir] > K_ar[dir] || vcon_cl[dir] > cmax_roe) fail_HLLD[0] = 1;
+	if (vcon_cl[GEN_1] < K_al[GEN_1] || vcon_cl[GEN_1] < cmin_roe) fail_HLLD[0] = 1;
+	if (vcon_cl[GEN_1] > K_ar[GEN_1] || vcon_cl[GEN_1] > cmax_roe) fail_HLLD[0] = 1;
 
 	//Check that contact wave is going slower than v=0.99c
 	vsq = (vcon_cl[1] * vcon_cl[1] + vcon_cl[2] * vcon_cl[2] + vcon_cl[3] * vcon_cl[3]);
 	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 
 	//If wavefan inconsisten revert to HLLC
-	if (fabs(w_al) <= fabs(ptot) || vcon_al[dir] <= cmin_roe || K_al[dir] <= cmin_roe || w_al <= 0.) fail_HLLD[0] = 1;
-	if (fabs(w_ar) <= fabs(ptot) || vcon_ar[dir] >= cmax_roe || K_ar[dir] >= cmax_roe || w_ar <= 0.) fail_HLLD[0] = 1;
+	if (fabs(w_al) <= fabs(ptot) || vcon_al[GEN_1] <= cmin_roe || K_al[GEN_1] <= cmin_roe || w_al <= 0.) fail_HLLD[0] = 1;
+	if (fabs(w_ar) <= fabs(ptot) || vcon_ar[GEN_1] >= cmax_roe || K_ar[GEN_1] >= cmax_roe || w_ar <= 0.) fail_HLLD[0] = 1;
 
 	//Check that v_al is going slower than v=0.99c
 	vsq = (vcon_al[1] * vcon_al[1] + vcon_al[2] * vcon_al[2] + vcon_al[3] * vcon_al[3]);

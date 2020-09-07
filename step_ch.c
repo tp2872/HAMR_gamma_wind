@@ -297,6 +297,7 @@ double advance(int flag)
 	return defcon*ndt;
 }
 
+#if(RAD_M1)
 void utoprim_M1_0(double Dt, int n)
 {
 	int i, j, z, k, ind0;
@@ -444,6 +445,7 @@ void utoprim_M1_2(double Dt, int n){
 		}
 	}
 }
+#endif
 
 void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {

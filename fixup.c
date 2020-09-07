@@ -357,6 +357,7 @@ void fixup_utoprim(double((* restrict pv[NB_LOCAL])[NPR]), int n)
   return;
 }
 
+#if(RAD_M1)
 void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n)
 {
 	int i, j, z, k;
@@ -426,6 +427,7 @@ void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n)
 	}
 	return;
 }
+#endif
 
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n)
 {

@@ -5,9 +5,8 @@ void raise_g(double vcov[], double gcon[][NDIM], double vcon[]);
 void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
 void ncov_calc(double gcon[][NDIM], double ncov[]); 
 int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
-
+#if(RAD_M1)
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size) {
-	#if(RAD_M1)
 	double error_t=pow(10., -3.99999);
 	int k;
 	double delta_Ur, U_ft[NPR], pb_i[NPR];
@@ -144,12 +143,10 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 			pb[k] = pb_i[k];
 		}
 	}
-	#endif
 }
 
 //Calculate initial error for source term and set initial guess values
 void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size) {
-	#if(RAD_M1)
 	double kappa_abs, kappa_es, tau = 0., norm;
 	int k, pflag, pflag_rad;
 	struct of_state q;
@@ -210,11 +207,9 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	error_t[0] += 0.25 * sqrt(geom->gcon[1][1]) * (fabs(U_f[U1_RAD] - U_i[U1_RAD] - Dt * dU[U1_RAD]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[2][2]) * (fabs(U_f[U2_RAD] - U_i[U2_RAD] - Dt * dU[U2_RAD]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[3][3]) * (fabs(U_f[U3_RAD] - U_i[U3_RAD] - Dt * dU[U3_RAD]) / norm);
-	#endif
 }
 
 int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double *error_t, double cell_size, int do_entropy, int do_staged) {
-	#if(RAD_M1)
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4][4], dEdpb_inv[4][4], bsq, error_new[5], offset= pow(10., -8.);
 	double T_GAS, norm, norm_S, D;
 	struct of_state q;
@@ -445,12 +440,10 @@ int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 		n_iter++;
 	}
 	return(0);
-	#endif
 }
 
 // This method iterates T^t_mu
 int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged) {
-	#if(RAD_M1)
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -727,12 +720,10 @@ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	return(0);
-	#endif
 }
 
 // This method iterates Su^t and T^t_i
 int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged) {
-	#if(RAD_M1)
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -998,12 +989,10 @@ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	return(0);
-	#endif
 }
 
 // This method iterates R^t_mu
 int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged) {
-	#if(RAD_M1)
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -1287,12 +1276,10 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	return(0);
-	#endif
 }
 
 // This method iterates E_RAD an U_rad
 int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged) {
-	#if(RAD_M1)
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4][4], dEdpb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -1578,11 +1565,9 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 	}
 
 	return(0);
-	#endif
 }
 
 int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double cell_size) {
-	#if(RAD_M1)
 	double factor, remainder = 1.0,  Uh[NPR], U_new[NPR], ph[NPR], pb_new[NPR], pb_old[NPR], fraction;
 	double kappa_abs, kappa_emmit, kappa_es, tau;
 	int flag = 0, keep_iterating = 1, nstep = 0, k;
@@ -1757,12 +1742,10 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 	}
 
 	return 0;
-	#endif
 }
 
 //Inversion from radiation conserved to primitive quantities
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim) {
-	#if(RAD_M1)
 	double U_tmp[NPR_R], prim_tmp[NPR_R];
 	double prim_tmp_gas[4]; //BEV added
 	int i, ret;
@@ -1785,13 +1768,11 @@ int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], dou
 	}
 
 	return(ret);
-	#endif
 }
 
 // Limits radiation with either BASIC or TYPE2 approaches
 int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim)
 {
-	#if(RAD_M1)
 	double Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq=0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, gammasq2, y, pressure, f, ymax;
@@ -1873,7 +1854,6 @@ int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		}		
 	}
 	return(returnval);
-	#endif
 }
 
 void calc_ymax(void) {
@@ -1918,3 +1898,4 @@ void calc_ymax(void) {
 	y_max = y_new;
 
 }
+#endif

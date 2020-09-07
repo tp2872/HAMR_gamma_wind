@@ -93,12 +93,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 1
 #define NB_2 1
-#define NB_3 1
+#define NB_3 2
 
 /*Set block size in each dimension*/
 #define BS_1 160
 #define BS_2 160
-#define BS_3 160
+#define BS_3 80
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -141,7 +141,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (320)
+#define DUMPFACTOR (640)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0

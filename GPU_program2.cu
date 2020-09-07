@@ -87,9 +87,10 @@ __global__ void packsend3(int i1, int i2, int j1, int j2, int z1, int z2, int is
 	int icurr = (global_id - global_id % (j2 - j1)) / (j2 - j1) + i1 + N1G;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;	
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
-	int zsize = 1, zlevel = 0;
+	int zsize = 1;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
 	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = (int)(0.001+pow(2.0, (double)zlevel));
