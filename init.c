@@ -142,6 +142,7 @@ void init()
 
 	int n;
 	#if(GPU_ENABLED || GPU_DEBUG )
+	for (n = 0; n < n_active;n++) GPU_write(n_ord[n]);
 	GPU_boundprim(1);
 	#endif
 }

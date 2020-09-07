@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 		for (l = 0; l < N_LEVELS_3D; l++) {
 			init();
 			average_grid();
-			#if(N_LEVELS_3D>1)
+			#if(N_LEVELS_3D>0)
 			check_refcrit();
 			#endif
 		}	

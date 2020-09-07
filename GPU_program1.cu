@@ -2624,7 +2624,7 @@ __device__ double calc_kappa_abs(double* ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(0.*kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -2641,7 +2641,7 @@ __device__ double calc_kappa_emmit(double* ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(0. * kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total (electron) scattering opacity
@@ -2650,7 +2650,7 @@ __device__ double calc_kappa_es(double* ph) {
 	double Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE);
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Tg / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
-	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(0. * kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq)
@@ -3495,8 +3495,8 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l);
 		#if(RAD_M1)
 		get_state_rad(p, &geom, &state_rad);
-		primtoflux_rad(p, &state_rad, dir, &geom, temp3);
-		primtoflux_rad(p, &state_rad, 0, &geom, temp4);
+		primtoflux_rad(p, &state_rad, dir, &geom, temp1);
+		primtoflux_rad(p, &state_rad, 0, &geom, temp2);
 		vchar_rad(p, &state, &state_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx);
 		#endif
 
@@ -3559,10 +3559,10 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux_rad(p, &state_rad, 0, &geom, temp4);
 		
 		vchar_rad(p, &state, &state_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx);
-		
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
+
 		if (flag == 1) {
 			for (k = UU_RAD; k <= U3_RAD; k++) {
 				#if(HLLF)
@@ -4386,7 +4386,7 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  
 
 		//Perform implicit solve
 		cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
-		implicit_rad_solve(p, U_n, U_n, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt * Y_IMEX, cell_size, y_max);
+		implicit_rad_solve(p, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt * Y_IMEX, cell_size, y_max);
 
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(p, radius[icurr], &geom, &q)) {
@@ -4470,7 +4470,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			#if( N3G > 0 )
 			U_1[k] -= Dt * (F3[k * (ksize)+global_id - zoffset + zsize] - F3[k * (ksize)+global_id - zoffset]) / (dx_3 * (double)zsize);
 			#endif
-			dU_MHD1[k * (ksize)+global_id + isize - zoffset] = dU[k];
+			dU_MHD1[k * (ksize)+global_id] = dU[k];
 		}
 
 		#if(NSY)
@@ -4500,9 +4500,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		#endif
 
 		//Set temporary variable
-		for (k = 0; k < NPR; k++) {
-			U_n_tmp[k] = U_n[k * (ksize)+global_id];
-		}
+		for (k = 0; k < NPR; k++) U_n_tmp[k] = U_n[k * (ksize)+global_id];
 
 		//Perform implicit solve
 		cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));

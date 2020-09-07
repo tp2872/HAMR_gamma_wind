@@ -2326,7 +2326,7 @@ void post_refine(void){
 	//Allocate memory for all active blocks
 	activate_blocks();
 	//set_corners(1);
-	#if(N_LEVELS_1D_INT>0)
+	#if(N_LEVELS_1D_INT>=0)
 	average_grid();
 	#endif
 
