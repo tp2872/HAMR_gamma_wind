@@ -1,7 +1,7 @@
 #include "config.h"
 
 /*Declerations of functions for Utoprim2D*/
-__device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+__device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim);
 __device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim);
 __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance);
 __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
@@ -9,7 +9,7 @@ __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], dou
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
 
 /*Declerations of functions for Utoprim_1dvsq2fix1*/
-__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+__device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim);
 __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm);
 __device__ double dWdvsq_calc2(double vsq, double rho, double p);
 __device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim);
@@ -19,19 +19,19 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2);
 
 /*Declerations of functions for Utoprim_1dfix1*/
-__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
-__device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K_atm, double tolerance, int lim);
+__device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim);
+__device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim);
 __device__ int general_newton_raphson3(double x[],  double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old, double tolerance);
 __device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
 __device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
 
 /*Declerations of functions for Utoprim_NM*/
-__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
-__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim);
+__device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim);
+__device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim);
 
 /*Declerations of functions related to (M1) radiation scheme*/
-__device__ int Rtoprim(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], int lim);
-__device__ int Rtoprim_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR_R], int lim);
+__device__ int Rtoprim(double *U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], int lim);
+__device__ int Rtoprim_calc(double *U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR_R], int lim);
 __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
 __device__ void vchar_rad(double* pr, struct of_state_rad* q_rad, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx);
 __device__ double calc_kappa_abs(double* ph);
@@ -54,6 +54,7 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
+__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin);
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
 __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU);
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
@@ -74,6 +75,21 @@ __device__ void para(double x1, double x2, double x3, double x4, double x5, doub
 __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd);
 __device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q);
 
+/*Advanced Riemann solver related functions*/
+__device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double* F);
+__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin);
+__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR_U]);
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]);
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]);
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]);
+__device__ double calc_HLLD_pres(int dir, int* fail_HLLC, int* fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double* eta_l, double* eta_r, double* w_al, double* w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]);
+__device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]);
+__device__ void check_HLLD_par(int dir, int* fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]);
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR_U], double R_r[NPR_U], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double* eta_l, double* eta_r, double* w_al, double* w_ar);
 
 /*************************************************************************/
 /*************************************************************************
@@ -277,7 +293,6 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 	int i, j;
 	double tmpvar;
 
-
 	/* Perform the forward substitution using the LU matrix.
 	*/
 	for (i = 0; i < NDIM; i++) {
@@ -306,11 +321,10 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 	}
 
 	/* End of LU_substitution() */
-
 }
 
 //Inversion from radiation conserved to primitive quantities
-__device__ int Rtoprim(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], int lim){
+__device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, int lim){
 	double U_tmp[NPR_R], prim_tmp[NPR_R];
 	int i, ret;
 	double alpha;
@@ -341,7 +355,7 @@ __device__ int Rtoprim(double U[NPR], double gcov[10], double gcon[10], double g
 	return(ret);
 }
 
-__device__ int Rtoprim_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR_R], int lim){
+__device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, int lim){
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM], Qtsq, Qdotn;
 	double gammasq, y, pressure, f, ymax;
 	int i;
@@ -398,23 +412,7 @@ __device__ int Rtoprim_calc(double U[NPR], double gcov[10], double gcon[10], dou
 	return(0);
 }
 
-__device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F);
-__device__ void vchar_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double *vmax, double *vmin);
-__device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *vmax, double *vmin);
-__device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
-__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
-__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
-__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
-__device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
-	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
-__device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
-	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
-__device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]);
-__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar);
-
-__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+__device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
@@ -449,7 +447,7 @@ __device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], doubl
 	return(ret);
 }
 
-__device__ int Utoprim_NM_calc(double U[NPR_U], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double tolerance, int lim){
+__device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u,  w,  gamma,   vsq, errx;
 	double Bsq, QdotBsq, Qtsq, Qdotn;
@@ -566,7 +564,7 @@ __device__ int Utoprim_NM_calc(double U[NPR_U], double gcov[10], double gcon[10]
 	return(0);
 }
 
-__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+__device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
@@ -606,7 +604,7 @@ __device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], d
 	return(ret);
 }
 
-__device__ int Utoprim_new_body3(double U[NPR_U], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double K_atm, double tolerance, int lim){
+__device__ int Utoprim_new_body3(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim){
 	double x_1d[1];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
@@ -897,7 +895,7 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double ja
 	return;
 }
 
-__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+__device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], double gdet, double prim, double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha, K_atm;
@@ -946,7 +944,7 @@ __device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10
 	return(ret);
 }
 
-__device__ int Utoprim_new_body2(double U[NPR_U], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double K_atm, double tolerance, int lim){
+__device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim){
 	double x_1d[1];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, gammasq, gamma, gtmp, W, utsq, vsq;
@@ -1165,7 +1163,7 @@ __device__ double dWdvsq_calc2(double vsq, double rho, double p){
 	return((GAMMA*(2. - G_ATM)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
 }
 
-__device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim){
+__device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
@@ -1207,7 +1205,7 @@ __device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10], doubl
 }
 #include <stdio.h>
 
-__device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR_HD], double tolerance, int lim){
+__device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double x_2d[NEWT_DIM_2];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
@@ -1546,7 +1544,7 @@ __device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_
 }
 
 //Apply floors to a cell
-__device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, struct of_state* q) {
+__device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_state* q) {
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
 	double pf_prefloor[NPR_U], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
 	int dofloor=0, flag = 0, m, k;
@@ -1570,7 +1568,7 @@ __device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, stru
 
 	//floor on density and internal energy density (momentum *not* conserved) 
 	#pragma unroll 9
-	PLOOP pf_prefloor[k] = pf[k];
+	for (k = 0; k < NPR_U; k++)pf_prefloor[k] = pf[k];
 	if (pf[RHO] < rhoflr) {
 		pf[RHO] = rhoflr;
 		dofloor = 1;
@@ -1587,21 +1585,15 @@ __device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, stru
 		betapar = -q->bcon[0] / ((bsq + SMALL) * q->ucon[0]);
 		betasq = betapar * betapar * bsq;
 		betasqmax = 1. - 1. / (GAMMAMAX * GAMMAMAX);
-		if (betasq > betasqmax) {
-			betasq = betasqmax;
-		}
+		if (betasq > betasqmax) betasq = betasqmax;
+
 		gamma = 1. / sqrt(1 - betasq);
 		#pragma unroll 4
-		for (m = 0; m < NDIM; m++) {
-			ucondr[m] = gamma * (q->ucon[m] + betapar * q->bcon[m]);
-		}
+		for (m = 0; m < NDIM; m++) ucondr[m] = gamma * (q->ucon[m] + betapar * q->bcon[m]);
 
 		Bcon[0] = 0.;
-
 		#pragma unroll 3
-		for (m = 1; m < NDIM; m++) {
-			Bcon[m] = pf[B1 - 1 + m];
-		}
+		for (m = 1; m < NDIM; m++) Bcon[m] = pf[B1 - 1 + m];
 
 		lower(Bcon, geom->gcov, Bcov);
 		udotB = dot(q->ucon, Bcov);
@@ -1637,9 +1629,7 @@ __device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, stru
 		ut_calc_3vel(vcon, geom, &ut);
 
 		#pragma unroll 4
-		for (m = 0; m < NDIM; m++) {
-			ucon[m] = ut * vcon[m];
-		}
+		for (m = 0; m < NDIM; m++) ucon[m] = ut * vcon[m];
 		ucon_to_utcon(ucon,geom, utcon);
 
 		//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
@@ -1651,10 +1641,10 @@ __device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, stru
 	}
 	#elif(ZAMO_FLOOR)
 	if (dofloor == 1) {
-		double dpf[NPR], U_prefloor[NPR], Xtransone_over_ucondr;
+		double dpf[NPR_U], U_prefloor[NPR_U], Xtransone_over_ucondr;
 		struct of_state_rad q_rad;
 		#pragma unroll 9
-		PLOOP dpf[k] = pf[k] - pf_prefloor[k];
+		for (k = 0; k < NPR_U; k++) dpf[k] = pf[k] - pf_prefloor[k];
 
 		//compute the conserved quantity associated with floor addition
 		get_state(dpf, geom, q);
@@ -1666,7 +1656,7 @@ __device__ int fixup_cell(double pf[NPR_U], double r, struct of_geom* geom, stru
 
 		//add U_added to the current conserved quantity
 		#pragma unroll 9
-		PLOOP U[k] = U_prefloor[k] + dU[k];
+		for (k = 0; k < NPR_U; k++) U[k] = U_prefloor[k] + dU[k];
 
 		#if(NEWMAN)
 		flag = Utoprim_NM(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC);
@@ -1750,7 +1740,7 @@ __device__ void primtoU(double *pr, struct of_state *q, struct of_state_rad *q_r
 	return;
 }
 
-/* add in source terms to equations of motion */
+/* add in geometrical and cooling source terms to equations of motion */
 __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
 {
 	double mhd[NDIM][NDIM];
@@ -1845,6 +1835,11 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	misc_source(ph, icurr, jcurr, geom, q, dU, a, gam, r, Dt);
 	#endif
 
+	dU[UU] *= geom->g;
+	dU[U1] *= geom->g;
+	dU[U2] *= geom->g;
+	dU[U3] *= geom->g;
+
 	//Add M1 radiation terms
 	#if(RAD_M1)
 	double mhd_rad[NDIM][NDIM];
@@ -1912,10 +1907,6 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	dU[U3_RAD] *= geom->g;
 	#endif
 
-	dU[UU] *= geom->g;
-	dU[U1] *= geom->g;
-	dU[U2] *= geom->g;
-	dU[U3] *= geom->g;
 	/* done! */
 }
 
@@ -2021,7 +2012,6 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
 	}
 }
-
 
 __device__ void primtoflux(double *  pr, struct of_state *  q, struct of_state_rad *  q_rad, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam)
 {
@@ -3018,7 +3008,6 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 	int zsize2 = 1, zoffset2 = 0;
 	double temp[NPR];
 
-
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	int  zlevel = 0, zlevel2 = 0;
 	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
@@ -3208,9 +3197,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			F[k*(ksize)+global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
 			#endif
 		}
-		//if (dir == 2 && ((jcurr == BS_2 + N2G && POLE_2 == 1) || (jcurr == N2G && POLE_1 == 1))) {
-		//	for (k = 0; k < NPR_U; k++) F[k*(ksize)+global_id] = 0.;
-		//}
+
 		#if(RAD_M1)
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
@@ -4847,7 +4834,7 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 	}
 }
 
-__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]) {
 	double A, B, C, D, vcon, ptot;
 	int k, fail_HLLC = 0;
 	int UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
@@ -4889,7 +4876,7 @@ __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 		F_FT[0][KTOT] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
+		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
 	}
 	else if (cmin_roe < int_velocity && vcon >= int_velocity && fail_HLLC == 0) {
 		//Set Rankine-Hugoniot jump conditions
@@ -4904,17 +4891,17 @@ __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 		F_FT[0][KTOT] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
+		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
 	}
 	else {
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_HLL[0][k];
 			F_FT[1][k] = F_HLL[1][k];
 		}
 	}
 }
 
-__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]) {
 	double A, B, C, D, vcon[NDIM], gammasq, ptot, v_dot_B;
 	int k, fail_HLLC = 0;
 	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
@@ -4970,7 +4957,7 @@ __device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], dou
 		F_FT[0][KTOT] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon[dir] + SMALL)*U_r[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
+		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
 	}
 	else if (cmin_roe < int_velocity && vcon[dir] >= int_velocity && fail_HLLC == 0) {
 		//Set Rankine-Hugoniot jump conditions
@@ -4985,22 +4972,22 @@ __device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], dou
 		F_FT[0][KTOT] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon[dir] + SMALL)*U_l[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
+		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
 	}
 	else {
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_HLL[0][k];
 			F_FT[1][k] = F_HLL[1][k];
 		}
 	}
 }
 
-__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
-	double K_al[NDIM], B_al[NDIM], K_ar[NDIM], B_ar[NDIM], vcon_al[NDIM], vcon_ar[NDIM], eta_l, eta_r, w_al, w_ar, vcon_cl[NDIM], vcon_cr[NDIM], B_c[NDIM], R_l[NPR], R_r[NPR], ptot;
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]) {
+	double K_al[NDIM], B_al[NDIM], K_ar[NDIM], B_ar[NDIM], vcon_al[NDIM], vcon_ar[NDIM], eta_l, eta_r, w_al, w_ar, vcon_cl[NDIM], vcon_cr[NDIM], B_c[NDIM], R_l[NPR_U], R_r[NPR_U], ptot;
 	int k, fail_HLLC = 0, fail_HLLD = 0;
 
-	for (k = 0; k < NPR; k++) R_l[k] = (cmin_roe*U_l[k] - F_l[k]);
-	for (k = 0; k < NPR; k++) R_r[k] = (cmax_roe*U_r[k] - F_r[k]);
+	for (k = 0; k < NPR_U; k++) R_l[k] = (cmin_roe*U_l[k] - F_l[k]);
+	for (k = 0; k < NPR_U; k++) R_r[k] = (cmax_roe*U_r[k] - F_r[k]);
 
 	//Calculate necessary pressure using Newton Raphson solve
 	ptot = calc_HLLD_pres(dir, &fail_HLLC, &fail_HLLD, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, K_al, B_al, K_ar, B_ar, vcon_al, vcon_ar, &eta_l, &eta_r, &w_al, &w_ar, vcon_cl, vcon_cr, F_FT, F_HLL, F_l, F_r, U_l, U_r, R_l, R_r, B_c);
@@ -5015,7 +5002,7 @@ __device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_
 		calc_HLLC(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
 	}
 	else { //Calculate using HLL solver
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_HLL[0][k];
 			F_FT[1][k] = F_HLL[1][k];
 		}
@@ -5024,7 +5011,7 @@ __device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_
 
 __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
+	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]) {
 	double A, B, C, D, gammasq, vcon[NDIM], ptot_HLLC, ptot, v_dot_B;
 	int keep_iterating = 1;
 	int n_iter = 0;
@@ -5132,8 +5119,8 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 
 __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
-	double v_dot_B, F_al[2][NPR], F_ar[2][NPR], F_cl[2][NPR], F_cr[2][NPR];
+	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]) {
+	double v_dot_B, F_al[2][NPR_U], F_ar[2][NPR_U], F_cl[2][NPR_U], F_cr[2][NPR_U];
 	int k, GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
 
 	if (dir == 1) {
@@ -5206,25 +5193,25 @@ __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 	}
 
 	if ((cmin_roe < int_velocity) && (int_velocity <= K_al[dir])) {
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_al[0][k];
 			F_FT[1][k] = F_l[k] + cmin_roe * (F_al[0][k] - U_l[k]);
 		}
 	}
 	else if ((K_al[dir] < int_velocity) && (int_velocity <= vcon_cl[dir])) {
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_cl[0][k];
 			F_FT[1][k] = F_l[k] + cmin_roe * (F_al[0][k] - U_l[k]) + K_al[dir] * (F_cl[0][k] - F_al[0][k]);
 		}
 	}
 	else if ((vcon_cr[dir] <= int_velocity) && (int_velocity < K_ar[dir])) {
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_cr[0][k];
 			F_FT[1][k] = F_r[k] + cmax_roe * (F_ar[0][k] - U_r[k]) + K_ar[dir] * (F_cr[0][k] - F_ar[0][k]);
 		}
 	}
 	else if (((cmax_roe > int_velocity) && (int_velocity > K_ar[dir]))) {
-		for (k = 0; k < NPR; k++) {
+		for (k = 0; k < NPR_U; k++) {
 			F_FT[0][k] = F_ar[0][k];
 			F_FT[1][k] = F_r[k] + cmax_roe * (F_ar[0][k] - U_r[k]);
 		}
@@ -5282,7 +5269,7 @@ __device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double
 	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 }
 
-__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR_U], double R_r[NPR_U], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {
 	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
 	double A, C, G, X, Q, error = 0.;
 	double delta_Kx, Y_l, Y_r, B_hat[NDIM];
