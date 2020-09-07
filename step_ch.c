@@ -248,15 +248,22 @@ double advance(int flag)
 	#if(!STAGGERED)
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_ct(F1, F2, F3, n_ord[n]);
 	#else
-	for (n = 0; n < n_active; n++){
+	#if(RAD_M1)
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2(ph, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
+	}
+	#else
+	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(ph, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
+	#endif
 	const_transport_bound();
 	#if(RAD_M1)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_2(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_M1_1(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, ps, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, psh, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	#else
 	for (n = 0; n < n_active; n++){
@@ -334,34 +341,34 @@ void utoprim_M1_1(double Dt, int n){
 	int i, j, z, k;
 	double y = 1.0 - 1.0 / sqrt(2.0);
 	double cell_size;
-	double dU[NPR];
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
-	#pragma omp  parallel shared(n, gdet, psh, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, dU, ind0, ind1, ind2, ind3, cell_size)
+	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, ind0, ind1, ind2, ind3, cell_size)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
-			source(p[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
 
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
+			source(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD1[nl[n]][ind0], Dt);
+
 			#pragma ivdep
 			PLOOP{
-					U_1[nl[n]][ind0][k] = (3. * y - 1.) / y * U_n[nl[n]][ind0][k] + (1. - 2. * y) / y * U_0[nl[n]][ind0][k] + Dt * (
-					#if( N1G > 0 )
-					- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
-					#endif
-					#if( N2G > 0 )
-					- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
-					#endif
-					#if( N3G > 0 )
-					- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
-					#endif	
-					+ dU[k]);
+				U_1[nl[n]][ind0][k] =  U_n[nl[n]][ind0][k] + Dt * (
+				#if( N1G > 0 )
+				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
+				#endif
+				#if( N2G > 0 )
+				- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
+				#endif
+				#if( N3G > 0 )
+				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+				#endif	
+				+ dU_MHD1[nl[n]][ind0][k] + (1. - 2. * y) * dU_RAD0[nl[n]][ind0][k]);
 			}
 
 			#if STAGGERED
@@ -374,7 +381,7 @@ void utoprim_M1_1(double Dt, int n){
 
 			PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Dt, cell_size);
+			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], y*Dt, cell_size);
 		}
 	}
 }
@@ -388,7 +395,7 @@ void utoprim_M1_2(double Dt, int n){
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n, gdet, p, ps, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, q, q_rad, dU, U_2, geom, ind0, ind1, ind2, ind3)
+	#pragma omp  parallel shared(n, gdet, p, ps, dU_MHD1, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, q, q_rad, dU, U_2, geom, ind0, ind1, ind2, ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -405,17 +412,17 @@ void utoprim_M1_2(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-					U_2[k] = 0.5 * U_n[nl[n]][ind0][k] + 0.5 * U_1[nl[n]][ind0][k] + Dt * 0.5 * (
-					#if( N1G > 0 )
-					- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
-					#endif
-					#if( N2G > 0 )
-					- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
-					#endif
-					#if( N3G > 0 )
-					- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
-					#endif	
-					+ dU[k] + 2.0 * y * dU_RAD0[nl[n]][ind0][k] + (1.0 - y) * dU_RAD1[nl[n]][ind0][k]);
+				U_2[k] = U_n[nl[n]][ind0][k] + Dt * (
+				#if( N1G > 0 )
+				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
+				#endif
+				#if( N2G > 0 )
+				- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
+				#endif
+				#if( N3G > 0 )
+				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+				#endif
+				+ 0.5* (dU[k] + dU_MHD1[nl[n]][ind0][k] + dU_RAD0[nl[n]][ind0][k] +  dU_RAD1[nl[n]][ind0][k]));
 			}
 
 			#if STAGGERED
@@ -619,8 +626,6 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 					#endif
 
-			
-
 					get_state(p_l, &geom, &state_l);
 					get_state(p_r, &geom, &state_r);
 					#if(RAD_M1)
@@ -640,16 +645,27 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 					ctop = MY_MAX(cmax, cmin);
 
+					#if(RAD_M1)
 					#pragma ivdep
-					for (k = 0; k <= KTOT;k++) {
-						#if(HLLF)
-						F[nl[n]][ind0][k] = (cmax*F_l[k] + cmin*F_r[k] - cmax*cmin*(U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
-						#else
-						F[nl[n]][ind0][k] = 0.5*(F_l[k] + F_r[k] - ctop*(U_r[k] - U_l[k]));
-						#endif
+					if (flag == 1) {
+						for (k = 0; k <= KTOT; k++) {
+							#if(HLLF)
+							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL));
+							#else
+							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k])));
+							#endif
+						}
+					}
+					else {
+						for (k = 0; k <= KTOT; k++) {
+							#if(HLLF)
+							F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
+							#else
+							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
+							#endif
+						}
 					}
 
-					#if(RAD_M1)
 					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
 					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
 
@@ -657,11 +673,31 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 					ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 
-					for (k = UU_RAD; k <= U3_RAD; k++) {
+					if (flag == 1) {
+						for (k = UU_RAD; k <= U3_RAD; k++) {
+							#if(HLLF)
+							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + (cmax_rad * F_l[k] + cmin_rad * F_r[k] - cmax_rad * cmin_rad * (U_r[k] - U_l[k])) / (cmax_rad + cmin_rad + SMALL));
+							#else
+							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k])));
+							#endif
+						}
+					}
+					else {
+						for (k = UU_RAD; k <= U3_RAD; k++) {
+							#if(HLLF)
+							F[nl[n]][ind0][k] = (cmax_rad * F_l[k] + cmin_rad * F_r[k] - cmax_rad * cmin_rad * (U_r[k] - U_l[k])) / (cmax_rad + cmin_rad + SMALL);
+							#else
+							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k]));
+							#endif
+						}
+					}
+					#else
+					#pragma ivdep
+					for (k = 0; k <= KTOT; k++) {
 						#if(HLLF)
-						F[nl[n]][ind0][k] = (cmax_rad*F_l[k] + cmin_rad*F_r[k] - cmax_rad*cmin_rad*(U_r[k] - U_l[k])) / (cmax_rad + cmin_rad + SMALL);
+						F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
 						#else
-						F[nl[n]][ind0][k] = 0.5*(F_l[k] + F_r[k] - ctop_rad*(U_r[k] - U_l[k]));
+						F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
 						#endif
 					}
 					#endif
@@ -694,7 +730,6 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 		}
 	return(ndt);
 }
-
 
 void GPU_step_ch()
 {
@@ -967,10 +1002,21 @@ double advance_GPU(void)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
-	for (n = 0; n < n_active; n++){
-		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport2(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	#if(RAD_M1)
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2_M1_2(1, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport2(0, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
+	#else
+	#if(GPU_OPENMP)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2(1, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport2(0, 0.5 * dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+	#endif
+
 	rc = 0;
 	GPU_consttransport_bound();
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
@@ -978,10 +1024,17 @@ double advance_GPU(void)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
+	#if(RAD_M1)
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport3(0, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+	}
+	#else
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport3(0, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
+	#endif
 	#else
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct1(n_ord[n]);
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_flux_ct2(n_ord[n]);

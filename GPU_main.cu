@@ -1857,6 +1857,29 @@ void GPU_consttransport2(int flag, double Dt, int n){
 	if (cudaSuccess != status)fprintf(stderr, "Error constransport2 %d \n", status);
 }
 
+void GPU_consttransport2_M1_2(int flag, double Dt, int n) {
+	#if(RAD_M1)
+	int nr_workgroups_local[1];
+	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) % LOCAL_WORK_SIZE) + (BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) / LOCAL_WORK_SIZE;
+	#if(N_GPU>1)
+	cudaSetDevice(block[n][AMR_GPU]);
+	#endif
+
+	/*Run kernel*/
+	if (flag == 1) {
+		consttransport2_M1_2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+			Bufferph_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+	}
+	else {
+		consttransport2_M1_2 << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (BufferE_1[nl[n]], Bufferstorage3[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+			Bufferp_1[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], block[n][AMR_NBR1] < 0 || (block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3), block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3));
+	}
+	//cudaDeviceSynchronize();
+	status = cudaGetLastError();
+	if (cudaSuccess != status)fprintf(stderr, "Error constransport2 %d \n", status);
+	#endif
+}
+
 void GPU_consttransport3(int flag, double Dt, int n){
 	int nr_workgroups_local[1];
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) % LOCAL_WORK_SIZE) + (BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) / LOCAL_WORK_SIZE;

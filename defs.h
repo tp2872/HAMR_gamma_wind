@@ -68,6 +68,7 @@ double(*restrict U_n[NB_LOCAL])[NPR];
 double(*restrict U_0[NB_LOCAL])[NPR];
 double(*restrict U_1[NB_LOCAL])[NPR];
 double(*restrict U[NB_LOCAL])[NPR];
+double(*restrict dU_MHD1[NB_LOCAL])[NPR];
 double(*restrict dU_RAD0[NB_LOCAL])[NPR];
 double(*restrict dU_RAD1[NB_LOCAL])[NPR];
 double(*restrict dq[NB_LOCAL])[NPR];

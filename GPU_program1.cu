@@ -80,18 +80,18 @@ __device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struc
 /*Advanced Riemann solver related functions*/
 __device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double* F);
 __device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin);
-__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR_U]);
-__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]);
-__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]);
-__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]);
+__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
 __device__ double calc_HLLD_pres(int dir, int* fail_HLLC, int* fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double* eta_l, double* eta_r, double* w_al, double* w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]);
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
 __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]);
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
 __device__ void check_HLLD_par(int dir, int* fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]);
-__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR_U], double R_r[NPR_U], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double* eta_l, double* eta_r, double* w_al, double* w_ar);
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double* eta_l, double* eta_r, double* w_al, double* w_ar);
 
 /*************************************************************************/
 /*************************************************************************
@@ -353,7 +353,7 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim){
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
-	double gammasq, y, pressure, f, ymax;
+	double gammasq, y, pressure, f;
 	int i, returnval = 0;
 
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
@@ -1988,9 +1988,9 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU)
 
 	//Add radiation 4-force
 	ucon_calc(ph, geom, ucon);
-	lower(ucon, geom, ucov);
+	lower(ucon, geom->gcov, ucov);
 	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad);
-	lower(Gcon, geom, Gcov);
+	lower(Gcon, geom->gcov, Gcov);
 
 	dU[UU] = Gcov[0];
 	dU[U1] = Gcov[1];
@@ -2172,6 +2172,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 
 //Calculate radiative wave velocity
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx) {
+	#if(RAD_M1)
 	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd;
 	double Acon_0, Acon_js;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
@@ -2205,6 +2206,10 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	Au2 = Au * Au;
 	Bu2 = Bu * Bu;
 	AuBu = Au * Bu;
+
+	A = Bu2 - (Bsq + Bu2) * crad2;
+	B = 2. * (AuBu - (AB + AuBu) * crad2);
+	C = Au2 - (Asq + Au2) * crad2;
 
 	discr = B * B - 4. * A * C;
 	if ((discr < 0.0) && (discr > -1.e-10)) discr = 0.0;
@@ -2265,6 +2270,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	*vmin = MY_MAX(cmin_mhd, cmin_rad);
 
 	return;
+	#endif
 }
 
 //Calculate total absorption opacity
@@ -2290,7 +2296,6 @@ __device__ double calc_kappa_emmit(double* ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
 	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
-
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO]) * pow(Tg, 7.7);
@@ -3126,8 +3131,8 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l);
 		//vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
 		#if(RAD_M1)
-		get_state_rad(p, &geom, &state_rad);
-		vchar_rad(p, &state_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, (dir==1)*dx_1+(dir==2)*dx_2+(dir==3)*dx_3);
+		//get_state_rad(p, &geom, &state_rad);
+		//vchar_rad(p, &state_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, (dir==1)*dx_1+(dir==2)*dx_2+(dir==3)*dx_3);
 		#endif
 
 		if (zoffset != 0 && dir == 3){
@@ -3162,7 +3167,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux(p, &state, 0, &geom, temp4, &cmax_r, &cmin_r);
 		//vchar(p, &state, &geom, dir, &cmax_r, &cmin_r,  gam);
 		#if(RAD_M1)
-		vchar_rad(p, &state_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, (dir == 1)*dx_1 + (dir == 2)*dx_2 + (dir == 3)*dx_3);
+		//vchar_rad(p, &state_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, (dir == 1)*dx_1 + (dir == 2)*dx_2 + (dir == 3)*dx_3);
 		#endif
 
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
@@ -3553,6 +3558,75 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)){
 			emf[3 * (ksize)+global_id] = 0.;
 			emf[1 * (ksize)+global_id] = -0.5*(F2[B3*(ksize)+global_id] + F2[B3*(ksize)+global_id - D3]);
+		}
+	}
+}
+
+__global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
+	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
+{
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3 + D3) * (BS_2 + D2);
+	zcurr = (global_id % (isize)) % (BS_3 + D3);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + D3);
+	icurr = (global_id - (jcurr * (BS_3 + D3) + zcurr)) / (isize);
+	zcurr += (N3G)*D3;
+	jcurr += (N2G)*D2;
+	icurr += (N1G)*D1;
+	if (global_id < (BS_1 + D1) * (BS_2 + D2) * (BS_3 + D3)) k = 1;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	int jsize = BS_3 + 2 * N3G;
+
+	if (k == 1) {
+		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
+		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
+		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
+		double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
+		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id];
+		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + F2[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
+		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id];
+		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
+		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id];
+		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
+		double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
+		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id];
+		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id];
+		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		
+		emf[1 * (ksize)+global_id] *= 0.5;
+		emf[2 * (ksize)+global_id] *= 0.5;
+		emf[3 * (ksize)+global_id] *= 0.5;
+
+		emf[1 * (ksize)+global_id] += 0.25 * 0.5 * ((-F2[B3 * (ksize)+global_id] - (dE_LEFT_13_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_13_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+			+ (-F2[B3 * (ksize)+global_id - D3] + (dE_RIGHT_13_1 * (double)(F2[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2 * (double)(F2[RHO * (ksize)+global_id - D3] > 0.0))) +
+			+(F3[B2 * (ksize)+global_id] - (dE_LEFT_12_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_12_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+			+ (F3[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_12_1 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_12_2 * (double)(F3[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+		emf[2 * (ksize)+global_id] += 0.25 * 0.5 * ((-F3[B1 * (ksize)+global_id] - (dE_LEFT_21_1 * (double)(F3[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_21_2 * (double)(F3[RHO * (ksize)+global_id] > 0.0)))
+			+ (-F3[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_21_1 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_21_2 * (double)(F3[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+			+ (F1[B3 * (ksize)+global_id] - (dE_LEFT_23_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_23_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+			+ (F1[B3 * (ksize)+global_id - D3] + (dE_RIGHT_23_1 * (double)(F1[RHO * (ksize)+global_id - D3] <= 0.0) + dE_RIGHT_23_2 * (double)(F1[RHO * (ksize)+global_id - D3] > 0.0))));
+		emf[3 * (ksize)+global_id] += 0.25 * 0.5 * ((F2[B1 * (ksize)+global_id] - (dE_LEFT_31_1 * (double)(F2[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_31_2 * (double)(F2[RHO * (ksize)+global_id] > 0.0)))
+			+ (F2[B1 * (ksize)+global_id - D1 * isize] + (dE_RIGHT_31_1 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] <= 0.0) + dE_RIGHT_31_2 * (double)(F2[RHO * (ksize)+global_id - D1 * isize] > 0.0)))
+			+ (-F1[B2 * (ksize)+global_id] - (dE_LEFT_32_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_32_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
+			+ (-F1[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_32_1 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_32_2 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
+
+		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
+			emf[3 * (ksize)+global_id] = 0.;
+			emf[1 * (ksize)+global_id] += -0.5 * 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
 	}
 }
@@ -4806,7 +4880,7 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 	}
 }
 
-__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]) {
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
 	double A, B, C, D, vcon, ptot;
 	int k, fail_HLLC = 0;
 	int UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
@@ -4848,7 +4922,7 @@ __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 		F_FT[0][KTOT] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon + SMALL)*U_r[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
 	}
 	else if (cmin_roe < int_velocity && vcon >= int_velocity && fail_HLLC == 0) {
 		//Set Rankine-Hugoniot jump conditions
@@ -4863,17 +4937,17 @@ __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 		F_FT[0][KTOT] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon + SMALL)*U_l[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
 	}
 	else {
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_HLL[0][k];
 			F_FT[1][k] = F_HLL[1][k];
 		}
 	}
 }
 
-__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]) {
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
 	double A, B, C, D, vcon[NDIM], gammasq, ptot, v_dot_B;
 	int k, fail_HLLC = 0;
 	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
@@ -4929,7 +5003,7 @@ __device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], dou
 		F_FT[0][KTOT] = (cmax_roe - r_ucon[dir] / r_ucon[0]) / (cmax_roe - vcon[dir] + SMALL)*U_r[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_r[k] + cmax_roe*(F_FT[0][k] - U_r[k]));
 	}
 	else if (cmin_roe < int_velocity && vcon[dir] >= int_velocity && fail_HLLC == 0) {
 		//Set Rankine-Hugoniot jump conditions
@@ -4944,22 +5018,22 @@ __device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], dou
 		F_FT[0][KTOT] = (cmin_roe - l_ucon[dir] / l_ucon[0]) / (cmin_roe - vcon[dir] + SMALL)*U_l[KTOT];
 
 		//Calculate HLLC flux
-		for (k = 0; k < NPR_U; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
+		for (k = 0; k < NPR; k++) F_FT[1][k] = (F_l[k] + cmin_roe*(F_FT[0][k] - U_l[k]));
 	}
 	else {
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_HLL[0][k];
 			F_FT[1][k] = F_HLL[1][k];
 		}
 	}
 }
 
-__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U]) {
-	double K_al[NDIM], B_al[NDIM], K_ar[NDIM], B_ar[NDIM], vcon_al[NDIM], vcon_ar[NDIM], eta_l, eta_r, w_al, w_ar, vcon_cl[NDIM], vcon_cr[NDIM], B_c[NDIM], R_l[NPR_U], R_r[NPR_U], ptot;
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
+	double K_al[NDIM], B_al[NDIM], K_ar[NDIM], B_ar[NDIM], vcon_al[NDIM], vcon_ar[NDIM], eta_l, eta_r, w_al, w_ar, vcon_cl[NDIM], vcon_cr[NDIM], B_c[NDIM], R_l[NPR], R_r[NPR], ptot;
 	int k, fail_HLLC = 0, fail_HLLD = 0;
 
-	for (k = 0; k < NPR_U; k++) R_l[k] = (cmin_roe*U_l[k] - F_l[k]);
-	for (k = 0; k < NPR_U; k++) R_r[k] = (cmax_roe*U_r[k] - F_r[k]);
+	for (k = 0; k < NPR; k++) R_l[k] = (cmin_roe*U_l[k] - F_l[k]);
+	for (k = 0; k < NPR; k++) R_r[k] = (cmax_roe*U_r[k] - F_r[k]);
 
 	//Calculate necessary pressure using Newton Raphson solve
 	ptot = calc_HLLD_pres(dir, &fail_HLLC, &fail_HLLD, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, K_al, B_al, K_ar, B_ar, vcon_al, vcon_ar, &eta_l, &eta_r, &w_al, &w_ar, vcon_cl, vcon_cr, F_FT, F_HLL, F_l, F_r, U_l, U_r, R_l, R_r, B_c);
@@ -4974,7 +5048,7 @@ __device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_
 		calc_HLLC(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
 	}
 	else { //Calculate using HLL solver
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_HLL[0][k];
 			F_FT[1][k] = F_HLL[1][k];
 		}
@@ -4983,7 +5057,7 @@ __device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_
 
 __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]) {
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
 	double A, B, C, D, gammasq, vcon[NDIM], ptot_HLLC, ptot, v_dot_B;
 	int keep_iterating = 1;
 	int n_iter = 0;
@@ -5091,8 +5165,8 @@ __device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double
 
 __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
-	double F_FT[2][NPR_U], double F_HLL[2][NPR_U], double F_l[NPR_U], double F_r[NPR_U], double U_l[NPR_U], double U_r[NPR_U], double R_l[NPR_U], double R_r[NPR_U], double B_c[NDIM]) {
-	double v_dot_B, F_al[2][NPR_U], F_ar[2][NPR_U], F_cl[2][NPR_U], F_cr[2][NPR_U];
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
+	double v_dot_B, F_al[2][NPR], F_ar[2][NPR], F_cl[2][NPR], F_cr[2][NPR];
 	int k, GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
 
 	if (dir == 1) {
@@ -5165,25 +5239,25 @@ __device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM
 	}
 
 	if ((cmin_roe < int_velocity) && (int_velocity <= K_al[dir])) {
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_al[0][k];
 			F_FT[1][k] = F_l[k] + cmin_roe * (F_al[0][k] - U_l[k]);
 		}
 	}
 	else if ((K_al[dir] < int_velocity) && (int_velocity <= vcon_cl[dir])) {
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_cl[0][k];
 			F_FT[1][k] = F_l[k] + cmin_roe * (F_al[0][k] - U_l[k]) + K_al[dir] * (F_cl[0][k] - F_al[0][k]);
 		}
 	}
 	else if ((vcon_cr[dir] <= int_velocity) && (int_velocity < K_ar[dir])) {
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_cr[0][k];
 			F_FT[1][k] = F_r[k] + cmax_roe * (F_ar[0][k] - U_r[k]) + K_ar[dir] * (F_cr[0][k] - F_ar[0][k]);
 		}
 	}
 	else if (((cmax_roe > int_velocity) && (int_velocity > K_ar[dir]))) {
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			F_FT[0][k] = F_ar[0][k];
 			F_FT[1][k] = F_r[k] + cmax_roe * (F_ar[0][k] - U_r[k]);
 		}
@@ -5241,7 +5315,7 @@ __device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double
 	if (!(vsq < 0.999)) fail_HLLD[0] = 1;
 }
 
-__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR_U], double R_r[NPR_U], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar) {
 	int GEN_1, GEN_2, GEN_3, UGEN_1, UGEN_2, UGEN_3, BGEN_1, BGEN_2, BGEN_3;
 	double A, C, G, X, Q, error = 0.;
 	double delta_Kx, Y_l, Y_r, B_hat[NDIM];
