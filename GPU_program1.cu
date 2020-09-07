@@ -64,8 +64,8 @@ __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin);
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux);
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,struct of_state *  q, double a, double r);
-__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	double a, double r, double Dt);
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, const  double* __restrict__ conn,struct of_state *  q, double r);
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt);
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
@@ -1749,7 +1749,7 @@ __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 }
 
 /* add in geometrical and cooling source terms to equations of motion */
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r)
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, const  double* __restrict__ conn_GPU, struct of_state *  q, double r)
 {
 	double mhd[NDIM][NDIM];
 	int k, j, dir;
@@ -1840,7 +1840,7 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 
 	//Add cooling term if needed
 	#if (COOL_DISK)
-	misc_source(ph, icurr, jcurr, geom, q, dU, a, gam, r, Dt);
+	misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt);
 	#endif
 
 	dU[UU] *= geom->g;
@@ -1918,12 +1918,11 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	/* done! */
 }
 
-__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,
-	double a, double gam, double r, double Dt){
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,  double r, double Dt){
 	double epsilon = ph[UU] / ph[RHO];
-	double om_kepler = 1. / (pow(r, 3. / 2.) + a);
+	double om_kepler = 1. / (pow(r, 3. / 2.) + BH_SPIN);
 	double T_target = M_PI / 2.*pow(H_OVER_R*r*om_kepler, 2.);
-	double Y = (gam - 1.)*epsilon / T_target;
+	double Y = (GAMMA - 1.)*epsilon / T_target;
 	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
 	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
 	double bsq = dot(q->bcon,q->bcov);
@@ -1973,8 +1972,8 @@ __device__ void mhd_calc_rad(double * pr, int dir, struct of_state_rad * q_rad, 
 __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU)
 {
 	#if(RAD_M1)
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
-	int j, k;
+	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
+	int k;
 	struct of_state_rad q_rad;
 
 	PLOOP dU[k] = 0.;
@@ -3047,7 +3046,7 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 }
 
 __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
-	double cour, double*  dtij, int POLE_1, int POLE_2, double dx_1, double dx_2, double dx_3, int calc_time)
+	double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -3067,19 +3066,17 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	int idel, jdel, zdel, i;
-	int face;
+	int idel, jdel, zdel, i, face;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor;
-	double cmax_r, cmin_r, cmax, cmin, cmax_r_rad, cmin_r_rad, cmax_rad, cmin_rad;
-	double ctop, ctop_rad;
-	double temp3[NPR], temp4[NPR];
-	double cmax_l, cmin_l, cmax_l_rad, cmin_l_rad;
-	double p[NPR];
-	double temp1[NPR], temp2[NPR];
+	double cmax_r, cmin_r, cmax, cmin, cmax_l, cmin_l, ctop, ctop_rad;
+	double temp1[NPR], temp2[NPR], temp3[NPR], temp4[NPR], p[NPR];
 	struct of_geom geom;
 	struct of_state state;
+	#if(RAD_M1)
+	double cmax_r_rad, cmin_r_rad, cmax_l_rad, cmin_l_rad, cmax_rad, cmin_rad;
 	struct of_state_rad state_rad;
+	#endif
 	local_dtij[local_id] = 1.e9;
 	int zsize = 1, zoffset = 0;
 
@@ -3091,23 +3088,24 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
 
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
-	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3*((double)zsize); }
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx; }
+	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx*((double)zsize); }
 
 	if (k == 1){
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
+		//Get left state
 		if (zoffset != 0 && dir == 3){
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
-				p[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id - D3]);
+				p[k] = 0.5 * (pv[k * (ksize)+global_id] + pv[k * (ksize)+global_id - D3]);
 			}
 		}
 		else{
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
-				p[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
+				p[k] = dq2[k * (ksize)+global_id - idel * isize - jdel * (BS_3 + 2 * N3G) - zdel];
 			}
 		}
 		#if(STAGGERED)
@@ -3129,12 +3127,14 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l);
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l);
-		//vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
 		#if(RAD_M1)
-		//get_state_rad(p, &geom, &state_rad);
-		//vchar_rad(p, &state_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, (dir==1)*dx_1+(dir==2)*dx_2+(dir==3)*dx_3);
+		get_state_rad(p, &geom, &state_rad);
+		primtoflux_rad(p, &state_rad, dir, &geom, temp3);
+		primtoflux_rad(p, &state_rad, 0, &geom, temp4);
+		vchar_rad(p, &state, &state_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx);
 		#endif
 
+		//Get right state
 		if (zoffset != 0 && dir == 3){
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
@@ -3165,38 +3165,72 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		get_state_rad(p, &geom, &state_rad);
 		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r);
 		primtoflux(p, &state, 0, &geom, temp4, &cmax_r, &cmin_r);
-		//vchar(p, &state, &geom, dir, &cmax_r, &cmin_r,  gam);
-		#if(RAD_M1)
-		//vchar_rad(p, &state_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, (dir == 1)*dx_1 + (dir == 2)*dx_2 + (dir == 3)*dx_3);
-		#endif
 
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 		ctop = MY_MAX(cmax, cmin);
-		#pragma unroll 9	
-		for (k = 0; k<NPR_U; k++){
-			#if(HLLF)
-			F[k*(ksize)+global_id] = (cmax*temp1[k] + cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
-			#else
-			F[k*(ksize)+global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
-			#endif
-		}
 
 		#if(RAD_M1)
+		if (flag == 1) {
+			for (k = 0; k < NPR_U; k++) {
+				#if(HLLF)
+				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL));
+				#else
+				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + LAXF * (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k]))));
+				#endif
+			}
+		}
+		else {
+			for (k = 0; k < NPR_U; k++) {
+				#if(HLLF)
+				F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+				#else
+				F[k * (ksize)+global_id] = (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k])));
+				#endif
+			}
+		}
+		get_state_rad(p, &geom, &state_rad);
+		primtoflux_rad(p, &state_rad, dir, &geom, temp3);
+		primtoflux_rad(p, &state_rad, 0, &geom, temp4);
+		
+		vchar_rad(p, &state, &state_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx);
+		
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
-		for (k = UU_RAD; k <= U3_RAD; k++) {
+		if (flag == 1) {
+			for (k = UU_RAD; k <= U3_RAD; k++) {
+				#if(HLLF)
+				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad + SMALL));
+				#else
+				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k])));
+				#endif
+			}
+		}
+		else {
+			for (k = UU_RAD; k <= U3_RAD; k++) {
+				#if(HLLF)
+				F[k * (ksize)+global_id] = (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad + SMALL);
+				#else
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
+				#endif
+			}
+		}
+		#else
+		for (k = 0; k < NPR_U; k++) {
 			#if(HLLF)
-			F[k*(ksize)+global_id] = (cmax_rad*temp1[k] + cmin_rad*temp3[k] - cmax_rad*cmin_rad*(temp4[k] - temp2[k])) / (cmax_rad + cmin_rad + SMALL);
+			F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
 			#else
-			F[k*(ksize)+global_id] = 0.5*(temp1[k] + temp3[k] - ctop_rad*(temp4[k] - temp2[k]));
+			F[k * (ksize)+global_id] = (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k])));
 			#endif
 		}
-
-		cmax_rad = MY_MAX(cmax_rad, cmin_rad);
-		cmax = MY_MAX(cmax, cmax_rad);
 		#endif
+
+		/* evaluate restriction on timestep */
+		#if(RAD_M1)
+		ctop = MY_MAX(ctop, ctop_rad);
+		#endif
+
 		local_dtij[local_id] = factor / ctop;
 	}
 	if (calc_time == 1){
@@ -3943,25 +3977,313 @@ __global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double
 	}
 }
 
-__global__ void Utoprim_M1_0(void)
+__global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, double Dt, double y_max, int POLE_1, int POLE_2)
 {
-	
+	#if(RAD_M1)
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	zcurr = (global_id % (isize)) % (BS_3 + 2 * N2G);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * N3G);
+	icurr = (global_id - (jcurr * (BS_3 + 2 * N3G)+zcurr)) / (isize);
+	if (global_id < (BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) k = 1;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	struct of_geom geom;
+	struct of_state q;
+	double p[NPR], dU[NPR], U[NPR];
+	double y = 1.0 - 1.0 / sqrt(2.0);
+	int zsize = 1, zoffset = 0, u;
+	int pflag_local, pflag_rad_local;
+
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	if (k == 1) {
+		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		for (k = 0; k < NPR; k++) {
+			p[k] = 0.0;
+			for (u = 0; u < zsize; u++) {
+				p[k] += (1.0 / ((double)zsize)) * p_i[k * (ksize)+global_id - zoffset + u];
+			}
+		}
+
+		get_state(p, &geom, &q);
+		primtoflux(p, &q, 0, &geom, U, NULL, NULL);
+		
+		for (k = 0; k < NPR; k++) {
+			U_n[k * (ksize)+global_id] = U[k];
+		}
+
+		/*Implement implicit solve here!*/
+
+		//Apply floors in ZAMO frame or drift frame
+		if (fixup_cell(p, radius[icurr], &geom, &q)) {
+			pflag[global_id] = -333;
+			pflag[0] = global_id;;
+			failimage[3 * (ksize)+global_id]++;
+		}
+
+		#pragma unroll 9	
+		for (k = 0; k < NPR; k++) {
+			p_i[k * (ksize)+global_id] = p[k];
+			dU_RAD0[k * (ksize)+global_id] = dU[k];
+		}
+	}
+	#endif
 }
 
-__global__ void Utoprim_M1_1(void)
+__global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, const double* __restrict__ U_n, double* dU_MHD1, const double* __restrict__ dU_RAD0, double* dU_RAD1, const  double* __restrict__  psh, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
+	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2)
 {
+	#if(RAD_M1)
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3) * (BS_2);
+	zcurr = (global_id % (isize)) % (BS_3);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3);
+	icurr = (global_id - (jcurr * (BS_3)+zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	if (global_id < (BS_1) * (BS_2) * (BS_3)) k = 1;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#if(NSY)
+	int fix_mem2 = fix_mem1;
+	#else
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#endif
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	struct of_geom geom;
+	struct of_state q;
+	double p[NPR], dU[NPR], U_1[NPR];
+	int zsize = 1, zoffset = 0, u;
 
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	if (k == 1) {
+		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		for (k = 0; k < NPR; k++) {
+			p[k] = 0.0;
+			for (u = 0; u < zsize; u++) {
+				p[k] += (1.0 / ((double)zsize)) * p_i[k * (ksize)+global_id - zoffset + u];
+			}
+		}
+
+		get_state(p, &geom, &q);
+		source(p, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]);
+
+		#pragma unroll 9	
+		for (k = 0; k < NPR; k++) {
+			U_1[k] = 0.;
+			for (u = 0; u < zsize; u++) {
+				U_1[k] += U_n[k * (ksize)+global_id - zoffset + u] / ((double)zsize);
+				#if( N1G > 0 )
+				U_1[k] -= Dt * (F1[k * (ksize)+global_id + isize - zoffset + u] - F1[k * (ksize)+global_id - zoffset + u]) / (dx_1 * (double)zsize);
+				#endif
+				#if( N2G > 0 )
+				U_1[k] -= Dt * (F2[k * (ksize)+global_id + (BS_3 + 2 * N3G) - zoffset + u] - F2[k * (ksize)+global_id - zoffset + u]) / (dx_2 * (double)zsize);
+				#endif
+				U_1[k] += Dt * (dU[k] + (1. - 2. * Y_IMEX) * dU_RAD0[k * (ksize)+global_id - zoffset + u] ) / ((double)zsize);
+			}
+			#if( N3G > 0 )
+			U_1[k] -= Dt * (F3[k * (ksize)+global_id - zoffset + zsize] - F3[k * (ksize)+global_id - zoffset]) / (dx_3 * (double)zsize);
+			#endif
+			dU_MHD1[k * (ksize)+global_id + isize - zoffset] = dU[k];
+		}
+
+		#if(NSY)
+		U_1[B1] = 0.0;
+		U_1[B2] = 0.0;
+		#if(STAGGERED)
+		for (u = 0; u < zsize; u++) {
+			U_1[B1] += (psh[0 * ksize + global_id - zoffset + u] * gdet[FACE1 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset + u] + psh[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+			U_1[B2] += (psh[1 * ksize + global_id - zoffset + u] * gdet[FACE2 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset + u] + psh[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (jcurr + D2) * (BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+		}
+		#if(N3G>0)
+		U_1[B3] = (psh[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset] + psh[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + (zcurr - zoffset + zsize * D3)]) / 2.0;
+		#endif
+		#endif
+		#else
+		#if(STAGGERED)
+		U_1[B1] = 0.0;
+		U_1[B2] = 0.0;
+		for (u = 0; u < zsize; u++) {
+			U_1[B1] += (psh[0 * ksize + global_id - zoffset + u] * gdet[FACE1 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psh[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1) * (BS_2 + 2 * N2G) + jcurr]) / (2.0 * (double)zsize);
+			U_1[B2] += (psh[1 * ksize + global_id - zoffset + u] * gdet[FACE2 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psh[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + (jcurr + D2)]) / (2.0 * (double)zsize);
+		}
+		#if(N3G>0)
+		U_1[B3] = (psh[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psh[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		#endif
+		#endif
+		#endif
+
+		/*Implement implicit solve here!*/
+
+		//Apply floors in ZAMO frame or drift frame
+		if (fixup_cell(p, radius[icurr], &geom, &q)) {
+			pflag[global_id] = -333;
+			pflag[0] = global_id;;
+			failimage[3 * (ksize)+global_id]++;
+		}
+
+		#pragma unroll 9	
+		for (k = 0; k < NPR; k++) {
+			ph_i[k * (ksize)+global_id] = p[k];
+			dU_RAD1[k * (ksize)+global_id] = dU[k];
+		}
+	}
+	#endif
 }
 
-__global__ void Utoprim_M1_2(void)
+__global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, const double* __restrict__ U_n, const double* __restrict__ dU_MHD1, const double* __restrict__ dU_RAD0, const double* __restrict__ dU_RAD1, const  double* __restrict__  ps, const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3,
+	const  double* __restrict__ radius, int* pflag, int* pflag_rad, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, double y_max, int POLE_1, int POLE_2)
 {
+	#if(RAD_M1)
+	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	int isize, icurr, jcurr, zcurr, k = 0;
+	isize = (BS_3) * (BS_2);
+	zcurr = (global_id % (isize)) % (BS_3);
+	jcurr = ((global_id - zcurr) % (isize)) / (BS_3);
+	icurr = (global_id - (jcurr * (BS_3)+zcurr)) / (isize);
+	zcurr += N3G;
+	jcurr += N2G;
+	icurr += N1G;
+	if (global_id < (BS_1) * (BS_2) * (BS_3)) k = 1;
+	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	global_id = isize * icurr + (BS_3 + 2 * N3G) * jcurr + zcurr;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#if(NSY)
+	int fix_mem2 = fix_mem1;
+	#else
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	#endif
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	struct of_geom geom;
+	struct of_state q;
+	double ph[NPR], dU[NPR], U_2[NPR];
+	int zsize = 1, zoffset = 0, u;
 
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel = 0;
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = (int)(0.001 + pow(2.0, (double)zlevel));
+	zoffset = (zcurr - N3G) % zsize;
+	#endif
+
+	if (k == 1) {
+		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		for (k = 0; k < NPR; k++) {
+			ph[k] = 0.0;
+			for (u = 0; u < zsize; u++) {
+				ph[k] += (1.0 / ((double)zsize)) * ph_i[k * (ksize)+global_id - zoffset + u];
+			}
+		}
+
+		get_state(ph, &geom, &q);
+		source(ph, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]);
+
+		#pragma unroll 9	
+		for (k = 0; k < NPR; k++) {
+			U_2[k] = 0.;
+			for (u = 0; u < zsize; u++) {
+				U_2[k] += U_n[k * (ksize) + global_id - zoffset + u] / ((double)zsize);
+				#if( N1G > 0 )
+				U_2[k] -= Dt * (F1[k * (ksize) + global_id + isize - zoffset + u] - F1[k * (ksize) + global_id - zoffset + u]) / (dx_1 * (double)zsize);
+				#endif
+				#if( N2G > 0 )
+				U_2[k] -= Dt * (F2[k * (ksize) + global_id + (BS_3 + 2 * N3G) - zoffset + u] - F2[k * (ksize) + global_id - zoffset + u]) / (dx_2 * (double)zsize);
+				#endif
+				U_2[k] += 0.5 * Dt * (dU[k] + dU_MHD1[k * (ksize) + global_id - zoffset + u] + dU_RAD0[k * (ksize) + global_id - zoffset + u] + dU_RAD1[k * (ksize) + global_id - zoffset + u]) / ((double)zsize);
+			}
+			#if( N3G > 0 )
+			U_2[k] -= Dt * (F3[k * (ksize)+global_id - zoffset + zsize] - F3[k * (ksize)+global_id - zoffset]) / (dx_3 * (double)zsize);
+			#endif
+		}
+
+		#if(NSY)
+		U_2[B1] = 0.0;
+		U_2[B2] = 0.0;
+		#if(STAGGERED)
+		for (u = 0; u < zsize; u++) {
+			U_2[B1] += (ps[0 * ksize + global_id - zoffset + u] * gdet[FACE1 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset + u] + ps[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1) * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+			U_2[B2] += (ps[1 * ksize + global_id - zoffset + u] * gdet[FACE2 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset + u] + ps[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + (jcurr + D2) * (BS_3 + 2 * N3G) + zcurr - zoffset + u]) / 2.0;
+		}
+		#if(N3G>0)
+		U_2[B3] = (ps[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr - zoffset] + ps[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + (zcurr - zoffset + zsize * D3)]) / 2.0;
+		#endif
+		#endif
+		#else
+		#if(STAGGERED)
+		U_2[B1] = 0.0;
+		U_2[B2] = 0.0;
+		for (u = 0; u < zsize; u++) {
+			U_2[B1] += (ps[0 * ksize + global_id - zoffset + u] * gdet[FACE1 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + ps[0 * ksize + global_id + isize - zoffset + u] * gdet[FACE1 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + (icurr + D1) * (BS_2 + 2 * N2G) + jcurr]) / (2.0 * (double)zsize);
+			U_2[B2] += (ps[1 * ksize + global_id - zoffset + u] * gdet[FACE2 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + ps[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + (jcurr + D2)]) / (2.0 * (double)zsize);
+		}
+		#if(N3G>0)
+		U_2[B3] = (ps[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + ps[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		#endif
+		#endif
+		#endif
+
+		#if(NEWMAN)
+		pflag[global_id] = Utoprim_NM(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC);
+		#else
+		pflag[global_id] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC);
+		#endif
+
+		#if( DO_FONT_FIX ) 
+		if (pflag[global_id]) {
+			failimage[global_id]++;
+			#if DOKTOT
+			pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC);
+			#endif
+			if (pflag[global_id]) {
+				failimage[1 * (ksize)+global_id]++;
+				pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC);
+				if (pflag[global_id]) {
+					pflag[0] = global_id;
+					failimage[2 * (ksize)+global_id]++;
+				}
+			}
+		}
+		#endif
+		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC);
+
+		//Apply floors in ZAMO frame or drift frame
+		if (fixup_cell(ph, radius[icurr], &geom, &q)) {
+			pflag[global_id] = -333;
+			pflag[0] = global_id;;
+			failimage[3 * (ksize)+global_id]++;
+		}
+
+		#pragma unroll 9	
+		for (k = 0; k < NPR; k++) {
+			p_i[k * (ksize)+global_id] = ph[k];
+		}
+	}
+	#endif
 }
 
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
-	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int POLE_1, int POLE_2)
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2)
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
@@ -3984,7 +4306,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	struct of_geom geom;
 	struct of_state q;
-	struct of_state_rad q_rad;
 	double pf[NPR],  dU[NPR], U[NPR];
 
 	int zsize = 1, zoffset = 0, u;
@@ -4043,7 +4364,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		}
 
-		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, a, radius[icurr]);
+		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]);
 
 		#pragma unroll 9	
 		for (k = 0; k< NPR; k++){
@@ -4115,7 +4436,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
-	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm,  double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int POLE_1, int POLE_2)
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int ki = 0,k=0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
@@ -4681,7 +5002,7 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 }
 
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
-	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx_1, double dx_2, double dx_3, int calc_time)
+	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -4722,9 +5043,9 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 	zoffset = (zcurr - N3G) % zsize;
 	#endif
 
-	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx_1; }
-	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx_2; }
-	else if (dir == 3) {idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx_3*((double)zsize);}
+	if (dir == 1) { idel = 1; jdel = 0; zdel = 0;  face = FACE1; factor = cour*dx; }
+	else if (dir == 2) { idel = 0; jdel = 1; zdel = 0; face = FACE2; factor = cour*dx; }
+	else if (dir == 3) {idel = 0; jdel = 0; zdel = 1; face = FACE3; factor = cour*dx*((double)zsize);}
 
 	if (k == 1) {
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);

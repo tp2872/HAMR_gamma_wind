@@ -294,6 +294,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 
+//IMEX constant
+#define Y_IMEX (0.29289321881)
+
 /*************************************************************************
 MNEMONICS SECTION
 *************************************************************************/
