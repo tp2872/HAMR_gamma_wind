@@ -330,7 +330,7 @@ void utoprim_M1_0(double Dt, int n)
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
 				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size);
+				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size);
 			}
 		}
 	}
@@ -807,6 +807,15 @@ double advance_GPU(void)
 			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
 	}
 
+	#if(RAD_M1)
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) {
+		}
+		else if (prestep_half[nl[n_ord[n]]] == 1) {
+			 GPU_Utoprim_M1_0(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
+		}
+	}
+	#endif
 	#if(N3G>0)		
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
@@ -1039,18 +1048,25 @@ double advance_GPU(void)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static, n_active/nthreads) private(n,status,timestep)
 	#endif
+	#if(RAD_M1)
+	for (n = 0; n < n_active; n++) {
+		if (prestep_full[nl[n_ord[n]]] == 1) GPU_Utoprim_M1_2(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
+		else if (prestep_half[nl[n_ord[n]]] == 1) utoprim_M1_1(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
+	}
+	#else
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1){
-			timestep = dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			GPU_fixup(1, n_ord[n], timestep);
+			GPU_fixup(1, n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
 			//GPU_fixuputoprim(1, n_ord[n]);
+			//GPU_fixuputoprim_rad(1, n_ord[n]);
 		}
 		else if (prestep_half[nl[n_ord[n]]] == 1){
-			timestep = 0.5 * dt*(double)block[n_ord[n]][AMR_TIMELEVEL];
-			GPU_fixup(0, n_ord[n], timestep);
+			GPU_fixup(0, n_ord[n], 0.5*dt* (double)block[n_ord[n]][AMR_TIMELEVEL]);
 			//GPU_fixuputoprim(0, n_ord[n]);
+			//GPU_fixuputoprim_rad(0, n_ord[n]);
 		}
 	}
+	#endif
 
 	if (nstep % (2 * AMR_MAXTIMELEVEL) == 2 * AMR_MAXTIMELEVEL - 1){
 		ndt = 1e9;
