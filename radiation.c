@@ -1747,7 +1747,6 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 //Inversion from radiation conserved to primitive quantities
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim) {
 	double U_tmp[NPR_R], prim_tmp[NPR_R];
-	double prim_tmp_gas[4]; //BEV added
 	int i, ret;
 	double alpha;
 

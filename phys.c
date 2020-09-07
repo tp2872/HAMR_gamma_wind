@@ -55,7 +55,6 @@
 void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
-	double n = 1. / (GAMMA - 1.);
 
 	/* particle number flux */
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
@@ -82,45 +81,6 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
 	#endif
 
-	//double temp1 = flux[KTOT] / flux[RHO];
-	//flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
-	//double temp2 = exp((flux[KTOT] / flux[RHO]) * (GAMMA - 1.));
-	//fprintf(stderr, "old: %f new: %f \n", log10(temp1), log10(temp2));
-	//K_atm3 = (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
-
-	//flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
-	//flux[KTOT] / flux[RHO]= 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
-	//(flux[KTOT] / flux[RHO])*(GAMMA - 1.) =  log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
-	//exp((flux[KTOT] / flux[RHO])*(GAMMA - 1.))=(GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA)
-
-	//K_atm3 = (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
-
-	//flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
-	//flux[KTOT] / flux[RHO]= log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
-	//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1);
-	//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], 1. / (GAMMA - 1.)) / pow(pr[RHO], 1. / (GAMMA - 1.) + 1);
-	//pow(exp(flux[KTOT] / flux[RHO]), GAMMA -1.)=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
-	//exp((flux[S] / flux[RHO])*(GAMMA -1.))=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
-	//exp((flux[S] / flux[RHO])*(GAMMA -1.))=flux(KTOT)/flux(RHO)
-	//(flux[S] / flux[RHO])* (GAMMA - 1.)=log(flux(KTOT) / flux(RHO))
-	//flux(S)=flux(RHO)/(GAMMA-1.)*log(flux(KTOT) / flux(RHO))
-
-	//XX= P / rho ^ gamma
-	//K = rho*uu* XX
-	//flux(K)/flux(RHO)=xx
-	//log(flux(K) / flux(K))=log(xx)
-	//flux(rho)*log(flux(K) / flux(RHO))=rho*uu*log(xx)
-	//S = rho*uu/(gamma-1)*log(XX)
-
-	//dS/dT=
-
-	//dK / dt = dK / dS * dS / dT;
-	//dK / dS=(GAMMA-1.)d(XX)/d(log(XX)); !!!
-	//dK / dS=(GAMMA-1.)*XX; !!!
-		//dK / dS=(GAMMA-1.)*P / rho ^ gamma; !!!
-
-
-	//d(log(XX))/d(XX)=1/XX;
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }
@@ -283,8 +243,6 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
 	}
-	//if (ph[RHO] > 0.1)fprintf(stderr, "test: %f %f rho: %f ug: %f \n", log10(fabs(lambda * ucon[0])), log10(fabs(kappa_es * (R_dot_ucon[0] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[0]))), log10(fabs(ph[RHO])), log10(fabs(ph[UU])));
-
 }
 
 //Calculate total absorption opacity
@@ -708,3 +666,44 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 		}
 	}
 }
+
+/*Some notes for calculation of entropy source term*/
+//double temp1 = flux[KTOT] / flux[RHO];
+//flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
+//double temp2 = exp((flux[KTOT] / flux[RHO]) * (GAMMA - 1.));
+//fprintf(stderr, "old: %f new: %f \n", log10(temp1), log10(temp2));
+//K_atm3 = (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
+
+//flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
+//flux[KTOT] / flux[RHO]= 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
+//(flux[KTOT] / flux[RHO])*(GAMMA - 1.) =  log((GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA));
+//exp((flux[KTOT] / flux[RHO])*(GAMMA - 1.))=(GAMMA - 1.0) * pr[UU] * pow(pr[RHO], -GAMMA)
+
+//K_atm3 = (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
+
+//flux[KTOT] = flux[RHO] * log(pow((GAMMA-1.0)*pr[UU], n) / pow(pr[RHO], n + 1));
+//flux[KTOT] / flux[RHO]= log(pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1));
+//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], n) / pow(pr[RHO], n + 1);
+//exp(flux[KTOT] / flux[RHO])= pow((GAMMA - 1.0) * pr[UU], 1. / (GAMMA - 1.)) / pow(pr[RHO], 1. / (GAMMA - 1.) + 1);
+//pow(exp(flux[KTOT] / flux[RHO]), GAMMA -1.)=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
+//exp((flux[S] / flux[RHO])*(GAMMA -1.))=(GAMMA - 1.0) * pr[UU]* pow(pr[RHO], -GAMMA)
+//exp((flux[S] / flux[RHO])*(GAMMA -1.))=flux(KTOT)/flux(RHO)
+//(flux[S] / flux[RHO])* (GAMMA - 1.)=log(flux(KTOT) / flux(RHO))
+//flux(S)=flux(RHO)/(GAMMA-1.)*log(flux(KTOT) / flux(RHO))
+
+//XX= P / rho ^ gamma
+//K = rho*uu* XX
+//flux(K)/flux(RHO)=xx
+//log(flux(K) / flux(K))=log(xx)
+//flux(rho)*log(flux(K) / flux(RHO))=rho*uu*log(xx)
+//S = rho*uu/(gamma-1)*log(XX)
+
+//dS/dT=
+
+//dK / dt = dK / dS * dS / dT;
+//dK / dS=(GAMMA-1.)d(XX)/d(log(XX)); !!!
+//dK / dS=(GAMMA-1.)*XX; !!!
+	//dK / dS=(GAMMA-1.)*P / rho ^ gamma; !!!
+
+
+//d(log(XX))/d(XX)=1/XX;
