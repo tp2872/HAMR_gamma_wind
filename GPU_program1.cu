@@ -3528,7 +3528,6 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		}
 		#endif
 		get_state(p, &geom, &state);
-		get_state_rad(p, &geom, &state_rad);
 		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r);
 		primtoflux(p, &state, 0, &geom, temp4, &cmax_r, &cmin_r);
 
