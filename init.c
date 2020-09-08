@@ -1241,7 +1241,9 @@ void set_mag(void){
 			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+(4./3.-1.)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
-			#else
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1. / (GAMMA - 1.) * ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.01*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+#else
 			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}

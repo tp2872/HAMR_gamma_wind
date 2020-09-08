@@ -246,40 +246,40 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 }
 
 //Calculate total absorption opacity
-double calc_kappa_abs(double * restrict ph) {
+double calc_kappa_abs(double* ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
-	double Tg = fabs(MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE));
-	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE * ARAD, 0.25));
-	kappa_m = 0.1*Z_AB;
-	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
-	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -1.7)*pow(Tr, -3.);
-	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg));
-	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -0.5)*pow(Tr, -3.0)*log(1. + 1.6*(Tr / Tg))*(1. + 4.4*pow(10., -10.)*Tg);
-	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = 1.7*pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS,-2.);
+	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
-	return(kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS);
+	kappa_m = 0.1 * Z_AB;
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO]) * pow(Tg, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
+	kappa_abs = kappa_bf;//1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
+
+	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
-double calc_kappa_emmit(double * restrict ph) {
+double calc_kappa_emmit(double* ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
-	double Tg = fabs(MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE));
-	//Tg = fabs((GAMMA - 1.)*(ph[UU]) / (ph[RHO]));
+	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
-	kappa_m = 0.1*Z_AB;
-	kappa_h = 1.1*pow(10., -25.)*sqrt(Z_AB*ph[RHO])*pow(Tg, 7.7);
-	kappa_chianti = 4.0*pow(10., 34.)*(Z_AB / 0.02)*Ye*pow(Tg, -4.7);
-	kappa_bf = 3.0*pow(10., 25.)*Z_AB*(1. + X_AB + 0.75*Y_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6);
-	kappa_ff = 4.0*pow(10., 22.)*(1. + X_AB)*(1. - Z_AB)*ph[RHO] * pow(Tg, -3.5)*log(1. + 1.6)*(1. + 4.4*pow(10., -10.)*Tg);
+	kappa_m = 0.1 * Z_AB;
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO]) * pow(Tg, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = 1.7 *pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS, -2.);
+	kappa_abs = kappa_bf;//1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
+	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
 }
-
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph) {
 	double kappa_es;

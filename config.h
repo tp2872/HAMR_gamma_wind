@@ -20,7 +20,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -63,9 +63,9 @@ Numerical Parameters section
 #define ThreeD (1)
 
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
-#define GPU_ENABLED 0
+#define GPU_ENABLED 1
 #define GPU_DEBUG 0
-#define CPU_OPENMP 1
+#define CPU_OPENMP 0
 #define TIMER 1
 
 /*Enable AMD for FMA instructions, works also good with NVIDIA now!*/
@@ -91,13 +91,13 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 3
+#define NB_1 1
 #define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 40
-#define BS_2 120
+#define BS_1 256
+#define BS_2 256
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -141,7 +141,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (200)
+#define DUMPFACTOR (800)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -164,7 +164,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
@@ -289,9 +289,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
-#define MASS_DENSITY_SCALE (1.0)
+#define MASS_DENSITY_SCALE (1.1)
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
-#define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITY_SCALE) * C_CGS)
+#define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 
 //IMEX constant
