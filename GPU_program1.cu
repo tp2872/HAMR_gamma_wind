@@ -122,8 +122,6 @@ struct of_state {
 struct of_state_rad {
 	double ucon[NDIM];
 	double ucov[NDIM];
-	double bcon[NDIM];
-	double bcov[NDIM];
 };
 
 __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double *U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double *dU, double Dt, double cell_size, double y_max) {
@@ -156,7 +154,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 		//Check if fluid is in extreme radiation subdominant regime
 		if (((U_n[UU_RAD] / U_n[UU]) < 1.e-5) || ((pb[UU_RAD] / pb[UU]) < 1.e-5) || (fabs(delta_Ur) < 1.e-5)) {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
 			//if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -221,7 +219,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 		}
 		else {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			//if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -2620,7 +2618,7 @@ __device__ double calc_kappa_abs(double* ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(0.*kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -2637,7 +2635,7 @@ __device__ double calc_kappa_emmit(double* ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(0. * kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total (electron) scattering opacity
@@ -2646,7 +2644,7 @@ __device__ double calc_kappa_es(double* ph) {
 	double Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE);
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Tg / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
-	return(0. * kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
+	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq)
@@ -4354,7 +4352,6 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  
 	struct of_state q;
 	struct of_state_rad q_rad;
 	double p[NPR], dU[NPR], U[NPR], U_0[NPR], cell_size;
-	double y = 1.0 - 1.0 / sqrt(2.0);
 	int zsize = 1, zoffset = 0, u;
 	int pflag_local, pflag_rad_local;
 

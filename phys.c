@@ -259,7 +259,7 @@ double calc_kappa_abs(double * restrict ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7*pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS,-2.);
 
-	return(0.*kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS);
+	return(kappa_abs*(ph[RHO]*MASS_DENSITY_SCALE)*R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -277,7 +277,7 @@ double calc_kappa_emmit(double * restrict ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = 1.7 *pow(10., -25.)*pow(Tg, -7. / 2.)*pow(MH_CGS, -2.);
 
-	return(0.*kappa_abs* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
+	return(kappa_abs* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
 }
 
 //Calculate total (electron) scattering opacity
@@ -286,7 +286,7 @@ double calc_kappa_es(double * restrict ph) {
 	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
 	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
 	kappa_es = 0.2*(1 + X_AB);
-	return(0.*kappa_es* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
+	return(kappa_es* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
