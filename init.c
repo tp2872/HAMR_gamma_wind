@@ -995,7 +995,7 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
 
 void set_mag(void){
 	int i, j, z, k, n;
-	double rhomax = 1., umax = 0.;
+	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
 	double rho_av, q, beta = 100.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
@@ -1164,9 +1164,15 @@ void set_mag(void){
 			#endif
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
-				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			#if(RAD_M1)
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
+			#else
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
+				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+			#endif
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
@@ -1185,7 +1191,7 @@ void set_mag(void){
 	#if (MPI_enable)
 	/*Share bsq_max among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &pmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
@@ -1200,7 +1206,7 @@ void set_mag(void){
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
 	#else
-	beta_act = (gam - 1.)*umax / (0.5*bsq_max);
+	beta_act = pmax / (0.5*bsq_max);
 	#endif
 	if (rank == 0){
 		fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
@@ -1221,7 +1227,7 @@ void set_mag(void){
 	}
 
 	bsq_max = 0.;
-	umax = 0;
+	pmax = 0;
 	bsq_sum = 0.;
 	ug_sum = 0.;
 	for (n = 0; n < n_active; n++){
@@ -1231,10 +1237,15 @@ void set_mag(void){
 			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				bsq_max = bsq_ij;
 			}
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			#if(RAD_M1)
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+(4./3.-1.)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
-
+			#else
+			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			}
+			#endif
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
 			coord(n_ord[n], i, j, z, CENT, X);
@@ -1250,7 +1261,7 @@ void set_mag(void){
 	/*Share bsq_max among MPI processes*/
 	#if (MPI_enable)
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	MPI_Allreduce(MPI_IN_PLACE, &pmax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
@@ -1260,7 +1271,7 @@ void set_mag(void){
 	#if(WHICHPROBLEM==THIN_PROBLEM)
 	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
 	#else
-	beta_act = (gam - 1.)*umax / (0.5*bsq_max);
+	beta_act = pmax / (0.5*bsq_max);
 	#endif
 	if (rank == 0){
 		fprintf(stderr, "final beta: %g (should be %g)\n", beta_act, beta);
