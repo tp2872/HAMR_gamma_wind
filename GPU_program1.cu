@@ -2529,10 +2529,6 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	/* find radiation wave speed */
 	crad2 = 1.0 / 3.0;
 
-	/* check on it! */
-	if (crad2 < 0.) crad2 = SMALL;
-	if (crad2 > 1.) crad2 = 1.;
-
 	/* now require that speed of wave measured by observer q->ucon is crad2 */
 	Asq = Acon_js;
 	Bsq = geom->gcon[0];// dot(Bcon, Bcov);
@@ -3025,7 +3021,7 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 
 		vsq_rad = MY_MAX(1.e-13, vsq_rad);
 		if (vsq_rad >= 1.) {
-			vsq_rad = 1. - 1. / (GAMMAMAX * GAMMAMAX);
+			vsq_rad = 1. - 1. / (GAMMAMAX_RAD * GAMMAMAX_RAD);
 		}
 		gamma_rad = 1. / sqrt(1. - vsq_rad);
 		pr[U1_RAD] *= gamma_rad;
@@ -4348,7 +4344,7 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  
 	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
 	isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
-	zcurr = (global_id % (isize)) % (BS_3 + 2 * N2G);
+	zcurr = (global_id % (isize)) % (BS_3 + 2 * N3G);
 	jcurr = ((global_id - zcurr) % (isize)) / (BS_3 + 2 * N3G);
 	icurr = (global_id - (jcurr * (BS_3 + 2 * N3G)+zcurr)) / (isize);
 	if (global_id < (BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) k = 1;

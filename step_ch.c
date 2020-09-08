@@ -388,11 +388,9 @@ void utoprim_M1_2(double Dt, int n){
 	int i, j, z, k;
 	double ndt, ndt1, ndt2, ndt3, U_2[NPR], dU[NPR];
 	struct of_geom geom;
-	struct of_state q;
-	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n, gdet, p, ps, dU_MHD1, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, q, q_rad, dU, U_2, geom, ind0, ind1, ind2, ind3)
+	#pragma omp  parallel shared(n, gdet, p, ps, dU_MHD1, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, dU, U_2, geom, ind0, ind1, ind2, ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -403,8 +401,6 @@ void utoprim_M1_2(double Dt, int n){
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
-			get_state(ph[nl[n]][ind0], &geom, &q);
-			get_state_rad(ph[nl[n]][ind0], &geom, &q_rad);
 
 			#pragma ivdep
 			PLOOP{
@@ -812,7 +808,7 @@ double advance_GPU(void)
 		if (prestep_full[nl[n_ord[n]]] == 1) {
 		}
 		else if (prestep_half[nl[n_ord[n]]] == 1) {
-		  GPU_Utoprim_M1_0(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
+			GPU_Utoprim_M1_0(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
 		}
 	}
 	#endif

@@ -546,7 +546,7 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 		SLOOP vsq_rad += geom.gcov[j][k] * pr[U1_RAD + j - 1] * pr[U1_RAD + k - 1];
 		if (fabs(vsq_rad) < 1.e-13)  vsq_rad = 1.e-13;
 		if (vsq_rad >= 1.) {
-			vsq_rad = 1. - 1. / (GAMMAMAX * GAMMAMAX);
+			vsq_rad = 1. - 1. / (GAMMAMAX_RAD * GAMMAMAX_RAD);
 		}
 		gamma_rad = 1. / sqrt(1. - vsq_rad);
 		pr[U1_RAD] *= gamma_rad;
