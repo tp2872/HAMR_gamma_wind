@@ -197,7 +197,8 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 
 	//Calculate iterated error at start of iteration
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
-	error_t[0] = 0.25 * sqrt(geom->gcon[1][1]) * (fabs(U_f[U1] - U_i[U1] - Dt * dU[U1]) / norm);
+	error_t[0] = 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
+	error_t[0] += 0.25 * sqrt(geom->gcon[1][1]) * (fabs(U_f[U1] - U_i[U1] - Dt * dU[U1]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[2][2]) * (fabs(U_f[U2] - U_i[U2] - Dt * dU[U2]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[3][3]) * (fabs(U_f[U3] - U_i[U3] - Dt * dU[U3]) / norm);
 
