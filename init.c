@@ -650,7 +650,7 @@ void init_torus()
 }
 
 void init_rad_pres(double pi[NPR]) {
-	double T_old, T_new, ptot, arad, dPdT, errx;
+	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
 	int keep_iterating, i, n_iter;
 
 	keep_iterating = 1;
@@ -685,11 +685,12 @@ void init_rad_pres(double pi[NPR]) {
 	} 
 
 	if (n_iter == MAX_NEWT_ITER*5) {
-		pi[UU_RAD] = 0.;
+		//pi[UU_RAD] = 0.;
 	}
 	else {
-		pi[UU] = pi[RHO]*T_new;
-		pi[UU_RAD] = 1. / 3. * arad*pow(T_new,4.);
+		//pgas = pi[RHO] * T_new;
+		//pi[UU] = pgas / (GAMMA - 1.);
+		//pi[UU_RAD] = arad*pow(T_new,4.);
 	}
 
 	pi[U1_RAD] = pi[U1];
@@ -1165,7 +1166,7 @@ void set_mag(void){
 			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
 			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
 			#if(RAD_M1)
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if (((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+ (4./3.-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
 			#else
@@ -1238,11 +1239,11 @@ void set_mag(void){
 				bsq_max = bsq_ij;
 			}
 			#if(RAD_M1)
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
+			if (((GAMMA - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+(4./3.-1.)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = 1. / (GAMMA - 1.) * ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.01*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.0001*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 #else
 			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];

@@ -157,7 +157,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	kappa_es = calc_kappa_es(pb);
 	tau = (kappa_abs + kappa_es) * cell_size;
 
-	if (tau < 0.66) {
+	//if (tau < 0.66) {
 		//Set guess values for primitives after implicit step based on optical depth
 		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
@@ -171,7 +171,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
 		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, BASIC);
-	}
+	//}
 	
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
@@ -191,6 +191,9 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	get_state_rad(pb, geom, &q_rad);
 	mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
 	for (k = UU_RAD; k <= U3_RAD; k++)U_f[k] *= geom->g;
+
+	//Set U_i for consistency
+	PLOOP U_i[k] = U_f[k];
 
 	//Calculate source term for U_i
 	source_rad(pb, geom, dU);
