@@ -235,7 +235,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 	kappa_abs =  calc_kappa_abs(ph);
 	kappa_emmit = calc_kappa_emmit(ph);
 	kappa_es = calc_kappa_es(ph);
-	arad = ARAD / (ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 
 	Tg = (GAMMA - 1.)*ph[UU] / ph[RHO];
 	lambda = kappa_emmit * arad* pow(Tg, 4.); //in units of erg/s/cm^3
@@ -244,12 +244,6 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
 	}
 }
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(T_CGS, 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * C_CGS * C_CGS) / (BOLTZ_CGS * ph[RHO]), 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow((GAMMA - 1.) * ph[UU]/ph[RHO], 4.)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(Tg, 4.) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-//lambda = c_CGS * kappa_CGS * pow(Tg, 4.) * ARAD / (ENERGY_DE NSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-
 
 //Calculate total absorption opacity
 double calc_kappa_abs(double* ph) {
@@ -266,7 +260,7 @@ double calc_kappa_abs(double* ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf;//1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs * ph[RHO] * MASS_DENSITY_SCALE * R_G_CGS);
+	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -284,7 +278,7 @@ double calc_kappa_emmit(double* ph) {
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf;//1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs * ph[RHO] * MASS_DENSITY_SCALE * R_G_CGS);
+	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
 }
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph) {
