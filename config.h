@@ -189,8 +189,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (1)
-#define LAXF  (0)
+#define HLLF  (0)
+#define LAXF  (1)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
