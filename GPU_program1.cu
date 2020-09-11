@@ -4714,20 +4714,20 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 		if (flag == 1) {
 			for (k = UU_RAD; k <= U3_RAD; k++) {
-				#if(HLLF)
-				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad + SMALL));
-				#else
+				//#if(HLLF)
+				//F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad));
+				//#else
 				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k])));
-				#endif
+				//#endif
 			}
 		}
 		else {
 			for (k = UU_RAD; k <= U3_RAD; k++) {
-				#if(HLLF)
-				F[k * (ksize)+global_id] = (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad + SMALL);
-				#else
+				//#if(HLLF)
+				//F[k * (ksize)+global_id] = (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad);
+				//#else
 				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
-				#endif
+				//#endif
 			}
 		}
 		#else
