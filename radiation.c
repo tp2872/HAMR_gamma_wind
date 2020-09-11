@@ -36,10 +36,10 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 		//Check if fluid is in extreme radiation subdominant regime
 		if (((U_n[UU_RAD] / U_n[UU]) < pow(10.,-5.)) || ((pb[UU_RAD] / pb[UU]) < pow(10., -5.)) || (fabs(delta_Ur) < pow(10., -5.))) {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			//if (error_t > pow(10, -9.)) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
-			//if (error_t > pow(10, -9.))implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			if (error_t > pow(10, -9.))implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
@@ -101,13 +101,13 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 		}
 		else {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			if (error_t > pow(10, -9.))implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			//if (error_t > pow(10, -9.))implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			//if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
+			if (error_t > pow(10, -9.)) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try UMHD
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 0, 0);
@@ -127,7 +127,7 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 			*/
 
 			//If error is still below set margin, accept solution, otherwise try UMHD with entropy
-			if (error_t > pow(10, -9.)) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
+			//if (error_t > pow(10, -9.)) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
 
 			//If error is still below set margin, accept solution, otherwise try EMHD with entropy
 			//if (error_t > pow(10, -9.)) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, 1, 0);
@@ -157,7 +157,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	kappa_es = calc_kappa_es(pb);
 	tau = (kappa_abs + kappa_es) * cell_size;
 
-	if (tau < 0.66) {
+	//if (tau < 0.66) {
 		//Set guess values for primitives after implicit step based on optical depth
 		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
 		#if(DO_FONT_FIX)
@@ -171,7 +171,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
 		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, BASIC);
-	}
+//	}
 	
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
@@ -191,6 +191,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	get_state_rad(pb, geom, &q_rad);
 	mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
 	for (k = UU_RAD; k <= U3_RAD; k++)U_f[k] *= geom->g;
+	PLOOP U_i[k] = U_f[k];
 
 	//Calculate source term for U_i
 	source_rad(pb, geom, dU);

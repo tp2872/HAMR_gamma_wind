@@ -157,7 +157,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
-			if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
+			//if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max,0 , 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -169,7 +169,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			//if (error_t > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PMHD with entropy
-			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
+			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
 
 			/*
 			//If error is below set margin, accept solution, otherwise try PRAD with entropy
@@ -224,9 +224,6 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
-			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
-
 			//If error is still below set margin, accept solution, otherwise try UMHD
 			//if (error_t > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
@@ -234,7 +231,10 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			//if (error_t > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD with entropy
-			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
+			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
+
+			//If error is still below set margin, accept solution, otherwise try URAD
+			//if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			/*/
 			//If error is still below set margin, accept solution, otherwise try URAD with entropy
@@ -309,6 +309,8 @@ __device__ void implicit_rad_solve_init(double *pb, double *U_n, double *U_i, do
 	get_state_rad(pb, geom, &q_rad);
 	mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
 	for (k = UU_RAD; k <= U3_RAD; k++)U_f[k] *= geom->g;
+	
+	//Reset primitives
 	PLOOP U_i[k] = U_f[k];
 
 	//Calculate source term for U_i
@@ -317,9 +319,9 @@ __device__ void implicit_rad_solve_init(double *pb, double *U_n, double *U_i, do
 	//Calculate iterated error at start of iteration
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
 	error_t[0] = 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
-	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
-	norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2]) + fabs(U_f[U2]) + fabs(Dt * dU[U2]));
-	norm += (fabs(sqrt(geom->gcon[9]) * U_i[U3]) + fabs(U_f[U3]) + fabs(Dt * dU[U3]));
+	norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1]) + fabs(U_f[U1]) + fabs(Dt * dU[U1]));
+	norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2]) + fabs(U_f[U2]) + fabs(Dt * dU[U2]));
+	norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3]) + fabs(U_f[U3]) + fabs(Dt * dU[U3]));
 	error_t[0] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_f[U1] - U_i[U1] - Dt * dU[U1]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_f[U2] - U_i[U2] - Dt * dU[U2]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_f[U3] - U_i[U3] - Dt * dU[U3]) / norm);
@@ -327,9 +329,9 @@ __device__ void implicit_rad_solve_init(double *pb, double *U_n, double *U_i, do
 	//Calculate total error at start of iteration
 	norm = (fabs(U_i[UU_RAD]) + fabs(U_f[UU_RAD]) + fabs(Dt * dU[UU_RAD]));
 	error_t[0] += 0.25 * (fabs(U_f[UU_RAD] - U_i[UU_RAD] - Dt * dU[UU_RAD]) / norm);
-	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1_RAD]) + fabs(U_f[U1_RAD]) + fabs(Dt * dU[U1_RAD]));
-	norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2_RAD]) + fabs(U_f[U2_RAD]) + fabs(Dt * dU[U2_RAD]));
-	norm += (fabs(sqrt(geom->gcon[9]) * U_i[U3_RAD]) + fabs(U_f[U3_RAD]) + fabs(Dt * dU[U3_RAD]));
+	norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_f[U1_RAD]) + fabs(Dt * dU[U1_RAD]));
+	norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2_RAD]) + fabs(U_f[U2_RAD]) + fabs(Dt * dU[U2_RAD]));
+	norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3_RAD]) + fabs(U_f[U3_RAD]) + fabs(Dt * dU[U3_RAD]));
 	error_t[0] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_f[U1_RAD] - U_i[U1_RAD] - Dt * dU[U1_RAD]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_f[U2_RAD] - U_i[U2_RAD] - Dt * dU[U2_RAD]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_f[U3_RAD] - U_i[U3_RAD] - Dt * dU[U3_RAD]) / norm);
@@ -374,8 +376,8 @@ __device__ int implicit_rad_solve_PMHD(double *pb, double *U_n, double *U_i, dou
 					pb_new[i] = pb_old[i] + dpb;
 				}
 				else {
-					if(1) dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)))*sqrt(geom->gcov[4 * (i == U1) + 7 * (i == U2) + 9 * (i == U3)]);
-					//else dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * pb_old[i];/// sqrt(geom->gcov[4 * (i == U1) + 7 * (i == U2) + 9 * (i == U3)]);
+					if (fabs(pb_old[i]) < pow(10., -100.)) dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) / sqrt(geom->gcov[4 * (i == U1) + 7 * (i == U2) + 9 * (i == U3)]);
+					else dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * pb_old[i];
 					pb_new[i] = pb_old[i] + dpb;
 				}
 
@@ -501,13 +503,13 @@ __device__ int implicit_rad_solve_PMHD(double *pb, double *U_n, double *U_i, dou
 		source_rad(pb_new, geom, dU_new);
 
 		//Calculate iterated error
-		//norm = (fabs(sqrt(geom->gcon[4])*U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
-		//norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2]) + fabs(U_new[U2]) + fabs(Dt * dU_new[U2]));
-		//norm += (fabs(sqrt(geom->gcon[9]) * U_i[U3]) + fabs(U_new[U3]) + fabs(Dt * dU_new[U3]));
-		norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
+		norm = sqrt(geom->gcon[4])* (fabs(U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
+		norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2]) + fabs(U_new[U2]) + fabs(Dt * dU_new[U2]));
+		norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3]) + fabs(U_new[U3]) + fabs(Dt * dU_new[U3]));
 		error_new[n_iter % 5] = 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
+		norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 
 		//Set correct offset for Jacobian for next iteration
@@ -528,9 +530,9 @@ __device__ int implicit_rad_solve_PMHD(double *pb, double *U_n, double *U_i, dou
 		}
 		norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 		if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
-		//norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1_RAD]) + fabs(U_new[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
-		//norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2_RAD]) + fabs(U_new[U2_RAD]) + fabs(Dt * dU_new[U2_RAD]));
-		//norm += (fabs(sqrt(geom->gcon[9]) * U_i[U3_RAD]) + fabs(U_new[U3_RAD]) + fabs(Dt * dU_new[U3_RAD]));
+		norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_new[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
+		norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2_RAD]) + fabs(U_new[U2_RAD]) + fabs(Dt * dU_new[U2_RAD]));
+		norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3_RAD]) + fabs(U_new[U3_RAD]) + fabs(Dt * dU_new[U3_RAD]));
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
@@ -625,7 +627,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2);
+				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
 					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2);
@@ -732,7 +734,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 			//Estimate conserved entropy using prior primitives
 			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
-			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
 			#if(DO_FONT_FIX)
 			if (flag && (n_iter_fail > 1)) {
 				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
@@ -1174,7 +1176,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2);
+				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
 					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2);
@@ -1281,7 +1283,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			//Estimate conserved entropy using prior primitives
 			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
-			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
 			#if(DO_FONT_FIX)
 			if (flag && (n_iter_fail > 1)) {
 				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
@@ -1454,7 +1456,10 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 						pb_new[i] = pb_old[i] + dpb;
 					}
 					else {
-						dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) / sqrt(geom->gcov[4 * (i == U1_RAD) + 7 * (i == U2_RAD) + 9 * (i == U3_RAD)]);
+						if (fabs(pb_old[i]) < pow(10., -100.)) dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) / sqrt(geom->gcov[4 * (i == U1) + 7 * (i == U2) + 9 * (i == U3)]);
+						else dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * pb_old[i];
+
+						//dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) / sqrt(geom->gcov[4 * (i == U1_RAD) + 7 * (i == U2_RAD) + 9 * (i == U3_RAD)]);
 						pb_new[i] = pb_old[i] + dpb;
 					}
 
@@ -1608,15 +1613,20 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				source_rad(pb_new, geom, dU_new);
 
 				//Calculate iterated error
-				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+				norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_new[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
+				norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2_RAD]) + fabs(U_new[U2_RAD]) + fabs(Dt * dU_new[U2_RAD]));
+				norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3_RAD]) + fabs(U_new[U3_RAD]) + fabs(Dt * dU_new[U3_RAD]));
+
 				error_new[n_iter % 5] = 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
+				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+
 				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 
 				//Set correct offset for Jacobian for next iteration
 				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
-				//else offset = pow(10., -8.);
+				else offset = pow(10., -8.);
 				//fprintf(stderr, "error_i: %f, n_iter: %d, n_iter_fail: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, n_iter_fail, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
 
 				//Calculate total error
@@ -1633,6 +1643,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					#endif
 				}
 				if (do_entropy == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+				norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
+				norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2]) + fabs(U_new[U2]) + fabs(Dt * dU_new[U2]));
+				norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3]) + fabs(U_new[U3]) + fabs(Dt * dU_new[U3]));
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1] - U_i[U1] - Dt * dU_new[U1]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
@@ -1657,7 +1670,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If we've reached the tolerance level in total error or we exceeded more than 20 iterations, stop iterating
-				if ((fabs(error_new[n_iter % 5]) <= 1.e-12) || (n_iter >= 20)) {
+				if ((fabs(error_new[n_iter % 5]) <= 1.e-9) || (n_iter >= 20)) {
 					keep_iterating = 0;
 					//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
 				}

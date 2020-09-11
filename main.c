@@ -99,8 +99,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 20.;
-	DTd = 0.001;
+	DTl = 25.;
+	DTd = 25;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
-			//restart_write(); //do restart dump simultaneous with log
+			restart_write(); //do restart dump simultaneous with log
 			tlog += DTl;
 		}
 
