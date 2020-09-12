@@ -1056,12 +1056,12 @@ double advance_GPU(void)
 	#else
 	for (n = 0; n < n_active; n++){
 		if (prestep_full[nl[n_ord[n]]] == 1){
-			//GPU_fixup(1, n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
+			GPU_fixup(1, n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
 			//GPU_fixuputoprim(1, n_ord[n]);
 			//GPU_fixuputoprim_rad(1, n_ord[n]);
 		}
 		else if (prestep_half[nl[n_ord[n]]] == 1 ){
-			//GPU_fixup(0, n_ord[n], 0.5*dt* (double)block[n_ord[n]][AMR_TIMELEVEL]);
+			GPU_fixup(0, n_ord[n], 0.5*dt* (double)block[n_ord[n]][AMR_TIMELEVEL]);
 			//GPU_fixuputoprim(0, n_ord[n]);
 			//GPU_fixuputoprim_rad(0, n_ord[n]);
 		}

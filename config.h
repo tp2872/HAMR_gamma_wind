@@ -45,7 +45,7 @@ Physical Parameters section
 #define UUMINLIMIT  (1.e-20)
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
-#define BSQORHOMAX (20.*FLOORFACTOR)
+#define BSQORHOMAX (15.*FLOORFACTOR)
 #define BSQOUMAX (750.*FLOORFACTOR)
 #define UORHOMAX (150.*FLOORFACTOR)
 
@@ -91,14 +91,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
+#define NB_1 1
 #define NB_2 1
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 128
-#define BS_3 64
+#define BS_1 512
+#define BS_2 512
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -122,7 +122,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (4)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -135,13 +135,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 4
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 4
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (50)
+#define DUMPFACTOR (800)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
