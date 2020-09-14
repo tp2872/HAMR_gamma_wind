@@ -93,7 +93,7 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 1
 #define NB_2 1
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 512
