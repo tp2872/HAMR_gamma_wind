@@ -700,8 +700,8 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 //XX= P / rho ^ gamma
 //K = rho*uu* XX
 //flux(K)/flux(RHO)=xx
-//log(flux(K) / flux(K))=log(xx)
-//flux(rho)*log(flux(K) / flux(RHO))=rho*uu*log(xx)
+//log(flux(K) / flux(RHO))=log(XX)
+//flux(rho)*log(flux(K) / flux(RHO))=rho*uu*log(XX)
 //S = rho*uu/(gamma-1)*log(XX)
 
 //dS/dT=
