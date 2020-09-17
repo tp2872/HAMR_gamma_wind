@@ -147,6 +147,80 @@ void init()
 	#endif
 }
 
+
+void init_sndwave()
+{
+	int i, j, k;
+	double x, y, z, sth, cth;
+	double ur, uh, up, u, rho;
+	double X[NDIM];
+	struct of_geom geom;
+
+	double myrho, myu, mycs, myv;
+	double delta_rho;
+	double cosa, sina;
+	double delta_ampl = 1e-5; //amplitude of the wave
+	double k_vec_x = 2 * M_PI;  //wavevector
+	double k_vec_y = 0;
+	double k_vec_len = sqrt(k_vec_x * k_vec_x + k_vec_y * k_vec_y);
+	double tfac = 1e4; //factor by which to reduce velocity
+
+	/* some physics parameters */
+	gam = GAMMA;
+
+	/* some numerical parameters */
+	lim = MC;
+	failed = 0;	/* start slow */
+	dt = 1.e-5;
+
+	t = 0.;
+
+
+	myrho = 1.;
+	myu = myrho / (gam * (gam - 1));  //so that mycs is unity
+
+	mycs = sqrt(gam * (gam - 1) * myu / myrho);  //background sound speed
+
+	/* output choices */
+	tf = tfac / mycs;
+
+
+	/* start diagnostic counters */
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+	defcon = 1.;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+		coord(n_ord[n],i, j, k, CENT, X);
+		bl_coord(X, &x, &y, &z);
+
+		//applying the perturbations
+		delta_rho = delta_ampl * cos(k_vec_x * x + k_vec_y * y);
+
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho + delta_rho;
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = (myu + gam * myu * delta_rho / myrho) / (tfac * tfac);
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = (delta_rho / myrho * mycs * k_vec_x / k_vec_len) / tfac;
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = (delta_rho / myrho * mycs * k_vec_y / k_vec_len) / tfac;
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0;
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+		ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+		ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+		ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+	}
+
+	/* enforce boundary conditions */
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+	bound_prim(p,1);
+}
+
+
 void init_thindisk()
 {
 	int i, j, z, n;
