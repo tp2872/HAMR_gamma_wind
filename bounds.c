@@ -53,12 +53,14 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	int i, n, flag;
 	double temp=nstep;
 	if (bound_force == 1) nstep = -1;
+	#if(!PERIODIC1)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim1(p,ps, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim1(ph, psh, n_ord[n]);
 	}
+	#endif
 
-	#if(!TRANS_BOUND)
+	#if(!TRANS_BOUND && !PERIODIC2)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim2(p,ps, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim2(ph,psh, n_ord[n]);
@@ -110,7 +112,7 @@ void bound_prim(double(*restrict prim[NB_LOCAL])[NPR], int bound_force)
 	}
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomP \n");
 
-	#if(TRANS_BOUND && NB_3==1)
+	#if(TRANS_BOUND && NB_3==1 && !PERIODIC2)
 	for (n = 0; n < n_active; n++){
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 || bound_force == 1) bound_prim_trans(p, ps, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) bound_prim_trans(ph, psh, n_ord[n]);

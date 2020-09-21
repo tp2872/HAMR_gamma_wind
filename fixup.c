@@ -49,6 +49,7 @@
 
 void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 {
+	#if(!CARTESIAN)
 	int i, j, z;
 	#pragma omp parallel shared(n,pv, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z)
 	{
@@ -57,6 +58,7 @@ void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 			fixup1zone(i, j, z, n, pv[nl[n]][index_3D(n, i, j, z)]);
 		}
 	}
+	#endif
 }
 
 void fixup1zone( int i, int j, int z, int n, double pv[NPR] ) 

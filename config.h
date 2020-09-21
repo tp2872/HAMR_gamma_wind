@@ -11,7 +11,12 @@ Physical Parameters section
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
+#define SOUND_WAVE 10
+#define ENT_WAVE 11
 #define WHICHPROBLEM TORUS_PROBLEM
+
+/*Set Cartesian grid for test problems*/
+#define CARTESIAN (0)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -91,21 +96,29 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
+#define NB_1 6
 #define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 512
-#define BS_2 512
+#define BS_1 128
+#define BS_2 768
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
+#if(BS_1==1)
+#define REF_1 0
+#else
 #define REF_1 1
+#endif
+#if(BS_2==1)
+#define REF_2 0
+#else
 #define REF_2 1
+#endif
 #if(BS_3==1)
 #define REF_3 0
 #else
@@ -135,13 +148,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 1
+#define AMR_MAXTIMELEVEL 8
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 1
+#define AMR_SWITCHTIMELEVEL 8
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (800)
+#define DUMPFACTOR (300)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -156,7 +169,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 500.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.8)
+#define COUR (0.90)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -164,7 +177,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (1)
+#define PPM (0)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
@@ -202,9 +215,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define POLEFIX 2
 
 /*Set periodic boundary conditions only in the third dimension is supported*/
-#define PERIODIC1 0
-#define PERIODIC2 0
-#if (BS_3*NB3==1)
+#define PERIODIC1 CARTESIAN
+#define PERIODIC2 CARTESIAN
+#if (BS_3*NB_3==1)
 #define PERIODIC3 0
 #else
 #define PERIODIC3 1

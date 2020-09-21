@@ -84,6 +84,8 @@ void set_mag_TDE(void);
 void set_uniform_Bphi(void);
 double lfish_calc(double r);
 void init_rad_pres(double pi[NPR]);
+void init_sndwave();
+void init_entwave();
 
 double global_kappa, aphipow;
 
@@ -137,6 +139,11 @@ void init()
 		break;
 		case BONDI_PROBLEM_2D:
 		init_bondi();
+		case SOUND_WAVE:
+		init_sndwave();
+		case ENT_WAVE:
+		init_entwave();
+
 		break;
 	}
 
@@ -147,11 +154,97 @@ void init()
 	#endif
 }
 
+void init_entwave()
+{
+	int n, i, j, z, k;
+	double x, y, zz, sth, cth;
+	double ur, uh, up, u, rho;
+	double X[NDIM];
+	struct of_geom geom;
+	double rhor;
+
+	double myrho, myu, mycs, myv;
+	double delta_rho;
+	double cosa, sina;
+	double delta_ampl = 1.e-1; //amplitude of the wave
+	double k_vec_x = 2 * M_PI;  //wavevector
+	double k_vec_y = 2 * M_PI;
+	double k_vec_len = sqrt(k_vec_x * k_vec_x + k_vec_y * k_vec_y);
+	double tfac = 1.e3; //factor by which to reduce velocity
+
+	/* some physics parameters */
+	gam = GAMMA;
+
+	/* some numerical parameters */
+	failed = 0;	/* start slow */
+	dt = 1.e-5;
+	t = 0.;
+
+	myrho = 1.;
+	myu = 4. * myrho / (gam * (gam - 1));  //so that mycs is unity
+	mycs = sqrt(gam * (gam - 1) * myu / myrho);  //background sound speed
+	myv = 1.;  //velocity with a magnitude of 1
+
+	/* output choices */
+	tf = tfac;///mycs;
+
+	/* start diagnostic counters */
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+	defcon = 1.;
+
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &x, &y, &zz);
+
+			//applying the perturbations
+			delta_rho = delta_ampl * cos(k_vec_x * x + k_vec_y * y);
+
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho + delta_rho;
+			if (x < .2) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+
+			}
+			else if (x > .8) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+			}
+			else {
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1e4;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+
+			}
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myu / (tfac * tfac);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = myv / tfac;
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = myv/tfac;
+			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = myv/tfac;//cos(k_vec_x*x);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+		}
+	}
+
+	/* enforce boundary conditions */
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+	bound_prim(p, 1);
+}
 
 void init_sndwave()
 {
-	int i, j, k;
-	double x, y, z, sth, cth;
+	int i, j, k, z, n;
+	double x, y, zz, sth, cth;
 	double ur, uh, up, u, rho;
 	double X[NDIM];
 	struct of_geom geom;
@@ -163,7 +256,7 @@ void init_sndwave()
 	double k_vec_x = 2 * M_PI;  //wavevector
 	double k_vec_y = 0;
 	double k_vec_len = sqrt(k_vec_x * k_vec_x + k_vec_y * k_vec_y);
-	double tfac = 1e4; //factor by which to reduce velocity
+	double tfac = 1e3; //factor by which to reduce velocity
 
 	/* some physics parameters */
 	gam = GAMMA;
@@ -193,24 +286,24 @@ void init_sndwave()
 	defcon = 1.;
 
 	for (n = 0; n < n_active; n++) {
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-		coord(n_ord[n],i, j, k, CENT, X);
-		bl_coord(X, &x, &y, &z);
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] -N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1+N3G){
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &x, &y, &zz);
+			//applying the perturbations
+			delta_rho = delta_ampl * cos(k_vec_x * x + k_vec_y * y);
 
-		//applying the perturbations
-		delta_rho = delta_ampl * cos(k_vec_x * x + k_vec_y * y);
-
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho + delta_rho;
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = (myu + gam * myu * delta_rho / myrho) / (tfac * tfac);
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = (delta_rho / myrho * mycs * k_vec_x / k_vec_len) / tfac;
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = (delta_rho / myrho * mycs * k_vec_y / k_vec_len) / tfac;
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0;
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
-		p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
-		ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
-		ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
-		ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+ 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho + delta_rho;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = (myu + gam * myu * delta_rho / myrho) / (tfac * tfac);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = (delta_rho / myrho * mycs * k_vec_x / k_vec_len) / tfac;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = (delta_rho / myrho * mycs * k_vec_y / k_vec_len) / tfac;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+		}
 	}
 
 	/* enforce boundary conditions */
@@ -219,7 +312,6 @@ void init_sndwave()
 	}
 	bound_prim(p,1);
 }
-
 
 void init_thindisk()
 {
@@ -474,8 +566,8 @@ void init_torus()
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-	rin = 6.0;
-	rmax = 12.;
+	rin = 20.;
+	rmax = 41.;
     l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
@@ -1120,8 +1212,8 @@ void set_mag(void){
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
-			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
+			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){		
 				

@@ -69,9 +69,11 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 {
 	X[0] = 0.0;
 	int j_local = j;
+	#if(!CARTESIAN)
 	if (j < 0) j_local = -j - 1;
 	if (j >= N2*pow(1 + REF_2, block[n][AMR_LEVEL2])) j_local = 2 * N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j;
 	if (j == N2*pow(1 + REF_2, block[n][AMR_LEVEL2]) && loc == FACE2) j_local = j;
+	#endif
 	if (loc == FACE1) {
 		X[1] = startx[1] + i*dx[nl[n]][1];
 		X[2] = startx[2] + (j_local + 0.5)*dx[nl[n]][2];
@@ -98,6 +100,7 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 		X[3] = startx[3] + z*dx[nl[n]][3];
 	}
 
+	#if(!CARTESIAN)
 	if (j < 0){
 		X[2] = X[2] + 1;
 		X[2] = -X[2];
@@ -110,7 +113,7 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 		X[2] = 4. - X[2];
 		X[2] = X[2] - 1;
 	}
-
+	#endif
 	return;
 }
 
@@ -126,7 +129,7 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
 	#endif
 
 	// avoid singularity at polar axis
-	#if(COORDSINGFIX)
+	#if(COORDSINGFIX && !CARTESIAN)
 	if (fabs(V[2])<SINGSMALL){
 		if (V[2] >= 0.0) V[2] = SINGSMALL;
 		if (V[2]<0.0)  V[2] = -SINGSMALL;
@@ -144,6 +147,11 @@ void bl_coord(double * restrict X, double * restrict r, double * restrict th, do
 }
 
 void vofx_matthewcoords(double *X, double *V){
+	#if(CARTESIAN)
+	V[1] = X[1];
+	V[2] = X[2];
+	V[3] = X[3];
+	#else
 	V[0] = X[0];
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
 	if (X[1] < Xtrans){
@@ -178,11 +186,17 @@ void vofx_matthewcoords(double *X, double *V){
 		V[2] = sign*(A1* M_PI*Xc + M_PI*(1. - A1)*(A3*pow(Xc, A2) + 0.50 / M_PI*sin(M_PI + 2.*M_PI*(A3*pow(Xc, A2)))));
 	}
 	V[3] = X[3];
+#endif
 }
 
 /* some grid location, dxs */
 void set_points(int n)
 {
+	#if(CARTESIAN)
+	dx[nl[n]][1] = 1. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
+	dx[nl[n]][2] = 1. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
+	dx[nl[n]][3] = 1. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+	#else
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
 	if(Rout<=RTRANS){
 		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
@@ -193,12 +207,13 @@ void set_points(int n)
 	}
 	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+	#endif
 }
 
 void set_gridparam(void) {
 	a = BH_SPIN;
 	Rin = 0.85*(1. + sqrt(1. - a * a));
-	Rout = 50.;
+	Rout = 850.;
 	lim = MC;
 	failed = 0;
 	cour = COUR;
@@ -207,6 +222,11 @@ void set_gridparam(void) {
 	R0 = 0.0;
 	gam = GAMMA;
 
+	#if(CARTESIAN)
+	startx[1] = 0.;
+	startx[2] = 0.;
+	startx[3] = 0.;
+	#else
 	if (N2 != 1) {
 		//2D problem, use full pi-wedge in theta
 		fractheta = 1.0 - 2.0 / ((double)N2)*(TRANS_BOUND == 1);
@@ -220,6 +240,7 @@ void set_gridparam(void) {
 	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
 	startx[2] = -1. + 1.*(1. - fractheta);
 	startx[3] = 0.;
+	#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

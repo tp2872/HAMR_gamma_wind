@@ -3092,6 +3092,7 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 
 //Apply floors to a cell
 __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_state* q) {
+	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
 	double pf_prefloor[NPR_U], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
 	int dofloor=0, flag = 0, m, k;
@@ -3235,6 +3236,9 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 	}
 
 	return flag;
+	#else 
+	return(0);
+	#endif
 }
 
 
@@ -4223,8 +4227,8 @@ __device__  double slope_lim(double y1, double y2, double y3, int dir)
 {
 	double Dqm, Dqp, Dqc, s;
 	/* woodward, or monotonized central, slope limiter */
-	Dqm = (1.5)*(y2 - y1);
-	Dqp = (1.5)*(y3 - y2);
+	Dqm = (2.0)*(y2 - y1);
+	Dqp = (2.0)*(y3 - y2);
 	Dqc = 0.5*(y3 - y1);
 	s = Dqm*Dqp;
 	if (s <= 0.) return 0.;
@@ -4747,20 +4751,12 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 		if (flag == 1) {
 			for (k = UU_RAD; k <= U3_RAD; k++) {
-				//#if(HLLF)
-				//F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad));
-				//#else
 				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k])));
-				//#endif
 			}
 		}
 		else {
 			for (k = UU_RAD; k <= U3_RAD; k++) {
-				//#if(HLLF)
-				//F[k * (ksize)+global_id] = (cmax_rad * temp1[k] + cmin_rad * temp3[k] - cmax_rad * cmin_rad * (temp4[k] - temp2[k])) / (cmax_rad + cmin_rad);
-				//#else
 				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
-				//#endif
 			}
 		}
 		#else
@@ -5205,10 +5201,12 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 			+ (-F1[B2 * (ksize)+global_id] - (dE_LEFT_32_1 * (double)(F1[RHO * (ksize)+global_id] <= 0.0) + dE_LEFT_32_2 * (double)(F1[RHO * (ksize)+global_id] > 0.0)))
 			+ (-F1[B2 * (ksize)+global_id - D2 * jsize] + (dE_RIGHT_32_1 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] <= 0.0) + dE_RIGHT_32_2 * (double)(F1[RHO * (ksize)+global_id - D2 * jsize] > 0.0))));
 
+		#if(!CARTESIAN)
 		if ((POLE_1 == 1 && jcurr == N2G) || (POLE_2 == 1 && jcurr == BS_2 + N2G)) {
 			emf[3 * (ksize)+global_id] = 0.;
 			emf[1 * (ksize)+global_id] += -0.5 * 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
+		#endif
 	}
 }
 

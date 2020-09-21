@@ -99,8 +99,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 25.;
-	DTd = 5;
+	DTl = 100.;
+	DTd = 25.;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;
@@ -131,17 +131,19 @@ int main(int argc, char *argv[])
 		if (failed) break;
 
 		//Every swithchtime read out data from GPU and set boundary
-		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
+		if ((nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0 && TIMER) || (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) || (t >= tdump_reduced && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0 && DUMP_SMALL)){
 			end1 = get_wall_time();
 			#if (GPU_ENABLED==1)
 			for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 			#endif
 			bound_prim(p, 1);
+			#if(!CARTESIAN)
 			if (dt > 0.5) break;
+			#endif
 		}
 
 		//Refine every TREF
-		if (t >= tref && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tref && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			set_timelevel(1);
 			check_refcrit();
 			#if (GPU_ENABLED==1)
@@ -152,13 +154,13 @@ int main(int argc, char *argv[])
 		}
 
 		//Put out log file and rdump file
-		if (t >= tlog && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			restart_write(); //do restart dump simultaneous with log
 			tlog += DTl;
 		}
 
 		/* Put out dump file*/
-		if (t >= tdump && nstep % (DUMPFACTOR * AMR_SWITCHTIMELEVEL) == 0) {
+		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
 			tdump += DTd;
 		}	
@@ -197,6 +199,10 @@ int main(int argc, char *argv[])
 	//cuProfilerStop();
 
 	/* do final diagnostics */
+	#if (GPU_ENABLED==1)
+	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
+	#endif
+	diag(DUMP_OUT);
 	diag(FINAL_OUT) ;
 
 	/*Close GPU*/
@@ -414,7 +420,7 @@ void alloc_bounds_CPU(int n){
 		ref3_2s = 0;
 		ref3_4s = 0;
 	}
-	
+
 	send1[nl[n]] = (double *)malloc(NG *(1 + ref1_1)*(1 + ref3_1)* (NPR + 3)*(BS_1 / (1 + ref1_1) + 2 * N1G)*(BS_3 / (1 + ref3_1) + 2 * N3G) * sizeof(double));
 	send2[nl[n]] = (double *)malloc(NG *(1 + ref2_2)*(1 + ref3_2)* (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G) * sizeof(double));
 	send3[nl[n]] = (double *)malloc(NG *(1 + ref1_3)*(1 + ref3_3)* (NPR + 3)*(BS_1 / (1 + ref1_3) + 2 * N1G)*(BS_3 / (1 + ref3_3) + 2 * N3G) * sizeof(double));

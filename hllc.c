@@ -543,7 +543,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 					ndt_thread = dtij;
 				}
 
-				#if(!TRANS_BOUND)
+				#if(!TRANS_BOUND && !CARTESIAN)
 				if (dir == 2 && (j == 0 || j == N2 * pow(1 + REF_2, block[n][AMR_LEVEL]))) {
 					//#pragma ivdep
 					PLOOP F[nl[n]][ind0][k] = 0.;

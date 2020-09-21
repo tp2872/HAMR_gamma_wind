@@ -47,6 +47,14 @@
 /* insert metric here */
 void gcov_func(double *X, double gcovp[][NDIM])
 {
+	#if(CARTESIAN)
+	int j, k;
+	DLOOP gcovp[j][k] = 0.;
+	gcovp[0][0] = -1.;
+	gcovp[1][1] = 1.;
+	gcovp[2][2] = 1.;
+	gcovp[3][3] = 1.;
+	#else
 	int i, j, k, l;
 	double sth, cth, s2, rho2, sph, cph;
 	double r, th, phi;
@@ -248,6 +256,7 @@ void gcov_func(double *X, double gcovp[][NDIM])
 			}
 		}
 	}
+#endif
 }
 
 /* assumes gcov has been set first; returns determinant */
