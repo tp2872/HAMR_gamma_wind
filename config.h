@@ -22,7 +22,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Gibwa's refinement criterion*/
-#define REFINE_GIBWA (0)
+#define REFINE_GIBWA (1)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
@@ -96,17 +96,17 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 6
-#define NB_2 1
+#define NB_1 4
+#define NB_2 3
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 768
+#define BS_1 32
+#define BS_2 32
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
-#define N_LEVELS_3D 1
+#define N_LEVELS_3D 2
 
 /*Set in which dimensions to refine for AMR. Do not change, deprecated!*/
 #if(BS_1==1)
@@ -169,15 +169,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 500.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.90)
+#define COUR (0.80)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
-#define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
-#define PPM (0)
+#define PPM (1)
 #define PPM_FLATTENER (0)
 
 /*Enable/disable van Leer spatial reconstruction. Never enable both*/
@@ -274,7 +274,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 //Abundace constants
 #define Z_AB (0.02)

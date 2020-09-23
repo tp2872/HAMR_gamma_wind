@@ -585,124 +585,169 @@ void set_AMR(void){
 		else L_1DMAX = MY_MIN((ceil)(-0.001+log((double)((NB_2 - 1) - j0) + 1.0) / log(2.)), N_LEVELS_1D);
 
 		//x-y plane
-		if (i + 1 > i_max || j - 1 < 0){
-			if ((i + 1 > i_max) && PERIODIC1) i1 = 0;
+		//Corn 1
+		if (i + 1 > i_max){
+			if (PERIODIC1) i1 = 0;
 			else i1 = -1;
-			if (((j - 1) < 0) && PERIODIC2) j1 = j_max;
-			else j1 = -1; 
 		}
-		else{
-			i1 = i + 1;
-			j1 = j - 1;
+		else i1 = i + 1;
+		if (j - 1 < 0) {
+			if (PERIODIC2) j1 = j_max;
+			else j1 = -1;
 		}
+		else  j1 = j - 1;
 		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR2] >= 0) block[n][AMR_CORN1] = NB;
 		else block[n][AMR_CORN1] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
-		if (i + 1 > i_max || j + 1 > j_max){
-			if ((i + 1 > i_max) && PERIODIC1) i1 = 0;
+		//Corn 2
+		if (i + 1 > i_max){
+			if (PERIODIC1) i1 = 0;
 			else i1 = -1;
-			if ((j + 1 > j_max) && PERIODIC2) j1 = 0;
+		}
+		else i1 = i + 1;
+		if (j + 1 > j_max) {
+			if (PERIODIC2) j1 = 0;
 			else j1 = -1;
 		}
-		else{
-			i1 = i + 1;
-			j1 = j + 1;
-		}
+		else j1 = j + 1;
 		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR2] >= 0) block[n][AMR_CORN2] = NB;
 		else block[n][AMR_CORN2] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
-		if (i - 1 < 0 || j + 1 > j_max){
-			if (((i - 1) < 0) && PERIODIC1) i1 = i_max;
+		//Corn 3
+		if (i - 1 < 0 ){
+			if (PERIODIC1) i1 = i_max;
 			else i1 = -1;
-			if ((j + 1 > j_max) && PERIODIC2) j1 = 0;
+		}
+		else i1 = i - 1;
+		if (j + 1 > j_max) {
+			if (PERIODIC2) j1 = 0;
 			else j1 = -1;
 		}
-		else{
-			i1 = i - 1;
-			j1 = j + 1;
-		}
+		else j1 = j + 1;
 		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR4] >= 0) block[n][AMR_CORN3] = NB;
 		else block[n][AMR_CORN3] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
-		if (i - 1 < 0 || j - 1 < 0){
-			if (((i - 1) < 0) && PERIODIC1) i1 = i_max;
+		//Corn 4
+		if (i - 1 < 0){
+			if (PERIODIC1) i1 = i_max;
 			else i1 = -1;
-			if (((j - 1) < 0) && PERIODIC2) j1 = j_max;
+		}
+		else i1 = i - 1;
+		if (j - 1 < 0) {
+			if (PERIODIC2) j1 = j_max;
 			else j1 = -1;
 		}
-		else{
-			i1 = i - 1;
-			j1 = j - 1;
-		}
+		else j1 = j - 1;
 		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR4] >= 0) block[n][AMR_CORN4] = NB;
 		else block[n][AMR_CORN4] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i1, j1, z);
 
 		//x-z plane
-		i1 = i + 1;
-		z1 = z - 1;
-		if ((i + 1 > i_max) && PERIODIC1) i1 = 0;
-		else i1 = -1;
-		if (z - 1 < 0) z1 = z_max;
+		//Corn 5
+		if (i + 1 > i_max) {
+			if (PERIODIC1) i1 = 0;
+			else i1 = -1;
+		}
+		else i1 = i + 1;
+		if (z - 1 < 0) {
+			if (PERIODIC3) z1 = z_max;
+			else z1 = -1;
+		}
+		else z1 = z - 1;
 		block[n][AMR_CORN5] = AMR_coord_linear2(level, j0, i1, j, z1);
 
-		i1 = i + 1;
-		z1 = z + 1;
-		if ((i + 1 > i_max) && PERIODIC1) i1 = 0;
-		else i1 = -1;
-		if ((z + 1 > z_max) && PERIODIC3) z1 = 0;
-		else z1 = -1;		
+		//Corn 6
+		if (i + 1 > i_max) {
+			if (PERIODIC1) i1 = 0;
+			else i1 = -1;
+		}
+		else i1 = i + 1;
+		if (z + 1 > z_max) {
+			if (PERIODIC3) z1 = 0;
+			else z1 = -1;
+		}
+		else z1 = z + 1;
 		block[n][AMR_CORN6] = AMR_coord_linear2(level, j0, i1, j, z1);
 
-		i1 = i - 1;
-		z1 = z + 1;
-		if (((i - 1) < 0) && PERIODIC1) i1 = i_max;
-		else i1 = -1;		
-		if ((z + 1 > z_max) && PERIODIC3) z1 = 0;
-		else z1 = -1;
+		//Corn 7
+		if (i - 1 < 0) {
+			if (PERIODIC1) i1 = i_max;
+			else i1 = -1;
+		}
+		else i1 = i - 1;
+		if (z + 1 > z_max) {
+			if ( PERIODIC3) z1 = 0;
+			else z1 = -1;
+		}
+		else z1 = z + 1;
 		block[n][AMR_CORN7] = AMR_coord_linear2(level, j0, i1, j, z1);
 
-
-		i1 = i - 1;
-		z1 = z - 1;
-		if (((i - 1) < 0) && PERIODIC1) i1 = i_max;
-		else i1 = -1;
-		if (z - 1 < 0) z1 = z_max;
+		//Corn 8
+		if (i - 1 < 0) {
+			if (PERIODIC1) i1 = i_max;
+			else i1 = -1;
+		}
+		else i1 = i - 1;
+		if (z - 1 < 0) {
+			if (PERIODIC3) z1 = z_max;
+			else z1 = -1;
+		}
+		else z1 = z - 1;
 		block[n][AMR_CORN8] = AMR_coord_linear2(level, j0, i1, j, z1);
 
 		//y-z plane
-		j1 = j - 1;
-		z1 = z + 1;
-		if (((j - 1) < 0) && PERIODIC2) j1 = j_max;
-		else j1 = -1;
-		if ((z + 1 > z_max) && PERIODIC3) z1 = 0;
-		else z1 = -1;
+		//Corn 9
+		if (j - 1 < 0) {
+			if (PERIODIC2) j1 = j_max;
+			else j1 = -1;
+		}
+		else j1 = j - 1;
+		if (z + 1 > z_max) {
+			if (PERIODIC3) z1 = 0;
+			else z1 = -1;
+		}
+		else z1 = z + 1;
 		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR5] >= 0) block[n][AMR_CORN9] = NB;
 		else block[n][AMR_CORN9] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
-		j1 = j + 1;
-		z1 = z + 1;
-		if ((j + 1 > j_max) && PERIODIC2) j1 = 0;
-		else j1 = -1;
-		if ((z + 1 > z_max) && PERIODIC3) z1 = 0;
-		else z1 = -1;
+		//Corn 10
+		if (j + 1 > j_max) {
+			if (PERIODIC2) j1 = 0;
+			else j1 = -1;
+		}
+		else j1 = j + 1;
+		if (z + 1 > z_max) {
+			if (PERIODIC3) z1 = 0;
+			else z1 = -1;
+		}
+		else z1 = z + 1;
 		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR5] >= 0) block[n][AMR_CORN10] = NB;
 		else block[n][AMR_CORN10] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
-		j1 = j + 1;
-		z1 = z - 1;
-		if ((j + 1 > j_max) && PERIODIC2) j1 = 0;
-		else j1 = -1;
-		if (((z - 1) < 0) && PERIODIC3) z1 = z_max;
-		else z1 = -1;
+		//Corn 11
+		if (j + 1 > j_max) {
+			if (PERIODIC2) j1 = 0;
+			else j1 = -1;
+		}
+		else j1 = j + 1;
+		if (z - 1 < 0) {
+			if (PERIODIC3) z1 = z_max;
+			else z1 = -1;
+		}
+		else z1 = z - 1;
 		if (block[n][AMR_NBR3] == NB && block[n][AMR_NBR6] >= 0) block[n][AMR_CORN11] = NB;
 		else block[n][AMR_CORN11] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 
-		j1 = j - 1;
-		z1 = z - 1;
-		if (((j - 1) < 0) && PERIODIC2) j1 = j_max;
-		else j1 = -1;
-		if (((z - 1) < 0) && PERIODIC3) z1 = z_max;
-		else z1 = -1;
+		//Corn 12
+		if (j - 1 < 0) {
+			if (PERIODIC2) j1 = j_max;
+			else j1 = -1;
+		}
+		else j1 = j - 1;
+		if (z - 1 < 0) {
+			if (PERIODIC3) z1 = z_max;
+			else z1 = -1;
+		}
+		else z1 = z - 1;
 		if (block[n][AMR_NBR1] == NB && block[n][AMR_NBR6] >= 0) block[n][AMR_CORN12] = NB;
 		else block[n][AMR_CORN12] = AMR_coord_linear2(level, (int)(j1 / pow(1 + REF_2, block[n][AMR_LEVEL2])), i, j1, z1);
 	}
