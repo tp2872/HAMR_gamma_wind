@@ -803,7 +803,26 @@ double advance_GPU(void)
 			GPU_Utoprim_M1_0(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
 		}
 	}
+	#if(GPU_OPENMP)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		}
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim1(0, n_ord[n]);
+	}
+	#if(!TRANS_BOUND)
+	#if(GPU_OPENMP)
+	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
+	#endif
+	for (n = 0; n < n_active; n++) {
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
+		}
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) GPU_boundprim2(0, n_ord[n]);
+	}
+	#endif
+	#endif
+
 	#if(N3G>0)		
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
