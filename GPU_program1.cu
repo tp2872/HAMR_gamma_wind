@@ -157,7 +157,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
-			if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max,0 , 0);
+			//if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max,0 , 0);
 
 			//If error is still below set margin, accept solution, otherwise try UMHD
 			//if (error_t > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -166,7 +166,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			//if (error_t > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PMHD with entropy
-			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
+			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
 			
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -223,7 +223,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			//if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try UMHD
 			//if (error_t > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -232,7 +232,7 @@ __device__ void implicit_rad_solve(double *pb, double *U_n, double *U_i, double 
 			//if (error_t > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PMHD with entropy
-			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
+			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);		
@@ -3457,6 +3457,25 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 	double lambda = om_kepler*ph[UU] * sqrt(Y - 1. + fabs(Y - 1.));
 	double int_energy = q->ucov[0] * q->ucon[0] * ph[UU];
 	double bsq = dot(q->bcon,q->bcov);
+	#if(WHICHPROBLEM==TRUNC_PROBLEM)
+	if (r > 40.) {
+		if (fabs(q->ucov[0] * lambda) * Dt < 0.1 * fabs(int_energy)) {
+			dU[UU] += -q->ucov[0] * lambda;
+			dU[U1] += -q->ucov[1] * lambda;
+			dU[U2] += -q->ucov[2] * lambda;
+			dU[U3] += -q->ucov[3] * lambda;
+			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) * (GAMMA - 1.) * lambda;
+		}
+		else {
+			lambda *= (0.1 * fabs(int_energy)) / (fabs(q->ucov[0] * lambda) * Dt);
+			dU[UU] += -q->ucov[0] * lambda;
+			dU[U1] += -q->ucov[1] * lambda;
+			dU[U2] += -q->ucov[2] * lambda;
+			dU[U3] += -q->ucov[3] * lambda;
+			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) * (GAMMA - 1.) * lambda;
+		}
+	}
+	#else
 	if (bsq / ph[RHO]<1. || r<10.){
 		if (fabs(q->ucov[0] * lambda)*Dt<0.1*fabs(int_energy)){
 			dU[UU] += -q->ucov[0] * lambda;
@@ -3474,6 +3493,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) *(GAMMA - 1.) * lambda;
 		}
 	}
+	#endif
 }
 
 /* MHD stress tensor, with first index up, second index down */

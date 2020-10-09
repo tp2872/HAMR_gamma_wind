@@ -13,8 +13,8 @@ Physical Parameters section
 #define THIN_PROBLEM 9
 #define SOUND_WAVE 10
 #define ENT_WAVE 11
-#define TORUS_PROBLEM_RAZIEH 12
-#define WHICHPROBLEM TORUS_PROBLEM_RAZIEH
+#define TRUNC_PROBLEM 12
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (0)
@@ -23,7 +23,7 @@ Physical Parameters section
 #define REFINE_JET (0)
 
 /*Gibwa's refinement criterion*/
-#define REFINE_GIBWA (1)
+#define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
 #define GAMMA	(5./3.)
@@ -31,7 +31,7 @@ Physical Parameters section
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILT_ANGLE (45.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -39,7 +39,7 @@ Physical Parameters section
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (0)
-#define H_OVER_R (0.1)
+#define H_OVER_R (0.05)
 
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
@@ -97,14 +97,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 3
-#define NB_3 2
+#define NB_1 2
+#define NB_2 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 44
-#define BS_3 64
+#define BS_1 128
+#define BS_2 128
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -136,7 +136,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -149,10 +149,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (300)
