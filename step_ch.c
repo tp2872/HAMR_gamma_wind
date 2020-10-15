@@ -985,10 +985,10 @@ double advance_GPU(void)
 			#if(N_GPU>1)
 			cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 			#endif	
-			flux_rec1(F1, BufferF1_1, n_ord[n], 1);
-			flux_rec2(F2, BufferF2_1, n_ord[n], 1);
+			//flux_rec1(F1, BufferF1_1, n_ord[n], 1);
+			//flux_rec2(F2, BufferF2_1, n_ord[n], 1);
 			#if(N3G>0)
-			flux_rec3(F3, BufferF3_1, n_ord[n], 1);
+			//flux_rec3(F3, BufferF3_1, n_ord[n], 1);
 			#endif
 		}
 		set_iprobe(1, &flag);
@@ -1030,7 +1030,7 @@ double advance_GPU(void)
 	#endif
 
 	rc = 0;
-	GPU_consttransport_bound();
+	//GPU_consttransport_bound();
 	if (rc != 0)fprintf(stderr, "Error in MPI in boundcomE \n");
 
 	#if(GPU_OPENMP)
