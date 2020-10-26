@@ -1908,7 +1908,7 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
 	int i, returnval = 0;
-	 
+
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
 	raise(Qcov, gcon, Qcon);
 
@@ -1938,11 +1938,10 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 		prim[0] = 1.e-150;
 		//if (y > 1. || isnan(y)) returnval = 1;
 		y = 0.;
-		returnval = 2;
 	}
-	if (prim[0] < 0 && lim==BASIC) {
+	if (prim[0] < 0) {
 		prim[0] = 0.5 * fabs(prim[0]);
-		Qdotn *= -0.5;
+		Qdotn *= -1.0;
 	}
 	if (y <= 0.) {
 		for (i = 1; i < 4; i++) prim[i] = 0.0;
@@ -1954,10 +1953,8 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 		prim[2] = 0.;
 		prim[3] = 0.;
 		gammasq = 1.0;
-		y = 0.;
-		returnval = 2;
 
-		/*// Get Ebar and p_rad as usual
+		// Get Ebar and p_rad as usual
 		pressure = -Qdotn / (4. * gammasq - 1.);
 		prim[0] = pressure * 3.; // Erad = 3*p_rad
 
@@ -1968,7 +1965,7 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 			}
 		}
 		y = 0.;
-		returnval = 0;*/
+		returnval = 0;
 	}
 	if (y > y_max) {
 		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
@@ -1988,7 +1985,7 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad		
-			returnval = 1;
+			returnval = 0;
 		}
 	}
 	return(returnval);
