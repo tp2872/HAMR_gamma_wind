@@ -51,6 +51,7 @@
  *
  */
 #include <float.h>
+#include <complex.h>
 #include "decs_MPI.h"
 
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -163,20 +164,7 @@ void init()
 void init_entwave()
 {
 	int n, i, j, z, k;
-	double x, y, zz, sth, cth;
-	double ur, uh, up, u, rho;
-	double X[NDIM];
 	struct of_geom geom;
-	double rhor;
-
-	double myrho, myu, mycs, myv;
-	double delta_rho;
-	double cosa, sina;
-	double delta_ampl = 1.e-1; //amplitude of the wave
-	double k_vec_x = 2 * M_PI;  //wavevector
-	double k_vec_y = 2 * M_PI;
-	double k_vec_len = sqrt(k_vec_x * k_vec_x + k_vec_y * k_vec_y);
-	double tfac = 1.e3; //factor by which to reduce velocity
 
 	/* some physics parameters */
 	gam = GAMMA;
@@ -186,14 +174,6 @@ void init_entwave()
 	dt = 1.e-5;
 	t = 0.;
 
-	myrho = 1.;
-	myu = 4. * myrho / (gam * (gam - 1));  //so that mycs is unity
-	mycs = sqrt(gam * (gam - 1) * myu / myrho);  //background sound speed
-	myv = 1.;  //velocity with a magnitude of 1
-
-	/* output choices */
-	tf = tfac;///mycs;
-
 	/* start diagnostic counters */
 	dump_cnt = 0;
 	dump_cnt_reduced = 0;
@@ -201,49 +181,124 @@ void init_entwave()
 	rdump_cnt = 0;
 	defcon = 1.;
 
+	double X[NDIM];
+
+	// Mean state
+	double rho0 = 1.;
+	double u0 = 1.; // TODO set U{n} for boosted entropy
+	double B10 = 1.; // This is set later, see below
+	double B20 = 0.;
+	double B30 = 0.;
+
+	// Wavevector
+	double k1 = 2. * M_PI;
+	double k2 = 0.;// 2. * M_PI;
+	double k3 = 0.;// 2. * M_PI;
+	double amp = 1.e-4;
+
+	// "Faux-2D" planar waves direction
+	// Set to 0 for "full" 3D wave
+	int dir = 1;
+	int nmode = 0;
+
+	double omega, drho, du, du1, du2, du3, dB1, dB2, dB3;
+
+	// Default value 0
+	omega = 0.;
+	drho = 0.;
+	du = 0.;
+	du1 = 0.;
+	du2 = 0.;
+	du3 = 0.;
+	dB1 = 0.;
+	dB2 = 0.;
+	dB3 = 0.;
+
+	// Eigenmode
+	if (nmode == 0) { // Entropy
+		omega = 2. * M_PI / 5.; // To get tf
+		drho = 1.;
+		du = 0.;
+		du1 = 0.;
+		du2 = 0.;
+		du3 = 0.;
+		dB1 = 0.;
+		dB2 = 0.;
+		dB3 = 0.;
+	}
+	else if (nmode == 1) { // Slow
+		omega = 2.74220688339;
+		drho = 0.580429492464;
+		du = 0.773905989952;
+		du1 = -0.253320198552;
+		du2 = 0.;
+		du3 = 0.;
+		dB1 = 0.;
+		dB2 = 0.;
+		dB3 = 0.;
+	}
+	else if (nmode == 2) { // Alfven
+		omega = 3.44144232573;
+		drho = 0.;
+		du = 0.;
+		du1 = 0.;
+		du2 = 0.480384461415;
+		du3 = 0.;
+		dB1 = 0.;
+		dB2 = 0.877058019307;
+		dB3 = 0.;
+	}
+	else { // Fast
+		omega = 3.44144232573;
+		drho = 0.;
+		du = 0.;
+		du1 = 0.;
+		du2 = 0.;
+		du3 = 0.480384461415;
+		dB1 = 0.;
+		dB2 = 0.;
+		dB3 = 0.877058019307;
+	}
+
+	// Override tf and the dump and log intervals
+	tf = 2. * M_PI / fabs(omega);
+	fprintf(stderr,"tf: %f \"n", tf);
 
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
 			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &x, &y, &zz);
 
-			//applying the perturbations
-			delta_rho = delta_ampl * cos(k_vec_x * x + k_vec_y * y);
+			double mode;
+			//if (dir == 1) mode = amp * cos(k2 * X[2] + k3 * X[3]);
+			//else if (dir == 2) mode = amp * cos(k1 * X[1] + k3 * X[3]);
+			//else if (dir == 3) mode = amp * cos(k1 * X[1] + k3 * X[2]);
+			//else 
+				mode = amp * cos(k1 * X[1] + k2 * X[2] + k3 * X[3]);
 
-			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho + delta_rho;
-			if (x < .2) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho0 + drho * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u0 + du * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = du1 * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = du2 * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = du3 * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = B10 + dB1 * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = B20 + dB2 * mode;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = B30 + dB3 * mode;
 
-			}
-			else if (x > .8) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1.;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
-			}
-			else {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = 1e4;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+			coord(n_ord[n], i, j, z, FACE1, X);
+			mode = amp * cos(k1 * X[1] + k2 * X[2] + k3 * X[3]);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = B10 + dB1 * mode;
 
-			}
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myu / (tfac * tfac);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = myv / tfac;
-			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = myv/tfac;
-			//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = myv/tfac;//cos(k_vec_x*x);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			coord(n_ord[n], i, j, z, FACE2, X);
+			mode = amp * cos(k1 * X[1] + k2 * X[2] + k3 * X[3]);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = B20 + dB2 * mode;
 
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+			coord(n_ord[n], i, j, z, FACE3, X);
+			mode = amp * cos(k1 * X[1] + k2 * X[2] + k3 * X[3]);
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = B30 + dB3 * mode;
 		}
 	}
 
 	/* enforce boundary conditions */
-	for (n = 0; n < n_active; n++) {
-		fixup(p, n_ord[n]);
-	}
 	bound_prim(p, 1);
 }
 
@@ -1533,6 +1588,7 @@ void set_mag(void){
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
 				#else
+				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(r / 20. * sin(th), 3.) * exp(-r / 400.) - 0.2;// pow(q, 2.0) * pow(r, 3.0); //MAD
 				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = q;// pow(q, 2.0) * pow(r, 3.0); //MAD
 				#endif
 			}

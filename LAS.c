@@ -11,6 +11,24 @@ void set_timelevel(int tag){
 	nz = NB_3;
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
+	#if(CARTESIAN)
+	if (nstep > 0) {
+		for (n = 0; n < n_active; n++) {
+			block[n_ord[n]][AMR_TIMELEVEL] = 1;
+			for (i = i_max; i >= 0; i--) {
+				if (N_LEVELS_3D>1) {
+					if (block[n_ord[n]][AMR_LEVEL] == 0)block[n_ord[n]][AMR_TIMELEVEL] = 2;
+					else block[n_ord[n]][AMR_TIMELEVEL] = 1;
+					break;
+				}
+				else {
+					if (block[n_ord[n]][AMR_COORD1] == 1 && block[n_ord[n]][AMR_COORD2] == 1 && (block[n_ord[n]][AMR_COORD3] == 1 || D3 == 0))  block[n_ord[n]][AMR_TIMELEVEL] = 2;
+					else block[n_ord[n]][AMR_TIMELEVEL] = 1;
+				}
+			}
+		}
+	}
+	#else
 	if (nstep > 0){
 		for (n = 0; n < n_active; n++){
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;
@@ -22,6 +40,7 @@ void set_timelevel(int tag){
 			}
 		}
 	}
+	#endif
 
 	//Send timelevel of all blocks to all nodes only when load balancing, otherwise send only to neighbouring nodes/blocks
 	if (tag) {

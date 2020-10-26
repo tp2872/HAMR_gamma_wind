@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 100.;
+	DTl = 50.;// 100.;
 	DTd = 25.;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
@@ -1305,11 +1305,11 @@ int index_3D(int n, int i, int j, int z)
 }
 int index_2D(int n, int i, int j, int z)
 {
-	//#if(!NSY)
+	#if(!NSY)
 	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G) + ((j - N2_GPU_offset[n]) + N2G));
-	//#else
-	//return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(BS_3 + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
-	//#endif
+	#else
+	return(((i - N1_GPU_offset[n]) + N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + ((j - N2_GPU_offset[n]) + N2G)*(BS_3 + 2 * N3G) + ((z - N3_GPU_offset[n]) + N3G));
+	#endif
 }
 
 /*****************************************************************/
@@ -1352,8 +1352,6 @@ void set_grid(int n)
 			if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
 			zsize = (int)pow(2.0, (double)zlevel);
 			zoffset = (z - N3_GPU_offset[n]) % zsize;
-			zsize = 1;
-			zoffset = 0;
 
 			/* zone-centered */
 			coord(n, i, j, z - zoffset + zsize / 2, CENT, X);

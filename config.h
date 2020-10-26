@@ -26,12 +26,12 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(4./3.)
+#define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
-#define TILT_ANGLE (0.0)
+#define TILT_ANGLE (45.0)
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -102,9 +102,9 @@ Numerical Parameters section
 #define NB_3 2
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 44
-#define BS_3 96
+#define BS_1 60
+#define BS_2 48
+#define BS_3 72
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -149,13 +149,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 32
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 32
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (300)
+#define DUMPFACTOR (20)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -170,7 +170,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define TREF 500.
 
 /*Select the courant factor for the timestep*/
-#define COUR (0.80)
+#define COUR (0.8)
 
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
@@ -207,7 +207,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
-#define NSY (1)
+#define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
 #define TRANS_BOUND (1*((BS_3*NB_3)>1))
@@ -275,7 +275,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 //Abundace constants
 #define Z_AB (0.02)

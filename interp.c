@@ -442,7 +442,7 @@ void prolong_grid(void){
 
 							psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = B3_prolong(n_ord[n], i, j, z, 0, 0, 0.0, psh, b1_1, b1_2, b1_3, b1_4, b1_5, b1_6, b1_7, b1_8,
 								b2_1, b2_2, b2_3, b2_4, b2_5, b2_6, b2_7, b2_8, b3_1, b3_2, b3_3, b3_4, b3_5, b3_6, b3_7, b3_8, 1, 1, 1, 1, 1, 1000000000);
-							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] * psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3];
+							ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3] = 1. / gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + u)][FACE3] * psh[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + u)][3];
 						}
 					}
 				}
