@@ -13,7 +13,7 @@ Physical Parameters section
 #define THIN_PROBLEM 9
 #define POSTMERGER_PROBLEM 10
 
-#define WHICHPROBLEM POSTMERGER_PROBLEM
+#define WHICHPROBLEM TORUS_PROBLEM
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -39,6 +39,8 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
+#define DOHELM_KTOT (0)
+#define KTOT_FACTOR (1e-5)
 #define DONUCLEAR (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
@@ -56,10 +58,10 @@ Physical Parameters section
     #define UUMINLIMIT  (1.e-40)
 #endif
 #elif ((DOHELM || DONUCLEAR) && (WHICHPROBLEM == TORUS_PROBLEM))
-    #define RHOMIN    (1.e-7)
-    #define UUMIN    (1.e-9)
-    #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT  (1.e-20)
+    #define RHOMIN    (1.e-14)
+    #define UUMIN    (1.e-16)
+    #define RHOMINLIMIT (1.e-30)
+    #define UUMINLIMIT  (1.e-30)
 #else
     #define RHOMIN	(1.e-7)
     #define UUMIN	(1.e-9)
@@ -118,12 +120,12 @@ Numerical Parameters section
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
 #define NB_2 4
-#define NB_3 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
-#define BS_3 64
+#define BS_1 64
+#define BS_2 64
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -147,7 +149,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (3)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -160,10 +162,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 16
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (20)
@@ -286,7 +288,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
 
 /* whether or not to rescale primitive variables before interpolating them for flux/BC's. Is not implemented on GPU and dperacated/unlikely to work correctly on CPU */
 #define RESCALE     (0)
@@ -625,15 +627,25 @@ Variable Inversion Section
 /*************************************************************************
 Section with EOS constants
 *************************************************************************/
-#define EOSIMAX (211)
-#define EOSJMAX (71)
-#define eos_tlo (4.0)
-#define eos_dlo (-10.0)
+#define EOSIMAX (541)   
+#define EOSJMAX (201)   
+// Log10 of EOS quantity limits
+#define eos_tlo (3.0)   
+#define eos_dlo (-12.0) 
+#define eos_thi (13.0)
+#define eos_dhi (15.0)
+// EOS quantity limits
+#define eos_temp_low (1e3)
+#define eos_temp_up (1e13)
+#define eos_dens_low (1e-12)
+#define eos_dens_up (1e15)
+
 #define MAXLEN (1024)
 
 // tolerances 
 #define EOS_TEMP_TOL (1.e-5)
 #define EOS_TOL (1.e-10)
+#define EOS_ITERATIONS (50)
 
 // becomes true if variables for Aprox13t network are set
 #define bAprox13t (0)

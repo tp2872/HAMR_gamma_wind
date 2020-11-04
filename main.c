@@ -75,8 +75,6 @@ int main(int argc, char *argv[])
 
 	#if (DOHELM)
 	eos_init();
-	//test_eos();
-	//exit(1);
 	#if(GPU_ENABLED || GPU_DEBUG )
 	eos_init_GPU();
 	#endif

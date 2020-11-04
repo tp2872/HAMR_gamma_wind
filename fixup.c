@@ -182,7 +182,14 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	#if DOKTOT
-	pv[KTOT] = (gam - 1.)*pv[UU] * pow(pv[RHO], -gam);
+#if (DOHELM && DOHELM_KTOT)
+	double xentr;
+	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
+	// pv[KTOT] = xentr;
+	pv[KTOT] = exp(KTOT_FACTOR * xentr);
+#else 
+	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
+#endif
 	#endif
   /* limit gamma wrt normal observer */
 

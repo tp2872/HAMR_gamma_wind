@@ -388,7 +388,7 @@ void init_torus()
 	rmax = 12.;
   l = lfish_calc(rmax) ;
   kappa = 1.e-3 ;
-	beta = 10 ;
+	beta = 100.;
 
 	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
@@ -514,6 +514,7 @@ void init_torus()
 					rhomax = rho;
 				}
 
+				// Danat: enforce identical internal energy profiles between runs
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u; // *(1. + 4.e-2 * (ranc(0) - 0.5));
 				if(u > umax && r > rin){
 					#pragma omp critical
@@ -680,8 +681,7 @@ void init_torus()
 #else
       eos_mode_rhopres_u (den, pres, &ener);
 #endif
-
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener;
+	  p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener;
     }
   }
 #else
@@ -1820,7 +1820,7 @@ void set_mag(double beta, double rhomax, double umax){
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.05;
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
 			#endif
 			if (q > 0.){
 				coord(n_ord[n], i, j, z, CENT, X);
