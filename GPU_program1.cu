@@ -535,7 +535,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
 
 		//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
-		if ((fabs(error_new[n_iter % 5]) <= 1.e-12) || (n_iter >= 20)) {
+		if ((fabs(error_new[n_iter % 5]) <= 1.e-10) || (n_iter >= 20)) {
 			keep_iterating = 0;
 		}
 
@@ -545,7 +545,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error increased more than 4 times stop iterating
-		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+		if ((error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 			count_increase++;
 			if (count_increase >= 5) keep_iterating = 0;
 		}
@@ -1522,7 +1522,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		}
 
 		n_iter_fail = 0;
-		while (n_iter_fail < 10) {
+		while (n_iter_fail < 2) {
 			//Set primitive variables before Newton step
 			PLOOP{
 				pb_new[k] = pb_old[k];
@@ -1654,7 +1654,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			}
 
 			//If error increased more than 4 times stop iterating
-			if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+			if ((error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 				count_increase++;
 				if (count_increase >= 5) keep_iterating = 0;
 				//fprintf(stderr, "n_iter: %d n_iter_jacob: %d, error0: %f, error1: %f, error2: %f, error3: %f, \n", n_iter, n_iter_jacob, log10(error_temp), log10(error_new[(n_iter - 2) % 5]), log10(error_new[(n_iter - 1) % 5]), log10(error_new[n_iter % 5]));
@@ -1699,7 +1699,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		}
 		else {
 			n_iter_fail++;
-			if (n_iter_fail == 10) return(1);
+			if (n_iter_fail == 2) return(1);
 		}
 	}
 
