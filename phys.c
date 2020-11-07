@@ -560,7 +560,7 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	if ((discr<0.0) && (discr>-1.e-10)) discr = 0.0;
 	else if (discr < -1.e-10) {
 		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, crad2);
-		fprintf(stderr, "\n\t q->ucon_rad: %g %g %g %g\n", q_rad->ucon[0], q_rad->ucon[1],
+		fprintf(stderr, "\n\t q->ucon_rad1: %g %g %g %g\n", q_rad->ucon[0], q_rad->ucon[1],
 			q_rad->ucon[2], q_rad->ucon[3]);
 		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
 			Acon[2], Acon[3]);
@@ -614,7 +614,7 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	if ((discr < 0.0) && (discr > -1.e-10)) discr = 0.0;
 	else if (discr < -1.e-10) {
 		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, crad2);
-		fprintf(stderr, "\n\t q->ucon_rad: %g %g %g %g\n", q_rad->ucon[0], q_rad->ucon[1],
+		fprintf(stderr, "\n\t q->ucon_rad2: %g %g %g %g\n", q_rad->ucon[0], q_rad->ucon[1],
 			q_rad->ucon[2], q_rad->ucon[3]);
 		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
 			Acon[2], Acon[3]);

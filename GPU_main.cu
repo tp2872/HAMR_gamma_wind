@@ -2013,11 +2013,11 @@ void GPU_fixup(int flag, int n, double Dt)
 
 	if (flag == 0){
 		fixup << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferstorage2[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max);
 	}
 	else{
 		fixup << < nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], Bufferph_1[nl[n]], Bufferp_1[nl[n]], Bufferstorage2[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], Bufferdq_1[nl[n]],
-			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2);
+			Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, flag, POLE_1, POLE_2, y_max);
 	}
 	//cudaDeviceSynchronize();
 	status = cudaGetLastError();
