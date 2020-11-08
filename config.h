@@ -11,9 +11,14 @@ Physical Parameters section
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
+<<<<<<< HEAD
 #define SOUND_WAVE 10
 #define ENT_WAVE 11
 #define TRUNC_PROBLEM 12
+=======
+#define POSTMERGER_PROBLEM 10
+
+>>>>>>> origin/danat_summer
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
@@ -26,12 +31,21 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
+<<<<<<< HEAD
 #define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
 #define TILT_ANGLE (45.0)
+=======
+#define GAMMA	(4./3.)
+#define BH_SPIN (0.86)
+
+/*Wheter or not to tilt the disk*/
+#define TILTED (0)
+#define TILT_ANGLE (65.0)
+>>>>>>> origin/danat_summer
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -44,11 +58,37 @@ Physical Parameters section
 /*Wheter or not to use the full dispersion relation. Only slows down simulation and does not really increase accuracy. Do not use, not implemented anymore*/
 #define FULL_DISP (0)
 
+/* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
+#define DOHELM (1)
+#define DOHELM_KTOT (0)
+#define KTOT_FACTOR (1e-5)
+#define DONUCLEAR (0)
+
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
-#define RHOMIN	(1.e-7)
-#define UUMIN	(1.e-9)
-#define RHOMINLIMIT (1.e-20)
-#define UUMINLIMIT  (1.e-20)
+#if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
+#if (DOHELM)
+// Danat: otherwise EOS fails, since the densities are too low outside the torus
+    #define RHOMIN (1.e-14)     
+    #define UUMIN (1.e-16)      
+    #define RHOMINLIMIT (1.e-20)
+    #define UUMINLIMIT (1.e-20) 
+#else
+    #define RHOMIN      (1.e-26)
+    #define UUMIN       (1.e-27)
+    #define RHOMINLIMIT (1.e-40)
+    #define UUMINLIMIT  (1.e-40)
+#endif
+#elif ((DOHELM || DONUCLEAR) && (WHICHPROBLEM == TORUS_PROBLEM))
+    #define RHOMIN    (1.e-14)
+    #define UUMIN    (1.e-16)
+    #define RHOMINLIMIT (1.e-30)
+    #define UUMINLIMIT  (1.e-30)
+#else
+    #define RHOMIN	(1.e-7)
+    #define UUMIN	(1.e-9)
+    #define RHOMINLIMIT (1.e-20)
+    #define UUMINLIMIT  (1.e-20)
+#endif
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
 #define BSQORHOMAX (15.*FLOORFACTOR)
@@ -61,6 +101,9 @@ Physical Parameters section
 
 /*Runtime in hours*/
 #define RUNTIME (24.0)
+
+/* Post-merger problem, whether to read the binary IC file or not */
+#define READBINARY (0)
 
 /*************************************************************************
 Numerical Parameters section
@@ -98,12 +141,21 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
+<<<<<<< HEAD
 #define NB_2 3
 #define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 56
 #define BS_2 48
+=======
+#define NB_2 4
+#define NB_3 1
+
+/*Set block size in each dimension*/
+#define BS_1 64
+#define BS_2 64
+>>>>>>> origin/danat_summer
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -155,7 +207,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
+<<<<<<< HEAD
 #define DUMPFACTOR (160)
+=======
+#define DUMPFACTOR (20)
+>>>>>>> origin/danat_summer
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -210,8 +266,16 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
+<<<<<<< HEAD
 #define TRANS_BOUND (1*((BS_3*NB_3)>1))
 
+=======
+#define TRANS_BOUND (1)
+#if(TRANS_BOUND && NB_3%2!=0)
+#undef TRANS_BOUND
+#define TRANS_BOUND (0)
+#endif
+>>>>>>> origin/danat_summer
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
 
@@ -259,6 +323,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
 #define DOCYLINDRIFYCOORDS (0)
 
+/* enable MC particles */
+#define DOPARTICLES 0
+#define NPTOT 1000
+
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
 
@@ -269,14 +337,17 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
+<<<<<<< HEAD
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
+=======
+>>>>>>> origin/danat_summer
 //Abundace constants
 #define Z_AB (0.02)
 #define Y_AB (0.28)
@@ -315,7 +386,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 MNEMONICS SECTION
 *************************************************************************/
 /* mnemonics for primitive vars; conserved vars */
-#define RHO	(0)	
+#define RHO	(0)
 #define UU	(1)
 #define U1	(2)
 #define U2	(3)
@@ -324,15 +395,18 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
-#define UU_RAD	(9)
-#define U1_RAD	(10)
-#define U2_RAD	(11)
-#define U3_RAD	(12)
+#if(DONUCLEAR)
+#define RHONP     (9)
+#define RHOALPHA  (10)
+#define RHOFLOOR  (11)
+#define YE        (12)
+#define AMB       (13)
+#endif
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
 #define RIGHT (1)
-#define FACE1	(0)	
+#define FACE1	(0)
 #define FACE2	(1)
 #define CORN	(2)
 #define CENT	(3)
@@ -374,9 +448,13 @@ MNEMONICS SECTION
 #define FAIL_METRIC         (6)
 
 /*For Windows users*/
-#ifndef M_PI 
-#define M_PI 3.14159265358979323846264338327950288 
-#endif 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif
+
+#ifndef M_PI_2
+#define M_PI_2 3.14159265358979323846264338327950288 / 2.0
+#endif
 
 /*Mnemonics for AMR parameters*/
 #define NV 183
@@ -572,7 +650,7 @@ Variable Inversion Section
 /* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
 #define USE_ISENTROPIC 1
 
-#if( USE_ISENTROPIC ) 
+#if( USE_ISENTROPIC )
 #define G_ATM GAMMA
 #else
 #define G_ATM G_ISOTHERMAL
@@ -598,6 +676,124 @@ Variable Inversion Section
 #define NEWT_DIM_1 1
 
 /*************************************************************************
+Section with EOS constants
+*************************************************************************/
+#define EOSIMAX (541)   
+#define EOSJMAX (201)   
+// Log10 of EOS quantity limits
+#define eos_tlo (3.0)   
+#define eos_dlo (-12.0) 
+#define eos_thi (13.0)
+#define eos_dhi (15.0)
+// EOS quantity limits
+#define eos_temp_low (1e3)
+#define eos_temp_up (1e13)
+#define eos_dens_low (1e-12)
+#define eos_dens_up (1e15)
+
+#define MAXLEN (1024)
+
+// tolerances 
+#define EOS_TEMP_TOL (1.e-5)
+#define EOS_TOL (1.e-10)
+#define EOS_ITERATIONS (50)
+
+// becomes true if variables for Aprox13t network are set
+#define bAprox13t (0)
+
+// Use linear interpolation of the EOS table
+#define EOS_LINEAR (1)
+
+// if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
+// otherwise, set EOS_COULOMB_CORR to 0
+#define eos_coulombMult (0.0)
+#define EOS_COULOMB_CORR (0)
+
+#define eos_coulombAbort (1)
+
+// from eos_helmConstData
+#define avo (6.0221367e23)
+#define kerg (1.380658e-16)
+#define kev (8.617385e-5)
+#define amu (1.6605402e-24)
+#define avoinv (1.0e0 / avo)
+#define kergavo (kerg * avo)
+#define c_light (2.99792458e10)
+#define h_planck (6.6260755e-27)
+#define hbar_planck (1.05457266e-27)
+#define ssol (5.67051e-5)
+#define asol (4.0e0 * ssol / c_light)
+#define asoli3 (asol / 3.0e0)
+#define asoli3_inv (3.0e0 / asol)
+#define sioncon ((2.0e0 * M_PI * amu * kerg) / (h_planck * h_planck))
+
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+#define Mbh_cgs (8.07 * 1.99e33)
+#else
+#define Mbh_cgs (3 * 1.99e33)
+#endif 
+
+#define G_cgs (6.67259e-8)
+
+#define third (1.0e0/3.0e0)
+#define forth (4.0e0/3.0e0)
+#define eos_qe (4.8032068e-10)
+#define esqu (eos_qe * eos_qe)
+
+// conversion factors for EOS
+// DANAT: finish!
+#define conv_T_CODE2CGS (1.0)
+#define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G_cgs^3 / M_bh^2
+#define conv_dens_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs) / (c_light * c_light * c_light * c_light * c_light * c_light)
+#define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs))
+#define conv_pres_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
+#define conv_ener_CODE2CGS (c_light * c_light)
+#define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
+#define conv_entr_CGS2CODE (1.0)
+
+//For the uniform background coulomb correction
+#define eos_a1 (-0.898004e0)
+#define eos_b1 (0.96786e0)
+#define eos_c1 (0.220703e0)
+#define d1cc (-0.86097e0)
+#define e1cc (2.5269e0)
+#define eos_a2 (0.29561e0)
+#define eos_b2 (1.9885e0)
+#define eos_c2 (0.288675e0)
+#define third (1.0e0/3.0e0)
+#define forth (4.0e0/3.0e0)
+
+//For the nuclear physics: alpha particles
+#define Qalpha (4.5334641147464686e-5)
+#define Qa (28.3 * 1.60217733e-6)
+
+// ***********Beginning of statement function declarations **********
+// quintic hermite polynomial statement functions
+// psi0 and its derivatives
+#define psi0(zFunc) (zFunc*zFunc*zFunc * ( zFunc * (-6.0e0*zFunc + 15.0e0) -10.0e0) + 1.0e0)
+#define dpsi0(zFunc) (zFunc*zFunc * ( zFunc * (-30.0e0*zFunc + 60.0e0) - 30.0e0))
+#define ddpsi0(zFunc) (zFunc* ( zFunc*( -120.0e0*zFunc + 180.0e0) -60.0e0))
+
+// psi1 and its derivatives
+#define psi1(zFunc) (zFunc*( zFunc*zFunc * ( zFunc * (-3.0e0*zFunc + 8.0e0) - 6.0e0) + 1.0e0))
+#define dpsi1(zFunc) (zFunc*zFunc * ( zFunc * (-15.0e0*zFunc + 32.0e0) - 18.0e0) +1.0e0)
+#define ddpsi1(zFunc) (zFunc * (zFunc * (-60.0e0*zFunc + 96.0e0) -36.0e0))
+
+// psi2  and its derivatives
+#define psi2(zFunc) (0.5e0*zFunc*zFunc*( zFunc* ( zFunc * (-zFunc + 3.0e0) - 3.0e0) + 1.0e0))
+#define dpsi2(zFunc) (0.5e0*zFunc*( zFunc*(zFunc*(-5.0e0*zFunc + 12.0e0) - 9.0e0) + 2.0e0))
+#define ddpsi2(zFunc) (0.5e0*(zFunc*( zFunc * (-20.0e0*zFunc + 36.0e0) - 18.0e0) + 2.0e0))
+
+#define h5(w0t, w1t, w2t, w0mt, w1mt, w2mt, w0d, w1d, w2d, w0md, w1md, w2md, fi) (fi[0]  *w0d*w0t   + fi[1]  *w0md*w0t  + fi[2]  *w0d*w0mt  + fi[3]  *w0md*w0mt + fi[4]  *w0d*w1t   + fi[5]  *w0md*w1t + fi[6]  *w0d*w1mt  + fi[7]  *w0md*w1mt + fi[8]  *w0d*w2t   + fi[9] *w0md*w2t + fi[10] *w0d*w2mt  + fi[11] *w0md*w2mt + fi[12] *w1d*w0t   + fi[13] *w1md*w0t + fi[14] *w1d*w0mt  + fi[15] *w1md*w0mt  + fi[16] *w2d*w0t   + fi[17] *w2md*w0t + fi[18] *w2d*w0mt  + fi[19] *w2md*w0mt + fi[20] *w1d*w1t   + fi[21] *w1md*w1t + fi[22] *w1d*w1mt  + fi[23] *w1md*w1mt + fi[24] *w2d*w1t   + fi[25] *w2md*w1t + fi[26] *w2d*w1mt  + fi[27] *w2md*w1mt + fi[28] *w1d*w2t   + fi[29] *w1md*w2t + fi[30] *w1d*w2mt  + fi[31] *w1md*w2mt + fi[32] *w2d*w2t   + fi[33] *w2md*w2t + fi[34] *w2d*w2mt  + fi[35] *w2md*w2mt)
+
+//  cubic hermite polynomial statement functions
+//  psi0 & derivatives
+#define xpsi0(zFunc) (zFunc * zFunc * (2.0e0*zFunc - 3.0e0) + 1.0)
+
+//  psi1 & derivatives
+#define xpsi1(zFunc) (zFunc * ( zFunc * (zFunc - 2.0e0) + 1.0e0))
+
+/*************************************************************************
 Section with derived quantities
 *************************************************************************/
 /** Grid size without AMR **/
@@ -619,17 +815,23 @@ Section with derived quantities
 #define D2 (N2>1)
 #define D3 (N3>1)
 
-#if(RAD_M1)
-#define NPRDUMP 14
+#if(DONUCLEAR)
+#define NPRDUMP    14
 #else
-#define NPRDUMP 9
+#define NPRDUMP    9
 #endif
 
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
+<<<<<<< HEAD
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
+=======
+#define NPR_NUC    (5)        /* number of primitive variables for DONUCLEAR */
+#define NPR        (NPR_U + DONUCLEAR*NPR_NUC)        /* total number of primitive variables */
+
+>>>>>>> origin/danat_summer
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
@@ -725,11 +927,11 @@ Section with derived quantities
 #define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)//loop over all Dimensions; first rank loop */
 #define DLOOPA for(j=0;j<NDIM;j++) //loop over all Space dimensions; second rank loop */
 #define SLOOP  for(j=1;j<NDIM;j++) for(k=1;k<NDIM;k++) //loop over all Space dimensions; first rank loop */
-#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables 
+#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables
 #define MY_MIN(fval1,fval2) ( ((fval1) < (fval2)) ? (fval1) : (fval2))
 #define MY_MAX(fval1,fval2) ( ((fval1) > (fval2)) ? (fval1) : (fval2))
 #define delta(i,j) ( (i == j) ? 1. : 0.)
-#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]) 
+#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3])
 #define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
 #define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)
 #if (N3>1)

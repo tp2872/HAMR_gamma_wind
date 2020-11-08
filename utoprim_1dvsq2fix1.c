@@ -149,6 +149,7 @@ int Utoprim_1dvsq2fix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDI
       //Set the geometry variables
       alpha = 1.0/sqrt(-gcon[0][0]);
   
+<<<<<<< HEAD
       //Transform the CONSERVED variables into the new system
       U_tmp[RHO] = alpha * U[RHO] / gdet;
       U_tmp[UU]  = alpha * (U[UU] - U[RHO])/gdet ;
@@ -181,6 +182,66 @@ int Utoprim_1dvsq2fix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDI
       }
 
       return( ret ) ;
+=======
+  /* Transform the CONSERVED variables into the new system */
+  U_tmp[RHO] = alpha * U[RHO] / gdet;
+  U_tmp[UU]  = alpha * (U[UU] - U[RHO])  / gdet ;
+  for( i = UTCON1; i <= UTCON3; i++ ) {
+    U_tmp[i] = alpha * U[i] / gdet ;
+  }
+  for( i = BCON1; i <= BCON3; i++ ) {
+    U_tmp[i] = alpha * U[i] / gdet ;
+  }
+
+  /* Transform the PRIMITIVE variables into the new system */
+  for( i = 0; i < BCON1; i++ ) {
+    prim_tmp[i] = prim[i];
+  }
+  for( i = BCON1; i <= BCON3; i++ ) {
+    prim_tmp[i] = alpha*prim[i];
+  }
+
+  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
+
+  /* Transform new primitive variables back if there was no problem : */ 
+  if( ret == 0 ) {
+    for( i = 0; i < BCON1; i++ ) {
+      prim[i] = prim_tmp[i];
+    }
+  }
+
+    #if(DONUCLEAR)
+    prim[RHONP] = U[RHONP]/U[RHO];
+    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
+    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
+    prim[YE] = U[YE]/U[RHO];
+    prim[AMB] = U[AMB]/U[RHO];
+    
+    #if 0 // DANAT: check how rho_amb factors into this
+    // Danat: check the normalizations of the mass fractions and Ye
+    prim[YE] = MY_MAX(prim[YE], 1.0);
+    prim[YE] = MY_MIN(prim[YE], 1e-10);
+    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
+    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
+    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
+    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
+    prim[AMB] = MY_MAX(prim[AMB], 1.0);
+    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
+    
+    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
+    
+    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
+        
+        prim[RHONP] *= fac_norm;
+        prim[RHOALPHA] *= fac_norm;
+        prim[AMB] *= fac_norm;
+    }
+    #endif
+    #endif
+    
+  return( ret ) ;
+
+>>>>>>> origin/danat_summer
 }
 
 
@@ -271,8 +332,21 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
         return(retval);
     }
 
+<<<<<<< HEAD
     gammasq = (1. + utsq);
     gamma = sqrt(gammasq);
+=======
+  gammasq = 1. + utsq ;
+  gamma  = sqrt(gammasq);
+	
+  // Always calculate rho from D and gamma so that using D in EOS remains consistent
+  //   i.e. you don't get positive values for dP/d(vsq) . 
+  rho0 = D_2 / gamma ;
+  u = prim[UU] ;
+    // DANAT: add EOS p as function of rho0 and u
+  p = pressure_rho0_u(rho0,u) ;
+  w = rho0 + u + p ;
+>>>>>>> origin/danat_summer
 
     //Always calculate rho from D and gamma so that using D in EOS remains consistent; i.e. you don't get positive values for dP/d(vsq) . 
     rho0 = D_2 / gamma;
@@ -307,7 +381,13 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     gtmp = sqrt(1. - vsq);
     gamma = 1. / gtmp;
 
+<<<<<<< HEAD
     w = W * (1. - vsq);
+=======
+  // Find W from this vsq:
+    // DANAT:
+  W = W_of_vsq(vsq, &p, &rho0, &u);
+>>>>>>> origin/danat_summer
 
     //Return for negative density or internal energy
     if ((rho0 <= 0.)) {

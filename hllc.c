@@ -300,7 +300,7 @@ void vchar_FT(double * restrict pr, double ucon[NDIM], double bcon[NDIM], int di
 	vp = -(-B + discr) / (2.*A);
 	vm = -(-B - discr) / (2.*A);
 
-	#if( FULL_DISP ) 
+	#if( FULL_DISP )
 	double vp2, vm2;
 	vp2 = NewtonRaphson(vp, 5, dir, ucon, bcon, EE, va2, cs2);
 	vm2 = NewtonRaphson(vm, 5, dir, ucon, bcon, EE, va2, cs2);
@@ -487,7 +487,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 					for (k = 0; k < NPR; k++) F_HLL[1][k] = HLLF*((cmax_roe * F_l[k] - cmin_roe * F_r[k] + cmax_roe * cmin_roe * (U_r[k] - U_l[k])) / (cmax_roe - cmin_roe + SMALL));
 
 					int do_hydro = (fabs(F_HLL[0][dir + B1 - 1] * F_HLL[0][dir + B1 - 1] * l_ucon[0] * r_ucon[0]) < pow(10., -8.)*fabs(F_HLL[0][UU]));
-					
+
 					if (do_hydro) {
 						calc_HLLC_hydro(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
 					}
@@ -502,7 +502,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 							F_FT[1][k] = F_HLL[1][k];
 						}
 						#endif
-					}			
+					}
 				}
 
 				//Transform stress energy tensor from orthonormal frame to coordinate basis
@@ -537,7 +537,7 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 				//Normalize with gdet
 				PLOOP F[nl[n]][ind0][k] = geom.g*F1[k];
 
-				// evaluate restriction on timestep 
+				// evaluate restriction on timestep
 				dtij = fabs(cour*dx[nl[n]][dir] / ctop);
 				if (dtij < ndt_thread) {
 					ndt_thread = dtij;
@@ -724,7 +724,7 @@ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, d
 
 	//Calculate necessary pressure using Newton Raphson solve
 	ptot=calc_HLLD_pres(dir, &fail_HLLC, &fail_HLLD, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, K_al, B_al, K_ar, B_ar, vcon_al, vcon_ar, &eta_l, &eta_r, &w_al, &w_ar, vcon_cl, vcon_cr, F_FT, F_HLL, F_l, F_r, U_l, U_r, R_l, R_r, B_c);
-	
+
 	//Check generated parameters for consistency if previous line did not fail
 	if (fail_HLLD == 0) check_HLLD_par(dir, &fail_HLLD, cmin_roe, cmax_roe, ptot, w_al, w_ar, eta_l, eta_r, vcon_cl, vcon_cr, vcon_al, vcon_ar, K_al, K_ar, B_c);
 
@@ -847,7 +847,7 @@ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDI
 	return ptot;
 }
 
-void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM], 
+void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
 	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
 	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]) {
 	double v_dot_B, F_al[2][NPR], F_ar[2][NPR], F_cl[2][NPR], F_cr[2][NPR];

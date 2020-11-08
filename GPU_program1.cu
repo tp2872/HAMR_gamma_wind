@@ -5,6 +5,7 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 __device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim);
 __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance);
 __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
+<<<<<<< HEAD
 __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
 
@@ -49,6 +50,72 @@ __device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, dou
 __device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
 __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
 __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
+=======
+__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[]
+                                #if (DOHELM)
+                                , const  double* __restrict__ gpu_eos_table
+                                #endif
+                                );
+__device__ int general_newton_raphson(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
+                                        #if (DOHELM)
+                                        , const  double* __restrict__ gpu_eos_table
+                                        #endif
+                                    );
+__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
+                        #if (DOHELM)
+                        , const  double* __restrict__ gpu_eos_table
+                        #endif
+                         );
+__device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
+__device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm
+#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+#endif
+);
+__device__ double dWdvsq_calc2(double vsq, double rho, double p);
+#if(DOHELM)
+__device__ void dWdvsq_calc2_helmholtz(const  double* __restrict__ gpu_eos_table, double vsq, double D, double K_atm, double* W, double* dWdvsq);
+#endif
+__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm
+#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+#endif
+);
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
+#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+#endif
+);
+__device__ void validate_x2(double x[1], double x0[1]);
+__device__ int general_newton_raphson2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
+#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+#endif
+);
+__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K
+#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+#endif
+);
+__device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double D, double K_atm, double W_for_gnr2);
+__device__ int Utoprim_1dfix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K);
+__device__ int Utoprim_new_body3(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K_atm);
+__device__ double vsq_calc3(double W, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
+__device__ int general_newton_raphson3(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
+__device__ void func_1d_orig1(double x[], double dx[], double resid[],
+	double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
+__device__ int gnr2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
+__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]
+                                #if (DOHELM)
+                                , const  double* __restrict__ gpu_eos_table
+                                #endif
+                               );
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]
+                            #if (DOHELM)
+                            , const  double* __restrict__ gpu_eos_table
+                            #endif
+                            );
+>>>>>>> origin/danat_summer
 
 /*Matrix Inversion*/
 __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]);
@@ -63,16 +130,38 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
+<<<<<<< HEAD
 __device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin);
+=======
+>>>>>>> origin/danat_summer
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
 __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU);
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
+<<<<<<< HEAD
 __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin);
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux);
 __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, const  double* __restrict__ conn,struct of_state *  q, double r);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt);
+=======
+__device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam
+                            #if (DOHELM)
+                            , const  double* __restrict__ gpu_eos_table
+                            #endif
+                           );
+__device__ void primtoU(double *  pr, struct of_state *  q, struct of_geom *  geom, double *U, double gam
+                        #if (DOHELM)
+                        , const  double* __restrict__ gpu_eos_table
+                        #endif
+                        );
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, double gam, const  double* __restrict__ conn,struct of_state *  q, double a, double r
+						#if (DOHELM)
+						, const  double* __restrict__ gpu_eos_table
+						#endif
+);
+__device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	double a, double gam, double r, double Dt);
+>>>>>>> origin/danat_summer
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
 __device__ double bsq_calc(double *  pr, struct of_geom *  geom);
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq);
@@ -81,6 +170,7 @@ __device__ double readImageDouble(int4 a);
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
+<<<<<<< HEAD
 __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd);
 __device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q);
 
@@ -1504,6 +1594,13 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					mhd_calc(pb_new, 0, &q, &U_new[UU]);
 					for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 					U_new[UU] += U_i[RHO];
+=======
+__device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd
+                            #if (DOHELM)
+                            , const  double* __restrict__ gpu_eos_table
+                            #endif
+                         );
+>>>>>>> origin/danat_summer
 
 					//Compute new entropy from MHD variables
 #if(FULL_ENTROPY)
@@ -1855,6 +1952,7 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 	/* End of LU_substitution() */
 }
 
+<<<<<<< HEAD
 //Inversion from radiation conserved to primitive quantities
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim){
 	double U_tmp[NPR_R], prim_tmp[NPR_R];
@@ -1956,6 +2054,52 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 	}
 	return(returnval);
 }
+=======
+__device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F);
+__device__ void vchar_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double *vmax, double *vmin);
+__device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *vmax, double *vmin
+                        #if (DOHELM)
+                        , const  double* __restrict__ gpu_eos_table
+                        #endif
+                      );
+__device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
+__device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
+__device__ double calc_HLLD_pres(int dir, int *fail_HLLC, int *fail_HLLD, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double *eta_l, double *eta_r, double *w_al, double *w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
+__device__ void calc_HLLD_state(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double ptot, double int_velocity, double cmin_roe, double cmax_roe, double K_al[NDIM],
+	double B_al[NDIM], double K_ar[NDIM], double  B_ar[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double eta_l, double eta_r, double w_al, double w_ar, double vcon_cl[NDIM], double vcon_cr[NDIM],
+	double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR], double R_l[NPR], double R_r[NPR], double B_c[NDIM]);
+__device__ void check_HLLD_par(int dir, int * fail_HLLD, double cmin_roe, double cmax_roe, double ptot, double w_al, double w_ar, double eta_l, double eta_r, double vcon_cl[NDIM], double vcon_cr[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double B_c[NDIM]);
+__device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmin_roe, double cmax_roe, double BX, double R_l[NPR], double R_r[NPR], double B_al[NDIM], double B_ar[NDIM], double B_c[NDIM], double vcon_al[NDIM], double vcon_ar[NDIM], double K_al[NDIM], double K_ar[NDIM], double vcon_cl[NDIM], double vcon_cr[NDIM], double *eta_l, double *eta_r, double  *w_al, double *w_ar);
+
+// EOS functions
+#if (DOHELM)
+#if (EOS_LINEAR)
+__device__ void interp_eostable_linear(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double* free, double* df_d, double* df_t, double* df_tt, double* df_dt, double* dpepdd, double* etaele);
+#else
+__device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
+#endif
+__device__ void eos_helm(const  double* __restrict__ gpu_eos_table, int calc_derivatives, double btemp, double den, double abar, double zbar, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dentrdt, double* dpresdd, double* denerdd, double* cs2);
+__device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres);
+__device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres, double *cs2);
+__device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *dpdrho, double *dpde_d);
+__device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *u);
+__device__ void eos_mode_rhotemp_pres_min (const  double* __restrict__ gpu_eos_table, double den, double *pres);
+__device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, double den, double p_goal, double *u);
+__device__ void eos_mode_rhos_upres(const  double* __restrict__ gpu_eos_table, double den, double entr_goal, double* pres, double* u, double* dpdrho, double* dudrho);
+__device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* entr);
+#endif
+
+__device__ int Utoprim_NM(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]
+                            #if (DOHELM)
+                            , const  double* __restrict__ gpu_eos_table
+                            #endif
+                          )
+{
+>>>>>>> origin/danat_summer
 
 __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
@@ -1980,7 +2124,15 @@ __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gd
 	//Transform the PRIMITIVE variables into the new system
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
+<<<<<<< HEAD
 	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
+=======
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp
+                            #if (DOHELM)
+                            , gpu_eos_table
+                            #endif
+                          );
+>>>>>>> origin/danat_summer
 
 	//Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
@@ -1992,7 +2144,16 @@ __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gd
 	return(ret);
 }
 
+<<<<<<< HEAD
 __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
+=======
+__device__ int Utoprim_NM_calc(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]
+                                #if (DOHELM)
+                                , const  double* __restrict__ gpu_eos_table
+                                #endif
+                               )
+{
+>>>>>>> origin/danat_summer
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u,  w,  gamma,   vsq, errx;
 	double Bsq, QdotBsq, Qtsq, Qdotn;
@@ -2022,18 +2183,36 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 	ncon[3] = gcon[3] * ncov;
 
 	Qdotn = Qcon[0] * ncov;
+<<<<<<< HEAD
 	
+=======
+
+	for (i = 1; i<4; i++)  Qtcon[i] = Qcon[i] + ncon[i] * Qdotn;
+
+>>>>>>> origin/danat_summer
 	Qsq = 0.;
 
 	for (i = 0; i<4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn*Qdotn;
-	
+
 	//Start inversion scheme AKA Newman et al
 	double a, d, z, phi, R, Wsq, p_array[3], epsilon, p_old, p_new;
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    // -- to get min. pressure for a given density, set T = T_min = 1e4 K
+    double xpres;
+    eos_mode_rhotemp_pres_min (gpu_eos_table, prim[RHO], &xpres);
+    p_array[0] = xpres;
+    #else
+    // 2. Ideal gas EOS
 	p_array[0] = (GAMMA - 1.)*prim[UU];
+    #endif
+
 	p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
 	if (d < 0.0) return(1);
@@ -2044,6 +2223,7 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 		epsilon = a / 3. - 2. / 3. * a * cos(2. / 3. * phi + 2. / 3. * M_PI);
 		z = epsilon - Bsq;
 
+<<<<<<< HEAD
 		vsq = (Qtsq * z * z + QdotBsq * (Bsq + 2. * z)) / (z * z * pow(Bsq + z, 2.));
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
@@ -2056,6 +2236,41 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 		p_array[iter] = (GAMMA - 1.) * u;
 		p_old = p_array[iter - 1];
 		p_new = p_array[iter];
+=======
+		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+
+		// DANAT: add this - therefore rho0 is nan
+		if (fabs(vsq) < 1e-15) vsq = 0.0;
+		if (fabs(vsq) >= 1.0) return(1);
+
+		Wsq = 1. / (1. - vsq);
+		w = z * (1. - vsq);
+		gamma = sqrt(Wsq);
+		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+
+        // EOS-specific calls:
+        #if (DOHELM)
+        // 1. Helmholtz EOS
+        double xpres;
+        eos_mode_rhow_pres_u (gpu_eos_table, rho0, w, &xpres, &u);
+        #else
+        // 2. Ideal gas EOS
+		u = (w - rho0) / GAMMA;
+        #endif
+
+		iter++;
+		iter_tot++;
+
+        #if (DOHELM)
+        // 1. Helmholtz EOS
+        p_array[iter % 3] = xpres;
+        #else
+        // 2. Ideal gas EOS
+		p_array[iter % 3] = (GAMMA - 1.)*u;
+        #endif
+
+		p_new = p_array[iter % 3];
+>>>>>>> origin/danat_summer
 		if (iter >= 2) {
 			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
 
@@ -2088,8 +2303,23 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 		gamma = sqrt(Wsq);
 
 		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+
+        // EOS-specific calls:
+        #if (DOHELM)
+        // 1. Helmholtz EOS
+        eos_mode_rhow_pres_u (gpu_eos_table, rho0, w, &p_new, &u);
+        #else
+        // 2. Ideal gas EOS
 		u = (w - rho0) / GAMMA;
+<<<<<<< HEAD
 		p_new = (GAMMA - 1.) * u;
+=======
+		p_new = (GAMMA - 1.)*u;
+        #endif
+	}
+	if (iter_tot >= MAX_NEWT_ITER || p_new < 0.0 || rho0<0.0 || vsq>=1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG ||gamma>GAMMAMAX || gamma<1.){
+		return(1);
+>>>>>>> origin/danat_summer
 	}
 
 	//If density or internal energy is negative return error code
@@ -2143,6 +2373,13 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	#if(DOKTOT)
+	prim[KTOT] = U[KTOT] / U[RHO];
+	#endif
+
+>>>>>>> origin/danat_summer
 	return(ret);
 }
 
@@ -2283,8 +2520,13 @@ __device__ int general_newton_raphson3(double x[], double Bsq, double Qtsq, doub
 
 	keep_iterating = 1;
 	while (keep_iterating) {
+<<<<<<< HEAD
 		#if(USE_ISENTROPIC)   
 		func_1d_orig1(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);  /* returns with new dx, f, df */
+=======
+	#if( USE_ISENTROPIC )
+		func_1d_orig1(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, W_for_gnr2, rho_for_gnr2, W_for_gnr2_old, rho_for_gnr2_old);  /* returns with new dx, f, df */
+>>>>>>> origin/danat_summer
 		#endif
 
 		//Save old values before calculating the new
@@ -2437,8 +2679,18 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double ja
 	return;
 }
 
+<<<<<<< HEAD
 __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
+=======
+__device__ int Utoprim_1dvsq2fix1(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double K
+#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+#endif
+)
+{
+	double U_tmp[NPR], prim_tmp[NPR];
+>>>>>>> origin/danat_summer
 	int i, ret;
 	double alpha, K_atm;
 
@@ -2461,9 +2713,17 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	#pragma unroll 3
 	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
+<<<<<<< HEAD
 	//Transform the PRIMITIVE variables into the new system
 	#pragma unroll 5
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
+=======
+	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K
+#if(DOHELM)
+		, gpu_eos_table
+#endif
+	);
+>>>>>>> origin/danat_summer
 
 	#if(DOKTOT)
 	if (full_entropy)K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
@@ -2480,10 +2740,27 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		}
 	}
 
+<<<<<<< HEAD
 	return(ret);
 }
 
 __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double K_atm, double tolerance, int lim){
+=======
+	#if(DOKTOT)
+	prim[KTOT] = U[KTOT] / U[RHO];
+	#endif
+
+	return(ret);
+}
+
+__device__ int Utoprim_new_body2(double U[NPR], double gcov[10],
+	double gcon[10], double gdet, double prim[NPR], double K_atm
+#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+#endif
+)
+{
+>>>>>>> origin/danat_summer
 	double x_1d[1];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, gammasq, gamma, gtmp, W, utsq, vsq;
@@ -2545,16 +2822,35 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	gamma = sqrt(gammasq);
 
 	// Always calculate rho from D and gamma so that using D in EOS remains consistent
-	//   i.e. you don't get positive values for dP/d(vsq) . 
+	//   i.e. you don't get positive values for dP/d(vsq) .
 	rho0 = D / gamma;
+#if(DOHELM && DOHELM_KTOT)
+	// 1. Helmholtz EOS
+	double dpdrho, dudrho;
+	eos_mode_rhos_upres(gpu_eos_table, rho0, K_atm, &p, &u, &dpdrho, &dudrho);
+#else
+	// 2. Gamma EOS
 	u = prim[UU];
 	p = (GAMMA - 1.)*u;
+<<<<<<< HEAD
 
 	//Initialize independent variables for Newton-Raphson:
 	x_1d[0] = 1. - 1. / gammasq;
 
 	//Find vsq via Newton-Raphson:
 	retval = general_newton_raphson2(x_1d, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm, tolerance);
+=======
+#endif
+	// Initialize independent variables for Newton-Raphson:
+	x_1d[0] = 1. - 1. / gammasq;
+
+	// Find vsq via Newton-Raphson:
+	retval = general_newton_raphson2(x_1d, 1, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm
+#if(DOHELM)
+		, gpu_eos_table
+#endif
+	);
+>>>>>>> origin/danat_summer
 
 	/* Problem with solver, so return denoting error before doing anything further */
 	if (retval != 0) {
@@ -2569,14 +2865,23 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 		return(retval);
 	}
 
+<<<<<<< HEAD
 	//Find W from this vsq:
 	W = W_of_vsq2(vsq, &p, &rho0, &u, D, K_atm);
+=======
+	// Find W from this vsq:
+	W = W_of_vsq2(vsq, &p, &rho0, &u, D, K_atm
+#if(DOHELM)
+		, gpu_eos_table
+#endif
+	);
+>>>>>>> origin/danat_summer
 
 	//Recover the primitive variables from the scalars and conserved variables:
 	gtmp = sqrt(1. - vsq);
 	gamma = 1. / gtmp;
 
-	// User may want to handle this case differently, e.g. do NOT return upon 
+	// User may want to handle this case differently, e.g. do NOT return upon
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
 	if ((rho0 <= 0.)) {
 		retval = 5;
@@ -2601,8 +2906,19 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	return(retval);
 }
 
+<<<<<<< HEAD
 __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance){
 	double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1], jac[NEWT_DIM_1][NEWT_DIM_1];
+=======
+__device__ int general_newton_raphson2(double x[], int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
+#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+#endif
+)
+{
+	double f, df, dx[NEWT_DIM_1], x_old[NEWT_DIM_1], resid[NEWT_DIM_1],
+		jac[NEWT_DIM_1][NEWT_DIM_1];
+>>>>>>> origin/danat_summer
 	double errx;
 	int    n_iter,  i_extra, doing_extra;
 	double W, W_old, rho, p, u;
@@ -2624,7 +2940,16 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	while (keep_iterating) {
 		func_1d_gnr2(x, dx, resid, jac, &f, &df,Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm);/* returns with new dx, f, df */
 
+<<<<<<< HEAD
 		//Set old values
+=======
+		func_1d_gnr2(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D, K_atm
+#if(DOHELM)
+		, gpu_eos_table
+#endif
+		);/* returns with new dx, f, df */
+
+>>>>>>> origin/danat_summer
 		errx = 0.;
 		x_old[0] = x[0];
 
@@ -2635,7 +2960,11 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 
 		//Calculate W=w*gamma
 		W_old = W;
-		W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm);
+		W = W_of_vsq2(x[0], &p, &rho, &u, D, K_atm
+#if(DOHELM)
+			, gpu_eos_table
+#endif
+		);
 		errx = (W == 0.) ? fabs(W - W_old) : fabs((W - W_old) / W);
 		errx += (x[0] == 0.) ? fabs(x[0] - x_old[0]) : fabs((x[0] - x_old[0]) / x[0]);
 
@@ -2647,7 +2976,6 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 		if (((fabs(errx) <= tolerance) && (doing_extra == 0)) || (i_extra > EXTRA_NEWT_ITER) || (n_iter >= (MAX_NEWT_ITER - 1))) {
 			keep_iterating = 0;
 		}
-
 		n_iter++;
 	} 
 
@@ -2659,6 +2987,19 @@ __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, doub
 	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > tolerance)) return(0);
 	if (fabs(errx) <= tolerance) return(0);
 
+<<<<<<< HEAD
+=======
+		return(1);
+	}
+	if ((fabs(errx) <= MIN_NEWT_TOL) && (fabs(errx) > NEWT_TOL)){
+		//fprintf(stderr," totalcount = %d   1   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
+		return(0);
+	}
+	if (fabs(errx) <= NEWT_TOL){
+		//fprintf(stderr," totalcount = %d   2   %d  %26.20e \n",n_iter,i_extra,errx); fflush(stderr);
+		return(0);
+	}
+>>>>>>> origin/danat_summer
 	return(0);
 }
 
@@ -2670,6 +3011,7 @@ __device__ void validate_x2(double x[1], double x0[1]){
 	return;
 }
 
+<<<<<<< HEAD
 __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm){
 	double W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
 	//vsq = x[0];
@@ -2681,6 +3023,35 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 
 	// Doing this assuming  P = (G-1) u :
 	dWdvsq = dWdvsq_calc2(x[0], rho, p);
+=======
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
+#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+#endif
+)
+{
+	double vsq, W, Wsq, W3, dWdvsq, fact_tmp, rho, p, u;
+	vsq = x[0];
+
+#if(DOHELM && DOHELM_KTOT)
+	// Helmholtz EOS
+	dWdvsq_calc2_helmholtz(gpu_eos_table, vsq, D, K_atm, &W, &dWdvsq);
+	Wsq = W * W;
+	W3 = W * Wsq;
+#else
+	// Calculate best value for W given current guess for vsq:
+	W = W_of_vsq2(vsq, &p, &rho, &u, D, K_atm
+#if(DOHELM)
+		, gpu_eos_table
+#endif
+	);
+	Wsq = W * W;
+	W3 = W * Wsq;
+	// Doing this assuming  P = (G-1) u :
+	dWdvsq = dWdvsq_calc2(vsq, rho, p);
+#endif
+
+>>>>>>> origin/danat_summer
 	fact_tmp = (Bsq + W);
 	resid[0] = Qtsq - x[0] * fact_tmp * fact_tmp + QdotBsq * (Bsq + 2.*W) / Wsq;
 	jac[0][0] = -fact_tmp * (fact_tmp + 2. * dWdvsq * (x[0] + QdotBsq / W3));
@@ -2689,21 +3060,77 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	*df = -2. * (*f);
 }
 
+<<<<<<< HEAD
 __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm){
 	double gtmp;
 	gtmp = (1. - vsq);
 	*rho = D * sqrt(gtmp);
 	*p = K_atm * pow(*rho, GAMMA);
+=======
+__device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm
+#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+#endif
+)
+{
+	double gtmp;
+	gtmp = (1. - vsq);
+	*rho = D * sqrt(gtmp);
+
+#if(DOHELM && DOHELM_KTOT)
+	// 1. Helmholtz EOS
+	double dpdrho, dudrho;
+	eos_mode_rhos_upres(gpu_eos_table, *rho, K_atm, p, u, &dpdrho, &dudrho);
+	return((*rho + *u + *p) / gtmp);
+#else
+	// 2. Gamma EOS
+	*p = K_atm * pow(*rho, G_ATM);
+>>>>>>> origin/danat_summer
 	*u = *p / (GAMMA - 1.);
 	return((*rho + *u + *p) / gtmp);
+#endif
 }
 
+<<<<<<< HEAD
 __device__ double dWdvsq_calc2(double vsq, double rho, double p){
 	return((GAMMA*(2. - G_ATM)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
 }
 
 __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
+=======
+__device__ double dWdvsq_calc2(double vsq, double rho, double p)
+{
+
+	return((GAMMA*(2. - G_ATM)*p + (GAMMA - 1.)*rho) / (2.*(GAMMA - 1.)*(1. - vsq)*(1. - vsq)));
+}
+
+// Entropy inversion, Helmholtz EOS
+#if(DOHELM)
+__device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table, double vsq, double D, double K_atm, double *W, double *dWdvsq)
+{
+	double gtmp;
+	gtmp = (1. - vsq);
+	double rho = D * sqrt(gtmp);
+	
+	double p, u, dpdrho, dudrho;
+	eos_mode_rhos_upres(gpu_eos_table, rho, K_atm, &p, &u, &dpdrho, &dudrho);
+	*W = (rho + u + p) / gtmp;
+
+	*dWdvsq = ((0.5 * rho * (1.0 - dpdrho - dudrho) + p + u) / (gtmp * gtmp));
+}
+#endif
+
+
+__device__ int Utoprim_2d(double U[NPR], double gcov[10], double gcon[10],
+	double gdet, double prim[NPR]
+    #if (DOHELM)
+    , const  double* __restrict__ gpu_eos_table
+    #endif
+    )
+{
+	double U_tmp[NPR], prim_tmp[NPR];
+>>>>>>> origin/danat_summer
 	int i, ret;
 	double alpha;
 
@@ -2730,7 +3157,15 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 	#pragma unroll 5
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
+<<<<<<< HEAD
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
+=======
+	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp
+                            #if (DOHELM)
+                            , gpu_eos_table
+                            #endif
+                           );
+>>>>>>> origin/danat_summer
 
 	/* Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
@@ -2744,7 +3179,16 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 }
 #include <stdio.h>
 
+<<<<<<< HEAD
 __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim){
+=======
+__device__ int Utoprim_new_body(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR]
+                                #if (DOHELM)
+                                , const  double* __restrict__ gpu_eos_table
+                                #endif
+                                )
+{
+>>>>>>> origin/danat_summer
 	double x_2d[NEWT_DIM_2];
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
@@ -2808,25 +3252,42 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 	gamma = sqrt(gammasq);
 
 	// Always calculate rho from D and gamma so that using D in EOS remains consistent
-	//   i.e. you don't get positive values for dP/d(vsq) . 
+	//   i.e. you don't get positive values for dP/d(vsq) .
 	rho0 = D / gamma;
 	u = prim[UU];
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    eos_mode_rhou_pres (gpu_eos_table, rho0, u, &p);
+    #else
+    // 2. Ideal gas EOS
 	p = (GAMMA - 1.)*u;
+    #endif
+
 	w = rho0 + u + p;
 
 	W_last = w*gammasq;
 
-	// Make sure that W is large enough so that v^2 < 1 : 
+	// Make sure that W is large enough so that v^2 < 1 :
 	i_increase = 0;
 	while (((W_last*W_last*W_last * (W_last + 2.*Bsq) - QdotBsq*(2.*W_last + Bsq)) <= W_last*W_last*(Qtsq - Bsq*Bsq))&& (i_increase < 10)) {
 		W_last *= 10.;
 		i_increase++;
 	}
 
-	// Calculate W and vsq: 
+	// Calculate W and vsq:
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last, Bsq, Qtsq, QdotBsq);
+<<<<<<< HEAD
 	retval = general_newton_raphson(x_2d, Bsq, Qtsq, QdotBsq, Qdotn, D, tolerance);
+=======
+	retval = general_newton_raphson(x_2d, n, Bsq, Qtsq, QdotBsq, Qdotn, D
+                                    #if (DOHELM)
+                                    , gpu_eos_table
+                                    #endif
+                                    );
+>>>>>>> origin/danat_summer
 
 	W = x_2d[0];
 	vsq = x_2d[1];
@@ -2855,10 +3316,18 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 	rho0 = D * gtmp;
 
 	w = W * (1. - vsq);
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    eos_mode_rhow_pres_u (gpu_eos_table, rho0, w, &p, &u);
+    #else
+    // 2. Ideal gas EOS
 	p = (GAMMA - 1.)*(w - rho0) / GAMMA;
 	u = w - (rho0 + p);
+    #endif
 
-	// User may want to handle this case differently, e.g. do NOT return upon 
+	// User may want to handle this case differently, e.g. do NOT return upon
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
 	if ((rho0 <= 0.)) {
 		retval = 5;
@@ -2903,9 +3372,15 @@ __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq){
 
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq){
 	double vsq;
+<<<<<<< HEAD
 
 	vsq = fabs(vsq_calc(x0, Bsq, Qtsq, QdotBsq)); // guaranteed to be positive 
 	return((vsq > 1.) ? (1.0 - 1.e-15) : vsq);
+=======
+	double dv = 1.e-15;
+	vsq = fabs(vsq_calc(x0, Bsq, Qtsq, QdotBsq)); // guaranteed to be positive
+	return((vsq > 1.) ? (1.0 - dv) : vsq);
+>>>>>>> origin/danat_summer
 }
 
 __device__ void validate_x(double x[2], double x0[2]){
@@ -2919,7 +3394,17 @@ __device__ void validate_x(double x[2], double x0[2]){
 	return;
 }
 
+<<<<<<< HEAD
 __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance){
+=======
+__device__ int general_newton_raphson(double x[], int n,
+	double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
+    #if (DOHELM)
+    , const  double* __restrict__ gpu_eos_table
+    #endif
+    )
+{
+>>>>>>> origin/danat_summer
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
 	double errx;
@@ -2936,7 +3421,15 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
 	//Start the Newton-Raphson iterations
 	keep_iterating = 1;
 	while (keep_iterating) {
+<<<<<<< HEAD
 		func_vsq(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D);  /* returns with new dx, f, df */
+=======
+		func_vsq(x, dx, resid, jac, &f, &df, n, Bsq, Qtsq, QdotBsq, Qdotn, D
+                #if (DOHELM)
+                 , gpu_eos_table
+                #endif
+                );  /* returns with new dx, f, df */
+>>>>>>> origin/danat_summer
 
 		//Save old values before calculating the new
 		errx = 0.;
@@ -2980,6 +3473,7 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
 	return(0);
 }
 
+<<<<<<< HEAD
 __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D){
 	double Wsq, p_tmp, dPdvsq, dPdW, gtmp;
 	double t11, t16, t18, t2, t21, t23,t24, t25, t3, t35, t36, t4, t40, t9;
@@ -2998,6 +3492,62 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 	dPdW = (GAMMA - 1.) * (1. - x[1]) / GAMMA;
 	dPdvsq = (GAMMA - 1.) * (fma(0.5, D / sqrt(1. - x[1]), -x[0])) / GAMMA;
 	#endif
+=======
+__device__ void func_vsq(double x[], double dx[], double resid[],
+	double jac[][NEWT_DIM_2], double *f, double *df, int n, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
+    #if (DOHELM)
+    , const  double* __restrict__ gpu_eos_table
+    #endif
+)
+{
+	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, gtmp;
+	double t11;
+	double t16;
+	double t18;
+	double t2;
+	double t21;
+	double t23;
+	double t24;
+	double t25;
+	double t3;
+	double t35;
+	double t36;
+	double t4;
+	double t40;
+	double t9;
+
+	W = x[0];
+	vsq = x[1];
+
+	Wsq = W*W;
+	gtmp = 1. - vsq;
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    double rho = D * sqrt(1. - vsq);
+    double w = W * (1. - vsq);
+    double dpdrho, dpde_d;
+
+    eos_mode_rhow_pres_dpdrho_dpde_d (gpu_eos_table, rho, w, &p_tmp, &dpdrho, &dpde_d);
+
+    double dpdeps_o_rho = dpde_d / rho;
+    double dpdvsq_1 = -0.5 * D / sqrt(1. - vsq) * dpdrho;
+    double dpdvsq_2 = -0.5 * (W + p_tmp / sqrt(1. - vsq)) / rho;
+    dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) * (1. - vsq);
+    dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
+
+    #else
+    // 2. Ideal gas EOS
+	p_tmp = (GAMMA - 1.) * (fma(W, gtmp, -D * sqrt(gtmp))) / GAMMA;
+	dPdW = (GAMMA - 1.) * (1. - vsq) / GAMMA;
+	dPdvsq = (GAMMA - 1.) * (fma(0.5, D / sqrt(1. - vsq), -W)) / GAMMA;
+    #endif
+
+	// These expressions were calculated using Mathematica, but fmae into efficient
+	// code using Maple.  Since we know the analytic form of the equations, we can
+	// explicitly calculate the Newton-Raphson step:
+>>>>>>> origin/danat_summer
 
 	// These expressions were calculated using Mathematica, but fmae into efficient  code using Maple.  Since we know the analytic form of the equations, we can explicitly calculate the Newton-Raphson step: 
 	#if(AMD)
@@ -3065,6 +3615,7 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 	rhoflr = RHOMIN * rhoscal;
 	uuflr = UUMIN * uuscal;
 
+<<<<<<< HEAD
 	get_state(pf, geom, q);
 	bsq = dot(q->bcon, q->bcov);
 
@@ -3204,6 +3755,8 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 }
 
 
+=======
+>>>>>>> origin/danat_summer
 /* find relative 4-velocity from 4-velocity (both in code coords) */
 __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 {
@@ -3235,8 +3788,32 @@ __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut)
 	*ut = sqrt(DD);
 }
 
+<<<<<<< HEAD
 /* add in geometrical and cooling source terms to equations of motion */
 __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, const  double* __restrict__ conn_GPU, struct of_state *  q, double r)
+=======
+__device__ void primtoU(double *pr, struct of_state *q, struct of_geom *geom, double *U, double gam
+                        #if (DOHELM)
+                        , const  double* __restrict__ gpu_eos_table
+                        #endif
+                        )
+{
+	double h, l;
+	primtoflux(pr, q, 0, geom, U,&h,&l, gam
+                #if (DOHELM)
+                , gpu_eos_table
+                #endif
+               );
+	return;
+}
+
+/* add in source terms to equations of motion */
+__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *  dU, double Dt, double gam, const  double* __restrict__ conn_GPU, struct of_state *  q, double a, double r
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+)
+>>>>>>> origin/danat_summer
 {
 	double mhd[NDIM][NDIM];
 	int k, j, dir;
@@ -3247,9 +3824,19 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = icurr*(BS_2 + 2 * N2G) + jcurr;
-	#endif	
+	#endif
 
+<<<<<<< HEAD
 	P = (GAMMA - 1.)*ph[UU];
+=======
+	#if (DOHELM)
+	// Helmholtz EOS
+	eos_mode_rhou_pres(gpu_eos_table, ph[RHO], ph[UU], &P);
+	#else
+	// Ideal gas EOS
+	P = (gam - 1.)*ph[UU];
+	#endif
+>>>>>>> origin/danat_summer
 	w = P + ph[RHO] + ph[UU];
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
@@ -3271,10 +3858,10 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	}
 
 	/* contract mhd stress tensor with connection */
-	#pragma unroll 9	
+	#pragma unroll 9
 	PLOOP dU[k] = 0.;
-	
-	#pragma unroll 4	
+
+	#pragma unroll 4
 	for (k = 0; k<NDIM; k++){
 		#if(NSY)
 		dU[UU] += mhd[0][k] * conn_GPU[0 * NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + k*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
@@ -3323,7 +3910,7 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 		dU[U2] += mhd[3][k] * conn;
 		dU[U3] += mhd[2][k] * conn;
 		#endif
-	}	
+	}
 
 	//Add cooling term if needed
 	#if (COOL_DISK)
@@ -3334,6 +3921,7 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	dU[U1] *= geom->g;
 	dU[U2] *= geom->g;
 	dU[U3] *= geom->g;
+<<<<<<< HEAD
 
 	//Add M1 radiation terms
 	#if(RAD_M1)
@@ -3402,6 +3990,8 @@ __device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcur
 	dU[U3_RAD] *= geom->g;
 	#endif
 
+=======
+>>>>>>> origin/danat_summer
 	/* done! */
 }
 
@@ -3438,6 +4028,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 			dU[U1] += -q->ucov[1] * lambda;
 			dU[U2] += -q->ucov[2] * lambda;
 			dU[U3] += -q->ucov[3] * lambda;
+			// Danat: Use HelmEOS
 			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) *(GAMMA - 1.) * lambda;
 		}
 		else{
@@ -3446,6 +4037,7 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 			dU[U1] += -q->ucov[1] * lambda;
 			dU[U2] += -q->ucov[2] * lambda;
 			dU[U3] += -q->ucov[3] * lambda;
+			// Danat: Use HelmEOS
 			dU[KTOT] += -pow(ph[RHO], 1. - GAMMA) *(GAMMA - 1.) * lambda;
 		}
 	}
@@ -3453,14 +4045,27 @@ __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *
 }
 
 /* MHD stress tensor, with first index up, second index down */
-__device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd)
+__device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd
+                        #if (DOHELM)
+                        , const  double* __restrict__ gpu_eos_table
+                        #endif
+                        )
 {
 	int j;
 	double r, u, P, w, bsq, eta, ptot;
 
 	r = pr[RHO];
 	u = pr[UU];
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    eos_mode_rhou_pres (gpu_eos_table, r, u, &P);
+    #else
+    // 2. Ideal gas EOS
 	P = (GAMMA - 1.)*u;
+    #endif
+
 	w = P + r + u;
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
@@ -3470,6 +4075,7 @@ __device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mh
 	DLOOPA mhd[j] = eta*q->ucon[dir] * q->ucov[j] + ptot*delta(dir, j) - q->bcon[dir] * q->bcov[j];
 }
 
+<<<<<<< HEAD
 __device__ void mhd_calc_rad(double * pr, int dir, struct of_state_rad * q_rad, double * mhd_rad){
 	int j;
 	/* single row of mhd stress tensor, first index up, second index down */
@@ -3555,18 +4161,46 @@ __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, 
 }
 
 __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin)
+=======
+
+__device__ void primtoflux(double *  pr, struct of_state *  q, int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin, double gam
+                            #if (DOHELM)
+                            , const  double* __restrict__ gpu_eos_table
+                            #endif
+                           )
+>>>>>>> origin/danat_summer
 {
 	int j, k;
 	double mhd[NDIM];
 	double P, w, bsq, eta, ptot;
 
 	/*Calculate misc quantities*/
+<<<<<<< HEAD
 	P = (GAMMA - 1.)*pr[UU];
 	#if(AMD)
 	w = fma(gam, pr[UU], pr[RHO]);
 	#else
 	w = pr[RHO] + GAMMA*pr[UU];
 	#endif
+=======
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    double cs2_helm;
+    eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], &P, &cs2_helm);
+	w = pr[RHO] + pr[UU] + P;
+    #else
+    // 2. Ideal gas EOS
+    P = (gam - 1.)*pr[UU];
+    #if AMD
+    w = fma(gam, pr[UU], pr[RHO]);
+    #else
+    w = pr[RHO] + gam*pr[UU];
+    #endif
+    #endif
+
+>>>>>>> origin/danat_summer
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
 	#if(AMD)
@@ -3635,8 +4269,23 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 			Acon_js = geom->gcon[9];
 		}
 
+<<<<<<< HEAD
 		//find fast magnetosonic speed
 		cs2 = GAMMA*(GAMMA - 1.)*pr[UU] / w;
+=======
+		/* find fast magnetosonic speed */
+
+        // EOS-specific calls:
+        #if (DOHELM)
+        // 1. Helmholtz EOS
+        // cs2 was already calculated above
+        cs2 = cs2_helm;
+        #else
+        // 2. Ideal gas EOS
+        cs2 = gam*(gam - 1.)*pr[UU] / w;
+        #endif
+
+>>>>>>> origin/danat_summer
 		va2 = bsq / eta;
 		cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
 
@@ -3677,6 +4326,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	return;
 }
 
+<<<<<<< HEAD
 //Calculate radiative wave velocity
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx) {
 	#if(RAD_M1)
@@ -3821,6 +4471,8 @@ __device__ double calc_kappa_es(double* ph) {
 	kappa_es = 0.2 * (1 + X_AB);
 	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
+=======
+>>>>>>> origin/danat_summer
 
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq)
 {
@@ -3893,16 +4545,6 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 	return;
 }
 
-/* find ucon, ucov, bcon, bcov from radiation primitive variables */
-__device__ void get_state_rad(double * pr, struct of_geom * geom, struct of_state_rad * q_rad)
-{
-	/* get radiation ucon */
-	ucon_calc_rad(pr, geom, q_rad->ucon);
-	lower(q_rad->ucon, geom->gcov, q_rad->ucov);
-
-	return;
-}
-
 /* Raises a covariant rank-1 tensor to a contravariant one */
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM])
 {
@@ -3928,12 +4570,33 @@ __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM])
 	ucov[2] = fma(gcov[2], ucon[0], fma(gcov[5], ucon[1], fma(gcov[7], ucon[2],gcov[8] * ucon[3])));
 	ucov[3] = fma(gcov[3], ucon[0], fma(gcov[6], ucon[1], fma(gcov[8], ucon[2],gcov[9] * ucon[3])));
 	return;
+<<<<<<< HEAD
 	#else
 	ucov[0] = gcov[0]*ucon[0] + gcov[1]*ucon[1] + gcov[2]*ucon[2] + gcov[3]*ucon[3] ;
 	ucov[1] = gcov[1]*ucon[0] + gcov[4]*ucon[1] + gcov[5]*ucon[2] + gcov[6]*ucon[3] ;
 	ucov[2] = gcov[2]*ucon[0] + gcov[5]*ucon[1] + gcov[7]*ucon[2] + gcov[8]*ucon[3] ;
 	ucov[3] = gcov[3]*ucon[0] + gcov[6]*ucon[1] + gcov[8]*ucon[2] + gcov[9]*ucon[3] ;
 	#endif
+=======
+#else
+	ucov[0] = gcov[0]*ucon[0]
+		+ gcov[1]*ucon[1]
+		+ gcov[2]*ucon[2]
+		+ gcov[3]*ucon[3] ;
+	ucov[1] = gcov[1]*ucon[0]
+		+ gcov[4]*ucon[1]
+		+ gcov[5]*ucon[2]
+		+ gcov[6]*ucon[3] ;
+	ucov[2] = gcov[2]*ucon[0]
+		+ gcov[5]*ucon[1]
+		+ gcov[7]*ucon[2]
+		+ gcov[8]*ucon[3] ;
+	ucov[3] = gcov[3]*ucon[0]
+		+ gcov[6]*ucon[1]
+		+ gcov[8]*ucon[2]
+		+ gcov[9]*ucon[3] ;
+#endif
+>>>>>>> origin/danat_summer
 }
 
 /* find contravariant four-velocity */
@@ -3961,6 +4624,7 @@ __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon)
 	return;
 }
 
+<<<<<<< HEAD
 /* find contravariant radiation four-velocity */
 __device__ void ucon_calc_rad(double * pr, struct of_geom * geom, double *ucon_rad)
 {
@@ -3986,6 +4650,8 @@ __device__ void ucon_calc_rad(double * pr, struct of_geom * geom, double *ucon_r
 	return;
 }
 
+=======
+>>>>>>> origin/danat_summer
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon)
 {
 	int j;
@@ -4017,6 +4683,7 @@ __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma)
 	if (qsq < 0.){
 		if (fabs(qsq) > 1.E-10){ // then assume not just machine precision
 			*gamma = 1.;
+<<<<<<< HEAD
 			return (1);
 		}
 		else qsq = 1.E-10; // set floor
@@ -4041,12 +4708,14 @@ __device__ int gamma_calc_rad(double *  pr, struct of_geom *  geom, double *  ga
 	if (qsq_rad < 0.) {
 		if (fabs(qsq_rad) > 1.E-10) { // then assume not just machine precision
 			*gamma_rad = 1.;
+=======
+>>>>>>> origin/danat_summer
 			return (1);
 		}
-		else qsq_rad = 1.E-10; // set floor
+		else qsq = 1.E-10; // set floor
 	}
 
-	*gamma_rad = sqrt(1. + qsq_rad);
+	*gamma = sqrt(1. + qsq);
 
 	return(0);
 }
@@ -4060,7 +4729,7 @@ __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  g
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = ii*(BS_2 + 2 * N2G) + jj;
-	#endif	
+	#endif
 	#if(NSY)
 	geom->gcon[0] = gcon_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
 	geom->gcov[0] = gcov_GPU[kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
@@ -4118,8 +4787,8 @@ __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans *trans
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int global_id = ii*(BS_2 + 2 * N2G) + jj;
-	#endif	
-	
+	#endif
+
 	#if(NSY)
 	for (i = 0; i < NDIM; i++)for (j = 0; j < NDIM; j++) {
 		trans->Mud[i][j] = Mud_GPU[(i*NDIM + j) * NSOLVER*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + kk*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + global_id];
@@ -4142,25 +4811,40 @@ __device__ void inflow_check(double *  pr, int ii, int jj, int zz, int type, con
 	ucon_calc(pr, &geom, ucon);
 
 	if (((ucon[1] > 0.) && (type == 0)) || ((ucon[1] < 0.) && (type == 1))) {
+<<<<<<< HEAD
 		// find gamma and remove it from primitives 
 		gamma_calc(pr, &geom, &gamma);
+=======
+		// find gamma and remove it from primitives
+		if (gamma_calc(pr, &geom, &gamma)) {
+			// fflush(stderr);
+			// fprintf(stderr,"\ninflow_check(): gamma failure \n");
+			// fflush(stderr);
+			// fail(FAIL_GAMMA);
+		}
+>>>>>>> origin/danat_summer
 		pr[U1] /= gamma;
 		pr[U2] /= gamma;
 		pr[U3] /= gamma;
 		alpha = 1. / sqrt(-geom.gcon[0]);
 		beta1 = geom.gcon[1] * alpha*alpha;
 
-		// reset radial velocity so radial 4-velocity is zero 
+		// reset radial velocity so radial 4-velocity is zero
 		pr[U1] = beta1 / alpha;
 
-		// now find new gamma and put it back in 		
+		// now find new gamma and put it back in
 		vsq = geom.gcov[4] * pr[UTCON1 + 1 - 1] * pr[UTCON1 + 1 - 1]; //1,1
 		vsq += 2.*geom.gcov[5] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 1 - 1]; //1,2
 		vsq += 2.*geom.gcov[6] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 1 - 1]; //1,3
 		vsq += geom.gcov[7] * pr[UTCON1 + 2 - 1] * pr[UTCON1 + 2 - 1]; //2,2
 		vsq += 2 * geom.gcov[8] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 2 - 1]; //2,3
+<<<<<<< HEAD
 		vsq += geom.gcov[9] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 3 - 1]; //3,3
 		
+=======
+		vsq += geom.gcov[9] * pr[UTCON1 + 3 - 1] * pr[UTCON1 + 3 - 1]; //1,2
+
+>>>>>>> origin/danat_summer
 		vsq = MY_MAX(1.e-13,vsq);
 		if (vsq >= 1.) {
 			vsq = 1. - 1. / (GAMMAMAX*GAMMAMAX);
@@ -4210,7 +4894,11 @@ __device__  double slope_lim(double y1, double y2, double y3, int dir)
 {
 	double Dqm, Dqp, Dqc, s;
 	/* woodward, or monotonized central, slope limiter */
+<<<<<<< HEAD
 	Dqm = (2.0)*(y2 - y1);
+=======
+	Dqm = (2.0)*(y2 - y1); // Danat: changed the coefficient from 1.5 to 2.0 for comparison between CPU and GPU codes
+>>>>>>> origin/danat_summer
 	Dqp = (2.0)*(y3 - y2);
 	Dqc = 0.5*(y3 - y1);
 	s = Dqm*Dqp;
@@ -4280,7 +4968,7 @@ __device__ void para(double x1, double x2, double x3, double x4, double x5, doub
 
 __device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F) {
 	double Sp;
-	
+
 	Sp = (x4 - x2) / (x5 - x1);
 	F[0] = MY_MAX(0., MY_MIN(1., 10.*(Sp - 0.75)));
 	if (fabs(x4 - x2) / MY_MIN(x4, x2) < 0.33) F[0] = 0;
@@ -4313,6 +5001,8 @@ __device__ double interp(double y1, double y2, double y3)
 			return(Dqc);
 	}
 }
+
+//#include "decsCUDA.h"
 
 __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restrict__  p, int dir, int POLE_1, int POLE_2)
 {
@@ -4380,7 +5070,7 @@ __global__ void interpolate(double *  dq1, double *  dq2, const  double* __restr
 	}
 
 	if (k == 1) {
-		#pragma unroll 9	
+		#pragma unroll 9
 		for (k = 0; k<NPR; k++) {
 			x2 = p[MY_MAX(k*(ksize)+global_id + z2 - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
 			x3 = p[k*(ksize)+global_id + z3];
@@ -4481,19 +5171,19 @@ __global__ void fluxcalcprep(const  double* __restrict__   F, double *  dq1, dou
 			x4 = p[MY_MIN((UU + dir)*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			if (x4 - x2 > 0.) FF = 0.;
 			#endif
-		#pragma unroll 9	
+		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
 			x1 = p[MY_MAX(k*(ksize)+global_id + z1*zdel - 2 * (BS_3 + 2 * N3G)*jdel - 2 * isize*idel, 0)];
 			x2 = p[MY_MAX(k*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
 			x3 = p[k*(ksize)+global_id + z3*zdel];
 			x4 = p[MY_MIN(k*(ksize)+global_id + z4*zdel + 1 * (BS_3 + 2 * N3G)*jdel + 1 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
 			x5 = p[MY_MIN(k*(ksize)+global_id + z5*zdel + 2 * (BS_3 + 2 * N3G)*jdel + 2 * isize*idel, NPR*((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) + fix_mem1))];
-			para(x1, x2, x3, x4, x5, &result, &temp);		
+			para(x1, x2, x3, x4, x5, &result, &temp);
 			dq1[k*(ksize)+global_id] = FF*x3 + (1. - FF)*result;
 			dq2[k*(ksize)+global_id] = FF*x3 + (1. - FF)*temp;
 		}
 		#else
-		#pragma unroll 9	
+		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
 			x2 = p[MY_MAX(k*(ksize)+global_id + z2*zdel - 1 * (BS_3 + 2 * N3G)*jdel - 1 * isize*idel, 0)];
 			x3 = p[k*(ksize)+global_id + z3*zdel];
@@ -4540,7 +5230,7 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 			for (u = 0; u < zsize; u++){
 				for (k = 0; k < NPR; k++) p[k*ksize + global_id - zoffset + u] = temp[k] + (((double)u + 0.5) - 0.5*(double)zsize) / ((double)zsize)*(dq2[k*(ksize)+global_id - zoffset] - dq1[k*(ksize)+global_id - zoffset]);
 			}
-			
+
 			temp[0] = ps[0 * (ksize)+global_id - zoffset];
 			temp[2] = ps[2 * (ksize)+global_id - zoffset];
 			for (u = 0; u < zsize; u++){
@@ -4581,7 +5271,15 @@ __global__ void reconstruct_internal(double* p, double* ps, const  double* __res
 }
 
 __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int lim, int dir,
+<<<<<<< HEAD
 	double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag)
+=======
+	double gam, double cour, double*  dtij, int POLE_1, int POLE_2, double dx_1, double dx_2, double dx_3, int calc_time
+#if (DOHELM)
+    , const  double* __restrict__ gpu_eos_table
+#endif
+    )
+>>>>>>> origin/danat_summer
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -4604,6 +5302,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	int idel, jdel, zdel, i, face;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor;
+<<<<<<< HEAD
 	double cmax_r, cmin_r, cmax, cmin, cmax_l, cmin_l, ctop, ctop_rad;
 	double temp1[NPR], temp2[NPR], temp3[NPR], temp4[NPR], p[NPR];
 	struct of_geom geom;
@@ -4612,6 +5311,16 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	double cmax_r_rad, cmin_r_rad, cmax_l_rad, cmin_l_rad, cmax_rad, cmin_rad;
 	struct of_state_rad state_rad;
 	#endif
+=======
+    double cmax_r, cmin_r, cmax, cmin;
+	double ctop;
+	double temp3[NPR], temp4[NPR];
+    double cmax_l, cmin_l;
+	double p[NPR];
+	double temp1[NPR], temp2[NPR];
+	struct of_geom geom;
+	struct of_state state;
+>>>>>>> origin/danat_summer
 	local_dtij[local_id] = 1.e9;
 	int zsize = 1, zoffset = 0;
 
@@ -4632,13 +5341,13 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 
 		//Get left state
 		if (zoffset != 0 && dir == 3){
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
 				p[k] = 0.5 * (pv[k * (ksize)+global_id] + pv[k * (ksize)+global_id - D3]);
 			}
 		}
 		else{
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
 				p[k] = dq2[k * (ksize)+global_id - idel * isize - jdel * (BS_3 + 2 * N3G) - zdel];
 			}
@@ -4660,6 +5369,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		#endif
 
 		get_state(p, &geom, &state);
+<<<<<<< HEAD
 		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l);
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l);
 		#if(RAD_M1)
@@ -4668,16 +5378,29 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux_rad(p, &state_rad, 0, &geom, temp2);
 		vchar_rad(p, &state, &state_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx * ((double)zsize));
 		#endif
+=======
+		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                   );
+		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                   );
+		//vchar(p, &state, &geom, dir, &cmax_l, &cmin_l, gam);
+>>>>>>> origin/danat_summer
 
 		//Get right state
 		if (zoffset != 0 && dir == 3){
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
 				p[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id - D3]);
 			}
 		}
 		else{
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k < NPR; k++){
 				p[k] = dq1[k*(ksize)+global_id];
 			}
@@ -4697,12 +5420,27 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		}
 		#endif
 		get_state(p, &geom, &state);
+<<<<<<< HEAD
 		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r);
 		primtoflux(p, &state, 0, &geom, temp4, &cmax_r, &cmin_r);
+=======
+		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                   );
+		primtoflux(p, &state, 0, &geom, temp4, &cmax_r, &cmin_r, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                   );
+		//vchar(p, &state, &geom, dir, &cmax_r, &cmin_r,  gam);
+>>>>>>> origin/danat_summer
 
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 		ctop = MY_MAX(cmax, cmin);
+<<<<<<< HEAD
 
 		#if(RAD_M1)
 		if (flag == 1) {
@@ -4764,6 +5502,19 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop = MY_MAX(ctop, ctop_rad);
 		#endif
 
+=======
+
+		#pragma unroll 9
+		for (k = 0; k<NPR_U; k++){
+			#if(HLLF)
+			F[k*(ksize)+global_id] = (cmax*temp1[k] + cmin*temp3[k] - cmax*cmin*(temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+			#else
+			F[k*(ksize)+global_id] =  LAXF*(0.5*(temp1[k] + temp3[k] - ctop*(temp4[k] - temp2[k])));
+			#endif
+		}
+
+
+>>>>>>> origin/danat_summer
 		local_dtij[local_id] = factor / ctop;
 	}
 	if (calc_time == 1){
@@ -4871,7 +5622,7 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 	vp = -(-B + discr) / (2.*A);
 	vm = -(-B - discr) / (2.*A);
 
-	#if( FULL_DISP ) 
+	#if( FULL_DISP )
 	double vp2, vm2;
 	vp2 = NewtonRaphson(vp, 5, dir, ucon, bcon, EE, va2, cs2);
 	vm2 = NewtonRaphson(vm, 5, dir, ucon, bcon, EE, va2, cs2);
@@ -4893,7 +5644,11 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 	return;
 }
 
-__device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *vmax, double *vmin)
+__device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *vmax, double *vmin
+                        #if (DOHELM)
+                        , const  double* __restrict__ gpu_eos_table
+                        #endif
+                      )
 {
 	double discr, vp, vm, va2, cs2, cms2;
 	double bsq, eta, w;
@@ -4913,14 +5668,25 @@ __device__ void vchar(double *pr, struct of_state *q, struct of_geom *geom, int 
 	}
 
 	/* find fast magnetosonic speed */
+
+    // EOS-specific calls:
+    #if (DOHELM)
+    // 1. Helmholtz EOS
+    double xpres;
+    eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], &xpres, &cs2);
+    w = pr[RHO] + pr[UU] + xpres;
+    #else
+    // 2. Ideal gas EOS
 	#if AMD
 	w = fma(gam, pr[UU], pr[RHO]);
 	#else
 	w = pr[RHO] + GAMMA*pr[UU];
 	#endif
+    cs2 = GAMMA*(GAMMA - 1.)*pr[UU] / w;
+    #endif
+
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
-	cs2 = GAMMA*(GAMMA - 1.)*pr[UU] / w;
 	va2 = bsq / eta;
 	cms2 = cs2 + va2 - cs2*va2;	/* and there it is... */
 
@@ -4986,10 +5752,10 @@ __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, in
 				F3[B2*(ksize)+icurr*isize + (N2G - 1)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
-				#pragma unroll 9	
+				#pragma unroll 9
 				PLOOP F2[k*(ksize)+icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.;
-				#endif	
-				#pragma unroll 9	
+				#endif
+				#pragma unroll 9
 				for (k = 0; k<NPR; k++){
 					F2[k*(ksize)+icurr*isize + N2G*(BS_3 + 2 * N3G) + zcurr] = 0.0;
 				}
@@ -5000,10 +5766,10 @@ __global__ void fix_flux(double *  F1, double *  F2, double *  F3, int NBR_1, in
 				F3[B2*(ksize)+icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = -F3[B2*(ksize)+icurr*isize + (BS_2 + N2G - 1)*(BS_3 + 2 * N3G) + zcurr];
 				#endif
 				#if INFLOW==0
-				#pragma unroll 9	
+				#pragma unroll 9
 				PLOOP F2[k*(ksize)+icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.;
-				#endif	
-				#pragma unroll 9	
+				#endif
+				#pragma unroll 9
 				for (k = 0; k<NPR; k++){
 					F2[k*(ksize)+icurr*isize + (BS_2 + N2G)*(BS_3 + 2 * N3G) + zcurr] = 0.0;
 				}
@@ -5268,7 +6034,7 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 			for (u = 0; u < zsize; u++)psf[global_id - zoffset + u] = temp / gdet_GPU[index1 - NSY*(zoffset - u)];
 		}
 	}
-	
+
 	if (icurr >= imin[2] && jcurr >= jmin[2] && zcurr >= zmin[2] && icurr<imax[2] && jcurr<jmax[2] && zcurr<zmax[2] && k == 1){
 		#if(N3G>0)
 		if (zoffset == 0){
@@ -5359,7 +6125,7 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 	int fix_mem2 = fix_mem1;
 	#else
 	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
-	#endif	
+	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	int zsize = 1,  zoffset=0, u;
 	double temp;
@@ -5492,7 +6258,7 @@ __global__ void flux_ct2(double *  F1, double *  F2, double *  F3, const  double
 		#endif
 	}
 	if (icurr >= N1G && jcurr >= N2G && zcurr >= N3G && icurr<BS_1 + N1G && jcurr<BS_2 + N2G + D2 && zcurr<BS_3 + N3G){
-		#if (N1G>0 && N2G>0)		
+		#if (N1G>0 && N2G>0)
 		F2[B1*(ksize)+global_id] = -0.5*(emf3 - emf[3 * (ksize)+global_id + isize]);
 		#endif
 		#if (N2G>0 && N3G>0)
@@ -5786,11 +6552,25 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#endif
 		#endif
 
+<<<<<<< HEAD
 		#if(NEWMAN)
 		pflag[global_id] = Utoprim_NM(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC);
 		#else
 		pflag[global_id] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC);
 		#endif
+=======
+__global__ void Utoprim0(const  double* __restrict__ pi_i, const  double* __restrict__ pb_i, double* pf_i, double *  psf,
+	const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3, double* U_i, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
+{
+
+}
+
+__global__ void Utoprim1(double* pi_i, double* pb_i, double* pf_i, double *  psf,
+	double *  F1, double *  F2, double *  F3, double* radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step)
+{
+>>>>>>> origin/danat_summer
 
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
@@ -5826,9 +6606,20 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 }
 
 //For P100/V100 GPUs replace Utoprim0, Utoprim1, Utoprim2, fixup by this kernel
+#if (DOHELM)
 __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int POLE_1, int POLE_2,
+    const double* __restrict__ gpu_eos_table)
+#else
+__global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2, const  double* __restrict__  psf,
+	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+<<<<<<< HEAD
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2, double y_max)
+=======
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int POLE_1, int POLE_2)
+#endif
+>>>>>>> origin/danat_summer
 {
 	int global_id=blockDim.x*blockIdx.x+threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k=0;
@@ -5851,9 +6642,19 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	struct of_geom geom;
 	struct of_state q;
+<<<<<<< HEAD
 	double pf[NPR],  dU[NPR], U[NPR];
 
 	int zsize = 1, zoffset = 0, u;
+=======
+	int  dofloor = 0, m;
+	double r, uuscal, rhoscal, rhoflr, uuflr;
+	double f, gamma, bsq;
+	double pf[NPR], pf_prefloor[NPR], dU[NPR], U[NPR];
+	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+	int zsize = 1, zlevel = 0, zoffset = 0, u;
+>>>>>>> origin/danat_summer
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	int zlevel = 0;
@@ -5872,16 +6673,26 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0/((double)zsize))*pi_i[k*(ksize)+global_id-zoffset+u];
 				}
 			}
+<<<<<<< HEAD
 
 			get_state(pf, &geom, &q);
 			primtoflux(pf, &q,0, &geom, U, NULL, NULL);
 			#pragma unroll 9	
+=======
+			get_state(pf, &geom, &q);
+			primtoU(pf, &q, &geom, U, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                    );
+			#pragma unroll 9
+>>>>>>> origin/danat_summer
 			for (k = 0; k<NPR; k++){
 				storage2[k*(ksize)+global_id] = U[k];
 			}
 		}
 		else{
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k<NPR; k++){
 				U[k] = storage2[k*(ksize)+global_id];
 			}
@@ -5893,8 +6704,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			}
 			get_state(pf, &geom, &q);
 		}
+<<<<<<< HEAD
 
 		#pragma unroll 9	
+=======
+		#pragma unroll 9
+>>>>>>> origin/danat_summer
 		for (k = 0; k<NPR; k++){
 			for (u = 0; u < zsize; u++){
 				#if( N1G > 0 )
@@ -5909,9 +6724,17 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		}
 
+<<<<<<< HEAD
 		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]);
+=======
+		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, gam, conn, &q, a, radius[icurr]
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
+>>>>>>> origin/danat_summer
 
-		#pragma unroll 9	
+		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
 			U[k] += Dt*(dU[k]);
 		}
@@ -5951,6 +6774,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max);
 		#else
 		#if(NEWMAN)
+<<<<<<< HEAD
 		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 		#else
 		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
@@ -5961,6 +6785,44 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			failimage[global_id]++;
 			#if DOKTOT
 			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, 0);
+=======
+		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                        #if (DOHELM)
+                                        , gpu_eos_table
+                                        #endif
+                                        );
+		if (pflag[global_id]){
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                            #if (DOHELM)
+                                            , gpu_eos_table
+                                            #endif
+                                            );
+		}
+		#else
+		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                        #if (DOHELM)
+                                        , gpu_eos_table
+                                        #endif
+                                        );
+		if (pflag[global_id]) {
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+										#if (DOHELM)
+										, gpu_eos_table
+										#endif
+			);
+		}
+		#endif
+		//compute the square of fluid frame magnetic field (twice magnetic pressure)
+		#if( DO_FONT_FIX )
+		if (pflag[global_id]) {
+			failimage[global_id]++;
+			#if DOKTOT
+			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+			);
+>>>>>>> origin/danat_summer
 			#endif
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
@@ -5972,25 +6834,263 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			}
 		}
 		#endif
+<<<<<<< HEAD
 		#endif
 
 		//Apply floors in ZAMO frame or drift frame
 		if (fixup_cell(pf, radius[icurr], &geom, &q)) {
+=======
+		r = radius[icurr];
+		rhoscal = pow(r, -POWRHO);
+		uuscal = pow(rhoscal, gam);
+
+		// Danat: multiply by max. density; change to a device global variable later 
+		#if (DOHELM)
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+		double rhomax_helm = 1.0;
+#else
+		double rhomax_helm = 1e-7;
+#endif
+		rhoflr = RHOMIN * rhoscal * rhomax_helm;
+		uuflr = UUMIN * uuscal * rhomax_helm;
+		#else
+		rhoflr = RHOMIN * rhoscal;
+		uuflr = UUMIN * uuscal;
+		#endif
+
+		ucon_calc(pf, &geom, q.ucon);
+		lower(q.ucon, geom.gcov, q.ucov);
+		bcon_calc(pf, q.ucon, q.ucov, q.bcon);
+		lower(q.bcon, geom.gcov, q.bcov);
+		bsq = dot(q.bcon, q.bcov);
+
+		//tie floors to the local values of magnetic field and internal energy density
+		if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+		if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+		if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
+
+		if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+		if (uuflr  < UUMINLIMIT) uuflr = UUMINLIMIT;
+
+		//floor on density and internal energy density (momentum *not* conserved)
+		#pragma unroll 9
+		PLOOP pf_prefloor[k] = pf[k];
+		if (pf[RHO] <rhoflr){
+			pf[RHO] = rhoflr;
+			dofloor = 1;
+		}
+		if (pf[UU] < uuflr){
+			pf[UU] = uuflr;
+			dofloor = 1;
+		}
+
+		#if( DRIFT_FLOOR )
+		if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
+			//ucon_calc(pf_prefloor, &geom, q.ucon) ;
+			//lower(q.ucon, geom.gcov, q.ucov) ;
+			if (trans > 1.) {
+				trans = 1.;
+			}
+
+			betapar = -q.bcon[0] / ((bsq + SMALL)*q.ucon[0]);
+			betasq = betapar*betapar*bsq;
+			betasqmax = 1. - 1. / (GAMMAMAX*GAMMAMAX);
+			if (betasq > betasqmax) {
+				betasq = betasqmax;
+			}
+			gamma = 1. / sqrt(1 - betasq);
+			#pragma unroll 4
+			for (m = 0; m < NDIM; m++) {
+				ucondr[m] = gamma*(q.ucon[m] + betapar*q.bcon[m]);
+			}
+
+			Bcon[0] = 0.;
+
+			#pragma unroll 3
+			for (m = 1; m < NDIM; m++) {
+				Bcon[m] = pf[B1 - 1 + m];
+			}
+
+			lower(Bcon, geom.gcov, Bcov);
+			udotB = dot(q.ucon, Bcov);
+			Bsq = dot(Bcon, Bcov);
+			B = sqrt(Bsq);
+
+			//enthalpy before the floors
+			wold = pf_prefloor[RHO] + pf_prefloor[UU] * gam;
+
+			//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
+			QdotB = udotB*wold*q.ucon[0];
+
+			//enthalpy after the floors
+			wnew = pf[RHO] + pf[UU] * gam;
+			//wnew = wold;
+
+			x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
+
+			//new parallel velocity
+			vpar = x / (ucondr[0] * (1. + sqrt(1. + x*x)));
+
+			one_over_ucondr_t = 1. / ucondr[0];
+
+			//new contravariant 3-velocity, v^i
+			vcon[0] = 1.;
+
+			#pragma unroll 3
+			for (m = 1; m < NDIM; m++) {
+				//parallel (to B) plus perpendicular (to B) velocities
+				vcon[m] = vpar*Bcon[m] / (B + SMALL) + ucondr[m] * one_over_ucondr_t;
+			}
+
+			//compute u^t corresponding to the new v^i
+			ut_calc_3vel(vcon, &geom, &ut);
+
+			#pragma unroll 4
+			for (m = 0; m < NDIM; m++) {
+				ucon[m] = ut*vcon[m];
+			}
+			ucon_to_utcon(ucon, &geom, utcon);
+
+			//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
+			//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
+			#pragma unroll 3
+			for (m = 1; m < NDIM; m++) {
+				pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
+			}
+		}
+		#elif(ZAMO_FLOOR)
+		if (dofloor == 1) {
+			double dpf[NPR], U_prefloor[NPR],Xtransone_over_ucondr;
+			#pragma unroll 9
+			PLOOP dpf[k] = pf[k] - pf_prefloor[k];
+
+			//compute the conserved quantity associated with floor addition
+			get_state(dpf, &geom, &q);
+			primtoU(dpf, &q, &geom, dU, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                    );
+
+			//compute the prefloor conserved quantity
+			get_state(pf_prefloor, &geom, &q);
+			primtoU(pf_prefloor, &q, &geom, U_prefloor, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                    );
+
+			//add U_added to the current conserved quantity
+			#pragma unroll 9
+			PLOOP U[k] = U_prefloor[k] + dU[k];
+
+			#if(NEWMAN)
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                            #if (DOHELM)
+                                            , gpu_eos_table
+                                            #endif
+                                            );
+			if (pflag[global_id]){
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                                #if (DOHELM)
+                                                , gpu_eos_table
+                                                #endif
+                                                );
+			}
+			#else
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                            #if (DOHELM)
+                                            , gpu_eos_table
+                                            #endif
+                                            );
+			if (pflag[global_id]) {
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                                #if (DOHELM)
+                                                , gpu_eos_table
+                                                #endif
+                                                );
+			}
+			#endif
+			if (pflag[global_id]){
+				failimage[global_id]++;
+				#if( DO_FONT_FIX )
+				U[KTOT] = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+				pf[KTOT] = U[KTOT] / U[RHO];
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]
+#if(DOHELM)
+					, gpu_eos_table
+#endif
+				);
+				if (pflag[global_id]) {
+					failimage[1 * (ksize)+global_id]++;
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+					if (pflag[global_id]){
+						pflag[0] = 100;
+						failimage[2 * (ksize)+global_id]++;
+					}
+				}
+				#else
+				pflag[0] = 100;
+				#endif
+			}
+		}
+		#endif
+		// limit gamma wrt normal observer
+		if (gamma_calc(pf, &geom, &gamma)) {
+			// Treat gamma failure here as "fixable" for fixup_utoprim()
+>>>>>>> origin/danat_summer
 			pflag[global_id] = -333;
 			pflag[0] = global_id;;
 			failimage[3 * (ksize)+global_id]++;
 		}
+<<<<<<< HEAD
 
 		#pragma unroll 9	
 		for (k = 0; k< NPR; k++){
+=======
+		else {
+			if (gamma > GAMMAMAX) {
+				f = sqrt(
+					(GAMMAMAX*GAMMAMAX - 1.) /
+					(gamma*gamma - 1.)
+					);
+				pf[U1] *= f;
+				pf[U2] *= f;
+				pf[U3] *= f;
+			}
+		}
+		#if DOKTOT
+		#if (DOHELM && DOHELM_KTOT)
+			double xentr;
+			eos_mode_rhou_entr(gpu_eos_table, pf[RHO], pf[UU], &xentr);
+			pf_i[KTOT * (ksize)+global_id] = exp(KTOT_FACTOR * xentr);
+			// pf_i[KTOT * (ksize)+global_id] = xentr;
+		#else
+			pf_i[KTOT * (ksize)+global_id] = (gam - 1.)* pf[UU] * pow(pf[RHO], -gam);
+		#endif
+		#endif
+		#pragma unroll 9
+		for (k = 0; k< NPR - DOKTOT; k++){
+>>>>>>> origin/danat_summer
 			pf_i[k*(ksize)+global_id] = pf[k];
 		}
 	}
 }
 
+
+#if (DOHELM)
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+<<<<<<< HEAD
 	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2)
+=======
+	const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int POLE_1, int POLE_2, const double* __restrict__ gpu_eos_table)
+#else
+__global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
+    const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage,
+    const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double* Katm, double gam, double dx_1, double dx_2, double dx_3, double a, double Dt, int full_step, int POLE_1, int POLE_2)
+#endif
+>>>>>>> origin/danat_summer
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int ki = 0,k=0, ksize, isize, fix_mem1,fix_mem2, icurr,jcurr,zcurr;
@@ -5999,7 +7099,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 		global_id -= 0;
 		icurr = 0;
 		zcurr = global_id%BS_3;
-		jcurr = (global_id - zcurr) / BS_3; 
+		jcurr = (global_id - zcurr) / BS_3;
 		k = 1;
 	}
 	else if (global_id >= BS_2*BS_3 && global_id < 2 * BS_2*BS_3){
@@ -6044,7 +7144,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	}
 	zcurr += N3G;
 	jcurr += N2G;
-	icurr += N1G;	
+	icurr += N1G;
 	isize = (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G);
 	global_id = isize*icurr + (BS_3 + 2 * N3G)*jcurr + zcurr;
 	fix_mem1 = LOCAL_WORK_SIZE - (isize*(BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
@@ -6056,8 +7156,18 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	struct of_geom geom;
 	struct of_state q;
+<<<<<<< HEAD
 	double pf[NPR], U[NPR];
 	int zsize = 1, zoffset = 0, u;
+=======
+	int  dofloor = 0, m;
+	double r, uuscal, rhoscal, rhoflr, uuflr;
+	double f, gamma, bsq;
+	double pf[NPR], pf_prefloor[NPR], U[NPR];
+	double trans, betapar, betasq, betasqmax, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+	int zsize = 1, zlevel = 0, zoffset = 0, u;
+>>>>>>> origin/danat_summer
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	int zlevel = 0;
@@ -6078,9 +7188,17 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				}
 			}
 			get_state(pf, &geom, &q);
+<<<<<<< HEAD
 			primtoflux(pf, &q, 0, &geom, U, NULL, NULL);
+=======
+			primtoU(pf, &q, &geom, U, gam
+                    #if (DOHELM)
+                    , gpu_eos_table
+                    #endif
+                    );
+>>>>>>> origin/danat_summer
 
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k<NPR; k++){
 				for (u = 0; u < zsize; u++){
 					#if( N1G > 0 )
@@ -6122,16 +7240,52 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			#endif
 
 			#if(NEWMAN)
+<<<<<<< HEAD
 			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
 			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC);
+=======
+			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                            #if (DOHELM)
+                                            , gpu_eos_table
+                                            #endif
+                                            );
+			if (pflag[global_id]){
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                                #if (DOHELM)
+                                                , gpu_eos_table
+                                                #endif
+                                                );
+			}
+			#else
+			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                            #if (DOHELM)
+                                            , gpu_eos_table
+                                            #endif
+                                            );
+			if (pflag[global_id]) {
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                                #if (DOHELM)
+                                                , gpu_eos_table
+                                                #endif
+                                                );
+			}
+>>>>>>> origin/danat_summer
 			#endif
 			//compute the square of fluid frame magnetic field (twice magnetic pressure)
-			#if( DO_FONT_FIX ) 
+			#if( DO_FONT_FIX )
 			if (pflag[global_id]) {
 				failimage[global_id]++;
 				#if DOKTOT
+<<<<<<< HEAD
 				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, 0);
+=======
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]
+#if(DOHELM)
+					, gpu_eos_table
+#endif
+				);
+>>>>>>> origin/danat_summer
 				#endif
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
@@ -6144,15 +7298,243 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			}
 			#endif
 
+<<<<<<< HEAD
 			//Apply floors in ZAMO frame or drift frame
 			if (fixup_cell(pf, radius[icurr], &geom, &q)){
+=======
+			r = radius[icurr];
+			rhoscal = pow(r, -POWRHO);
+			uuscal = pow(rhoscal, gam);
+
+			// Danat: multiply by max. density; change to a device global variable later 
+			#if (DOHELM)
+#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
+			double rhomax_helm = 1.0;
+#else
+			double rhomax_helm = 1e-7;
+#endif
+			rhoflr = RHOMIN * rhoscal * rhomax_helm;
+			uuflr = UUMIN * uuscal * rhomax_helm;
+			#else
+			rhoflr = RHOMIN*rhoscal;
+			uuflr = UUMIN*uuscal;
+			#endif
+
+			ucon_calc(pf, &geom, q.ucon);
+			lower(q.ucon, geom.gcov, q.ucov);
+			bcon_calc(pf, q.ucon, q.ucov, q.bcon);
+			lower(q.bcon, geom.gcov, q.bcov);
+			bsq = dot(q.bcon, q.bcov);
+
+			//tie floors to the local values of magnetic field and internal energy density
+			if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+			if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+			if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
+
+			if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+			if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
+
+			//floor on density and internal energy density (momentum *not* conserved)
+			#pragma unroll 9
+			PLOOP pf_prefloor[k] = pf[k];
+			if (pf[RHO] < rhoflr){
+				pf[RHO] = rhoflr;
+				dofloor = 1;
+			}
+			if (pf[UU] < uuflr){
+				pf[UU] = uuflr;
+				dofloor = 1;
+			}
+
+			#if( DRIFT_FLOOR )
+			if (dofloor && (trans = 10.*bsq / MY_MIN(pf[RHO], pf[UU]) - 1.) > 0.) {
+				//ucon_calc(pf_prefloor, &geom, q.ucon) ;
+				//lower(q.ucon, geom.gcov, q.ucov) ;
+				if (trans > 1.) {
+					trans = 1.;
+				}
+
+				betapar = -q.bcon[0] / ((bsq + SMALL)*q.ucon[0]);
+				betasq = betapar*betapar*bsq;
+				betasqmax = 1. - 1. / (GAMMAMAX*GAMMAMAX);
+				if (betasq > betasqmax) {
+					betasq = betasqmax;
+				}
+				gamma = 1. / sqrt(1 - betasq);
+				#pragma unroll 4
+				for (m = 0; m < NDIM; m++) {
+					ucondr[m] = gamma*(q.ucon[m] + betapar*q.bcon[m]);
+				}
+
+				Bcon[0] = 0.;
+
+				#pragma unroll 3
+				for (m = 1; m < NDIM; m++) {
+					Bcon[m] = pf[B1 - 1 + m];
+				}
+
+				lower(Bcon, geom.gcov, Bcov);
+				udotB = dot(q.ucon, Bcov);
+				Bsq = dot(Bcon, Bcov);
+				B = sqrt(Bsq);
+
+				//enthalpy before the floors
+				wold = pf_prefloor[RHO] + pf_prefloor[UU] * gam;
+
+				//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
+				QdotB = udotB*wold*q.ucon[0];
+
+				//enthalpy after the floors
+				wnew = pf[RHO] + pf[UU] * gam;
+				//wnew = wold;
+
+				x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
+
+				//new parallel velocity
+				vpar = x / (ucondr[0] * (1. + sqrt(1. + x*x)));
+
+				one_over_ucondr_t = 1. / ucondr[0];
+
+				//new contravariant 3-velocity, v^i
+				vcon[0] = 1.;
+
+				#pragma unroll 3
+				for (m = 1; m < NDIM; m++) {
+					//parallel (to B) plus perpendicular (to B) velocities
+					vcon[m] = vpar*Bcon[m] / (B + SMALL) + ucondr[m] * one_over_ucondr_t;
+				}
+
+				//compute u^t corresponding to the new v^i
+				ut_calc_3vel(vcon, &geom, &ut);
+
+				#pragma unroll 4
+				for (m = 0; m < NDIM; m++) {
+					ucon[m] = ut*vcon[m];
+				}
+				ucon_to_utcon(ucon, &geom, utcon);
+
+				//now convert 3-vel to relative 4-velocity and put it into pv[U1..U3]
+				//\tilde u^i = u^t(v^i-g^{ti}/g^{tt})
+				#pragma unroll 3
+				for (m = 1; m < NDIM; m++) {
+					pf[m + UU] = utcon[m] * trans + pf_prefloor[m + UU] * (1. - trans);
+				}
+			}
+			#elif(ZAMO_FLOOR)
+			if (dofloor == 1) {
+				double dpf[NPR], U_prefloor[NPR], Xtransone_over_ucondr;
+				#pragma unroll 9
+				PLOOP dpf[k] = pf[k] - pf_prefloor[k];
+
+				//compute the conserved quantity associated with floor addition
+				get_state(dpf, &geom, &q);
+				primtoU(dpf, &q, &geom, dU, gam
+                        #if (DOHELM)
+                        , gpu_eos_table
+                        #endif
+                        );
+
+				//compute the prefloor conserved quantity
+				get_state(pf_prefloor, &geom, &q);
+				primtoU(pf_prefloor, &q, &geom, U_prefloor, gam
+                        #if (DOHELM)
+                        , gpu_eos_table
+                        #endif
+                        );
+
+				//add U_added to the current conserved quantity
+				#pragma unroll 9
+				PLOOP U[k] = U_prefloor[k] + dU[k];
+
+				#if(NEWMAN)
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                                #if (DOHELM)
+                                                , gpu_eos_table
+                                                #endif
+                                                );
+				if (pflag[global_id]){
+					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                                    #if (DOHELM)
+                                                    , gpu_eos_table
+                                                    #endif
+                                                    );
+				}
+				#else
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf
+                                                #if (DOHELM)
+                                                , gpu_eos_table
+                                                #endif
+                                                );
+				if (pflag[global_id]) {
+					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf
+                                                    #if (DOHELM)
+                                                    , gpu_eos_table
+                                                    #endif
+                                                    );
+				}
+				#endif
+				if (pflag[global_id]){
+					failimage[global_id]++;
+					#if( DO_FONT_FIX )
+					U[KTOT] = (geom.g*pf[0] * (gam - 1.)*pf[1] / pow(pf[0], gam)) * (q.ucon[0]);
+					pf[KTOT] = U[KTOT] / U[RHO];
+					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]
+#if(DOHELM)
+						, gpu_eos_table
+#endif
+					);
+					if (pflag[global_id]) {
+						failimage[1 * (ksize)+global_id]++;
+						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, pf[KTOT]);
+						if (pflag[global_id]){
+							pflag[0] = 100;
+							failimage[2 * (ksize)+global_id]++;
+						}
+					}
+					#else
+					pflag[0] = 100;
+					#endif
+				}
+			}
+			#endif
+
+			// limit gamma wrt normal observer
+			if (gamma_calc(pf, &geom, &gamma)) {
+				// Treat gamma failure here as "fixable" for fixup_utoprim()
+>>>>>>> origin/danat_summer
 				pflag[global_id] = -333;
 				pflag[0] = global_id;;
 				failimage[3 * (ksize)+global_id]++;
 			}
+<<<<<<< HEAD
 
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++){
+=======
+			else {
+				if (gamma > GAMMAMAX) {
+					f = sqrt(
+						(GAMMAMAX*GAMMAMAX - 1.) /
+						(gamma*gamma - 1.)
+						);
+					pf[U1] *= f;
+					pf[U2] *= f;
+					pf[U3] *= f;
+				}
+			}
+			#if DOKTOT
+			#if (DOHELM && DOHELM_KTOT)
+			double xentr;
+			eos_mode_rhou_entr(gpu_eos_table, pf[RHO], pf[UU], &xentr);
+			// pf_i[KTOT * (ksize)+global_id] = xentr;
+			pf_i[KTOT * (ksize)+global_id] = exp(KTOT_FACTOR * xentr);
+			#else
+			pf_i[KTOT * (ksize)+global_id] = (gam - 1.) * pf[UU] * pow(pf[RHO], -gam);
+			#endif
+			#endif
+			#pragma unroll 9
+			for (k = 0; k < NPR - DOKTOT; k++){
+>>>>>>> origin/danat_summer
 				pf_i[k*(ksize)+global_id] = pf[k];
 			}
 		}
@@ -6204,7 +7586,7 @@ __global__ void fixuputoprim(double *  pv, int *  pflag, int *  failimage)
 
 	/* Fix the interior points first */
 	if (k==1) {
-		if (pflag[global_id] != 0) {	
+		if (pflag[global_id] != 0) {
 			for (k = 0; k < NPR; k++) avg[k] = 0.;
 			if (icurr - 1 >= N1G){
 				if (pflag[global_id - isize] == 0){
@@ -6265,7 +7647,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double prim1[NPR], prim2[NPR], prim3[NPR], prim4[NPR], prim5[NPR], prim6[NPR];
 
-	// inner r boundary condition: u, gdet extrapolation 
+	// inner r boundary condition: u, gdet extrapolation
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_4 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -6329,7 +7711,7 @@ __global__ void boundprim1(double *   pv, const  double* __restrict__ gcov,const
 		jcurr = (global_id - zcurr) / (BS_3 + 2 * N3G);
 	}
 
-	// outer r BC: outflow 
+	// outer r BC: outflow
 	if (jcurr >= 0 && jcurr<BS_2 + 2 * N2G && zcurr >= 0 && zcurr<BS_3 + 2 * N3G && NBR_2 == -1){
 		#pragma unroll 9
 		for (k = 0; k< NPR; k++){
@@ -6418,7 +7800,7 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			#endif
 		}
 
-		// make sure b and u are antisymmetric at the poles 
+		// make sure b and u are antisymmetric at the poles
 		for (j = 0; j<N2G; j++) {
 			pv[U2 * (ksize)+isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
 			#if(RAD_M1)
@@ -6465,11 +7847,21 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			#endif
 
 			//everything else copy (both poles)
+<<<<<<< HEAD
 			pv[RHO * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[RHO * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			pv[UU * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[UU * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			pv[U1 * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[U1 * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			pv[U3 * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[U3 * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 
+=======
+			pv[0 * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[0 * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[1 * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[1 * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[2 * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[2 * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			pv[4 * (ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[4 * (ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			#if (N2G==0)
+			//pv[7*(ksize)+isize*icurr+(BS_2-1-j+N2G)*(BS_3+2*N3G)+zcurr] = pv[7*(ksize)+isize*icurr+(BS_2-1-jref+N2G)*(BS_3+2*N3G)+zcurr];
+			#endif
+>>>>>>> origin/danat_summer
 			#if DOKTOT
 			pv[KTOT*(ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
@@ -6483,7 +7875,7 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			#endif
 		}
 
-		// make sure b and u are antisymmetric at the poles 
+		// make sure b and u are antisymmetric at the poles
 		for (j = BS_2 + N2G; j<BS_2 + 2 * N2G; j++) {
 			pv[U2 * (ksize)+isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
 			#if(RAD_M1)
@@ -6575,6 +7967,7 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 	}
 }
 
+#if(FRAME_TRANSFORM)
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
 	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag)
 {
@@ -6625,14 +8018,14 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 		get_geometry(icurr, jcurr, zcurr, face, &geom, gcov, gcon, gdet);
 
 		if (zoffset != 0 && dir == 3) {
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k < NPR; k++) {
 				p_l[k] = 0.5*(pv[k*(ksize)+global_id] + pv[k*(ksize)+global_id - D3]);
 				p_r[k] = p_l[k];
 			}
 		}
 		else {
-			#pragma unroll 9	
+			#pragma unroll 9
 			for (k = 0; k < NPR; k++) {
 				p_l[k] = dq2[k*(ksize)+global_id - idel*isize - jdel*(BS_3 + 2 * N3G) - zdel];
 				p_r[k] = dq1[k*(ksize)+global_id];
@@ -6774,6 +8167,7 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 		}
 	}
 }
+#endif
 
 __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
 	double A, B, C, D, vcon, ptot;
@@ -7301,7 +8695,7 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 	//Y_l = (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3])) / (eta_l[0] * delta_Kx - (K_al[1] * B_hat[1] + K_al[2] * B_hat[2] + K_al[3] * B_hat[3]));
 	//Y_r = (1. - (K_ar[1] * K_ar[1] + K_ar[2] * K_ar[2] + K_ar[3] * K_ar[3])) / (eta_r[0] * delta_Kx - (K_ar[1] * B_hat[1] + K_ar[2] * B_hat[2] + K_ar[3] * B_hat[3]));
 	//error = delta_Kx*(1. - B_ar[dir] * (Y_r - Y_l));
-	
+
 	//Calculate state around contact discontiuity according to equations 47, 50-52
 	vcon_cl[GEN_1] = (K_al[GEN_1] - (B_c[GEN_1] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] * delta_Kx - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
 	vcon_cl[GEN_2] = (K_al[GEN_2] - (B_c[GEN_2] * (1. - (K_al[1] * K_al[1] + K_al[2] * K_al[2] + K_al[3] * K_al[3]))) / (eta_l[0] * delta_Kx - (K_al[1] * B_c[1] + K_al[2] * B_c[2] + K_al[3] * B_c[3])));
@@ -7313,8 +8707,13 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 	B_c[GEN_1] = BX;
 	B_c[GEN_2] = B_c[GEN_2] / delta_Kx;
 	B_c[GEN_3] = B_c[GEN_3] / delta_Kx;
+<<<<<<< HEAD
 	
 	return (vcon_cr[GEN_1] - vcon_cl[GEN_1]);*/
+=======
+
+	return (vcon_cr[GEN_1] - vcon_cl[GEN_1]);
+>>>>>>> origin/danat_summer
 
 	if (dir == 1) {
 		GEN_1 = 1; GEN_2 = 2; GEN_3 = 3;
@@ -7398,6 +8797,951 @@ __device__ double calc_error_HLLD(int dir, int do_hydro, double ptot, double cmi
 
 	vcon_cl[dir] = (vcon_cl[dir] + vcon_cr[dir])*0.5;
 	vcon_cr[dir] = vcon_cl[dir];
+<<<<<<< HEAD
 	
 	return error;
+=======
+
+	return error;*/
+>>>>>>> origin/danat_summer
 }
+
+
+// EOS function calls
+#if (DOHELM)
+
+#if (EOS_LINEAR)
+__device__ void interp_eostable_linear(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double* free, double* df_d, double* df_t, double* df_tt, double* df_dt, double* dpepdd, double* etaele) {
+	int iat, jat;
+	double xt, xd, mxt, mxd;
+	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
+
+	//  hash locate this temperature and density
+	jat = (int)((log10(btemp) - eos_tlo) * (double)(EOSJMAX - 1) / (eos_thi - eos_tlo)) + 1;
+	jat = MY_MAX(1, MY_MIN(jat, EOSJMAX - 1)) - 1;
+	iat = (int)((log10(din) - eos_dlo) * (double)(EOSIMAX - 1) / (eos_dhi - eos_dlo)) + 1;
+	iat = MY_MAX(1, MY_MIN(iat, EOSIMAX - 1)) - 1;
+
+	double tstp = (eos_thi - eos_tlo) / (double)(EOSJMAX - 1);
+	double dstp = (eos_dhi - eos_dlo) / (double)(EOSIMAX - 1);
+	double eos_t_jat = pow(10.0, (eos_tlo + jat * tstp));
+	double eos_d_iat = pow(10.0, (eos_dlo + iat * dstp));
+	double eos_dt_jat = pow(10.0, (eos_tlo + (jat + 1) * tstp)) - pow(10.0, (eos_tlo + jat * tstp));
+	double eos_dd_iat = pow(10.0, (eos_dlo + (iat + 1) * dstp)) - pow(10.0, (eos_dlo + iat * dstp));
+
+	//  various differences
+	xt = MY_MAX((btemp - eos_t_jat) / eos_dt_jat, 0.0); 
+	xd = MY_MAX((din - eos_d_iat) / eos_dd_iat, 0.0); 
+	mxt = 1.0 - xt;
+	mxd = 1.0 - xd;
+
+	// the free energy
+	*free = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+			gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+			gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+			gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+
+	// derivative with respect to density
+	*df_d = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+			gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+			gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+			gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+
+	// derivative with respect to temperature
+	*df_t = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+			gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+			gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+			gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+
+	// second derivative with respect to temperature
+	*df_tt =	gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+				gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+				gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+				gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+
+	//  second derivative with respect to temperature and density
+	*df_dt =	gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+				gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+				gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+				gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+
+	// now get the pressure derivative with density, chemical potential, and
+	// electron positron number densities
+	// get the interpolation weight functions
+
+	//  pressure derivative with density
+	*dpepdd =	gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+				gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+				gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+				gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+
+	*dpepdd = MY_MAX(ye * (*dpepdd), 0.0);
+
+	//  electron chemical potential etaele
+	*etaele =	gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat)] * mxt * mxd +
+				gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * mxt * xd +
+				gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat)*EOSJMAX + (jat + 1)] * xt * mxd +
+				gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * xt * xd;
+}
+
+#else
+
+__device__ void interp_eostable(const  double* __restrict__ gpu_eos_table, double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele) {
+    int iat, jat;
+    double fi[36];
+    double xt, xd, mxt, mxd;
+    double si0t, si1t, si2t, si0mt, si1mt, si2mt, si0d, si1d, si2d, si0md, si1md, si2md;
+    double dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt;
+	int eos_offset = LOCAL_WORK_SIZE - (EOSIMAX * EOSJMAX) % LOCAL_WORK_SIZE;
+
+	//  hash locate this temperature and density
+	jat = (int)((log10(btemp) - eos_tlo) * (double)(EOSJMAX - 1) / (eos_thi - eos_tlo)) + 1;
+	jat = MY_MAX(1, MY_MIN(jat, EOSJMAX - 1)) - 1;
+	iat = (int)((log10(din) - eos_dlo) * (double)(EOSIMAX - 1) / (eos_dhi - eos_dlo)) + 1;
+	iat = MY_MAX(1, MY_MIN(iat, EOSIMAX - 1)) - 1;
+
+    //  access the table locations only once
+    fi[0] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[1] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[2] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[3] = gpu_eos_table[0 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[4] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[5] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[6] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[7] = gpu_eos_table[2 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[8] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[9] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[10] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[11] = gpu_eos_table[4 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[12] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat) ];
+    fi[13] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[14] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[15] = gpu_eos_table[1 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[16] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[17] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[18] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[19] = gpu_eos_table[3 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[20] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[21] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[22] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[23] = gpu_eos_table[5 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[24] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[25] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[26] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[27] = gpu_eos_table[6 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[28] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[29] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[30] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[31] = gpu_eos_table[7 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+    fi[32] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)];
+    fi[33] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)];
+    fi[34] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)];
+    fi[35] = gpu_eos_table[8 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)];
+
+	double tstp = (eos_thi - eos_tlo) / (double)(EOSJMAX - 1);
+	double dstp = (eos_dhi - eos_dlo) / (double)(EOSIMAX - 1);
+    double eos_t_jat = pow (10.0, (eos_tlo + jat * tstp));
+    double eos_d_iat = pow (10.0, (eos_dlo + iat * dstp));
+    double eos_dt_jat = pow (10.0, (eos_tlo + (jat + 1) * tstp)) - pow (10.0, (eos_tlo + jat * tstp));
+    double eos_dd_iat = pow (10.0, (eos_dlo + (iat + 1) * dstp)) - pow (10.0, (eos_dlo + iat * dstp));
+
+    //  various differences
+    xt = MY_MAX((btemp - eos_t_jat) / eos_dt_jat, 0.0); // fix here
+    xd = MY_MAX((din - eos_d_iat) / eos_dd_iat, 0.0); // fix here
+    mxt = 1.0 - xt;
+    mxd = 1.0 - xd;
+
+    //  the density and temperature basis functions
+    si0t = psi0(xt);
+    si1t = psi1(xt)*eos_dt_jat; // fix here
+    si2t = psi2(xt)*eos_dt_jat * eos_dt_jat; // fix here
+
+    si0mt = psi0(mxt);
+    si1mt = -psi1(mxt)*eos_dt_jat; // fix here
+    si2mt = psi2(mxt)*eos_dt_jat * eos_dt_jat; // fix here
+
+    si0d = psi0(xd);
+    si1d = psi1(xd)*eos_dd_iat; // fix here
+    si2d = psi2(xd)*eos_dd_iat * eos_dd_iat; // fix here
+
+    si0md = psi0(mxd);
+    si1md = -psi1(mxd)*eos_dd_iat; // fix here
+    si2md = psi2(mxd)*eos_dd_iat * eos_dd_iat; // fix here
+
+    // the free energy
+    *free = h5(si0t, si1t, si2t, si0mt, si1mt, si2mt, si0d, si1d, si2d, si0md, si1md, si2md, fi);
+
+    // the first derivatives of the basis functions
+    dsi0d = dpsi0(xd) / eos_dd_iat; // fix here
+    dsi1d = dpsi1(xd);
+    dsi2d = dpsi2(xd)*eos_dd_iat; // fix here
+
+    dsi0md = -dpsi0(mxd) / eos_dd_iat; // fix here
+    dsi1md = dpsi1(mxd);
+    dsi2md = -dpsi2(mxd)*eos_dd_iat; // fix here
+
+    // derivative with respect to density
+    *df_d = h5(si0t, si1t, si2t, si0mt, si1mt, si2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, fi);
+
+    // the first derivatives of the basis functions
+    dsi0t = dpsi0(xt) / eos_dt_jat; // fix here
+    dsi1t = dpsi1(xt);
+    dsi2t = dpsi2(xt)*eos_dt_jat; // fix here
+
+    dsi0mt = -dpsi0(mxt) / eos_dt_jat; // fix here
+    dsi1mt = dpsi1(mxt);
+    dsi2mt = -dpsi2(mxt)*eos_dt_jat; // fix here
+
+    // derivative with respect to temperature
+    *df_t = h5(dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, si0d, si1d, si2d, si0md, si1md, si2md, fi);
+
+    // the second derivatives of the basis functions
+    ddsi0t = ddpsi0(xt) / (eos_dt_jat * eos_dt_jat); // fix here
+    ddsi1t = ddpsi1(xt) / eos_dt_jat; // fix here
+    ddsi2t = ddpsi2(xt);
+    ddsi0mt = ddpsi0(mxt) / (eos_dt_jat * eos_dt_jat); // fix here
+    ddsi1mt = -ddpsi1(mxt) / eos_dt_jat; // fix here
+    ddsi2mt = ddpsi2(mxt);
+
+    // second derivative with respect to temperature
+    *df_tt = h5(ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt, si0d, si1d, si2d, si0md, si1md, si2md, fi);
+
+    //  second derivative with respect to temperature and density
+    *df_dt = h5(dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md, fi);
+
+    // now get the pressure derivative with density, chemical potential, and
+    // electron positron number densities
+    // get the interpolation weight functions
+    si0t = xpsi0(xt);
+    si1t = xpsi1(xt)*eos_dt_jat; // fix here
+
+    si0mt = xpsi0(mxt);
+    si1mt = -xpsi1(mxt)*eos_dt_jat; // fix here
+
+    si0d = xpsi0(xd);
+    si1d = xpsi1(xd)*eos_dd_iat; // fix here
+
+    si0md = xpsi0(mxd);
+    si1md = -xpsi1(mxd)*eos_dd_iat; // fix here
+
+    //  pressure derivative with density
+    *dpepdd =   gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si0t +
+                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si0t +
+                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si0mt +
+                gpu_eos_table[9 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si0mt +
+
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si1t +
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si1t +
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si1mt +
+                gpu_eos_table[11 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si1mt +
+
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si0t +
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si0t +
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si0mt +
+                gpu_eos_table[10 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si0mt +
+
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si1t +
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si1t +
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si1mt +
+                gpu_eos_table[12 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si1mt;
+
+    // h3dpd(iat,jat,
+    //      si0t,   si1t,   si0mt,   si1mt,
+    //      si0d,   si1d,   si0md,   si1md,
+    //      eos_dpdf, eos_dpdft, eos_dpdfd, eos_dpdfdt);
+
+    *dpepdd = MY_MAX(ye * (*dpepdd), 0.0);
+
+    //  electron chemical potential etaele
+    *etaele =   gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si0t +
+                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si0t +
+                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si0mt +
+                gpu_eos_table[13 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si0mt +
+
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si0d * si1t +
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si0md * si1t +
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si0d * si1mt +
+                gpu_eos_table[15 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si0md * si1mt +
+
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si0t +
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si0t +
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si0mt +
+                gpu_eos_table[14 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si0mt +
+
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat)] * si1d * si1t +
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat)] * si1md * si1t +
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat) * EOSJMAX + (jat + 1)] * si1d * si1mt +
+                gpu_eos_table[16 * (EOSIMAX * EOSJMAX + eos_offset) + (iat + 1) * EOSJMAX + (jat + 1)] * si1md * si1mt;
+
+    // h3e(iat,jat,
+    //                si0t,   si1t,   si0mt,   si1mt,
+    //                si0d,   si1d,   si0md,   si1md);
+
+    //  electron + positron number densities
+    /*xnefer = eos_xf[(iat)*EOSJMAX + jat] * si0d*si0t + eos_xf[(iat + 1)*EOSJMAX + jat] * si0md*si0t
+     + eos_xf[(iat)*EOSJMAX + jat + 1] * si0d*si0mt + eos_xf[(iat + 1)*EOSJMAX + jat + 1] * si0md*si0mt
+     + eos_xft[(iat)*EOSJMAX + jat] * si0d*si1t + eos_xft[(iat + 1)*EOSJMAX + jat] * si0md*si1t
+     + eos_xft[(iat)*EOSJMAX + jat + 1] * si0d*si1mt + eos_xft[(iat + 1)*EOSJMAX + jat + 1] * si0md*si1mt
+     + eos_xfd[(iat)*EOSJMAX + jat] * si1d*si0t + eos_xfd[(iat + 1)*EOSJMAX + jat] * si1md*si0t
+     + eos_xfd[(iat)*EOSJMAX + jat + 1] * si1d*si0mt + eos_xfd[(iat + 1)*EOSJMAX + jat + 1] * si1md*si0mt
+     + eos_xfdt[(iat)*EOSJMAX + jat] * si1d*si1t + eos_xfdt[(iat + 1)*EOSJMAX + jat] * si1md*si1t
+     + eos_xfdt[(iat)*EOSJMAX + jat + 1] * si1d*si1mt + eos_xfdt[(iat + 1)*EOSJMAX + jat + 1] * si1md*si1mt;*/
+
+    // h3x(iat,jat,
+    //              si0t,   si1t,   si0mt,   si1mt,
+    //              si0d,   si1d,   si0md,   si1md);
+}
+#endif
+
+
+__device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_derivatives, double btemp, double den, double abar, double zbar, double *pres, double *ener, double* entr, double *dpresdt, double *denerdt, double *dentrdt, double *dpresdd, double *denerdd, double *cs2)
+{
+    // Local variables
+	double prad, dpraddt, erad, deraddt, srad, dsraddt;
+	double pion, dpiondt, eion, deiondt, sion, dsiondt;
+	double pele, dpepdt, eele, deepdt, sele, dsepdt;
+
+	// Danat: out of all derivatives w.r.t. density we only need dpdrho so far; commented out the others for the sake of optimizing the code
+	double dpraddd, dpiondd, dpepdd;
+	double deraddd, deiondd, deepdd;
+	double dsepdd; //dentrdd, dsraddd, dsiondd, ;
+
+    // For the coulomb corrections
+#if (EOS_COULOMB_CORR)
+	double x4, x5, y1, y2, y3, z4, z5;
+	double ktinv, dxnidd, dsdd, lami, inv_lami, lamidd, s1, s2, s3, plasg, plasg_inv, plasgdd, plasgdt;
+	double ecoul, decouldd, decouldt, pcoul, dpcouldd, dpcouldt, scoul, dscouldd, dscouldt;
+#endif
+
+    // Convert from code units to cgs units (EOS table units)
+    btemp *= conv_T_CODE2CGS;
+    den *= conv_dens_CODE2CGS;
+
+	// If density is below the minimum supplied by the table:
+	// double den_low = den;
+	// int is_density_low = 0;
+	// if (den < 1e-12) {
+	// 	den = 1e-12;
+	// 	is_density_low = 1;
+	// }
+
+	double deni = 1.0 / den;
+	double tempi = 1.0 / btemp;
+
+    // Useful relations
+    double ytot1 = 1.0 / abar;
+    double ye = ytot1 * zbar;
+    double kt = kerg * btemp;
+    double din = zbar * ytot1 * den;
+	double kavoy = kergavo * ytot1;
+
+    //Look up the desired quantities in the eos table
+	double free, df_d, df_t, df_dd, df_tt, df_dt, etaele;
+#if (EOS_LINEAR)
+	interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+#else
+    interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+#endif
+
+    // the desired electron-positron thermodynamic quantities
+    pele = din * din * df_d;
+    sele = -df_t * ye;
+    eele = ye * free + btemp * sele;
+
+	double xni = avo * ytot1 * den;
+    pion = xni * kt; 
+	eion = 1.5 * pion * deni;
+	sion = (pion * deni + eion) * tempi + kavoy * log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * btemp, 1.5));
+
+    // uniform background corrections & only the needed parts for speed
+    // plasg is the plasma coupling parameter
+    // split up calculations below -- they all used to depend upon a redefined z
+#if (EOS_COULOMB_CORR)
+	s1 = 4.0 / 3.0 * M_PI * xni;
+	lami = 1.0 / pow(s1, third);
+	inv_lami = 1.0 / lami;
+	dxnidd = avo * ytot1;
+	ktinv = 1.0 / kt;
+	plasg = zbar * zbar * esqu * ktinv * inv_lami;
+    if (plasg >= 1.0) {
+		// yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+		x4 = pow(plasg, 0.25);
+        z4 = eos_c1 / x4;
+        ecoul = dxnidd * kt * (eos_a1*plasg + eos_b1*x4 + z4 + d1cc);
+        pcoul = third * den * ecoul;
+        scoul = -kavoy*(3.0*eos_b1*x4 - 5.0*z4 + d1cc*(log(plasg) - 1.0) - e1cc);
+	}
+    else if (plasg < 1.0) {
+		// yakovlev & shalybkov 1989 equations 102, 103, 104
+		x5 = plasg * sqrt(plasg);
+        y3 = pow(plasg, eos_b2);
+        z5 = eos_c2 * x5 - third * eos_a2 * y3;
+		pcoul = -pion * z5;
+        ecoul = 3.0 * pcoul * deni;
+        scoul = -kavoy*(eos_c2*x5 - eos_a2*(eos_b2 - 1.0) / eos_b2*y3);
+	}
+#endif
+
+    // radiation section:
+    prad = asoli3 * btemp * btemp * btemp * btemp;
+    double x1 = prad * deni;
+    erad = 3.0 * x1;
+    srad = (x1 + erad)*tempi;
+
+    // sackur-tetrode equation for the ion entropy of
+    // a single ideal gas characterized by abar
+#if (EOS_COULOMB_CORR)
+    *pres = prad + pion + pele + pcoul * eos_coulombMult;
+    *ener = erad + eion + eele + ecoul * eos_coulombMult;
+	*entr = srad + sion + sele + scoul * eos_coulombMult;
+#else
+	*pres = prad + pion + pele;
+	*ener = erad + eion + eele;
+	*entr = srad + sion + sele;
+#endif
+
+
+
+    if (calc_derivatives) {
+        // Calculate pressure derivatives
+        dpraddt = 4.0 * prad * tempi;
+        dpraddd = 0.0;
+
+        dpiondd = avo * ytot1 * kt;
+        dpiondt = xni * kerg;
+
+        dpepdt = din * din * df_dt;
+
+#if (EOS_COULOMB_CORR)
+		plasg_inv = 1.0 / plasg;
+        if (plasg >= 1.0) {
+			// yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+            y1 = dxnidd * kt * (eos_a1 + 0.25*plasg_inv*(eos_b1*x4 - z4));
+            dsdd = 4.0 / 3.0*M_PI * dxnidd;
+            lamidd = -third * lami / s1 * dsdd;
+            plasgdd = -plasg * inv_lami * lamidd;
+            plasgdt = -plasg * ktinv * kerg;
+			decouldd = y1 * plasgdd;
+            decouldt = y1 * plasgdt + ecoul * tempi;
+            dpcouldd = third * (ecoul + den * decouldd);
+            dpcouldt = third * den  * decouldt;
+        }
+        else if (plasg < 1.0) {
+			// yakovlev & shalybkov 1989 equations 102, 103, 104
+            s2 = (1.5*eos_c2*x5 - third*eos_a2*eos_b2*y3)*plasg_inv;
+            dxnidd = avo * ytot1;
+            dsdd = 4.0 / 3.0*M_PI * dxnidd;
+            lamidd = -third * lami / s1 * dsdd;
+            plasgdd = -plasg * inv_lami * lamidd;
+            plasgdt = -plasg * ktinv * kerg;
+			dpcouldd = -dpiondd*z5 - pion*s2*plasgdd;
+            dpcouldt = -dpiondt*z5 - pion*s2*plasgdt;
+            decouldd = 3.0*dpcouldd*deni - ecoul*deni;
+            decouldt = 3.0*dpcouldt*deni;
+        }
+#endif
+
+#if (EOS_COULOMB_CORR)
+        *dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * eos_coulombMult; // pressure derivative vs density
+        *dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * eos_coulombMult; // pressure derivative vs temperature
+#else
+		*dpresdd = dpraddd + dpiondd + dpepdd; // pressure derivative vs density
+		*dpresdt = dpraddt + dpiondt + dpepdt; // pressure derivative vs temperature
+#endif
+        // Calculate energy derivatives
+        deiondd = (1.5 * dpiondd - eion)*deni;
+        deiondt = 1.5 * xni * kerg *deni;
+		deraddd = -erad*deni;
+        deraddt = 4.0 * erad * tempi;
+        
+		dsepdt = -df_tt * ye;
+        dsepdd = -df_dt * ye * ye;
+        deepdt = btemp * dsepdt;
+        deepdd = ye*ye*df_d + btemp*dsepdd;
+
+#if (EOS_COULOMB_CORR)
+        *denerdd = deraddd + deiondd + deepdd + decouldd * eos_coulombMult;  // energy derivative vs density
+        *denerdt = deraddt + deiondt + deepdt + decouldt * eos_coulombMult; // energy derivative vs temperature
+#else 
+		*denerdd = deraddd + deiondd + deepdd;  // energy derivative vs density
+		*denerdt = deraddt + deiondt + deepdt; // energy derivative vs temperature
+#endif
+
+        // Calculate entropy derivatives
+        //dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
+        dsraddt = (dpraddt*deni + deraddt - srad)*tempi;
+        //dsiondd = (dpiondd*deni - pion*deni*deni + deiondd)*tempi - kavoy * deni;
+        dsiondt = (dpiondt*deni + deiondt)*tempi - (pion*deni + eion) * tempi*tempi + 1.5 * kavoy * tempi;
+
+#if (EOS_COULOMB_CORR)
+        if (plasg >= 1.0) {
+			// yakovlev & shalybkov 1989 equations 82, 85, 86, 87
+			y2 = -kavoy*plasg_inv*(0.75*eos_b1*x4 + 1.25*z4 + d1cc);
+            dscouldd = y2 * plasgdd;
+            dscouldt = y2 * plasgdt;
+        }
+        else if (plasg < 1.0) {
+			// yakovlev & shalybkov 1989 equations 102, 103, 104
+			s3 = -kavoy*plasg_inv*(1.5*eos_c2*x5 - eos_a2*(eos_b2 - 1.0)*y3);
+			dscouldd = s3 * plasgdd;
+            dscouldt = s3 * plasgdt;
+        }
+#endif
+
+#if (EOS_COULOMB_CORR)
+		//dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * eos_coulombMult; // entropy derivative vs density and density
+        *dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * eos_coulombMult; // entropy derivative vs density and time
+#else
+		//dentrdd = dsraddd + dsiondd + dsepdd; // entropy derivative vs density and density
+		*dentrdt = dsraddt + dsiondt + dsepdt; // entropy derivative vs density and time
+#endif 
+        // calculate relativistic soundspeeds
+        double chit, z;
+        chit = btemp / (*pres) * (*dpresdt);
+        z = 1.0 + ((*ener) + (c_light * c_light)) * den / (*pres);
+        *cs2 = (chit * chit * (*pres) * deni  * tempi / (*denerdt) + (*dpresdd) * den / (*pres)) / z; // already in the units of the code (c = 1)
+    }
+
+	// double density_factor = den / den_low;
+	// if (is_density_low) {
+	// 	*ener *= density_factor;
+	// 	*entr *= density_factor;
+	// 	*denerdt *= density_factor;
+	// 	*dentrdt *= density_factor;
+	// 	// for now
+	// }
+
+    // Convert from cgs to code units
+    *pres *= conv_pres_CGS2CODE;
+    *ener *= conv_ener_CGS2CODE;
+	*entr /= kergavo;
+
+    *dpresdt *= conv_pres_CGS2CODE * conv_T_CODE2CGS;
+    *denerdt *= conv_ener_CGS2CODE * conv_T_CODE2CGS;
+    *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
+	*denerdd *= conv_ener_CGS2CODE * conv_dens_CODE2CGS;
+	*dentrdt /= kergavo;
+
+    return;
+}
+
+
+__device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres) {
+
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = EOS_ITERATIONS;
+    double tolerance = EOS_TEMP_TOL;
+    double tolerance_e = EOS_TOL;
+
+    // initial guess : temperature
+    double temp_ini_guess;
+    double ener_goal = u_goal / den;
+
+	if (ener_goal <= 0.0)
+		temp_ini_guess = eos_temp_low;
+	else
+        temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+    double temp_new, temp_old;
+    double ener_tmp, ener_old;
+    double dpdt, dedt, dpdrho;
+	double entr, dsdt, dedrho;
+    double cs2;
+
+    double error, error_e;
+    int i;
+
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+    temp_old = temp_ini_guess;
+    for(i = 0; i < max_iterations; i++){
+        eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+
+        //do not allow temp to change more than 2. times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+        if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+        temp_old = temp_new;
+
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_e < tolerance_e) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+}
+
+__device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres, double *cs2) {
+
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_e = EOS_TOL;
+
+    // initial guess : temperature
+    double temp_ini_guess;
+    double ener_goal = u_goal / den;
+
+	if (ener_goal <= 0.0)
+		temp_ini_guess = eos_temp_low;
+	else
+		temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+    double temp_new, temp_old;
+    double ener_tmp, ener_old;
+    double dpdt, dedt, dpdrho;
+	double entr, dsdt, dedrho;
+
+    double error, error_e;
+    int i;
+
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+    temp_old = temp_ini_guess;
+    for(i = 0; i < max_iterations; i++){
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2);
+        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+
+        //do not allow temp to change more than 2. times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+        temp_old = temp_new;
+
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_e < tolerance_e) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+}
+
+__device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *dpdrho, double *dpde_d) {
+
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_h = EOS_TOL;
+
+    double deni = 1.0 / den;
+
+    // initial guess : temperature
+    double temp_ini_guess;
+    double h_goal = w_goal * deni;
+
+	if (h_goal <= 1.0)
+		temp_ini_guess = eos_temp_low;
+	else 
+		temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+    double temp_new, temp_old;
+    double ener_old, pres_old;
+    double dpdt, dedt, dhdt;
+	double entr, dsdt, dedrho;
+    double h_tmp;
+    double cs2;
+
+    double error, error_h;
+    int i;
+
+    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+    double xpres = *pres;
+    double xener = 0.0;
+
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+    temp_old = temp_ini_guess;
+
+    for(i = 0; i < max_iterations; i++){
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+
+        h_tmp = xener + (*pres) * deni;
+        dhdt = dedt + dpdt * deni;
+        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdt * xenth;
+
+        // do not allow temp to change more than 2 times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_h = fabs((h_tmp - xenth) / xenth);
+
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+        temp_old = temp_new;
+        if(error < tolerance && error_h < tolerance_h) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+
+    *dpde_d = dpdt / dedt;
+}
+
+__device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *u) {
+    // implementation in Newman-Hamlin inversion
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_h = EOS_TOL;
+
+    double deni = 1.0 / den;
+
+    // initial guess : temperature
+    double temp_ini_guess;
+    double h_goal = w_goal * deni;
+
+	if (h_goal <= 1.0)
+		temp_ini_guess = eos_temp_low;
+	else
+		temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+    double temp_new, temp_old;
+    double ener_old, pres_old;
+    double dpresdener_d, dhdtemp;
+    double h_tmp;
+    double cs2;
+    double dpdrho, dpdt, dedt, dpde_d;
+	double entr, dsdt, dedrho;
+
+    double error, error_h;
+    int i;
+
+    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+    double xener;
+
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+    temp_old = temp_ini_guess;
+
+    for(i = 0; i < max_iterations; i++){
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+
+        h_tmp = xener + (*pres) * deni;
+        dhdtemp = dedt + dpdt * deni;
+        temp_new = temp_old - (h_tmp / xenth - 1.0) / dhdtemp * xenth;
+
+		// do not allow temp to change more than 2 times in one iteration
+		if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+		if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_h = fabs((h_tmp - xenth) / xenth);
+
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+        temp_old = temp_new;
+        if(error < tolerance && error_h < tolerance_h) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+
+    *u = xener * den;
+}
+
+__device__ void eos_mode_rhotemp_pres_min (const  double* __restrict__ gpu_eos_table, double den, double *pres) {
+    // implementation in Newman-Hamlin inversion
+    // Parameters of Newton-Raphson iterations
+    double temp = eos_temp_low;
+    double ener, dpdt, dedt, dpdrho;
+	double entr, dsdt, dedrho;
+	double cs2;
+
+	eos_helm(gpu_eos_table, 1, temp, den, 1.0, 1.0, pres, &ener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+}
+
+__device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, double den, double p_goal, double *u) {
+
+    // Parameters of Newton-Raphson iterations
+    int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_p = EOS_TOL;
+
+    double deni = 1.0 / den;
+
+    // initial guess : temperature
+    double temp_ini_guess;
+    if (p_goal <= 0.0) temp_ini_guess = eos_temp_low;
+    else temp_ini_guess = pow(p_goal * conv_pres_CODE2CGS * asoli3_inv, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+    double temp_new, temp_old;
+    double p_tmp;
+    double cs2;
+    double xener;
+
+    double error, error_p;
+    int i;
+
+	double entr, dsdt, dedrho;
+    double dpdt, dedt, dpdrho;
+
+    temp_old = temp_ini_guess;
+
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+    for(i = 0; i < max_iterations; i++){
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, &p_tmp, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+
+        temp_new = temp_old - (p_tmp - p_goal) / dpdt;
+
+        // do not allow temp to change more than 2 times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_p = fabs((p_tmp - p_goal) / p_goal);
+
+        //printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+        temp_old = temp_new;
+
+        // more iterations after reached below tolerance
+        if(error < tolerance && error_p < tolerance_p) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+
+    *u = xener * den;
+}
+
+
+// Entropy inversion
+__device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, double den, double entr_goal, double *pres, double* u, double *dpdrho, double *dudrho) {
+
+	// Parameters of Newton-Raphson iterations
+	int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_p = EOS_TOL;
+
+	double deni = 1.0 / den;
+
+	// initial guess : temperature
+	double temp_ini_guess = 1.0e5; // Danat: random guess
+	
+	// Convert kappa to entropy
+	entr_goal = log(entr_goal / KTOT_FACTOR);
+
+	double temp_new, temp_old;
+	double cs2;
+	double xener, xentr;
+	double dedrho;
+
+	double error, error_p;
+	int i;
+
+	double dpdt, dedt, dsdt;
+
+	temp_old = temp_ini_guess;
+
+	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+	for (i = 0; i < max_iterations; i++) {
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, &xener, &xentr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+
+		temp_new = temp_old - (xentr - entr_goal) / dsdt;
+
+		// do not allow temp to change more than 2 times in one iteration
+		if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+		if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+		error = fabs((temp_new - temp_old) / temp_old);
+		error_p = fabs((xentr - entr_goal) / entr_goal);
+
+		//printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+		temp_old = temp_new;
+
+		// more iterations after reached below tolerance
+		if (error < tolerance && error_p < tolerance_p) {
+			more_iterations -= 1;
+			if (more_iterations == 0) break;
+		}
+	}
+
+	*u = xener * den;
+	*dudrho = dedrho * den + xener;
+}
+
+
+__device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* entr) {
+
+	// Parameters of Newton-Raphson iterations
+	int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_e = EOS_TOL;
+
+	// initial guess : temperature
+	double temp_ini_guess;
+	double ener_goal = u_goal / den;
+
+	if (ener_goal <= 0.0)
+		temp_ini_guess = eos_temp_low;
+	else
+		temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+	double temp_new, temp_old;
+	double ener_tmp, ener_old;
+	double dpdt, dedt, dpdrho;
+	double dsdt, dedrho;
+	double pres, cs2;
+
+	double error, error_e;
+	int i;
+
+	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+	temp_old = temp_ini_guess;
+	for (i = 0; i < max_iterations; i++) {
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+
+		//do not allow temp to change more than 2. times in one iteration
+		if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+		if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+		error = fabs((temp_new - temp_old) / temp_old);
+		error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+		temp_old = temp_new;
+
+		// more iterations after reached below tolerance
+		if (error < tolerance && error_e < tolerance_e) {
+			more_iterations -= 1;
+			if (more_iterations == 0) break;
+		}
+	}
+}
+#endif

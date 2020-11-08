@@ -63,18 +63,33 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 ******************************************************************************/
 #include "u2p_util.h"
+#include "decs.h"
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
 double Bsq, QdotBsq, Qtsq, Qdotn, D;
 #pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
 
-// Declarations: 
+// Declarations:
 static double vsq_calc(double W);
+<<<<<<< HEAD
 static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim);
 static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim);
 static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance);
 static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df);
+=======
+static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[]);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR]);
+
+#if (DONUCLEAR && DOHELM)
+static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int, double, double, double, double, double), double varye, double varxatm, double varxn, double varxp, double varxa);
+static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n, double varye, double varxatm, double varxn, double varxp, double varxa);
+#else
+static int general_newton_raphson(double x[], int n, void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *, int));
+static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, int n);
+#endif
+                     
+>>>>>>> origin/danat_summer
 static double x1_of_x0(double x0);
 static double pressure_W_vsq(double W, double vsq);
 static double dpdW_calc_vsq(double W, double vsq);
@@ -138,9 +153,27 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
 
+<<<<<<< HEAD
 	//Transform the PRIMITIVE variables into the new system
 	#pragma ivdep
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
+=======
+	/* Transform the PRIMITIVE variables into the new system */
+	 #pragma ivdep
+	for (i = 0; i < BCON1; i++) {
+		prim_tmp[i] = prim[i];
+	}
+	 #pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) {
+		prim_tmp[i] = alpha*prim[i];
+	}
+#if (DONUCLEAR)
+     #pragma ivdep
+    for (i = BCON3 + 1; i <= NPR; i++) {
+        prim_tmp[i] = prim[i];
+    }
+#endif
+>>>>>>> origin/danat_summer
 
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
@@ -152,6 +185,42 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	#if(DOKTOT)
+	prim[KTOT] = U[KTOT] / U[RHO];
+	#endif
+
+#if (DONUCLEAR)
+    prim[RHONP] = U[RHONP]/U[RHO];
+    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
+    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
+    prim[YE] = U[YE]/U[RHO];
+    prim[AMB] = U[AMB]/U[RHO];
+    
+    #if 0 // DANAT: check how rho_amb factors into this
+    // Danat: check the normalizations of the mass fractions and Ye
+    prim[YE] = MY_MAX(prim[YE], 1.0);
+    prim[YE] = MY_MIN(prim[YE], 1e-10);
+    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
+    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
+    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
+    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
+    prim[AMB] = MY_MAX(prim[AMB], 1.0);
+    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
+    
+    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
+    
+    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
+        
+        prim[RHONP] *= fac_norm;
+        prim[RHOALPHA] *= fac_norm;
+        prim[AMB] *= fac_norm;
+    }
+    #endif
+#endif
+    
+>>>>>>> origin/danat_summer
 	return(ret);
 }
 
@@ -198,7 +267,12 @@ j = 0 -> success
 
 static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim)
 {
+<<<<<<< HEAD
 	double x_2d[NEWT_DIM_2];
+=======
+    double x_2d[NEWT_DIM_2];
+    
+>>>>>>> origin/danat_summer
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq, tmpdiff;
 	int i, j, n, retval, i_increase;
@@ -259,7 +333,41 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 	//Always calculate rho from D and gamma so that using D in EOS remains consistent; i.e. you don't get positive values for dP/d(vsq) . 
 	rho0 = D / gamma;
 	u = prim[UU];
-	p = pressure_rho0_u(rho0, u);
+
+    #if DOHELM
+    // Helmholtz EOS
+    
+    #if (DONUCLEAR)
+    // Nuclear physics
+    
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+    
+    varye = prim[YE];
+    varxatm = prim[AMB];
+    varxa = prim[RHOALPHA];
+    varxnp = prim[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    
+    eos_mode_dens_ener_nuclear(u / rho0, rho0, varye, varxatm, varxn, varxp, varxa, &p);
+    
+    #else
+    // Helmholtz EOS w/o nuclear physics
+    eos_mode_rhou_pres (rho0, u, &p);
+    #endif
+    
+    #else
+    // Ideal gas EOS
+    p = pressure_rho0_u(rho0, u);
+    #endif
+    
 	w = rho0 + u + p;
 	W_last = w*gammasq;
 
@@ -273,7 +381,16 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 	//Calculate W and vsq: 
 	x_2d[0] = fabs(W_last);
 	x_2d[1] = x1_of_x0(W_last);
+<<<<<<< HEAD
 	retval = general_newton_raphson(x_2d, func_vsq, tolerance);
+=======
+    
+#if (DONUCLEAR && DOHELM)
+    retval = general_newton_raphson(x_2d, n, func_vsq, varye, varxatm, varxn, varxp, varxa);
+#else
+    retval = general_newton_raphson(x_2d, n, func_vsq);
+#endif
+>>>>>>> origin/danat_summer
 
 	W = x_2d[0];
 	vsq = x_2d[1];
@@ -302,9 +419,16 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 	rho0 = D * gtmp;
 
 	w = W * (1. - vsq);
-	p = pressure_rho0_w(rho0, w);
-	u = w - (rho0 + p);
-
+    
+    #if (DOHELM)
+    // Helmholtz EOS
+    eos_mode_rhow_pres_u (rho0, w, &p, &u);
+    #else
+    // Ideal gas EOS
+    p = pressure_rho0_w(rho0, w); // DANAT: change this for Helmholtz EOS! say, find p and u as f(rho0, w)
+    u = w - (rho0 + p);
+    #endif
+    
 	// User may want to handle this case differently, e.g. do NOT return upon 
 	// a negative rho/u, calculate v^i so that rho/u can be floored by other routine:
 	if ((rho0 <= 0.) ) {
@@ -395,7 +519,22 @@ general_newton_raphson():
 -- inspired in part by Num. Rec.'s routine newt();
 
 *****************************************************************/
+<<<<<<< HEAD
 static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance)
+=======
+static int general_newton_raphson(double x[], int n,
+	void(*funcd) (double[], double[], double[],
+	double[][NEWT_DIM_2], double *,
+	double *, int
+#if (DONUCLEAR && DOHELM)
+    , double, double, double, double, double
+#endif
+    )
+#if (DONUCLEAR && DOHELM)
+    , double varye, double varxatm, double varxn, double varxp, double varxa
+#endif
+    )
+>>>>>>> origin/danat_summer
 {
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
@@ -421,7 +560,18 @@ static int general_newton_raphson(double x[], void(*funcd) (double[], double[], 
 		//returns with new dx, f, df
 		(*funcd) (x, dx, resid, jac, &f, &df);  
 
+<<<<<<< HEAD
 		//Save old values before calculating the new
+=======
+#if (DONUCLEAR && DOHELM)
+        (*funcd) (x, dx, resid, jac, &f, &df, n, varye, varxatm, varxn, varxp, varxa);
+#else
+		(*funcd) (x, dx, resid, jac, &f, &df, n);  /* returns with new dx, f, df */
+#endif
+
+
+		/* Save old values before calculating the new: */
+>>>>>>> origin/danat_summer
 		errx = 0.;
 		#pragma ivdep
 		for (id = 0; id < NEWT_DIM_2; id++) x_old[id] = x[id];
@@ -486,7 +636,17 @@ df    = -2*f;  (on output)
 n    = dimension of x[];
 *********************************************************************************/
 
+<<<<<<< HEAD
 static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_DIM_2], double *f, double *df){
+=======
+static void func_vsq(double x[], double dx[], double resid[],
+	double jac[][NEWT_DIM_2], double *f, double *df, int n
+#if (DONUCLEAR && DOHELM)
+    , double varye, double varxatm, double varxn, double varxp, double varxa
+#endif
+                     )
+{
+>>>>>>> origin/danat_summer
 	double  W, vsq, Wsq, p_tmp, dPdvsq, dPdW, temp, detJ, tmp2, tmp3;
 	double t11, t16, t18, t2, t21, t23, t24, t25, t3, t35, t36, t4, t40, t9;
 
@@ -494,9 +654,40 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
 	W = x[0];
 	vsq = x[1];
 	Wsq = W*W;
+<<<<<<< HEAD
 	p_tmp = pressure_W_vsq(W, vsq);
 	dPdW = dpdW_calc_vsq(W, vsq);
 	dPdvsq = dpdvsq_calc(W, vsq);
+=======
+
+    #if DOHELM
+    // Helmholtz EOS
+    double w = W * (1.0 - vsq);
+    double rho = D * sqrt(1.0 - vsq);
+    double gamma_sq = 1.0/(1.0 - vsq);
+    double gamma = sqrt(gamma_sq);
+    double dpdrho, dpde_d;
+    
+    #if (DONUCLEAR)
+    eos_mode_dens_enth_nuclear (rho, varye, varxatm, varxn, varxp, varxa, &p_tmp, enth, &dpdrho, &dpdt, &dedt, &dpde_d);
+    #else
+    // Helmholtz EOS
+    eos_mode_rhow_pres_dpdrho_dpde_d (rho, w, &p_tmp, &dpdrho, &dpde_d);
+    #endif
+    
+    double dpdeps_o_rho = dpde_d / rho;
+    double dpdvsq_1 = -0.5*D*gamma*dpdrho;
+    double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
+    dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
+    dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
+    
+    #else
+    // Ideal gas EOS
+    p_tmp = pressure_W_vsq(W, vsq);
+    dPdW = dpdW_calc_vsq(W, vsq);
+    dPdvsq = dpdvsq_calc(W, vsq);
+    #endif
+>>>>>>> origin/danat_summer
 
 	// These expressions were calculated using Mathematica, but made into efficient 
 	// code using Maple.  Since we know the analytic form of the equations, we can 
@@ -563,8 +754,14 @@ dpdW_calc_vsq():
 
 -- partial derivative of pressure with respect to W;
 **********************************************************************/
+<<<<<<< HEAD
 static double dpdW_calc_vsq(double W, double vsq){
 	return((GAMMA - 1.) * (1. - vsq) / GAMMA);
+=======
+static double dpdW_calc_vsq(double W, double vsq)
+{
+    return((GAMMA - 1.) * (1. - vsq) / GAMMA);
+>>>>>>> origin/danat_summer
 }
 
 /**********************************************************************/
@@ -573,8 +770,14 @@ dpdvsq_calc():
 
 -- partial derivative of pressure with respect to vsq
 **********************************************************************/
+<<<<<<< HEAD
 static double dpdvsq_calc(double W, double vsq){
 	return((GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA);
+=======
+static double dpdvsq_calc(double W, double vsq)
+{
+    return((GAMMA - 1.) * (0.5 * D / sqrt(1. - vsq) - W) / GAMMA);
+>>>>>>> origin/danat_summer
 }
 
 
@@ -610,9 +813,27 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 
 	//Transform the PRIMITIVE variables into the new system
 	#pragma ivdep
+<<<<<<< HEAD
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 	
 	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, NEWT_TOL, lim);
+=======
+	for (i = 0; i < BCON1; i++) {
+		prim_tmp[i] = prim[i];
+	}
+	#pragma ivdep
+	for (i = BCON1; i <= BCON3; i++) {
+		prim_tmp[i] = alpha*prim[i];
+	}
+#if (DONUCLEAR)
+    #pragma ivdep
+    for (i = BCON3 + 1; i < NPR; i++) {
+        prim_tmp[i] = prim[i];
+    }
+#endif
+    
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp);
+>>>>>>> origin/danat_summer
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -626,10 +847,45 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	prim[KTOT] = U[KTOT] / U[RHO];
 	#endif
 
+#if(DONUCLEAR)
+    prim[RHONP] = U[RHONP]/U[RHO];
+    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
+    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
+    prim[YE] = U[YE]/U[RHO];
+    prim[AMB] = U[AMB]/U[RHO];
+    
+    #if 0 // DANAT: check how rho_amb factors into this
+    // Danat: check the normalizations of the mass fractions and Ye
+    prim[YE] = MY_MAX(prim[YE], 1.0);
+    prim[YE] = MY_MIN(prim[YE], 1e-10);
+    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
+    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
+    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
+    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
+    prim[AMB] = MY_MAX(prim[AMB], 1.0);
+    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
+    
+    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
+    
+    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
+        
+        prim[RHONP] *= fac_norm;
+        prim[RHOALPHA] *= fac_norm;
+        prim[AMB] *= fac_norm;
+    }
+    #endif
+#endif
+    
 	return(ret);
 }
 
+<<<<<<< HEAD
 static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[5], double tolerance, int lim){
+=======
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_U])
+{
+
+>>>>>>> origin/danat_summer
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
 	double rho0, u, w,  gamma, vsq, errx=10000.;
 	int i;
@@ -665,31 +921,105 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	int iter = 0;
 	int iter_tot = 0;
 	int set_variables = 0;
-	p_array[0] = (GAMMA - 1.)*prim[UU];
-	p_new = p_array[0];
+    
+    #if DOHELM
+    double xdens, xpres, xener, xenth;
+    // Helmholtz EOS
+    xdens = prim[RHO];
+    
+    #if (DONUCLEAR)
+    // Nuclear physics
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+    
+    varye = prim[YE];
+    varxatm = prim[AMB];
+    varxa = prim[RHOALPHA];
+    varxnp = prim[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    
+    eos_get_min_pres_NH_nuclear (xdens, varye, varxatm, varxn, varxp, varxa, &xpres);
+    
+    #else
+    // Helmholtz EOS w/o nuclear physics
+    // -- to get min. pressure for a given density, set T = T_min = 1e4 K
+    eos_mode_rhotemp_pres_min (xdens, &xpres);
+    #endif
+    
+    p_array[0] = xpres;
+    
+    #else
+    // Ideal gas EOS
+    p_array[0] = (GAMMA - 1.)*prim[UU];
+    #endif
+	
+    p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
-	if (d < 0.0) return(1);
+//    if (d < 1e-20) return(1); // DANAT : edited for d very small (< 1e-30)
 	do{
 		set_variables = 0;
 		a = -Qdotn + p_new + 0.5*Bsq;
 		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
 		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+        if (d < 1e-20) {
+            epsilon = a; // Danat: in case d = 0, epsilon = a
+        }
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+        
+        // DANAT addition
+        if (fabs(vsq) < 1e-15) vsq = 0.0;
+        if (fabs(vsq) >= 1.0) return(1); // it gives rho0 = NaN, therefore HelmEOS fails
+        
 		Wsq = 1. / (1. - vsq);
 		w = z * (1. - vsq);
 		gamma = 1. / sqrt(1. - vsq);
+<<<<<<< HEAD
 		rho0 = U[RHO] / gamma; 
 		u = (w - rho0) / GAMMA; //Watch out you may need this for a more complicated EOS
+=======
+		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
+        
+        #if (DOHELM)
+        
+        #if (DONUCLEAR)
+        // Nuclear physics
+        eos_mode_dens_enth_NH_nuclear (rho0, varye, varxatm, varxn, varxp, varxa, &xpres, &xener, xenth);
+        
+        #else
+        // Helmholtz EOS w/o nuclear physics
+        eos_mode_rhow_pres_u (rho0, w, &xpres, &u);
+        #endif
+        
+        #else
+        // Ideal gas EOS
+		u = (w - rho0) / GAMMA;
+        #endif
+>>>>>>> origin/danat_summer
 
 		iter++;
 		iter_tot++;
+        
+        #if DOHELM
+        // Helmholtz EOS
+        p_array[iter] = xpres;
+        #else
+        // Ideal gas EOS
 		p_array[iter] = (GAMMA - 1.)*u;
-		p_old = p_array[iter - 1];
+        #endif
+        
+        p_old = p_array[iter - 1];
 		p_new = p_array[iter];
 		if (iter >= 2) {
-			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2]);
+			R = (p_array[iter] - p_array[iter - 1]) / (p_array[iter - 1] - p_array[iter - 2] + 1e-20); // Danat: what if p_array[iter-1] = p_array[iter-2]? Added 1e-20 in the denominator
 
 			if (R<1. && R>0.) {
 				set_variables = 1;
@@ -709,19 +1039,48 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		a = -Qdotn + p_new + 0.5*Bsq;
 		phi = acos(1. / a*sqrt((27.*d) / (4.*a)));
 		epsilon = a / 3. - 2. / 3.*a*cos(2. / 3.*phi + 2. / 3.*M_PI);
+        if (d < 1e-20) {
+            epsilon = a; // Danat: in case d = 0, epsilon = a
+        }
 		z = epsilon - Bsq;
 
 		vsq = (Qtsq*z*z + QdotBsq*(Bsq + 2. * z)) / (z*z*pow(Bsq + z, 2.));
+        // DANAT addition
+        if (fabs(vsq) < 1e-15) vsq = 0.0;
 		Wsq = 1. / (1. - vsq);
 		w = z / Wsq;
 		if (vsq >= 1.0 || vsq<0. || z <= 0. || z > W_TOO_BIG || !isfinite(vsq) || !isfinite(z)) {
 			return(4);
 		}
 		gamma = sqrt(Wsq);
+<<<<<<< HEAD
 
 		rho0 = U[RHO] / gamma; //Watch out you may need this for a more complicated EOS
 		u = (w - rho0) / GAMMA;
 		p_new = (GAMMA - 1.)*u;
+=======
+		rho0 = D / gamma; //Watch out you may need this for a more complicated EOS
+        
+        #if (DOHELM)
+        
+        #if (DONUCLEAR)
+        // Nuclear physics
+        eos_mode_dens_enth_NH_nuclear (rho0, varye, varxatm, varxn, varxp, varxa, &xpres, &xener, xenth);
+        
+        #else
+        // Helmholtz EOS w/o nuclear physics
+        eos_mode_rhow_pres_u (rho0, w, &xpres, &u);
+        #endif
+        
+        p_new = xpres;
+        
+        #else
+        // Ideal gas EOS
+        u = (w - rho0) / GAMMA;
+        p_new = (GAMMA - 1.)*u;
+        #endif
+        
+>>>>>>> origin/danat_summer
 	}
 
 	//If density or internal energy is negative return error code
@@ -739,7 +1098,6 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 	}
 
 	/* done! */
+    
 	return(0);
 }
-
-

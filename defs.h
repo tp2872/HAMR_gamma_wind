@@ -41,7 +41,9 @@ along with HARM; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 ***********************************************************************************/
+#ifndef __APPLE__
 #include <malloc.h>
+#endif
 
 /*************************************************************************
 GLOBAL ARRAY SECTION
@@ -59,7 +61,7 @@ double(*E_avg1[N_LEVELS_3D])[BS_1 + 2 * N1G];
 double(*E_avg2[N_LEVELS_3D])[BS_1 + 2 * N1G];
 double(*E_avg1_new[N_LEVELS_3D])[BS_1 + 2 * N1G];
 double(*E_avg2_new[N_LEVELS_3D])[BS_1 + 2 * N1G];
-double(*restrict  ph[NB_LOCAL])[NPR];
+double(*restrict ph[NB_LOCAL])[NPR];
 double(*restrict E_corn[NB_LOCAL])[NDIM];
 double(*restrict dE[NB_LOCAL])[2][NDIM][NDIM];
 double(*restrict ps[NB_LOCAL])[NDIM];
@@ -82,6 +84,47 @@ double(*restrict gdet[NB_LOCAL])[NPG];
 double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
+
+// Nuclear physics arrays
+#if(DONUCLEAR || DOHELM)
+double rhomax_nuclear;
+double (*G_global)[N2M][N3M];
+double (*Q_global)[N2M][N3M];
+double (*qalpha_global)[N2M][N3M];
+#endif
+
+#if DOPARTICLES
+/*MC particles arrays*/
+double xcon_p[NPTOT][NDIM];
+double pcov_p[NPTOT][NDIM];
+#endif
+
+/*EOS CPU arrays*/
+double eos_f[EOSIMAX*EOSJMAX];
+double eos_fd[EOSIMAX*EOSJMAX];
+double eos_ft[EOSIMAX*EOSJMAX];
+double eos_fdd[EOSIMAX*EOSJMAX];
+double eos_ftt[EOSIMAX*EOSJMAX];
+double eos_fdt[EOSIMAX*EOSJMAX];
+double eos_fddt[EOSIMAX*EOSJMAX];
+double eos_fdtt[EOSIMAX*EOSJMAX];
+double eos_fddtt[EOSIMAX*EOSJMAX];
+double eos_dpdf[EOSIMAX*EOSJMAX];
+double eos_dpdfd[EOSIMAX*EOSJMAX];
+double eos_dpdft[EOSIMAX*EOSJMAX];
+double eos_dpdfdt[EOSIMAX*EOSJMAX];
+double eos_ef[EOSIMAX*EOSJMAX];
+double eos_efd[EOSIMAX*EOSJMAX];
+double eos_eft[EOSIMAX*EOSJMAX];
+double eos_efdt[EOSIMAX*EOSJMAX];
+double eos_xf[EOSIMAX*EOSJMAX];
+double eos_xfd[EOSIMAX*EOSJMAX];
+double eos_xft[EOSIMAX*EOSJMAX];
+double eos_xfdt[EOSIMAX*EOSJMAX];
+double eos_t[EOSJMAX];
+double eos_d[EOSIMAX];
+double eos_dd[EOSIMAX];
+double eos_dt[EOSJMAX];
 
 /*GPU arrays*/
 double *F1_1[NB_LOCAL];
@@ -722,6 +765,11 @@ double * BufferrecE3corn3_62[NB_LOCAL];
 double * BufferrecE3corn4_72[NB_LOCAL];
 double * BufferrecE3corn4_82[NB_LOCAL];
 
+#if (DOHELM)
+double * eos_table[1];
+double * GPU_eos_table[1];
+#endif
+
 /*************************************************************************
 GLOBAL VARIABLES SECTION
 *************************************************************************/
@@ -730,7 +778,7 @@ double a;
 double gam;
 
 /* numerical parameters */
-double Rin, Rout, R0, fractheta;
+double Rin, Rout, R0, fractheta, x1br, rbr, npow2, cpow2, x1max;
 double cour;
 double dV, dx[NB_LOCAL][NPR], startx[NPR];
 double dt, bdt[NB_LOCAL][4];

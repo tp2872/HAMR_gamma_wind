@@ -124,6 +124,9 @@ void diag(int call_code)
 		}
 		gdump_new();
 		dump_new();
+#if DOPARTICLES
+        pdump();
+#endif
 		#if(DUMP_SMALL)
 		if(nstep==0){
 			if (rank == 0) {

@@ -42,6 +42,7 @@
 
 ***********************************************************************************/
 #include "decs_MPI.h"
+//#include "decs.h"
 
 /** 
  *
@@ -121,11 +122,19 @@ void coord(int n, int i, int j, int z, int loc, double * restrict X)
 void bl_coord(double * restrict X, double * restrict r, double * restrict th, double * restrict phi)
 {
 	double V[4];
+  void (*vofx_function_pointer)(double*, double*);
 
+  //choose the type of coordinates depending on the problem at hand
+  #if( WHICHPROBLEM == POSTMERGER_PROBLEM)
+    vofx_function_pointer = vofx_sjetcoords;
+  #else
+    vofx_function_pointer = vofx_matthewcoords;
+  #endif
+  
 	#if(!DOCYLINDRIFYCOORDS)
-	vofx_matthewcoords(X,V);
+    vofx_function_pointer(X,V);
 	#else
-	vofx_cylindrified(X, vofx_matthewcoords, V);
+    vofx_cylindrified(X, vofx_function_pointer, V);
 	#endif
 
 	// avoid singularity at polar axis
@@ -189,15 +198,143 @@ void vofx_matthewcoords(double *X, double *V){
 #endif
 }
 
+void vofx_sjetcoords( double *X, double *V )
+{
+  double thetaofx2(double x2, double ror0nu);
+
+  /////////////////////
+  //ANGULAR GRID SETUP
+  /////////////////////
+  
+  //transverse resolution fraction devoted to different components
+  //(sum should be <1)
+  double global_fracdisk = 0.36;
+  double global_fracjet = 0.15;
+  
+  double global_jetnu1 = -2.;  //the nu-parameter that determines jet shape
+  double global_jetnu2 = 0.75;  //the nu-parameter that determines jet shape
+  
+  //subtractor, controls the size of the last few cells close to axis:
+  //if rsjet = 0, then no modification <- *** default for use with grid cylindrification
+  //if rsjet ~ 0.5, the grid is nearly vertical rather than monopolar,
+  //                which makes the timestep larger
+  double global_rsjet = 0.0;
+  
+  //distance at which theta-resolution is *exactly* uniform in the jet grid -- want to have this at BH horizon;
+  //otherwise, near-uniform near jet axis but less resolution (much) further from it
+  //the larger r0grid, the larger the thickness of the jet
+  //to resolve
+  double global_r0grid = Rin;
+  
+  //distance at which jet part of the grid becomes monopolar
+  //should be the same as r0disk to avoid cell crowding at the interface of jet and disk grids
+  double global_r0jet = 40*Rin;
+  
+  //distance after which the jet grid collimates according to the usual jet formula
+  //the larger this distance, the wider is the jet region of the grid
+  double global_rjetend = 1e3;
+  
+  //distance at which disk part of the grid becomes monopolar
+  //the larger r0disk, the larger the thickness of the disk
+  //to resolve
+  double global_r0disk = 2*Rin;
+  
+  //distance after which the disk grid collimates to merge with the jet grid
+  //should be roughly outer edge of the disk
+  double global_rdiskend = 1.e7;
+
+  
+  //for SJETCOORDS
+  double theexp;
+  double Ftrgen( double x, double xa, double xb, double ya, double yb );
+  double limlin( double x, double x0, double dx, double y0 );
+  double minlin( double x, double x0, double dx, double y0 );
+  double mins( double f1, double f2, double df );
+  double maxs( double f1, double f2, double df );
+  double thetaofx2(double x2, double ror0nu);
+  double  fac, faker, ror0nu;
+  double fakerdisk, fakerjet;
+  double rbeforedisk, rinsidedisk, rinsidediskmax, rafterdisk;
+  double ror0nudisk, ror0nujet, thetadisk, thetajet;
+  
+  V[0] = X[0];
+  
+  theexp = X[1];
+  
+  if( X[1] > x1br ) {
+    theexp += cpow2 * pow(X[1]-x1br,npow2);
+  }
+  V[1] = R0+exp(theexp);
+  
+  double r1disk, r1jet, r2jet, r1, dr;
+  fac = Ftrgen( fabs(X[2]), global_fracdisk, 1-global_fracjet, 0, 1 );
+  
+  r1disk = mins( V[1]/global_r0disk, 1. , 0.5 ) * (global_r0disk/global_r0grid);
+  //r2disk = V[1]/r1;
+  
+  if( global_r0disk >= global_r0jet ) {
+    r1jet = mins( V[1]/global_r0jet, 1. , 0.5 ) * (global_r0jet/global_r0grid);
+    r2jet = V[1]/(r1jet*global_r0grid);
+    dr = global_rjetend/global_r0jet;
+    r2jet = mins( r2jet, dr, 0.5*dr );
+  }
+  else {
+    r1jet = mins( V[1]/global_r0disk, 1. , 0.5 ) * (global_r0disk/global_r0grid);
+    r2jet = maxs( V[1]/global_r0jet, 1., 0.5);
+    dr = global_rjetend/global_r0jet;
+    r2jet = mins( r2jet, dr, 0.5*dr );
+  }
+  
+  ror0nudisk = pow( r1disk, 0.5*global_jetnu1);
+  ror0nujet = pow( r1jet, 0.5*global_jetnu1) * pow(r2jet, 0.5*global_jetnu2);
+  
+  thetadisk = thetaofx2( X[2], ror0nudisk );
+  thetajet = thetaofx2( X[2], ror0nujet );
+  V[2] = fac*thetajet + (1 - fac)*thetadisk;
+  
+  // default is uniform \phi grid
+  V[3]=X[3];
+}
+
+double thetaofx2(double x2, double ror0nu)
+{
+  double theta;
+  if( x2 < -0.5 ) {
+    theta = 0       + atan( tan((x2+1)*M_PI_2)/ror0nu );
+  }
+  else if( x2 >  0.5 ) {
+    theta = M_PI    + atan( tan((x2-1)*M_PI_2)/ror0nu );
+  }
+  else {
+    theta = M_PI_2 + atan( tan(x2*M_PI_2)*ror0nu );
+  }
+  return(theta);
+}
+
 /* some grid location, dxs */
 void set_points(int n)
 {
+<<<<<<< HEAD
 	#if(CARTESIAN)
 	dx[nl[n]][1] = 1. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	dx[nl[n]][2] = 1. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 1. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
 	#else
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
+=======
+#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+  double lenx[NDIM];
+
+    lenx[1] = x1max - startx[1];
+	lenx[2] = 2.*fractheta;
+	lenx[3] = 2.*M_PI;
+
+	dx[nl[n]][1] = lenx[1] / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
+	dx[nl[n]][2] = lenx[2] / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
+	dx[nl[n]][3] = lenx[3] / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
+#else  
+        double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
+>>>>>>> origin/danat_summer
 	if(Rout<=RTRANS){
 		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
@@ -207,14 +344,24 @@ void set_points(int n)
 	}
 	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
+<<<<<<< HEAD
 	#endif
+=======
+#endif
+>>>>>>> origin/danat_summer
 }
 
 void set_gridparam(void) {
 	a = BH_SPIN;
+<<<<<<< HEAD
 	Rin = 0.85*(1. + sqrt(1. - a * a));
 	Rout = 200.;
 	lim = MC;
+=======
+    Rin = 0.8; // DANAT: 0.9*(1. + sqrt(1. - a * a));
+    Rout = 100000.; // DANAT: used to be 100000.
+    lim = MC;
+>>>>>>> origin/danat_summer
 	failed = 0;
 	cour = COUR;
 	if (dt > 1e-5) dt = dt;
@@ -236,11 +383,65 @@ void set_gridparam(void) {
 		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
 		fractheta = 1.e-2;
 	}
-
+#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+  const double RELACC = 1e-14;
+  const int ITERMAX = 50;
+  rbr = 1e+4;
+  npow2=4.0; //power exponent
+  cpow2=1.0; //exponent prefactor (the larger it is, the more hyperexponentiation is)
+  double x1max0, dxmax;
+  int iter;
+  
+  Rin = 0.98; // 0.87 * (1. + sqrt(1. - a * a));  //.98
+  Rout = 1e5;
+  x1br = log( rbr - R0 );
+  
+  if( Rout < rbr ) {
+    x1max = log(Rout-R0);
+  }
+  else {
+    x1max0 = 1.;
+    x1max = 2.;
+    
+    //find the root via iterations
+    for( iter = 0; iter < ITERMAX; iter++ ) {
+      if( fabs((x1max - x1max0)/x1max) < RELACC ) {
+        break;
+      }
+      x1max0 = x1max;
+      dxmax= (pow( (log(Rout-R0) - x1max0)/cpow2, 1./npow2 ) + x1br) - x1max0;
+      
+      // need a slight damping factor
+      double dampingfactor=0.5;
+      x1max = x1max0 + dampingfactor*dxmax;
+      if (x1max> log(Rout-R0)){x1max = log(Rout-R0);}
+    }
+    
+    if( iter == ITERMAX ) {
+      if(rank==0) {
+        printf( "Error: iteration procedure for finding x1max has not converged: x1max = %g, dx1max/x1max = %g, iter = %d\n",
+               x1max, (x1max-x1max0)/x1max, iter );
+        printf( "Error: iteration procedure for finding x1max has not converged: rbr= %g, x1br = %g, log(Rout-R0) = %g\n",
+               rbr, x1br, log(Rout-R0) );
+      }
+      exit(1);
+    }
+    else {
+      if(rank==0) printf( "x1max = %g (dx1max/x1max = %g, itno = %d)\n", x1max, (x1max-x1max0)/x1max, iter );
+    }
+  }
+  startx[1] = log(Rin - R0) ;  //minimum values
+  startx[2] = -1.+(1.-fractheta) ;   //minimum values
+  startx[3] = 0. ;   //minimum values
+#else
 	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
 	startx[2] = -1. + 1.*(1. - fractheta);
 	startx[3] = 0.;
+<<<<<<< HEAD
 	#endif
+=======
+#endif
+>>>>>>> origin/danat_summer
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -273,21 +474,30 @@ void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout)
 	//initialize X0: cylindrify region
 	//X[1] < X0[1] && X[2] < X0[2] (value of X0[3] not used)
 	X0[0] = Xin[0];
-	/*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
-	X0[1] = pow(log(38.*(double)N3 / 250.0 - RB), 1. / RADEXP);
-	X0[2] = -1. + 1. / ((double)(N2));
+  
+  //{0, roughly midpoint between grid origin and x10, -1, 0}
+  DLOOPA Xtr[j] = X[j];
+
+#if( WHICHPROBLEM == POSTMERGER_PROBLEM)
+	X0[1] = 3.0;
+	X0[2] = -1. + 1./256.;
 	X0[3] = 0.;
+  Xtr[1] = log( 0.5*( exp(X0[1])+exp(startx[1]) ) );   //always bound to be between startx[1] and X0[1]
+#else
+  /*disk 150^3 Rout 100 Rg-->100^3=25 Rg*/
+  X0[1] = pow(log(38.*(double)N3 / 250.0 - RB), 1. / RADEXP);
+  X0[2] = -1. + 1. / ((double)(N2));
+  X0[3] = 0.;
+  //3D jet
+  //Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
+  Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
+#endif
 	/*3D jet Rout 10000 Rg 1024x400x100*/
 	/*X0[1] = pow(log(600. - RB), 1. / RADEXP);
 	X0[2] = -1. + 3. / (double)N2;
 	X0[3] = 0.;*/
 	vofx(X0, V0);
 
-	//{0, roughly midpoint between grid origin and x10, -1, 0}
-	DLOOPA Xtr[j] = X[j];
-	//3D jet
-	//Xtr[1] = pow(log(0.5*(exp(pow(X0[1], RADEXP) + RB) + exp(pow(startx[1], RADEXP) + RB))), 1. / RADEXP);   //always bound to be between startx[1] and X0[1]
-	Xtr[1] = pow(log(0.5*(exp(pow(X0[1],RADEXP))+RB + exp(pow(startx[1],RADEXP))+RB)-RB),1./RADEXP);   //always bound to be between startx[1] and X0[1]
 	vofx(Xtr, Vtr);
 
 	f1 = func1(X0, X, vofx);

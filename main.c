@@ -1,27 +1,27 @@
 /***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
+    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble,
                    Gabor Toth, and Luca Del Zanna
 
                         HARM  version 1.0   (released May 1, 2006)
 
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
+    This file is part of HARM.  HARM is a program that solves hyperbolic
     partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
+    shock-capturing techniques.  This version of HARM has been configured to
+    solve the relativistic magnetohydrodynamic equations of motion on a
     stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
+    an accretion disk model.
 
-    You are morally obligated to cite the following two papers in his/her 
+    You are morally obligated to cite the following two papers in his/her
     scientific literature that results from use of any part of HARM:
 
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
+    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003,
         Astrophysical Journal, 589, 444.
 
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
+    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006,
         Astrophysical Journal1, 626.
 
-   
-    Further, we strongly encourage you to obtain the latest version of 
+
+    Further, we strongly encourage you to obtain the latest version of
     HARM directly from our distribution website:
     http://rainman.astro.uiuc.edu/codelib/
 
@@ -51,9 +51,9 @@
    main():
    ------
 
-     -- Initializes, time-steps, and concludes the simulation. 
+     -- Initializes, time-steps, and concludes the simulation.
      -- Handles timing of output routines;
-     -- Main is main, what more can you say.  
+     -- Main is main, what more can you say.
 
 -*****************************************************************/
 int main(int argc, char *argv[])
@@ -65,13 +65,20 @@ int main(int argc, char *argv[])
 	clock_t begin2;
 	nstep = 0;
 	defcon = 1.;
-
 	/* Perform Initializations, either directly or via checkpoint */
 	MPI_initialize(argc, argv);
+
 	#if(GPU_ENABLED || GPU_DEBUG )
 	GPU_init();
 	#endif
-	set_AMR();
+    set_AMR();
+
+	#if (DOHELM)
+	eos_init();
+	#if(GPU_ENABLED || GPU_DEBUG )
+	eos_init_GPU();
+	#endif
+	#endif
 
 	if (!restart_read()) {
 		#if(DEREFINE_POLE)
@@ -86,12 +93,10 @@ int main(int argc, char *argv[])
 		}	
 		//restart_write();
 	}
-	
+
 	/* do initial diagnostics */
 	bound_prim(p, 1);
-	bound_prim(p, 1);
 	#if(GPU_ENABLED || GPU_DEBUG )
-	GPU_boundprim(1);
 	GPU_boundprim(1);
 	for (n = 0; n < n_active; n++) GPU_read(n_ord[n]);
 	#endif
@@ -163,7 +168,7 @@ int main(int argc, char *argv[])
 		if (t >= tdump && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
 			diag(DUMP_OUT) ;
 			tdump += DTd;
-		}	
+		}
 
 		/* Put out reduced dump file*/
 		#if(DUMP_SMALL)
@@ -184,7 +189,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "dt1: %f dt2: %f dt3: %f nstep: %d \n", ndt1, ndt2, ndt3, nstep);
 				fflush(stderr);
 			}
-			time_spent3 = 0.0;	
+			time_spent3 = 0.0;
 
 			//Safe and exit at end of 24 hour runtime
 			if (dump_cnt-dump_cnt0>50000){
@@ -261,8 +266,13 @@ void MPI_initialize(int argc, char *argv[])
 
 	#pragma omp parallel shared(nthreads) private(threadid)
 	{
-		threadid = omp_get_thread_num();
+#ifdef __APPLE__
+        threadid = 0;
+        nthreads = 1;
+#else
+        threadid = omp_get_thread_num();
 		nthreads = omp_get_num_threads();
+#endif
 		if (threadid == 0 && rank == 0) {
 			fprintf(stderr, "nthreads = %d\n", nthreads);
 		}
@@ -271,7 +281,7 @@ void MPI_initialize(int argc, char *argv[])
 
 	if (rank == 0){
 		system("mkdir dumps gdumps rdumps0 rdumps1 reduced");
-		#if defined(WIN32)
+		#if defined(_WIN32)
 		system("mkdir reduced\\gdumps");
 		#else
 		system("mkdir -p reduced/gdumps");
@@ -285,15 +295,15 @@ void MPI_initialize(int argc, char *argv[])
   set_arrays():
   ----------
 
-       -- sets to zero all arrays, plus performs pointer trick 
-          so that grid arrays can legitimately refer to ghost 
-          zone quantities at positions  i = -2, -1, N1, N1+1 and 
+       -- sets to zero all arrays, plus performs pointer trick
+          so that grid arrays can legitimately refer to ghost
+          zone quantities at positions  i = -2, -1, N1, N1+1 and
           j = -2, -1, N2, N2+1
 
  *****************************************************************/
 void set_arrays_image(void)
 {
-	
+
 }
 
 void set_arrays(int n)
@@ -408,14 +418,14 @@ void alloc_bounds_CPU(int n){
 		if (block[n][AMR_NBR3_1] >= 0) ref3_3 = block[block[n][AMR_NBR3_1]][AMR_LEVEL3] - block[n][AMR_LEVEL3];
 	}
 	ref1_1s = ref1_1;
-	ref1_3s = ref1_3;	
+	ref1_3s = ref1_3;
 	ref3_1s = ref3_1;
 	ref3_3s = ref3_3;
 
 	if (block[n][AMR_NBR1P] >= 0)ref1_1s = MY_MIN(ref1_1, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR1P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR3P] >= 0)ref1_3s = MY_MIN(ref1_3, block[n][AMR_LEVEL1] - block[block[n][AMR_NBR3P]][AMR_LEVEL1]);
 	if (block[n][AMR_NBR1P] >= 0)ref3_1s = MY_MIN(ref3_1, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR1P]][AMR_LEVEL3]);
-	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);	
+	if (block[n][AMR_NBR3P] >= 0)ref3_3s = MY_MIN(ref3_3, block[n][AMR_LEVEL3] - block[block[n][AMR_NBR3P]][AMR_LEVEL3]);
 	if ((block[n][AMR_COORD2] == 0 || block[n][AMR_COORD2] == NB_2*(int)pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1) && DEREFINE_POLE){
 		ref3_2s = 0;
 		ref3_4s = 0;
@@ -447,7 +457,7 @@ void alloc_bounds_CPU(int n){
 	send4_6[nl[n]] = send4[nl[n]] + ref3_4*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
 	send4_7[nl[n]] = send4[nl[n]] + (ref3_4 + ref2_4)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
 	send4_8[nl[n]] = send4[nl[n]] + (ref3_4 + ref2_4 + (ref3_4 && ref2_4))*(NG * (NPR + 3)*(BS_2 / (1 + ref2_4) + 2 * N2G)*(BS_3 / (1 + ref3_4) + 2 * N3G));
-	#if(N3G>0)	
+	#if(N3G>0)
 	send5_1[nl[n]] = send5[nl[n]];
 	send5_3[nl[n]] = send5[nl[n]] + ref2_5*(NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G));
 	send5_5[nl[n]] = send5[nl[n]] + (ref1_5 + ref2_5)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_5) + 2 * N2G)*(BS_1 / (1 + ref1_5) + 2 * N1G));
@@ -483,7 +493,7 @@ void alloc_bounds_CPU(int n){
 	receive4_6[nl[n]] = receive4[nl[n]] + ref3_2*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	receive4_7[nl[n]] = receive4[nl[n]] + (ref3_2 + ref2_2)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	receive4_8[nl[n]] = receive4[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	#if(N3G>0)	
+	#if(N3G>0)
 	receive5_1[nl[n]] = receive5[nl[n]];
 	receive5_3[nl[n]] = receive5[nl[n]] + ref2_6*(NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G));
 	receive5_5[nl[n]] = receive5[nl[n]] + (ref1_6 + ref2_6)*(NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G));
@@ -520,7 +530,7 @@ void alloc_bounds_CPU(int n){
 	tempreceive4_6[nl[n]] = tempreceive4[nl[n]] + ref3_2*(2*NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	tempreceive4_7[nl[n]] = tempreceive4[nl[n]] + (ref3_2 + ref2_2)*(2*NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	tempreceive4_8[nl[n]] = tempreceive4[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(2*NG * (NPR + 3)*(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	#if(N3G>0)	
+	#if(N3G>0)
 	tempreceive5_1[nl[n]] = tempreceive5[nl[n]];
 	tempreceive5_3[nl[n]] = tempreceive5[nl[n]] + ref2_6*(2*NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G));
 	tempreceive5_5[nl[n]] = tempreceive5[nl[n]] + (ref1_6 + ref2_6)*(2*NG * (NPR + 3)*(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G));
@@ -565,7 +575,7 @@ void alloc_bounds_CPU(int n){
 	receive4_6fine[nl[n]] = receive4_fine[nl[n]] + ref3_2*(NPR *(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	receive4_7fine[nl[n]] = receive4_fine[nl[n]] + (ref3_2 + ref2_2)*(NPR *(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
 	receive4_8fine[nl[n]] = receive4_fine[nl[n]] + (ref3_2 + ref2_2 + (ref3_2 && ref2_2))*(NPR *(BS_2 / (1 + ref2_2) + 2 * N2G)*(BS_3 / (1 + ref3_2) + 2 * N3G));
-	#if(N3G>0)	
+	#if(N3G>0)
 	receive5_1fine[nl[n]] = receive5_fine[nl[n]];
 	receive5_3fine[nl[n]] = receive5_fine[nl[n]] + ref2_6*(NPR *(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G));
 	receive5_5fine[nl[n]] = receive5_fine[nl[n]] + (ref1_6 + ref2_6)*(NPR *(BS_2 / (1 + ref2_6) + 2 * N2G)*(BS_1 / (1 + ref1_6) + 2 * N1G));
@@ -592,7 +602,7 @@ void alloc_bounds_CPU(int n){
 	#if(N3G>0)
 	receive5_flux[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
 	receive6_flux[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
-	#endif	
+	#endif
 	#if(N_LEVELS>1)
 	receive1_3flux[nl[n]] = receive1_flux[nl[n]];
 	receive1_4flux[nl[n]] = receive1_flux[nl[n]] + ref3_3*(NPR *(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
@@ -628,7 +638,7 @@ void alloc_bounds_CPU(int n){
 	#if(N3G>0)
 	receive5_flux1[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
 	receive6_flux1[nl[n]] = (double *)malloc(NPR* (BS_2)*(BS_1) * sizeof(double));
-	#endif	
+	#endif
 	#if(N_LEVELS>1)
 	receive1_3flux1[nl[n]] = receive1_flux1[nl[n]];
 	receive1_4flux1[nl[n]] = receive1_flux1[nl[n]] + ref3_3*(NPR *(BS_1 / (1 + ref1_3))*(BS_3 / (1 + ref3_3)));
@@ -1317,9 +1327,9 @@ int index_2D(int n, int i, int j, int z)
   set_grid():
   ----------
 
-       -- calculates all grid functions that remain constant 
-          over time, such as the metric (gcov), inverse metric 
-          (gcon), connection coefficients (conn), and sqrt of 
+       -- calculates all grid functions that remain constant
+          over time, such as the metric (gcov), inverse metric
+          (gcon), connection coefficients (conn), and sqrt of
           the metric's determinant (gdet).
 
  *****************************************************************/
@@ -1370,7 +1380,7 @@ void set_grid(int n)
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE1] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1]);
 			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE1], gcon[nl[n]][index_2D(n, i, j, z)][FACE1]);
-			
+
 			/* phi-face-centered */
 			coord(n, i, j, z - zoffset, FACE3, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE3]);
@@ -1391,7 +1401,7 @@ void set_grid(int n)
 			else coord(n, i, j, z - zoffset + zsize / 2, FACE2, X);
 			gcov_func(X, gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
 			gdet[nl[n]][index_2D(n, i, j, z)][FACE2] = gdet_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2]);
-			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);	
+			gcon_func(gcov[nl[n]][index_2D(n, i, j, z)][FACE2], gcon[nl[n]][index_2D(n, i, j, z)][FACE2]);
 		}
 	}
 	#if(FRAME_TRANSFORM)
@@ -1403,7 +1413,7 @@ void set_grid(int n)
 		coord(n, i, j, z, FACE1, X);
 		bl_coord(X, &r, &th, &phi);
 		dq[nl[n]][index_3D(n, i, j, z)][0] = r;
-		
+
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 		dq[nl[n]][index_3D(n, i, j, z)][3] = r;
@@ -1411,7 +1421,7 @@ void set_grid(int n)
 		coord(n, i, j, z, FACE2, X);
 		bl_coord(X, &r, &th, &phi);
 		dq[nl[n]][index_3D(n, i, j, z)][1] = th;
-		
+
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 		dq[nl[n]][index_3D(n, i, j, z)][4] = th;
@@ -1419,7 +1429,7 @@ void set_grid(int n)
 		coord(n, i, j, z, FACE3, X);
 		bl_coord(X, &r, &th, &phi);
 		dq[nl[n]][index_3D(n, i, j, z)][2] = phi;
-		
+
 		coord(n, i, j, z, CENT, X);
 		bl_coord(X, &r, &th, &phi);
 		dq[nl[n]][index_3D(n, i, j, z)][5] = phi;
@@ -1442,7 +1452,7 @@ void set_grid(int n)
 		//Calculate distances between pixels in x1,x2,x3-->0,1,2 at the faces of the cell and x1,x2,x3-->3,4,5 at the cell centres
 		V[nl[n]][index_3D(n, i, j, z)][0] = V[nl[n]][index_3D(n, i - D1, j, z)][3] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i - D1, j, z)][CENT][1][1]);
 		V[nl[n]][index_3D(n, i, j, z)][3] = V[nl[n]][index_3D(n, i, j, z)][0] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE1][1][1]);
-		
+
 		V[nl[n]][index_3D(n, i, j, z)][1] = V[nl[n]][index_3D(n, i, j - D2, z)][4] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j - D2, z)][CENT][2][2]);
 		V[nl[n]][index_3D(n, i, j, z)][4] = V[nl[n]][index_3D(n, i, j, z)][1] + 0.5*sqrt(gcov[nl[n]][index_2D(n, i, j, z)][FACE2][2][2]);
 
@@ -1465,7 +1475,7 @@ void set_grid(int n)
 }
 
 double get_wall_time(){
-	#ifdef __unix__   
+	#ifdef __unix__
 	struct timeval time;
 	if (gettimeofday(&time, NULL)){
 		//  Handle error

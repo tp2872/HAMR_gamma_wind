@@ -350,7 +350,8 @@ this is used by primtoU and Utoprim_?D
 */
 FTYPE pressure_rho0_u(FTYPE rho0, FTYPE u)
 {
-  return((GAMMA - 1.)*u) ;
+    return((GAMMA - 1.)*u) ;
+
 }
 
 

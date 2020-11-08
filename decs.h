@@ -46,12 +46,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#ifdef __unix__   
+#ifdef __unix__
 #include <sys/time.h>
 #endif
 #include <cuda.h>
 #include <cuda_runtime.h>
+#ifndef __APPLE__
 #include <omp.h>
+#endif
 #include "config.h"
 
 /*************************************************************************
@@ -93,6 +95,49 @@ extern double(*restrict gdet[NB_LOCAL])[NPG];
 extern double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict dU_s[NB_LOCAL])[NPR];
+
+// Nuclear physics arrays
+#if(DONUCLEAR || DOHELM)
+extern double rhomax_nuclear;
+extern double (*G_global)[N2M][N3M];
+extern double (*Q_global)[N2M][N3M];
+extern double (*qalpha_global)[N2M][N3M];
+#endif
+
+#if DOPARTICLES
+/*MC particles arrays*/
+extern double xcon_p[NPTOT][NDIM];
+extern double pcov_p[NPTOT][NDIM];
+#endif
+
+#if (DOHELM)
+/*EOS CPU arrays*/
+extern double eos_f[EOSIMAX*EOSJMAX];
+extern double eos_fd[EOSIMAX*EOSJMAX];
+extern double eos_ft[EOSIMAX*EOSJMAX];
+extern double eos_fdd[EOSIMAX*EOSJMAX];
+extern double eos_ftt[EOSIMAX*EOSJMAX];
+extern double eos_fdt[EOSIMAX*EOSJMAX];
+extern double eos_fddt[EOSIMAX*EOSJMAX];
+extern double eos_fdtt[EOSIMAX*EOSJMAX];
+extern double eos_fddtt[EOSIMAX*EOSJMAX];
+extern double eos_dpdf[EOSIMAX*EOSJMAX];
+extern double eos_dpdfd[EOSIMAX*EOSJMAX];
+extern double eos_dpdft[EOSIMAX*EOSJMAX];
+extern double eos_dpdfdt[EOSIMAX*EOSJMAX];
+extern double eos_ef[EOSIMAX*EOSJMAX];
+extern double eos_efd[EOSIMAX*EOSJMAX];
+extern double eos_eft[EOSIMAX*EOSJMAX];
+extern double eos_efdt[EOSIMAX*EOSJMAX];
+extern double eos_xf[EOSIMAX*EOSJMAX];
+extern double eos_xfd[EOSIMAX*EOSJMAX];
+extern double eos_xft[EOSIMAX*EOSJMAX];
+extern double eos_xfdt[EOSIMAX*EOSJMAX];
+extern double eos_t[EOSJMAX];
+extern double eos_d[EOSIMAX];
+extern double eos_dd[EOSIMAX];
+extern double eos_dt[EOSJMAX];
+#endif
 
 /*GPU transfer arrays*/
 extern double *F1_1[NB_LOCAL];
@@ -733,6 +778,11 @@ extern double * BufferrecE3corn3_62[NB_LOCAL];
 extern double * BufferrecE3corn4_72[NB_LOCAL];
 extern double * BufferrecE3corn4_82[NB_LOCAL];
 
+#if (DOHELM)
+extern double * eos_table[1];
+extern double * GPU_eos_table[1];
+#endif
+
 /*************************************************************************
 GLOBAL VARIABLES SECTION
 *************************************************************************/
@@ -741,7 +791,7 @@ extern double a;
 extern double gam;
 
 /* numerical parameters */
-extern double Rin, Rout, R0, fractheta;
+extern double Rin, Rout, R0, fractheta, x1br, rbr, npow2, cpow2, x1max;
 extern double cour;
 extern double dV, dx[NB_LOCAL][NPR], startx[NPR];
 extern double dt, bdt[NB_LOCAL][4];
@@ -797,11 +847,6 @@ struct of_state {
 	double bcov[NDIM];
 };
 
-struct of_state_rad {
-	double ucon[NDIM];
-	double ucov[NDIM];
-};
-
 /*Timing/benchmarking decleration*/
 extern clock_t begin1, end1, begin2, end2;
 extern double time_spent3;
@@ -852,6 +897,13 @@ void close_rdump();
 void close_gdump();
 void close_gdump_reduced();
 double get_wall_time();
+#if DOPARTICLES
+void pdump(void);
+void pdump_frequent(void);
+void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag);
+void init_particles(void);
+void build_tetrad(double gcon[NDIM][NDIM], double Econ[NDIM][NDIM], double Ecov[NDIM][NDIM]);
+#endif
 
 /** Evolution/physics functions **/
 double advance(int flag);
@@ -870,17 +922,17 @@ void utoprim_M1_2(double Dt, int n);
 void E_average(void);
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom);
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double *restrict gamma);
-int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad);
 void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict ucov, double * restrict bcon);
 void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
 void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
 void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 void step_ch(void);
-void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict fl);
+void primtoflux(double * restrict pa, struct of_state * restrict q, int dir, struct of_geom * restrict geom, double * restrict fl);
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
+<<<<<<< HEAD
 void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
 void calc_ymax(void);
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
@@ -891,33 +943,30 @@ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
 int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
 int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
+=======
+>>>>>>> origin/danat_summer
 void u_to_v(double *pr, int i, int j);
 void fixup(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void fixup1zone(int i, int j, int z, int n, double prim[NPR]);
 void fixup_utoprim(double(*restrict pv[NB_LOCAL])[NPR], int n);
 void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon);
-void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
 void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd);
-void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad);
-double calc_kappa_abs(double * restrict ph);
-double calc_kappa_emmit(double * restrict ph);
-double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
-int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
-void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
-void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
 int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, int a, int b, int c);
+<<<<<<< HEAD
 void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx);
+=======
+>>>>>>> origin/danat_summer
 void step_ch_debug();
 void GPU_benchmark(void);
 void GPU_init(void);
@@ -962,6 +1011,7 @@ double slope_lim(double y1, double y2, double y3);
 void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double *F);
 void area_map(int i, int j, int n, double(*restrict prim[NB_LOCAL])[NPR]);
 void blgset(int n, int i, int j, struct of_geom *geom);
+void ksgset(int n, int i, int j, struct of_geom *geom);
 void bl_coord(double * restrict X, double * restrict r, double * restrict th, double * restrict phi);
 void bl_gcon_func(double r, double th, double gcov[][NDIM]);
 void kerr_gcov_func(double r, double th, double gcov[][NDIM]);
@@ -972,7 +1022,13 @@ void diag(int call_code);
 void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
 void set_Katm(void);
+<<<<<<< HEAD
 void set_mag(void);
+=======
+void set_mag(double beta, double rhomax, double umax);
+void set_mag_postmerger(double beta, double rhomax, double umax);
+int  get_G_ATM(double *g_tmp);
+>>>>>>> origin/danat_summer
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double *X, double lgcov[][NDIM]);
 void get_geometry(int n, int i, int j, int z, int loc, struct of_geom *geom);
@@ -1168,6 +1224,7 @@ static double func1(double *X0, double *X, void(*vofx)(double*, double*));
 static double func2(double *X0, double *X, void(*vofx)(double*, double*));
 void vofx_cylindrified(double *Xin, void(*vofx)(double*, double*), double *Vout);
 void vofx_matthewcoords(double *X, double *V);
+void vofx_sjetcoords( double *X, double *V );
 void dxdxp_func(double *X, double dxdxp[][NDIM]);
 
 //Rotation/ellipticity related
@@ -1183,7 +1240,32 @@ void set_Mud(int n);
 double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 
+#if (DOHELM)
+//EOS related
+void eos_init(void);
+void eos_init_GPU(void);
+void interp_eostable(double den, double btemp, double din, double ye, double *free, double *df_d, double *df_t, double *df_tt, double *df_dt, double *dpepdd, double *etaele);
+void test_eos(void);
+void eos_helm(int calc_derivatives, double btemp, double den, double abar, double zbar, double* pres, double* ener, double* entr, double* dpresdt, double* denerdt, double* dpresdd, double* cs2);
+void eos_mode_rhou_entr(double den, double u_goal, double* entr);
+void eos_mode_rhou_pres (double den, double u_goal, double *pres);
+void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2);
+void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, double *dpdrho, double *dpde_d);
+void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u);
+void eos_mode_rhotemp_pres_min (double den, double *pres);
+void eos_mode_rhopres_u (double den, double p_goal, double *u);
+#endif
 
-
-
+#if DONUCLEAR
+void eos_helm_nuclear(int calc_derivatives, double btemp, double den, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd);
+void nse_abundance (double dens, double temp, double ye, double *xn, double *xp, double *xa);
+void nse_derivatives (double dens, double temp, double xn, double xp, double xa, double *xa_r, double *xa_t, double *xa_y, double *xn_r, double *xn_t, double *xn_y, double *xp_r, double *xp_t, double *xp_y);
+void eos_mode_dens_ener_nuclear_nucevol(double ener_goal, double den, double *btemp, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele);
+void eos_mode_dens_ener_nuclear(double ener_goal, double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres);
+void eos_calc_soundspeed_nuclear (double ener_goal, double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres, double *cs2);
+void eos_mode_dens_enth_nuclear (double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);
+void eos_mode_dens_enth_NH_nuclear (double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres, double *ener, double h_goal);
+void eos_get_min_pres_NH_nuclear (double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres);
+void eos_mode_dens_pres_nuclear(double *ener, double den, double ye, double p_goal, double *xx_atm, double *xxn, double *xxp, double *xxa);
+#endif
 

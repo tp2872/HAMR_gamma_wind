@@ -52,7 +52,7 @@
         
 ***********************************************************************************************/
 
-void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
+void primtoflux(double * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
 
@@ -62,11 +62,6 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	/* MHD stress-energy tensor w/ first index up, * second index down. */
 	mhd_calc(pr, dir, q, &flux[UU]) ;
 	flux[UU] += flux[RHO];
-
-	//Radiation energy tensor
-	#if(RAD_M1)
-	mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
-	#endif
 
 	/* dual of Maxwell tensor */
 	#pragma ivdep
@@ -80,7 +75,14 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	#else
 	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
 	#endif
-
+    
+#if(DONUCLEAR)
+    flux[RHONP] = flux[RHO]*pr[RHONP];
+    flux[RHOALPHA] = flux[RHO]*pr[RHOALPHA];
+    flux[RHOFLOOR] = flux[RHO]*pr[RHOFLOOR]/pr[RHO];
+    flux[YE] = flux[RHO]*pr[YE];
+    flux[AMB] = flux[RHO]*pr[AMB];
+#endif
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }
@@ -106,7 +108,46 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 
     r = pr[RHO] ;
     u = pr[UU] ;
+<<<<<<< HEAD
     P = (GAMMA - 1.)*u ;
+=======
+    
+    #if DOHELM
+    // Helmholtz EOS
+
+    #if (DONUCLEAR)
+    // Nuclear physics
+    
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+
+    varye = pr[YE];
+    varxatm = pr[AMB];
+    varxa = pr[RHOALPHA];
+    varxnp = pr[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    
+    eos_mode_dens_ener_nuclear(u / r, r, varye, varxatm, varxn, varxp, varxa, &P);
+    
+    #else
+    
+    // Helmholtz EOS w/o nuclear physics
+    eos_mode_rhou_pres (r, u, &P);
+    #endif
+    
+    #else
+    // Ideal gas EOS
+    P = (gam - 1.)*u;
+    #endif
+    
+>>>>>>> origin/danat_summer
     w = P + r + u ;
 	bsq = dot(q->bcon,q->bcov) ;
 	eta = w + bsq ;
@@ -117,22 +158,12 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j] + ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
 }
 
-/* Radiation stress tensor, with first index up, second index down */
-void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad)
-{
-	int j;
-	/* single row of mhd stress tensor, first index up, second index down */
-	#pragma ivdep
-	DLOOPA mhd_rad[j] = 4./3.*pr[UU_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[UU_RAD]*delta(dir, j);
-}
-
 /* add in (explicit) geometricc source terms to equations of motion */
 void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
 {
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
+	double mhd[NDIM][NDIM];
 	int j,k ;
 	struct of_state q ;
-	struct of_state_rad q_rad;
 
 	get_state(ph, geom, &q) ;
 	mhd_calc(ph, 0, &q, mhd[0]) ;
@@ -151,6 +182,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 		dU[U3] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
 	}
 
+<<<<<<< HEAD
 	//Add M1 radiation source terms
 	#if(RAD_M1)
 	get_state_rad(ph, geom, &q_rad);
@@ -166,6 +198,14 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 		dU[U2_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][2][j];
 		dU[U3_RAD] += mhd_rad[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
 	}
+=======
+	//Add disk cooling term
+	#if(COOL_DISK)
+	double X[NDIM],r,th,phi;
+	coord(n, ii,jj, zz, CENT,X) ;
+	bl_coord(X,&r,&th, &phi) ;
+	misc_source(ph, ii, jj, geom, &q, dU, r, Dt) ;
+>>>>>>> origin/danat_summer
 	#endif
 
 	//Add disk cooling term
@@ -180,6 +220,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 	PLOOP dU[k] *= geom->g ;
 }
 
+<<<<<<< HEAD
 /* Add implicit radiation 4-force source term to equations of motion */
 void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU)
 {
@@ -294,6 +335,8 @@ double calc_kappa_es(double * restrict ph) {
 	kappa_es = 0.2*(1 + X_AB);
 	return(kappa_es* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
 }
+=======
+>>>>>>> origin/danat_summer
 
 /* returns b^2 (i.e., twice magnetic pressure) */
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom)
@@ -317,18 +360,8 @@ void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_s
 	return ;
 }
 
-/* find ucon, ucov, bcon, bcov from radiation primitive variables */
-void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad)
-{
-	/* get radiation ucon */
-	ucon_calc_rad(pr, geom, q_rad->ucon);
-	lower(q_rad->ucon, geom, q_rad->ucov);
-
-	return;
-}
-
 /* find contravariant four-velocity */
-void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
+    void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
 {
 	double alpha,gamma ;
 	double beta[NDIM] ;
@@ -352,6 +385,7 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	return ;
 }
 
+<<<<<<< HEAD
 /* find contravariant radiation four-velocity */
 void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad)
 {
@@ -377,6 +411,8 @@ void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
 	return;
 }
 
+=======
+>>>>>>> origin/danat_summer
 /* find gamma-factor wrt normal observer */
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma)
 {
@@ -395,26 +431,6 @@ int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	*gamma = sqrt(1. + qsq) ;
 
 	return(0) ;
-}
-
-/* find gamma-factor wrt normal observer */
-int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad)
-{
-	double qsq;
-	qsq = geom->gcov[1][1] * pr[U1_RAD] * pr[U1_RAD] + geom->gcov[2][2] * pr[U2_RAD] * pr[U2_RAD] + geom->gcov[3][3] * pr[U3_RAD] * pr[U3_RAD] + 2.*(geom->gcov[1][2] * pr[U1_RAD] * pr[U2_RAD] + geom->gcov[1][3] * pr[U1_RAD] * pr[U3_RAD] + geom->gcov[2][3] * pr[U2_RAD] * pr[U3_RAD]);
-	if (qsq < 0.) {
-		if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
-			fprintf(stderr, "gamma_calc_rad():  failed: qsq = %28.18e \n", qsq);
-			fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1_RAD], pr[U2_RAD], pr[U3_RAD]);
-			*gamma_rad = 1.;
-			return (1);
-		}
-		else qsq = 1.E-10; // set floor
-	}
-
-	*gamma_rad = sqrt(1. + qsq);
-
-	return(0);
 }
 
 /*  
@@ -446,10 +462,64 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon,q->bcov) ;
+<<<<<<< HEAD
 	EF = pr[RHO] + GAMMA* pr[UU];
 	EE = bsq + EF ;
 	va2 = bsq/EE ;
 	cs2 = GAMMA*(GAMMA - 1.)* pr[UU] /EF ;
+=======
+	rho = pr[RHO] ;
+	u = pr[UU] ;
+    
+    #if DOHELM
+    // Helmholtz EOS
+    
+    double xener = u / rho;
+    double xpres;
+
+    #if (DONUCLEAR)
+    // Nuclear physics
+    
+    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
+    
+    varye = pr[YE];
+    varxatm = pr[AMB];
+    varxa = pr[RHOALPHA];
+    varxnp = pr[RHONP];
+    
+    // Make sure that the abundances do add up to 1
+    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
+    varxa   *= fac;
+    varxatm *= fac;
+    
+    // Get xn, xp
+    varxn = 1.0 - varye - 0.5 * varxa;
+    varxp = varye - 0.5 * varxa;
+    eos_calc_soundspeed_nuclear (xener, rho, varye, varxatm, varxn, varxp, varxa, &xpres, &cs2);
+    
+    #else
+    
+    // Helmholtz EOS w/o nuclear physics
+    eos_mode_rhou_pres_cs2 (rho, u, &xpres, &cs2);
+    
+    #endif
+    
+    va2 = bsq/(bsq + rho + u + xpres);
+    
+    #else
+    // Ideal gas EOS
+    EF = rho + gam*u ;
+    EE = bsq + EF ;
+    va2 = bsq/EE ;
+    cs2 = gam*(gam - 1.)*u/EF ;
+    #endif
+	
+//	if(cs2 < 0.) cs2 = SMALL ;
+//	if(cs2 > 1.) cs2 = 1. ;
+//	if(va2 < 0.) va2 = SMALL ;
+//	if(va2 > 1.) va2 = 1. ;
+
+>>>>>>> origin/danat_summer
 	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */
 
 	/* check on it! */
@@ -477,7 +547,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	C =      Au2  - (Asq + Au2)*cms2 ;
 
 	discr = B*B - 4.*A*C ;
-	if((discr<0.0)&&(discr>-1.e-10)) discr=0.0;
+    if((discr<0.0)&&(discr>-1.e-10)) discr=0.0;
 	else if(discr < -1.e-10) {
 		fprintf(stderr,"\n\t %g %g %g %g %g\n",A,B,C,discr,cms2) ;
 		fprintf(stderr,"\n\t q->ucon: %g %g %g %g\n",q->ucon[0],q->ucon[1],
@@ -508,6 +578,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 	return ;
 }
 
+<<<<<<< HEAD
 //Calculate radiative wave velocity
 void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
 	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd;
@@ -645,6 +716,8 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	return;
 }
 
+=======
+>>>>>>> origin/danat_summer
 /* Add any additional source terms (e.g. cooling functions) */
 void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_state *q, double *dU, double r, double Dt) 
 {

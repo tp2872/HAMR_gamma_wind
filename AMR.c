@@ -1207,6 +1207,9 @@ void set_AMR(void){
 		N3_GPU_offset[n] = block[n][AMR_COORD3] * BS_3;	
 	}
 
+  //Grid parameters
+  set_gridparam(); //MLQ: first, set the grid parameters to ensure that set_points() has all req'd info
+
 	#pragma omp parallel for schedule(static,  NB/nthreads) private(n, n_parent, n_child, n_nbr, level, level1, level2, level3, new_level1, new_level2, new_level3, i, j,j0, z, l, i1, j1, z1, i_max, j_max, z_max, i_parent, j_parent, z_parent, ind, ref_1, ref_2, ref_3, L_1DMAX, jbound, flag, y)
 	for (n = 0; n <= n_max; n++){
 		set_points(n);
@@ -1238,7 +1241,7 @@ void set_AMR(void){
 		else block[n][AMR_WEIGHT] = MAX_WEIGHT;
 	}
 
-	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4){
+	if (BS_3 / (int)pow(2, N_LEVELS_1D_INT)<4 && N_LEVELS_1D_INT > 0){
 		if (rank == 0) fprintf(stderr, "Grid too small for number of internal derefinement levels! \n");
 		//exit(0);
 	}
@@ -1254,9 +1257,6 @@ void set_AMR(void){
 		exit(0);
 	}
 	#endif
-
-	//Grid parameters
-	set_gridparam();
 
 	//Check if there is a restart file with the preset grid hierarchy
 	restart_read_param();

@@ -43,6 +43,8 @@
 ***********************************************************************************/
 #include "decs_MPI.h"
 
+void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double *u_floor);
+
 #define FLOOP for(k=0;k<B1;k++)
 
 /* apply floors to density, internal energy */
@@ -63,29 +65,32 @@ void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 
 void fixup1zone( int i, int j, int z, int n, double pv[NPR] ) 
 {
-	double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr,uuflr;
-	double f,gamma, bsq;
-	double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
-	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
-	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
-	int m;
-	int k, flag, dofloor=0;
-	struct of_state q;
-	struct of_geom geom;
+  double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
+  double f,gamma, bsq;
+  double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
+  double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+  double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+  int m;
+  int k, flag, dofloor=0;
+  struct of_state q;
+  struct of_geom geom;
 
-	coord(n, i,j, z, CENT,X) ;
-	bl_coord(X,&r,&th, &phi) ;
+  coord(n, i,j, z, CENT,X) ;
+  bl_coord(X,&r,&th, &phi) ;
 
-	rhoscal = pow(r,-POWRHO) ;
-	uuscal = pow(rhoscal, gam);
+    get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); // Danat addition: 11/18/19 - avoid rhoflr too large`
+#if (0)
+  rhoscal = pow(r,-POWRHO) ;
+  uuscal = pow(rhoscal, gam);
 
-	rhoflr = RHOMIN*rhoscal;
-	uuflr  = UUMIN*uuscal;
-
-	//compute the square of fluid frame magnetic field (twice magnetic pressure)
-	get_geometry(n,i,j,z,CENT,&geom) ;
-	bsq = bsq_calc(pv,&geom) ;
-
+  rhoflr = RHOMIN*rhoscal;
+  uuflr  = UUMIN*uuscal;
+#endif
+    
+  //compute the square of fluid frame magnetic field (twice magnetic pressure)
+  get_geometry(n,i,j,z,CENT,&geom) ;
+  bsq = bsq_calc(pv,&geom) ;
+  
   //tie floors to the local values of magnetic field and internal energy density
 	#if(1)
 	  if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
@@ -178,6 +183,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 
+<<<<<<< HEAD
 	/* limit gamma wrt normal observer */
 	if( gamma_calc(pv,&geom,&gamma) ) { 
 		/* Treat gamma failure here as "fixable" for fixup_utoprim() */
@@ -195,6 +201,46 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		}
 	}
 	return;
+=======
+	#if DOKTOT
+#if (DOHELM && DOHELM_KTOT)
+	double xentr;
+	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
+	// pv[KTOT] = xentr;
+	pv[KTOT] = exp(KTOT_FACTOR * xentr);
+#else 
+	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
+#endif
+	#endif
+  /* limit gamma wrt normal observer */
+
+  if( gamma_calc(pv,&geom,&gamma) ) { 
+    /* Treat gamma failure here as "fixable" for fixup_utoprim() */
+	  fprintf(stderr, "Gamma fail: %d %d %d %d \n",n, i, j, z);
+    pflag[nl[n]][index_3D(n ,i,j,z)] = -333;
+	pflag[nl[n]][index_3D(n ,N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+    failimage[nl[n]][index_3D(n ,i,j,z)][3]++ ;
+  }
+  else { 
+    if(gamma > GAMMAMAX) {
+      f = sqrt(
+	       (GAMMAMAX*GAMMAMAX - 1.)/
+	       (gamma*gamma - 1.)
+	       ) ;
+      pv[U1] *= f ;	
+      pv[U2] *= f ;	
+      pv[U3] *= f ;	
+    }
+  }
+    
+#if(DONUCLEAR)
+    //account for the floor addition
+    pv[RHOFLOOR] += pv[RHO] - pv_prefloor[RHO];
+#endif
+    
+    
+  return;
+>>>>>>> origin/danat_summer
 }
 
 /* find relative 4-velocity from 4-velocity (both in code coords) */

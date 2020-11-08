@@ -299,7 +299,11 @@ void average_grid(void){
 
 	//Average primitive and staggered grid variables
 	for (n = 0; n < n_active; n++) {
+<<<<<<< HEAD
 		#if(N_LEVELS_1D_INT>0 && D3>0)
+=======
+        #if(N_LEVELS_1D_INT>0 && D3>0)
+>>>>>>> origin/danat_summer
 		#if(N_GPU>1)
 		cudaSetDevice(block[n_ord[n]][AMR_GPU]);
 		#endif
@@ -328,7 +332,11 @@ void average_grid(void){
 				#endif
 			}
 		}
+<<<<<<< HEAD
 		#endif
+=======
+        #endif
+>>>>>>> origin/danat_summer
 		#if(GPU_ENABLED || GPU_DEBUG )
 		#pragma omp parallel private(i, j, z, k)
 		{
