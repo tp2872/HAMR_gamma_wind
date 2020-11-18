@@ -320,7 +320,6 @@ void utoprim_M1_0(double Dt, int n)
 	double cell_size, U_0[NPR];
 	struct of_geom geom;
 	struct of_state q;
-<<<<<<< HEAD
 	struct of_state_rad q_rad;
 
 	#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom, U_0, q, q_rad, ind0, cell_size)
@@ -352,16 +351,10 @@ void utoprim_M1_1(double Dt, int n){
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
 	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, U_1, geom, ind0, ind1, ind2, ind3, cell_size)
-=======
-	int ind0, ind1, ind2, ind3;
-
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q, U, dU, ind0, ind1, ind2,ind3)
->>>>>>> origin/danat_summer
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
 			get_geometry(n, i, j, z, CENT, &geom);
-<<<<<<< HEAD
 
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
@@ -411,13 +404,6 @@ void utoprim_M1_2(double Dt, int n){
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			get_geometry(n, i, j, z, CENT, &geom);
-
-=======
-			source(pb[nl[n]][index_3D(n, i, j, z)], &geom, n, i, j, z, dU, Dt);
-			get_state(pi[nl[n]][index_3D(n, i, j, z)], &geom, &q);
-            primtoflux(pi[nl[n]][index_3D(n, i, j, z)], &q, 0, &geom, U);
-            
->>>>>>> origin/danat_summer
 			ind0 = index_3D(n, i, j, z);
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
@@ -520,14 +506,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#if(NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#else
-<<<<<<< HEAD
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
-=======
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
-			if (pflag[nl[n]][ind0]) {
-				pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0]);
-			}
->>>>>>> origin/danat_summer
 			#endif
 
 			#if( DO_FONT_FIX ) 
@@ -546,28 +525,10 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 				}
 			}
 			#endif
-<<<<<<< HEAD
 			#if(RAD_M1)
 			pflag_rad[nl[n]][ind0] = Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
 			#endif
 		}
-=======
-            
-            #if(DONUCLEAR)
-            // Nuclear physics ON
-            
-            int was_floor_activated = 0;
-            
-            // Helmholtz EOS
-            #if(DOHELM)
-            nuc_evol_helm (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n);
-            #else
-            nuc_evol (pf[nl[n]][index_3D(n, i, j, z)], Dt, i, j, z, was_floor_activated, n); //nuclear physics
-            #endif
-            
-            #endif
-        }
->>>>>>> origin/danat_summer
 	}
 }
 
@@ -609,11 +570,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	else if (dir == 3) { idel = 0; jdel = 0; zdel = 1; face = FACE3; }
 	else { exit(10); }
 	
-<<<<<<< HEAD
 		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_l_rad, state_r_rad,state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin,cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad, cmax_roe, cmin_roe, ctop,ctop_rad, dtij, ind0, ind1, ind2, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
-=======
-		#pragma omp parallel shared(counter0,counter1,block, n_ord,n_active,n, gam, ps,t, psh,flag, pr, dq, ndt, cour, dx,dir,  F, face, idel, jdel, zdel,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z,k, ndt_thread, p_l, p_r, geom, state_l, state_r, state_roe, F_l, F_r,U_l, U_r, cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ctop, dtij, ind0, ind1, U_HLL, F_HLL, qi, vcon, U_i, bsq, fail_HLLC, test, ptot)
->>>>>>> origin/danat_summer
 		{
 			ndt_thread = 1.e9;
 
@@ -669,7 +626,6 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					get_state(p_l, &geom, &state_l);
 					get_state(p_r, &geom, &state_r);
-<<<<<<< HEAD
 					#if(RAD_M1)
 					get_state_rad(p_l, &geom, &state_l_rad);
 					get_state_rad(p_r, &geom, &state_r_rad);
@@ -679,14 +635,6 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l);
 					primtoflux(p_r, &state_r, &state_r_rad, 0, &geom, U_r);
-=======
-					
-					primtoflux(p_l, &state_l, dir, &geom, F_l);
-					primtoflux(p_r, &state_r, dir, &geom, F_r);
-
-					primtoflux(p_l, &state_l, 0, &geom, U_l);
-					primtoflux(p_r, &state_r, 0, &geom, U_r);
->>>>>>> origin/danat_summer
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);
@@ -716,7 +664,6 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 						}
 					}
 
-<<<<<<< HEAD
 					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
 					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
 
@@ -745,8 +692,6 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 					#endif
 
-=======
->>>>>>> origin/danat_summer
 					/* evaluate restriction on timestep */
 					cmax = MY_MAX(cmax, cmin);
 					dtij = cour*dx[nl[n]][dir] / cmax;

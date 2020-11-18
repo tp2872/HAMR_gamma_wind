@@ -314,27 +314,12 @@ double thetaofx2(double x2, double ror0nu)
 /* some grid location, dxs */
 void set_points(int n)
 {
-<<<<<<< HEAD
 	#if(CARTESIAN)
 	dx[nl[n]][1] = 1. / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	dx[nl[n]][2] = 1. / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 1. / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
 	#else
 	double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
-=======
-#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
-  double lenx[NDIM];
-
-    lenx[1] = x1max - startx[1];
-	lenx[2] = 2.*fractheta;
-	lenx[3] = 2.*M_PI;
-
-	dx[nl[n]][1] = lenx[1] / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL]));
-	dx[nl[n]][2] = lenx[2] / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL]));
-	dx[nl[n]][3] = lenx[3] / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL]));
-#else  
-        double Xtrans = pow(log(RTRANS - RB), 1. / RADEXP);
->>>>>>> origin/danat_summer
 	if(Rout<=RTRANS){
 		dx[nl[n]][1] = (pow(log(Rout - RB), 1. / RADEXP) - pow(log(Rin - RB), 1. / RADEXP)) / (double)(N1) / (double)(pow(1 + REF_1, block[n][AMR_LEVEL1]));
 	}
@@ -344,24 +329,14 @@ void set_points(int n)
 	}
 	dx[nl[n]][2] = 2.*fractheta / (double)(N2) / (double)(pow(1 + REF_2, block[n][AMR_LEVEL2]));
 	dx[nl[n]][3] = 2.*M_PI / (double)(N3) / (double)(pow(1 + REF_3, block[n][AMR_LEVEL3]));
-<<<<<<< HEAD
 	#endif
-=======
-#endif
->>>>>>> origin/danat_summer
 }
 
 void set_gridparam(void) {
 	a = BH_SPIN;
-<<<<<<< HEAD
 	Rin = 0.85*(1. + sqrt(1. - a * a));
 	Rout = 200.;
 	lim = MC;
-=======
-    Rin = 0.8; // DANAT: 0.9*(1. + sqrt(1. - a * a));
-    Rout = 100000.; // DANAT: used to be 100000.
-    lim = MC;
->>>>>>> origin/danat_summer
 	failed = 0;
 	cour = COUR;
 	if (dt > 1e-5) dt = dt;
@@ -437,11 +412,7 @@ void set_gridparam(void) {
 	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
 	startx[2] = -1. + 1.*(1. - fractheta);
 	startx[3] = 0.;
-<<<<<<< HEAD
 	#endif
-=======
-#endif
->>>>>>> origin/danat_summer
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

@@ -932,7 +932,6 @@ void primtoflux(double * restrict pa, struct of_state * restrict q, int dir, str
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
-<<<<<<< HEAD
 void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
 void calc_ymax(void);
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
@@ -943,8 +942,6 @@ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
 int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
 int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
-=======
->>>>>>> origin/danat_summer
 void u_to_v(double *pr, int i, int j);
 void fixup(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void fixup1zone(int i, int j, int z, int n, double prim[NPR]);
@@ -963,10 +960,7 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, int a, int b, int c);
-<<<<<<< HEAD
 void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx);
-=======
->>>>>>> origin/danat_summer
 void step_ch_debug();
 void GPU_benchmark(void);
 void GPU_init(void);
@@ -1022,13 +1016,7 @@ void diag(int call_code);
 void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
 void set_Katm(void);
-<<<<<<< HEAD
 void set_mag(void);
-=======
-void set_mag(double beta, double rhomax, double umax);
-void set_mag_postmerger(double beta, double rhomax, double umax);
-int  get_G_ATM(double *g_tmp);
->>>>>>> origin/danat_summer
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double *X, double lgcov[][NDIM]);
 void get_geometry(int n, int i, int j, int z, int loc, struct of_geom *geom);

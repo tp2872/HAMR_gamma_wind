@@ -183,7 +183,17 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 
-<<<<<<< HEAD
+	#if DOKTOT
+	#if (DOHELM && DOHELM_KTOT)
+	double xentr;
+	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
+	// pv[KTOT] = xentr;
+	pv[KTOT] = exp(KTOT_FACTOR * xentr);
+	#else 
+	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
+	#endif
+	#endif
+
 	/* limit gamma wrt normal observer */
 	if( gamma_calc(pv,&geom,&gamma) ) { 
 		/* Treat gamma failure here as "fixable" for fixup_utoprim() */
@@ -201,46 +211,6 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		}
 	}
 	return;
-=======
-	#if DOKTOT
-#if (DOHELM && DOHELM_KTOT)
-	double xentr;
-	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
-	// pv[KTOT] = xentr;
-	pv[KTOT] = exp(KTOT_FACTOR * xentr);
-#else 
-	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
-#endif
-	#endif
-  /* limit gamma wrt normal observer */
-
-  if( gamma_calc(pv,&geom,&gamma) ) { 
-    /* Treat gamma failure here as "fixable" for fixup_utoprim() */
-	  fprintf(stderr, "Gamma fail: %d %d %d %d \n",n, i, j, z);
-    pflag[nl[n]][index_3D(n ,i,j,z)] = -333;
-	pflag[nl[n]][index_3D(n ,N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
-    failimage[nl[n]][index_3D(n ,i,j,z)][3]++ ;
-  }
-  else { 
-    if(gamma > GAMMAMAX) {
-      f = sqrt(
-	       (GAMMAMAX*GAMMAMAX - 1.)/
-	       (gamma*gamma - 1.)
-	       ) ;
-      pv[U1] *= f ;	
-      pv[U2] *= f ;	
-      pv[U3] *= f ;	
-    }
-  }
-    
-#if(DONUCLEAR)
-    //account for the floor addition
-    pv[RHOFLOOR] += pv[RHO] - pv_prefloor[RHO];
-#endif
-    
-    
-  return;
->>>>>>> origin/danat_summer
 }
 
 /* find relative 4-velocity from 4-velocity (both in code coords) */

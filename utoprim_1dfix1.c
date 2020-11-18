@@ -157,7 +157,6 @@ int Utoprim_1dfix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][N
     //Transform the PRIMITIVE variables into the new system
     for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
-<<<<<<< HEAD
     #if(FULL_ENTROPY)
     K_atm3 = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
     #else
@@ -165,66 +164,6 @@ int Utoprim_1dfix1(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][N
     #endif
 
     ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
-=======
-  /* Set the geometry variables: */
-  alpha = 1.0/sqrt(-gcon[0][0]);
-  
-  /* Transform the CONSERVED variables into the new system */
-  U_tmp[RHO] = alpha * U[RHO] / gdet;
-  U_tmp[UU]  = alpha * (U[UU] - U[RHO])  / gdet ;
-  for( i = UTCON1; i <= UTCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
-  }
-  for( i = BCON1; i <= BCON3; i++ ) {
-    U_tmp[i] = alpha * U[i] / gdet ;
-  }
-
-  /* Transform the PRIMITIVE variables into the new system */
-  for( i = 0; i < BCON1; i++ ) {
-    prim_tmp[i] = prim[i];
-  }
-  for( i = BCON1; i <= BCON3; i++ ) {
-    prim_tmp[i] = alpha*prim[i];
-  }
-
-  ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp);
-
-  /* Transform new primitive variables back if there was no problem : */ 
-  if( ret == 0 ) { 
-    for( i = 0; i < BCON1; i++ ) {
-      prim[i] = prim_tmp[i];
-    }
-  }
-    
-#if(DONUCLEAR)
-    prim[RHONP] = U[RHONP]/U[RHO];
-    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
-    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
-    prim[YE] = U[YE]/U[RHO];
-    prim[AMB] = U[AMB]/U[RHO];
-   
-    #if 0 // DANAT: check how rho_amb factors into this
-    // Danat: check the normalizations of the mass fractions and Ye
-    prim[YE] = MY_MAX(prim[YE], 1.0);
-    prim[YE] = MY_MIN(prim[YE], 1e-10);
-    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
-    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
-    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
-    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
-    prim[AMB] = MY_MAX(prim[AMB], 1.0);
-    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
-    
-    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
-    
-    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
-        
-        prim[RHONP] *= fac_norm;
-        prim[RHOALPHA] *= fac_norm;
-        prim[AMB] *= fac_norm;
-    }
-    #endif
-#endif
->>>>>>> origin/danat_summer
 
     /* Transform new primitive variables back if there was no problem : */
     if (ret == 0) {

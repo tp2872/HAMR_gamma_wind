@@ -11,14 +11,10 @@ Physical Parameters section
 #define BONDI_PROBLEM_2D 7
 #define TORUS_PROBLEM_GRB 8
 #define THIN_PROBLEM 9
-<<<<<<< HEAD
 #define SOUND_WAVE 10
 #define ENT_WAVE 11
 #define TRUNC_PROBLEM 12
-=======
-#define POSTMERGER_PROBLEM 10
 
->>>>>>> origin/danat_summer
 #define WHICHPROBLEM TORUS_PROBLEM
 
 /*Set Cartesian grid for test problems*/
@@ -31,21 +27,12 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-<<<<<<< HEAD
 #define GAMMA	(5./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
 #define TILTED (0)
 #define TILT_ANGLE (45.0)
-=======
-#define GAMMA	(4./3.)
-#define BH_SPIN (0.86)
-
-/*Wheter or not to tilt the disk*/
-#define TILTED (0)
-#define TILT_ANGLE (65.0)
->>>>>>> origin/danat_summer
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
@@ -141,21 +128,12 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-<<<<<<< HEAD
 #define NB_2 3
 #define NB_3 1
 
 /*Set block size in each dimension*/
 #define BS_1 56
 #define BS_2 48
-=======
-#define NB_2 4
-#define NB_3 1
-
-/*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 64
->>>>>>> origin/danat_summer
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -207,11 +185,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-<<<<<<< HEAD
 #define DUMPFACTOR (160)
-=======
-#define DUMPFACTOR (20)
->>>>>>> origin/danat_summer
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -266,16 +240,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
-<<<<<<< HEAD
 #define TRANS_BOUND (1*((BS_3*NB_3)>1))
 
-=======
-#define TRANS_BOUND (1)
-#if(TRANS_BOUND && NB_3%2!=0)
-#undef TRANS_BOUND
-#define TRANS_BOUND (0)
-#endif
->>>>>>> origin/danat_summer
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
 
@@ -342,12 +308,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
 
-<<<<<<< HEAD
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
-=======
->>>>>>> origin/danat_summer
 //Abundace constants
 #define Z_AB (0.02)
 #define Y_AB (0.28)

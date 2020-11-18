@@ -51,11 +51,7 @@
  *
  */
 #include <float.h>
-<<<<<<< HEAD
 #include <complex.h>
-=======
-#include <string.h>
->>>>>>> origin/danat_summer
 #include "decs_MPI.h"
 
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
@@ -92,12 +88,9 @@ void init_torus_grb();
 void set_mag_TDE(void);
 void set_uniform_Bphi(void);
 double lfish_calc(double r);
-<<<<<<< HEAD
 void init_rad_pres(double pi[NPR]);
 void init_sndwave();
 void init_entwave();
-=======
->>>>>>> origin/danat_summer
 
 double global_kappa, aphipow;
 
@@ -125,12 +118,7 @@ void init()
 	void init_disruption(void);
 	void init_monopole(double Rout_val);
 	void init_thindisk();
-<<<<<<< HEAD
 	void init_truncdisk();
-=======
-	void init_postmerger(void);
-
->>>>>>> origin/danat_summer
 
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
@@ -747,9 +735,9 @@ void init_thindisk()
 	rhomax = 0.;
 	umax = 0.;
 	#if(!NSY)
-	tilt = (TILT_ANGLE) / 180.*M_PI;
+	tilt = (TILT_ANGLE) / 180. * M_PI;
 	#else
-	tilt = -(TILT_ANGLE) / 180.*M_PI;
+	tilt = -(TILT_ANGLE) / 180. * M_PI;
 	#endif
 	eccentricity = 0.0;
 	for (n = 0; n < n_active; n++) {
@@ -777,22 +765,22 @@ void init_thindisk()
 			double rhoc;
 			thin = M_PI / 2.;
 			double A, R, D, E, L;
-			A = 1.0 + a*a / (r*r) + 2.0*a*a / (r*r*r);
-			R = 1 + a / (r*sqrt(r));
-			D = 1.0 - 2.0 / r + a*a / (r*sqrt(r));
-			E = 1.0 + 4.0*a*a / (r*r) - 4.0*a*a / (r*r*r) + 3.0 * a*a*a*a / (r*r*r*r);
+			A = 1.0 + a * a / (r * r) + 2.0 * a * a / (r * r * r);
+			R = 1 + a / (r * sqrt(r));
+			D = 1.0 - 2.0 / r + a * a / (r * sqrt(r));
+			E = 1.0 + 4.0 * a * a / (r * r) - 4.0 * a * a / (r * r * r) + 3.0 * a * a * a * a / (r * r * r * r);
 			L = 1.;
-			rhoc = 1./r*pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
+			rhoc = 1. / r * pow(A, -4.) * pow(R, 6.0) * D * E * E / (L * L);
 			if (r > rmax) rhoc = 0.0;////rhoc /= exp(sqrt(r-rmax));
-			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
+			rho = rhoc * exp(-pow((th - thin) / H_OVER_R, 2.0) * 0.5);
 			ur = 0.;
 			uh = 0.;
 			up = 0.;
 
 			/* regions outside torus */
-			if (r > 4*rmax || r < 2.0) {
-				rho = 1.e-7*RHOMIN;
-				u = 1.e-7*UUMIN;
+			if (r > 4 * rmax || r < 2.0) {
+				rho = 1.e-7 * RHOMIN;
+				u = 1.e-7 * UUMIN;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
@@ -810,7 +798,7 @@ void init_thindisk()
 			* so it needs to be transformed at the end */
 			else {
 				up = 1. / (pow(r, 3. / 2.) + a);
-				up *= sqrt(1. / (1 - up*up));
+				up *= sqrt(1. / (1 - up * up));
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 
 				if (rho > rhomax) {
@@ -818,9 +806,9 @@ void init_thindisk()
 					rhomax = rho;
 				}
 
-				double T_target = M_PI / 2.*pow(H_OVER_R*r*up, 2.);
+				double T_target = M_PI / 2. * pow(H_OVER_R * r * up, 2.);
 				u = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * T_target / (gam - 1.);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2*(ranc(0) - 0.5));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
 				if (u > umax && r > rin) {
 					#pragma omp critical
 					umax = u;
@@ -860,6 +848,10 @@ void init_thindisk()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+
+			#if(RAD_M1)
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			#endif
 		}
 	}
 	a = temp;
@@ -891,15 +883,8 @@ void init_thindisk()
 	}
 	bound_prim(p, 1);
 
-  //set_mag();
+	set_mag();
 
-<<<<<<< HEAD
-=======
-	#if( DO_FONT_FIX )
-	set_Katm();
-	#endif
-
->>>>>>> origin/danat_summer
 	sourceflag = 0.;
 	#if(ELLIPTICAL2)
 	calc_source();
@@ -908,59 +893,47 @@ void init_thindisk()
 
 void init_torus()
 {
-	int i,j,z,n ;
-	double r,th,phi,sth,cth ;
-	double ur,uh,up,u,rho ;
+	int i, j, z, n;
+	double r, th, phi, sth, cth;
+	double ur, uh, up, u, rho;
 	double bl_gcov[NDIM][NDIM];
 	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
 	double tilt, eccentricity;
 	double tau, taumax, cell_size, kappa_abs, kappa_emmit, kappa_es;
-	struct of_geom geom ;
+	struct of_geom geom;
 
 	/* for disk interior */
-	double l,rin,lnh,expm2chi,up1 ;
-	double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
-	double kappa,hm1, gam_local ;
+	double l, rin, lnh, expm2chi, up1;
+	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
+	double kappa, hm1, gam_local;
 
 	/*For MPI*/
 	double inmsg;
 
 	/* for magnetic field */
-	double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-
-  // mass of the disk
-  double torus_mass = 0.0;
-  double rho_factor;
+	double rho_av, rhomax, umax, beta, bsq_ij, bsq_max, norm, q, beta_act;
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
-<<<<<<< HEAD
 	rin = 6.;
 	rmax = 12.;
-    l = lfish_calc(rmax) ;
-	kappa = 1.e-3 ;
-	beta = 100. ;
+	l = lfish_calc(rmax);
+	kappa = 1.e-3;
+	beta = 100.;
 	#if(RAD_M1)
 	gam_local = 4. / 3.;
 	#else
 	gam_local = GAMMA;
 	#endif
-=======
-	rin = 6.0;
-	rmax = 12.;
-  l = lfish_calc(rmax) ;
-  kappa = 1.e-3 ;
-	beta = 100.;
->>>>>>> origin/danat_summer
 
 	//Check if there are enough cells within event horizon
-	coord(0,5, 0, 0, CENT, X);
+	coord(0, 5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 	if (rank == 0) {
 		fprintf(stderr, "r[5]: %g\n", r);
-		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a*a)));
-		if (r > 1. + sqrt(1. - a*a)) {
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
+		if (r > 1. + sqrt(1. - a * a)) {
 			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
 		}
 		else {
@@ -968,137 +941,123 @@ void init_torus()
 		}
 	}
 
-    /* output choices */
-	tf = 200000000.0 ;
+	/* output choices */
+	tf = 200000000.0;
 
 	/* start diagnostic counters */
-	dump_cnt = 0 ;
+	dump_cnt = 0;
 	dump_cnt_reduced = 0;
-	image_cnt = 0 ;
-	rdump_cnt = 0 ;
+	image_cnt = 0;
+	rdump_cnt = 0;
 
-	rhomax = 0. ;
-	umax = 0. ;
+	rhomax = 0.;
+	umax = 0.;
 	taumax = 0.;
 	#if(!NSY)
-	tilt = (TILT_ANGLE)/180.*M_PI;
+	tilt = (TILT_ANGLE) / 180. * M_PI;
 	#else
-	tilt = -(TILT_ANGLE) / 180.*M_PI;
+	tilt = -(TILT_ANGLE) / 180. * M_PI;
 	#endif
 	eccentricity = 0.0;
-	for (n = 0; n < n_active; n++){
+	for (n = 0; n < n_active; n++) {
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X,&r,&th, &phi) ;
+			bl_coord(X, &r, &th, &phi);
 			pos_new[1] = r;
 			pos_new[2] = th;
 			pos_new[3] = phi;
 			#if (TILTED)
-			sph_to_cart(X_cart,  &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-			rotate_coord(X_cart,-tilt);
+			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			rotate_coord(X_cart, -tilt);
 			cart_to_sph(X_cart, &r, &th, &phi);
 			#endif
 
 			#if(ELLIPTICAL)
 			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-			elliptical_coord(X_cart,pos_new, &r, eccentricity);
+			elliptical_coord(X_cart, pos_new, &r, eccentricity);
 			#endif
 
-			sth = sin(th) ;
-			cth = cos(th) ;
+			sth = sin(th);
+			cth = cos(th);
 
 			/* calculate lnh */
-			DD = r*r - 2.*r + a*a ;
-			AA = (r*r + a*a)*(r*r + a*a) - DD*a*a*sth*sth ;
-			SS = r*r + a*a*cth*cth ;
+			DD = r * r - 2. * r + a * a;
+			AA = (r * r + a * a) * (r * r + a * a) - DD * a * a * sth * sth;
+			SS = r * r + a * a * cth * cth;
 
-			thin = M_PI/2. ;
-			sthin = sin(thin) ;
-			cthin = cos(thin) ;
-			DDin = rin*rin - 2.*rin + a*a ;
-			AAin = (rin*rin + a*a)*(rin*rin + a*a)
-				- DDin*a*a*sthin*sthin ;
-			SSin = rin*rin + a*a*cthin*cthin ;
+			thin = M_PI / 2.;
+			sthin = sin(thin);
+			cthin = cos(thin);
+			DDin = rin * rin - 2. * rin + a * a;
+			AAin = (rin * rin + a * a) * (rin * rin + a * a)
+				- DDin * a * a * sthin * sthin;
+			SSin = rin * rin + a * a * cthin * cthin;
 
-			if(r >= rin) {
-				lnh = 0.5*log((1. + sqrt(1. + 4.*(l*l*SS*SS)*DD/
-					(AA*sth*AA*sth)))/(SS*DD/AA))
-					- 0.5*sqrt(1. + 4.*(l*l*SS*SS)*DD/(AA*AA*sth*sth))
-					- 2.*a*r*l/AA
-					- (0.5*log((1. + sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
-					(AAin*AAin*sthin*sthin)))/(SSin*DDin/AAin))
-					- 0.5*sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
-						(AAin*AAin*sthin*sthin))
-					- 2.*a*rin*l/AAin ) ;
+			if (r >= rin) {
+				lnh = 0.5 * log((1. + sqrt(1. + 4. * (l * l * SS * SS) * DD /
+					(AA * sth * AA * sth))) / (SS * DD / AA))
+					- 0.5 * sqrt(1. + 4. * (l * l * SS * SS) * DD / (AA * AA * sth * sth))
+					- 2. * a * r * l / AA
+					- (0.5 * log((1. + sqrt(1. + 4. * (l * l * SSin * SSin) * DDin /
+						(AAin * AAin * sthin * sthin))) / (SSin * DDin / AAin))
+						- 0.5 * sqrt(1. + 4. * (l * l * SSin * SSin) * DDin /
+							(AAin * AAin * sthin * sthin))
+						- 2. * a * rin * l / AAin);
 			}
 			else
-				lnh = 1. ;
+				lnh = 1.;
 
 			/* regions outside torus */
-			if(lnh < 0. || r < rin) {
-				rho = 1.e-7*RHOMIN ;
-				u = 1.e-7*UUMIN ;
+			if (lnh < 0. || r < rin) {
+				rho = 1.e-7 * RHOMIN;
+				u = 1.e-7 * UUMIN;
 
-				ur = 0. ;
-				uh = 0. ;
-				up = 0. ;
+				ur = 0.;
+				uh = 0.;
+				up = 0.;
 
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
-<<<<<<< HEAD
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
+
 				#if(RAD_M1)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = pow(10., -5.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
-=======
-				
-#if (DONUCLEAR)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.0;  //ambient mass fraction (to be multiplied by rho later)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.0;  //Ye = 1 outside the disk
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.0;  //no nucleons
->>>>>>> origin/danat_summer
 				#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
 			 * so it needs to be transformed at the end */
 			else {
-				hm1 = exp(lnh) - 1. ;
-<<<<<<< HEAD
-				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),
-							1./(gam_local - 1.)) ;
-				u = kappa*pow(rho, gam_local)/(gam_local - 1.) ;
-=======
-				rho = pow(hm1*(gam - 1.)/(kappa*gam),
-							1./(gam - 1.)) ;
-				u = kappa*pow(rho,gam)/(gam - 1.) ;
->>>>>>> origin/danat_summer
-				ur = 0. ;
-				uh = 0. ;
+				hm1 = exp(lnh) - 1.;
+				rho = pow(hm1 * (gam_local - 1.) / (kappa * gam_local),
+					1. / (gam_local - 1.));
+				u = kappa * pow(rho, gam_local) / (gam_local - 1.);
+				ur = 0.;
+				uh = 0.;
 
 				/* calculate u^phi */
-				expm2chi = SS*SS*DD/(AA*AA*sth*sth) ;
-				up1 = sqrt((-1. + sqrt(1. + 4.*l*l*expm2chi))/2.) ;
-				up = 2.*a*r*sqrt(1. + up1*up1)/sqrt(AA*SS*DD) +
-					sqrt(SS/AA)*up1/sth ;
+				expm2chi = SS * SS * DD / (AA * AA * sth * sth);
+				up1 = sqrt((-1. + sqrt(1. + 4. * l * l * expm2chi)) / 2.);
+				up = 2. * a * r * sqrt(1. + up1 * up1) / sqrt(AA * SS * DD) +
+					sqrt(SS / AA) * up1 / sth;
 
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 
-				if (rho > rhomax){
+				if (rho > rhomax) {
 					#pragma omp critical
 					rhomax = rho;
 				}
 
-				// Danat: enforce identical internal energy profiles between runs
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u; // *(1. + 4.e-2 * (ranc(0) - 0.5));
-				if(u > umax && r > rin){
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
+				if (u > umax && r > rin) {
 					#pragma omp critical
-					umax = u ;
+					umax = u;
 				}
 
 				#if (TILTED)
@@ -1107,77 +1066,60 @@ void init_torus()
 				V[3] = up;
 				//th = (th - M_PI / 2.) *(fractheta*0.5) + M_PI / 2.;
 				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V[1];
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V[2];
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V[3];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V[3];
 
 				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 				#elif(ELLIPTICAL)
 				V_old[1] = ur;
 				V_old[2] = uh;
 				V_old[3] = up;
 				elliptical_vector(X_cart, V_old, V_new, pos_new, &r, &th, eccentricity);
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V_new[1];
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V_new[2];
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V_new[3];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V_new[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V_new[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V_new[3];
 
 				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
-
-				#if (DONUCLEAR)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0.0 ;  //ambient mass fraction vanishes
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1.0 ;  //all nucleons initially
-				#endif
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
 
 				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
 				#endif
 
-        // add mass to compute total mass of the disk
-        torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * rho * dV;
+				// add mass to compute total mass of the disk
+				//torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * rho * dV;
 			}
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
-<<<<<<< HEAD
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;	
-=======
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B3] = 0.;
->>>>>>> origin/danat_summer
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
 		}
-	}
+}
 
-  a = temp;
+	a = temp;
 
-  #if (MPI_enable)
+	#if (MPI_enable)
 	/*Share info between the MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-<<<<<<< HEAD
-	
-=======
-  MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
+	//MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
 	#endif
 
-  #if (DOHELM || DONUCLEAR)
->>>>>>> origin/danat_summer
 	/* Normalize the densities so that max(rho) = 1 */
-	if (rank == 0){
-    fprintf(stderr, "Before normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
-    fprintf(stderr, "Normalizing by torus_mass = 0.001:\n");
+	if (rank == 0) {
+		fprintf(stderr, "rhomax: %g\n", rhomax);
 	}
-<<<<<<< HEAD
-	#endif
 
-	for (n = 0; n < n_active; n++){
+	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
+
 			#if(RAD_M1)
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
@@ -1187,33 +1129,20 @@ void init_torus()
 			#if(D3>1)
 			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
 			#else
-			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
 			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_es+ kappa_abs)*cell_size;
+			tau = (kappa_es + kappa_abs) * cell_size;
 			if (tau > taumax) {
 				#pragma omp critical
 				taumax = tau;
 			}
-=======
-
-	//ZSLOOP(0,N1-1,0,N2-1) {
-  rho_factor = 0.001 / torus_mass;
-  torus_mass = 0.0;
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] *= rho_factor;
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] *= rho_factor;
-      // check total mass of the disk after normalization
-      torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * dV;
->>>>>>> origin/danat_summer
 		}
-
 	}
-<<<<<<< HEAD
-	umax /= rhomax ;
-	rhomax = 1. ;
+
+	umax /= rhomax;
+	rhomax = 1.;
 
 	//Calculate maximum optical depth in once cell
 	#if (MPI_enable)
@@ -1229,116 +1158,55 @@ void init_torus()
 	}
 	#endif
 
-	for (n = 0; n < n_active; n++){
-		fixup(p, n_ord[n]);
-=======
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	bound_prim(p, 1);
 
-  #if (MPI_enable)
-  /*Share torus_mass among MPI processes*/
-  MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	#endif
-
-	umax *= rho_factor;
-	rhomax *= rho_factor;
-
-  rhomax_nuclear = rhomax;
-
-  if (rank == 0){
-    fprintf(stderr, "After normalization: rhomax: %g, umax: %g, torus_mass: %g\n", rhomax, umax, torus_mass);
->>>>>>> origin/danat_summer
-	}
-
-  #else
-  /* Normalize the densities so that max(rho) = 1 */
-  if (rank == 0) fprintf(stderr, "Before normalization: rhomax: %g, umax: %g\n", rhomax, umax);
-
-  //ZSLOOP(0,N1-1,0,N2-1) {
-  rho_factor = 1.0 / rhomax;
-  torus_mass = 0.0;
-  for (n = 0; n < n_active; n++){
-    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] *= rho_factor;
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] *= rho_factor;
-    }
-  }
-
-  umax *= rho_factor;
-  rhomax *= rho_factor;
-
-  if (rank == 0) fprintf(stderr, "After normalization: rhomax: %g, umax: %g\n", rhomax, umax);
-
-  #endif
-
-  for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
-  bound_prim(p, 1);
-
-<<<<<<< HEAD
-=======
-  set_mag(beta, rhomax, umax);
-
-#if DOPARTICLES
-  init_particles();
-#endif
-
-	#if( DO_FONT_FIX )
-	set_Katm();
-	#endif
-
->>>>>>> origin/danat_summer
-	sourceflag=0.;
+	set_mag();
+	sourceflag = 0.;
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
 
-<<<<<<< HEAD
+	#if (0)
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	double den, ener, pres;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+			ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			pres = ener * (gam - 1.0);
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi);
+			eos_mode_rhopres_u(den, pres, &ener);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+		}
+	}
+	#endif
+}
+
 void init_rad_pres(double pi[NPR]) {
 	double T_old, T_new, ptot, pgas, prad, arad, dPdT, errx;
 	int keep_iterating, i, n_iter;
-=======
-#if DOHELM
-  // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-  double den, ener, pres;
-#if (DONUCLEAR)
-  double varye, varxatm, varxa, varxn, varxp;
-#endif
->>>>>>> origin/danat_summer
 
-  for (n = 0; n < n_active; n++) {
-    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-      den = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO];
-      ener = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU];
+	keep_iterating = 1;
+	n_iter = 0;
+	arad = ARAD / (MASS_DENSITY_SCALE * C_CGS * C_CGS / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+	T_old = (GAMMA - 1.) * pi[UU] / pi[RHO]; // HELMEOS
+	T_new = T_old;
+	ptot = (GAMMA - 1.) * pi[UU];
 
-#if (DONUCLEAR)
-      varye = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][YE];
-      varxatm = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][AMB];
-      varxa = p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHOALPHA];
-      varxn = 1.0 - varye - 0.5 * varxa;
-      varxp = varye - 0.5 * varxa;
-#endif
+	while (keep_iterating) {
+		// Calculate gradient dPdT
+		dPdT = pi[RHO] + 4. / 3. * arad * pow(T_new, 3.);
 
-      pres = ener * (gam - 1.0);
-      coord(n_ord[n], i, j, z, CENT, X);
-      bl_coord(X,&r,&th, &phi);
+		// Make the newton step
+		T_old = T_new;
+		T_new = T_old - ((pi[RHO] * T_old + 1. / 3. * arad * pow(T_old, 4.)) - ptot) / dPdT;
 
-#if (DONUCLEAR)
-      eos_mode_dens_pres_nuclear(&ener, den, varye, pres, &varxatm, &varxn, &varxp, &varxa);
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][AMB] = varxatm;
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHOALPHA] = varxa;
-      p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHONP] = varxn + varxp;
-#else
-      eos_mode_rhopres_u (den, pres, &ener);
-#endif
-	  p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] = ener;
-    }
-  }
-#else
+		// Calculate the convergence criterion for iterated variables
+		errx = fabs(T_new - T_old) / T_old;
 
-#if (DONUCLEAR)
-    double temp_unit = 1.6749286e-24*2.99792458e10*2.99792458e10/1.380658e-16;
-    double dens_unit = 3.*1.99e33*6.67259e-8/(2.99792458e10*2.99792458e10);
-    dens_unit = 3.*1.99e33/(dens_unit*dens_unit*dens_unit);
-
-<<<<<<< HEAD
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
 		/*  before stopping                                                          */
@@ -1362,65 +1230,6 @@ void init_rad_pres(double pi[NPR]) {
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
-=======
-    double varye, varxatm;
-    double Tnuc, Tmev, T10, rho10, Xwb, Xa, Xp, Xn;
-    double rhofloor, ufloor;
-
-  for (n = 0; n < n_active; n++){
-    ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOALPHA]   = 0.0;
-
-        rho = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-        u = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-        varye = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE];
-        varxatm = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB];
-
-        get_geometry (n_ord[n], i, j, z, CENT, &geom);
-        coord(n, i, j, z, CENT, X);
-        bl_coord(X,&r,&th, &phi) ;
-        get_rho_u_floor(r, th, phi, &rhofloor, &ufloor);
-
-        //floor values slightly elevated for Rodrigo
-        rhofloor *= 1.5;
-        ufloor *= 1.5;
-
-        if (varxatm > 0.5) {
-            p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOFLOOR] = rhofloor/1.5;
-            p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO]=rhofloor;
-        }
-        else {
-            p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOFLOOR] = rhofloor/1.5;
-        }
-
-        if (varxatm > 0.5) {
-            p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]=rhofloor/(r+SMALL)/(gam-1.);
-            //ambient u in HSE (Newtonian, yes, but hey...)
-        }
-
-        //Compute source terms and abundances at t = 0
-        if (varxatm < 0.5) {
-
-            Tnuc  = compute_temperature(rho, (gam-1)*u, varye);
-            Tmev  = Tnuc*temp_unit*1.380658e-16/1.6021772e-6;
-            T10   = Tnuc*temp_unit/1e+10;
-            rho10 = rho*dens_unit/1e+10;
-
-            Xwb  = 15.58*pow(Tmev,1.125)*pow(rho10,-0.75)*exp(-7.074/Tmev);
-            Xa   = MY_MIN(2.*varye,2.*(1.-varye)) * (1.-MY_MIN(1.,Xwb)) - varxatm;
-            Xa   = MY_MAX(Xa, 1.e-10);
-
-            Xp = varye - 0.5*Xa - varxatm;
-            Xp = MY_MAX(Xp, 1.e-10);
-
-            Xn = 1. -Xp -Xa -varxatm;
-            Xn = MY_MAX(Xn, 1.e-10);
-
-            p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHOALPHA] = Xa; //*p[i][j][k][RHO];
-            p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = (Xn+Xp); //*p[i][j][k][RHO];
-        }
->>>>>>> origin/danat_summer
 
     }
   }
@@ -1429,8 +1238,8 @@ void init_rad_pres(double pi[NPR]) {
 
 #endif
 
-  for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
-  bound_prim(p, 1);
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	bound_prim(p, 1);
 }
 
 void check_inversions (void) {
@@ -2244,415 +2053,9 @@ void init_disruption()
 
   //set_mag();
 
-<<<<<<< HEAD
-  sourceflag=0.;
+	sourceflag=0.;
 	#if(ELLIPTICAL2)
-  calc_source();
-=======
-	#if( DO_FONT_FIX )
-  set_Katm();
-	#endif
-
-  sourceflag=0.;
-	#if(ELLIPTICAL2)
-  calc_source();
-	#endif
-}
-
-int interpolate_spec_prims( double r, double th, double ph, extent ext, double *data, double *p)
-{
-  int interpolate_spec_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
-  double vx, vy, vz, poten, x, y, z, R;
-  double bl_gcov[NDIM][NDIM];
-  int res;
-
-  //vars: VARI, VARJ, VARK, VARR, VARTHETA, VARPHI, VARRHO, VARP, VARYE, VARMUDT, VARVUR, VARVUTHETA, VARVUPHI
-  //ivar:  0,    1,    2,     3,    4,         5,     6,      7,    8,      9,      10,        11,       12
-  res = interpolate_spec_var(r,th,ph,ext,data,VARRHO,&p[RHO]);
-  //note that this is pressure, not internal energy
-  res += interpolate_spec_var(r,th,ph,ext,data,VARP,&p[UU]); p[UU] /= (gam-1);
-  //not yet ready for it
-  //res = interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
-  res += interpolate_spec_var(r,th,ph,ext,data,VARVUR,&p[U1]);
-  res += interpolate_spec_var(r,th,ph,ext,data,VARVUTHETA,&p[U2]);
-  res += interpolate_spec_var(r,th,ph,ext,data,VARVUPHI,&p[U3]);
-
-  p[B1] = 0.;
-  p[B2] = 0.;
-  p[B3] = 0.;
-
-  return(res);
-}
-
-
-int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p)
-{
-  int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
-  double vx, vy, vz, poten, x, y, z, R;
-  double bl_gcov[NDIM][NDIM];
-  int res;
-  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
-  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  res = interpolate_var(r,th,ph,ext,data,3,&p[RHO]);
-  if(res) return(res);
-  res = interpolate_var(r,th,ph,ext,data,4,&p[UU]);
-  res = interpolate_var(r,th,ph,ext,data,5,&vx);
-  res = interpolate_var(r,th,ph,ext,data,6,&vy);
-  res = interpolate_var(r,th,ph,ext,data,7,&vz);
-  res = interpolate_var(r,th,ph,ext,data,8,&poten);
-  double x1, y1, z1;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  R = sqrt(x*x+y*y);
-  //Matthew: seems wrong to me, we work in a coordinate basis with boyer lindquist coordinates(r, theta,phi)!!!
- // bl_gcov_func(r, th, bl_gcov);
-
-  if (vx*vx + vy*vy + vz*vz>1.0){
-	  poten = vx*vx + vy*vy + vz*vz;
-	  vx /= poten;
-	  vy /= poten;
-	  vz /= poten;
-  }
-  p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
-  p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
-  p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
-  p[UU] = p[UU]*p[RHO];
-
-//  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
- // p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
- /// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
-
-
-  p[B1] = 0.;
-  p[B2] = 0.;
-  p[B3] = 0.;
-
-  return(0);
-}
-
-//define compact form for array indexing
-#define d(ii,jj,kk) data[((ivar*nx+ii)*ny+jj)*nz+kk]
-
-int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val)
-{
-  double x, y, z, dx, dy, dz;
-  double i, j, k, di, dj, dk;
-  int i0, j0, k0, i1, j1, k1, nx, ny, nz;
-  double c00, c01, c10, c11, c0, c1, c;
-
-  nx = ext.nx;
-  ny = ext.ny;
-  nz = ext.nz;
-  x = r*sin(th)*cos(ph);
-  y = r*sin(th)*sin(ph);
-  z = r*cos(th);
-  dx = (ext.xmax-ext.xmin)/(nx-1);
-  dy = (ext.ymax-ext.ymin)/(ny-1);
-  dz = (ext.zmax-ext.zmin)/(nz-1);
-  i = (x-ext.xmin)/dx;
-  j = (y-ext.ymin)/dy;
-  k = (z-ext.zmin)/dz;
-  i0 = floor(i);
-  j0 = floor(j);
-  k0 = floor(k);
-  i1 = (int)ceil(i);
-  j1 = (int)ceil(j);
-  k1 = (int)ceil(k);
-  if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
-    return(1);
-  }
-  di = i - floor(i);
-  dj = j - floor(j);
-  dk = k - floor(k);
-  c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
-  c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
-  c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
-  c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
-  c0 = c00*(1-dj) + c10*dj;
-  c1 = c01*(1-dj) + c11*dj;
-  c = c0*(1-dk) + c1*dk;
-  if (isnan(c))  return(1);
-  *val = c;
-  return(0);
-
-}
-//undefine array shortcut to avoid name conflicts
-#undef d
-
-//define compact form for array indexing
-#define d(ii,jj,kk) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
-
-int interpolate_spec_var( double r, double th, double ph, extent ext, double *icdata, int ivar, double *val)
-{
-  double x, y, z, dx, dy, dz;
-  double i, j, k, di, dj, dk;
-  int i0, j0, k0, i1, j1, k1, nx, ny, nz;
-  double c00, c01, c10, c11, c0, c1, c;
-  int ii, jj, kk;
-  double th0, th1;
-
-  //limit th, ph to [0,pi], [0,2pi)
-  if(th<0) th = 0;
-  if(th>M_PI) th = M_PI;
-  if(ph>=2. * M_PI) ph -= 2. * M_PI;
-  if(ph<0) ph += 2. * M_PI;
-
-  nx = ext.nx;
-  ny = ext.ny;
-  nz = ext.nz;
-  for(i0=j0=k0=0; i0<nx; i0++) {
-    if(dd(i0,j0,k0,VARR) > r) break;
-  }
-  i0--;
-  if(i0 < 0 || i0 >= nx-1) return(1);
-  di = log2( r/dd(i0,j0,k0,VARR) ) / log2( dd(i0+1,j0,k0,VARR)/dd(i0,j0,k0,VARR) );
-  i = i0 + di;
-
-  for(j0=0; j0<ny; j0++) {
-    th1 = dd(i0,j0,k0,VARTHETA)*(1-di)+dd(i0+1,j0,k0,VARTHETA)*di;
-    if( th1 > th ) break;
-  }
-  j0--;
-  if(j0 < 0) {
-    j0 = 0;
-    dj = 0;
-  }
-  else if(j0 >= ext.ny - 1) {
-    j0 = ny-1;
-    dj = 0;
-  }
-  else {
-    th0 = dd(i0,j0,k0,VARTHETA)*(1-di)+dd(i0+1,j0,k0,VARTHETA)*di;
-    dj = (th-th0)/(th1-th0);
-  }
-  j = j0 + dj;
-
-  dz = (ext.zmax-ext.zmin)/(nz-1);
-  k = (ph-ext.zmin)/dz-0.5;
-
-  i1 = (int)ceil(i);
-  j1 = (int)ceil(j);
-  k0 = floor(k);
-  k1 = (int)ceil(k);
-  if(i0<0 || i1>=nx || j0<0 || j1>=ny || k0<-1 || k1>=nz+1) {
-    return(1);
-  }
-  dk = k - floor(k);
-  if(k0==-1) k0 = nz-1;
-  if(k1==nz) k1 = 0;
-  c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
-  c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
-  c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
-  c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
-  c0 = c00*(1-dj) + c10*dj;
-  c1 = c01*(1-dj) + c11*dj;
-  c = c0*(1-dk) + c1*dk;
-  if (isnan(c))  return(1);
-  *val = c;
-  return(0);
-
-}
-//undefine array shortcut to avoid name conflicts
-#undef d
-
-void set_mag(double beta, double rhomax, double umax){
-	int i, j, z, k, n;
-//  double rhomax = 1., umax = 0., beta = 10.;
-	int i100 = 0;
-	double rho_av, q, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
-	double r, th, phi, X[NDIM];
-	struct of_geom geom;
-	#if(!NSY)
-	double tilt = (TILT_ANGLE) / 180.*M_PI;
-	#else
-	double tilt = -(TILT_ANGLE) / 180.*M_PI;
-	#endif
-
-	do{
-		i100++;
-		coord(0, i100, 0, 0, CENT, X);
-		bl_coord(X, &r, &th, &phi);
-	} while (r < 400.0);
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]] + D1, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + D2, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
-			dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][0] = 0.;
-			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
-			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
-			dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][0] = 0.;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
-		}
-	}
-
-	/* first find corner-centered vector potential */
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
-			/* Cell centered vector potential */
-			#if(WHICHPROBLEM==THIN_PROBLEM)
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
-			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
-			#endif
-			if (q > 0.){
-				coord(n_ord[n], i, j, z, CENT, X);
-				bl_coord(X, &r, &th, &phi);
-				#if(WHICHPROBLEM==THIN_PROBLEM)
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
-				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
-				#else
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = pow(q, 2.0) * pow(r, 3.0); //MAD
-				#endif
-			}
-			else{
-				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] = 0.0;
-			}
-			if (q > 0.) {
-				#if (TILTED)
-				coord(n_ord[n],i, j, z, CENT, X);
-				bl_coord(X, &r, &th, &phi);
-				pos_new[1] = r;
-				pos_new[2] = th;
-				pos_new[3] = phi;
-				sph_to_cart(X_cart, &r, &th, &phi);
-				rotate_coord(X_cart, -tilt);
-				cart_to_sph(X_cart, &r, &th, &phi);
-
-				V[1] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1];
-				V[2] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2];
-				V[3] = dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3];
-				rotate_vector2(V, pos_new, &r, &th, &phi, tilt);
-				dq[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] = V[1];
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = V[2];
-				dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = V[3];
-				#endif
-			}
-		}
-	}
-
-	//Transform from cell centered vector potential to edge centered vector potential
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - D1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - D2, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3){
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.25*(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][1] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z - D3)][1]);
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.25*(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z - D3)][2] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][2] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z - D3)][2]);
-			E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.25*(dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j - D2, z)][3] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j, z)][3] + dq[nl[n_ord[n]]][index_3D(n_ord[n], i - D1, j - D2, z)][3]);
-		}
-	}
-
-	/* now differentiate to find cell-centered B,
-	and begin normalization */
-	#if(STAGGERED)
-	gpu = 0;
-	nstep = AMR_SWITCHTIMELEVEL - 1;
-	set_prestep();
-	const_transport_bound();
-	nstep = 0;
-	#endif
-	for (n = 0; n < n_active; n++){
-		#if(STAGGERED)
-		//Reset toroidal component of vector potential so that no monopoles occur in initial conditions at the pole
-		if (block[n_ord[n]][AMR_NBR1] == -1 || block[n_ord[n]][AMR_POLE] == 1 || block[n_ord[n]][AMR_POLE] == 3){
-			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][3] = 0.;
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
-			}
-		}
-
-		if (block[n_ord[n]][AMR_NBR3] == -1 || block[n_ord[n]][AMR_POLE] == 2 || block[n_ord[n]][AMR_POLE] == 3){
-			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]] + BS_2, z)][3] = 0.;
-				E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, N2_GPU_offset[n_ord[n]], z)][1] = 0.;
-			}
-		}
-
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
-			get_geometry(n_ord[n], i, j, z, FACE1, &geom);
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][3]) / (dx[nl[n_ord[n]]][2] * geom.g)
-				#if(N3G>0)
-				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][2]) / (dx[nl[n_ord[n]]][3] * geom.g)
-				#endif
-				;
-			get_geometry(n_ord[n], i, j, z, FACE2, &geom);
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][3]) / (dx[nl[n_ord[n]]][1] * geom.g)
-				#if(N3G>0)
-				- (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][1]) / (dx[nl[n_ord[n]]][3] * geom.g)
-				#endif
-				;
-			get_geometry(n_ord[n], i, j, z, FACE3, &geom);
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = -(E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][2]) / (dx[nl[n_ord[n]]][1] * geom.g)
-				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][1]) / (dx[nl[n_ord[n]]][2] * geom.g);
-		}
-			#endif
-	}
-
-	double bsq_max = 0.;
-	double ug_sum = 0.;
-	double bsq_sum = 0.;
-	for (n = 0; n < n_active; n++){
-		ZLOOP3D_MPI{
-			/* flux-ct */
-			#if(!STAGGERED)
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B1] =
-				-(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][3]
-				+ E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j + 1, z)][3]) / (2.*dx[nl[n_ord[n]]][2] * geom.g)
-				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][2]
-				+ E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z + 1)][2]) / (2.*dx[nl[n_ord[n]]][3] * geom.g);
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B2] =
-				(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][3] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][3]
-				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][3] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j + 1, z)][3]) / (2.*dx[nl[n_ord[n]]][1] * geom.g)
-				- (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j + 1, z)][1]
-				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + 1)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z + 1)][1]) / (2.*dx[nl[n_ord[n]]][3] * geom.g);
-			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] =
-				-(E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][2] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][2]
-				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z)][2] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i + 1, j, z + 1)][2]) / (2.*dx[nl[n_ord[n]]][1] * geom.g)
-				+ (E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][1] + E_corn[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z + 1)][1]
-				- E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z)][1] - E_corn[nl[n_ord[n]]][index_3D(n_ord[n], i, j + 1, z + 1)][1]) / (2.*dx[nl[n_ord[n]]][2] * geom.g);
-			#else
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE1] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i + D1, j, z)][1] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i + D1, j, z)][FACE1]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE2] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j + D2, z)][2] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j + D2, z)][FACE2]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
-			#if(N3G>0)
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = (ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][FACE3] + ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z + D3)][3] * gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z + D3)][FACE3]) / (2.0* gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT]);
-			#else
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3];
-			#endif
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			#endif
-			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
-			beta_ij = 0.5*(gam - 1.0)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] / bsq_ij;
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)){
-				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			}
-			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				bsq_max = bsq_ij;
-			}
-			#if(WHICHPROBLEM==THIN_PROBLEM)
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
-			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			if (q > 0. && r<50.) {
-				bsq_sum += bsq_ij* geom.g* dx[nl[n_ord[n]]][1] * dx[nl[n_ord[n]]][2] * dx[nl[n_ord[n]]][3];
-				ug_sum += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * geom.g * dx[nl[n_ord[n]]][1] * dx[nl[n_ord[n]]][2] * dx[nl[n_ord[n]]][3];
-			}
-			#endif
-		}
-	}
-
-	#if (MPI_enable)
-	/*Share bsq_max among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	#if(WHICHPROBLEM==THIN_PROBLEM)
-	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	#endif
->>>>>>> origin/danat_summer
+	calc_source();
 	#endif
 
 	if (rank == 0){
@@ -2738,10 +2141,7 @@ void set_mag(double beta, double rhomax, double umax){
 
 void set_mag_postmerger(double beta, double rhomax, double umax){
 	int i, j, z, k, n;
-<<<<<<< HEAD
 	double rhomax = 1., pmax = 0.;
-=======
->>>>>>> origin/danat_summer
 	int i100 = 0;
 	double rho_av, q, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
@@ -2750,12 +2150,9 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
 	double tilt = -(TILT_ANGLE) / 180.*M_PI;
-<<<<<<< HEAD
 	#endif	
 	#if(WHICHPROBLEM==TRUNC_PROBLEM)
 	tilt = 0.;
-=======
->>>>>>> origin/danat_summer
 	#endif
 
 	do{
@@ -2783,7 +2180,6 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 	/* first find corner-centered vector potential */
 	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-N1G, BS_1 + N1_GPU_offset[n_ord[n]]+D1, N2_GPU_offset[n_ord[n]]-N2G, N2_GPU_offset[n_ord[n]] + BS_2+D2, N3_GPU_offset[n_ord[n]]-N3G, N3_GPU_offset[n_ord[n]] + BS_3+D3){
-<<<<<<< HEAD
 			/* Cell centered vector potential */	
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
@@ -2795,9 +2191,6 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 			rotate_coord(X_cart, -tilt);
 			cart_to_sph(X_cart, &r, &th, &phi);
 			#endif
-=======
-			/* Cell centered vector potential */
->>>>>>> origin/danat_summer
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
@@ -4088,20 +3481,9 @@ void init_torus_grb(){
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p, 1);
 
-<<<<<<< HEAD
-
 	#if (GPU_ENABLED)
 	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
 	#endif
-=======
-#if( DO_FONT_FIX )
-	set_Katm();
-#endif
-
-#if (GPU_ENABLED)
-	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]); //MLQ: do we need this?
-#endif
->>>>>>> origin/danat_summer
 }
 
 //note that only axisymmetric A is supported
