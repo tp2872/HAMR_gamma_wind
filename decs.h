@@ -847,6 +847,11 @@ struct of_state {
 	double bcov[NDIM];
 };
 
+struct of_state_rad {
+    double ucon[NDIM];
+    double ucov[NDIM];
+};
+
 /*Timing/benchmarking decleration*/
 extern clock_t begin1, end1, begin2, end2;
 extern double time_spent3;
@@ -897,13 +902,6 @@ void close_rdump();
 void close_gdump();
 void close_gdump_reduced();
 double get_wall_time();
-#if DOPARTICLES
-void pdump(void);
-void pdump_frequent(void);
-void advance_particles(double(*restrict pr[NB_LOCAL])[NPR], double Dt, int flag);
-void init_particles(void);
-void build_tetrad(double gcon[NDIM][NDIM], double Econ[NDIM][NDIM], double Ecov[NDIM][NDIM]);
-#endif
 
 /** Evolution/physics functions **/
 double advance(int flag);
@@ -922,13 +920,14 @@ void utoprim_M1_2(double Dt, int n);
 void E_average(void);
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom);
 int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double *restrict gamma);
+int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad);
 void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict ucov, double * restrict bcon);
 void read_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
 void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G], int n);
 void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 void step_ch(void);
-void primtoflux(double * restrict pa, struct of_state * restrict q, int dir, struct of_geom * restrict geom, double * restrict fl);
+void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict fl);
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
 void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
@@ -948,12 +947,20 @@ void fixup1zone(int i, int j, int z, int n, double prim[NPR]);
 void fixup_utoprim(double(*restrict pv[NB_LOCAL])[NPR], int n);
 void fixup_utoprim_rad(double((*restrict pv[NB_LOCAL])[NPR]), int n);
 void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon);
+void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
 void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd);
+void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad);
+double calc_kappa_abs(double * restrict ph);
+double calc_kappa_emmit(double * restrict ph);
+double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
+int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
+void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
+void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
 int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);

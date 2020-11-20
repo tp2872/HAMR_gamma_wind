@@ -264,33 +264,7 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
 
     #if DOHELM
     // Helmholtz EOS
-    
-    #if (DONUCLEAR)
-    // Nuclear physics
-    
-    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
-    
-    varye = prim[YE];
-    varxatm = prim[AMB];
-    varxa = prim[RHOALPHA];
-    varxnp = prim[RHONP];
-    
-    // Make sure that the abundances do add up to 1
-    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
-    varxa   *= fac;
-    varxatm *= fac;
-    
-    // Get xn, xp
-    varxn = 1.0 - varye - 0.5 * varxa;
-    varxp = varye - 0.5 * varxa;
-    
-    eos_mode_dens_ener_nuclear(u / rho0, rho0, varye, varxatm, varxn, varxp, varxa, &p);
-    
-    #else
-    // Helmholtz EOS w/o nuclear physics
     eos_mode_rhou_pres (rho0, u, &p);
-    #endif
-    
     #else
     // Ideal gas EOS
     p = pressure_rho0_u(rho0, u);
@@ -688,35 +662,6 @@ int Utoprim_NM(double U[NPR_U], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]
 	#if(DOKTOT)
 	prim[KTOT] = U[KTOT] / U[RHO];
 	#endif
-
-#if(DONUCLEAR)
-    prim[RHONP] = U[RHONP]/U[RHO];
-    prim[RHOALPHA] = U[RHOALPHA]/U[RHO];
-    prim[RHOFLOOR] = U[RHOFLOOR]/U[RHO];
-    prim[YE] = U[YE]/U[RHO];
-    prim[AMB] = U[AMB]/U[RHO];
-    
-    #if 0 // DANAT: check how rho_amb factors into this
-    // Danat: check the normalizations of the mass fractions and Ye
-    prim[YE] = MY_MAX(prim[YE], 1.0);
-    prim[YE] = MY_MIN(prim[YE], 1e-10);
-    prim[RHONP] = MY_MAX(prim[RHONP], 1.0);
-    prim[RHONP] = MY_MIN(prim[RHONP], 1e-10);
-    prim[RHOALPHA] = MY_MAX(prim[RHOALPHA], 1.0);
-    prim[RHOALPHA] = MY_MIN(prim[RHOALPHA], 1e-10);
-    prim[AMB] = MY_MAX(prim[AMB], 1.0);
-    prim[AMB] = MY_MIN(prim[AMB], 1e-10);
-    
-    double fac_norm = 1.0 / (prim[RHONP] + prim[RHOALPHA] + prim[AMB]);
-    
-    if (prim[RHONP] + prim[RHOALPHA] + prim[AMB] - 1.0 > 1e-10) {
-        
-        prim[RHONP] *= fac_norm;
-        prim[RHOALPHA] *= fac_norm;
-        prim[AMB] *= fac_norm;
-    }
-    #endif
-#endif
     
 	return(ret);
 }
@@ -763,35 +708,9 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     double xdens, xpres, xener, xenth;
     // Helmholtz EOS
     xdens = prim[RHO];
-    
-    #if (DONUCLEAR)
-    // Nuclear physics
-    double varye, varxatm, varxa, varxnp, varxn, varxp, fac;
-    
-    varye = prim[YE];
-    varxatm = prim[AMB];
-    varxa = prim[RHOALPHA];
-    varxnp = prim[RHONP];
-    
-    // Make sure that the abundances do add up to 1
-    fac = 1.0 / (varxnp + varxa + varxatm + SMALL);
-    varxa   *= fac;
-    varxatm *= fac;
-    
-    // Get xn, xp
-    varxn = 1.0 - varye - 0.5 * varxa;
-    varxp = varye - 0.5 * varxa;
-    
-    eos_get_min_pres_NH_nuclear (xdens, varye, varxatm, varxn, varxp, varxa, &xpres);
-    
-    #else
-    // Helmholtz EOS w/o nuclear physics
     // -- to get min. pressure for a given density, set T = T_min = 1e4 K
     eos_mode_rhotemp_pres_min (xdens, &xpres);
-    #endif
-    
     p_array[0] = xpres;
-    
     #else
     // Ideal gas EOS
     p_array[0] = (GAMMA - 1.)*prim[UU];

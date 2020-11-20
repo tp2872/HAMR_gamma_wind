@@ -506,12 +506,12 @@ void kerr_gcov_func(double r, double th, double gcov[][NDIM])
 	rho2 = r*r + a*a*cth*cth;	
 
 	gcov[0][0] = (-1. + 2.*r / rho2);
-	gcov[0][1] = (4.*r / rho2);
-	gcov[0][3] = (-4.*a*r*s2 / rho2);
+	gcov[0][1] = (2.*r / rho2);
+	gcov[0][3] = (-2.*a*r*s2 / rho2);
 
 	gcov[1][0] = gcov[0][1];
 	gcov[1][1] = (1. + 2.*r / rho2);
-	gcov[1][3] = (-2.*a*s2*(1. + 2.*r / rho2));
+	gcov[1][3] = (-a*s2*(1. + 2.*r / rho2));
 
 	gcov[2][2] = rho2;
 

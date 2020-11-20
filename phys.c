@@ -52,7 +52,7 @@
         
 ***********************************************************************************************/
 
-void primtoflux(double * restrict pr, struct of_state * restrict q, int dir, struct of_geom * restrict geom, double * restrict flux)
+void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
 	int j,k ;
 
@@ -63,6 +63,11 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, int dir, str
 	mhd_calc(pr, dir, q, &flux[UU]) ;
 	flux[UU] += flux[RHO];
 
+    //Radiation energy tensor
+    #if(RAD_M1)
+    mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
+    #endif
+    
 	/* dual of Maxwell tensor */
 	#pragma ivdep
 	for (k = B1; k <= B3; k++){
@@ -76,13 +81,6 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, int dir, str
 	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
 	#endif
     
-#if(DONUCLEAR)
-    flux[RHONP] = flux[RHO]*pr[RHONP];
-    flux[RHOALPHA] = flux[RHO]*pr[RHOALPHA];
-    flux[RHOFLOOR] = flux[RHO]*pr[RHOFLOOR]/pr[RHO];
-    flux[YE] = flux[RHO]*pr[YE];
-    flux[AMB] = flux[RHO]*pr[AMB];
-#endif
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
 }
@@ -127,12 +125,22 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
 	DLOOPA mhd[j] = eta*q->ucon[dir]*q->ucov[j] + ptot*delta(dir,j) - q->bcon[dir]*q->bcov[j] ;
 }
 
+/* Radiation stress tensor, with first index up, second index down */
+void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad)
+{
+    int j;
+    /* single row of mhd stress tensor, first index up, second index down */
+    #pragma ivdep
+    DLOOPA mhd_rad[j] = 4./3.*pr[UU_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[UU_RAD]*delta(dir, j);
+}
+
 /* add in (explicit) geometricc source terms to equations of motion */
 void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
 {
-	double mhd[NDIM][NDIM];
+    double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
 	int j,k ;
 	struct of_state q ;
+    struct of_state_rad q_rad;
 
 	get_state(ph, geom, &q) ;
 	mhd_calc(ph, 0, &q, mhd[0]) ;
@@ -317,8 +325,18 @@ void get_state(double * restrict pr, struct of_geom * restrict geom, struct of_s
 	return ;
 }
 
+/* find ucon, ucov, bcon, bcov from radiation primitive variables */
+void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad)
+{
+    /* get radiation ucon */
+    ucon_calc_rad(pr, geom, q_rad->ucon);
+    lower(q_rad->ucon, geom, q_rad->ucov);
+
+    return;
+}
+
 /* find contravariant four-velocity */
-    void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
+void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon)
 {
 	double alpha,gamma ;
 	double beta[NDIM] ;
@@ -385,6 +403,26 @@ int gamma_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 	*gamma = sqrt(1. + qsq) ;
 
 	return(0) ;
+}
+
+/* find gamma-factor wrt normal observer */
+int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict gamma_rad)
+{
+    double qsq;
+    qsq = geom->gcov[1][1] * pr[U1_RAD] * pr[U1_RAD] + geom->gcov[2][2] * pr[U2_RAD] * pr[U2_RAD] + geom->gcov[3][3] * pr[U3_RAD] * pr[U3_RAD] + 2.*(geom->gcov[1][2] * pr[U1_RAD] * pr[U2_RAD] + geom->gcov[1][3] * pr[U1_RAD] * pr[U3_RAD] + geom->gcov[2][3] * pr[U2_RAD] * pr[U3_RAD]);
+    if (qsq < 0.) {
+        if (fabs(qsq) > 1.E-10) { // then assume not just machine precision
+            fprintf(stderr, "gamma_calc_rad():  failed: qsq = %28.18e \n", qsq);
+            fprintf(stderr, "v[1-3] = %28.18e %28.18e %28.18e  \n", pr[U1_RAD], pr[U2_RAD], pr[U3_RAD]);
+            *gamma_rad = 1.;
+            return (1);
+        }
+        else qsq = 1.E-10; // set floor
+    }
+
+    *gamma_rad = sqrt(1. + qsq);
+
+    return(0);
 }
 
 /*  

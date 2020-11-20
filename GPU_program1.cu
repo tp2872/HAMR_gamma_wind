@@ -4246,6 +4246,16 @@ __device__ void get_state(double *  pr, struct of_geom *  geom, struct of_state 
 	return;
 }
 
+/* find ucon, ucov, bcon, bcov from radiation primitive variables */
+__device__ void get_state_rad(double * pr, struct of_geom * geom, struct of_state_rad * q_rad)
+{
+    /* get radiation ucon */
+    ucon_calc_rad(pr, geom, q_rad->ucon);
+    lower(q_rad->ucon, geom->gcov, q_rad->ucov);
+
+    return;
+}
+
 /* Raises a covariant rank-1 tensor to a contravariant one */
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM])
 {
@@ -4386,10 +4396,10 @@ __device__ int gamma_calc_rad(double *  pr, struct of_geom *  geom, double *  ga
 			*gamma_rad = 1.;
 			return (1);
 		}
-		else qsq = 1.E-10; // set floor
+		else qsq_rad = 1.E-10; // set floor
 	}
 
-	*gamma = sqrt(1. + qsq);
+	*gamma_rad = sqrt(1. + qsq_rad);
 
 	return(0);
 }
@@ -7037,7 +7047,6 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 	}
 }
 
-#if(FRAME_TRANSFORM)
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
 	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag)
 {
@@ -7245,7 +7254,6 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 		}
 	}
 }
-#endif
 
 __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]) {
 	double A, B, C, D, vcon, ptot;

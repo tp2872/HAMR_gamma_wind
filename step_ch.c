@@ -95,15 +95,6 @@ void step_ch()
 		#endif
 
 		bound_prim(ph, 0);    /* Set boundary conditions for primitive variables, flag bad ghost zones */
-        
-#if DOPARTICLES
-        for (n = 0; n < n_active; n++){
-            if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
-                advance_particles(ph, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], 0);
-                //pdump_frequent();
-            }
-        }
-#endif
 		nstep++;
 	}
 
@@ -552,9 +543,11 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 	int i, j, z, k, idel, jdel, zdel, face;
 	double p_l[NPR], p_r[NPR], F_l[NPR], F_r[NPR], U_l[NPR], U_r[NPR], F_HLL[NPR], U_HLL[NPR], vcon[NDIM], U_i[NPR], ptot;
 	double cmax_l, cmax_r, cmin_l, cmin_r, cmax, cmin, cmax_roe, cmin_roe, ndt, ndt_thread, dtij;
-	double ctop;
+    double cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad;
+    double ctop, ctop_rad;
 	struct of_geom geom;
 	struct of_state state_l, state_r, state_roe, qi;
+    struct of_state_rad state_l_rad, state_r_rad;
 	double bsq;
 	int max_i, max_j, max_z;
 	double val;
@@ -694,12 +687,15 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					/* evaluate restriction on timestep */
 					cmax = MY_MAX(cmax, cmin);
+                    #if(RAD_M1)
+                    cmax_rad = MY_MAX(cmax_rad, cmin_rad);
+                    cmax = MY_MAX(cmax, cmax_rad);
+                    #endif
 					dtij = cour*dx[nl[n]][dir] / cmax;
 					if (dtij < ndt_thread) {
 						ndt_thread = dtij;
 						#if(!TRANS_BOUND && !CARTESIAN)
 						if (dir == 2 && (j == 0 || j == N2 * pow(1+REF_2,block[n][AMR_LEVEL]))) {
-							//#pragma ivdep
                             PLOOP F[nl[n]][ind0][k] = 0.;
 						}
 						#endif

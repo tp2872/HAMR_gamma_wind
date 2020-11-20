@@ -89,9 +89,6 @@ Physical Parameters section
 /*Runtime in hours*/
 #define RUNTIME (24.0)
 
-/* Post-merger problem, whether to read the binary IC file or not */
-#define READBINARY (0)
-
 /*************************************************************************
 Numerical Parameters section
 *************************************************************************/
@@ -127,13 +124,13 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 3
+#define NB_1 1
+#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 56
-#define BS_2 48
+#define BS_1 224
+#define BS_2 144
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -233,8 +230,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define STAGGERED (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (0)
-#define LAXF  (1)
+#define HLLF  (1)
+#define LAXF  (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
@@ -289,10 +286,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Wheter to cylindrify coordinates to increase GLOBAL timestep. Not usefull with internal derefinement, may become deprecated!*/
 #define DOCYLINDRIFYCOORDS (0)
 
-/* enable MC particles */
-#define DOPARTICLES 0
-#define NPTOT 1000
-
 /*Put out files which Ziri can Ray-Trace. Not fully implemented yet*/
 #define ZIRI_DUMP 0
 
@@ -303,7 +296,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (1)
+#define DUMP_DIAG (0)
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1
@@ -349,7 +342,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 MNEMONICS SECTION
 *************************************************************************/
 /* mnemonics for primitive vars; conserved vars */
-#define RHO	(0)
+#define RHO	(0)	
 #define UU	(1)
 #define U1	(2)
 #define U2	(3)
@@ -358,18 +351,15 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
-#if(DONUCLEAR)
-#define RHONP     (9)
-#define RHOALPHA  (10)
-#define RHOFLOOR  (11)
-#define YE        (12)
-#define AMB       (13)
-#endif
+#define UU_RAD	(9)
+#define U1_RAD	(10)
+#define U2_RAD	(11)
+#define U3_RAD	(12)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
 #define RIGHT (1)
-#define FACE1	(0)
+#define FACE1	(0)	
 #define FACE2	(1)
 #define CORN	(2)
 #define CENT	(3)
@@ -411,13 +401,9 @@ MNEMONICS SECTION
 #define FAIL_METRIC         (6)
 
 /*For Windows users*/
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327950288
-#endif
-
-#ifndef M_PI_2
-#define M_PI_2 3.14159265358979323846264338327950288 / 2.0
-#endif
+#ifndef M_PI 
+#define M_PI 3.14159265358979323846264338327950288 
+#endif 
 
 /*Mnemonics for AMR parameters*/
 #define NV 183
@@ -613,7 +599,7 @@ Variable Inversion Section
 /* use K(s)=K(r)=const. (G_ATM = GAMMA) of time or  T = T(r) = const. of time (G_ATM = 1.) */
 #define USE_ISENTROPIC 1
 
-#if( USE_ISENTROPIC )
+#if( USE_ISENTROPIC ) 
 #define G_ATM GAMMA
 #else
 #define G_ATM G_ISOTHERMAL
@@ -778,23 +764,17 @@ Section with derived quantities
 #define D2 (N2>1)
 #define D3 (N3>1)
 
-#if(DONUCLEAR)
-#define NPRDUMP    14
+#if(RAD_M1)
+#define NPRDUMP 14
 #else
-#define NPRDUMP    9
+#define NPRDUMP 9
 #endif
 
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
-<<<<<<< HEAD
 #define NPR_R      (4)        /* number of radiation primitive variables */
 #define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
 #define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
-=======
-#define NPR_NUC    (5)        /* number of primitive variables for DONUCLEAR */
-#define NPR        (NPR_U + DONUCLEAR*NPR_NUC)        /* total number of primitive variables */
-
->>>>>>> origin/danat_summer
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
@@ -890,11 +870,11 @@ Section with derived quantities
 #define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)//loop over all Dimensions; first rank loop */
 #define DLOOPA for(j=0;j<NDIM;j++) //loop over all Space dimensions; second rank loop */
 #define SLOOP  for(j=1;j<NDIM;j++) for(k=1;k<NDIM;k++) //loop over all Space dimensions; first rank loop */
-#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables
+#define SLOOPA for(j=1;j<NDIM;j++) // loop over Primitive variables 
 #define MY_MIN(fval1,fval2) ( ((fval1) < (fval2)) ? (fval1) : (fval2))
 #define MY_MAX(fval1,fval2) ( ((fval1) > (fval2)) ? (fval1) : (fval2))
 #define delta(i,j) ( (i == j) ? 1. : 0.)
-#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3])
+#define dot(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]) 
 #define ZLOOP for(i=0;i<N1;i++)for(j=0;j<N2;j++)
 #define ZLOOP_MPI for(i=N1_GPU_offset[n_ord[n]];i<N1_GPU_offset[n_ord[n]] + BS_1;i++)for(j=N2_GPU_offset[n_ord[n]];j<N2_GPU_offset[n_ord[n]] + BS_2 ;j++)
 #if (N3>1)

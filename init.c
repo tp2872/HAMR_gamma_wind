@@ -1,27 +1,27 @@
 /***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble,
+    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
                    Gabor Toth, and Luca Del Zanna
 
                         HARM  version 1.0   (released May 1, 2006)
 
-    This file is part of HARM.  HARM is a program that solves hyperbolic
+    This file is part of HARM.  HARM is a program that solves hyperbolic 
     partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to
-    solve the relativistic magnetohydrodynamic equations of motion on a
+    shock-capturing techniques.  This version of HARM has been configured to 
+    solve the relativistic magnetohydrodynamic equations of motion on a 
     stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model.
+    an accretion disk model. 
 
-    You are morally obligated to cite the following two papers in his/her
+    You are morally obligated to cite the following two papers in his/her 
     scientific literature that results from use of any part of HARM:
 
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003,
+    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
         Astrophysical Journal, 589, 444.
 
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006,
+    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
         Astrophysical Journal, 641, 626.
 
-
-    Further, we strongly encourage you to obtain the latest version of
+   
+    Further, we strongly encourage you to obtain the latest version of 
     HARM directly from our distribution website:
     http://rainman.astro.uiuc.edu/codelib/
 
@@ -33,7 +33,7 @@
 
     HARM is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURpos_newE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
@@ -44,7 +44,7 @@
 
 /*
  *
- * generates initial conditions for a fishbone & moncrief disk
+ * generates initial conditions for a fishbone & moncrief disk 
  * with exterior at minimum values for density & internal energy.
  *
  * cfg 8-10-01
@@ -60,10 +60,9 @@ void vconbl_to_utcon(double *pr, int n, int ii, int jj, int zz);
 void utilde_to_ucon(double *pr, double udphi, int n, int ii, int jj, int zz);
 void udphi_to_utuphi(double *ucon, double udphi, double *udphi_new, struct of_geom *geom, double *utcon);
 void dxdr_sph_to_cart(double r, double th, double phi, double dxdr[][NDIM]);
-void set_mag(double beta, double rhomax, double umax);
-void set_mag_postmerger(double beta, double rhomax, double umax);
 void rotate_vector2(double V[NDIM], double pos_new[NDIM], double *r, double *th, double *phi, double tilt);
 void coord_transform(double *pr, int n, int ii, int jj, int zz);
+void set_mag(void);
 void init_thindisk();
 double compute_Amax(double(*restrict A[NB])[NPR]);
 double compute_B_from_A(void);
@@ -134,16 +133,19 @@ void init()
 		case THIN_PROBLEM:
 		init_thindisk();
 		break;
+		case THIN_PROBLEM:
+		init_thindisk();
+		break;
 		case DISRUPTION_PROBLEM:
 		init_disruption();
 		break;
 		case TORUS_PROBLEM_GRB:
 		init_torus_grb();
 		break;
-	        case POSTMERGER_PROBLEM:
+    case POSTMERGER_PROBLEM:
 		init_postmerger();
 		break;
-		case BONDI_PROBLEM_1D:
+    case BONDI_PROBLEM_1D;
 		case BONDI_PROBLEM_2D:
 		init_bondi();
 		break;
@@ -735,9 +737,9 @@ void init_thindisk()
 	rhomax = 0.;
 	umax = 0.;
 	#if(!NSY)
-	tilt = (TILT_ANGLE) / 180. * M_PI;
+	tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
-	tilt = -(TILT_ANGLE) / 180. * M_PI;
+	tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif
 	eccentricity = 0.0;
 	for (n = 0; n < n_active; n++) {
@@ -765,22 +767,22 @@ void init_thindisk()
 			double rhoc;
 			thin = M_PI / 2.;
 			double A, R, D, E, L;
-			A = 1.0 + a * a / (r * r) + 2.0 * a * a / (r * r * r);
-			R = 1 + a / (r * sqrt(r));
-			D = 1.0 - 2.0 / r + a * a / (r * sqrt(r));
-			E = 1.0 + 4.0 * a * a / (r * r) - 4.0 * a * a / (r * r * r) + 3.0 * a * a * a * a / (r * r * r * r);
+			A = 1.0 + a*a / (r*r) + 2.0*a*a / (r*r*r);
+			R = 1 + a / (r*sqrt(r));
+			D = 1.0 - 2.0 / r + a*a / (r*sqrt(r));
+			E = 1.0 + 4.0*a*a / (r*r) - 4.0*a*a / (r*r*r) + 3.0 * a*a*a*a / (r*r*r*r);
 			L = 1.;
-			rhoc = 1. / r * pow(A, -4.) * pow(R, 6.0) * D * E * E / (L * L);
+			rhoc = 1./r*pow(A, -4.)*pow(R, 6.0)*D*E*E / (L*L);
 			if (r > rmax) rhoc = 0.0;////rhoc /= exp(sqrt(r-rmax));
-			rho = rhoc * exp(-pow((th - thin) / H_OVER_R, 2.0) * 0.5);
+			rho = rhoc * exp(-pow((th-thin)/H_OVER_R,2.0)*0.5);
 			ur = 0.;
 			uh = 0.;
 			up = 0.;
 
 			/* regions outside torus */
-			if (r > 4 * rmax || r < 2.0) {
-				rho = 1.e-7 * RHOMIN;
-				u = 1.e-7 * UUMIN;
+			if (r > 4*rmax || r < 2.0) {
+				rho = 1.e-7*RHOMIN;
+				u = 1.e-7*UUMIN;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
@@ -798,7 +800,7 @@ void init_thindisk()
 			* so it needs to be transformed at the end */
 			else {
 				up = 1. / (pow(r, 3. / 2.) + a);
-				up *= sqrt(1. / (1 - up * up));
+				up *= sqrt(1. / (1 - up*up));
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
 
 				if (rho > rhomax) {
@@ -806,9 +808,9 @@ void init_thindisk()
 					rhomax = rho;
 				}
 
-				double T_target = M_PI / 2. * pow(H_OVER_R * r * up, 2.);
+				double T_target = M_PI / 2.*pow(H_OVER_R*r*up, 2.);
 				u = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * T_target / (gam - 1.);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2*(ranc(0) - 0.5));
 				if (u > umax && r > rin) {
 					#pragma omp critical
 					umax = u;
@@ -893,34 +895,34 @@ void init_thindisk()
 
 void init_torus()
 {
-	int i, j, z, n;
-	double r, th, phi, sth, cth;
-	double ur, uh, up, u, rho;
+	int i,j,z,n ;
+	double r,th,phi,sth,cth ;
+	double ur,uh,up,u,rho ;
 	double bl_gcov[NDIM][NDIM];
 	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
 	double tilt, eccentricity;
 	double tau, taumax, cell_size, kappa_abs, kappa_emmit, kappa_es;
-	struct of_geom geom;
+	struct of_geom geom ;
 
 	/* for disk interior */
-	double l, rin, lnh, expm2chi, up1;
-	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
-	double kappa, hm1, gam_local;
+	double l,rin,lnh,expm2chi,up1 ;
+	double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
+	double kappa,hm1, gam_local ;
 
 	/*For MPI*/
 	double inmsg;
 
 	/* for magnetic field */
-	double rho_av, rhomax, umax, beta, bsq_ij, bsq_max, norm, q, beta_act;
+	double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
 
 	/* disk parameters (use fishbone.m to select new solutions) */
 	double temp = a;
 	a = 0.9375;
 	rin = 6.;
 	rmax = 12.;
-	l = lfish_calc(rmax);
-	kappa = 1.e-3;
-	beta = 100.;
+  l = lfish_calc(rmax) ;
+	kappa = 1.e-3 ;
+	beta = 100. ;
 	#if(RAD_M1)
 	gam_local = 4. / 3.;
 	#else
@@ -928,101 +930,100 @@ void init_torus()
 	#endif
 
 	//Check if there are enough cells within event horizon
-	coord(0, 5, 0, 0, CENT, X);
+	coord(0,5, 0, 0, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 	if (rank == 0) {
 		fprintf(stderr, "r[5]: %g\n", r);
-		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
-		if (r > 1. + sqrt(1. - a * a)) {
+		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a*a)));
+		if (r > 1. + sqrt(1. - a*a)) {
 			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
 		}
 		else {
 			fprintf(stderr, "\n");
 		}
 	}
-
-	/* output choices */
-	tf = 200000000.0;
+	
+    /* output choices */
+	tf = 200000000.0 ;
 
 	/* start diagnostic counters */
-	dump_cnt = 0;
+	dump_cnt = 0 ;
 	dump_cnt_reduced = 0;
-	image_cnt = 0;
-	rdump_cnt = 0;
+	image_cnt = 0 ;
+	rdump_cnt = 0 ;
 
-	rhomax = 0.;
-	umax = 0.;
+	rhomax = 0. ;
+	umax = 0. ;
 	taumax = 0.;
 	#if(!NSY)
-	tilt = (TILT_ANGLE) / 180. * M_PI;
+	tilt = (TILT_ANGLE)/180.*M_PI;
 	#else
-	tilt = -(TILT_ANGLE) / 180. * M_PI;
+	tilt = -(TILT_ANGLE) / 180.*M_PI;
 	#endif
 	eccentricity = 0.0;
-	for (n = 0; n < n_active; n++) {
+	for (n = 0; n < n_active; n++){
 		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
+			bl_coord(X,&r,&th, &phi) ;
 			pos_new[1] = r;
 			pos_new[2] = th;
 			pos_new[3] = phi;
 			#if (TILTED)
-			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-			rotate_coord(X_cart, -tilt);
+			sph_to_cart(X_cart,  &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
+			rotate_coord(X_cart,-tilt);
 			cart_to_sph(X_cart, &r, &th, &phi);
 			#endif
 
 			#if(ELLIPTICAL)
 			sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-			elliptical_coord(X_cart, pos_new, &r, eccentricity);
+			elliptical_coord(X_cart,pos_new, &r, eccentricity);
 			#endif
 
-			sth = sin(th);
-			cth = cos(th);
+			sth = sin(th) ;
+			cth = cos(th) ;
 
 			/* calculate lnh */
-			DD = r * r - 2. * r + a * a;
-			AA = (r * r + a * a) * (r * r + a * a) - DD * a * a * sth * sth;
-			SS = r * r + a * a * cth * cth;
+			DD = r*r - 2.*r + a*a ;
+			AA = (r*r + a*a)*(r*r + a*a) - DD*a*a*sth*sth ;
+			SS = r*r + a*a*cth*cth ;
 
-			thin = M_PI / 2.;
-			sthin = sin(thin);
-			cthin = cos(thin);
-			DDin = rin * rin - 2. * rin + a * a;
-			AAin = (rin * rin + a * a) * (rin * rin + a * a)
-				- DDin * a * a * sthin * sthin;
-			SSin = rin * rin + a * a * cthin * cthin;
+			thin = M_PI/2. ;
+			sthin = sin(thin) ;
+			cthin = cos(thin) ;
+			DDin = rin*rin - 2.*rin + a*a ;
+			AAin = (rin*rin + a*a)*(rin*rin + a*a) 
+				- DDin*a*a*sthin*sthin ;
+			SSin = rin*rin + a*a*cthin*cthin ;
 
-			if (r >= rin) {
-				lnh = 0.5 * log((1. + sqrt(1. + 4. * (l * l * SS * SS) * DD /
-					(AA * sth * AA * sth))) / (SS * DD / AA))
-					- 0.5 * sqrt(1. + 4. * (l * l * SS * SS) * DD / (AA * AA * sth * sth))
-					- 2. * a * r * l / AA
-					- (0.5 * log((1. + sqrt(1. + 4. * (l * l * SSin * SSin) * DDin /
-						(AAin * AAin * sthin * sthin))) / (SSin * DDin / AAin))
-						- 0.5 * sqrt(1. + 4. * (l * l * SSin * SSin) * DDin /
-							(AAin * AAin * sthin * sthin))
-						- 2. * a * rin * l / AAin);
+			if(r >= rin) {
+				lnh = 0.5*log((1. + sqrt(1. + 4.*(l*l*SS*SS)*DD/
+					(AA*sth*AA*sth)))/(SS*DD/AA)) 
+					- 0.5*sqrt(1. + 4.*(l*l*SS*SS)*DD/(AA*AA*sth*sth))
+					- 2.*a*r*l/AA 
+					- (0.5*log((1. + sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
+					(AAin*AAin*sthin*sthin)))/(SSin*DDin/AAin)) 
+					- 0.5*sqrt(1. + 4.*(l*l*SSin*SSin)*DDin/
+						(AAin*AAin*sthin*sthin)) 
+					- 2.*a*rin*l/AAin ) ;
 			}
 			else
-				lnh = 1.;
+				lnh = 1. ;
 
 			/* regions outside torus */
-			if (lnh < 0. || r < rin) {
-				rho = 1.e-7 * RHOMIN;
-				u = 1.e-7 * UUMIN;
+			if(lnh < 0. || r < rin) {
+				rho = 1.e-7*RHOMIN ;
+				u = 1.e-7*UUMIN ;
 
-				ur = 0.;
-				uh = 0.;
-				up = 0.;
+				ur = 0. ;
+				uh = 0. ;
+				up = 0. ;
 
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
-
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
 				#if(RAD_M1)
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = pow(10., -5.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
@@ -1033,93 +1034,86 @@ void init_torus()
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
 			 * so it needs to be transformed at the end */
-			else {
-				hm1 = exp(lnh) - 1.;
-				rho = pow(hm1 * (gam_local - 1.) / (kappa * gam_local),
-					1. / (gam_local - 1.));
-				u = kappa * pow(rho, gam_local) / (gam_local - 1.);
-				ur = 0.;
-				uh = 0.;
+			else { 
+				hm1 = exp(lnh) - 1. ;
+				rho = pow(hm1*(gam_local - 1.)/(kappa* gam_local),
+							1./(gam_local - 1.)) ;
+				u = kappa*pow(rho, gam_local)/(gam_local - 1.) ;
+				ur = 0. ;
+				uh = 0. ;
 
 				/* calculate u^phi */
-				expm2chi = SS * SS * DD / (AA * AA * sth * sth);
-				up1 = sqrt((-1. + sqrt(1. + 4. * l * l * expm2chi)) / 2.);
-				up = 2. * a * r * sqrt(1. + up1 * up1) / sqrt(AA * SS * DD) +
-					sqrt(SS / AA) * up1 / sth;
+				expm2chi = SS*SS*DD/(AA*AA*sth*sth) ;
+				up1 = sqrt((-1. + sqrt(1. + 4.*l*l*expm2chi))/2.) ;
+				up = 2.*a*r*sqrt(1. + up1*up1)/sqrt(AA*SS*DD) +
+					sqrt(SS/AA)*up1/sth ;
 
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][RHO] = rho;
 
-				if (rho > rhomax) {
+				if (rho > rhomax){
 					#pragma omp critical
 					rhomax = rho;
 				}
-
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
-				if (u > umax && r > rin) {
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][UU] = u*(1. + 4.e-2*(ranc(0) - 0.5));
+				if(u > umax && r > rin){
 					#pragma omp critical
-					umax = u;
+					umax = u ;
 				}
-
+			
 				#if (TILTED)
 				V[1] = ur;
 				V[2] = uh;
 				V[3] = up;
 				//th = (th - M_PI / 2.) *(fractheta*0.5) + M_PI / 2.;
 				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V[3];
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V[3];
 
 				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
 				#elif(ELLIPTICAL)
 				V_old[1] = ur;
 				V_old[2] = uh;
 				V_old[3] = up;
 				elliptical_vector(X_cart, V_old, V_new, pos_new, &r, &th, eccentricity);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V_new[1];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V_new[2];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V_new[3];
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = V_new[1];
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = V_new[2];
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = V_new[3];
 
 				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)], n_ord[n], i, j, z);
 				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U1] = ur;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U2] = uh;
+				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][U3] = up;//watch out
 
 				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
+				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], n_ord[n], i, j, z);
 				#endif
-
-				// add mass to compute total mass of the disk
-				//torus_mass += gdet[nl[n_ord[n]]][index_2D(n_ord[n], i, j, z)][CENT] * rho * dV;
 			}
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][B3] = 0.;	
 		}
-}
-
+	}
 	a = temp;
-
 	#if (MPI_enable)
-	/*Share info between the MPI processes*/
+	/*Share rhomax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
+	/*Share umax among MPI processes*/
 	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	//MPI_Allreduce(MPI_IN_PLACE, &torus_mass, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	#endif
-
+  #endif
+  
 	/* Normalize the densities so that max(rho) = 1 */
-	if (rank == 0) {
+	if (rank == 0){
 		fprintf(stderr, "rhomax: %g\n", rhomax);
 	}
 
-	for (n = 0; n < n_active; n++) {
+	for (n = 0; n < n_active; n++){
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
-
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
+			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
 			#if(RAD_M1)
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
@@ -1129,20 +1123,20 @@ void init_torus()
 			#if(D3>1)
 			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
 			#else
-			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
 			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_es + kappa_abs) * cell_size;
+			tau = (kappa_es+ kappa_abs)*cell_size;
 			if (tau > taumax) {
 				#pragma omp critical
 				taumax = tau;
 			}
 		}
-	}
 
-	umax /= rhomax;
-	rhomax = 1.;
+	}
+	umax /= rhomax ;
+	rhomax = 1. ;
 
 	//Calculate maximum optical depth in once cell
 	#if (MPI_enable)
@@ -1158,11 +1152,15 @@ void init_torus()
 	}
 	#endif
 
-	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	for (n = 0; n < n_active; n++){
+		fixup(p, n_ord[n]);
+	}
+
 	bound_prim(p, 1);
 
 	set_mag();
-	sourceflag = 0.;
+
+	sourceflag=0.;
 	#if(ELLIPTICAL2)
 	calc_source();
 	#endif
@@ -1191,21 +1189,23 @@ void init_rad_pres(double pi[NPR]) {
 
 	keep_iterating = 1;
 	n_iter = 0;
-	arad = ARAD / (MASS_DENSITY_SCALE * C_CGS * C_CGS / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
-	T_old = (GAMMA - 1.) * pi[UU] / pi[RHO]; // HELMEOS
+	arad = ARAD/(MASS_DENSITY_SCALE*C_CGS*C_CGS/pow(MMW*MH_CGS*C_CGS*C_CGS/BOLTZ_CGS,4.));
+	T_old = (GAMMA - 1.)*pi[UU] / pi[RHO];
 	T_new = T_old;
-	ptot = (GAMMA - 1.) * pi[UU];
+	ptot = (GAMMA - 1.)*pi[UU];
 
 	while (keep_iterating) {
-		// Calculate gradient dPdT
-		dPdT = pi[RHO] + 4. / 3. * arad * pow(T_new, 3.);
+		//Calculate gradient dPdT
+		dPdT = pi[RHO] + 4. / 3.*arad*pow(T_new, 3.);
 
-		// Make the newton step
+		/* Make the newton step: */
 		T_old = T_new;
-		T_new = T_old - ((pi[RHO] * T_old + 1. / 3. * arad * pow(T_old, 4.)) - ptot) / dPdT;
+		T_new = T_old - ((pi[RHO] * T_old+1./3.*arad*pow(T_old,4.))-ptot) / dPdT;
 
-		// Calculate the convergence criterion for iterated variables
-		errx = fabs(T_new - T_old) / T_old;
+		/****************************************/
+		/* Calculate the convergence criterion for iterated variables */
+		/****************************************/
+		errx = fabs(T_new-T_old)/T_old;
 
 		/*****************************************************************************/
 		/* If we've reached the tolerance level, then just do a few extra iterations */
@@ -1230,76 +1230,8 @@ void init_rad_pres(double pi[NPR]) {
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
-
-    }
-  }
-
-#endif
-
-#endif
-
-	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
-	bound_prim(p, 1);
 }
 
-void check_inversions (void) {
-  FILE *f;
-  char filename[100];
-  double double_size = sizeof(double);
-  sprintf(filename, "check_inversions.bdat");
-  f = fopen(filename, "wb");
-
-  int n, ind0;
-  int i, j, z, k;
-  struct of_geom geom;
-  struct of_state q;
-  double r, th, phi;
-  double X[NDIM], U[NPR], pf[NPR];
-  int retval;
-  int count_NM_failed = 0;
-  int count_2d_failed = 0;
-  int count_total = 0;
-
-  for (n = 0; n < n_active; n++) {
-    ZSLOOP3D (N1_GPU_offset [n_ord[n]], N1_GPU_offset [n_ord[n]] + BS_1 - 1, N2_GPU_offset [n_ord[n]], N2_GPU_offset [n_ord[n]] + BS_2 - 1, N3_GPU_offset [n_ord[n]], N3_GPU_offset [n_ord[n]] + BS_3 - 1) {
-      coord(n_ord[n], i, j, z, CENT, X);
-      bl_coord(X,&r,&th, &phi) ;
-      get_geometry (nl [n_ord[n]], i, j, z, CENT, &geom);
-      ind0 = index_3D (n_ord [n], i, j, z);
-      get_state (p [nl [n_ord[n]]] [ind0], &geom, &q);
-      primtoflux (p [nl [n_ord[n]]] [ind0], &q, 0, &geom, U);
-
-      fprintf(stderr, "i:%d, j:%d, z:%d, rho=%e\n", i, j, z, p [nl [n_ord [n]]] [ind0] [RHO]);
-
-      fwrite(&r, double_size, 1, f);
-      fwrite(&th, double_size, 1, f);
-      fwrite(&phi, double_size, 1, f);
-      PLOOP fwrite(&p [nl [n_ord [n]]] [ind0] [k], double_size, 1, f);
-
-      fprintf(stderr, "Newman-Hamlin starts\n");
-      PLOOP U[k] *= 0.80;
-      //retval = Utoprim_NM (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
-      retval = Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
-      count_total += 1;
-      if (retval != 0) {
-        fprintf(stderr, "Newman-Hamlin failed; 2d starts\n");
-        count_NM_failed += 1;
-        retval = Utoprim_2d (U, geom.gcov, geom.gcon, geom.g, p [nl [n_ord [n]]] [ind0]);
-        if (retval != 0) {
-          count_2d_failed += 1;
-          fprintf(stderr, "2d failed\n");
-        }
-      }
-      PLOOP fwrite(&p [nl [n_ord [n]]] [ind0] [k], double_size, 1, f);
-      fprintf(stderr, "retval = %d\n", retval);
-    }
-  }
-
-  fprintf(stderr, "failed NM = %d, failed 2d = %d out of %d\n", count_NM_failed, count_2d_failed, count_total);
-
-  fclose(f);
-  exit(1);
-}
 
 #define dd(ii,jj,kk,ivar) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
 #define VARI 0
@@ -1869,18 +1801,18 @@ void init_disruption()
   double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
   double tilt, eccentricity;
   struct of_geom geom ;
-
+  
   /* for disk interior */
   double l,rin,lnh,expm2chi,up1 ;
   double DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin ;
   double kappa,hm1 ;
-
+  
   /*For MPI*/
   double inmsg;
-
+  
   /* for magnetic field */
   double rho_av,rhomax,umax,beta,bsq_ij,bsq_max,norm,q,beta_act ;
-
+  
   /* for ICs */
   FILE *fp;
   int ind;
@@ -1892,10 +1824,10 @@ void init_disruption()
   size_t memsize, nitems, nread;
   double prim[NPR];
   int k;
-
+  
   /* disk parameters (use fishbone.m to select new solutions) */
   a = 0.9375 ;
-
+  
   coord(0,5, 0, 0, CENT, X);
   bl_coord(X, &r, &th, &phi);
   if (rank == 0) {
@@ -1908,10 +1840,10 @@ void init_disruption()
       fprintf(stderr, "\n");
     }
   }
-
+  
   /* output choices */
   tf = 200000000.0 ;
-
+  
   /* start diagnostic counters */
   dump_cnt = 0 ;
   dump_cnt_reduced = 0;
@@ -1924,7 +1856,7 @@ void init_disruption()
   for (ind=0; ind<numtasks; ind++) {
     if (ind == rank) {
       fp = fopen(fname, "rb");
-	    if (NULL == fp && 0 == rank) {
+	  if (NULL == fp && 0 == rank) {
         fprintf(stderr, "Could not open file %s for reading, exiting\n", fname);
         exit(1234);
       }
@@ -1969,14 +1901,14 @@ void init_disruption()
 
   //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
   //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
-  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+  //mapping: icdata[((ivar*nx+ii)*ny+jj)*nz+kk] 
   rhomax = 0. ;
   umax = 0. ;
 	#if(!NSY)
   tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
   tilt = -(TILT_ANGLE) / 180.*M_PI;
-	#endif
+	#endif  
   eccentricity = 0.0;
   for (n = 0; n < n_active; n++){
     ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1985,21 +1917,21 @@ void init_disruption()
       pos_new[1] = r;
       pos_new[2] = th;
       pos_new[3] = phi;
-
+      
       sth = sin(th) ;
       cth = cos(th) ;
-
+      
       res = interpolate_prims(r, th, phi, ext, icdata, prim);
 
 	  /* regions outside stream */
       if(res ||prim[RHO] < 1e-20 || r<10) {
         rho = 1.e-20;
         u = 1.e-20;
-
+        
         ur = 0. ;
         uh = 0. ;
         up = 0. ;
-
+        
 		prim[RHO] = rho;
 		prim[UU] = u;
         prim[U1] = ur;
@@ -2028,11 +1960,11 @@ void init_disruption()
   #if (MPI_enable)
   /*Share rhomax among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
+  
   /*Share umax among MPI processes*/
   MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
   #endif
-
+  
   /* Normalize the densities so that max(rho) = 1 */
   if (rank == 0){
     fprintf(stderr, "rhomax: %g\n", rhomax);
@@ -2053,97 +1985,112 @@ void init_disruption()
 
   //set_mag();
 
-	sourceflag=0.;
+  sourceflag=0.;
 	#if(ELLIPTICAL2)
-	calc_source();
+  calc_source();
 	#endif
-
-	if (rank == 0){
-		fprintf(stderr, "initial bsq_max: %g\n", bsq_max);
-	}
-
-	/* finally, normalize to set field strength */
-	#if(WHICHPROBLEM==THIN_PROBLEM)
-	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
-	#else
-	beta_act = (gam - 1.)*umax / (0.5*bsq_max);
-	#endif
-	if (rank == 0){
-		fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
-	}
-	norm = sqrt(beta_act / beta);
-
-	for (n = 0; n < n_active; n++){
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1 + D3){
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] *= norm;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] *= norm;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] *= norm;
-			#if(STAGGERED)
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] *= norm;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] *= norm;
-			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] *= norm;
-			#endif
-		}
-	}
-
-	bsq_max = 0.;
-	umax = 0;
-	bsq_sum = 0.;
-	ug_sum = 0.;
-	for (n = 0; n < n_active; n++){
-		ZLOOP3D_MPI{
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			bsq_ij = bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)], &geom);
-			if (bsq_ij > bsq_max && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				bsq_max = bsq_ij;
-			}
-			if (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > umax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
-				umax = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			}
-
-			#if(WHICHPROBLEM==THIN_PROBLEM)
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.0005;
-			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			if (q > 0. && r<50.) {
-				bsq_sum += bsq_ij* geom.g* dx[nl[n_ord[n]]][1] * dx[nl[n_ord[n]]][2] * dx[nl[n_ord[n]]][3];
-				ug_sum += p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * geom.g * dx[nl[n_ord[n]]][1] * dx[nl[n_ord[n]]][2] * dx[nl[n_ord[n]]][3];
-			}
-			#endif
-		}
-	}
-
-	/*Share bsq_max among MPI processes*/
-	#if (MPI_enable)
-	MPI_Allreduce(MPI_IN_PLACE, &bsq_max, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	#if(WHICHPROBLEM==THIN_PROBLEM)
-	MPI_Allreduce(MPI_IN_PLACE, &bsq_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	MPI_Allreduce(MPI_IN_PLACE, &ug_sum, 1, MPI_DOUBLE, MPI_SUM, mpi_cartcomm);
-	#endif
-	#endif
-
-	#if(WHICHPROBLEM==THIN_PROBLEM)
-	beta_act = (gam - 1.)*ug_sum / (0.5*bsq_sum);
-	#else
-	beta_act = (gam - 1.)*umax / (0.5*bsq_max);
-	#endif
-	if (rank == 0){
-		fprintf(stderr, "final beta: %g (should be %g)\n", beta_act, beta);
-	}
-
-	/* enforce boundary conditions */
-	for (n = 0; n < n_active; n++){
-		fixup(p, n_ord[n]);
-	}
-	bound_prim(p, 1);
 }
 
-void set_mag_postmerger(double beta, double rhomax, double umax){
+int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p)
+{
+  int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
+  double vx, vy, vz, poten, x, y, z, R;
+  double bl_gcov[NDIM][NDIM];
+  int res;
+  //vars: [x],[y],[z],[rho],[ug],[vx],[vy],[vz],[poten]
+  //ivar:  0,  1,  2,   3,   4,   5,   6,   7,     8
+  res = interpolate_var(r,th,ph,ext,data,3,&p[RHO]);
+  if(res) return(res);
+  res = interpolate_var(r,th,ph,ext,data,4,&p[UU]);
+  res = interpolate_var(r,th,ph,ext,data,5,&vx);
+  res = interpolate_var(r,th,ph,ext,data,6,&vy);
+  res = interpolate_var(r,th,ph,ext,data,7,&vz);
+  res = interpolate_var(r,th,ph,ext,data,8,&poten);
+  double x1, y1, z1;
+  x = r*sin(th)*cos(ph);
+  y = r*sin(th)*sin(ph);
+  z = r*cos(th);
+  R = sqrt(x*x+y*y);
+  //Matthew: seems wrong to me, we work in a coordinate basis with boyer lindquist coordinates(r, theta,phi)!!!
+ // bl_gcov_func(r, th, bl_gcov);
+
+  if (vx*vx + vy*vy + vz*vz>1.0){
+	  poten = vx*vx + vy*vy + vz*vz;
+	  vx /= poten;
+	  vy /= poten;
+	  vz /= poten;
+  }
+  p[U1] = (vx*x + vy*y + vz*z) / r;             //dr/dt = dr/dx*vx + dr/dy*vy + dr/dz*vz
+  p[U2] = (x*z*vx + y*z*vy - R*R*vz) / (r*r*R); //dth/dt = dth/dx*vx + dth/dy*vy + dth/dz*vz
+  p[U3] = (-y*vx + x*vy) / (R*R);             //dph/dt = dph/dx*vx + dph/dy*vy + dph/dz*vz
+  p[UU] = p[UU]*p[RHO];
+
+//  p[U1] = (vx * sin(th)*cos(ph) + vy * sin(th)*sin(ph) + vz * cos(th)) / sqrt(bl_gcov[1][1]);
+ // p[U2] = (vx * cos(th)*cos(ph) + vy * cos(th)*sin(ph) - vz * sin(th)) / sqrt(bl_gcov[2][2]);
+ /// p[U3] = (-vx * sin(ph) + vy * cos(ph)) / sqrt(bl_gcov[3][3]);
+
+ 
+  p[B1] = 0.;
+  p[B2] = 0.;
+  p[B3] = 0.;
+
+  return(0);
+}
+
+//define compact form for array indexing
+#define d(ii,jj,kk) data[((ivar*nx+ii)*ny+jj)*nz+kk]
+
+int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val)
+{
+  double x, y, z, dx, dy, dz;
+  double i, j, k, di, dj, dk;
+  int i0, j0, k0, i1, j1, k1, nx, ny, nz;
+  double c00, c01, c10, c11, c0, c1, c;
+
+  nx = ext.nx;
+  ny = ext.ny;
+  nz = ext.nz;
+  x = r*sin(th)*cos(ph);
+  y = r*sin(th)*sin(ph);
+  z = r*cos(th);
+  dx = (ext.xmax-ext.xmin)/(nx-1);
+  dy = (ext.ymax-ext.ymin)/(ny-1);
+  dz = (ext.zmax-ext.zmin)/(nz-1);
+  i = (x-ext.xmin)/dx;
+  j = (y-ext.ymin)/dy;
+  k = (z-ext.zmin)/dz;
+  i0 = floor(i);
+  j0 = floor(j);
+  k0 = floor(k);
+  i1 = (int)ceil(i);
+  j1 = (int)ceil(j);
+  k1 = (int)ceil(k);
+  if(i0<5 || i1>=nx-5 || j0<5 || j1>=ny-5 || k0<5 || k1>=nz-5) {
+    return(1);
+  }
+  di = i - floor(i);
+  dj = j - floor(j);
+  dk = k - floor(k);
+  c00 = d(i0,j0,k0)*(1-di) + d(i1,j0,k0)*di;
+  c01 = d(i0,j0,k1)*(1-di) + d(i1,j0,k1)*di;
+  c10 = d(i0,j1,k0)*(1-di) + d(i1,j1,k0)*di;
+  c11 = d(i0,j1,k1)*(1-di) + d(i1,j1,k1)*di;
+  c0 = c00*(1-dj) + c10*dj;
+  c1 = c01*(1-dj) + c11*dj;
+  c = c0*(1-dk) + c1*dk;
+  if (isnan(c))  return(1);
+  *val = c;
+  return(0);
+  
+}
+//undefine array shortcut to avoid name conflicts
+#undef d
+
+void set_mag(void){
 	int i, j, z, k, n;
 	double rhomax = 1., pmax = 0.;
 	int i100 = 0;
-	double rho_av, q, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
+	double rho_av, q, beta = 100.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
 	#if(!NSY)
@@ -2197,9 +2144,8 @@ void set_mag_postmerger(double beta, double rhomax, double umax){
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
 			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
-			if (q > 0.){
-				coord(n_ord[n], i, j, z, CENT, X);
-				bl_coord(X, &r, &th, &phi);
+			if (q > 0.){		
+				
 				#if(WHICHPROBLEM==THIN_PROBLEM)
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = q*pow(r,2.0); //Toroidal
 				//dq[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = sin(2.0*M_PI *r/120.)*sqrt(r*r*r*r*r)*q;
@@ -2532,6 +2478,7 @@ void coord_transform(double *pr, int n, int ii, int jj, int zz)
 	/* done! */
 }
 
+// These are functions needed for POSTMERGER problem
 /* this version starts w/ BL 3-velocity and
  * converts to relative 4-velocity in modified
  * Kerr-Schild coordinates */
@@ -3047,7 +2994,6 @@ void calc_source(){
 #else
 #define DENSITY_NORMALIZATION NORMALIZE_BY_DENSITY_MAX
 #endif
-
 //torus density normalization
 //////////////////////
 
@@ -3113,7 +3059,7 @@ void init_torus_grb(){
 	}
 
 	/* output choices */
-	tf = 200000000.0;
+	tf = 25000.0;
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
@@ -3177,7 +3123,7 @@ void init_torus_grb(){
 #if( DOAUTOCOMPUTEENK0 )
 				//will be recomputed for every (ti,tj,tk), but is same for all of them, so ok
 				global_kappa = kappa * pow(rho_scale_factor, 1 - gam);
-#endif
+#endif    
 #else
 				rho_scale_factor = 1.0;
 #endif
@@ -3231,7 +3177,7 @@ void init_torus_grb(){
 #if( DOAUTOCOMPUTEENK0 )
 				//will be recomputed for every (ti,tj,tk), but is same for all of them, so ok
 				global_kappa = kappa * pow(rho_scale_factor, 1 - gam);
-#endif
+#endif 
 #else
 				rho_scale_factor = 1.0;
 #endif
@@ -3256,7 +3202,7 @@ void init_torus_grb(){
 			//compute atmospheric values
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &r, &th, &phi);
-//      get_rho_u_floor(r, th, phi, &rhofloor, &ufloor); // DANAT: temporary fix
+			get_rho_u_floor(r, th, phi, &rhofloor, &ufloor);
 
 			/* regions outside torus */
 			if (r < rin || isnan(eps) || eps < 0 || rho*rho_scale_factor < rhofloor) {
@@ -3267,11 +3213,6 @@ void init_torus_grb(){
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.0;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.0;
-#if (DONUCLEAR)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 1.;  //ambient mass fraction (to be multiplied by rho later)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 1.;  //Ye = 1 outside the disk
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 0.;  //no nucleons
-#endif
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			* Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -3293,12 +3234,6 @@ void init_torus_grb(){
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
-
-#if (DONUCLEAR)
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][AMB]   = 0. ;  //ambient mass fraction vanishes
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][YE]    = 0.1;  //Ye = 0.1 inside the disk
-        p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHONP] = 1. ;  //all nucleons initially
-#endif
 
 				/* convert from 4-vel in BL coords to relative 4-vel in code coords */
 				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
@@ -3330,8 +3265,8 @@ void init_torus_grb(){
 	}
 	else if (DENSITY_NORMALIZATION == NORMALIZE_BY_TORUS_MASS) {
 		//a factor of fracphi accounts for missing mass outside the wedge
-		rho_scale_factor = 0.001 / torus_mass;
-		if (rank == 0) fprintf(stderr, "Normalizing by torus_mass = 0.001:\n");
+		rho_scale_factor = 0.01 / torus_mass;
+		if (rank == 0) fprintf(stderr, "Normalizing by torus_mass = 0.01:\n");
 	}
 	torus_mass = 0.;
 	for (n = 0; n < n_active; n++){
@@ -3392,13 +3327,13 @@ void init_torus_grb(){
 	//need to apply the floor on density to avoid beta ~ ug/(bsq+SMALL) = 0 outside torus when normalizing B
 	for (n = 0; n<n_active; n++) fixup(p, n_ord[n]);
 
-	// now differentiate to find cell-centered B, and begin normalization
+	// now differentiate to find cell-centered B, and begin normalization 
 	bsq_max = compute_B_from_A();
 
 	if (WHICHFIELD == NORMALFIELD || WHICHFIELD == SEMIMAD){
 		if (rank == 0) fprintf(stderr, "initial bsq_max: %g\n", bsq_max);
 
-		//finally, normalize to set field strength
+		//finally, normalize to set field strength 
 		beta_act = (gam - 1.)*umax / (0.5*bsq_max);
 
 		if (rank == 0) fprintf(stderr, "initial beta: %g (should be %g)\n", beta_act, beta);
@@ -3480,6 +3415,7 @@ void init_torus_grb(){
 	// enforce boundary conditions
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p, 1);
+
 
 	#if (GPU_ENABLED)
 	for (n = 0; n < n_active; n++) GPU_write(n_ord[n]);
@@ -4100,17 +4036,6 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 {
 	double rhoflr, uuflr;
 	double uuscal, rhoscal;
-#if(DONUCLEAR)
-  double fac1, fac2;
-  double r0, rt, tnu;
-#endif
-#if (DONUCLEAR || DOHELM)
-#if (WHICHPROBLEM == POSTMERGER_PROBLEM)
-  double rhomax = 1.0;
-#else
-  double rhomax = 1e-7;
-#endif
-#endif
 
 
 	if (BL == 0){
@@ -4120,45 +4045,11 @@ void get_rho_u_floor(double r, double th, double phi, double *rho_floor, double 
 	else{
 		rhoscal = pow(r, -POWRHO);
 		uuscal = pow(rhoscal, gam); //rhoscal/r ;
-#if (DOHELM)
-		rhoflr = RHOMIN*rhoscal*rhomax; //this is Rodrigo's rhot
-		uuflr = UUMIN*uuscal*rhomax;
-#else
-    rhoflr = RHOMIN*rhoscal; //this is Rodrigo's rhot
-    uuflr = UUMIN*uuscal;
-#endif
+		rhoflr = RHOMIN*rhoscal; //this is Rodrigo's rhot
+		uuflr = UUMIN*uuscal;
 
-#if DONUCLEAR
-    //uuscal = pow(r,-POWRHO*gam); //rhoscal/r ;
-    //////////////////////
-    //
-    // Rodrigo's time-dependent floor
-    //
-    r0 = rmax;
-    rt = 4.*r0;
-    //from Rodrigo:
-    //t_v = 250  rmax / vk(rmax) = 9,425  rg / c ~ 40 Newtonian orbits (approx),
-    //for rmax = 50km and Mbh = 3Msun = 0.1397 seconds
-    tnu    = 250 * rmax * sqrt(rmax);
-    rhoflr = RHOMIN*rhomax*rhoscal; //this is Rodrigo's rhot
-    uuflr  = UUMIN*rhomax*uuscal;
-
-    fac2 = (rt/r); fac2 *= fac2;
-    if( r <= rt ) {
-      fac1 = t/tnu+1.; fac1 *= fac1;
-      rhoflr *= 1.+(fac2-1.)/fac1;
-      rhoflr /= fac2;
-      uuflr *= 1.+(fac2-1.)/fac1;
-      uuflr /= fac2;
-    }
-    if( rhoflr < RHOMINLIMIT*rhomax ) rhoflr = RHOMINLIMIT*rhomax;
-    if( uuflr  < UUMINLIMIT*rhomax  ) uuflr  = UUMINLIMIT*rhomax;
-    //
-    ////////////////////////
-#else
-    if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
-    if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
-#endif
+		if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+		if (uuflr  < UUMINLIMIT) uuflr = UUMINLIMIT;
 	}
 
 	*rho_floor = rhoflr;
