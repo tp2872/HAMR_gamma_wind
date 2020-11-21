@@ -65,33 +65,33 @@ void fixup(double((* restrict pv[NB_LOCAL])[NPR]), int n)
 
 void fixup1zone( int i, int j, int z, int n, double pv[NPR] ) 
 {
-  double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
-  double f,gamma, bsq;
-  double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
-  double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
-  double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
-  int m;
-  int k, flag, dofloor=0;
-  struct of_state q;
-  struct of_geom geom;
+	double r,th, phi, X[NDIM],uuscal,rhoscal, rhoflr, uuflr;
+	double f,gamma, bsq;
+	double pv_prefloor[NPR], dpv[NPR], U_prefloor[NPR], dU[NPR], U[NPR], U_ent;
+	double trans, betapar, betasq, betasqmax, one_over_ucondr_, udotB, Bsq, B, wold, wnew, QdotB, x, vpar, one_over_ucondr_t, ut;
+	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
+	int m;
+	int k, flag, dofloor=0;
+	struct of_state q;
+	struct of_geom geom;
 
-  coord(n, i,j, z, CENT,X) ;
-  bl_coord(X,&r,&th, &phi) ;
+	coord(n, i,j, z, CENT,X) ;
+	bl_coord(X,&r,&th, &phi) ;
 
-    get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); // Danat addition: 11/18/19 - avoid rhoflr too large`
-#if (0)
-  rhoscal = pow(r,-POWRHO) ;
-  uuscal = pow(rhoscal, gam);
+	get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); // Danat addition: 11/18/19 - avoid rhoflr too large`
+	#if (0)
+		rhoscal = pow(r,-POWRHO) ;
+		uuscal = pow(rhoscal, gam);
 
-  rhoflr = RHOMIN*rhoscal;
-  uuflr  = UUMIN*uuscal;
-#endif
+		rhoflr = RHOMIN*rhoscal;
+		uuflr  = UUMIN*uuscal;
+	#endif
     
-  //compute the square of fluid frame magnetic field (twice magnetic pressure)
-  get_geometry(n,i,j,z,CENT,&geom) ;
-  bsq = bsq_calc(pv,&geom) ;
+	//compute the square of fluid frame magnetic field (twice magnetic pressure)
+	get_geometry(n,i,j,z,CENT,&geom) ;
+	bsq = bsq_calc(pv,&geom) ;
   
-  //tie floors to the local values of magnetic field and internal energy density
+	//tie floors to the local values of magnetic field and internal energy density
 	#if(1)
 	  if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
 	  if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
@@ -187,7 +187,6 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#if (DOHELM && DOHELM_KTOT)
 	double xentr;
 	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
-	// pv[KTOT] = xentr;
 	pv[KTOT] = exp(KTOT_FACTOR * xentr);
 	#else 
 	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);

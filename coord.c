@@ -357,60 +357,61 @@ void set_gridparam(void) {
 		//1D problem (since only 1 cell in theta-direction), use a restricted theta-wedge
 		fractheta = 1.e-2;
 	}
-#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
-  const double RELACC = 1e-14;
-  const int ITERMAX = 50;
-  rbr = 1e+4;
-  npow2=4.0; //power exponent
-  cpow2=1.0; //exponent prefactor (the larger it is, the more hyperexponentiation is)
-  double x1max0, dxmax;
-  int iter;
+	#if(WHICHPROBLEM == POSTMERGER_PROBLEM)
+	const double RELACC = 1e-14;
+	const int ITERMAX = 50;
+	rbr = 1e+4;
+	npow2=4.0; //power exponent
+	cpow2=1.0; //exponent prefactor (the larger it is, the more hyperexponentiation is)
+	double x1max0, dxmax;
+	int iter;
   
-  Rin = 0.98; // 0.87 * (1. + sqrt(1. - a * a));  //.98
-  Rout = 1e5;
-  x1br = log( rbr - R0 );
+	Rin = 0.98; // 0.87 * (1. + sqrt(1. - a * a));  //.98
+	Rout = 1e5;
+	x1br = log( rbr - R0 );
   
-  if( Rout < rbr ) {
-    x1max = log(Rout-R0);
-  }
-  else {
-    x1max0 = 1.;
-    x1max = 2.;
+	if( Rout < rbr ) {
+	x1max = log(Rout-R0);
+	}
+	else {
+	x1max0 = 1.;
+	x1max = 2.;
     
-    //find the root via iterations
-    for( iter = 0; iter < ITERMAX; iter++ ) {
-      if( fabs((x1max - x1max0)/x1max) < RELACC ) {
-        break;
-      }
-      x1max0 = x1max;
-      dxmax= (pow( (log(Rout-R0) - x1max0)/cpow2, 1./npow2 ) + x1br) - x1max0;
+	//find the root via iterations
+	for( iter = 0; iter < ITERMAX; iter++ ) {
+		if( fabs((x1max - x1max0)/x1max) < RELACC ) {
+		break;
+		}
+		x1max0 = x1max;
+		dxmax= (pow( (log(Rout-R0) - x1max0)/cpow2, 1./npow2 ) + x1br) - x1max0;
       
-      // need a slight damping factor
-      double dampingfactor=0.5;
-      x1max = x1max0 + dampingfactor*dxmax;
-      if (x1max> log(Rout-R0)){x1max = log(Rout-R0);}
-    }
+		// need a slight damping factor
+		double dampingfactor=0.5;
+		x1max = x1max0 + dampingfactor*dxmax;
+		if (x1max> log(Rout-R0)){x1max = log(Rout-R0);}
+	}
     
-    if( iter == ITERMAX ) {
-      if(rank==0) {
-        printf( "Error: iteration procedure for finding x1max has not converged: x1max = %g, dx1max/x1max = %g, iter = %d\n",
-               x1max, (x1max-x1max0)/x1max, iter );
-        printf( "Error: iteration procedure for finding x1max has not converged: rbr= %g, x1br = %g, log(Rout-R0) = %g\n",
-               rbr, x1br, log(Rout-R0) );
-      }
-      exit(1);
-    }
-    else {
-      if(rank==0) printf( "x1max = %g (dx1max/x1max = %g, itno = %d)\n", x1max, (x1max-x1max0)/x1max, iter );
-    }
-  }
-  startx[1] = log(Rin - R0) ;  //minimum values
-  startx[2] = -1.+(1.-fractheta) ;   //minimum values
-  startx[3] = 0. ;   //minimum values
-#else
+	if( iter == ITERMAX ) {
+		if(rank==0) {
+		printf( "Error: iteration procedure for finding x1max has not converged: x1max = %g, dx1max/x1max = %g, iter = %d\n",
+				x1max, (x1max-x1max0)/x1max, iter );
+		printf( "Error: iteration procedure for finding x1max has not converged: rbr= %g, x1br = %g, log(Rout-R0) = %g\n",
+				rbr, x1br, log(Rout-R0) );
+		}
+		exit(1);
+	}
+	else {
+		if(rank==0) printf( "x1max = %g (dx1max/x1max = %g, itno = %d)\n", x1max, (x1max-x1max0)/x1max, iter );
+	}
+	}
+	startx[1] = log(Rin - R0) ;  //minimum values
+	startx[2] = -1.+(1.-fractheta) ;   //minimum values
+	startx[3] = 0. ;   //minimum values
+	#else
 	startx[1] = pow(log(Rin - RB), 1. / RADEXP);
 	startx[2] = -1. + 1.*(1. - fractheta);
 	startx[3] = 0.;
+	#endif
 	#endif
 }
 

@@ -1,5 +1,4 @@
 #include "decs.h"
-#include "nuclear.h"
 #include <mpi.h>
 
 //MPI Variables

@@ -133,19 +133,16 @@ void init()
 		case THIN_PROBLEM:
 		init_thindisk();
 		break;
-		case THIN_PROBLEM:
-		init_thindisk();
-		break;
 		case DISRUPTION_PROBLEM:
 		init_disruption();
 		break;
 		case TORUS_PROBLEM_GRB:
 		init_torus_grb();
 		break;
-    case POSTMERGER_PROBLEM:
+		case POSTMERGER_PROBLEM:
 		init_postmerger();
 		break;
-    case BONDI_PROBLEM_1D;
+		case BONDI_PROBLEM_1D:
 		case BONDI_PROBLEM_2D:
 		init_bondi();
 		break;
@@ -920,7 +917,7 @@ void init_torus()
 	a = 0.9375;
 	rin = 6.;
 	rmax = 12.;
-  l = lfish_calc(rmax) ;
+	l = lfish_calc(rmax) ;
 	kappa = 1.e-3 ;
 	beta = 100. ;
 	#if(RAD_M1)
@@ -1165,21 +1162,26 @@ void init_torus()
 	calc_source();
 	#endif
 
-	#if (0)
+	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	double den, ener, pres;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi); 
+
 			den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
 			ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-
 			pres = ener * (gam - 1.0);
-			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
+			
 			eos_mode_rhopres_u(den, pres, &ener);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 		}
 	}
+
+	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+	bound_prim(p, 1);
+
 	#endif
 }
 
@@ -1685,11 +1687,7 @@ void init_postmerger()
   }
   bound_prim(p,1);
 
-  set_mag(beta, rhomax, umax);
-
-#if( DO_FONT_FIX )
-  set_Katm();
-#endif
+  //set_mag();
 
   sourceflag=0.;
 #if(ELLIPTICAL2)
@@ -1991,6 +1989,31 @@ void init_disruption()
 	#endif
 }
 
+int interpolate_spec_prims(double r, double th, double ph, extent ext, double* data, double* p)
+{
+	int interpolate_spec_var(double r, double th, double ph, extent ext, double* data, int ivar, double* val);
+	double vx, vy, vz, poten, x, y, z, R;
+	double bl_gcov[NDIM][NDIM];
+	int res;
+
+	//vars: VARI, VARJ, VARK, VARR, VARTHETA, VARPHI, VARRHO, VARP, VARYE, VARMUDT, VARVUR, VARVUTHETA, VARVUPHI
+	//ivar:  0,    1,    2,     3,    4,         5,     6,      7,    8,      9,      10,        11,       12
+	res = interpolate_spec_var(r, th, ph, ext, data, VARRHO, &p[RHO]);
+	//note that this is pressure, not internal energy
+	res += interpolate_spec_var(r, th, ph, ext, data, VARP, &p[UU]); p[UU] /= (gam - 1);
+	//not yet ready for it
+	//res = interpolate_spec_var(r,th,ph,ext,data,VARYE,&p[YE]);
+	res += interpolate_spec_var(r, th, ph, ext, data, VARVUR, &p[U1]);
+	res += interpolate_spec_var(r, th, ph, ext, data, VARVUTHETA, &p[U2]);
+	res += interpolate_spec_var(r, th, ph, ext, data, VARVUPHI, &p[U3]);
+
+	p[B1] = 0.;
+	p[B2] = 0.;
+	p[B3] = 0.;
+
+	return(res);
+}
+
 int interpolate_prims( double r, double th, double ph, extent ext, double *data, double *p)
 {
   int interpolate_var( double r, double th, double ph, extent ext, double *data, int ivar, double *val);
@@ -2082,6 +2105,82 @@ int interpolate_var( double r, double th, double ph, extent ext, double *data, i
   *val = c;
   return(0);
   
+}
+//undefine array shortcut to avoid name conflicts
+#undef d
+
+//define compact form for array indexing
+#define d(ii,jj,kk) icdata[((ivar*nx+ii)*ny+jj)*nz+kk]
+
+int interpolate_spec_var(double r, double th, double ph, extent ext, double* icdata, int ivar, double* val)
+{
+	double x, y, z, dx, dy, dz;
+	double i, j, k, di, dj, dk;
+	int i0, j0, k0, i1, j1, k1, nx, ny, nz;
+	double c00, c01, c10, c11, c0, c1, c;
+	int ii, jj, kk;
+	double th0, th1;
+
+	//limit th, ph to [0,pi], [0,2pi)
+	if (th < 0) th = 0;
+	if (th > M_PI) th = M_PI;
+	if (ph >= 2. * M_PI) ph -= 2. * M_PI;
+	if (ph < 0) ph += 2. * M_PI;
+
+	nx = ext.nx;
+	ny = ext.ny;
+	nz = ext.nz;
+	for (i0 = j0 = k0 = 0; i0 < nx; i0++) {
+		if (dd(i0, j0, k0, VARR) > r) break;
+	}
+	i0--;
+	if (i0 < 0 || i0 >= nx - 1) return(1);
+	di = log2(r / dd(i0, j0, k0, VARR)) / log2(dd(i0 + 1, j0, k0, VARR) / dd(i0, j0, k0, VARR));
+	i = i0 + di;
+
+	for (j0 = 0; j0 < ny; j0++) {
+		th1 = dd(i0, j0, k0, VARTHETA) * (1 - di) + dd(i0 + 1, j0, k0, VARTHETA) * di;
+		if (th1 > th) break;
+	}
+	j0--;
+	if (j0 < 0) {
+		j0 = 0;
+		dj = 0;
+	}
+	else if (j0 >= ext.ny - 1) {
+		j0 = ny - 1;
+		dj = 0;
+	}
+	else {
+		th0 = dd(i0, j0, k0, VARTHETA) * (1 - di) + dd(i0 + 1, j0, k0, VARTHETA) * di;
+		dj = (th - th0) / (th1 - th0);
+	}
+	j = j0 + dj;
+
+	dz = (ext.zmax - ext.zmin) / (nz - 1);
+	k = (ph - ext.zmin) / dz - 0.5;
+
+	i1 = (int)ceil(i);
+	j1 = (int)ceil(j);
+	k0 = floor(k);
+	k1 = (int)ceil(k);
+	if (i0 < 0 || i1 >= nx || j0 < 0 || j1 >= ny || k0 < -1 || k1 >= nz + 1) {
+		return(1);
+	}
+	dk = k - floor(k);
+	if (k0 == -1) k0 = nz - 1;
+	if (k1 == nz) k1 = 0;
+	c00 = d(i0, j0, k0) * (1 - di) + d(i1, j0, k0) * di;
+	c01 = d(i0, j0, k1) * (1 - di) + d(i1, j0, k1) * di;
+	c10 = d(i0, j1, k0) * (1 - di) + d(i1, j1, k0) * di;
+	c11 = d(i0, j1, k1) * (1 - di) + d(i1, j1, k1) * di;
+	c0 = c00 * (1 - dj) + c10 * dj;
+	c1 = c01 * (1 - dj) + c11 * dj;
+	c = c0 * (1 - dk) + c1 * dk;
+	if (isnan(c))  return(1);
+	*val = c;
+	return(0);
+
 }
 //undefine array shortcut to avoid name conflicts
 #undef d
@@ -2989,11 +3088,8 @@ void calc_source(){
 #define NORMALIZE_BY_TORUS_MASS (1)
 #define NORMALIZE_BY_DENSITY_MAX (2)
 
-#if(DONUCLEAR)
-#define DENSITY_NORMALIZATION NORMALIZE_BY_TORUS_MASS
-#else
 #define DENSITY_NORMALIZATION NORMALIZE_BY_DENSITY_MAX
-#endif
+
 //torus density normalization
 //////////////////////
 

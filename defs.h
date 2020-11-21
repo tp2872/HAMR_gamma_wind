@@ -85,20 +85,6 @@ double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 double(*restrict dU_s[NB_LOCAL])[NPR];
 
-// Nuclear physics arrays
-#if(DONUCLEAR || DOHELM)
-double rhomax_nuclear;
-double (*G_global)[N2M][N3M];
-double (*Q_global)[N2M][N3M];
-double (*qalpha_global)[N2M][N3M];
-#endif
-
-#if DOPARTICLES
-/*MC particles arrays*/
-double xcon_p[NPTOT][NDIM];
-double pcov_p[NPTOT][NDIM];
-#endif
-
 /*EOS CPU arrays*/
 double eos_f[EOSIMAX*EOSJMAX];
 double eos_fd[EOSIMAX*EOSJMAX];

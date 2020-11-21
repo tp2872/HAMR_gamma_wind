@@ -1,61 +1,67 @@
 #include "config.h"
 
-/*Declerations of functions for Utoprim2D*/
-__device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
-
-__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
-
-/*Declerations of functions for Utoprim_1dvsq2fix1*/
-__device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, double D, double K_atm
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ double dWdvsq_calc2(double vsq, double rho, double p);
+/*Declarations of functions for Utoprim2D*/
 #if(DOHELM)
+__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
+__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
+__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance, const  double* __restrict__ gpu_eos_table);
+__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, const  double* __restrict__ gpu_eos_table);
+__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy, const  double* __restrict__ gpu_eos_table);
+__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm, const  double* __restrict__ gpu_eos_table);
 __device__ void dWdvsq_calc2_helmholtz(const  double* __restrict__ gpu_eos_table, double vsq, double D, double K_atm, double* W, double* dWdvsq);
+__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, const  double* __restrict__ gpu_eos_table);
+__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance, const  double* __restrict__ gpu_eos_table);
+__device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
+__device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
+__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
+__device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q, const  double* __restrict__ gpu_eos_table);
+__device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r, const  double* __restrict__ gpu_eos_table);
+__device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd, const  double* __restrict__ gpu_eos_table);
+__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR], const  double* __restrict__ gpu_eos_table);
+__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
+__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table);
+__device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table);
+/*Declarations of functions related to (M1) radiation inversion scheme*/
+__device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
+__device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
+__device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
+__device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
+__device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
+#else 
+__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
+__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim);
+__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance);
+__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
+__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy);
+__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm);
+__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim);
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
+__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance);
+__device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
+__device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
+__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin);
+__device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q);
+__device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r);
+__device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd);
+__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
+__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin);
+__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max);
+__device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max);
+/*Declarations of functions related to (M1) radiation inversion scheme*/
+__device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
+__device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
+__device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
+__device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
+__device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
 #endif
-__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
+
+__device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
+__device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
+__device__ double dWdvsq_calc2(double vsq, double rho, double p);
 __device__ void validate_x2(double x[1], double x0[1]);
-__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
 __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2);
 
 /*Declerations of functions for Utoprim_1dfix1*/
@@ -65,22 +71,9 @@ __device__ int general_newton_raphson3(double x[],  double Bsq, double Qtsq, dou
 __device__ void func_1d_orig1(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2, double rho_for_gnr2, double W_for_gnr2_old, double rho_for_gnr2_old);
 __device__ int gnr2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double W_for_gnr2);
 
-/*Declerations of functions for Utoprim_NM*/
-__device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-
 /*Declerations of functions related to (M1) radiation scheme*/
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim);
 __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim);
-__device__ int implicit_rad_solve_PMHD(double pb[NPR], double U[NPR], struct of_geom geom, double dU[NPR], double Dt);
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx);
 __device__ double calc_kappa_abs(double* ph);
 __device__ double calc_kappa_emmit(double* ph);
@@ -88,15 +81,6 @@ __device__ double calc_kappa_es(double* ph);
 __device__ void mhd_calc_rad(double* pr, int dir, struct of_state_rad* q_rad, double* mhd_rad);
 __device__ void ucon_calc_rad(double* pr, struct of_geom* geom, double* ucon_rad);
 __device__ void get_state_rad(double* pr, struct of_geom* geom, struct of_state_rad* q_rad);
-
-/*Declerations of functions related to (M1) radiation inversion scheme*/
-__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max);
-__device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max);
-__device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
-__device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
-__device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
-__device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
-__device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
 
 /*Matrix Inversion*/
 __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]);
@@ -112,29 +96,13 @@ __device__ void ucon_calc(double *  pr, struct of_geom *  geom, double *  ucon);
 __device__ void bcon_calc(double *  pr, double *  ucon, double *  ucov, double *  bcon);
 __device__ int gamma_calc(double *  pr, struct of_geom *  geom, double *  gamma);
 
-__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-
 __device__ void get_geometry(int ii, int jj, int zz, int kk, struct of_geom *  geom, const  double* __restrict__ gcov_GPU, const  double* __restrict__ gcon_GPU, const  double* __restrict__ gdet_GPU);
 __device__ void get_trans(int ii, int jj, int zz, int kk, struct of_trans * trans, const  double* __restrict__ Mud_GPU, const  double* __restrict__ Mud_inv_GPU);
 __device__ double slope_lim(double y1, double y2, double y3, int lim);
 __device__ void raise(double ucov[NDIM], double gcon[10], double ucon[NDIM]);
 __device__ void lower(double ucon[NDIM], double gcov[10], double ucov[NDIM]);
 
-__device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct of_geom *  geom, double *  flux, double *  vmax, double *  vmin
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux);
-__device__ void source(double *  ph, struct of_geom *  geom, int icurr, int jcurr, int zcurr, double *dU, double Dt, const  double* __restrict__ conn,struct of_state *  q, double r
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
 __device__ void misc_source(double *  ph, int icurr, int jcurr, struct of_geom *  geom, struct of_state *  q, double *  dU,	 double r, double Dt);
 
 __device__ void inflow_check(double *  prim, int ii, int jj, int zz, int type, const  double* __restrict__ gcov1, const  double* __restrict__ gcoBS_2, const  double* __restrict__ gdet3);
@@ -146,22 +114,8 @@ __device__ void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon)
 __device__ void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 __device__ void para(double x1, double x2, double x3, double x4, double x5, double *lout, double *rout);
 
-__device__ void mhd_calc(double *  pr, int dir, struct of_state * q, double * mhd
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q);
-
 /*Advanced Riemann solver related functions*/
 __device__ void calculate_flattener(double x1, double x2, double  x3, double  x4, double  x5, double* F);
-__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin
-	#if (DOHELM)
-	, const  double* __restrict__ gpu_eos_table
-	#endif
-);
-__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
 __device__ void calc_HLLC(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
 __device__ void calc_HLLC_hydro(int dir, double l_ucon[NDIM], double r_ucon[NDIM], double int_velocity, double cmin_roe, double cmax_roe, double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
 __device__ void calc_HLLD(int dir, double cmin_roe, double cmax_roe, double int_velocity, double l_ucon[NDIM], double r_ucon[NDIM], double F_FT[2][NPR], double F_HLL[2][NPR], double F_l[NPR], double F_r[NPR], double U_l[NPR], double U_r[NPR]);
@@ -190,6 +144,7 @@ __device__ void eos_mode_rhotemp_pres_min(const  double* __restrict__ gpu_eos_ta
 __device__ void eos_mode_rhopres_u(const  double* __restrict__ gpu_eos_table, double den, double p_goal, double* u);
 __device__ void eos_mode_rhos_upres(const  double* __restrict__ gpu_eos_table, double den, double entr_goal, double* pres, double* u, double* dpdrho, double* dudrho);
 __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* entr);
+__device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* temp);
 #endif
 
 /*Declare structs for 'other functions'*/
@@ -216,7 +171,11 @@ struct of_state_rad {
 	double ucov[NDIM];
 };
 
-__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max) {
+__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+) {
 	double error_t = 1.e-3;
 	int k;
 	double delta_Ur, U_ft[NPR], pb_i[NPR];
@@ -229,7 +188,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	}
 
 		//Set initial values and error before attempting implicit solver
-	implicit_rad_solve_init(pb_i, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, y_max);
+	implicit_rad_solve_init(pb_i, U_n, U_i, U_ft, geom, dU, Dt, &error_t, cell_size, y_max
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+	);
 
 	//If we've reached the tolerance level, exit immediately and update variables
 	if (error_t < 1.e-12) {
@@ -246,7 +209,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		//Check if fluid is in extreme radiation subdominant regime
 		if (((U_n[UU_RAD] / U_n[UU]) < 1.e-5) || ((pb[UU_RAD] / pb[UU]) < 1.e-5) || (fabs(delta_Ur) < 1.e-5)) {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
 			//if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
@@ -311,7 +278,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		}
 		else {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -379,7 +350,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		);
 #if(DO_FONT_FIX)
 		if (pflag) {
-			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
+			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//);
 			if (pflag) {
 				//pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
 			}
@@ -393,16 +368,26 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
 	get_state(pb, geom, &q);
-	mhd_calc(pb, 0, &q, &U_f[UU]);
+	mhd_calc(pb, 0, &q, &U_f[UU]
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+	);
 	for (k = UU; k <= U3; k++)U_f[k] *= geom->g;
 	U_f[UU] += U_f[RHO];
 
 	//Recompute entropy for consistency
+	#if (DOHELM)
+	double xentr;
+	eos_mode_rhou_entr(gpu_eos_table, pb[RHO], pb[UU], &xentr);
+	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+	#else
 #if(FULL_ENTROPY)
 	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA)); // HELMEOS to find entropy
 #else
 	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * (GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA);
 #endif
+	#endif
 
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
@@ -434,7 +419,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 }
 
 
-__device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged) {
+__device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4][4], dEdpb_inv[4][4], error_new[5], offset = 1.e-8;
 	double T_GAS, norm, norm_S, D;
 	struct of_state q;
@@ -457,7 +446,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO]; // HELMEOS: to find temperature
+			#if (DOHELM)
+			eos_mode_rhou_temp(gpu_eos_table, pb_old[RHO], pb_old[UU], &T_GAS);
+			#else
+			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+			#endif
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
 		}
 		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
@@ -481,15 +474,25 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				get_state(pb_new, geom, &q);
 				pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0]; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 				U_new[RHO] = U_i[RHO];
-				mhd_calc(pb_new, 0, &q, &U_new[UU]); // Compute (new conserved vars) S u^t and T^+mu from gas P_i+1
+				mhd_calc(pb_new, 0, &q, &U_new[UU]
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				); // Compute (new conserved vars) S u^t and T^+mu from gas P_i+1
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] = U_new[UU] + U_new[RHO];
 				if (do_entropy == 1) {
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+					#else
 #if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA))); // HELMEOS
 #else
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
 #endif
+					#endif
 				}
 
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -511,7 +514,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					dEdpb[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dpb;
 				}
 				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+					#if (DOHELM)
+					eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+					#else
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					#endif
 					E_new[0] = T_GAS * (U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]);
 				}
 				else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
@@ -572,15 +579,25 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		get_state(pb_new, geom, &q);
 		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
-		mhd_calc(pb_new, 0, &q, &U_new[UU]);
+		mhd_calc(pb_new, 0, &q, &U_new[UU]
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 		for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 		U_new[UU] = U_new[UU] + U_new[RHO];
 
+		#if (DOHELM)
+		double xentr;
+		eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+		U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+		#else
 #if(FULL_ENTROPY)
 		U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 		U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
 #endif
+		#endif
 
 		//Derive new conserved quantaties for radiation variables
 		U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -615,7 +632,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//Calculate total error
 		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+			#if (DOHELM)
+			eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+			#else
+			T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; 
+			#endif
 #if(FULL_ENTROPY)
 			norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
@@ -689,7 +710,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 }
 
 // This method iterates T^t_mu
-__device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged) {
+__device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -713,7 +738,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO]; // HELMEOS
+			#if (DOHELM)
+			eos_mode_rhou_temp(gpu_eos_table, pb_old[RHO], pb_old[UU], &T_GAS);
+			#else
+			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+			#endif
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
 		}
 		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
@@ -739,10 +768,18 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC);
+				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 #if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
 					if (flag) {
 						flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
 					}
@@ -755,15 +792,25 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU]
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+					#else
 #if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 #endif
+					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -779,7 +826,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 						dEdUb[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dUb;
 					}
 					if (do_entropy == 1) {
-						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+						#if (DOHELM)
+						eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS)
+						#else
+						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+						#endif
 						E_new[0] = T_GAS * (U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]);
 					}
 					else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
@@ -846,10 +897,18 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 			//Estimate conserved entropy using prior primitives
 			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
-			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
+			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 #if(DO_FONT_FIX)
 			if (flag && (n_iter_fail > 1)) {
-				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
+				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				if (flag) {
 					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
 				}
@@ -866,15 +925,25 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU]
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
+				#if (DOHELM)
+				double xentr;
+				eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+				U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+				#else
 #if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 #endif
+				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -898,7 +967,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Calculate total error	
 				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+					#if (DOHELM)
+					eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+					#else
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; 
+					#endif
 #if(FULL_ENTROPY)
 					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
@@ -969,7 +1042,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 		}
 
 // This method iterates Su^t and T^t_i
-__device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged) {
+__device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -993,7 +1070,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO]; // HELMEOS
+			#if (DOHELM)
+			eos_mode_rhou_temp(gpu_eos_table, pb_old[RHO], pb_old[UU], &T_GAS);
+			#else
+			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+			#endif
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
 		}
 		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
@@ -1014,22 +1095,36 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Invert conserved MHD quantities using entropy based methods
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
+				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
+					#if(DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
 
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU]
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+					#else
 #if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 #endif
+					#endif
 
 					//Set radiation conserved quantities
 					U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -1053,7 +1148,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 						dEdUb[k - UU][i - UU] = (E_new[k - UU] - E_old[k - UU]) / dUb;
 					}
 					if (do_entropy == 1) {
-						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+						#if (DOHELM)
+						eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+						#else
+						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+						#endif
 						E_new[0] = T_GAS * (U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]);
 					}
 					else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
@@ -1116,7 +1215,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 			//Invert conserved MHD quantities using entropy based methods
-			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
+			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 			if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
 
 			if (flag == 0) {
@@ -1126,15 +1229,25 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU]
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
+				#if (DOHELM)
+				double xentr;
+				eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+				U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+				#else
 #if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 #endif
+				#endif 
 
 				//Derive new conserved quantaties for MHD variables
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -1167,7 +1280,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Calculate total error	
 				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+					#if (DOHELM)
+					eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+					#else
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					#endif
 #if(FULL_ENTROPY)
 					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
@@ -1238,7 +1355,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 }
 
 // This method iterates R^t_mu
-__device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged) {
+__device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -1262,7 +1383,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 		//Calculate reference error
 		for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO]; // HELMEOS
+			#if (DOHELM)
+			eos_mode_rhou_temp(gpu_eos_table, pb_old[RHO], pb_old[UU], &T_GAS);
+			#else
+			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+			#endif
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
 		}
 		else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
@@ -1288,10 +1413,18 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC);
+				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 #if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
 					if (flag) {
 						flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
 					}
@@ -1304,15 +1437,25 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU]
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+					#else
 #if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 #endif
+					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -1328,7 +1471,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 						dEdUb[k - UU_RAD][i - UU_RAD] = (E_new[k - UU_RAD] - E_old[k - UU_RAD]) / dUb;
 					}
 					if (do_entropy == 1) {
-						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+						#if (DOHELM)
+						eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+						#else
+						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+						#endif
 						E_new[0] = T_GAS * (U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]);
 					}
 					else E_new[0] = (U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]);
@@ -1395,10 +1542,18 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			//Estimate conserved entropy using prior primitives
 			U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
-			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
+			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 #if(DO_FONT_FIX)
 			if (flag && (n_iter_fail > 1)) {
-				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
+				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				if (flag) {
 					flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
 				}
@@ -1415,15 +1570,25 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU]
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
+				#if (DOHELM)
+				double xentr;
+				eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+				U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+				#else
 #if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
 #else
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 #endif
+				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -1448,7 +1613,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				//Calculate total error	
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+					#if (DOHELM)
+					eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+					#else
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					#endif
 #if(FULL_ENTROPY)
 					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
@@ -1519,13 +1688,17 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			}
 		}
 		n_iter++;
-			}
+	}
 
 	return(0);
-		}
+}
 
 // This method iterates E_RAD an U_rad
-__device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged) {
+__device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+) {
 	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4][4], dEdpb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
@@ -1550,7 +1723,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		//Set reference error at start
 		for (k = U1_RAD; k <= U3_RAD; k++) E_old[k - UU_RAD] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
 		if (do_entropy == 1) {
-			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO]; // HELMEOS
+			#if (DOHELM)
+			eos_mode_rhou_temp(gpu_eos_table, pb_old[RHO], pb_old[UU], &T_GAS);
+			#else
+			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
+			#endif
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
 		}
 		else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
@@ -1588,10 +1765,18 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2);
+				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 #if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
-					//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
+					//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
+					//	#if (DOHELM)
+					//	, gpu_eos_table
+					//	#endif
+					//);
 					if (flag) {
 						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
 					}
@@ -1601,16 +1786,26 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU]
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
 					for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 					U_new[UU] += U_i[RHO];
 
 					//Compute new entropy from MHD variables
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+					#else
 #if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA))); // HELMEOS
 #else
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
 #endif
+					#endif
 
 					//Calculate source function and jacobian
 					source_rad(pb_new, geom, dU_new);
@@ -1619,7 +1814,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 						dEdpb[k - UU_RAD][i - UU_RAD] = (E_new[k - UU_RAD] - E_old[k - UU_RAD]) / dpb;
 					}
 					if (do_entropy == 1) {
-						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+						#if (DOHELM)
+						eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+						#else
+						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+						#endif
 						E_new[0] = T_GAS * (U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]);
 					}
 					else E_new[0] = (U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]);
@@ -1697,10 +1896,18 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 		//Get MHD primitives
-		flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2);
+		flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 #if(DO_FONT_FIX)
 		if (flag && (n_iter_fail > 1)) {
-			//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
+			//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
+			//	#if (DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//);
 			if (flag) {
 				//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
 			}
@@ -1710,16 +1917,26 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		if (flag == 0) {
 			//Recompute T_t^mu for consistency
 			get_state(pb_new, geom, &q);
-			mhd_calc(pb_new, 0, &q, &U_new[UU]);
+			mhd_calc(pb_new, 0, &q, &U_new[UU]
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 			for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 			U_new[UU] += U_i[RHO];
 
 			//Compute new entropy from MHD variables
+			#if (DOHELM)
+			double xentr;
+			eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+			U_f[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr * KTOT_FACTOR;
+			#else
 #if(FULL_ENTROPY)
 			U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA))); // HELMEOS
 #else
 			U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
 #endif
+			#endif
 
 			//Get radiative source term
 			source_rad(pb_new, geom, dU_new);
@@ -1744,7 +1961,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			//Calculate total error
 			norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 			if (do_entropy == 1) {
-				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO]; // HELMEOS
+				#if (DOHELM)
+				eos_mode_rhou_temp(gpu_eos_table, pb_new[RHO], pb_new[UU], &T_GAS);
+				#else
+				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+				#endif
 #if(FULL_ENTROPY)
 				norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
@@ -1819,10 +2040,10 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 	}
 
 		n_iter++;
-}
+	}
 
 	return(0);
-	}
+}
 
 __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]){
 	int i, j;
@@ -2591,6 +2812,8 @@ __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double ja
 	return;
 }
 
+#include <stdio.h>
+
 __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim, int full_entropy
 	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
@@ -2624,8 +2847,12 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
 	#if(DOKTOT)
-	if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.)); // HELMEOS
+	#if(DOHELM)
+	K_atm = log(U[KTOT] / U[RHO]) / KTOT_FACTOR;
+	#else
+	if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 	else K_atm = U[KTOT] / U[RHO];
+	#endif
 	#endif
 
 	ret = Utoprim_new_body2(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim
@@ -2713,7 +2940,7 @@ __device__ int Utoprim_new_body2(double *U, double gcov[10], double gcon[10], do
 	// Always calculate rho from D and gamma so that using D in EOS remains consistent
 	//   i.e. you don't get positive values for dP/d(vsq) .
 	rho0 = D / gamma;
-	#if(DOHELM && DOHELM_KTOT)
+	#if(DOHELM)
 	// 1. Helmholtz EOS
 	double dpdrho, dudrho;
 	eos_mode_rhos_upres(gpu_eos_table, rho0, K_atm, &p, &u, &dpdrho, &dudrho);
@@ -2871,7 +3098,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	//vsq = x[0];
 
 	// Calculate best value for W given current guess for vsq: 
-	#if(DOHELM && DOHELM_KTOT)
+	#if(DOHELM)
 	// Helmholtz EOS
 	dWdvsq_calc2_helmholtz(gpu_eos_table, x[0], D, K_atm, &W, &dWdvsq);
 	Wsq = W * W;
@@ -2886,7 +3113,7 @@ __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac
 	Wsq = W * W;
 	W3 = W * Wsq;
 	// Doing this assuming  P = (G-1) u :
-	dWdvsq = dWdvsq_calc2(vsq, rho, p);
+	dWdvsq = dWdvsq_calc2(x[0], rho, p);
 	#endif
 
 	fact_tmp = (Bsq + W);
@@ -2905,7 +3132,7 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	double gtmp;
 	gtmp = (1. - vsq);
 	*rho = D * sqrt(gtmp);
-	#if(DOHELM && DOHELM_KTOT)
+	#if(DOHELM)
 	// 1. Helmholtz EOS
 	double dpdrho, dudrho;
 	eos_mode_rhos_upres(gpu_eos_table, *rho, K_atm, p, u, &dpdrho, &dudrho);
@@ -3350,7 +3577,11 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 }
 
 //Apply floors to a cell
-__device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_state* q) {
+__device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_state* q
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+) {
 	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
 	double pf_prefloor[NPR_U], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
@@ -3375,11 +3606,12 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 
 	//floor on density and internal energy density (momentum *not* conserved) 
 	#pragma unroll 9
-	for (k = 0; k < NPR_U; k++)pf_prefloor[k] = pf[k];
+	for (k = 0; k < NPR_U; k++) pf_prefloor[k] = pf[k];
 	if (pf[RHO] < rhoflr) {
 		pf[RHO] = rhoflr;
 		dofloor = 1;
 	}
+
 	if (pf[UU] < uuflr) {
 		pf[UU] = uuflr;
 		dofloor = 1;
@@ -3408,13 +3640,24 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 		B = sqrt(Bsq);
 
 		//enthalpy before the floors
-		wold = pf_prefloor[RHO] + pf_prefloor[UU] * GAMMA; // HELMEOS
+		#if (DOHELM)
+		double xP;
+		eos_mode_rhou_pres(gpu_eos_table, pf_prefloor[RHO], pf_prefloor[UU], &xP);
+		wold = pf_prefloor[RHO] + pf_prefloor[UU] + xP;
+		#else
+		wold = pf_prefloor[RHO] + pf_prefloor[UU] * GAMMA;
+		#endif
 
 		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
 		QdotB = udotB * wold * q->ucon[0];
 
 		//enthalpy after the floors
-		wnew = pf[RHO] + pf[UU] * GAMMA; // HELMEOS
+		#if (DOHELM)
+		eos_mode_rhou_pres(gpu_eos_table, pf[RHO], pf[UU], &xP);
+		wold = pf[RHO] + pf[UU] + xP;
+		#else
+		wnew = pf[RHO] + pf[UU] * GAMMA;
+		#endif
 
 		x = 2. * QdotB / (B * wnew * ucondr[0] + SMALL);
 
@@ -3455,11 +3698,19 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 
 		//compute the conserved quantity associated with floor addition
 		get_state(dpf, geom, q);
-		primtoflux(dpf, q, 0, geom, dU, NULL, NULL);
+		primtoflux(dpf, q, 0, geom, dU, NULL, NULL
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		//compute the prefloor conserved quantity
 		get_state(pf_prefloor, geom, q);
-		primtoflux(pf_prefloor, q, 0, geom, U_prefloor, NULL, NULL);
+		primtoflux(pf_prefloor, q, 0, geom, U_prefloor, NULL, NULL
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		//add U_added to the current conserved quantity
 		#pragma unroll 9
@@ -3838,7 +4089,11 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU)
 	dU[U3_RAD] = -Gcov[3];
 
 	#if(DOKTOT)
-	Tg = (GAMMA - 1.) * (ph[UU]) / (ph[RHO]); // HELMEOS
+	#if (DOHELM)
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
+	#else
+	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
 	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#else
@@ -3862,7 +4117,11 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	kappa_es = calc_kappa_es(ph);
 	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 
-	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO]; // HELMEOS
+	#if (DOHELM)
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
+	#else
+	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
 	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/s/cm^3
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
@@ -3948,12 +4207,18 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	flux[B3] = q->bcon[3] * q->ucon[dir] - q->bcon[dir] * q->ucon[3];
 	#endif
 
-	#if(DOKTOT )
+	#if(DOKTOT)
+	#if(DOHELM)
+	double xentr;
+	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
+	flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
+	#else 
 	#if(FULL_ENTROPY)
-	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA); // HELMEOS
+	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
 	//flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 	#else
 	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	#endif
 	#endif
 	#endif
 
@@ -5152,7 +5417,11 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	}
 }
 
-__device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR])
+__device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+)
 {
 	int j, k;
 	double  P, w, bsq, eta, ptot;
@@ -5161,7 +5430,17 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	flux[RHO] = pr[RHO] * ucon[dir];
 
 	/* MHD stress tensor, with first index up, second index down */
-	P = (GAMMA - 1.)*pr[UU]; // HELMEOS
+
+	// EOS-specific calls:
+	#if (DOHELM)
+	// 1. Helmholtz EOS
+	eos_mode_rhou_pres(gpu_eos_table, pr[RHO], pr[UU], &P);
+	w = pr[RHO] + pr[UU] + P;
+	#else
+	// 2. Ideal gas EOS
+	P = (GAMMA - 1.) * pr[UU];
+	#endif
+
 	w = P + pr[RHO] + pr[UU];
 	bsq = -bcon[0] * bcon[0] + bcon[1] * bcon[1] + bcon[2] * bcon[2] + bcon[3] * bcon[3];
 	eta = w + bsq;
@@ -5177,11 +5456,17 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	}
 
 	#if(DOKTOT)
+	#if(DOHELM)
+	double xentr;
+	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
+	flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
+	#else 
 	#if(FULL_ENTROPY)
-	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA); // HELMEOS
+	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
 	//flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 	#else
 	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	#endif
 	#endif
 	#endif
 }
@@ -5202,7 +5487,7 @@ __device__ void vchar_FT(double * pr, double ucon[NDIM], double bcon[NDIM], int 
 	// 1. Helmholtz EOS
 	double xpres;
 	eos_mode_rhou_pres_cs2(gpu_eos_table, pr[RHO], pr[UU], &xpres, &cs2);
-	w = pr[RHO] + pr[UU] + xpres;
+	EF = pr[RHO] + pr[UU] + xpres;
 	#else
 	// 2. Ideal gas EOS
 	#if AMD
@@ -5951,7 +6236,11 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  
 		}
 
 		get_state(p, &geom, &q);
-		primtoflux(p, &q, 0, &geom, U, NULL, NULL);
+		primtoflux(p, &q, 0, &geom, U, NULL, NULL
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 		get_state_rad(p, &geom, &q_rad);
 		primtoflux_rad(p, &q_rad, 0, &geom, U);
 
@@ -5960,7 +6249,11 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  
 		implicit_rad_solve(p, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt * Y_IMEX, cell_size, y_max);
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(p, radius[icurr], &geom, &q)) {
+		if (fixup_cell(p, radius[icurr], &geom, &q
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		)) {
 		//	pflag[global_id] = -333;
 		//	pflag[0] = global_id;;
 		//	failimage[3 * (ksize)+global_id]++;
@@ -6023,7 +6316,11 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		}
 
 		get_state(p, &geom, &q);
-		source(p, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]);
+		source(p, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++) {
@@ -6078,7 +6375,11 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		implicit_rad_solve(p, U_n_tmp, U_1, U_1, &pflag_local, &pflag_rad_local, &geom, dU, Y_IMEX * Dt, cell_size, y_max);
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(p, radius[icurr], &geom, &q)) {
+		if (fixup_cell(p, radius[icurr], &geom, &q
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		)) {
 		//	pflag[global_id] = -333;
 		//	pflag[0] = global_id;;
 		//	failimage[3 * (ksize)+global_id]++;
@@ -6139,7 +6440,11 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		}
 
 		get_state(ph, &geom, &q);
-		source(ph, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]);
+		source(ph, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++) {
@@ -6218,7 +6523,11 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC);
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(ph, radius[icurr], &geom, &q)) {
+		if (fixup_cell(ph, radius[icurr], &geom, &q
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		)) {
 			pflag[global_id] = -333;
 			pflag[0] = global_id;;
 			failimage[3 * (ksize)+global_id]++;
@@ -6261,7 +6570,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	struct of_geom geom;
 	struct of_state q;
-	double pf[NPR],  dU[NPR], U[NPR];
+	double pf[NPR], dU[NPR], U[NPR];
 
 	int zsize = 1, zoffset = 0, u;
 
@@ -6283,7 +6592,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				}
 			}
 			get_state(pf, &geom, &q);
-			primtoflux(pf, &q,0, &geom, U, NULL, NULL
+			primtoflux(pf, &q, 0, &geom, U, NULL, NULL
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
@@ -6380,7 +6689,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		);
 		#endif
-
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
@@ -6404,9 +6712,13 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(pf, radius[icurr], &geom, &q)) {
+		if (fixup_cell(pf, radius[icurr], &geom, &q
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		)) {
 			pflag[global_id] = -333;
-			pflag[0] = global_id;;
+			pflag[0] = global_id;
 			failimage[3 * (ksize)+global_id]++;
 		}
 
@@ -6414,22 +6726,10 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		for (k = 0; k< NPR; k++){
 			pf_i[k*(ksize)+global_id] = pf[k];
 		}
-
-		#if DOKTOT
-		#if (DOHELM && DOHELM_KTOT)
-		double xentr;
-		eos_mode_rhou_entr(gpu_eos_table, pf[RHO], pf[UU], &xentr);
-		pf_i[KTOT * (ksize)+global_id] = exp(KTOT_FACTOR * xentr);
-		// pf_i[KTOT * (ksize)+global_id] = xentr;
-		#else
-		pf_i[KTOT * (ksize)+global_id] = (gam - 1.) * pf[UU] * pow(pf[RHO], -gam);
-		#endif
-		#endif
 	}
 }
 
 
-#if (DOHELM)
 __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  double* __restrict__  psf,
 	const  double* __restrict__ F1, const  double* __restrict__  F2, const  double* __restrict__ F3, const  double* __restrict__ U_i, const  double* __restrict__ radius, int* pflag, int* failimage, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, const  double* __restrict__ conn, double dx_1, double dx_2, double dx_3, double Dt, int full_step, int POLE_1, int POLE_2
 	#if (DOHELM)
@@ -6606,7 +6906,11 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			#endif
 
 			//Apply floors in ZAMO frame or drift frame
-			if (fixup_cell(pf, radius[icurr], &geom, &q)){
+			if (fixup_cell(pf, radius[icurr], &geom, &q
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+			)){
 				pflag[global_id] = -333;
 				pflag[0] = global_id;;
 				failimage[3 * (ksize)+global_id]++;
@@ -6616,17 +6920,6 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			for (k = 0; k < NPR; k++){
 				pf_i[k*(ksize)+global_id] = pf[k];
 			}
-
-			#if DOKTOT
-			#if (DOHELM && DOHELM_KTOT)
-			double xentr;
-			eos_mode_rhou_entr(gpu_eos_table, pf[RHO], pf[UU], &xentr);
-			// pf_i[KTOT * (ksize)+global_id] = xentr;
-			pf_i[KTOT * (ksize)+global_id] = exp(KTOT_FACTOR * xentr);
-			#else
-			pf_i[KTOT * (ksize)+global_id] = (gam - 1.) * pf[UU] * pow(pf[RHO], -gam);
-			#endif
-			#endif
 		}
 	}
 }
@@ -7048,7 +7341,11 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 }
 
 __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, const  double* __restrict__ dq2, const  double* __restrict__  pv, const  double* __restrict__  ps, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet,
-	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag)
+	const  double* __restrict__ Mud, const  double* __restrict__ Mud_inv, int lim, int dir, double cour, double*  dtij, int POLE_1, int POLE_2, double dx, int calc_time, int flag
+	#if(DOHELM)
+	, const double* __restrict__ gpu_eos_table
+	#endif
+)
 {
 	int global_id = blockDim.x*blockIdx.x + threadIdx.x;
 	int local_id = threadIdx.x;
@@ -7131,8 +7428,16 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 		get_state(p_l, &geom, &state_l);
 		get_state(p_r, &geom, &state_r);
 
-		vchar(p_l, &state_l, &geom, dir, &(cmax_l), &(cmin_l));
-		vchar(p_r, &state_r, &geom, dir, &(cmax_r), &(cmin_r));
+		vchar(p_l, &state_l, &geom, dir, &(cmax_l), &(cmin_l)
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
+		vchar(p_r, &state_r, &geom, dir, &(cmax_r), &(cmin_r)
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		cmax[1] = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 		cmin[1] = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
@@ -7153,10 +7458,26 @@ __global__ void fluxcalc2D_FT(double *  F, const  double* __restrict__  dq1, con
 			}
 		}
 
-		primtoflux_FT(p_l, l_ucon, l_bcon, dir, F_l);
-		primtoflux_FT(p_r, r_ucon, r_bcon, dir, F_r);
-		primtoflux_FT(p_l, l_ucon, l_bcon, 0, U_l);
-		primtoflux_FT(p_r, r_ucon, r_bcon, 0, U_r);
+		primtoflux_FT(p_l, l_ucon, l_bcon, dir, F_l
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
+		primtoflux_FT(p_r, r_ucon, r_bcon, dir, F_r
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
+		primtoflux_FT(p_l, l_ucon, l_bcon, 0, U_l
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
+		primtoflux_FT(p_r, r_ucon, r_bcon, 0, U_r
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		);
 
 		vchar_FT(p_l, l_ucon, l_bcon, dir, &(cmax_l), &(cmin_l)
 			#if (DOHELM)
@@ -8721,10 +9042,10 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 	double deni = 1.0 / den;
 
 	// initial guess : temperature
-	double temp_ini_guess = 1.0e5; // Danat: random guess
+	double temp_ini_guess = 1.0e9; // Danat: random guess
 	
 	// Convert kappa to entropy
-	entr_goal = log(entr_goal / KTOT_FACTOR);
+	//entr_goal = log(entr_goal / KTOT_FACTOR);
 
 	double temp_new, temp_old;
 	double cs2;
@@ -8766,6 +9087,8 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 
 	*u = xener * den;
 	*dudrho = dedrho * den + xener;
+
+	if (isnan(entr_goal)) printf("[helm] u: %g, iters: %d, T: %g err: %g den: %g s: %g\n", (*u), i, temp_old, error_p, den, entr_goal);
 }
 
 
@@ -8820,4 +9143,59 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 		}
 	}
 }
+
+__device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* temp) {
+
+	// Parameters of Newton-Raphson iterations
+	int max_iterations = EOS_ITERATIONS;
+	double tolerance = EOS_TEMP_TOL;
+	double tolerance_e = EOS_TOL;
+
+	// initial guess : temperature
+	double temp_ini_guess;
+	double ener_goal = u_goal / den;
+
+	if (ener_goal <= 0.0)
+		temp_ini_guess = eos_temp_low;
+	else
+		temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
+	if (temp_ini_guess > eos_temp_up) temp_ini_guess = eos_temp_up;
+
+	double temp_new, temp_old;
+	double ener_tmp, ener_old;
+	double dpdt, dedt, dpdrho;
+	double dsdt, dedrho;
+	double pres, cs2, entr;
+
+	double error, error_e;
+	int i;
+
+	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+	temp_old = temp_ini_guess;
+	for (i = 0; i < max_iterations; i++) {
+		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+
+		//do not allow temp to change more than 2. times in one iteration
+		if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+		if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+		error = fabs((temp_new - temp_old) / temp_old);
+		error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+		if (temp_new < eos_temp_low) temp_new = eos_temp_low;
+		if (temp_new > eos_temp_up) temp_new = eos_temp_up;
+
+		temp_old = temp_new;
+
+		// more iterations after reached below tolerance
+		if (error < tolerance && error_e < tolerance_e) {
+			more_iterations -= 1;
+			if (more_iterations == 0) break;
+		}
+	}
+
+	*temp = temp_old;
+}
+
 #endif

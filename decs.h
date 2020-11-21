@@ -96,20 +96,6 @@ extern double(*restrict Mud[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict Mud_inv[NB])[NDIM][NDIM][NDIM];
 extern double(*restrict dU_s[NB_LOCAL])[NPR];
 
-// Nuclear physics arrays
-#if(DONUCLEAR || DOHELM)
-extern double rhomax_nuclear;
-extern double (*G_global)[N2M][N3M];
-extern double (*Q_global)[N2M][N3M];
-extern double (*qalpha_global)[N2M][N3M];
-#endif
-
-#if DOPARTICLES
-/*MC particles arrays*/
-extern double xcon_p[NPTOT][NDIM];
-extern double pcov_p[NPTOT][NDIM];
-#endif
-
 #if (DOHELM)
 /*EOS CPU arrays*/
 extern double eos_f[EOSIMAX*EOSJMAX];
@@ -1022,7 +1008,6 @@ void coord(int n, int i, int j, int z, int loc, double *X);
 void diag(int call_code);
 void diag_flux(double(*F1[NB_LOCAL])[NPR]);
 void fail(int fail_type);
-void set_Katm(void);
 void set_mag(void);
 void gcon_func(double lgcov[][NDIM], double lgcon[][NDIM]);
 void gcov_func(double *X, double lgcov[][NDIM]);
@@ -1249,18 +1234,5 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, 
 void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u);
 void eos_mode_rhotemp_pres_min (double den, double *pres);
 void eos_mode_rhopres_u (double den, double p_goal, double *u);
-#endif
-
-#if DONUCLEAR
-void eos_helm_nuclear(int calc_derivatives, double btemp, double den, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele, double *pres, double *ener, double *entr, double *dpresdt, double *denerdt, double *dpresdd, double *dentrdt, double *dentrdd);
-void nse_abundance (double dens, double temp, double ye, double *xn, double *xp, double *xa);
-void nse_derivatives (double dens, double temp, double xn, double xp, double xa, double *xa_r, double *xa_t, double *xa_y, double *xn_r, double *xn_t, double *xn_y, double *xp_r, double *xp_t, double *xp_y);
-void eos_mode_dens_ener_nuclear_nucevol(double ener_goal, double den, double *btemp, double ye, double *xx_atm, double *xxn, double *xxp, double *xxa, double *etaele);
-void eos_mode_dens_ener_nuclear(double ener_goal, double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres);
-void eos_calc_soundspeed_nuclear (double ener_goal, double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres, double *cs2);
-void eos_mode_dens_enth_nuclear (double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres, double h_goal, double *dpdrho, double *dpdt, double *dedt, double *dpde_d);
-void eos_mode_dens_enth_NH_nuclear (double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres, double *ener, double h_goal);
-void eos_get_min_pres_NH_nuclear (double den, double ye, double xx_atm, double xxn, double xxp, double xxa, double *pres);
-void eos_mode_dens_pres_nuclear(double *ener, double den, double ye, double p_goal, double *xx_atm, double *xxn, double *xxp, double *xxa);
 #endif
 

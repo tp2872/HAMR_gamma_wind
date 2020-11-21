@@ -14,6 +14,7 @@ Physical Parameters section
 #define SOUND_WAVE 10
 #define ENT_WAVE 11
 #define TRUNC_PROBLEM 12
+#define POSTMERGER_PROBLEM 13
 
 #define WHICHPROBLEM TORUS_PROBLEM
 
@@ -46,10 +47,8 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
-#define DOHELM_KTOT (0)
-#define KTOT_FACTOR (1e-5)
-#define DONUCLEAR (0)
+#define DOHELM (0)
+#define KTOT_FACTOR (1e-7)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
@@ -65,7 +64,7 @@ Physical Parameters section
     #define RHOMINLIMIT (1.e-40)
     #define UUMINLIMIT  (1.e-40)
 #endif
-#elif ((DOHELM || DONUCLEAR) && (WHICHPROBLEM == TORUS_PROBLEM))
+#elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
     #define RHOMIN    (1.e-14)
     #define UUMIN    (1.e-16)
     #define RHOMINLIMIT (1.e-30)
@@ -403,6 +402,7 @@ MNEMONICS SECTION
 /*For Windows users*/
 #ifndef M_PI 
 #define M_PI 3.14159265358979323846264338327950288 
+#define M_PI_2 (M_PI*0.5)
 #endif 
 
 /*Mnemonics for AMR parameters*/
@@ -692,13 +692,13 @@ Section with EOS constants
 // conversion factors for EOS
 // DANAT: finish!
 #define conv_T_CODE2CGS (1.0)
-#define conv_dens_CODE2CGS (c_light * c_light * c_light * c_light * c_light * c_light / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G_cgs^3 / M_bh^2
-#define conv_dens_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs) / (c_light * c_light * c_light * c_light * c_light * c_light)
-#define conv_pres_CODE2CGS ((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs))
-#define conv_pres_CGS2CODE (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
+#define conv_dens_CODE2CGS MASS_DENSITY_SCALE //(c_light * c_light * c_light * c_light * c_light * c_light / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs)) // = c_light^6 / G_cgs^3 / M_bh^2
+#define conv_dens_CGS2CODE (1.0 / MASS_DENSITY_SCALE) //(G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs) / (c_light * c_light * c_light * c_light * c_light * c_light)
+#define conv_pres_CODE2CGS PRESSURE_SCALE //((c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light) / (G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs))
+#define conv_pres_CGS2CODE (1.0 / PRESSURE_SCALE) //(G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
 #define conv_ener_CODE2CGS (c_light * c_light)
 #define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
-#define conv_entr_CGS2CODE (1.0)
+#define conv_entr_CGS2CODE (1.0 / kergavo)
 
 //For the uniform background coulomb correction
 #define eos_a1 (-0.898004e0)
