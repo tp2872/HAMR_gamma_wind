@@ -47,8 +47,8 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
-#define KTOT_FACTOR (1e-7)
+#define DOHELM (1)
+#define KTOT_FACTOR (1e-10)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
@@ -643,7 +643,7 @@ Section with EOS constants
 #define MAXLEN (1024)
 
 // tolerances 
-#define EOS_TEMP_TOL (1.e-5)
+#define EOS_TEMP_TOL (1.e-10)
 #define EOS_TOL (1.e-10)
 #define EOS_ITERATIONS (50)
 

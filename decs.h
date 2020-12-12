@@ -1234,5 +1234,6 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, 
 void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u);
 void eos_mode_rhotemp_pres_min (double den, double *pres);
 void eos_mode_rhopres_u (double den, double p_goal, double *u);
+void eos_mode_rhou_temp (double den, double u_goal, double* temp);
 #endif
 

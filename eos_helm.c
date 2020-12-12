@@ -411,10 +411,14 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 #endif
 
     // radiation section:
+    #if (RAD_M1)
+    prad = erad = srad = 0.;
+    #else
     prad = asoli3 * btemp * btemp * btemp * btemp;
     double x1 = prad * deni;
     erad = 3.0 * x1;
     srad = (x1 + erad) * tempi;
+    #endif 
 
     // sackur-tetrode equation for the ion entropy of
     // a single ideal gas characterized by abar
@@ -872,6 +876,60 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
     }
     
     *u = xener * den;
+}
+
+void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
+    // initial guess : temperature
+    double temp_ini_guess;
+
+    if (u_goal <= 0.0) temp_ini_guess = eos_temp_low;
+    else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
+    temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+
+    double ener_goal = u_goal / den;
+    double temp_new, temp_old;
+    double ener_tmp;
+    double dpdt, dedt, dpdrho;
+    double dsdt, dedrho;
+    double pres, cs2, entr;
+    double error, error_e;
+    int i;
+    int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+
+    temp_old = temp_ini_guess;
+    // DIMARK: testing below rho_low
+    double rho_f = 1.0;
+    if (den < eos_dens_low) {
+        den = eos_dens_low;
+        rho_f = den / eos_dens_low;
+        *temp = fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE));
+        return;
+    }
+    // DIMARK: end of the code snippet
+    for (i = 0; i < EOS_ITERATIONS; i++) {
+        eos_helm(1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
+
+        //do not allow temp to change more than 2. times in one iteration
+        if (temp_new / temp_old > 2.0) temp_new = 2.0 * temp_old;
+        if (temp_old / temp_new > 2.0) temp_new = 0.5 * temp_old;
+
+        error = fabs((temp_new - temp_old) / temp_old);
+        error_e = fabs((ener_tmp - ener_goal) / ener_goal);
+        if (temp_new < 1.0e3) temp_new = 1.0e3;
+        if (temp_new > 1.0e13) temp_new = 1.0e13;
+
+        temp_old = temp_new;
+        // more iterations after reached below tolerance
+        if (error < EOS_TEMP_TOL && error_e < EOS_TOL) {
+            more_iterations -= 1;
+            if (more_iterations == 0) break;
+        }
+    }
+    *temp = temp_old;
+
+    if (error_e > EOS_TOL) fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, temp_old, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
+
 }
 
 void test_eos(void) {

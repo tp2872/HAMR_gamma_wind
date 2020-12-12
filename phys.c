@@ -263,7 +263,12 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 double calc_kappa_abs(double* ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
+	#if (DOHELM)
+	double Tg;
+	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
+	#else
 	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	#endif
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
 	kappa_m = 0.1 * Z_AB;
@@ -281,7 +286,12 @@ double calc_kappa_abs(double* ph) {
 double calc_kappa_emmit(double* ph) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
+	#if (DOHELM)
+	double Tg;
+	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
+	#else
 	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	#endif
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
 	kappa_m = 0.1 * Z_AB;
@@ -297,7 +307,12 @@ double calc_kappa_emmit(double* ph) {
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph) {
 	double kappa_es;
+	#if (DOHELM)
+	double Tg;
+	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
+	#else
 	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	#endif
 	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
 	kappa_es = 0.2*(1 + X_AB);
 	return(kappa_es* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);

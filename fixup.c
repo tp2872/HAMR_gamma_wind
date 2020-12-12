@@ -144,14 +144,25 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		B = sqrt(Bsq);
 
 		//enthalpy before the floors
+		#if (DOHELM)
+		double xP;
+		eos_mode_rhou_pres(pv_prefloor[RHO], pv_prefloor[UU], &xP);
+		wold = pv_prefloor[RHO] + pv_prefloor[UU] + xP;
+		#else
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * gam;
+		#endif 
 
 		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
 		QdotB = udotB*wold*q.ucon[0];
 
 		//enthalpy after the floors
+		#if (DOHELM)
+		eos_mode_rhou_pres(pv[RHO], pv[UU], &xP);
+		wnew = pv[RHO] + pv[UU] + xP;
+		#else
 		wnew = pv[RHO] + pv[UU] * gam;
 		//wnew = wold;
+		#endif 
 
 		x = 2.*QdotB / (B*wnew*ucondr[0] + SMALL);
 
@@ -184,12 +195,16 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	#if DOKTOT
-	#if (DOHELM && DOHELM_KTOT)
+	#if (DOHELM)
 	double xentr;
 	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
-	pv[KTOT] = exp(KTOT_FACTOR * xentr);
+	pv[KTOT] = xentr;
+	//DIMARK: pv[KTOT] = exp(KTOT_FACTOR * xentr);
 	#else 
-	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
+	// DIMARK: entropy test
+	double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
+	pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
+	//pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
 	#endif
 	#endif
 
