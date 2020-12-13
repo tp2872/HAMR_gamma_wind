@@ -216,7 +216,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			);
 
 			//If error is below set margin, accept solution, otherwise try PRAD
-			//if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			if (error_t > 1.e-9)implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -291,7 +291,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			//if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
 			//If error is still below set margin, accept solution, otherwise try UMHD
 			//if (error_t > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
@@ -347,7 +347,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	kappa_es = calc_kappa_es(pb);
 	tau = (kappa_abs + kappa_es) * cell_size;
 
-	if (tau < 0.66) {
+	//if (tau < 0.66) {
 		//Set guess values for primitives after implicit step based on optical depth
 		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 			#if(DOHELM)
@@ -356,24 +356,24 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		);
 		#if(DO_FONT_FIX)
 		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-			);
+			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//);
 			if (pflag) {
-				pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 0		
-				#if(DOHELM==10)
-					, gpu_eos_table
-				#endif
-				);
+			//	pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 0		
+			//	#if(DOHELM==10)
+			//		, gpu_eos_table
+			//	#endif
+			//	);
 			}
 		}
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
 		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
-	}
+	//}
 
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
@@ -2248,24 +2248,37 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 		y = 0.;
 	}
 	if (prim[0] < 0) {
-		prim[0] = fabs(prim[0]);
+		prim[1] = 1.e-150;
+		prim[2] = 0.;
+		prim[3] = 0.;
+		prim[0] = 0.0 * fabs(prim[0]);
 		Qdotn *= -1.0;
 	}
 	if (y <= 0.) {
 		for (i = 1; i < 4; i++) prim[i] = 0.0;
 		y = 0.;
 	}
-	if (isnan(y)) {
-		prim[0] = 1.e-20;
+	if (y >= 1.0 || isnan(y)) {
 		prim[1] = 0.;
 		prim[2] = 0.;
 		prim[3] = 0.;
 		gammasq = 1.0;
 
+		// Get Ebar and p_rad as usual
+		pressure = -Qdotn / (4. * gammasq - 1.);
+		prim[0] = pressure * 3.; // Erad = 3*p_rad
+
+		// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
+		for (i = 1; i < 4; i++) {
+			if (!isnan(Qtcon[i])) {
+				//prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+			}
+		}
+		y = 0.;
 		returnval = 0;
 	}
 	if (y > y_max) {
-		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-20);
+		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
 		for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
 
 		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
@@ -2280,9 +2293,9 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 
 		if (lim == TYPE2) {
 			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.); // HELMEOS?
+			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad		
-			returnval = 1;
+			returnval = 0;
 		}
 	}
 	return(returnval);
@@ -6517,18 +6530,18 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
-			pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
-				#if (DOHELM)
-				,gpu_eos_table
-				#endif
-			);			
+			//pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
+			//	#if (DOHELM)
+			//	,gpu_eos_table
+			//	#endif
+			//);			
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
-				pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
-					#if(DOHELM==10)
-					, gpu_eos_table
-					#endif
-				);
+				//pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
+				//	#if(DOHELM==10)
+				//	, gpu_eos_table
+				//	#endif
+				//);
 				if (pflag[global_id]) {
 					pflag[0] = global_id;
 					failimage[2 * (ksize)+global_id]++;
