@@ -123,12 +123,12 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
+#define NB_1 4
 #define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 224
+#define BS_1 64
 #define BS_2 144
 #define BS_3 1
 
@@ -201,7 +201,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
-#define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)

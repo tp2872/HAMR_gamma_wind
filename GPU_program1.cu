@@ -244,8 +244,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//if (error_t > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PMHD with entropy
-			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
-
+			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//);
 			/*
 			//If error is below set margin, accept solution, otherwise try PRAD with entropy
 			//if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
@@ -317,8 +320,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//if (error_t > 1.e-9) implicit_rad_solve_EMHD(pb_i, U_n, U_i, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0);
 
 			//If error is below set margin, accept solution, otherwise try PRAD with entropy
-			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
-
+			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//);
 			/*/
 			//If error is still below set margin, accept solution, otherwise try URAD with entropy
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n, U_i, U_ft,pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 1, 0);
@@ -376,18 +382,22 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			, gpu_eos_table
 			#endif
 		);
-#if(DO_FONT_FIX)
+		#if(DO_FONT_FIX)
 		if (pflag) {
-			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 0
 			//	#if(DOHELM)
 			//	, gpu_eos_table
 			//	#endif
 			//);
 			if (pflag) {
-				//pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC);
+			//	pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 0		
+			//	#if(DOHELM==10)
+			//		, gpu_eos_table
+			//	#endif
+			//	);
 			}
 		}
-#endif	 
+		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
 		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
@@ -410,11 +420,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	eos_mode_rhou_entr(gpu_eos_table, pb[RHO], pb[UU], &xentr);
 	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * xentr;// *KTOT_FACTOR;
 	#else
-#if(FULL_ENTROPY)
+	#if(FULL_ENTROPY)
 	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA)); // HELMEOS to find entropy
-#else
+	#else
 	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * (GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA);
-#endif
+	#endif
 	#endif
 
 	//Recompute R_t^mu for consistency
@@ -1973,7 +1983,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			, gpu_eos_table
 			#endif
 		);
-#if(DO_FONT_FIX)
+		#if(DO_FONT_FIX)
 		if (flag && (n_iter_fail > 1)) {
 			//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 			//	#if (DOHELM)
@@ -1984,7 +1994,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
 			}
 		}
-#endif
+		#endif
 
 		if (flag == 0) {
 			//Recompute T_t^mu for consistency
@@ -2003,11 +2013,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
 			U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;// *KTOT_FACTOR;
 			#else
-#if(FULL_ENTROPY)
+			#if(FULL_ENTROPY)
 			U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA))); // HELMEOS
-#else
+			#else
 			U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-#endif
+			#endif
 			#endif
 
 			//Get radiative source term
@@ -2042,14 +2052,14 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				#else
 				T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
 				#endif
-#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY)
 				norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
-#else
+				#else
 				double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (pb_new[UU]) / pow(pb_new[RHO], GAMMA);
 				norm_S = T_GAS * (fabs(U_i[RHO] / (GAMMA - 1.) * log(U_i[KTOT] / U_i[RHO])) + fabs(U_new[RHO] / (GAMMA - 1.) * log(U_new[KTOT] / U_new[RHO])) + fabs(Dt * dU_new[KTOT] / dK_dS));
 				error_new[n_iter % 5] += 0.25 * T_GAS * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / dK_dS) / (norm);
-#endif
+				#endif
 			}
 			if (do_entropy == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 			norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
@@ -2356,7 +2366,7 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 
 		if (lim == TYPE2) {
 			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
-			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.); // HELMEOS?
+			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad		
 			returnval = 0;
 		}
@@ -6710,12 +6720,18 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
-			#if DOKTOT
-			//pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0);
-			#endif
+			//pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
+			//	#if (DOHELM)
+			//	,gpu_eos_table
+			//	#endif
+			//);			
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
-				//pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0);
+				//pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
+				//	#if(DOHELM==10)
+				//	, gpu_eos_table
+				//	#endif
+				//);
 				if (pflag[global_id]) {
 					pflag[0] = global_id;
 					failimage[2 * (ksize)+global_id]++;
