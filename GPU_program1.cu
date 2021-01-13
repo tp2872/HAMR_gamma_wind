@@ -449,11 +449,17 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	U_f[UU] += U_f[RHO];
 
 	//Recompute entropy for consistency
-	//#if(FULL_ENTROPY)
-	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA));
-	//#else
-	//U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * (GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA);
-	//#endif
+	#if (DOHELM)
+	double xentr;
+	eos_mode_rhou_entr(gpu_eos_table, pb[RHO], pb[UU], &xentr);
+	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * xentr;
+	#else
+	#if(FULL_ENTROPY)
+	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA)); 
+	#else
+	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * (GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA);
+	#endif
+	#endif
 
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
@@ -550,11 +556,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] = U_new[UU] + U_new[RHO];
 				if (do_entropy == 1) {
-					//#if(FULL_ENTROPY)
-					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-					//#else
-					//U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#endif
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+					#else
+#if(FULL_ENTROPY)
+					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA))); // HELMEOS
+#else
+					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+#endif
+					#endif
 				}
 
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -649,11 +661,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 		U_new[UU] = U_new[UU] + U_new[RHO];
 
-		//#if(FULL_ENTROPY)
+		#if (DOHELM)
+		double xentr;
+		eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+		U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+		#else
+#if(FULL_ENTROPY)
 		U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-		//#else
-		//U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-		//#endif
+#else
+		U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+#endif
+		#endif
 
 		//Derive new conserved quantaties for radiation variables
 		U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -841,9 +859,14 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
-					//#if(FULL_ENTROPY)
-					//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#else
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+					#else
+#if(FULL_ENTROPY)
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)); // HELMEOS
+#else
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
 					//#endif
 
@@ -972,11 +995,17 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
-				//#if(FULL_ENTROPY)
+				#if (DOHELM)
+				double xentr;
+				eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+				#else
+#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#else
-				//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-				//#endif
+#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+#endif
+				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -1141,11 +1170,17 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
-					//#if(FULL_ENTROPY)
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+					#else
+#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#else
-					//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-					//#endif
+#else
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+#endif
+					#endif
 
 					//Set radiation conserved quantities
 					U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -1258,11 +1293,17 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
-				//#if(FULL_ENTROPY)
+				#if (DOHELM)
+				double xentr;
+				eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+				#else
+#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#else
-				//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-				//#endif
+#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+#endif
+				#endif 
 
 				//Derive new conserved quantaties for MHD variables
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -1453,11 +1494,17 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
-					//#if(FULL_ENTROPY)
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+					#else
+#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#else
-					//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-					//#endif
+#else
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+#endif
+					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -1577,11 +1624,17 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
-				//#if(FULL_ENTROPY)
+				#if (DOHELM)
+				double xentr;
+				eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+				#else
+#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#else
-				//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-				//#endif
+#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+#endif
+				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -1791,11 +1844,17 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					U_new[UU] += U_new[RHO];
 
 					//Compute new entropy from MHD variables
-					//#if(FULL_ENTROPY)
+					#if (DOHELM)
+					double xentr;
+					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
+					#else
+#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-					//#else
-					//U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#endif
+#else
+					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+#endif
+					#endif
 
 					//Calculate source function and jacobian
 					source_rad(pb_new, geom, dU_new
@@ -2589,8 +2648,6 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
 	#if(DOKTOT)
-	// DIMARK: entropy test
-	//K_atm = U[KTOT] / U[RHO];
 	if(full_entropy)K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 	else K_atm = U[KTOT] / U[RHO];
 	#endif
@@ -2933,10 +2990,8 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 
 	#if(DOKTOT)
 	#if(DOHELM)
-	//K_atm = log(U[KTOT] / U[RHO]) / KTOT_FACTOR;
 	K_atm = U[KTOT] / U[RHO];
 	#else
-	// DIMARK: entropy test
 	if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 	else K_atm = U[KTOT] / U[RHO];
 	#endif
@@ -3227,7 +3282,7 @@ __device__ double W_of_vsq2(double vsq, double *p, double *rho, double *u, doubl
 	#else
 	// 2. Gamma EOS
 	// DIMARK: entropy test
-	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
+	double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
 	//K_atm -= ENTROPY_CONST;
 	//*p = exp(K_atm * (GAMMA - 1.)) * pow((*rho), GAMMA);
 	*p = K_atm * pow(*rho, GAMMA);
@@ -3595,11 +3650,16 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 
 	eos_mode_rhow_pres_dpdrho_dpde_d(gpu_eos_table, rho, (x[0]*gtmp), &p_tmp, &dpdrho, &dpde_d);
 
-	double dpdeps_o_rho = dpde_d / rho;
-	double dpdvsq_1 = -0.5 * D / sqrt(gtmp) * dpdrho;
-	double dpdvsq_2 = -0.5 * (x[0] + p_tmp / sqrt(gtmp)) / rho;
-	dPdW = (dpdeps_o_rho / (1.0 + dpdeps_o_rho)) * gtmp;
-	dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2) / (1.0 + dpdeps_o_rho);
+	//double dpdeps_o_rho = dpde_d / rho;
+	//double dpdvsq_1 = -0.5 * D / sqrt(gtmp) * dpdrho;
+	//double dpdvsq_2 = -0.5 * (x[0] + p_tmp / sqrt(gtmp)) / rho;
+	//dPdW = (dpdeps_o_rho / (1.0 + dpdeps_o_rho)) * gtmp;
+	//dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2) / (1.0 + dpdeps_o_rho);
+	
+	// Danat: edit (DIMARK)
+	double dudp = rho / dpde_d;
+	dPdW = 1.0 / (1.0 + dudp) * gtmp;
+	dPdvsq = (-x[0] + 0.5 * D / sqrt(gtmp) * (1. - dpdrho * dudp)) / (1. + dudp);
 
 	#else
 	// 2. Ideal gas EOS
@@ -4329,7 +4389,6 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	double xentr;
 	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
 	flux[KTOT] = flux[RHO] * xentr;
-	//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
 	#else 
 	#if(FULL_ENTROPY)
 	// DIMARK: entropy test
@@ -5627,7 +5686,6 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	double xentr;
 	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
 	flux[KTOT] = flux[RHO] * xentr;
-	//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
 	#else 
 	#if(FULL_ENTROPY)
 	// DIMARK: entropy test
@@ -6873,7 +6931,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		);
 		#endif
-		#if( DO_FONT_FIX ) 
+		#if( DO_FONT_FIX )
 		if (pflag[global_id]) {
 			failimage[global_id]++;
 			#if DOKTOT
@@ -8699,16 +8757,30 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 	double deraddd, deiondd, deepdd;
 	double dsepdd; //dentrdd, dsraddd, dsiondd, ;
 
-    // For the coulomb corrections
-#if (EOS_COULOMB_CORR)
-	double x4, x5, y1, y2, y3, z4, z5;
-	double ktinv, dxnidd, dsdd, lami, inv_lami, lamidd, s1, s2, s3, plasg, plasg_inv, plasgdd, plasgdt;
-	double ecoul, decouldd, decouldt, pcoul, dpcouldd, dpcouldt, scoul, dscouldd, dscouldt;
-#endif
+	// DIMARK: reset to GAMMA law (testing):
+	#if (EOS_GAMMALAW)
+	*pres = btemp * den;	
+	*ener = btemp / ((GAMMA - 1.0));
+	*entr = *pres * pow(den, -GAMMA);
+	*dpresdt = *pres / btemp;
+	*dpresdd = *pres / den;
+	*denerdt = *ener / btemp;
+	*denerdd = 0.0;
+	*dentrdt = 0.0;
+	*cs2 = GAMMA * (GAMMA - 1.) * (*ener) / (GAMMA * (*ener) + 1.);
+	return;
+	#endif
 
     // Convert from code units to cgs units (EOS table units)
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
+
+	// DIMARK: if the input values are outside the table bounds - reset the e-p contribution
+	int reset_elepos = 0;
+	//if ((btemp < eos_temp_low || btemp > eos_temp_up) || (den < eos_dens_low || den > eos_dens_up)) {
+	if (0) {
+		reset_elepos = 1;
+	}
 
 	// If density is below the minimum supplied by the table:
 	double den_low = den;
@@ -8730,11 +8802,17 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 
     //Look up the desired quantities in the eos table
 	double free, df_d, df_t, df_tt, df_dt, etaele;
-#if (EOS_LINEAR)
-	interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
-#else
-    interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
-#endif
+	if (reset_elepos) {
+		free = df_d = df_t = df_tt = df_dt = dpepdd = etaele = 1e-30;
+		is_density_low = 0;
+	}
+	else {
+		#if (EOS_LINEAR)
+		interp_eostable_linear(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+		#else
+		interp_eostable(gpu_eos_table, den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+		#endif
+	}
 
     // the desired electron-positron thermodynamic quantities
     pele = din * din * df_d;
@@ -8746,35 +8824,6 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
     pion = xni * kt; 
 	eion = 1.5 * pion * deni;
 	sion = (pion * deni + eion) * tempi + kavoy * log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * btemp, 1.5));
-
-    // uniform background corrections & only the needed parts for speed
-    // plasg is the plasma coupling parameter
-    // split up calculations below -- they all used to depend upon a redefined z
-#if (EOS_COULOMB_CORR)
-	s1 = 4.0 / 3.0 * M_PI * xni;
-	lami = 1.0 / pow(s1, third);
-	inv_lami = 1.0 / lami;
-	dxnidd = avo * ytot1;
-	ktinv = 1.0 / kt;
-	plasg = zbar * zbar * esqu * ktinv * inv_lami;
-    if (plasg >= 1.0) {
-		// yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-		x4 = pow(plasg, 0.25);
-        z4 = eos_c1 / x4;
-        ecoul = dxnidd * kt * (eos_a1*plasg + eos_b1*x4 + z4 + d1cc);
-        pcoul = third * den * ecoul;
-        scoul = -kavoy*(3.0*eos_b1*x4 - 5.0*z4 + d1cc*(log(plasg) - 1.0) - e1cc);
-	}
-    else if (plasg < 1.0) {
-		// yakovlev & shalybkov 1989 equations 102, 103, 104
-		x5 = plasg * sqrt(plasg);
-        y3 = pow(plasg, eos_b2);
-        z5 = eos_c2 * x5 - third * eos_a2 * y3;
-		pcoul = -pion * z5;
-        ecoul = 3.0 * pcoul * deni;
-        scoul = -kavoy*(eos_c2*x5 - eos_a2*(eos_b2 - 1.0) / eos_b2*y3);
-	}
-#endif
 
     // radiation section:
 	#if (RAD_M1)
@@ -8788,15 +8837,9 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 
     // sackur-tetrode equation for the ion entropy of
     // a single ideal gas characterized by abar
-#if (EOS_COULOMB_CORR)
-    *pres = prad + pion + pele + pcoul * eos_coulombMult;
-    *ener = erad + eion + eele + ecoul * eos_coulombMult;
-	*entr = srad + sion + sele + scoul * eos_coulombMult;
-#else
 	*pres = prad + pion + pele;
 	*ener = erad + eion + eele;
 	*entr = srad + sion + sele;
-#endif
 
 
 
@@ -8810,42 +8853,9 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 
         dpepdt = din * din * df_dt;
 
-#if (EOS_COULOMB_CORR)
-		plasg_inv = 1.0 / plasg;
-        if (plasg >= 1.0) {
-			// yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-            y1 = dxnidd * kt * (eos_a1 + 0.25*plasg_inv*(eos_b1*x4 - z4));
-            dsdd = 4.0 / 3.0*M_PI * dxnidd;
-            lamidd = -third * lami / s1 * dsdd;
-            plasgdd = -plasg * inv_lami * lamidd;
-            plasgdt = -plasg * ktinv * kerg;
-			decouldd = y1 * plasgdd;
-            decouldt = y1 * plasgdt + ecoul * tempi;
-            dpcouldd = third * (ecoul + den * decouldd);
-            dpcouldt = third * den  * decouldt;
-        }
-        else if (plasg < 1.0) {
-			// yakovlev & shalybkov 1989 equations 102, 103, 104
-            s2 = (1.5*eos_c2*x5 - third*eos_a2*eos_b2*y3)*plasg_inv;
-            dxnidd = avo * ytot1;
-            dsdd = 4.0 / 3.0*M_PI * dxnidd;
-            lamidd = -third * lami / s1 * dsdd;
-            plasgdd = -plasg * inv_lami * lamidd;
-            plasgdt = -plasg * ktinv * kerg;
-			dpcouldd = -dpiondd*z5 - pion*s2*plasgdd;
-            dpcouldt = -dpiondt*z5 - pion*s2*plasgdt;
-            decouldd = 3.0*dpcouldd*deni - ecoul*deni;
-            decouldt = 3.0*dpcouldt*deni;
-        }
-#endif
-
-#if (EOS_COULOMB_CORR)
-        *dpresdd = dpraddd + dpiondd + dpepdd + dpcouldd * eos_coulombMult; // pressure derivative vs density
-        *dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt * eos_coulombMult; // pressure derivative vs temperature
-#else
 		*dpresdd = dpraddd + dpiondd + dpepdd; // pressure derivative vs density
 		*dpresdt = dpraddt + dpiondt + dpepdt; // pressure derivative vs temperature
-#endif
+
         // Calculate energy derivatives
         deiondd = (1.5 * dpiondd - eion)*deni;
         deiondt = 1.5 * xni * kerg *deni;
@@ -8857,13 +8867,8 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
         deepdt = btemp * dsepdt;
         deepdd = ye*ye*df_d + btemp*dsepdd;
 
-#if (EOS_COULOMB_CORR)
-        *denerdd = deraddd + deiondd + deepdd + decouldd * eos_coulombMult;  // energy derivative vs density
-        *denerdt = deraddt + deiondt + deepdt + decouldt * eos_coulombMult; // energy derivative vs temperature
-#else 
 		*denerdd = deraddd + deiondd + deepdd;  // energy derivative vs density
 		*denerdt = deraddt + deiondt + deepdt; // energy derivative vs temperature
-#endif
 
         // Calculate entropy derivatives
         //dsraddd = (dpraddd*deni - x1*deni + deraddd)*tempi;
@@ -8871,28 +8876,9 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
         //dsiondd = (dpiondd*deni - pion*deni*deni + deiondd)*tempi - kavoy * deni;
         dsiondt = (dpiondt*deni + deiondt)*tempi - (pion*deni + eion) * tempi*tempi + 1.5 * kavoy * tempi;
 
-#if (EOS_COULOMB_CORR)
-        if (plasg >= 1.0) {
-			// yakovlev & shalybkov 1989 equations 82, 85, 86, 87
-			y2 = -kavoy*plasg_inv*(0.75*eos_b1*x4 + 1.25*z4 + d1cc);
-            dscouldd = y2 * plasgdd;
-            dscouldt = y2 * plasgdt;
-        }
-        else if (plasg < 1.0) {
-			// yakovlev & shalybkov 1989 equations 102, 103, 104
-			s3 = -kavoy*plasg_inv*(1.5*eos_c2*x5 - eos_a2*(eos_b2 - 1.0)*y3);
-			dscouldd = s3 * plasgdd;
-            dscouldt = s3 * plasgdt;
-        }
-#endif
-
-#if (EOS_COULOMB_CORR)
-		//dentrdd = dsraddd + dsiondd + dsepdd + dscouldd * eos_coulombMult; // entropy derivative vs density and density
-        *dentrdt = dsraddt + dsiondt + dsepdt + dscouldt * eos_coulombMult; // entropy derivative vs density and time
-#else
 		//dentrdd = dsraddd + dsiondd + dsepdd; // entropy derivative vs density and density
 		*dentrdt = dsraddt + dsiondt + dsepdt; // entropy derivative vs density and time
-#endif 
+
         // calculate relativistic soundspeeds
         double chit, z;
         chit = btemp / (*pres) * (*dpresdt);
@@ -8932,6 +8918,7 @@ __device__ void validate_T(double* temp);
 __device__ void eos_NR_temp_guess(double rho, double u, double* temp);
 
 __device__ void validate_T(double* temp) {
+	//if (*temp < 0.0) *temp = 1e-30;
 	if (*temp < eos_temp_low) *temp = eos_temp_low;
 	if (*temp > eos_temp_up) *temp = eos_temp_up;
 	return;
@@ -8954,7 +8941,8 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 	//*temp = fabs(MMW * MH_CGS * (gam - 1.) * (u * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * rho * MASS_DENSITY_SCALE));
 	*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
 	#else
-	*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
+	//*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
+	*temp = (GAMMA - 1.) * u / rho;
 	#endif
 
 	validate_T(temp);
@@ -9087,15 +9075,17 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
 		}
 	}
 
+	#if (revert_gamma)
 	if (error_e > EOS_TOL) {
 		// Use GAMMA EOS in this case
 		*pres = (GAMMA - 1.0) * u_goal;
-		error_e = 9.99e-12;
+		error_e = 10.0 * EOS_TOL;
 	}
-	
+	#endif	
 
+	#if (eos_nr_debug)
 	if (error_e > EOS_TOL) printf("1 %g %g %g %g %g\n", error_e, temp_old, den, u_goal, temp_ini_guess);
-
+	#endif
 }
 
 __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres, double *cs2) {
@@ -9171,17 +9161,28 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
 		}
 	}
 
+	#if (revert_gamma)
 	if (error_e > EOS_TOL) {
 		*pres = (GAMMA - 1.0) * u_goal;
 		*cs2 = GAMMA * (GAMMA - 1.0) * u_goal / (den + GAMMA * u_goal);
-		error_e = 9.99e-12;
+		error_e = 10.0 * EOS_TOL;
 	}
+	#endif
 
+	#if (eos_nr_debug)
 	if (error_e > EOS_TOL) printf("2 %g %g %g %g %g\n", error_e, temp_old, den, u_goal, temp_ini_guess);
-
+	#endif
 }
 
 __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *dpdrho, double *dpde_d) {
+	// check if the input is valid:
+	if (w_goal - den < 0.0) {
+		*pres = (GAMMA - 1.0) * (w_goal - den) / (GAMMA);
+		*dpdrho = 0.0;
+		*dpde_d = (GAMMA - 1.0);
+		return;
+	}
+
 	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, w_goal-den, &temp_ini_guess);
@@ -9260,19 +9261,34 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
 			i++;
 		}
 		*pres = presC;
+		xener = enerC;
 	}
 
-	//if (error_h > EOS_TOL) {
-	//	*pres = (GAMMA - 1.0) * (w_goal - den) / (GAMMA);
-	//}
+	*dpde_d = dpdt / dedt;
+	*dpdrho = *dpdrho - xener * deni * (*dpde_d);
 
+	#if (revert_gamma)
+	if (error_h > EOS_TOL) {
+		*pres = (GAMMA - 1.0) * (w_goal - den) / (GAMMA);
+		*dpdrho = 0.0;
+		*dpde_d = (GAMMA - 1.0);
+		error_h = 10.0 * EOS_TOL;
+	}
+	#endif
+
+	#if (eos_nr_debug)
 	if (error_h > EOS_TOL) printf("3 %g %g %g %g %g\n", error_h, temp_old, den, w_goal-den, temp_ini_guess);
-
-    *dpde_d = dpdt / dedt;
+	#endif
 }
 
 __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *u) {
     // implementation in Newman-Hamlin inversion
+	// check if the input is valid:
+	if (w_goal - den < 0.0) {
+		*u = (w_goal - den) / GAMMA;
+		*pres = *u * (GAMMA - 1.);
+		return;
+	}
 	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, w_goal - den, &temp_ini_guess);
@@ -9357,13 +9373,17 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
 		*u = enerC * den;
 	}
 
+	#if (revert_gamma)
 	if (error_h > EOS_TOL) {
 		*u = (w_goal - den) / GAMMA;
 		*pres = *u * (GAMMA - 1.);
-		error_h = 9.99e-12;
+		error_h = 10.0 * EOS_TOL;
 	}
-
+	#endif
+	
+	#if (eos_nr_debug)
 	if (error_h > EOS_TOL) printf("4 %g %g %g %g %g\n", error_h, temp_old, den, w_goal-den, temp_ini_guess);
+	#endif
 }
 
 __device__ void eos_mode_rhotemp_pres_min (const  double* __restrict__ gpu_eos_table, double den, double *pres) {
@@ -9450,12 +9470,16 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
 		}
 	}
 
+	#if (revert_gamma)
 	if (error_p > EOS_TOL) {
 		*u = p_goal / (GAMMA - 1.);
-		error_p = 9.99e-12;
+		error_p = 10.0 * EOS_TOL;
 	}
+	#endif
 
+	#if (eos_nr_debug)
 	if (error_p > EOS_TOL) printf("5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
+	#endif
 	*u = xener * den;
 }
 
@@ -9463,10 +9487,17 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
 // Entropy inversion
 __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, double den, double entr_goal, double *pres, double* u, double *dpdrho, double *dudrho) {
 	// initial guess : temperature
-	double temp_ini_guess = 1.0e9; // Danat: random guess
-	
+	double temp_ini_guess;
+	#if (EOS_GAMMALAW)
+	temp_ini_guess = entr_goal * pow(den, GAMMA - 1.);
+	#endif
+
 	// Convert kappa to entropy
-	//entr_goal = log(entr_goal / KTOT_FACTOR);
+	#if (!DOHELM_FULLENTROPY)
+	entr_goal = log(entr_goal) / KTOT_FACTOR;
+	#endif
+
+	temp_ini_guess = conv_pres_CODE2CGS * (*pres + *u) / (den * entr_goal * conv_entr_CODE2CGS * conv_dens_CODE2CGS);
 
 	double temp_new, temp_old;
 	double cs2;
@@ -9536,8 +9567,9 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 
 	*u = xener * den;
 	*dudrho = dedrho * den + xener;
+	#if (eos_nr_debug)
 	if (error_p > EOS_TOL) printf("6 %g %g %g %g %g\n", error_p, temp_old, den, entr_goal, temp_ini_guess);
-
+	#endif
 	//if (isnan(entr_goal)) printf("[helm] u: %g, iters: %d, T: %g err: %g den: %g s: %g\n", (*u), i, temp_old, error_p, den, entr_goal);
 }
 
@@ -9619,7 +9651,14 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 		}
 	}
 
+	// Convert entropy to kappa
+	#if (!DOHELM_FULLENTROPY)
+	*entr = exp((*entr) * KTOT_FACTOR);
+	#endif
+
+	#if (eos_nr_debug)
 	if (error_e > EOS_TOL) printf("7 %g %g %g %g %g\n", error_e, temp_old, den, u_goal, temp_ini_guess);
+	#endif
 }
 
 __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* temp) {
@@ -9695,13 +9734,17 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 	}
 	*temp = tempC;
 
+	#if (revert_gamma)
 	if (error_e > EOS_TOL) {
 		// Revert back to GAMMA law
 		*temp = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE));
-		error_e = 9.99e-12;
+		error_e = 10.0 * EOS_TOL;
 	}
+	#endif
 
+	#if (eos_nr_debug)
 	if (error_e > EOS_TOL) printf("8 %g %g %g %g %g\n", error_e, *temp, den, u_goal, temp_ini_guess);
+	#endif
 }
 
 #endif

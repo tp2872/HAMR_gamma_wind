@@ -1162,7 +1162,7 @@ void init_torus()
 	calc_source();
 	#endif
 
-	#if (DOHELM)
+	#if (DOHELM == 2)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	double den, ener, pres;
 	for (n = 0; n < n_active; n++) {

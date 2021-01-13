@@ -352,10 +352,30 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     double ecoul, decouldd, decouldt, pcoul, dpcouldd, dpcouldt, scoul, dscouldd, dscouldt;
 #endif
 
+    // DIMARK: reset to GAMMA law (testing):
+    #if (EOS_GAMMALAW)
+    //btemp /= MMW * MH_CGS * (ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE);
+    *pres = btemp * den;
+    *ener = btemp / ((GAMMA - 1.0));
+    *entr = *pres * pow(den, -GAMMA);
+    *dpresdt = *pres / btemp;
+    *dpresdd = *pres / den;
+    *denerdt = *ener / btemp;
+    *cs2 = GAMMA * (GAMMA - 1.) * (*ener) / (GAMMA * (*ener) + 1.);
+    return;
+    #endif
+
     // Convert from code units to cgs units (EOS table units)
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
     
+    // DIMARK: if the input values are outside the table bounds - reset the e-p contribution
+    int reset_elepos = 0;
+    //if ((btemp < eos_temp_low || btemp > eos_temp_up) || (den < eos_dens_low || den > eos_dens_up)) {
+    if (0) {
+        reset_elepos = 1;
+    }
+
     // If density is below the minimum supplied by the table:
     double den_low = den;
     int is_density_low = 0;
@@ -376,7 +396,13 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
 
     //Look up the desired quantities in the eos table
     double free, df_d, df_t, df_dd, df_tt, df_dt, etaele;
-    interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+    if (reset_elepos) {
+        free = df_d = df_t = df_tt = df_dt = dpepdd = etaele = 1e-30;
+        is_density_low = 0;
+    }
+    else {
+        interp_eostable(den, btemp, din, ye, &free, &df_d, &df_t, &df_tt, &df_dt, &dpepdd, &etaele);
+    }
 
     // the desired electron-positron thermodynamic quantities
     pele = din * din * df_d;
@@ -564,6 +590,15 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     return;
 }
 
+void validate_T(double* temp);
+
+void validate_T(double* temp) {
+    //if (*temp < 0.0) *temp = 1e-30;
+    if (*temp < eos_temp_low) *temp = eos_temp_low;
+    if (*temp > eos_temp_up) *temp = eos_temp_up;
+    return;
+}
+
 // Entropy inversion
 void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
     // Parameters of Newton-Raphson iterations
@@ -598,9 +633,7 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
 
         error = fabs((temp_new - temp_old) / temp_old);
         error_q = fabs((ener_tmp - ener_goal) / ener_goal);
-
-        temp_new = MY_MAX(eos_temp_low, temp_new);
-        temp_new = MY_MIN(eos_temp_up, temp_new);
+        validate_T(&temp_new);
 
         temp_old = temp_new;
 
@@ -646,6 +679,13 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
             i++;
         }
     }
+
+    #if (!DOHELM_FULLENTROPY)
+    * entr = exp((*entr) * KTOT_FACTOR);
+    #endif
+
+    if (*entr != *entr)
+        fprintf(stderr, "Entr = %g\n", *entr);
 }
 
 
@@ -682,9 +722,7 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
 
         error = fabs((temp_new - temp_old) / temp_old);
         error_q = fabs((ener_tmp - ener_goal) / ener_goal);
-
-        temp_new = MY_MAX(eos_temp_low, temp_new);
-        temp_new = MY_MIN(eos_temp_up, temp_new);
+        validate_T(&temp_new);
 
         temp_old = temp_new;
 
@@ -765,9 +803,7 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
 
         error = fabs((temp_new - temp_old) / temp_old);
         error_q = fabs((ener_tmp - ener_goal) / ener_goal);
-
-        temp_new = MY_MAX(eos_temp_low, temp_new);
-        temp_new = MY_MIN(eos_temp_up, temp_new);
+        validate_T(&temp_new);
 
         temp_old = temp_new;
 
@@ -855,9 +891,7 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, 
 
         error = fabs((temp_new - temp_old) / temp_old);
         error_q = fabs((h_tmp - xenth) / xenth);
-
-        temp_new = MY_MAX(eos_temp_low, temp_new);
-        temp_new = MY_MIN(eos_temp_up, temp_new);
+        validate_T(&temp_new);
 
         temp_old = temp_new;
 
@@ -919,10 +953,7 @@ void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u) {
         
         error = fabs((temp_new - temp_old) / temp_old);
         error_h = fabs((h_tmp - xenth) / xenth);
-        
-        //printf("num = %d, err in T = %e, err in h = %e, T = %e, h = %e, p = %e, e = %e\n", i, error, error_h, temp_new, h_tmp, *pres, *ener);
-        if (temp_new < 1.0e4) temp_new = 1.0e4;
-        if (temp_new > 1.0e11) temp_new = 1.0e11;
+        validate_T(&temp_new);
         
         temp_old = temp_new;
         if(error < tolerance && error_h < tolerance_h) {
@@ -983,10 +1014,7 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
         
         error = fabs((temp_new - temp_old) / temp_old);
         error_p = fabs((p_tmp - p_goal) / p_goal);
-        
-        //printf("num = %d, T = %e, err in T = %e, err in p = %e, p = %e, dpdt = %e\n", i, temp_new, error, error_p, p_tmp, dpdt);
-        if (temp_new < 1.0e3) temp_new = 1.0e3;
-        if (temp_new > 1.0e13) temp_new = 1.0e13;
+        validate_T(&temp_new);
         
         temp_old = temp_new;
         
@@ -1038,8 +1066,7 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
 
         error = fabs((temp_new - temp_old) / temp_old);
         error_e = fabs((ener_tmp - ener_goal) / ener_goal);
-        if (temp_new < 1.0e3) temp_new = 1.0e3;
-        if (temp_new > 1.0e13) temp_new = 1.0e13;
+        validate_T(&temp_new);
 
         temp_old = temp_new;
         // more iterations after reached below tolerance
@@ -1085,7 +1112,10 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
     }
     *temp = tempC;
 
-    if (error_e > EOS_TOL) fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, *temp, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
+    if (error_e > EOS_TOL)
+    {
+        fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, *temp, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
+    }
 }
 
 void test_eos(void) {

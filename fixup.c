@@ -199,12 +199,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	double xentr;
 	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
 	pv[KTOT] = xentr;
-	//DIMARK: pv[KTOT] = exp(KTOT_FACTOR * xentr);
 	#else 
 	// DIMARK: entropy test
-	double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
-	pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
-	//pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
+	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log/(PRESSURE_SCALE/ * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
+	//pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
+	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
 	#endif
 	#endif
 

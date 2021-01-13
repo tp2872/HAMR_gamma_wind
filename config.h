@@ -47,9 +47,13 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (0)
-#define KTOT_FACTOR (1e-10)
+#define DOHELM (1)
+#define DOHELM_FULLENTROPY (0)
+#define EOS_GAMMALAW (0)
+#define KTOT_FACTOR (1e-5)
 #define EOS_BISECTION_THRESHOLD (1e6)
+#define revert_gamma (1)
+#define eos_nr_debug (0)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
@@ -302,7 +306,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable IMEX*/
 #define DO_IMEX (1)
@@ -702,6 +706,7 @@ Section with EOS constants
 #define conv_pres_CGS2CODE (1.0 / PRESSURE_SCALE) //(G_cgs * G_cgs * G_cgs * Mbh_cgs * Mbh_cgs / (c_light * c_light * c_light * c_light * c_light * c_light * c_light * c_light)) // = G_cgs^3 * M_bh^2 /c_light^8
 #define conv_ener_CODE2CGS (c_light * c_light)
 #define conv_ener_CGS2CODE (1.0 / (c_light * c_light)) // = 1 / c_light^2
+#define conv_entr_CODE2CGS (kergavo)
 #define conv_entr_CGS2CODE (1.0 / kergavo)
 
 //For the uniform background coulomb correction
