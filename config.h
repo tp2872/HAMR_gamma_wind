@@ -49,6 +49,7 @@ Physical Parameters section
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
 #define KTOT_FACTOR (1e-10)
+#define EOS_BISECTION_THRESHOLD (1e6)
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))

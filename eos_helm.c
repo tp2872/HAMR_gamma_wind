@@ -356,6 +356,14 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     btemp *= conv_T_CODE2CGS;
     den *= conv_dens_CODE2CGS;
     
+    // If density is below the minimum supplied by the table:
+    double den_low = den;
+    int is_density_low = 0;
+    if (den < eos_dens_low) {
+        den = eos_dens_low;
+        is_density_low = 1;
+    }
+
     double deni = 1.0 / den;
     double tempi = 1.0 / btemp;
 
@@ -379,7 +387,6 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     pion = xni * kt;
     eion = 1.5 * pion * deni;
     sion = (pion * deni + eion) * tempi + kavoy * log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * btemp, 1.5));
-    sion = MY_MAX(sion, 0.0);
 
     // uniform background corrections & only the needed parts for speed
     // plasg is the plasma coupling parameter
@@ -532,6 +539,19 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
         *cs2 = (chit * chit * (*pres) * deni * tempi / (*denerdt) + (*dpresdd) * den / (*pres)) / z; // already in the units of the code (c = 1)
     }
 
+    double density_factor = den / den_low;
+    if (is_density_low) {
+        *pres *= density_factor;
+        //*ener unchanged;
+        *entr *= density_factor;
+        *dpresdt *= density_factor;
+        //*denerdt unchanged;
+        //*dpresdd unchanged
+        //*denerdd unchanged or = 0, I don't know yet
+        //*cs2 unchanged
+        // for now
+    }
+
     // Convert from cgs to code units
     *pres *= conv_pres_CGS2CODE;
     *ener *= conv_ener_CGS2CODE;
@@ -592,6 +612,40 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
 
         i++;
     }
+
+    // Bisection method as backup rootfinder
+    double tempA, tempB, tempC;
+    double enerA, enerB, enerC;
+    double fA, fB, fC;
+
+    if (error_q > EOS_TOL && error_q < EOS_BISECTION_THRESHOLD) {
+        tempA = eos_temp_low;
+        eos_helm(1, tempA, den, 1.0, 1.0, &pres, &enerA, entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fA = enerA - ener_goal;
+
+        tempB = eos_temp_up;
+        eos_helm(1, tempB, den, 1.0, 1.0, &pres, &enerB, entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fB = enerB - ener_goal;
+
+        if (fA * fB >= 0.0) return;
+
+        i = 0;
+        while (i < 2 * EOS_ITERATIONS) {
+            tempC = 0.5 * ((tempA)+(tempB));
+
+            eos_helm(1, tempC, den, 1.0, 1.0, &pres, &enerC, entr, &dpdt, &dedt, &dpdrho, &cs2);
+            fC = enerC - ener_goal;
+            error_q = fabs(fC / ener_goal);
+
+            if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_q < EOS_TOL) {
+                break;
+            }
+
+            if (fC * fA >= 0.0) tempA = tempC;
+            else tempB = tempC;
+            i++;
+        }
+    }
 }
 
 
@@ -642,6 +696,40 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
 
         i++;
     }
+
+    // Bisection method as backup rootfinder
+    double tempA, tempB, tempC;
+    double enerA, enerB, enerC;
+    double fA, fB, fC;
+
+    if (error_q > EOS_TOL && error_q < EOS_BISECTION_THRESHOLD) {
+        tempA = eos_temp_low;
+        eos_helm(1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fA = enerA - ener_goal;
+
+        tempB = eos_temp_up;
+        eos_helm(1, tempB, den, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fB = enerB - ener_goal;
+
+        if (fA * fB >= 0.0) return;
+
+        i = 0;
+        while (i < 2 * EOS_ITERATIONS) {
+            tempC = 0.5 * ((tempA)+(tempB));
+
+            eos_helm(1, tempC, den, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            fC = enerC - ener_goal;
+            error_q = fabs(fC / ener_goal);
+
+            if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_q < EOS_TOL) {
+                break;
+            }
+
+            if (fC * fA >= 0.0) tempA = tempC;
+            else tempB = tempC;
+            i++;
+        }
+    }
 }
 
 void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2) {
@@ -690,6 +778,40 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
         }
 
         i++;
+    }
+
+    // Bisection method as backup rootfinder
+    double tempA, tempB, tempC;
+    double enerA, enerB, enerC;
+    double fA, fB, fC;
+
+    if (error_q > EOS_TOL && error_q < EOS_BISECTION_THRESHOLD) {
+        tempA = eos_temp_low;
+        eos_helm(1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, cs2);
+        fA = enerA - ener_goal;
+
+        tempB = eos_temp_up;
+        eos_helm(1, tempB, den, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, cs2);
+        fB = enerB - ener_goal;
+
+        if (fA * fB >= 0.0) return;
+
+        i = 0;
+        while (i < 2 * EOS_ITERATIONS) {
+            tempC = 0.5 * ((tempA)+(tempB));
+
+            eos_helm(1, tempC, den, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, cs2);
+            fC = enerC - ener_goal;
+            error_q = fabs(fC / ener_goal);
+
+            if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_q < EOS_TOL) {
+                break;
+            }
+
+            if (fC * fA >= 0.0) tempA = tempC;
+            else tempB = tempC;
+            i++;
+        }
     }
 }
 
@@ -928,8 +1050,42 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
     }
     *temp = temp_old;
 
-    if (error_e > EOS_TOL) fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, temp_old, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
+    // Bisection method as backup rootfinder
+    double tempA, tempB, tempC;
+    double enerA, enerB, enerC;
+    double fA, fB, fC;
 
+    if (error_e > EOS_TOL && error_e < EOS_BISECTION_THRESHOLD) {
+        tempA = eos_temp_low;
+        eos_helm(1, tempA, den, 1.0, 1.0, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fA = enerA - ener_goal;
+
+        tempB = eos_temp_up;
+        eos_helm(1, tempB, den, 1.0, 1.0, &pres, &enerB, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fB = enerB - ener_goal;
+
+        if (fA * fB >= 0.0) return;
+
+        i = 0;
+        while (i < 2 * EOS_ITERATIONS) {
+            tempC = 0.5 * ((tempA)+(tempB));
+
+            eos_helm(1, tempC, den, 1.0, 1.0, &pres, &enerC, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            fC = enerC - ener_goal;
+            error_e = fabs(fC / ener_goal);
+
+            if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_e < EOS_TOL) {
+                break;
+            }
+
+            if (fC * fA >= 0.0) tempA = tempC;
+            else tempB = tempC;
+            i++;
+        }
+    }
+    *temp = tempC;
+
+    if (error_e > EOS_TOL) fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, *temp, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
 }
 
 void test_eos(void) {

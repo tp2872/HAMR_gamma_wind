@@ -2324,7 +2324,10 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 		y = 0.;
 	}
 	if (prim[0] < 0) {
-		prim[0] = 0.5 * fabs(prim[0]);
+		prim[1] = 1.e-150;
+		prim[2] = 0.;
+		prim[3] = 0.;
+		prim[0] = 0.0 * fabs(prim[0]);
 		Qdotn *= -1.0;
 	}
 	if (y <= 0.) {
@@ -2332,7 +2335,6 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 		y = 0.;
 	}
 	if (y >= 1.0 || isnan(y)) {
-		prim[0] = 1.e-150;
 		prim[1] = 0.;
 		prim[2] = 0.;
 		prim[3] = 0.;
@@ -2340,11 +2342,12 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 
 		// Get Ebar and p_rad as usual
 		pressure = -Qdotn / (4. * gammasq - 1.);
-		prim[0] = pressure * 3.;
+		prim[0] = pressure * 3.; // Erad = 3*p_rad
 
+		// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 		for (i = 1; i < 4; i++) {
 			if (!isnan(Qtcon[i])) {
-				prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+				//prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 			}
 		}
 		y = 0.;
@@ -8749,12 +8752,12 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
     den *= conv_dens_CODE2CGS;
 
 	// If density is below the minimum supplied by the table:
-	// double den_low = den;
-	// int is_density_low = 0;
-	// if (den < 1e-12) {
-	// 	den = 1e-12;
-	// 	is_density_low = 1;
-	// }
+	double den_low = den;
+	int is_density_low = 0;
+	if (den < eos_dens_low) {
+		den = eos_dens_low;
+		is_density_low = 1;
+	}
 
 	double deni = 1.0 / den;
 	double tempi = 1.0 / btemp;
@@ -8779,6 +8782,7 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
     sele = -df_t * ye;
     eele = ye * free + btemp * sele;
 
+	// ion portion of the gas:
 	double xni = avo * ytot1 * den;
     pion = xni * kt; 
 	eion = 1.5 * pion * deni;
@@ -8937,25 +8941,30 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
         *cs2 = (chit * chit * (*pres) * deni  * tempi / (*denerdt) + (*dpresdd) * den / (*pres)) / z; // already in the units of the code (c = 1)
     }
 
-	// double density_factor = den / den_low;
-	// if (is_density_low) {
-	// 	*ener *= density_factor;
-	// 	*entr *= density_factor;
-	// 	*denerdt *= density_factor;
-	// 	*dentrdt *= density_factor;
-	// 	// for now
-	// }
+	double density_factor = den / den_low;
+	if (is_density_low) {
+		*pres *= density_factor;
+		//*ener unchanged;
+		*entr *= density_factor;
+		*dpresdt *= density_factor;
+		//*denerdt unchanged;
+		*dentrdt *= density_factor;
+		//*dpresdd unchanged
+		//*denerdd unchanged or = 0, I don't know yet
+		//*cs2 unchanged
+		// for now
+	}
 
     // Convert from cgs to code units
     *pres *= conv_pres_CGS2CODE;
     *ener *= conv_ener_CGS2CODE;
-	*entr /= kergavo;
+	*entr *= conv_entr_CGS2CODE;
 
     *dpresdt *= conv_pres_CGS2CODE * conv_T_CODE2CGS;
     *denerdt *= conv_ener_CGS2CODE * conv_T_CODE2CGS;
+	*dentrdt *= conv_entr_CGS2CODE;
     *dpresdd *= conv_pres_CGS2CODE * conv_dens_CODE2CGS;
 	*denerdd *= conv_ener_CGS2CODE * conv_dens_CODE2CGS;
-	*dentrdt /= kergavo;
 
     return;
 }
@@ -8969,6 +8978,11 @@ __device__ void validate_T(double* temp) {
 	return;
 }
 
+__device__ int eos_check_input_u(double rho, double u) {
+	if (u <= 0.) return 1;
+	else return 0;
+}
+
 __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 	double gam = 5. / 3.;
 
@@ -8978,8 +8992,8 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 	}
 
 	#if (RAD_M1)
-	*temp = fabs(MMW * MH_CGS * (gam - 1.) * (u * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * rho * MASS_DENSITY_SCALE));
-	//*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
+	//*temp = fabs(MMW * MH_CGS * (gam - 1.) * (u * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * rho * MASS_DENSITY_SCALE));
+	*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
 	#else
 	*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
 	#endif
@@ -8988,8 +9002,60 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 	return;
 }
 
-__device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres) {
-    // initial guess : temperature
+// __device__ double eos_newton_raphson(const double* __restrict__ gpu_eos_table, int mode, double den, double temp_ini, double q_goal, double *pres, double *ener, double *entr, double *cs2, double *dpdt, double *dedt, double *dsdt, double *dpdd, double *dedd) {
+// 	// double pres, ener, entr, dpdt, dedt, dsdt, dpdd, dedd, cs2;
+// 	double enth, dhdt;
+// 	double temp_old, temp_new;
+// 	double errT, errQ;
+// 
+// 	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
+// 	temp_old = temp_ini;
+// 
+// 	for (int i = 0; i < EOS_ITERATIONS; i++) {
+// 		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, ener, entr, dpdt, dedt, dsdt, dpdd, dedd, cs2);
+// 
+// 		if (mode == EOS_NR_ENER) {
+// 			temp_new = temp_old - (*ener - q_goal) / *dedt;
+// 			errQ = fabs((*ener - q_goal) / q_goal);
+// 		}
+// 		else if (mode == EOS_NR_PRES) {
+// 			temp_new = temp_old - (*pres - q_goal) / *dpdt;
+// 			errQ = fabs((*pres - q_goal) / q_goal);
+// 		}
+// 		else if (mode == EOS_NR_ENTR) {
+// 			temp_new = temp_old - (*entr - q_goal) / *dsdt;
+// 			errQ = fabs((*entr - q_goal) / q_goal);
+// 		}
+// 		else if (mode == EOS_NR_ENTH) {
+// 			enth = *ener + *pres / den;
+// 			dhdt = *dedt + *dpdt / den;
+// 			temp_new = temp_old - (*enth - q_goal) / *dhdt;
+// 			errQ = fabs((*enth - q_goal) / q_goal);
+// 		}
+// 		else
+// 			printf("EOS NEWTON RAPHSON: WRONG MODE CHOSEN!\n");
+// 
+// 		//do not allow temp to change more than 10. times in one iteration
+// 		if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
+// 		if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
+// 
+// 		errT = fabs((temp_new - temp_old) / temp_old);
+// 		validate_T(&temp_new);
+// 
+// 		temp_old = temp_new;
+// 
+// 		// more iterations after reached below tolerance
+// 		if (errT < EOS_TEMP_TOL && errQ < EOS_TOL) {
+// 			more_iterations -= 1;
+// 			if (more_iterations == 0) break;
+// 		}
+// 	}
+// 
+// 	return errQ;
+// }
+
+__device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres) {	
+	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, u_goal, &temp_ini_guess);
 
@@ -9026,10 +9092,55 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
             if (more_iterations == 0) break;
         }
     }
+
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double enerA, enerB, enerC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_e > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fA = enerA - ener_goal;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fB = enerB - ener_goal;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+			fC = enerC - ener_goal;
+			error_e = fabs(fC / ener_goal);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_e < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+	}
+
+	if (error_e > EOS_TOL) {
+		// Use GAMMA EOS in this case
+		*pres = (GAMMA - 1.0) * u_goal;
+		error_e = 9.99e-12;
+	}
+	
+
+	if (error_e > EOS_TOL) printf("1 %g %g %g %g %g\n", error_e, temp_old, den, u_goal, temp_ini_guess);
+
 }
 
 __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres, double *cs2) {
-    // initial guess : temperature
+	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, u_goal, &temp_ini_guess);
 
@@ -9065,6 +9176,50 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
             if (more_iterations == 0) break;
         }
     }
+
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double enerA, enerB, enerC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_e > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2);
+		fA = enerA - ener_goal;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, pres, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2);
+		fB = enerB - ener_goal;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, pres, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, cs2);
+			fC = enerC - ener_goal;
+			error_e = fabs(fC / ener_goal);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_e < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+	}
+
+	if (error_e > EOS_TOL) {
+		*pres = (GAMMA - 1.0) * u_goal;
+		*cs2 = GAMMA * (GAMMA - 1.0) * u_goal / (den + GAMMA * u_goal);
+		error_e = 9.99e-12;
+	}
+
+	if (error_e > EOS_TOL) printf("2 %g %g %g %g %g\n", error_e, temp_old, den, u_goal, temp_ini_guess);
+
 }
 
 __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *dpdrho, double *dpde_d) {
@@ -9111,12 +9266,55 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
         }
     }
 
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double enerA, enerB, enerC;
+	double presA, presB, presC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_h > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, &presA, &enerA, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+		fA = enerA + presA * deni - xenth;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, &presB, &enerB, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+		fB = enerB + presB * deni - xenth;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, &presC, &enerC, &entr, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+			fC = enerC + presC * deni - xenth;
+			error_h = fabs(fC / xenth);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_h < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+		*pres = presC;
+	}
+
+	//if (error_h > EOS_TOL) {
+	//	*pres = (GAMMA - 1.0) * (w_goal - den) / (GAMMA);
+	//}
+
+	if (error_h > EOS_TOL) printf("3 %g %g %g %g %g\n", error_h, temp_old, den, w_goal-den, temp_ini_guess);
+
     *dpde_d = dpdt / dedt;
 }
 
 __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *u) {
     // implementation in Newman-Hamlin inversion
-    // initial guess : temperature
+	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, w_goal - den, &temp_ini_guess);
 
@@ -9159,8 +9357,54 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
             if (more_iterations == 0) break;
         }
     }
+	*u = xener * den;
 
-    *u = xener * den;
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double enerA, enerB, enerC;
+	double presA, presB, presC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_h > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, &presA, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fA = enerA + presA * deni - xenth;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, &presB, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fB = enerB + presB * deni - xenth;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, &presC, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+			fC = enerC + presC * deni - xenth;
+			error_h = fabs(fC / xenth);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_h < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+
+			i++;
+		}
+		*pres = presC;
+		*u = enerC * den;
+	}
+
+	if (error_h > EOS_TOL) {
+		*u = (w_goal - den) / GAMMA;
+		*pres = *u * (GAMMA - 1.);
+		error_h = 9.99e-12;
+	}
+
+	if (error_h > EOS_TOL) printf("4 %g %g %g %g %g\n", error_h, temp_old, den, w_goal-den, temp_ini_guess);
 }
 
 __device__ void eos_mode_rhotemp_pres_min (const  double* __restrict__ gpu_eos_table, double den, double *pres) {
@@ -9175,7 +9419,7 @@ __device__ void eos_mode_rhotemp_pres_min (const  double* __restrict__ gpu_eos_t
 }
 
 __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, double den, double p_goal, double *u) {
-    // initial guess : temperature
+	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, p_goal, &temp_ini_guess);
 
@@ -9212,7 +9456,48 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
         }
     }
 
-    *u = xener * den;
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double presA, presB, presC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_p > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, &presA, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fA = presA - p_goal;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, &presB, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fB = presB - p_goal;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, &presC, &xener, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+			fC = presC - p_goal;
+			error_p = fabs(fC / p_goal);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_p < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+	}
+
+	if (error_p > EOS_TOL) {
+		*u = p_goal / (GAMMA - 1.);
+		error_p = 9.99e-12;
+	}
+
+	if (error_p > EOS_TOL) printf("5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
+	*u = xener * den;
 }
 
 
@@ -9255,14 +9540,56 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 		}
 	}
 
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double entrA, entrB, entrC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_p > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, pres, &xener, &entrA, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+		fA = entrA - entr_goal;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, pres, &xener, &entrB, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+		fB = entrB - entr_goal;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, pres, &xener, &entrC, &dpdt, &dedt, &dsdt, dpdrho, &dedrho, &cs2);
+			fC = entrC - entr_goal;
+			error_p = fabs(fC / entr_goal);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_p < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+	}
+
 	*u = xener * den;
 	*dudrho = dedrho * den + xener;
+	if (error_p > EOS_TOL) printf("6 %g %g %g %g %g\n", error_p, temp_old, den, entr_goal, temp_ini_guess);
 
-	if (isnan(entr_goal)) printf("[helm] u: %g, iters: %d, T: %g err: %g den: %g s: %g\n", (*u), i, temp_old, error_p, den, entr_goal);
+	//if (isnan(entr_goal)) printf("[helm] u: %g, iters: %d, T: %g err: %g den: %g s: %g\n", (*u), i, temp_old, error_p, den, entr_goal);
 }
 
 
 __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* entr) {
+	// Check the input:
+	if (eos_check_input_u(den, u_goal)) {
+		*entr = 1e-30;
+		return;
+	}
+
 	// initial guess : temperature
 	double temp_ini_guess;
 	eos_NR_temp_guess(den, u_goal, &temp_ini_guess);
@@ -9278,15 +9605,6 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
 
 	temp_old = temp_ini_guess;
-	// DIMARK: testing below rho_low
-	double rho_f = 1.0;
-	if (den < eos_dens_low) {
-		den = eos_dens_low;
-		//rho_f = den / eos_dens_low;
-		//*temp = fabs(MMW * MH_CGS * (5. / 3. - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE));
-		return;
-	}
-	// DIMARK: end of the code snippet
 	for (i = 0; i < EOS_ITERATIONS; i++) {
 		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
 		temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -9307,7 +9625,42 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 		}
 	}
 
-	if (error_e > EOS_TOL) printf("[eos_mode_rhou_entr FAIL %g %g] : %g %g (%g)\n", error_e, temp_old, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE)));
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double enerA, enerB, enerC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_e > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, &pres, &enerA, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fA = enerA - ener_goal;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, &pres, &enerB, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fB = enerB - ener_goal;
+
+		if (fA * fB >= 0.0) flag = 0; 
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, &pres, &enerC, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+			fC = enerC - ener_goal;
+			error_e = fabs(fC / ener_goal);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_e < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+	}
+
+	if (error_e > EOS_TOL) printf("7 %g %g %g %g %g\n", error_e, temp_old, den, u_goal, temp_ini_guess);
 }
 
 __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* temp) {
@@ -9326,15 +9679,6 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
 
 	temp_old = temp_ini_guess;
-	// DIMARK: testing below rho_low
-	double rho_f = 1.0;
-	if (den < eos_dens_low) {
-		den = eos_dens_low;
-		//rho_f = den / eos_dens_low;
-		//*temp = fabs(MMW * MH_CGS * (5./3. - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE));
-		return;
-	}
-	// DIMARK: end of the code snippet
 	for (i = 0; i < EOS_ITERATIONS; i++) {
 		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
 		temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -9354,12 +9698,51 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 			if (more_iterations == 0) break;
 		}
 	}
-
-	//if (error_e > EOS_TOL) printf("[eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, temp_old, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE)));
 	*temp = temp_old;
+
+	// Bisection method as backup rootfinder
+	double tempA, tempB, tempC;
+	double enerA, enerB, enerC;
+	double fA, fB, fC;
+	int flag = 1;
+
+	if (error_e > EOS_TOL) {
+		tempA = eos_temp_low;
+		eos_helm(gpu_eos_table, 1, tempA, den, 1.0, 1.0, &pres, &enerA, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fA = enerA - ener_goal;
+
+		tempB = eos_temp_up;
+		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, &pres, &enerB, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+		fB = enerB - ener_goal;
+
+		if (fA * fB >= 0.0) flag = 0;
+
+		i = 0;
+		while (i < 2 * EOS_ITERATIONS && flag) {
+			tempC = 0.5 * ((tempA)+(tempB));
+
+			eos_helm(gpu_eos_table, 1, tempC, den, 1.0, 1.0, &pres, &enerC, &entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
+			fC = enerC - ener_goal;
+			error_e = fabs(fC / ener_goal);
+
+			if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_e < EOS_TOL) {
+				break;
+			}
+
+			if (fC * fA >= 0.0) tempA = tempC;
+			else tempB = tempC;
+			i++;
+		}
+	}
+	*temp = tempC;
+
+	if (error_e > EOS_TOL) {
+		// Revert back to GAMMA law
+		*temp = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+		error_e = 9.99e-12;
+	}
+
+	if (error_e > EOS_TOL) printf("8 %g %g %g %g %g\n", error_e, *temp, den, u_goal, temp_ini_guess);
 }
-
-
-
 
 #endif
