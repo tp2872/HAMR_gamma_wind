@@ -1111,8 +1111,9 @@ void init_torus()
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
+			#if (0)
 			#if(RAD_M1)
-			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]); // Danat: Does nothing!
 			#endif
 
 			//Calculate optical depth of one cell
@@ -1120,7 +1121,7 @@ void init_torus()
 			#if(D3>1)
 			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
 			#else
-			cell_size =MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
 			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
@@ -1129,8 +1130,8 @@ void init_torus()
 				#pragma omp critical
 				taumax = tau;
 			}
+			#endif
 		}
-
 	}
 	umax /= rhomax ;
 	rhomax = 1. ;
@@ -1142,12 +1143,12 @@ void init_torus()
 	#endif
 	#endif
 
-	#if(RAD_M1)
-	//Print maximum optical depth in grid
-	if (rank == 0) {
-		fprintf(stderr, "taumax: %g\n", taumax);
-	}
-	#endif
+	// #if(RAD_M1)
+	// //Print maximum optical depth in grid
+	// if (rank == 0) {
+	// 	fprintf(stderr, "taumax: %g\n", taumax);
+	// }
+	// #endif
 
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
@@ -1162,26 +1163,50 @@ void init_torus()
 	calc_source();
 	#endif
 
-	#if (DOHELM == 2)
-	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-	double den, ener, pres;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi); 
+			#if(RAD_M1)
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]); // Danat: Does nothing!
+			#endif
 
-			den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-			ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			pres = ener * (gam - 1.0);
-			
-			eos_mode_rhopres_u(den, pres, &ener);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+			#if (DOHELM)
+			// Use Helmholtz EOS to set u given rho and p = (GAMMA - 1)*u
+			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], (gam_local - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
+			#endif
+
+			#if(RAD_M1)
+			//Calculate optical depth of one cell
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			#if(D3>1)
+			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
+			#else
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			#endif
+			// DIMARK: 
+			//if (i == 100 && j == 71 && z == 0) {
+			//	fprintf(stderr, "%e %e %e (%e %e)\n", kappa_abs, kappa_es, tau, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
+			//}
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			tau = (kappa_es + kappa_abs) * cell_size;
+			if (tau > taumax) {
+				#pragma omp critical
+				taumax = tau;
+			}
+			#endif
 		}
 	}
 
+	#if(RAD_M1)
+	//Print maximum optical depth in grid
+	if (rank == 0) {
+		fprintf(stderr, "taumax: %g\n", taumax);
+	}
+	#endif
+
+	#if (DOHELM)
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p, 1);
-
 	#endif
 }
 
