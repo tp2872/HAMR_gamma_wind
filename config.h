@@ -48,12 +48,17 @@ Physical Parameters section
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
 #define DOHELM (1)
-#define DOHELM_FULLENTROPY (0)
+#define DOHELM_FULLENTROPY (0) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define EOS_GAMMALAW (0)
-#define KTOT_FACTOR (1e-5)
-#define EOS_BISECTION_THRESHOLD (1e6)
-#define revert_gamma (1)
+#define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
+#define inversion_w_edits   (1)
+#define enable_input_check  (1)
+#define revert_gamma        (1)
+
+#define EOS_BISECTION (0)
 #define eos_nr_debug (0)
+
+#define low_rho_correction  (0) // Leave it at 0, breaks 2d inversion
 
 /** FIXUP PARAMETERS, magnitudes of rho and u, respectively, in the floor : **/
 #if( (WHICHPROBLEM == POSTMERGER_PROBLEM))
@@ -70,10 +75,14 @@ Physical Parameters section
     #define UUMINLIMIT  (1.e-40)
 #endif
 #elif ((DOHELM) && (WHICHPROBLEM == TORUS_PROBLEM))
-    #define RHOMIN    (1.e-14)
-    #define UUMIN    (1.e-16)
-    #define RHOMINLIMIT (1.e-30)
-    #define UUMINLIMIT  (1.e-30)
+    #define RHOMIN	(1.e-7)
+    #define UUMIN	(1.e-9)
+    #define RHOMINLIMIT (1.e-20)
+    #define UUMINLIMIT  (1.e-20)
+    //#define RHOMIN    (1.e-14)
+    //#define UUMIN    (1.e-16)
+    //#define RHOMINLIMIT (1.e-30)
+    //#define UUMINLIMIT  (1.e-30)
 #else
     #define RHOMIN	(1.e-7)
     #define UUMIN	(1.e-9)
@@ -306,7 +315,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable IMEX*/
 #define DO_IMEX (1)
@@ -639,8 +648,8 @@ Section with EOS constants
 #define EOSJMAX (201)   
 // Log10 of EOS quantity limits
 #define eos_tlo (3.0)   
-#define eos_dlo (-12.0) 
 #define eos_thi (13.0)
+#define eos_dlo (-12.0) 
 #define eos_dhi (15.0)
 // EOS quantity limits
 #define eos_temp_low (1e3)
@@ -659,7 +668,7 @@ Section with EOS constants
 #define bAprox13t (0)
 
 // Use linear interpolation of the EOS table
-#define EOS_LINEAR (1)
+#define EOS_LINEAR (0)
 
 // if you set eos_coulombAbort to non-zero, set EOS_COULOMB_CORR to 1
 // otherwise, set EOS_COULOMB_CORR to 0
