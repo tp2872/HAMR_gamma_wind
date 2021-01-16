@@ -3649,17 +3649,19 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 	double dpdrho, dpde_d;
 
 	eos_mode_rhow_pres_dpdrho_dpde_d(gpu_eos_table, rho, (x[0]*gtmp), &p_tmp, &dpdrho, &dpde_d);
-
-	//double dpdeps_o_rho = dpde_d / rho;
-	//double dpdvsq_1 = -0.5 * D / sqrt(gtmp) * dpdrho;
-	//double dpdvsq_2 = -0.5 * (x[0] + p_tmp / sqrt(gtmp)) / rho;
-	//dPdW = (dpdeps_o_rho / (1.0 + dpdeps_o_rho)) * gtmp;
-	//dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2) / (1.0 + dpdeps_o_rho);
 	
+	#if (inversion_w_edits)
 	// Danat: edit (DIMARK)
 	double dudp = rho / dpde_d;
 	dPdW = 1.0 / (1.0 + dudp) * gtmp;
 	dPdvsq = (-x[0] + 0.5 * D / sqrt(gtmp) * (1. - dpdrho * dudp)) / (1. + dudp);
+	#else 
+	double dpdeps_o_rho = dpde_d / rho;
+	double dpdvsq_1 = -0.5 * D / sqrt(gtmp) * dpdrho;
+	double dpdvsq_2 = -0.5 * (x[0] + p_tmp / sqrt(gtmp)) / rho;
+	dPdW = (dpdeps_o_rho / (1.0 + dpdeps_o_rho)) * gtmp;
+	dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2) / (1.0 + dpdeps_o_rho);
+	#endif
 
 	#else
 	// 2. Ideal gas EOS
@@ -8785,10 +8787,12 @@ __device__ void eos_helm (const  double* __restrict__ gpu_eos_table, int calc_de
 	// If density is below the minimum supplied by the table:
 	double den_low = den;
 	int is_density_low = 0;
+	#if (low_rho_correction)
 	if (den < eos_dens_low) {
 		den = eos_dens_low;
 		is_density_low = 1;
 	}
+	#endif
 
 	double deni = 1.0 / den;
 	double tempi = 1.0 / btemp;
@@ -8941,70 +8945,28 @@ __device__ void eos_NR_temp_guess(double rho, double u, double* temp) {
 	//*temp = fabs(MMW * MH_CGS * (gam - 1.) * (u * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * rho * MASS_DENSITY_SCALE));
 	*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
 	#else
-	//*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
-	*temp = (GAMMA - 1.) * u / rho;
+	*temp = pow(u * PRESSURE_SCALE / ARAD, 0.25);
+	//*temp = (GAMMA - 1.) * u / rho;
 	#endif
 
 	validate_T(temp);
 	return;
 }
 
-// __device__ double eos_newton_raphson(const double* __restrict__ gpu_eos_table, int mode, double den, double temp_ini, double q_goal, double *pres, double *ener, double *entr, double *cs2, double *dpdt, double *dedt, double *dsdt, double *dpdd, double *dedd) {
-// 	// double pres, ener, entr, dpdt, dedt, dsdt, dpdd, dedd, cs2;
-// 	double enth, dhdt;
-// 	double temp_old, temp_new;
-// 	double errT, errQ;
-// 
-// 	int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-// 	temp_old = temp_ini;
-// 
-// 	for (int i = 0; i < EOS_ITERATIONS; i++) {
-// 		eos_helm(gpu_eos_table, 1, temp_old, den, 1.0, 1.0, pres, ener, entr, dpdt, dedt, dsdt, dpdd, dedd, cs2);
-// 
-// 		if (mode == EOS_NR_ENER) {
-// 			temp_new = temp_old - (*ener - q_goal) / *dedt;
-// 			errQ = fabs((*ener - q_goal) / q_goal);
-// 		}
-// 		else if (mode == EOS_NR_PRES) {
-// 			temp_new = temp_old - (*pres - q_goal) / *dpdt;
-// 			errQ = fabs((*pres - q_goal) / q_goal);
-// 		}
-// 		else if (mode == EOS_NR_ENTR) {
-// 			temp_new = temp_old - (*entr - q_goal) / *dsdt;
-// 			errQ = fabs((*entr - q_goal) / q_goal);
-// 		}
-// 		else if (mode == EOS_NR_ENTH) {
-// 			enth = *ener + *pres / den;
-// 			dhdt = *dedt + *dpdt / den;
-// 			temp_new = temp_old - (*enth - q_goal) / *dhdt;
-// 			errQ = fabs((*enth - q_goal) / q_goal);
-// 		}
-// 		else
-// 			printf("EOS NEWTON RAPHSON: WRONG MODE CHOSEN!\n");
-// 
-// 		//do not allow temp to change more than 10. times in one iteration
-// 		if (temp_new / temp_old > 10.0) temp_new = 10.0 * temp_old;
-// 		if (temp_old / temp_new > 10.0) temp_new = 0.1 * temp_old;
-// 
-// 		errT = fabs((temp_new - temp_old) / temp_old);
-// 		validate_T(&temp_new);
-// 
-// 		temp_old = temp_new;
-// 
-// 		// more iterations after reached below tolerance
-// 		if (errT < EOS_TEMP_TOL && errQ < EOS_TOL) {
-// 			more_iterations -= 1;
-// 			if (more_iterations == 0) break;
-// 		}
-// 	}
-// 
-// 	return errQ;
-// }
 
 __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, double den, double u_goal, double *pres) {	
 	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, u_goal, &temp_ini_guess);
+
+	// check if the input is valid:
+	#if (enable_input_check)
+	if (u_goal < 0.0) {
+		u_goal = fabs(u_goal);
+		*pres = u_goal * (GAMMA - 1.);
+		return;
+	}
+	#endif
 
     double ener_goal = u_goal / den;
     double temp_new, temp_old;
@@ -9040,6 +9002,7 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
         }
     }
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double enerA, enerB, enerC;
@@ -9074,6 +9037,7 @@ __device__ void eos_mode_rhou_pres (const  double* __restrict__ gpu_eos_table, d
 			i++;
 		}
 	}
+	#endif 
 
 	#if (revert_gamma)
 	if (error_e > EOS_TOL) {
@@ -9092,6 +9056,16 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
 	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, u_goal, &temp_ini_guess);
+
+	// check if the input is valid:
+	#if (enable_input_check)
+	if (u_goal < 0.0) {
+		u_goal = fabs(u_goal);
+		*pres = u_goal * (GAMMA - 1.);
+		*cs2 = GAMMA * (GAMMA - 1.0) * u_goal / (den + GAMMA * u_goal);
+		return;
+	}
+	#endif
 
 	double ener_goal = u_goal / den;
 	double temp_new, temp_old;
@@ -9126,6 +9100,7 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
         }
     }
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double enerA, enerB, enerC;
@@ -9160,6 +9135,7 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
 			i++;
 		}
 	}
+	#endif
 
 	#if (revert_gamma)
 	if (error_e > EOS_TOL) {
@@ -9176,12 +9152,14 @@ __device__ void eos_mode_rhou_pres_cs2(const  double* __restrict__ gpu_eos_table
 
 __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *dpdrho, double *dpde_d) {
 	// check if the input is valid:
+	#if (enable_input_check)
 	if (w_goal - den < 0.0) {
-		*pres = (GAMMA - 1.0) * (w_goal - den) / (GAMMA);
+		*pres = (GAMMA - 1.0) * fabs(w_goal - den) / (GAMMA);
 		*dpdrho = 0.0;
 		*dpde_d = (GAMMA - 1.0);
 		return;
 	}
+	#endif
 
 	// initial guess : temperature
     double temp_ini_guess;
@@ -9226,6 +9204,7 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
         }
     }
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double enerA, enerB, enerC;
@@ -9263,9 +9242,12 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
 		*pres = presC;
 		xener = enerC;
 	}
+	#endif
 
 	*dpde_d = dpdt / dedt;
+	#if (inversion_w_edits)
 	*dpdrho = *dpdrho - xener * deni * (*dpde_d);
+	#endif
 
 	#if (revert_gamma)
 	if (error_h > EOS_TOL) {
@@ -9284,11 +9266,14 @@ __device__ void eos_mode_rhow_pres_dpdrho_dpde_d (const  double* __restrict__ gp
 __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table, double den, double w_goal, double *pres, double *u) {
     // implementation in Newman-Hamlin inversion
 	// check if the input is valid:
+	#if (enable_input_check)
 	if (w_goal - den < 0.0) {
-		*u = (w_goal - den) / GAMMA;
+		*u = fabs(w_goal - den) / GAMMA;
 		*pres = *u * (GAMMA - 1.);
 		return;
 	}
+	#endif
+
 	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, w_goal - den, &temp_ini_guess);
@@ -9334,6 +9319,7 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
     }
 	*u = xener * den;
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double enerA, enerB, enerC;
@@ -9372,6 +9358,7 @@ __device__ void eos_mode_rhow_pres_u (const  double* __restrict__ gpu_eos_table,
 		*pres = presC;
 		*u = enerC * den;
 	}
+	#endif 
 
 	#if (revert_gamma)
 	if (error_h > EOS_TOL) {
@@ -9401,6 +9388,15 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
 	// initial guess : temperature
     double temp_ini_guess;
 	eos_NR_temp_guess(den, p_goal, &temp_ini_guess);
+
+	// check if the input is valid:
+	#if (enable_input_check)
+	if (p_goal < 0.0) {
+		p_goal = fabs(p_goal);
+		*u = p_goal / (GAMMA - 1.);
+		return;
+	}
+	#endif
 
     double temp_new, temp_old;
     double p_tmp;
@@ -9435,6 +9431,7 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
         }
     }
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double presA, presB, presC;
@@ -9469,6 +9466,7 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
 			i++;
 		}
 	}
+	#endif
 
 	#if (revert_gamma)
 	if (error_p > EOS_TOL) {
@@ -9483,6 +9481,13 @@ __device__ void eos_mode_rhopres_u (const  double* __restrict__ gpu_eos_table, d
 	*u = xener * den;
 }
 
+// ENTROPY PART:
+__device__ void get_sackur_tetrode_entropy(double den, double temp, double abar, double* entr);
+
+__device__ void get_sackur_tetrode_entropy(double den, double temp, double abar, double *entr) {
+	double deni = 1. / den;
+	*entr = kergavo / abar * log(pow(abar, 2.5) * deni * avoinv * pow(sioncon * temp, 1.5));
+}
 
 // Entropy inversion
 __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, double den, double entr_goal, double *pres, double* u, double *dpdrho, double *dudrho) {
@@ -9497,7 +9502,7 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 	entr_goal = log(entr_goal) / KTOT_FACTOR;
 	#endif
 
-	temp_ini_guess = conv_pres_CODE2CGS * (*pres + *u) / (den * entr_goal * conv_entr_CODE2CGS * conv_dens_CODE2CGS);
+	temp_ini_guess = pow(den * entr_goal * conv_entr_CODE2CGS * conv_dens_CODE2CGS / asol, 1. / 3.);
 
 	double temp_new, temp_old;
 	double cs2;
@@ -9530,6 +9535,7 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 		}
 	}
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double entrA, entrB, entrC;
@@ -9564,9 +9570,14 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 			i++;
 		}
 	}
+	#endif
 
 	*u = xener * den;
 	*dudrho = dedrho * den + xener;
+	#if (inversion_w_edits)
+	*dpdrho = *dpdrho - xener / den * (dpdt / dedt);
+	#endif
+
 	#if (eos_nr_debug)
 	if (error_p > EOS_TOL) printf("6 %g %g %g %g %g\n", error_p, temp_old, den, entr_goal, temp_ini_guess);
 	#endif
@@ -9576,10 +9587,12 @@ __device__ void eos_mode_rhos_upres(const double* __restrict__ gpu_eos_table, do
 
 __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, double den, double u_goal, double* entr) {
 	// Check the input:
+	#if (enable_input_check)
 	if (eos_check_input_u(den, u_goal)) {
-		*entr = 1e-30;
-		return;
+		u_goal = fabs(u_goal);
+		//return;
 	}
+	#endif
 
 	// initial guess : temperature
 	double temp_ini_guess;
@@ -9616,6 +9629,7 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 		}
 	}
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double enerA, enerB, enerC;
@@ -9631,7 +9645,7 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 		eos_helm(gpu_eos_table, 1, tempB, den, 1.0, 1.0, &pres, &enerB, entr, &dpdt, &dedt, &dsdt, &dpdrho, &dedrho, &cs2);
 		fB = enerB - ener_goal;
 
-		if (fA * fB >= 0.0) flag = 0; 
+		if (fA * fB >= 0.0) flag = 0;
 
 		i = 0;
 		while (i < 2 * EOS_ITERATIONS && flag) {
@@ -9650,6 +9664,16 @@ __device__ void eos_mode_rhou_entr(const  double* __restrict__ gpu_eos_table, do
 			i++;
 		}
 	}
+	#endif
+
+	#if (revert_gamma) 
+	if (error_e > EOS_TOL) {
+		get_sackur_tetrode_entropy(den, temp_ini_guess, 1.0, entr);
+		*entr += GAMMA * ener_goal * conv_ener_CODE2CGS / temp_ini_guess;
+		*entr *= conv_entr_CGS2CODE;
+		error_e = EOS_TOL * 10.0;
+	}
+	#endif
 
 	// Convert entropy to kappa
 	#if (!DOHELM_FULLENTROPY)
@@ -9667,6 +9691,15 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 	eos_NR_temp_guess(den, u_goal, &temp_ini_guess);
 
 	double ener_goal = u_goal / den;
+	// check if the input is valid:
+	#if (enable_input_check)
+	if (u_goal < 0.0) {
+		ener_goal = fabs(ener_goal);
+		*temp = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ener_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+		return;
+	}
+	#endif
+
 	double temp_new, temp_old;
 	double ener_tmp;
 	double dpdt, dedt, dpdrho;
@@ -9698,6 +9731,7 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 	}
 	*temp = temp_old;
 
+	#if (EOS_BISECTION)
 	// Bisection method as backup rootfinder
 	double tempA, tempB, tempC;
 	double enerA, enerB, enerC;
@@ -9733,6 +9767,7 @@ __device__ void eos_mode_rhou_temp(const  double* __restrict__ gpu_eos_table, do
 		}
 	}
 	*temp = tempC;
+	#endif
 
 	#if (revert_gamma)
 	if (error_e > EOS_TOL) {
