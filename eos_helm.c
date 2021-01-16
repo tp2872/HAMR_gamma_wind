@@ -379,10 +379,12 @@ void eos_helm(int calc_derivatives, double btemp, double den, double abar, doubl
     // If density is below the minimum supplied by the table:
     double den_low = den;
     int is_density_low = 0;
+    #if (low_rho_correction)
     if (den < eos_dens_low) {
         den = eos_dens_low;
         is_density_low = 1;
     }
+    #endif 
 
     double deni = 1.0 / den;
     double tempi = 1.0 / btemp;
@@ -651,7 +653,7 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
     double enerA, enerB, enerC;
     double fA, fB, fC;
 
-    if (error_q > EOS_TOL && error_q < EOS_BISECTION_THRESHOLD) {
+    if (error_q > EOS_TOL) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, 1.0, 1.0, &pres, &enerA, entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
@@ -740,7 +742,7 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
     double enerA, enerB, enerC;
     double fA, fB, fC;
 
-    if (error_q > EOS_TOL && error_q < EOS_BISECTION_THRESHOLD) {
+    if (error_q > EOS_TOL) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
@@ -821,7 +823,7 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
     double enerA, enerB, enerC;
     double fA, fB, fC;
 
-    if (error_q > EOS_TOL && error_q < EOS_BISECTION_THRESHOLD) {
+    if (error_q > EOS_TOL) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, 1.0, 1.0, pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, cs2);
         fA = enerA - ener_goal;
@@ -1024,7 +1026,46 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
             if (more_iterations == 0) break;
         }
     }
+
+    // Bisection method as backup rootfinder
+    double tempA, tempB, tempC;
+    double presA, presB, presC;
+    double fA, fB, fC;
+    int flag = 1;
+
+    if (error_p > EOS_TOL) {
+        tempA = eos_temp_low;
+        eos_helm(1, tempA, den, 1.0, 1.0, &presA, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fA = presA - p_goal;
+
+        tempB = eos_temp_up;
+        eos_helm(1, tempB, den, 1.0, 1.0, &presB, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+        fB = presB - p_goal;
+
+        if (fA * fB >= 0.0) flag = 0;
+
+        i = 0;
+        while (i < 2 * EOS_ITERATIONS && flag) {
+            tempC = 0.5 * ((tempA)+(tempB));
+
+            eos_helm(1, tempC, den, 1.0, 1.0, &presC, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
+            fC = presC - p_goal;
+            error_p = fabs(fC / p_goal);
+
+            if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_p < EOS_TOL) {
+                break;
+            }
+
+            if (fC * fA >= 0.0) tempA = tempC;
+            else tempB = tempC;
+            i++;
+        }
+    }
     
+    if (error_p > EOS_TOL) {
+        printf("5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
+    }
+
     *u = xener * den;
 }
 
@@ -1047,15 +1088,18 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
 
     temp_old = temp_ini_guess;
+
     // DIMARK: testing below rho_low
     double rho_f = 1.0;
-    if (den < eos_dens_low) {
-        den = eos_dens_low;
-        rho_f = den / eos_dens_low;
-        *temp = fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE));
-        return;
-    }
+    //if (den < eos_dens_low) {
+    //    den = eos_dens_low;
+    //    rho_f = den / eos_dens_low;
+    //    *temp = fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE));
+    //    return;
+    //}
+
     // DIMARK: end of the code snippet
+
     for (i = 0; i < EOS_ITERATIONS; i++) {
         eos_helm(1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -1082,7 +1126,7 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
     double enerA, enerB, enerC;
     double fA, fB, fC;
 
-    if (error_e > EOS_TOL && error_e < EOS_BISECTION_THRESHOLD) {
+    if (error_e > EOS_TOL) {
         tempA = eos_temp_low;
         eos_helm(1, tempA, den, 1.0, 1.0, &pres, &enerA, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         fA = enerA - ener_goal;
@@ -1109,12 +1153,14 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
             else tempB = tempC;
             i++;
         }
+        *temp = tempC;
     }
-    *temp = tempC;
 
-    if (error_e > EOS_TOL)
+    //if (error_e > EOS_TOL)
+    if (1)
     {
-        fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, *temp, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
+        //fprintf(stderr, "i: %d, (%e) T:%e, rho:%e, u_goal:%e\n", i, error_e, *temp, den, u_goal);
+        //fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, *temp, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
     }
 }
 
