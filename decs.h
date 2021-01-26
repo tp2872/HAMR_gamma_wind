@@ -1220,7 +1220,6 @@ void set_Mud(int n);
 double fluxcalc_hllc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
 
-#if (DOHELM)
 //EOS related
 void eos_init(void);
 void eos_init_GPU(void);
@@ -1235,5 +1234,4 @@ void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u);
 void eos_mode_rhotemp_pres_min (double den, double *pres);
 void eos_mode_rhopres_u (double den, double p_goal, double *u);
 void eos_mode_rhou_temp (double den, double u_goal, double* temp);
-#endif
 
