@@ -321,7 +321,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//If error is below set margin, accept solution, otherwise try PMHD
 			//if (error_t > 1.e-9)implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
-			if (error_t > 1.e-9)implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
+			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -2591,9 +2591,9 @@ __device__ int Utoprim_1dfix1(double *U, double gcov[10], double gcon[10], doubl
 
 	#if(DOKTOT)
 	// DIMARK: entropy test
-	K_atm = U[KTOT] / U[RHO];
-	//if(full_entropy)K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
-	//else K_atm = U[KTOT] / U[RHO];
+	//K_atm = U[KTOT] / U[RHO];
+	if(full_entropy)K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+	else K_atm = U[KTOT] / U[RHO];
 	#endif
 
 	ret = Utoprim_new_body3(U_tmp, gcov, gcon, gdet, prim_tmp, K_atm, tolerance, lim);
@@ -2938,9 +2938,8 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 	K_atm = U[KTOT] / U[RHO];
 	#else
 	// DIMARK: entropy test
-	K_atm = U[KTOT] / U[RHO];
-	//if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
-	//else K_atm = U[KTOT] / U[RHO];
+	if (full_entropy) K_atm = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+	else K_atm = U[KTOT] / U[RHO];
 	#endif
 	#endif
 
@@ -2949,13 +2948,6 @@ __device__ int Utoprim_1dvsq2fix1(double *U, double gcov[10], double gcon[10], d
 		, gpu_eos_table
 		#endif
 	);
-
-	//if (full_entropy)
-	//	printf("\tK:%g U[s]:%g U[d]:%g [%d] prim[%d]:%g prim[%d]:%g (%g %g)\n", K_atm, U[KTOT], U[RHO], ret, RHO, prim_tmp[RHO], UU, prim_tmp[UU], pre_rho, pre_uu);
-
-	//if (U[0] <= 0.) {
-	//	return(-100);
-	//}
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -4344,8 +4336,8 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	// DIMARK: entropy test
 	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
 	//flux[KTOT] = flux[RHO] * (1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA)) + ENTROPY_CONST);
-	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
-	////flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+	//flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 	#else
 	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
 	#endif
@@ -4491,7 +4483,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	));
 	tau = kappa_tot * sqrt(geom->gcov[(dir == 1) * 4 + (dir == 2) * 7 + (dir == 3) * 9]) * dx;
 	crad2 = MY_MIN(pow(4. / (3. * tau), 2.), 1.);
-	crad2 = 1.;
+
 	/* check on it! */
 	if (crad2 < 0.) crad2 = SMALL;
 	if (crad2 > 1.) crad2 = 1.;
@@ -5642,8 +5634,7 @@ __device__ void primtoflux_FT(double *pr, double ucon[NDIM], double bcon[NDIM], 
 	// DIMARK: entropy test
 	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
 	//flux[KTOT] = flux[RHO] * (1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA)) + ENTROPY_CONST);
-	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
-	////flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 	#else
 	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
 	#endif
@@ -6699,18 +6690,18 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
-			//pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
-			//	#if (DOHELM)
-			//	,gpu_eos_table
-			//	#endif
-			//);			
+			pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, FULL_ENTROPY
+				#if (DOHELM)
+				,gpu_eos_table
+				#endif
+			);			
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
-				//pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, 0
-				//	#if(DOHELM==10)
-				//	, gpu_eos_table
-				//	#endif
-				//);
+				pflag[global_id] = Utoprim_1dfix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, FULL_ENTROPY
+					#if(DOHELM==10)
+					, gpu_eos_table
+					#endif
+				);
 				if (pflag[global_id]) {
 					pflag[0] = global_id;
 					failimage[2 * (ksize)+global_id]++;
