@@ -2211,8 +2211,8 @@ int refine(int n){
 	int i, j, z, k, n_child, i1, j1, z1, n1, gpu_local;
 	int ref_1, ref_2, ref_3;
 
-	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > NB_LOCAL){
-		if (rank == 0 && numtasks<10) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
+	if (!check_nesting(n) || NODE_global[block[n][AMR_NODE]*N_GPU + block[n][AMR_GPU]] > MAX_BLOCKS){
+		if (rank == 0) fprintf(stderr, "Failed to refine block %d %d %d %d due to memory size on node %d!\n", block[n][AMR_LEVEL], block[n][AMR_COORD1], block[n][AMR_COORD2], block[n][AMR_COORD3], block[n][AMR_NODE]);
 		return 0; //First make sure nesting criteria are satisfied
 	}
 	else{
