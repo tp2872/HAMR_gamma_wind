@@ -325,6 +325,12 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//If error is below set margin, accept solution, otherwise try PMHD
 			//if (error_t > 1.e-9)implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 
+			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+			);
+
 			if (error_t > 1.e-9)implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
@@ -1430,13 +1436,6 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					, gpu_eos_table
 					#endif
 					);
-					if (flag) {
-						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1
-						//#if (DOHELM)
-						//, gpu_eos_table
-						//#endif
-						//);
-					}
 				}
 				#endif
 
@@ -1557,13 +1556,6 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				, gpu_eos_table
 				#endif
 				);
-				if (flag) {
-					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
-					//#if (DOHELM)
-					//, gpu_eos_table
-					//#endif
-					//);
-				}
 			}
 			#endif
 
