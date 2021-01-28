@@ -405,21 +405,21 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//if (tau < 0.66) {
 		//Set guess values for primitives after implicit step based on optical depth
-		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+		pflag =  Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
 		);
 		#if(DO_FONT_FIX)
 		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1
-				#if (DOHELM)
-				, gpu_eos_table
-				#endif
-				);
-			if (pflag) {
-				pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1);
-			}
+			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1
+			//	#if (DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//	);
+			//if (pflag) {
+			//	pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1);
+			//}
 		}
 		#endif	 
 
@@ -674,7 +674,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
 		error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 		norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
-		if (do_entropy <= 1)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 		else {
 			T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
 			//#if(FULL_ENTROPY)
@@ -5507,7 +5507,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop = MY_MAX(cmax, cmin);
 
 		#if(RAD_M1)
-		if (flag == 1) {
+		if (flag == 1 && DO_IMEX) {
 			for (k = 0; k < NPR_U; k++) {
 				#if(HLLF)
 				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL));
@@ -5545,7 +5545,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 
-		if (flag == 1) {
+		if (flag == 1 && DO_IMEX) {
 			for (k = UU_RAD; k <= U3_RAD; k++) {
 				F[k * (ksize)+global_id] = 0.5 * (F[k * (ksize)+global_id] + 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k])));
 			}
@@ -6786,6 +6786,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				, gpu_eos_table
 				#endif
 			);
+			#if(RAD_M1)
+			struct of_state_rad q_rad;
+			get_state_rad(pf, &geom, &q_rad);
+			primtoflux_rad(pf, &q_rad, 0, &geom, U);
+			#endif
 			#pragma unroll 9	
 			for (k = 0; k < NPR; k++) {
 				storage2[k * (ksize)+global_id] = U[k];
@@ -6857,11 +6862,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 		#endif
 
-		//#if(RAD_M1)
-		#if(0)
+		#if(RAD_M1)
 		double U_0[NPR];
 		int pflag_local, pflag_rad_local;
 		PLOOP dU[k] = 0.;
+
 		//Perform implicit solve
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
 		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max);
@@ -6879,13 +6884,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			, gpu_eos_table
 			#endif
 		);
-		//pflag[global_id] = 1;
 		#endif
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
 			#if DOKTOT
-			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, 0
+			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -6894,7 +6898,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
 				#if(!DOHELM)
-				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, 0);
+				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY);
 				#endif
 				if (pflag[global_id]){
 					pflag[0] = global_id;
@@ -7082,7 +7086,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			if (pflag[global_id]) {
 				failimage[global_id]++;
 				#if DOKTOT
-				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, 0
+				pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
@@ -7091,7 +7095,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				if (pflag[global_id]) {
 					failimage[1 * (ksize)+global_id]++;
 					#if(!DOHELM)
-					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, 0);
+					pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY);
 					#endif
 					if (pflag[global_id]){
 						pflag[0] = global_id;

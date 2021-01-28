@@ -304,6 +304,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
+/*Enable IMEX*/
+#define DO_IMEX (1)
+
 //Abundace constants
 #define Z_AB (0.02)
 #define Y_AB (0.28)

@@ -170,7 +170,7 @@ double advance(int flag)
 		bdt[nl[n_ord[n]]][0] = bdt[nl[n_ord[n]]][1] = bdt[nl[n_ord[n]]][2] = bdt[nl[n_ord[n]]][3] = 1e9;
 	}
 
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
 		}
@@ -248,7 +248,7 @@ double advance(int flag)
 	#if(!STAGGERED)
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_ct(F1, F2, F3, n_ord[n]);
 	#else
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2(ph, n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
@@ -260,7 +260,7 @@ double advance(int flag)
 	}
 	#endif
 	const_transport_bound();
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, ps, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, psh, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -272,7 +272,7 @@ double advance(int flag)
 	}
 	#endif
 	#endif
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
 			utoprim_M1_2(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -638,7 +638,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					#if(RAD_M1)
 					#pragma ivdep
-					if (flag == 1) {
+					if (flag == 1 && DO_IMEX) {
 						for (k = 0; k <= KTOT; k++) {
 							#if(HLLF)
 							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL));
@@ -664,7 +664,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 					ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 
-					if (flag == 1) {
+					if (flag == 1 && DO_IMEX) {
 						for (k = UU_RAD; k <= U3_RAD; k++) {
 							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k])));
 						}
@@ -793,7 +793,7 @@ double advance_GPU(void)
 			|| (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) < 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1 && nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) >  block[n_ord[n]][AMR_TIMELEVEL] - 1 && block[n_ord[n]][AMR_PRESTEP] == 1);
 	}
 
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (prestep_full[nl[n_ord[n]]] == 1) {
 		}
@@ -1012,7 +1012,7 @@ double advance_GPU(void)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport2_M1_2(1, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport2(0, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -1034,7 +1034,7 @@ double advance_GPU(void)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static,n_active/nthreads) private(n,status)
 	#endif
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (prestep_full[nl[n_ord[n]]] == 1) GPU_consttransport3(1, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 		else if (prestep_half[nl[n_ord[n]]] == 1) GPU_consttransport3(0, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -1053,7 +1053,7 @@ double advance_GPU(void)
 	#if(GPU_OPENMP)
 	//#pragma omp parallel for schedule(static, n_active/nthreads) private(n,status,timestep)
 	#endif
-	#if(RAD_M1)
+	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (prestep_full[nl[n_ord[n]]] == 1) {
 			GPU_Utoprim_M1_2(n_ord[n], dt * (double)block[n_ord[n]][AMR_TIMELEVEL]);
