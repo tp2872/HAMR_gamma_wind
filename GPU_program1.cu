@@ -412,14 +412,14 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		);
 		#if(DO_FONT_FIX)
 		if (pflag) {
-			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1
-			//	#if (DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	);
-			//if (pflag) {
-			//	pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1);
-			//}
+			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+				);
+			if (pflag) {
+				pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1);
+			}
 		}
 		#endif	 
 
@@ -6419,17 +6419,6 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* dU_RAD0, const  
 			#endif
 		);
 
-		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(p, radius[icurr], &geom, &q
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
-		)) {
-		//	pflag[global_id] = -333;
-		//	pflag[0] = global_id;;
-		//	failimage[3 * (ksize)+global_id]++;
-		}
-
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++) {
 			U_n[k * (ksize)+global_id] = U[k];
@@ -6554,15 +6543,15 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		);
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(p, radius[icurr], &geom, &q
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
-		)) {
+		//if (fixup_cell(p, radius[icurr], &geom, &q
+		//	#if (DOHELM)
+		//	, gpu_eos_table
+		//	#endif
+		//)) {
 		//	pflag[global_id] = -333;
 		//	pflag[0] = global_id;;
 		//	failimage[3 * (ksize)+global_id]++;
-		}
+		//}
 
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++) {
