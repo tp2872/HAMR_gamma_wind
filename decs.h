@@ -833,6 +833,15 @@ struct of_state {
 	double bcov[NDIM];
 };
 
+struct of_state_res {
+	double ucon[NDIM];
+	double ucov[NDIM];
+	double bcon[NDIM];
+	double bcov[NDIM];
+	double econ[NDIM];
+	double ecov[NDIM];
+};
+
 struct of_state_rad {
     double ucon[NDIM];
     double ucov[NDIM];
@@ -949,6 +958,7 @@ void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct 
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
 int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
+int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
@@ -988,6 +998,35 @@ void GPU_consttransport3_post(double Dt, int n);
 void GPU_consttransport_bound(void);
 void read_time_GPU(void);
 double fluxcalc_GPU(int n, int dir);
+
+//Resistivity related
+//In phys_res.c
+void primtoflux_res(double* restrict pr, struct of_state_res* restrict q_res, int dir, struct of_geom* restrict geom, double* restrict flux);
+void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict bcon);
+void bcon_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict bcon);
+void mhd_calc_res(double* restrict pr, int dir, struct of_geom* restrict geom, struct of_state_res* restrict q_res, double* restrict mhd);
+void source_res(double* restrict ph, struct of_geom* restrict geom, int n, int ii, int jj, int zz, double* restrict dU, double Dt);
+void calc_J(double p[NPR], double J[NDIM], double q, struct of_geom* restrict geom);
+void get_state_res(double* restrict pr, struct of_geom* restrict geom, struct of_state_res* restrict q_res);
+void vchar_res(struct of_geom* restrict geom, int js, double* restrict vmax, double* restrict vmin);
+double divE_calc(double(*restrict p[NB_LOCAL])[NPR], int n, int i, int j, int z);
+void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restrict ucov);
+double lvc4u(int i, int j, int k, int l);
+double lvc3u(int i, int j, int k);
+
+//In step_ch_res.c
+void step_ch_res();
+double advance_res(int flag);
+double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
+void utoprim_M1_0_res(double Dt, int n);
+void utoprim_M1_1_res(double Dt, int n);
+void utoprim_M1_2_res(double Dt, int n);
+double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n);
+
+//In const_trans_res.c
+void const_transport1_res(double(*restrict pb[NB_LOCAL])[NPR], int n);
+void const_transport1_M1_2_res(double(*restrict pb[NB_LOCAL])[NPR], int n);
+void const_transport2_res(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
 
 //Metric/Misc related
 double bl_gdet_func(double r, double th);

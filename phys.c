@@ -252,12 +252,6 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
 	}
 }
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(T_CGS, 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * C_CGS * C_CGS) / (BOLTZ_CGS * ph[RHO]), 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow((GAMMA - 1.) * ph[UU]/ph[RHO], 4.)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(Tg, 4.) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-//lambda = c_CGS * kappa_CGS * pow(Tg, 4.) * ARAD / (ENERGY_DE NSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-
 
 //Calculate total absorption opacity
 double calc_kappa_abs(double* ph) {

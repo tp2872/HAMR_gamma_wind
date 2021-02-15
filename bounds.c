@@ -263,14 +263,21 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							if (k == B1 || k == B2 || (N3 > 1 && k == B3))
 							//don't touch magnetic fields
 							continue;
+							#if(RESISTIVE)
+							if (k == E1 || k == E2 || (N3 > 1 && k == E3))
+							//don't touch electric fields
+							continue;
+							#endif
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
 							}
+							#if(RAD_M1)
 							else if (k == U2_RAD) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
 							}
+							#endif
 							else {
 								//everything else copy (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jref, z)][k];
@@ -292,14 +299,21 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							if (k == B1 || k == B2 || (N3 > 1 && k == B3))
 							//don't touch magnetic fields
 							continue;
+							#if(RESISTIVE)
+							if (k == E1 || k == E2 || (N3 > 1 && k == E3))
+								//don't touch electric fields
+								continue;
+							#endif
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
+							#if(RAD_M1)
 							else if (k == U2_RAD) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
+							#endif
 							else {
 								//everything else copy (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];

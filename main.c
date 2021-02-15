@@ -124,7 +124,11 @@ int main(int argc, char *argv[])
 		GPU_step_ch();
 		#endif
 		#if(CPU_OPENMP)
+		#if(RESISTIVE)
+		step_ch_res();
+		#else
 		step_ch();
+		#endif
 		#endif
 
 		/*Used for debugging*/
