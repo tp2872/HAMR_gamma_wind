@@ -1005,7 +1005,7 @@ void primtoflux_res(double* restrict pr, struct of_state_res* restrict q_res, in
 void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict bcon);
 void bcon_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict bcon);
 void mhd_calc_res(double* restrict pr, int dir, struct of_geom* restrict geom, struct of_state_res* restrict q_res, double* restrict mhd);
-void source_res(double* restrict ph, struct of_geom* restrict geom, int n, int ii, int jj, int zz, double* restrict dU, double Dt);
+void source_res(double* restrict ph, struct of_geom* restrict geom, int n, int ii, int jj, int zz, double* restrict dU, double* q, double Dt);
 void calc_J(double p[NPR], double J[NDIM], double q, struct of_geom* restrict geom);
 void get_state_res(double* restrict pr, struct of_geom* restrict geom, struct of_state_res* restrict q_res);
 void vchar_res(struct of_geom* restrict geom, int js, double* restrict vmax, double* restrict vmin);

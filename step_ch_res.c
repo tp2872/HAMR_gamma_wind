@@ -289,10 +289,11 @@ void utoprim_M1_0_res(double Dt, int n)
 
 void utoprim_M1_1_res(double Dt, int n){
 	int i, j, z, k;
-	double cell_size, U_1[NPR];
+	double cell_size, U_1[NPR], q;
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
-	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, U_1, geom, ind0, ind1, ind2, ind3, cell_size)
+
+	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, U_1, geom, ind0, ind1, ind2, ind3, cell_size, q)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
@@ -303,7 +304,8 @@ void utoprim_M1_1_res(double Dt, int n){
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
-			source_res(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD1[nl[n]][ind0], Dt);
+			divE_calc(p,n,i,j,z);
+			source_res(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD1[nl[n]][ind0], &q, Dt);
 
 			#pragma ivdep
 			PLOOP{
@@ -337,11 +339,11 @@ void utoprim_M1_1_res(double Dt, int n){
 
 void utoprim_M1_2_res(double Dt, int n){
 	int i, j, z, k;
-	double ndt, ndt1, ndt2, ndt3, U_2[NPR], dU[NPR];
+	double ndt, ndt1, ndt2, ndt3, U_2[NPR], dU[NPR], q;
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n, gdet, p, ps, dU_MHD1, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, dU, U_2, geom, ind0, ind1, ind2, ind3)
+	#pragma omp  parallel shared(n, gdet, p, ps, dU_MHD1, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, dU, U_2, geom, ind0, ind1, ind2, ind3,q)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -350,7 +352,9 @@ void utoprim_M1_2_res(double Dt, int n){
 			ind1 = index_3D(n, i + D1, j, z);
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
-			source_res(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
+
+			q = divE_calc(ph, n, i, j, z);
+			source_res(ph[nl[n]][ind0], &geom, n, i, j, z, dU, &q, Dt);
 
 			#pragma ivdep
 			PLOOP{
@@ -384,13 +388,13 @@ void utoprim_M1_2_res(double Dt, int n){
 void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {
 	int i, j, z, k;
-	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR];
+	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR], q;
 	double y = 1.0 - 1.0 / sqrt(2.0);
 	struct of_geom geom;
 	struct of_state_res q_res;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q_res, U, dU, ind0, ind1, ind2,ind3)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q_res, U, dU, ind0, ind1, ind2,ind3, q)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -401,7 +405,8 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
-			source_res(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
+			q = divE_calc(ph, n, i, j, z);
+			source_res(pb[nl[n]][ind0], &geom, n, i, j, z, dU,& q, Dt);
 			get_state_res(pi[nl[n]][ind0], &geom, &q_res);
 			primtoflux_res(pi[nl[n]][ind0], &q_res,  0, &geom, U);
 
@@ -446,7 +451,7 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
     double cmax_l_rad, cmax_r_rad, cmin_l_rad, cmin_r_rad, cmax_rad, cmin_rad;
     double ctop, ctop_rad;
 	struct of_geom geom;
-	struct of_state state_l_res, state_r_res;
+	struct of_state_res state_l_res, state_r_res;
 	double bsq;
 	int max_i, max_j, max_z;
 	double val;
@@ -525,8 +530,8 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 					primtoflux_res(p_l, &state_l_res, 0, &geom, U_l);
 					primtoflux_res(p_r, &state_r_res, 0, &geom, U_r);
 
-					vchar_res(p_l, &state_l_res, &geom, dir, &cmax_l, &cmin_l, i, j, z);
-					vchar_res(p_r, &state_r_res, &geom, dir, &cmax_r, &cmin_r, i, j, z);
+					vchar_res(&geom, dir, &cmax_l, &cmin_l);
+					vchar_res(&geom, dir, &cmax_r, &cmin_r);
 
 					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));

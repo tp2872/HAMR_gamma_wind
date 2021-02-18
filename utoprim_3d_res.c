@@ -67,13 +67,13 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
-double Bsq, QdotBsq, Qtsq, Qdotn, D;
-#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
+//double Bsq, QdotBsq, Qtsq, Qdotn, D;
+//#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
 
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim){
-	double U_tmp[NPR],  prim_tmp[NPR_HD];
-	int i, j, ret;
+	/*double U_tmp[NPR],  prim_tmp[NPR_HD];
+	int i, j, ret=0;
 	double alpha;
 
 	if (U[0] <= 0.) {
@@ -123,5 +123,5 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		}
 	}
 
-	return(ret);
+	return(ret);*/
 }

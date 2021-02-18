@@ -224,9 +224,9 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 }
 
 /* add in (explicit) geometricc source terms to equations of motion */
-void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
+void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double *q, double Dt)
 {
-    double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, utcov[3], Bcov[3], vdotE, q;
+    double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, utcov[3], Bcov[3], vdotE, q_local;
 	int j,k ;
 	struct of_state_res q_res;
 
@@ -256,21 +256,21 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	q = (alpha / geom->g) * divE_calc(ph, n, ii, jj, zz); //Calculate charge density first
+	q_local = (alpha / geom->g) * q[0];
 
 	//Calculate electric current J
 	gamma = q_res.ucon[0] * alpha;
 	lower_3(&(ph[U1]), geom, utcov);
 	lower_3(&(ph[B1]), geom, Bcov);
 	vdotE = alpha / gamma * (ph[E1] * utcov[0]+ ph[E2] * utcov[1] + ph[E3] * utcov[2]);
-	J[1] = q * ph[U1] / gamma + gamma / ETA * (ph[E1] * alpha + alpha / geom->g * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]) / gamma - vdotE * ph[U1] / gamma);
-	J[2] = q * ph[U2] / gamma + gamma / ETA * (ph[E2] * alpha + alpha / geom->g * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]) / gamma - vdotE * ph[U2] / gamma);
-	J[3] = q * ph[U3] / gamma + gamma / ETA * (ph[E3] * alpha + alpha / geom->g * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]) / gamma - vdotE * ph[U3] / gamma);
+	J[1] = q_local * ph[U1] / gamma + gamma / ETA * (ph[E1] * alpha + alpha / geom->g * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]) / gamma - vdotE * ph[U1] / gamma);
+	J[2] = q_local * ph[U2] / gamma + gamma / ETA * (ph[E2] * alpha + alpha / geom->g * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]) / gamma - vdotE * ph[U2] / gamma);
+	J[3] = q_local * ph[U3] / gamma + gamma / ETA * (ph[E3] * alpha + alpha / geom->g * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]) / gamma - vdotE * ph[U3] / gamma);
 
 	//Calculate source term for electric field
-	dU[E1] = -J[1] + beta[1] * q / alpha;
-	dU[E2] = -J[2] + beta[2] * q / alpha;
-	dU[E3] = -J[3] + beta[3] * q / alpha;
+	dU[E1] = -J[1] + beta[1] * q_local / alpha;
+	dU[E2] = -J[2] + beta[2] * q_local / alpha;
+	dU[E3] = -J[3] + beta[3] * q_local / alpha;
 
 	//Add disk cooling term
 	#if(COOL_DISK)
@@ -286,8 +286,7 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 
 void calc_J(double p[NPR], double J[NDIM], double q, struct of_geom* restrict geom) {
 	struct of_state_res q_res;
-	get_state_res(ph, geom, &q_res);
-
+	get_state_res(p, geom, &q_res);
 }
 
 /* find ucon, ucov, bcon, bcov from primitive variables */
@@ -298,11 +297,11 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 	lower(q_res->ucon, geom, q_res->ucov) ;
 
 	//get bcon
-	bcon_calc_res(pr, q_res->ucon, q_res->ucov, q_res->bcon) ;
+	bcon_calc_res(pr, geom, q_res->ucon, q_res->bcon) ;
 	lower(q_res->bcon, geom, q_res->bcov) ;
 
 	//get econ
-	econ_calc_res(pr, q_res->ucon, q_res->ucov, q_res->econ);
+	econ_calc_res(pr, geom, q_res->ucon, q_res->econ);
 	lower(q_res->econ, geom, q_res->ecov);
 
 	return ;
