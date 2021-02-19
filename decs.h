@@ -1062,6 +1062,9 @@ void raise(double * restrict v1, struct of_geom * restrict geom, double * restri
 int invert_matrix(double A[][NDIM], double Ainv[][NDIM]);
 int LU_decompose(double A[][NDIM], int permute[]);
 void LU_substitution(double A[][NDIM], double B[], int permute[]);
+int invert_matrix_3D(double A[][NDIM], double Ainv[][NDIM]);
+int LU_decompose_3D(double A[][NDIM], int permute[]);
+void LU_substitution_3D(double A[][NDIM], double B[], int permute[]);
 
 //AMR Related
 void MPI_initialize(int argc, char *argv[]);
