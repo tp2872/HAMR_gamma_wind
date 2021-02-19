@@ -72,7 +72,7 @@ Utoprim_1D, residual, and utsq */
 
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim){
-	/*double U_tmp[NPR],  prim_tmp[NPR_HD];
+	double D, S[3], tau, B[3], E[3], ncov[NDIM], ncon[NDIM], prim_tmp[NPR_HD];
 	int i, j, ret=0;
 	double alpha;
 
@@ -81,7 +81,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	}
 
 	//First update the primitive B-fields
-	 #pragma ivdep
+	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
 	//First update the primitive E-fields
@@ -90,24 +90,26 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 
 	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0][0]);
+	ncov_calc(gcon, ncov);
+	raise_g(ncov, gcon, ncon);
 
 	//Transform the CONSERVED variables to 3+1
-	U_tmp[RHO] = alpha * U[RHO] / gdet;
+	D = alpha * U[RHO] / gdet;
 
 	//Energy to 3+1
-	U_tmp[UU] = alpha * (U[UU] - U[RHO]) / gdet;
+	tau = alpha * alpha * (U[UU] - U[RHO]) / gdet;
 	
 	//Momentum to 3+1
 	#pragma ivdep
-	for (i = UTCON1; i <= UTCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
+	for (i = 0; i < 3; i++) S[i] = alpha * (U[U1 + i] + ncov[i] * (ncon[0] * U[UU] + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
 	
 	//Magnetic field to 3+1
 	#pragma ivdep
-	for (i = BCON1; i <= BCON3; i++) U_tmp[i] = alpha * U[i] / gdet;
+	for (i = 0; i < 3; i++) B[i] = alpha * U[B1+i] / gdet;
 
 	//Electric field to 3+1
 	#pragma ivdep
-	for (i = E1; i <= E3; i++) U_tmp[i] = alpha * U[i] / gdet;
+	for (i = 1; i < 3; i++) E[i] = alpha * U[E1+i] / gdet;
 
 	//Transform the PRIMITIVE variables into the new system
 	#pragma ivdep
@@ -123,5 +125,5 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		}
 	}
 
-	return(ret);*/
+	return(ret);
 }
