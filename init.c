@@ -2192,6 +2192,8 @@ void set_mag(void){
 	double rho_av, q, beta = 100.0, bsq_ij, norm, beta_act, V[NDIM], X_cart[NDIM],pos_new[NDIM], beta_ij;
 	double r, th, phi, X[NDIM];
 	struct of_geom geom;
+	struct of_state state;
+
 	#if(!NSY)
 	double tilt = (TILT_ANGLE) / 180.*M_PI;
 	#else
@@ -2422,6 +2424,20 @@ void set_mag(void){
 		}
 	}
 
+	#if(RESISTIVE)
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + N3G -D3) {
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
+			#if(N3G>0)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1] = -geom.g * (state.ucon[2] * state.bcon[3] - state.ucon[3] * state.bcon[2]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E2] = -geom.g * (state.ucon[3] * state.bcon[1] - state.ucon[1] * state.bcon[3]);
+			#endif
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E3] = -geom.g * (state.ucon[1] * state.bcon[2] - state.ucon[2] * state.bcon[1]);
+		}
+	}
+	#endif
+
 	bsq_max = 0.;
 	pmax = 0;
 	bsq_sum = 0.;
@@ -2439,7 +2455,7 @@ void set_mag(void){
 			}
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.0001*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-#else
+			#else
 			if ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			}

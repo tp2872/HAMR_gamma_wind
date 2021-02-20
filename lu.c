@@ -57,7 +57,7 @@
 
 *************************************************************************/
 
-int invert_matrix( double Am[][], double Aminv[][] )  
+int invert_matrix( double Am[][NDIM], double Aminv[][NDIM] )  
 { 
 
   int i,j;
@@ -87,7 +87,7 @@ int invert_matrix( double Am[][], double Aminv[][] )
   return(0);
 }
 
-int invert_matrix_3D(double Am[][3], double Aminv[][])
+int invert_matrix_3D(double Am[][3], double Aminv[][3])
 {
 
     int i, j;

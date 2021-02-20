@@ -226,8 +226,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable or disable the HLLD solver. Does not work yet!*/
 #define HLLD (0)
 
-/*Whether or not to use a staggered grid*/
+/*Whether or not to use a stagger magnetic field*/
 #define STAGGERED (1)
+
+/*Whether or not to use a stagger electric field*/
+#define STAGGERED_E (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #define HLLF  (1)

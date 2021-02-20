@@ -1013,6 +1013,9 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR], int n, int i, int j, int z)
 void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restrict ucov);
 double lvc4u(int i, int j, int k, int l);
 double lvc3u(int i, int j, int k);
+int invert_matrix_3D(double A[][3], double Ainv[][3]);
+int LU_decompose_3D(double A[][3], int permute[]);
+void LU_substitution_3D(double A[][3], double B[], int permute[]);
 
 //In step_ch_res.c
 void step_ch_res();
@@ -1062,9 +1065,6 @@ void raise(double * restrict v1, struct of_geom * restrict geom, double * restri
 int invert_matrix(double A[][NDIM], double Ainv[][NDIM]);
 int LU_decompose(double A[][NDIM], int permute[]);
 void LU_substitution(double A[][NDIM], double B[], int permute[]);
-int invert_matrix_3D(double A[][NDIM], double Ainv[][NDIM]);
-int LU_decompose_3D(double A[][NDIM], int permute[]);
-void LU_substitution_3D(double A[][NDIM], double B[], int permute[]);
 
 //AMR Related
 void MPI_initialize(int argc, char *argv[]);

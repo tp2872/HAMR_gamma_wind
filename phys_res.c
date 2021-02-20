@@ -126,7 +126,7 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 }
 
 /* calculate magnetic field four-vector */
-void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict bcon)
+void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict econ)
 {
 	double alpha, gamma, ncon[NDIM], E_dot_v, utcov[3], Bcov[3];
 
@@ -148,10 +148,10 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 	E_dot_v = pr[E1] * utcov[0] + pr[E2] * utcov[1] + pr[E3] * utcov[2];
 
 	//Final calculation of rest frame magnetic field
-	bcon[0] = alpha * (E_dot_v)*ncon[0];
-	bcon[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) - (alpha / geom->g) * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]);
-	bcon[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[B2]) - (alpha / geom->g) * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]);
-	bcon[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[B3]) - (alpha / geom->g) * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]);
+	econ[0] = alpha * (E_dot_v)*ncon[0];
+	econ[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha / geom->g) * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]);
+	econ[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha / geom->g) * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]);
+	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha / geom->g) * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]);
 
 	return;
 }
@@ -198,18 +198,17 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 
 	//Calculate contraction term
 	DLOOPA{
+		mhd_u[j] = 0.;
 		for (lambda = 0; lambda < 4; lambda++)for (beta = 0; beta < 4; beta++)for (kappa = 0; kappa < 4; kappa++) {
-			mhd_u[j] = -q_res->ucov[lambda] * q_res->ecov[beta] * q_res->bcov[kappa] * (q_res->ucon[dir] * (alpha / geom->g) * lvc4u(j, lambda, beta, kappa) + q_res->ucon[dir] * (alpha / geom->g) * lvc4u(j, lambda, beta, kappa));
+			mhd_u[j] += q_res->ucov[lambda] * q_res->ecov[beta] * q_res->bcov[kappa] * (q_res->ucon[dir] * (alpha / geom->g) * lvc4u(j, lambda, beta, kappa) + q_res->ucon[j] * (alpha / geom->g) * lvc4u(dir, lambda, beta, kappa));
 		}
 	}
 	lower(mhd_u, geom, mhd_d);
 
-    #if DOHELM
-    // Helmholtz EOS
-    eos_mode_rhou_pres (pr[RHO], pr[UU], &P);
+    #if DOHELM   
+    eos_mode_rhou_pres (pr[RHO], pr[UU], &P); // Helmholtz EOS
     #else
-    // Ideal gas EOS
-	P = (GAMMA - 1.) * pr[UU];
+	P = (GAMMA - 1.) * pr[UU]; // Ideal gas EOS
     #endif
     
     w = P + pr[RHO] + pr[UU];
@@ -246,7 +245,9 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 		dU[U2] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][2][j];
 		dU[U3] += mhd[j][k] * conn[nl[n]][index_2D(n, ii, jj, zz)][k][3][j];
 	}
-
+	
+	//Implicit source term; do not use in this function
+	/*
 	//Lapse in 3+1
 	alpha = 1.0 / sqrt(-geom->gcon[0][0]);
 
@@ -271,6 +272,11 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	dU[E1] = -J[1] + beta[1] * q_local / alpha;
 	dU[E2] = -J[2] + beta[2] * q_local / alpha;
 	dU[E3] = -J[3] + beta[3] * q_local / alpha;
+	*/
+
+	dU[E1] = 0.;
+	dU[E2] = 0.;
+	dU[E3] = 0.;
 
 	//Add disk cooling term
 	#if(COOL_DISK)
@@ -343,9 +349,7 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 	#if(N3>1)
 	dive += 0.25 * (pse[nl[n]][index_3D(n, i, j, z - zoffset + dz * zsize)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + dz * zsize)][FACE3] - pse[nl[n]][index_3D(n, i, j, z - zoffset)][3] * gdet[nl[n]][index_2D(n, i, j, z - zoffset)][FACE3]) / ((double)(zsize)*dx[nl[n]][3]);
 	#endif
-	dive = fabs(divb);
 	#else
-
 	/* Flux-ct defn */
 	dive = fabs(
 		#if(N1>1)
@@ -404,6 +408,7 @@ void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restr
 	return;
 }
 
+//4D Levi-cevita symbol (not tensor)
 double lvc4u(int i, int j, int k, int l) {
 	double lvc4u;
 
@@ -427,6 +432,7 @@ double lvc4u(int i, int j, int k, int l) {
 	return (-lvc4u);
 }
 
+//3D Levi-cevita symbol (not tensor)
 double lvc3u(int i, int j, int k) {
 	double lvc3u;
 			

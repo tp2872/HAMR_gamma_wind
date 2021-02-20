@@ -270,13 +270,13 @@ void MPI_initialize(int argc, char *argv[])
 
 	#pragma omp parallel shared(nthreads) private(threadid)
 	{
-#ifdef __APPLE__
+		#ifdef __APPLE__
         threadid = 0;
         nthreads = 1;
-#else
+		#else
         threadid = omp_get_thread_num();
 		nthreads = omp_get_num_threads();
-#endif
+		#endif
 		if (threadid == 0 && rank == 0) {
 			fprintf(stderr, "nthreads = %d\n", nthreads);
 		}

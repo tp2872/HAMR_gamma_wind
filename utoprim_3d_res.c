@@ -72,7 +72,7 @@ Utoprim_1D, residual, and utsq */
 
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim){
-	double D, S[3], tau, B[3], E[3], ncov[NDIM], ncon[NDIM], prim_tmp[NPR_HD];
+	double D, S[3], tau, B[3], E[3], ncov[NDIM], ncon[NDIM], prim_tmp[NPR_HD], U_tmp[NPR];
 	int i, j, ret=0;
 	double alpha;
 
@@ -97,11 +97,11 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	D = alpha * U[RHO] / gdet;
 
 	//Energy to 3+1
-	tau = alpha * alpha * (U[UU] - U[RHO]) / gdet;
+	tau = ncov[0] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3]) / gdet;
 	
 	//Momentum to 3+1
 	#pragma ivdep
-	for (i = 0; i < 3; i++) S[i] = alpha * (U[U1 + i] + ncov[i] * (ncon[0] * U[UU] + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
+	for (i = 0; i < 3; i++) S[i] = ncov[0] * (delta(i + 1, 1) * U[U1] + delta(i + 1, 2) * U[U2] + delta(i + 1, 3) * U[U3] + ncov[i+1] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
 	
 	//Magnetic field to 3+1
 	#pragma ivdep
