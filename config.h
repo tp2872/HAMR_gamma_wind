@@ -782,6 +782,8 @@ Section with derived quantities
 
 #if(RAD_M1)
 #define NPRDUMP 14
+#elif(RESISTIVE)
+#define NPRDUMP 13
 #else
 #define NPRDUMP 9
 #endif
@@ -789,9 +791,9 @@ Section with derived quantities
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
-#define NPR_E      (4)        /* number of electric field primitive variables */
+#define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R + RESISTIVE*3)        /* total number of primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */

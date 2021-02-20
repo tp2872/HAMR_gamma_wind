@@ -247,7 +247,6 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	}
 	
 	//Implicit source term; do not use in this function
-	/*
 	//Lapse in 3+1
 	alpha = 1.0 / sqrt(-geom->gcon[0][0]);
 
@@ -259,24 +258,19 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	//Calculate charge density from divergence of electric field
 	q_local = (alpha / geom->g) * q[0];
 
-	//Calculate electric current J
+	//Calculate explicit part of electric current J
 	gamma = q_res.ucon[0] * alpha;
 	lower_3(&(ph[U1]), geom, utcov);
 	lower_3(&(ph[B1]), geom, Bcov);
 	vdotE = alpha / gamma * (ph[E1] * utcov[0]+ ph[E2] * utcov[1] + ph[E3] * utcov[2]);
-	J[1] = q_local * ph[U1] / gamma + gamma / ETA * (ph[E1] * alpha + alpha / geom->g * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]) / gamma - vdotE * ph[U1] / gamma);
-	J[2] = q_local * ph[U2] / gamma + gamma / ETA * (ph[E2] * alpha + alpha / geom->g * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]) / gamma - vdotE * ph[U2] / gamma);
-	J[3] = q_local * ph[U3] / gamma + gamma / ETA * (ph[E3] * alpha + alpha / geom->g * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]) / gamma - vdotE * ph[U3] / gamma);
+	J[1] = q_local * ph[U1] / gamma; //+ gamma / ETA * (ph[E1] * alpha + alpha / geom->g * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]) / gamma - vdotE * ph[U1] / gamma);
+	J[2] = q_local * ph[U2] / gamma; //+ gamma / ETA * (ph[E2] * alpha + alpha / geom->g * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]) / gamma - vdotE * ph[U2] / gamma);
+	J[3] = q_local * ph[U3] / gamma; //+ gamma / ETA * (ph[E3] * alpha + alpha / geom->g * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]) / gamma - vdotE * ph[U3] / gamma);
 
 	//Calculate source term for electric field
-	dU[E1] = -J[1] + beta[1] * q_local / alpha;
-	dU[E2] = -J[2] + beta[2] * q_local / alpha;
-	dU[E3] = -J[3] + beta[3] * q_local / alpha;
-	*/
-
-	dU[E1] = 0.;
-	dU[E2] = 0.;
-	dU[E3] = 0.;
+	dU[E1] = -alpha * J[1] + beta[1] * q_local / alpha;
+	dU[E2] = -alpha * J[2] + beta[2] * q_local / alpha;
+	dU[E3] = -alpha * J[3] + beta[3] * q_local / alpha;
 
 	//Add disk cooling term
 	#if(COOL_DISK)
