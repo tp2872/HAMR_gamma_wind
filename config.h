@@ -125,7 +125,7 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 3
+#define NB_2 4
 #define NB_3 1
 
 /*Set block size in each dimension*/
@@ -314,7 +314,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0001)
 
 /*Enable IMEX*/
-#define DO_IMEX (1)
+#define DO_IMEX (0)
 
 //Abundace constants
 #define Z_AB (0.02)
@@ -783,7 +783,7 @@ Section with derived quantities
 #if(RAD_M1)
 #define NPRDUMP 14
 #elif(RESISTIVE)
-#define NPRDUMP 13
+#define NPRDUMP 12
 #else
 #define NPRDUMP 9
 #endif
