@@ -195,7 +195,7 @@ int invert_3DU(double D, double Dt_times_alpha, double etares, double tau, doubl
 		invert_matrix_3D(J_3du, J_3du_inv);
 
         //Update ucov_tilde
-        for (i=0;i<3;i++) vD[i] = vD[i] - (J_3du_inv[i][0]*f_3du[0]+ J_3du_inv[i][1] * f_3du[1]+ J_3du_inv[i][1] * f_3du[1]); //MATTHEW: This must be wrong; You want to divide residuals by jacobian
+        for (i=0;i<3;i++) vD[i] = vD[i] - (J_3du_inv[i][0]*f_3du[0]+ J_3du_inv[i][1] * f_3du[1]+ J_3du_inv[i][2] * f_3du[2]); //MATTHEW: This must be wrong; You want to divide residuals by jacobian
         
         //check convergence of ucov to exit loop
   		er = 0.0;
