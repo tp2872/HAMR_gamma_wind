@@ -54,6 +54,7 @@
 
 void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, int dir, struct of_geom * restrict geom, double * restrict flux)
 {
+	#if(RESISTIVE)
 	int k;
 	double alpha, beta[NDIM], Ecov[3], Bcov[3];
 
@@ -123,11 +124,13 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
     
 	#pragma ivdep
 	PLOOP flux[k] *= geom->g ;
+	#endif
 }
 
 /* calculate magnetic field four-vector */
 void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict econ)
 {
+	#if(RESISTIVE)
 	double alpha, gamma, ncon[NDIM], E_dot_v, utcov[3], Bcov[3];
 
 	//Lapse in 3+1
@@ -154,11 +157,13 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha / geom->g) * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]);
 
 	return;
+	#endif
 }
 
 /* calculate magnetic field four-vector */
 void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* restrict ucon, double * restrict bcon)
 {
+	#if(RESISTIVE)
 	double alpha, gamma, ncon[NDIM], B_dot_v, utcov[3], Ecov[3];
 
 	//Lapse in 3+1
@@ -185,11 +190,13 @@ void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* 
 	bcon[3] = alpha * (B_dot_v) * ncon[3] + gamma * (alpha * pr[B3]) - (alpha / geom->g) * (utcov[0] * Ecov[1] - utcov[1] * Ecov[0]);
 
 	return ;
+	#endif
 }
 
 /* MHD stress tensor, with first index up, second index down */
 void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, struct of_state_res * restrict q_res, double * restrict mhd)
 {
+	#if(RESISTIVE)
 	int j, lambda, beta, kappa;
 	double P,w,bsq,esq, eta,ptot, mhd_u[NDIM], mhd_d[NDIM], alpha;
 
@@ -220,12 +227,14 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 	//single row of mhd stress tensor, first index up, second index down
 	#pragma ivdep
 	DLOOPA mhd[j] = eta * q_res->ucon[dir] * q_res->ucov[j] + ptot * delta(dir, j) - q_res->bcon[dir] * q_res->bcov[j] - q_res->econ[dir] * q_res->ecov[j]+mhd_d[j];
+	#endif
 }
 
 /* add in (explicit) geometricc source terms to equations of motion */
 void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double *q, double Dt)
 {
-    double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, utcov[3], Bcov[3], vdotE, q_local;
+	#if(RESISTIVE)
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, utcov[3], Bcov[3], vdotE, q_local;
 	int j,k ;
 	struct of_state_res q_res;
 
@@ -282,11 +291,14 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
+	#endif
 }
 
 void calc_J(double p[NPR], double J[NDIM], double q, struct of_geom* restrict geom) {
+	#if(RESISTIVE)
 	struct of_state_res q_res;
 	get_state_res(p, geom, &q_res);
+	#endif
 }
 
 /* find ucon, ucov, bcon, bcov from primitive variables */
@@ -315,6 +327,7 @@ void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, d
 }
 
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z) {
+	#if(RESISTIVE)
 	int di = (N1 > 1);
 	int dj = (N2 > 1);
 	int dz = (N3 > 1);
@@ -385,11 +398,13 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 	);
 	#endif
 	return dive;
+	#endif
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
 void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restrict ucov)
 {
+	#if(RESISTIVE)
 	int i, j;
 	for (i = 0; i < 3; i++) {
 		ucov[i] = 0.0;
@@ -400,6 +415,7 @@ void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restr
 		}
 	}
 	return;
+	#endif
 }
 
 //4D Levi-cevita symbol (not tensor)

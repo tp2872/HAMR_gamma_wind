@@ -263,6 +263,7 @@ double advance_res(int flag)
 
 void utoprim_M1_0_res(double Dt, int n)
 {
+	#if(RESISTIVE)
 	int i, j, z, k, ind0;
 	double U_0[NPR];
 	struct of_geom geom;
@@ -284,9 +285,11 @@ void utoprim_M1_0_res(double Dt, int n)
 			}
 		}
 	}
+	#endif
 }
 
 void utoprim_M1_1_res(double Dt, int n){
+	#if(RESISTIVE)
 	int i, j, z, k;
 	double cell_size, U_1[NPR], q;
 	struct of_geom geom;
@@ -333,9 +336,11 @@ void utoprim_M1_1_res(double Dt, int n){
 			//implicit_res_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1, U_1, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Y_IMEX*Dt, cell_size);
 		}
 	}
+	#endif
 }
 
 void utoprim_M1_2_res(double Dt, int n){
+	#if(RESISTIVE)
 	int i, j, z, k;
 	double ndt, ndt1, ndt2, ndt3, U_2[NPR], dU[NPR], q;
 	struct of_geom geom;
@@ -381,10 +386,12 @@ void utoprim_M1_2_res(double Dt, int n){
 			pflag[nl[n]][ind0] = Utoprim_3d_res(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC);		
 		}
 	}
+	#endif
 }
 
 void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n)
 {
+	#if(RESISTIVE)
 	int i, j, z, k;
 	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR], q;
 	double y = 1.0 - 1.0 / sqrt(2.0);
@@ -434,12 +441,14 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 		}
 	}
+	#endif
 }
 
 double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL])[NPR], int dir, int flag, int n)
 {
+	#if(RESISTIVE)
 	#if(FRAME_TRANSFORM)
-	//ndt = fluxcalc_hlld(pr, F, dir, flag, n);
+	//ndt = fluxcalc_hlld_(pr, F, dir, flag, n);
 	if (rank == 0)fprintf(stderr, "Advanced Riemann solvers not implemented for resistive module \n");
 	return ndt;
 	#endif
@@ -589,4 +598,5 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 			}
 		}
 	return(ndt);
+	#endif
 }
