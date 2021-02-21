@@ -65,21 +65,16 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 #include "u2p_util.h"
 #include "decs.h"
+int invert_3DU(double D, double Dt_times_alpha, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance);
+void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
+void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac);
+void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]);
 
-/* these variables need to be shared between the functions
-Utoprim_1D, residual, and utsq */
-//double Bsq, QdotBsq, Qtsq, Qdotn, D;
-//#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
-void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt, double etares, double alpha, double gammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]);
-void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt, double etares, double alpha, double gammainv[3][3], double sqrtgamma, double lfac);
-int invert_3DU(double D, double Dt, double etares, double tau, double S[3], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double B[3], double E[3], double vD_guess[3], double gammainv[3][3], double tolerance, int retval);
-void res_3du_der(double D, double Dt, double etares, double tau, double S_j[3], double vD[3], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double B[3], double E[3], double Jac[3][3], double res[3]);
-
-int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt, double eta){
-	double D, S[3], tau, B[3], E[3], ncov[NDIM], ncon[NDIM], prim_tmp[NPR_HD], U_tmp[NPR];
+int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt){
+	double D, tau, S[3], B_guess[3], E_guess[3], ncov[NDIM], ncon[NDIM], U_tmp[NPR], rho , ug;
 	int i, j, k, retval = 0;
-	double alpha, gamma, gammasq,utsq, dtt, etares, u, p, enth, sqrtgamma;
-	double E_guess[3], gamma_guess, ucov_guess[3], ExB[3], xi_guess, gammainv[3][3];
+	double alpha, utsq, etares, u, p, enth, sqrtgamma;
+	double E_guess[3], gamma_guess, vD_guess[3], ExB[3], xi_guess, ggamma[3][3], ggammainv[3][3];
 
 	if (U[0] <= 0.) {
 		return(-100);
@@ -89,17 +84,17 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
-	//First update the primitive E-fields
-	#pragma ivdep
-	for (i = E1; i <= E3; i++) prim[i] = U[i] / gdet;
-
 	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0][0]);
+	sqrtgamma = gdet / alpha; //determinant for spatial part of metric
 	ncov_calc(gcon, ncov);
 	raise_g(ncov, gcon, ncon);
+
+	//Calculate 3+1 metric
 	for (i=0;i<3; i++){
 		 for (j=0;j<3;j++){
-		 	gammainv[i][j] = gcon[i+1][j+1]+ncon[i+1]*ncon[j+1]; //gamma^{ij}
+			ggamma[i][j] = gcov[i + 1][j + 1] + ncov[i + 1] * ncov[j + 1]; //gamma_{ij}
+			ggammainv[i][j] = gcon[i + 1][j + 1] + ncon[i + 1] * ncon[j + 1]; //gamma^{ij}
 		 }
 	}
 
@@ -115,87 +110,63 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	
 	//Magnetic field to 3+1
 	#pragma ivdep
-	for (i = 0; i < 3; i++) B[i] = alpha * U[B1+i] / gdet;
+	for (i = 0; i < 3; i++) B_guess[i] = alpha * U[B1+i] / gdet;
 
 	//Electric field to 3+1
 	#pragma ivdep
-	for (i = 1; i < 3; i++) E[i] = alpha * U[E1+i] / gdet;
+	for (i = 1; i < 3; i++) E_guess[i] = alpha * U[E1+i] / gdet;
 
-	//Transform the PRIMITIVE variables into the new system
-	#pragma ivdep
-	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
+	//calculate Lorentz factor guess for NR
+	utsq = 0.;
+	for (i = 1; i < 4; i++) for (j = 1; j < 4; j++) {
+		utsq += gcov[i][j] * prim[UTCON1 + i - 1] * prim[UTCON1 + j - 1];
+	}
+	if ((utsq < 0.) && (fabs(utsq) < 1.0e-13)) utsq = fabs(utsq);
+	if (utsq < 0. || utsq > UTSQ_TOO_BIG) retval = 2;
+	gamma_guess = sqrt(1. + utsq);
 
-	//calculate Lorentz factor
-	utsq = 0. ;
-  	for(i=1;i<4;i++){
-  		for(j=1;j<4;j++){
-  			 utsq += gcov[i][j]*prim[UTCON1+i-1]*prim[UTCON1+j-1] ;
-  		}
-  	}
-
-	if( (utsq < 0.) && (fabs(utsq) < 1.0e-13) ) { 
-    	utsq = fabs(utsq);
-  	}
-  	if(utsq < 0. || utsq > UTSQ_TOO_BIG) {
-    	retval = 2;
-    	//return(retval) ;
-		fprintf(stderr,"failure, utsq_too_big at %d %d\n", i,j);
-  	}
-
-  	gammasq = 1. + utsq ;
-  	gamma  = sqrt(gammasq);
-  	etares=eta;
-  	dtt=Dt; 
-  	sqrtgamma=gdet/alpha; //determinant for spatial part of metric
-  	
-  	//guesses for NR
-  	gamma_guess=gamma;
-  	u = U[UU] ;
-  	p = pressure_rho0_u(U[RHO],u) ;
-  	enth=(1.0+u+p)/U[RHO];
-  	xi_guess=D*enth*gamma_guess;
-  	
-  	for (i=0;i<3;i++){
-  		E_guess[i]=E[i];
-  	}
-  	
+	//guesses for NR
+	u = U[UU] / gdet;
+	p = pressure_rho0_u(U[RHO] / gdet, u);
+	enth = (1.0 + u + p) / (U[RHO] / gdet);
+	xi_guess = D * enth * gamma_guess;
+  	  	
   	for (i = 0; i < 3; i++){
 		ExB[i] = 0.;
-		for (j = 0; j < 3; j++){
-			for (k = 0; k < 3; k++){
-				if((j==k) || (j==i) || (k==i)) continue;
-				ExB[i] = ExB[i] + sqrtgamma*lvc3u(i,j,k)*E_guess[j]*B[k];
-			}
+		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++){
+			ExB[i] = ExB[i] + sqrtgamma*lvc3u(i,j,k)*E_guess[j]*B_guess[k];
 		}
+		vD_guess[i] = (S[i] - ExB[i]) * gamma_guess / xi_guess; //gamma*v_i-->vD_guess
 	}
-	for (i=0;i<3;i++){
-  		ucov_guess[i]=(S[i] - ExB[i])*gamma_guess/xi_guess; //gamma*v_i
-  	}
 	
 	//NR Step
-	retval=invert_3DU(D, Dt, etares, tau, S, gcov, gcon, gdet, B, E, ucov_guess, gammainv, tolerance, retval);
+	retval=invert_3DU(D, Dt*alpha, ETA, tau, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 	//you get back gamma*v_i and E
-
 
 	//Transform new primitive variables back if there was no problem
 	if (retval == 0) {
-		for (i = 0; i < BCON1; i++) prim[i] = prim_tmp[i];
+		prim[RHO] = rho;
+		prim[UU] = ug;
+		prim[U1] = vD_guess[0];
+		prim[U2] = vD_guess[1];
+		prim[U3] = vD_guess[2];
 
-		prim_tmp[E1] = E[0] / alpha;
-		prim_tmp[E2] = E[1] / alpha;
-		prim_tmp[E3] = E[2] / alpha;
+		prim[E1] = E_guess[0] / alpha;
+		prim[E2] = E_guess[1] / alpha;
+		prim[E3] = E_guess[2] / alpha;
 	}
 
 	return(retval);
 }
 
 //gives back E and gamma*v_i
-int invert_3DU(double D, double Dt, double etares, double tau, double S[3], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double B[3], double E[3], double vD_guess[3], double gammainv[3][3], double tolerance, int retval){
+int invert_3DU(double D, double Dt_times_alpha, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double *rho, double *ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance){
 	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], f_3du[3], Enew[3], B_D[3], alpha, lfac;
 	int i,j,k, nit, maxitnr, ii;
 	double er, er1, normV, half;
 	int maxitr=100;
-	
+	int retval = 1;
+
 	for (i=0;i<3; i++) vD[i] = vD_guess[i];
 
     //Newton-Raphson iteration
@@ -224,7 +195,7 @@ int invert_3DU(double D, double Dt, double etares, double tau, double S[3], doub
         for (i=0;i<3;i++) xk_3du[i] = vD[i];   
         
 		//Calculate jacobian and residuals
-        res_3du_der(D, Dt, etares, tau, S, xk_3du, gcov, gcon, gdet, B, E, J_3du, f_3du); 
+        res_3du_der(D, Dt_times_alpha, etares, tau, S, xk_3du, gcov, gcon, sqrtgamma, B_guess, E_guess, J_3du, f_3du); 
 
         //Store previous ucov_tilde
         for (i=0;i<3;i++) vDprev[i] = vD[i];
@@ -237,8 +208,8 @@ int invert_3DU(double D, double Dt, double etares, double tau, double S[3], doub
   		normV=0.0;
   		for(i=0;i<3;i++){
   			for(j=0;j<3;j++){
-  				er+=(gammainv[i][j]*f_3du[i]*f_3du[j]);
-  				normV+=(gammainv[i][j]*vD[i]*vD[j]);
+  				er+=(ggammainv[i][j]*f_3du[i]*f_3du[j]);
+  				normV+=(ggammainv[i][j]*vD[i]*vD[j]);
   			}
   		}
   		
@@ -256,22 +227,21 @@ int invert_3DU(double D, double Dt, double etares, double tau, double S[3], doub
 		B_D[i] = 0.;
 		vU[i] = 0.;
 		for (j=0;j<3;j++){
-			B_D[i]    = B_D[i] + gammainv[i][j]*B[j];
-			vU[i] = vU[i] + gammainv[i][j] * vD[j];
+			B_D[i] = B_D[i] + ggammainv[i][j] * B_guess[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
 		}
 	}
-
-	//Calculate shift in 3+1
-	alpha = 1.0 / sqrt(-gcon[0][0]);
 
 	//calculate Lorentz factor
 	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
 
-	getE_resistive(Enew, E, vD, B_D, Dt, etares, alpha, gammainv, gdet / alpha, lfac);
+	//Get E and ucov_tilde
+	getE_resistive(Enew, E_guess, vD, B_D, Dt_times_alpha, etares, ggammainv, sqrtgamma, lfac);
 	
-    //update E and ucov
+    //Update inverted quantities
     for (i=0;i<3;i++){
-		E[i]=Enew[i];
+		rho[0] = D / lfac;
+		E_guess[i]=Enew[i];
 		vD_guess[i]=vD[i];
     }
 	  
@@ -279,22 +249,10 @@ int invert_3DU(double D, double Dt, double etares, double tau, double S[3], doub
 }
 
 //gives jacobian and residuals
-void res_3du_der(double D, double Dt, double etares, double tau, double S_j[3], double vD[3], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double B[3], double E[3], double Jac[3][3], double res[3]){
-	double Enew[3],Enew_D[3], B_D[3], dEdu[3], Stilde_j[3], ExB[3], ncov[NDIM], ncon[NDIM], ucon[NDIM], ggamma[3][3], gammainv[3][3], tautilde, vU[3], decrossb[3], Stilde_uj[3];
-	double alpha, lfac, sqrtgamma, z, esqr, bsqr, Ssqr, eps, p, enth, edotde, depsdu, denthdu, dpdu, S_ujdotdecrossb;
-	alpha = 1.0 / sqrt(-gcon[0][0]);
+void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]){
+	double Enew[3],Enew_D[3], B_D[3], dEdu[3], Stilde_j[3], ExB[3], ncov[NDIM], ncon[NDIM], ucon[NDIM], ggamma[3][3], tautilde, vU[3], decrossb[3], Stilde_uj[3];
+	double lfac, sqrtgamma, z, esqr, bsqr, Ssqr, eps, p, enth, edotde, depsdu, denthdu, dpdu, S_ujdotdecrossb;
 	int i, j, k;
-
-	sqrtgamma=gdet/alpha; //determinant for spatial part of metric
-	ncov_calc(gcon, ncov);
-	raise_g(ncov, gcon, ncon);
-	
-	for (i=0;i<3; i++){
-		 for (j=0;j<3;j++){
-		 	ggamma[i][j]   = gcov[i+1][j+1]+ncov[i+1]*ncov[j+1]; //gamma_{ij}
-		 	gammainv[i][j] = gcon[i+1][j+1]+ncon[i+1]*ncon[j+1]; //gamma^{ij}
-		 }
-	}
 
 	//lower B and raise vD
 	for (i=0;i<3;i++){
@@ -302,7 +260,7 @@ void res_3du_der(double D, double Dt, double etares, double tau, double S_j[3], 
 		vU[i] = 0.;
 		for (j=0;j<3;j++){
 			B_D[i] = B_D[i] + ggamma[i][j] * B[j];
-			vU[i] = vU[i] + gammainv[i][j] * vD[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
 		}
 	}
 	
@@ -310,18 +268,16 @@ void res_3du_der(double D, double Dt, double etares, double tau, double S_j[3], 
 	lfac = sqrt(1.0+vU[0]*vD[0]+vU[1]*vD[1]+vU[2]*vD[2]);
 	
 	//calculate new electric field
-	getdEdu_resistive(Enew,E,vD,B_D,Dt,etares,alpha,gammainv,sqrtgamma,lfac,dEdu);
+	getdEdu_resistive(Enew,E,vD,B_D,Dt_times_alpha,etares,ggammainv,sqrtgamma,lfac,dEdu);
 	
 	//lower Enew 
-	for (i=0;i<3;i++){
-		for (j=0;j<3;j++){
-			Enew_D[i] = Enew_D[i] + ggamma[i][j]*Enew[j];
-		}
+	for (i=0;i<3;i++)for (j=0;j<3;j++){
+		Enew_D[i] = Enew_D[i] + ggamma[i][j]*Enew[j];
 	}
 	
 	//calculate bsqr and esqr
-	bsqr= B[0]*B_D[0]+B[1]*B_D[1]+B[2]*B_D[2];
-	esqr= Enew[0]*Enew_D[0]+Enew[1]*Enew_D[1]+Enew[2]*Enew_D[2];
+	bsqr = B[0] * B_D[0] + B[1] * B_D[1] + B[2] * B_D[2];
+	esqr = Enew[0] * Enew_D[0] + Enew[1] * Enew_D[1] + Enew[2] * Enew_D[2];
 	
 	//calculate tautilde and stilde
 	tautilde = tau - (bsqr + esqr)/2.0;
@@ -332,12 +288,11 @@ void res_3du_der(double D, double Dt, double etares, double tau, double S_j[3], 
 	}
 	for (i=0;i<3;i++) Stilde_j[i] = S_j[i] - ExB[i]; 
 	
-	
 	//raise Stilde
 	for (i=0;i<3;i++){
 		Stilde_uj[i] = 0.;
 		for (j=0;j<3;j++){
-			Stilde_uj[i]= Stilde_uj[i] + gammainv[i][j]*Stilde_j[j];
+			Stilde_uj[i]= Stilde_uj[i] + ggammainv[i][j]*Stilde_j[j];
 		}
 	}
 	
@@ -426,17 +381,16 @@ void res_3du_der(double D, double Dt, double etares, double tau, double S_j[3], 
 }
 
 //Recover E
-void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt, double etares, double alpha, double gammainv[3][3], double sqrtgamma, double lfac){
+void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac){
 	double vxbU[3],  vU[3];
 	int i, j, k;
 	double e0dotv, sigma;
-	
-	
+		
 	//calculate gamma*v^i
 	for (i = 0; i < 3; i++) {
 		vU[i] = 0;
 		for (j = 0; j < 3; j++) {
-			vU[i] = vU[i] + gammainv[i][j] * vD[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
 		}
 	}
 	
@@ -453,14 +407,14 @@ void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], do
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
 
 	//eta<1 case
-	sigma = Dt * alpha;
+	sigma = Dt_times_alpha;
 	for (i = 0; i < 3; i++) {
 		Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
 	}
 }
 
 //Recover E and DE/du
-void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt, double etares, double alpha, double gammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
+void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares,double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
 	double vxbU[3], kxbU[3], ginvv[3], krond[3], vU[3];
 	int i, j, k;
 	double e0dotv, sigma, denom1, denom2;
@@ -469,7 +423,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 	for (i = 0; i < 3; i++) {
 		vU[i] = 0;
 		for (j = 0; j < 3; j++) {
-			vU[i] = vU[i] + gammainv[i][j] * vD[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
 		}
 	}
 
@@ -486,7 +440,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
 
 	//eta<1 case
-	sigma = Dt * alpha;
+	sigma = Dt_times_alpha;
 	for (i = 0; i < 3; i++) Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
 
 	denom1 = etares + lfac * sigma;
@@ -507,7 +461,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
-		dEdu[0][i] = -E[i] * etares / pow(denom1, 2) * sigma * vU[0] / lfac - (-pow(sigma / denom1, 2) * vU[0] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + sigma / denom1 * (kxbU[i] + etares * (-E[0] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[0] / lfac * vU[i] - e0dotv / denom2 * gammainv[0][i])));
+		dEdu[0][i] = -E[i] * etares / pow(denom1, 2) * sigma * vU[0] / lfac - (-pow(sigma / denom1, 2) * vU[0] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + sigma / denom1 * (kxbU[i] + etares * (-E[0] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[0] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
 	}
 
 	// dE/dv2
@@ -525,7 +479,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
-		dEdu[1][i] = -E[i] * etares / pow(denom1, 2) * sigma * vU[1] / lfac - (-pow(sigma / denom1, 2) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + sigma / denom1 * (kxbU[i] + etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * gammainv[1][i])));
+		dEdu[1][i] = -E[i] * etares / pow(denom1, 2) * sigma * vU[1] / lfac - (-pow(sigma / denom1, 2) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + sigma / denom1 * (kxbU[i] + etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[1][i])));
 	}
 
 	// dE/dv3
@@ -543,6 +497,6 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
-		dEdu[2][i] = -E[i] * etares / pow(denom1, 2) * sigma * vU[2] / lfac - (-pow(sigma / denom1, 2) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + sigma / denom1 * (kxbU[i] + etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * gammainv[2][i])));
+		dEdu[2][i] = -E[i] * etares / pow(denom1, 2) * sigma * vU[2] / lfac - (-pow(sigma / denom1, 2) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + sigma / denom1 * (kxbU[i] + etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[2][i])));
 	}
 }
