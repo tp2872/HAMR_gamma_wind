@@ -357,14 +357,14 @@ void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, dou
 		}
 	}
 	edotde = Enew_D[0]*dEdu[0,0]+Enew_D[1]*dEdu[0,1]+Enew_D[2]*dEdu[0,2]; 
-    depsdu = vU[0]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[0]/(1.0+lfac) - pow(z/(1.0+lfac),2)*vU[0]/lfac;
+    depsdu = vU[0]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[0]/(1.0+lfac) - (z*z/((1.0+lfac)* (1.0 + lfac)))*vU[0]/lfac;
     
     if (z != 0.0) depsdu = depsdu - vU[0]/z*sqrt(Ssqr)/D;
     
     S_ujdotdecrossb = Stilde_uj[0]*decrossb[0]+Stilde_uj[1]*decrossb[1]+Stilde_uj[2]*decrossb[2];
     if (Ssqr != 0.0) depsdu = depsdu + (z/D)*S_ujdotdecrossb/sqrt(Ssqr);
     
-    dpdu = (GAMMA-1.0) * D * (depsdu/lfac - eps/pow(lfac,3)*vU[0]);
+    dpdu = (GAMMA-1.0) * D * (depsdu/lfac - eps/(lfac*lfac*lfac)*vU[0]);
     denthdu = GAMMA/(GAMMA-1.0) * (dpdu*lfac + p*vU[0]/lfac)/D;
     
 	Jac[0][0] = 1.0 + decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
@@ -380,14 +380,14 @@ void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, dou
 		}
 	}
 	edotde = Enew_D[0]*dEdu[1,0]+Enew_D[1]*dEdu[1,1]+Enew_D[2]*dEdu[1,2]; 
-    depsdu = vU[1]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[1]/(1.0+lfac) - pow(z/(1.0+lfac),2.)*vU[1]/lfac;
+    depsdu = vU[1]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[1]/(1.0+lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) *vU[1]/lfac;
     
 	if (z != 0.0) depsdu = depsdu - vU[1] / z * sqrt(Ssqr) / D;
     
     S_ujdotdecrossb = Stilde_uj[0]*decrossb[0]+Stilde_uj[1]*decrossb[1]+Stilde_uj[2]*decrossb[2];
     if (Ssqr != 0.0) depsdu = depsdu + (z/D)*S_ujdotdecrossb/sqrt(Ssqr);
     
-    dpdu = (GAMMA-1.0) * D * (depsdu/lfac - eps/pow(lfac,3)*vU[1]);
+    dpdu = (GAMMA-1.0) * D * (depsdu/lfac - eps/(lfac*lfac*lfac)*vU[1]);
     denthdu = GAMMA/(GAMMA-1.0) * (dpdu*lfac + p*vU[1]/lfac)/D;
     
     Jac[0][1] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) *denthdu;
@@ -403,14 +403,14 @@ void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, dou
 		}
 	}
 	edotde = Enew_D[0]*dEdu[2,0]+Enew_D[1]*dEdu[2,1]+Enew_D[2]*dEdu[2,2]; 
-    depsdu = vU[2]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[2]/(1.0+lfac) - pow(z/(1.0+lfac),2)*vU[2]/lfac;
+    depsdu = vU[2]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[2]/(1.0+lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) *vU[2]/lfac;
     
     if (z != 0.0) depsdu = depsdu - vU[2]/z*sqrt(Ssqr)/D;
     
     S_ujdotdecrossb = Stilde_uj[0]*decrossb[0]+Stilde_uj[1]*decrossb[1]+Stilde_uj[2]*decrossb[2];
     if (Ssqr != 0.0) depsdu = depsdu + (z/D)*S_ujdotdecrossb/sqrt(Ssqr);
     
-    dpdu = (GAMMA-1.0) * D * (depsdu/lfac - eps/pow(lfac,3)*vU[2]);
+    dpdu = (GAMMA-1.0) * D * (depsdu/lfac - eps/(lfac*lfac*lfac)*vU[2]);
     denthdu = GAMMA/(GAMMA-1.0) * (dpdu*lfac + p*vU[2]/lfac)/D;
     
     Jac[0][2] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) *denthdu;
@@ -495,7 +495,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 
 	//Build derivative
 	for (i = 0; i < 3; i++) {
-		dEdu[0][i] = -E[i] * etares / pow(denom1, 2) * Dt_times_alpha * vU[0] / lfac - (-pow(Dt_times_alpha / denom1, 2) * vU[0] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + Dt_times_alpha / denom1 * (kxbU[i] + etares * (-E[0] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[0] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
+		dEdu[0][i] = -E[i] * etares / (denom1*denom1) * Dt_times_alpha * vU[0] / lfac - (-(Dt_times_alpha * Dt_times_alpha / (denom1 * denom1)) * vU[0] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + Dt_times_alpha / denom1 * (kxbU[i] + etares * (-E[0] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[0] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
 	}
 
 	//Derivative of u x B: dE/dv2
@@ -512,7 +512,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
-		dEdu[1][i] = -E[i] * etares / pow(denom1, 2) * Dt_times_alpha * vU[1] / lfac - (-pow(Dt_times_alpha / denom1, 2) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + Dt_times_alpha / denom1 * (kxbU[i] + etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[1][i])));
+		dEdu[1][i] = -E[i] * etares / (denom1*denom1) * Dt_times_alpha * vU[1] / lfac - (-(Dt_times_alpha * Dt_times_alpha / (denom1 * denom1)) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + Dt_times_alpha / denom1 * (kxbU[i] + etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[1][i])));
 	}
 
 	// Derivative of u x B: dE/dv3
@@ -529,6 +529,6 @@ void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3],
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
-		dEdu[2][i] = -E[i] * etares / pow(denom1, 2) * Dt_times_alpha * vU[2] / lfac - (-pow(Dt_times_alpha / denom1, 2) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + Dt_times_alpha / denom1 * (kxbU[i] + etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / pow(denom2, 2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[2][i])));
+		dEdu[2][i] = -E[i] * etares / (denom1*denom1) * Dt_times_alpha * vU[2] / lfac - (-(Dt_times_alpha * Dt_times_alpha / (denom1 * denom1)) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) + Dt_times_alpha / denom1 * (kxbU[i] + etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[2][i])));
 	}
 }
