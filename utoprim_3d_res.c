@@ -67,14 +67,14 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 #include "decs.h"
 int invert_3DU(double D, double Dt_times_alpha, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance);
 void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
-void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac);
-void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]);
+void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac);
+void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]);
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt){
 	double D, tau, S[3], B_guess[3], E_guess[3], ncov[NDIM], ncon[NDIM], U_tmp[NPR], rho , ug;
 	int i, j, k, retval = 0;
-	double alpha, utsq, etares, u, p, enth, sqrtgamma;
-	double vD_guess[3], ExB[3], xi_guess, ggamma[3][3], ggammainv[3][3];
+	double alpha, etares,sqrtgamma;
+	double vD_guess[3], ggamma[3][3], ggammainv[3][3];
 
 	//Return if rho*gamma is negative
 	if (U[0] <= 0.) {
@@ -99,34 +99,29 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	D = alpha * U[RHO] / gdet;
 
 	//Energy to 3+1
-	tau = ncov[0] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3]) / gdet;
+	tau = ncov[0] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3]) / gdet - D;
 	
 	//Momentum to 3+1
-	#pragma ivdep
-	for (i = 0; i < 3; i++) S[i] = ncov[0] * (delta(i + 1, 1) * U[U1] + delta(i + 1, 2) * U[U2] + delta(i + 1, 3) * U[U3] + ncov[i+1] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
-	
+	S[1] = ncov[0] * (U[U1] + ncov[1] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
+	S[2] = ncov[0] * (U[U2] + ncov[2] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
+	S[3] = ncov[0] * (U[U3] + ncov[3] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
+
 	//Magnetic field to 3+1
 	#pragma ivdep
-	for (i = 0; i < 3; i++) B_guess[i] = alpha * U[B1+i] / gdet;
+	B_guess[0] = alpha * U[B1] / gdet;
+	B_guess[1] = alpha * U[B2] / gdet;
+	B_guess[2] = alpha * U[B3] / gdet;
 
 	//Electric field to 3+1
-	#pragma ivdep
-	for (i = 1; i < 3; i++) E_guess[i] = alpha * U[E1+i] / gdet;
+	E_guess[0] = alpha * U[E1] / gdet;
+	E_guess[1] = alpha * U[E2] / gdet;
+	E_guess[2] = alpha * U[E3] / gdet;
+	  	
+	//Guess of relative 4-velocity: gamma*v_i-->vD_guess (eq. 57)
+	vD_guess[0] = prim[U1]; 
+	vD_guess[1] = prim[U2];
+	vD_guess[2] = prim[U3];
 
-	//guesses for NR 
-	u = U[UU] / gdet;
-	p = pressure_rho0_u(U[RHO] / gdet, u);
-	enth = (1.0 + u + p) / (U[RHO] / gdet);
-	xi_guess = D * enth;
-  	  	
-  	for (i = 0; i < 3; i++){
-		ExB[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++){
-			ExB[i] = ExB[i] + sqrtgamma*lvc3u(i,j,k)*E_guess[j]*B_guess[k];
-		}
-		vD_guess[i] = (S[i] - ExB[i]) / xi_guess; //gamma*v_i-->vD_guess (eq. 57)
-	}
-	
 	//NR Step, you get back gamma*v_i and E
 	retval=invert_3DU(D, Dt*alpha, ETA, tau, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 
@@ -142,7 +137,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		prim[E3] = E_guess[2] / alpha;
 	}
 
-	//Update B fields regardless to preserve Div.B==0
+	//Update B fields regardless to preserve Div.B==0 regardless if inversion is succesful
 	#pragma ivdep
 	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
 
@@ -228,7 +223,7 @@ int invert_3DU(double D, double Dt_times_alpha, double etares, double tau, doubl
 	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
 
 	//Get E and ucov_tilde
-	getE_resistive(Enew, E_guess, vD, B_D, Dt_times_alpha, etares, ggammainv, sqrtgamma, lfac);
+	getE_resistive(Enew, E_guess, vU, vD, B_D, Dt_times_alpha, etares, ggammainv, sqrtgamma, lfac);
 
 	//lower Enew 
 	for (i = 0; i < 3; i++) {
@@ -297,10 +292,10 @@ void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, dou
 	}
 	
 	//calculate Lorentz factor
-	lfac = sqrt(1.0+vU[0]*vD[0]+vU[1]*vD[1]+vU[2]*vD[2]);
+	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
 	
 	//calculate new electric field
-	getdEdu_resistive(Enew,E,vD,B_D,Dt_times_alpha,etares,ggammainv,sqrtgamma,lfac,dEdu);
+	getdEdu_resistive(Enew, E, vU, vD, B_D, Dt_times_alpha, etares, ggammainv, sqrtgamma, lfac, dEdu);
 	
 	//lower Enew 
 	for (i=0;i<3;i++){
@@ -419,18 +414,10 @@ void res_3du_der(double D, double Dt_times_alpha, double etares, double tau, dou
 }
 
 //Recover E
-void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac){
+void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares, double ggammainv[3][3], double sqrtgamma, double lfac){
 	double vxbU[3],  vU[3], e0dotv;
 	int i, j, k;
 		
-	//calculate gamma*v^i
-	for (i = 0; i < 3; i++) {
-		vU[i] = 0;
-		for (j = 0; j < 3; j++) {
-			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
-		}
-	}
-	
 	// ucov x B_D
 	for (i=0; i < 3; i++){
 		vxbU[i] = 0.;
@@ -450,18 +437,11 @@ void getE_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], do
 }
 
 //Recover E and DE/du
-void getdEdu_resistive(double Enew[3], double E[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares,double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
-	double vxbU[3], kxbU[3], ginvv[3], krond[3], vU[3];
+void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double Dt_times_alpha, double etares,double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
+	double vxbU[3], kxbU[3], ginvv[3], krond[3];
 	int i, j, k;
 	double e0dotv,  denom1, denom2;
 
-	//calculate gamma*v^i
-	for (i = 0; i < 3; i++) {
-		vU[i] = 0;
-		for (j = 0; j < 3; j++) {
-			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
-		}
-	}
 
 	// ucov x B_D
 	for (i = 0; i < 3; i++) {
