@@ -77,42 +77,36 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	/*Maxwell tensor */
 	lower_3(&pr[E1], geom, Ecov);
 
-	#pragma ivdep
 	if (dir == 0) {
 		flux[E1] = pr[E1];
 		flux[E2] = pr[E2];
 		flux[E3] = pr[E3];
 	}
 	else {
-		flux[E1] = 0.;
-		flux[E2] = 0.;
-		flux[E3] = 0.;
-		for (k = 1; k <= 3; k++) {
-			flux[E1] += beta[1] * pr[E1 + (dir - 1)] - beta[dir] * beta[1] - (alpha * alpha / geom->g) * lvc3u(dir, 1, k) * Ecov[k - 1];
-			flux[E2] += beta[2] * pr[E1 + (dir - 1)] - beta[dir] * beta[2] - (alpha * alpha / geom->g) * lvc3u(dir, 2, k) * Ecov[k - 1];
-			flux[E3] += beta[3] * pr[E1 + (dir - 1)] - beta[dir] * beta[3] - (alpha * alpha / geom->g) * lvc3u(dir, 3, k) * Ecov[k - 1];
+		flux[E1] = beta[1] * pr[E1 + (dir - 1)] - beta[dir] * pr[E1];
+		flux[E2] = beta[2] * pr[E1 + (dir - 1)] - beta[dir] * pr[E2];
+		flux[E3] = beta[3] * pr[E1 + (dir - 1)] - beta[dir] * pr[E3];
+		flux[E1] -= (alpha * alpha / geom->g) * (Ecov[2] - Ecov[1]);
+		flux[E2] -= (alpha * alpha / geom->g) * (Ecov[0] - Ecov[2]);
+		flux[E3] -= (alpha * alpha / geom->g) * (Ecov[1] - Ecov[0]);
 
-		}
 	}
 
 	/* dual of Maxwell tensor */
 	lower_3(&pr[B1], geom, Bcov);
 
-	#pragma ivdep
 	if (dir == 0) {
 		flux[B1] = pr[B1];
 		flux[B2] = pr[B2];
 		flux[B3] = pr[B3];
 	}
 	else {
-		flux[E1] = 0.;
-		flux[E2] = 0.;
-		flux[E3] = 0.;
-		for (k = 1; k <= 3; k++) {
-			flux[B1] += beta[1] * pr[B1 + (dir - 1)] - beta[dir] * beta[1] + (alpha * alpha / geom->g) * lvc3u(dir, 1, k) * Bcov[k - 1];
-			flux[B2] += beta[2] * pr[B1 + (dir - 1)] - beta[dir] * beta[2] + (alpha * alpha / geom->g) * lvc3u(dir, 2, k) * Bcov[k - 1];
-			flux[B3] += beta[3] * pr[B1 + (dir - 1)] - beta[dir] * beta[3] + (alpha * alpha / geom->g) * lvc3u(dir, 3, k) * Bcov[k - 1];
-		}
+		flux[B1] = beta[1] * pr[B1 + (dir - 1)] - beta[dir] * pr[B1];
+		flux[B2] = beta[2] * pr[B1 + (dir - 1)] - beta[dir] * pr[B2];
+		flux[B3] = beta[3] * pr[B1 + (dir - 1)] - beta[dir] * pr[B3];
+		flux[B1] += (alpha * alpha / geom->g) * (Bcov[2] - Bcov[1]);
+		flux[B2] += (alpha * alpha / geom->g) * (Bcov[0] - Bcov[2]);
+		flux[B3] += (alpha * alpha / geom->g) * (Bcov[1] - Bcov[0]);
 	}
 
 	//Entropy advection
@@ -152,9 +146,9 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 
 	//Final calculation of rest frame magnetic field
 	econ[0] = alpha * (E_dot_v)*ncon[0];
-	econ[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha / geom->g) * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]);
-	econ[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha / geom->g) * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]);
-	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha / geom->g) * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]);
+	econ[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha * alpha / geom->g) * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]);
+	econ[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha * alpha / geom->g) * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]);
+	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha * alpha / geom->g) * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]);
 
 	return;
 	#endif
@@ -185,9 +179,9 @@ void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* 
 
 	//Final calculation of rest frame magnetic field
 	bcon[0] = alpha * (B_dot_v) * ncon[0];
-	bcon[1] = alpha * (B_dot_v) * ncon[1] + gamma * (alpha * pr[B1]) - (alpha / geom->g) * (utcov[1] * Ecov[2] - utcov[2] * Ecov[1]);
-	bcon[2] = alpha * (B_dot_v) * ncon[2] + gamma * (alpha * pr[B2]) - (alpha / geom->g) * (utcov[2] * Ecov[0] - utcov[0] * Ecov[2]);
-	bcon[3] = alpha * (B_dot_v) * ncon[3] + gamma * (alpha * pr[B3]) - (alpha / geom->g) * (utcov[0] * Ecov[1] - utcov[1] * Ecov[0]);
+	bcon[1] = alpha * (B_dot_v) * ncon[1] + gamma * (alpha * pr[B1]) - (alpha * alpha / geom->g) * (utcov[1] * Ecov[2] - utcov[2] * Ecov[1]);
+	bcon[2] = alpha * (B_dot_v) * ncon[2] + gamma * (alpha * pr[B2]) - (alpha * alpha / geom->g) * (utcov[2] * Ecov[0] - utcov[0] * Ecov[2]);
+	bcon[3] = alpha * (B_dot_v) * ncon[3] + gamma * (alpha * pr[B3]) - (alpha * alpha / geom->g) * (utcov[0] * Ecov[1] - utcov[1] * Ecov[0]);
 
 	return ;
 	#endif
@@ -226,7 +220,7 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 
 	//single row of mhd stress tensor, first index up, second index down
 	#pragma ivdep
-	DLOOPA mhd[j] = eta * q_res->ucon[dir] * q_res->ucov[j] + ptot * delta(dir, j) - q_res->bcon[dir] * q_res->bcov[j] - q_res->econ[dir] * q_res->ecov[j]+mhd_d[j];
+	DLOOPA mhd[j] = eta * q_res->ucon[dir] * q_res->ucov[j] + ptot * delta(dir, j) - q_res->bcon[dir] * q_res->bcov[j] - q_res->econ[dir] * q_res->ecov[j] + mhd_d[j];
 	#endif
 }
 
@@ -272,9 +266,9 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	lower_3(&(ph[U1]), geom, utcov);
 	lower_3(&(ph[B1]), geom, Bcov);
 	vdotE = alpha / gamma * (ph[E1] * utcov[0]+ ph[E2] * utcov[1] + ph[E3] * utcov[2]);
-	J[1] = q_local * ph[U1] / gamma; //+ gamma / ETA * (ph[E1] * alpha + alpha / geom->g * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]) / gamma - vdotE * ph[U1] / gamma);
-	J[2] = q_local * ph[U2] / gamma; //+ gamma / ETA * (ph[E2] * alpha + alpha / geom->g * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]) / gamma - vdotE * ph[U2] / gamma);
-	J[3] = q_local * ph[U3] / gamma; //+ gamma / ETA * (ph[E3] * alpha + alpha / geom->g * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]) / gamma - vdotE * ph[U3] / gamma);
+	J[1] = q_local * ph[U1] / gamma;
+	J[2] = q_local * ph[U2] / gamma;
+	J[3] = q_local * ph[U3] / gamma;
 
 	//Calculate source term for electric field
 	dU[E1] = -alpha * J[1] + beta[1] * q_local / alpha;
@@ -304,6 +298,7 @@ void calc_J(double p[NPR], double J[NDIM], double q, struct of_geom* restrict ge
 /* find ucon, ucov, bcon, bcov from primitive variables */
 void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct of_state_res * restrict q_res)
 {
+	#if(RESISTIVE)
 	//get ucon
 	ucon_calc(pr, geom, q_res->ucon) ;
 	lower(q_res->ucon, geom, q_res->ucov) ;
@@ -315,15 +310,14 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 	//get econ
 	econ_calc_res(pr, geom, q_res->ucon, q_res->econ);
 	lower(q_res->econ, geom, q_res->ecov);
-
-	return ;
+	#endif
 }
 
 void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin){
+	#if(RESISTIVE)
 	*vmax = sqrt(geom->gcon[js][js]);
 	*vmin = -sqrt(geom->gcon[js][js]);
-
-	return ;
+	#endif
 }
 
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z) {
@@ -446,11 +440,9 @@ double lvc4u(int i, int j, int k, int l) {
 double lvc3u(int i, int j, int k) {
 	double lvc3u;
 			
-	if (i > 0 && j > 0) {
-		if ((i == j) || (j == k) || (k == i)) lvc3u = 0.;
-		else if ((i + 1 == j) || (i - 2 == j)) lvc3u = 1.;
-		else lvc3u = -1;
-	}
+	if ((i == j) || (j == k) || (k == i)) lvc3u = 0.;
+	else if ((i + 1 == j) || (i - 2 == j)) lvc3u = 1.;
+	else lvc3u = -1;
 
 	return (lvc3u);
 }

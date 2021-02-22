@@ -2430,10 +2430,10 @@ void set_mag(void){
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
 			#if(N3G>0)
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1] = -geom.g * (state.ucon[2] * state.bcon[3] - state.ucon[3] * state.bcon[2]);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E2] = -geom.g * (state.ucon[3] * state.bcon[1] - state.ucon[1] * state.bcon[3]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1] = -1. / geom.g * (state.ucov[2] * state.bcov[3] - state.ucov[3] * state.bcov[2]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E2] = -1. / geom.g * (state.ucov[3] * state.bcov[1] - state.ucov[1] * state.bcov[3]);
 			#endif
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E3] = -geom.g * (state.ucon[1] * state.bcon[2] - state.ucon[2] * state.bcon[1]);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E3] = -1. / geom.g * (state.ucov[1] * state.bcov[2] - state.ucov[2] * state.bcov[1]);
 		}
 	}
 	#endif

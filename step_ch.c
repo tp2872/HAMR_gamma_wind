@@ -242,9 +242,11 @@ double advance(int flag)
 	set_iprobe(0, &flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 2);
 	#endif
+
 	#if(!TRANS_BOUND && !CARTESIAN)
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fix_flux(F1, F2, F3, n_ord[n]);
 	#endif
+
 	#if(!STAGGERED)
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_ct(F1, F2, F3, n_ord[n]);
 	#else
@@ -259,7 +261,9 @@ double advance(int flag)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
 	#endif
+
 	const_transport_bound();
+
 	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, ps, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -272,6 +276,7 @@ double advance(int flag)
 	}
 	#endif
 	#endif
+
 	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
