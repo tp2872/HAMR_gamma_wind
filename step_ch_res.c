@@ -383,7 +383,7 @@ void utoprim_M1_2_res(double Dt, int n){
 			#endif
 			
 			//Inversion (presently without backup)
-			pflag[nl[n]][ind0] = Utoprim_3d_res(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC);		
+			//pflag[nl[n]][ind0] = Utoprim_3d_res(U_2, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], NEWT_TOL, BASIC, Dt);		
 		}
 	}
 	#endif
@@ -410,7 +410,7 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
-			q = divE_calc(ph, n, i, j, z);
+			q = divE_calc(pb, n, i, j, z);
 			source_res(pb[nl[n]][ind0], &geom, n, i, j, z, dU,& q, Dt);
 			get_state_res(pi[nl[n]][ind0], &geom, &q_res);
 			primtoflux_res(pi[nl[n]][ind0], &q_res,  0, &geom, U);
@@ -437,8 +437,8 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			U[B3] = 0.5 * (psf[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][ind3][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-			
-			pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			PLOOP
+			pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC, Dt);
 		}
 	}
 	#endif
