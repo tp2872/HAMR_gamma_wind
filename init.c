@@ -1180,28 +1180,28 @@ void init_torus()
 			primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
 			bsq = dot(q_res.bcon, q_res.bcov);
 			esq = dot(q_res.econ, q_res.ecov);
-			//if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+			if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
 				//p[nl[n_ord[n]]][ind0][B1] = 0.;
 				//p[nl[n_ord[n]]][ind0][B2] = 0.;
 				///p[nl[n_ord[n]]][ind0][B3] = 0.;
-				//p[nl[n_ord[n]]][ind0][E1] = 0.;
-				//p[nl[n_ord[n]]][ind0][E2] = 0.;
-				//p[nl[n_ord[n]]][ind0][E3] = 0.;
+				p[nl[n_ord[n]]][ind0][E1] = 0.;
+				p[nl[n_ord[n]]][ind0][E2] = 0.;
+				p[nl[n_ord[n]]][ind0][E3] = 0.;
 				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
 				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
 				bsq = dot(q_res.bcon, q_res.bcov);
 				esq = dot(q_res.econ, q_res.ecov);
 
-				//fprintf(stderr, "rho_old: %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+				fprintf(stderr, "rho_old: %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
 
 				//Reset variables
-				PLOOP p[nl[n_ord[n]]][ind0][k] *= 2.;
-				pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.2);
+				//PLOOP p[nl[n_ord[n]]][ind0][k] *= 2.;
+				pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC,0.2);
 				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
 				bsq = dot(q_res.bcon, q_res.bcov);
 				esq = dot(q_res.econ, q_res.ecov);
-				//fprintf(stderr, "rho_new: %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n", log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
-			//}
+				fprintf(stderr, "rho_new: %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n", log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+			}
 		}
 	}
 

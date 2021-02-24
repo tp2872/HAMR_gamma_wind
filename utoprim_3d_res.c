@@ -256,7 +256,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
   		}
         if ((er < tolerance) || (er/(normV+1.e-16) <= er1*tolerance)){
         	retval=0;
-        	break; //solution found!!
+        	//break; //solution found!!
         }
        // retval=0;
         

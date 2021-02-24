@@ -259,7 +259,8 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	q_local = 0.*(alpha / geom->g) * q[0];
+	if(ETA==0.0)q_local = 0.*(alpha / geom->g) * q[0];
+	else q_local = (alpha / geom->g) * q[0];
 
 	//Calculate explicit part of electric current J
 	gamma = q_res.ucon[0] * alpha;
