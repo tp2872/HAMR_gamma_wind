@@ -1162,6 +1162,49 @@ void init_torus()
 	calc_source();
 	#endif
 
+
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	double den, ener, pres, bsq, esq;
+	struct of_state_res q_res;
+	struct of_state qs;
+	struct of_state_rad q_rad;
+
+	int ind0, k;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+
+			ind0 = index_3D(n_ord[n], i, j, z);
+
+			get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+			primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+			bsq = dot(q_res.bcon, q_res.bcov);
+			esq = dot(q_res.econ, q_res.ecov);
+			if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+				p[nl[n_ord[n]]][ind0][B1] = 0.;
+				p[nl[n_ord[n]]][ind0][B2] = 0.;
+				p[nl[n_ord[n]]][ind0][B3] = 0.;
+				p[nl[n_ord[n]]][ind0][E1] = 0.;
+				p[nl[n_ord[n]]][ind0][E2] = 0.;
+				p[nl[n_ord[n]]][ind0][E3] = 0.;
+				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+				bsq = dot(q_res.bcon, q_res.bcov);
+				esq = dot(q_res.econ, q_res.ecov);
+
+				fprintf(stderr, "rho_old: %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+
+				//Reset variables
+				PLOOP p[nl[n_ord[n]]][ind0][k] *= 2.;
+				pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.0);
+				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+				bsq = dot(q_res.bcon, q_res.bcov);
+				esq = dot(q_res.econ, q_res.ecov);
+				fprintf(stderr, "rho_new: %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n", log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+			}
+		}
+	}
+
 	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	double den, ener, pres;
@@ -2425,15 +2468,40 @@ void set_mag(void){
 	}
 
 	#if(RESISTIVE)
+	int i1, j1, k1, l1;
+	double alpha, sqrtgamma, B_guess[3], E_guess[3], B_D[3], E_D[3], vd_guess[3], gamma;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + N3G -D3) {
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
 			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
-			#if(N3G>0)
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1] = -1. / geom.g * (state.ucov[2] * state.bcov[3] - state.ucov[3] * state.bcov[2]);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E2] = -1. / geom.g * (state.ucov[3] * state.bcov[1] - state.ucov[1] * state.bcov[3]);
-			#endif
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E3] = -1. / geom.g * (state.ucov[1] * state.bcov[2] - state.ucov[2] * state.bcov[1]);
+			alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+			sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+			gamma = alpha * state.ucon[0];
+			vd_guess[0] = state.ucov[1] / gamma;
+			vd_guess[1] = state.ucov[2] / gamma;
+			vd_guess[2] = state.ucov[3] / gamma;
+			B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+			B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+			B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+			//E_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+			//E_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+			//E_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+
+			lower_3(B_guess, &geom, B_D);
+			lower_3(E_guess, &geom, E_D);
+
+			for (i1 = 0; i1 < 3; i1++) {
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = 0.;
+				for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+					if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+					p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = B_guess[i1] / alpha;
+
+					//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
+					//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = E_guess[i1] / alpha;
+				}
+			}
 		}
 	}
 	#endif

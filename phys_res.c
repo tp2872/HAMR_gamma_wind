@@ -122,10 +122,10 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 }
 
 /* calculate magnetic field four-vector */
-void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict econ)
+void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict ucov, double* restrict econ)
 {
 	#if(RESISTIVE)
-	double alpha, gamma, ncon[NDIM], E_dot_v, utcov[3], Bcov[3];
+	double alpha, gamma, ncon[NDIM], E_dot_v,  Bcov[3];
 
 	//Lapse in 3+1
 	alpha = 1.0 / sqrt(-geom->gcon[0][0]);
@@ -139,26 +139,26 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 	//Gamma in 3+1
 	gamma = ucon[0] * alpha;
 
-	//Dot product between magnetic field and velocity 3-vector
-	lower_3(&(pr[U1]), geom, utcov);
+	//Dot product between magnetic field and velocity 3-vector time GAMMA!
 	lower_3(&(pr[B1]), geom, Bcov);
-	E_dot_v = pr[E1] * utcov[0] + pr[E2] * utcov[1] + pr[E3] * utcov[2];
+	E_dot_v = pr[E1] * ucov[1] + pr[E2] * ucov[2] + pr[E3] * ucov[3];
+	//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - 1.0 / sqrtgamma * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1];
 
 	//Final calculation of rest frame magnetic field
 	econ[0] = alpha * (E_dot_v)*ncon[0];
-	econ[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha * alpha / geom->g) * (utcov[1] * Bcov[2] - utcov[2] * Bcov[1]);
-	econ[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha * alpha / geom->g) * (utcov[2] * Bcov[0] - utcov[0] * Bcov[2]);
-	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha * alpha / geom->g) * (utcov[0] * Bcov[1] - utcov[1] * Bcov[0]);
+	econ[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha * alpha / geom->g) * (ucov[2] * Bcov[2] - ucov[3] * Bcov[1]);
+	econ[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha * alpha / geom->g) * (ucov[3] * Bcov[0] - ucov[1] * Bcov[2]);
+	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha * alpha / geom->g) * (ucov[1] * Bcov[1] - ucov[2] * Bcov[0]);
 
 	return;
 	#endif
 }
 
 /* calculate magnetic field four-vector */
-void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* restrict ucon, double * restrict bcon)
+void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict ucov, double * restrict bcon)
 {
 	#if(RESISTIVE)
-	double alpha, gamma, ncon[NDIM], B_dot_v, utcov[3], Ecov[3];
+	double alpha, gamma, ncon[NDIM], B_dot_v, Ecov[3];
 
 	//Lapse in 3+1
 	alpha = 1.0 / sqrt(-geom->gcon[0][0]);
@@ -172,16 +172,15 @@ void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* 
 	//Gamma in 3+1
 	gamma = ucon[0] * alpha;
 
-	//Dot product between magnetic field and velocity 3-vector
-	lower_3(&(pr[U1]), geom, utcov);
+	//Dot product between magnetic field and velocity 3-vector time GAMMA
 	lower_3(&(pr[E1]), geom, Ecov);
-	B_dot_v = pr[B1] * utcov[0] + pr[B2] * utcov[1] + pr[B3] * utcov[2];
+	B_dot_v = pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3];
 
 	//Final calculation of rest frame magnetic field
 	bcon[0] = alpha * (B_dot_v) * ncon[0];
-	bcon[1] = alpha * (B_dot_v) * ncon[1] + gamma * (alpha * pr[B1]) - (alpha * alpha / geom->g) * (utcov[1] * Ecov[2] - utcov[2] * Ecov[1]);
-	bcon[2] = alpha * (B_dot_v) * ncon[2] + gamma * (alpha * pr[B2]) - (alpha * alpha / geom->g) * (utcov[2] * Ecov[0] - utcov[0] * Ecov[2]);
-	bcon[3] = alpha * (B_dot_v) * ncon[3] + gamma * (alpha * pr[B3]) - (alpha * alpha / geom->g) * (utcov[0] * Ecov[1] - utcov[1] * Ecov[0]);
+	bcon[1] = alpha * (B_dot_v)*ncon[1] + gamma * (alpha * pr[B1]) - (alpha * alpha / geom->g) * (ucov[2] * Ecov[2] - ucov[3] * Ecov[1]);
+	bcon[2] = alpha * (B_dot_v)*ncon[2] + gamma * (alpha * pr[B2]) - (alpha * alpha / geom->g) * (ucov[3] * Ecov[0] - ucov[1] * Ecov[2]);
+	bcon[3] = alpha * (B_dot_v)*ncon[3] + gamma * (alpha * pr[B3]) - (alpha * alpha / geom->g) * (ucov[1] * Ecov[1] - ucov[2] * Ecov[0]);
 
 	return ;
 	#endif
@@ -194,14 +193,15 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 	int j, lambda, beta, kappa;
 	double P,w,bsq,esq, eta,ptot, mhd_u[NDIM], mhd_d[NDIM], alpha;
 
+
 	//Lapse in 3+1
-	alpha = 1.0 / sqrt(-geom->gcon[0][0]);
+	alpha = 1.0;
 
 	//Calculate contraction term
 	DLOOPA{
 		mhd_u[j] = 0.;
-		for (lambda = 0; lambda < 4; lambda++)for (beta = 0; beta < 4; beta++)for (kappa = 0; kappa < 4; kappa++) {
-			mhd_u[j] += q_res->ucov[lambda] * q_res->ecov[beta] * q_res->bcov[kappa] * (q_res->ucon[dir] * (alpha / geom->g) * lvc4u(j, lambda, beta, kappa) + q_res->ucon[j] * (alpha / geom->g) * lvc4u(dir, lambda, beta, kappa));
+		for (lambda = 0; lambda < NDIM; lambda++)for (beta = 0; beta < NDIM; beta++)for (kappa = 0; kappa < NDIM; kappa++) {
+			mhd_u[j] += q_res->ucov[lambda] * q_res->ecov[beta] * q_res->bcov[kappa] * (q_res->ucon[dir] * (1.0 / geom->g) * lvc4u(j, lambda, beta, kappa) + q_res->ucon[j] * (1.0 / geom->g) * lvc4u(dir, lambda, beta, kappa));
 		}
 	}
 	lower(mhd_u, geom, mhd_d);
@@ -215,7 +215,7 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
     w = P + pr[RHO] + pr[UU];
 	bsq = dot(q_res->bcon, q_res->bcov) ;
 	esq = dot(q_res->econ, q_res->ecov);
-	eta = w + bsq + esq;
+	eta = w + (bsq + esq);
 	ptot = P + 0.5*(bsq + esq);
 
 	//single row of mhd stress tensor, first index up, second index down
@@ -228,7 +228,7 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double *q, double Dt)
 {
 	#if(RESISTIVE)
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, utcov[3], Bcov[3], vdotE, q_local;
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, vdotE, q_local;
 	int j,k ;
 	struct of_state_res q_res;
 
@@ -263,9 +263,7 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 
 	//Calculate explicit part of electric current J
 	gamma = q_res.ucon[0] * alpha;
-	lower_3(&(ph[U1]), geom, utcov);
-	lower_3(&(ph[B1]), geom, Bcov);
-	vdotE = alpha / gamma * (ph[E1] * utcov[0]+ ph[E2] * utcov[1] + ph[E3] * utcov[2]);
+	vdotE = alpha / gamma * (ph[E1] * q_res.ucov[1]+ ph[E2] * q_res.ucov[2] + ph[E3] * q_res.ucov[3]);
 	J[1] = q_local * ph[U1] / gamma;
 	J[2] = q_local * ph[U2] / gamma;
 	J[3] = q_local * ph[U3] / gamma;
@@ -288,13 +286,6 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	#endif
 }
 
-void calc_J(double p[NPR], double J[NDIM], double q, struct of_geom* restrict geom) {
-	#if(RESISTIVE)
-	struct of_state_res q_res;
-	get_state_res(p, geom, &q_res);
-	#endif
-}
-
 /* find ucon, ucov, bcon, bcov from primitive variables */
 void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct of_state_res * restrict q_res)
 {
@@ -304,11 +295,11 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 	lower(q_res->ucon, geom, q_res->ucov) ;
 
 	//get bcon
-	bcon_calc_res(pr, geom, q_res->ucon, q_res->bcon) ;
+	bcon_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->bcon) ;
 	lower(q_res->bcon, geom, q_res->bcov) ;
 
 	//get econ
-	econ_calc_res(pr, geom, q_res->ucon, q_res->econ);
+	econ_calc_res(pr, geom, q_res->ucon, q_res->ucov, q_res->econ);
 	lower(q_res->econ, geom, q_res->ecov);
 	#endif
 }
@@ -402,9 +393,7 @@ void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restr
 	int i, j;
 	for (i = 0; i < 3; i++) {
 		ucov[i] = 0.0;
-	}
-	for (j = 0; j < 3; j++) {
-		for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
 			ucov[i] += geom->gcov[i + 1][j + 1] * ucon[j];
 		}
 	}
@@ -416,7 +405,7 @@ void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restr
 double lvc4u(int i, int j, int k, int l) {
 	double lvc4u;
 
-	if ((i + j + k + l) != 6) {
+	if ((i==j) || (i==k) || (i==l) || (j==k) || (j==l) || (k==l)) {
 		lvc4u = 0.0;
 	}
 	else if ((i + j == 1) || (i + j == 5)) {
@@ -433,7 +422,7 @@ double lvc4u(int i, int j, int k, int l) {
 	}
 	else lvc4u = 0.0;
 
-	return (-lvc4u);
+	return (lvc4u);
 }
 
 //3D Levi-cevita symbol (not tensor)
