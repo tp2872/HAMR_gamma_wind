@@ -259,7 +259,7 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	q_local = (alpha / geom->g) * q[0];
+	q_local = 0.*(alpha / geom->g) * q[0];
 
 	//Calculate explicit part of electric current J
 	gamma = q_res.ucon[0] * alpha;
@@ -274,8 +274,8 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	dU[E3] = -alpha * J[3] + beta[3] * q_local / alpha;
 
 	//Add disk cooling term
-	#if(COOL_DISK)
 	double X[NDIM], r, th, phi;
+	#if(COOL_DISK)
 	coord(n, ii, jj, zz, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 	misc_source(ph, ii, jj, geom, &q, dU, r, Dt);
@@ -306,8 +306,14 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 
 void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin){
 	#if(RESISTIVE)
-	*vmax = sqrt(geom->gcon[js][js]);
-	*vmin = -sqrt(geom->gcon[js][js]);
+	double sqrtgamma, ncon_js,alpha,beta;
+	alpha = 1. / sqrt(-geom->gcon[0][0]);
+	beta= geom->gcon[0][js] * alpha * alpha;
+	ncon_js = -alpha * geom->gcon[0][js];
+
+	sqrtgamma = sqrt(geom->gcon[js][js] + ncon_js * ncon_js);
+	*vmax = alpha * sqrtgamma - beta;
+	*vmin = -alpha * sqrtgamma - beta;
 	#endif
 }
 

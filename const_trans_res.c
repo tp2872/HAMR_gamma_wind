@@ -2,8 +2,9 @@
 
 void const_transport1_res(double(*restrict pb[NB_LOCAL])[NPR], int n){
 	int i, j, z, k, ind0;
-
-	#pragma omp parallel shared(n,n_ord,n_active,E_corn, F1, F2, F3, dx,pb, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
+	double Ecov[3];
+	struct of_geom geom;
+	#pragma omp parallel shared(n,n_ord,n_active,E_corn, F1, F2, F3, dx,pb, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0, geom, Ecov)
 	{
 		#pragma omp for collapse(3) schedule(static,(BS_1+2*D1)*(BS_2+2*D2)*(BS_3+2*D3)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n] * D1 - D1, (N1_GPU_offset[n] + BS_1)*D1, N2_GPU_offset[n] * D2 - D2, (N2_GPU_offset[n] + BS_2)*D2, N3_GPU_offset[n] * D3 - D3, (N3_GPU_offset[n] + BS_3)*D3){
@@ -18,22 +19,22 @@ void const_transport1_res(double(*restrict pb[NB_LOCAL])[NPR], int n){
 
 			//upwind the electric field based on transverse gradients conform gardiner&stone 2005/2015, not yet tested
 			#if(N3G>0)
-			dE[nl[n]][ind0][LEFT][1][2] = (pb[nl[n]][ind0][E1] + F2[nl[n]][ind0][B3]);
-			dE[nl[n]][ind0][LEFT][1][3] = (pb[nl[n]][ind0][E1] - F3[nl[n]][ind0][B2]);
-			dE[nl[n]][ind0][LEFT][2][1] = (pb[nl[n]][ind0][E2] - F1[nl[n]][ind0][B3]);
-			dE[nl[n]][ind0][LEFT][2][3] = (pb[nl[n]][ind0][E2] + F3[nl[n]][ind0][B1]);
+			dE[nl[n]][ind0][LEFT][1][2] = 0. * (pb[nl[n]][ind0][E1] + F2[nl[n]][ind0][B3]);
+			dE[nl[n]][ind0][LEFT][1][3] = 0. * (pb[nl[n]][ind0][E1] - F3[nl[n]][ind0][B2]);
+			dE[nl[n]][ind0][LEFT][2][1] = 0. * (pb[nl[n]][ind0][E2] - F1[nl[n]][ind0][B3]);
+			dE[nl[n]][ind0][LEFT][2][3] = 0. * (pb[nl[n]][ind0][E2] + F3[nl[n]][ind0][B1]);
 			#endif
-			dE[nl[n]][ind0][LEFT][3][1] = (pb[nl[n]][ind0][E3] + F1[nl[n]][ind0][B2]);
-			dE[nl[n]][ind0][LEFT][3][2] = (pb[nl[n]][ind0][E3] - F2[nl[n]][ind0][B1]);
+			dE[nl[n]][ind0][LEFT][3][1] = 0. * (pb[nl[n]][ind0][E3] + F1[nl[n]][ind0][B2]);
+			dE[nl[n]][ind0][LEFT][3][2] = 0. * (pb[nl[n]][ind0][E3] - F2[nl[n]][ind0][B1]);
 
 			#if(N3G>0)
-			dE[nl[n]][ind0][RIGHT][1][2] = (-F2[nl[n]][index_3D(n, i, j + D2, z)][B3] - pb[nl[n]][ind0][E1]);
-			dE[nl[n]][ind0][RIGHT][1][3] = (F3[nl[n]][index_3D(n, i, j, z + D3)][B2] - pb[nl[n]][ind0][E1]);
-			dE[nl[n]][ind0][RIGHT][2][1] = (F1[nl[n]][index_3D(n, i + D1, j, z)][B3] - pb[nl[n]][ind0][E2]);
-			dE[nl[n]][ind0][RIGHT][2][3] = (-F3[nl[n]][index_3D(n, i, j, z + D3)][B1] - pb[nl[n]][ind0][E2]);
+			dE[nl[n]][ind0][RIGHT][1][2] = 0. * (-F2[nl[n]][index_3D(n, i, j + D2, z)][B3] - pb[nl[n]][ind0][E1]);
+			dE[nl[n]][ind0][RIGHT][1][3] = 0. * (F3[nl[n]][index_3D(n, i, j, z + D3)][B2] - pb[nl[n]][ind0][E1]);
+			dE[nl[n]][ind0][RIGHT][2][1] = 0. * (F1[nl[n]][index_3D(n, i + D1, j, z)][B3] - pb[nl[n]][ind0][E2]);
+			dE[nl[n]][ind0][RIGHT][2][3] = 0. * (-F3[nl[n]][index_3D(n, i, j, z + D3)][B1] - pb[nl[n]][ind0][E2]);
 			#endif
-			dE[nl[n]][ind0][RIGHT][3][1] = (-F1[nl[n]][index_3D(n, i + D1, j, z)][B2] - pb[nl[n]][ind0][E3]);
-			dE[nl[n]][ind0][RIGHT][3][2] = (F2[nl[n]][index_3D(n, i, j + D2, z)][B1] - pb[nl[n]][ind0][E3]);
+			dE[nl[n]][ind0][RIGHT][3][1] = 0. * (-F1[nl[n]][index_3D(n, i + D1, j, z)][B2] - pb[nl[n]][ind0][E3]);
+			dE[nl[n]][ind0][RIGHT][3][2] = 0. * (F2[nl[n]][index_3D(n, i, j + D2, z)][B1] - pb[nl[n]][ind0][E3]);
 		}
 
 		#pragma omp for collapse(2) schedule(static,(BS_1+D1)*(BS_2+D2)/nthreads)

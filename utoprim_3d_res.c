@@ -242,7 +242,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
         for (i=0;i<3;i++) vDprev[i] = vD[i];
         
 		//Find inverse of Jacobian 
-		invert_matrix_3D(J_3du, J_3du_inv);
+		retval=invert_matrix_3D(J_3du, J_3du_inv);
 
         //Update ucov_tilde
         for (i=0;i<3;i++) vD[i] = vD[i] - (J_3du_inv[i][0]*f_3du[0]+ J_3du_inv[i][1] * f_3du[1]+ J_3du_inv[i][2] * f_3du[2]); //MATTHEW: This must be wrong; You want to divide residuals by jacobian
@@ -254,12 +254,11 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 			er += (ggammainv[i][j] * f_3du[i] * f_3du[j]);
 			normV += (ggammainv[i][j] * vD[i] * vD[j]);
   		}
-		fprintf(stderr, "N: %d, error: %f \n", ii, log10(fabs(er)));
         if ((er < tolerance) || (er/(normV+1.e-16) <= er1*tolerance)){
-        	//retval=0;
-        	//break; //solution found!!
+        	retval=0;
+        	break; //solution found!!
         }
-        retval=0;
+       // retval=0;
         
 		ii++;
 	} while (ii < 10); // End of the Newton cycle
@@ -275,6 +274,8 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	if (retval != 0) {
+		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+
 		fprintf(stderr, "Inversion failure! \n");
 		return retval;
 	}
@@ -290,10 +291,10 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	//Get E and ucov_tilde
-	//getE_resistive(Enew, E_guess, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac);
-	Enew[0] = E_guess[0];
-	Enew[1] = E_guess[1];
-	Enew[2] = E_guess[2];
+	getE_resistive(Enew, E_guess, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac);
+	//Enew[0] = E_guess[0];
+	//Enew[1] = E_guess[1];
+	//Enew[2] = E_guess[2];
 
 	//lower Enew 
 	for (i = 0; i < 3; i++) {
@@ -339,8 +340,13 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	ug[0] = rho[0] * eps;
 
 	//Exit if density or internal energy drops below 0
-	if (rho[0] < 0. || ug[0] < 0.) {
-		fprintf(stderr,"Density or internal energy dropped below 0 in resistive inversion \n");
+	if (rho[0] < 0.) {
+		fprintf(stderr,"Density dropped below 0 in resistive inversion \n");
+		retval = -1;
+		return retval;
+	}
+	if (ug[0] < 0.) {
+		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion \n");
 		retval = -1;
 		return retval;
 	}
@@ -518,7 +524,7 @@ void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], dou
 
 //Recover E and DE/du
 void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares,double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
-	double vxbU[3], kxbU[3], ginvv[3], krond[3];
+	double vxbU[3], kxbU[3],  krond[3];
 	int i, j, k;
 	double e0dotv,  denom1, denom2;
 
