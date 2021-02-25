@@ -308,7 +308,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RAD_M1 (0)
 
 /*Enable Resistivity*/
-#define RESISTIVE (1)
+#define RESISTIVE (0)
 
 /*Set resistivity coefficient*/
 #define ETA (0.0)

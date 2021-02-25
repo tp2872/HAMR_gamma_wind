@@ -259,7 +259,7 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	if(ETA==0.0)q_local = 0.*(alpha / geom->g) * q[0];
+	if(ETA==0.0)q_local = 0.;
 	else q_local = (alpha / geom->g) * q[0];
 
 	//Calculate explicit part of electric current J
@@ -390,6 +390,8 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 	);
 	#endif
 	return dive;
+	#else
+	return(0.0);
 	#endif
 }
 

@@ -598,5 +598,7 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 			}
 		}
 	return(ndt);
+	#else
+return(0);
 	#endif
 }

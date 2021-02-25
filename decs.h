@@ -1015,6 +1015,7 @@ double lvc3u(int i, int j, int k);
 int invert_matrix_3D(double A[][3], double Ainv[][3]);
 int LU_decompose_3D(double A[][3], int permute[]);
 void LU_substitution_3D(double A[][3], double B[], int permute[]);
+void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
 
 //In step_ch_res.c
 void step_ch_res();

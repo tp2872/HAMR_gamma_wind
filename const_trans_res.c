@@ -1,6 +1,7 @@
 #include "decs_MPI.h"
 
 void const_transport1_res(double(*restrict pb[NB_LOCAL])[NPR], int n){
+	#if(RESISTIVE)
 	int i, j, z, k, ind0;
 	double Ecov[3];
 	struct of_geom geom;
@@ -58,9 +59,11 @@ void const_transport1_res(double(*restrict pb[NB_LOCAL])[NPR], int n){
 			if (j == 0 || j == (int)(N2*pow((1 + REF_2), block[n][AMR_LEVEL2]))) E_corn[nl[n]][ind0][3] = 0.0;
 		}
 	}
+	#endif
 }
 
 void const_transport1_M1_2_res(double(*restrict pb[NB_LOCAL])[NPR], int n) {
+	#if(RESISTIVE)
 	int i, j, z, k, ind0;
 
 	#pragma omp parallel shared(n,n_ord,n_active,E_corn, F1, F2, F3, dx,pb, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
@@ -122,10 +125,11 @@ void const_transport1_M1_2_res(double(*restrict pb[NB_LOCAL])[NPR], int n) {
 			#endif
 		}
 	}
+	#endif
 }
 
-
 void const_transport2_res(double(*restrict psi[NB_LOCAL])[NDIM], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n){
+	#if(RESISTIVE)
 	int i, j, z, k, ind0;
 	#pragma omp parallel shared(n,n_ord,n_active,E_corn, gdet,psf,psi, dx,Dt, p, N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads) private(i,j,z, ind0)
 	{
@@ -159,4 +163,5 @@ void const_transport2_res(double(*restrict psi[NB_LOCAL])[NDIM], double(*restric
 		}
 		#endif
 	}
+	#endif
 }

@@ -1168,7 +1168,7 @@ void init_torus()
 	struct of_state_res q_res;
 	struct of_state qs;
 	struct of_state_rad q_rad;
-
+#if(RESISTIVE)
 	int ind0, k;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
@@ -1204,7 +1204,7 @@ void init_torus()
 			}
 		}
 	}
-
+#endif
 	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	double den, ener, pres;
