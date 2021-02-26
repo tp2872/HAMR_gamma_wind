@@ -91,8 +91,67 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			#endif
 		}	
-		//restart_write();
+		restart_write();
+		close_rdump();
 	}
+
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	double den, ener, pres, bsq, esq,f, U[NPR], gamma, p_old[NPR];
+	int zz;
+	struct of_state_res q_res;
+	struct of_geom geom;
+	struct of_state_rad q_rad;
+#if(RESISTIVE==1)
+	int ind0, k;
+	for (zz = 0; zz < 50; zz++) {
+		for (n = 0; n < n_active; n++) {
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+
+				ind0 = index_3D(n_ord[n], i, j, z);
+
+				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+				bsq = dot(q_res.bcon, q_res.bcov);
+				esq = dot(q_res.econ, q_res.ecov);
+				//if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+					p[nl[n_ord[n]]][ind0][B1] = 0.;
+					p[nl[n_ord[n]]][ind0][B2] = 0.;
+					p[nl[n_ord[n]]][ind0][B3] = 0.;
+					p[nl[n_ord[n]]][ind0][E1] = 0.;
+					p[nl[n_ord[n]]][ind0][E2] = 0.;
+					p[nl[n_ord[n]]][ind0][E3] = 0.;
+	
+					//Reset variables
+					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
+					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
+
+					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+					bsq = dot(q_res.bcon, q_res.bcov);
+					esq = dot(q_res.econ, q_res.ecov);
+				
+					//PLOOP p[nl[n_ord[n]]][ind0][k] *=2.0;
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.0);
+
+					if (pflag[nl[n_ord[n]]][ind0] != 0) {
+						get_state_res(p_old, &geom, &q_res);
+						bsq = dot(q_res.bcon, q_res.bcov);
+						esq = dot(q_res.econ, q_res.ecov);
+						fprintf(stderr, "zz: %d rho_old (%d, %d, %d): %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", zz, i, j, z, log10(p_old[RHO]), log10(p_old[UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+
+						get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+						bsq = dot(q_res.bcon, q_res.bcov);
+						esq = dot(q_res.econ, q_res.ecov);
+						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+
+
+					}
+				//}
+			}
+		}
+	}
+#endif
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);

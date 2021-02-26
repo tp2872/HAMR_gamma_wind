@@ -75,8 +75,9 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	/*Maxwell tensor */
-	lower_3(&pr[E1], geom, Ecov);
+	lower_3(&pr[B1], geom, Bcov);
 
+	
 	if (dir == 0) {
 		flux[E1] = pr[E1];
 		flux[E2] = pr[E2];
@@ -86,14 +87,46 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[E1] = beta[1] * pr[E1 + (dir - 1)] - beta[dir] * pr[E1];
 		flux[E2] = beta[2] * pr[E1 + (dir - 1)] - beta[dir] * pr[E2];
 		flux[E3] = beta[3] * pr[E1 + (dir - 1)] - beta[dir] * pr[E3];
-		flux[E1] -= (alpha * alpha / geom->g) * (Ecov[2] - Ecov[1]);
-		flux[E2] -= (alpha * alpha / geom->g) * (Ecov[0] - Ecov[2]);
-		flux[E3] -= (alpha * alpha / geom->g) * (Ecov[1] - Ecov[0]);
-
+		flux[E1] -= (alpha * alpha / geom->g) * (Bcov[2] - Bcov[1]);
+		flux[E2] -= (alpha * alpha / geom->g) * (Bcov[0] - Bcov[2]);
+		flux[E3] -= (alpha * alpha / geom->g) * (Bcov[1] - Bcov[0]);
 	}
+	
+	/*if (dir == 0) {
+		int i1, j1, k1;
+		double sqrtgamma, gamma, B_guess[3], E_guess[3], vd_guess[3], B_D[3], E_D[3];
+		flux[E1] = pr[E1];
+		flux[E2] = pr[E2];
+		flux[E3] = pr[E3];
+		alpha = 1.0 / sqrt(-geom->gcon[0][0]);
+		sqrtgamma = geom->g / alpha; //determinant for spatial part of metric
+		gamma = alpha * q_res->ucon[0];
+		vd_guess[0] = q_res->ucov[1] / gamma;
+		vd_guess[1] = q_res->ucov[2] / gamma;
+		vd_guess[2] = q_res->ucov[3] / gamma;
+		B_guess[0] = alpha * pr[B1];
+		B_guess[1] = alpha * pr[B2];
+		B_guess[2] = alpha * pr[B3];
 
+		lower_3(B_guess, geom, B_D);
+		lower_3(E_guess, geom, E_D);
+
+		for (i1 = 0; i1 < 3; i1++) {
+			flux[E1 + i1] = 0.;
+			for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+				if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+				flux[E1 + i1] = flux[E1 + i1] - (1.0 / geom->g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+			}
+		}
+	}
+	else {
+		flux[E1] = 0.;
+		flux[E2] = 0.;
+		flux[E3] = 0.;
+	}*/
+	
 	/* dual of Maxwell tensor */
-	lower_3(&pr[B1], geom, Bcov);
+	lower_3(&pr[E1], geom, Ecov);
 
 	if (dir == 0) {
 		flux[B1] = pr[B1];
@@ -104,9 +137,9 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[B1] = beta[1] * pr[B1 + (dir - 1)] - beta[dir] * pr[B1];
 		flux[B2] = beta[2] * pr[B1 + (dir - 1)] - beta[dir] * pr[B2];
 		flux[B3] = beta[3] * pr[B1 + (dir - 1)] - beta[dir] * pr[B3];
-		flux[B1] += (alpha * alpha / geom->g) * (Bcov[2] - Bcov[1]);
-		flux[B2] += (alpha * alpha / geom->g) * (Bcov[0] - Bcov[2]);
-		flux[B3] += (alpha * alpha / geom->g) * (Bcov[1] - Bcov[0]);
+		flux[B1] += (alpha * alpha / geom->g) * (Ecov[2] - Ecov[1]);
+		flux[B2] += (alpha * alpha / geom->g) * (Ecov[0] - Ecov[2]);
+		flux[B3] += (alpha * alpha / geom->g) * (Ecov[1] - Ecov[0]);
 	}
 
 	//Entropy advection
@@ -142,7 +175,6 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 	//Dot product between magnetic field and velocity 3-vector time GAMMA!
 	lower_3(&(pr[B1]), geom, Bcov);
 	E_dot_v = pr[E1] * ucov[1] + pr[E2] * ucov[2] + pr[E3] * ucov[3];
-	//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - 1.0 / sqrtgamma * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1];
 
 	//Final calculation of rest frame magnetic field
 	econ[0] = alpha * (E_dot_v)*ncon[0];
@@ -259,7 +291,7 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	if(ETA==0.0)q_local = 0.;
+	if(ETA<0.000001)q_local = 0.;
 	else q_local = (alpha / geom->g) * q[0];
 
 	//Calculate explicit part of electric current J
@@ -306,16 +338,27 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 }
 
 void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin){
-	#if(RESISTIVE)
-	double sqrtgamma, ncon_js,alpha,beta;
+	//#if(RESISTIVE)
+	double sqrtgamma, ncon_js,alpha,beta, vm, vp;
 	alpha = 1. / sqrt(-geom->gcon[0][0]);
 	beta= geom->gcon[0][js] * alpha * alpha;
 	ncon_js = -alpha * geom->gcon[0][js];
 
 	sqrtgamma = sqrt(geom->gcon[js][js] + ncon_js * ncon_js);
-	*vmax = alpha * sqrtgamma - beta;
-	*vmin = -alpha * sqrtgamma - beta;
-	#endif
+
+	vp = alpha * sqrtgamma - beta;
+	vm = -alpha * sqrtgamma - beta;
+
+	if (vp > vm) {
+		*vmax = vp;
+		*vmin = vm;
+}
+	else {
+		*vmax = vm;
+		*vmin = vp;
+	}
+
+	//#endif
 }
 
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z) {

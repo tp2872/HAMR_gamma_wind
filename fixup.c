@@ -113,7 +113,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		dofloor = 1;
 	}
 
-	#if(DRIFT_FLOOR)
+	#if(0)
 	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
 		get_state(pv_prefloor, &geom, &q);
 		if (trans > 1.) {
