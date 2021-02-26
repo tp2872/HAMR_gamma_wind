@@ -195,7 +195,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	}
 	else {
 		//fprintf(stderr, "tau: %f, S_1: %f S_2: %f S_3: %f\n", log10(fabs((tau - tau_test) / tau_test)), log10(fabs((S[0] - S_test[0]) / S_test[0])), log10(fabs((S[1] - S_test[1]) / S_test[1])), log10(fabs((S[2] - S_test[2]) / S_test[2])));
-		fprintf(stderr, "tau: (%f, %f), S_1: (%f, %f) S_2: (%f, %f) S_3: (%f, %f)\n", log10(fabs((tau))), log10(fabs((tau_test))), log10(fabs((S[0]))), log10(fabs((S_test[0]))), log10(fabs((S[1]))), log10(fabs((S_test[1]))), log10(fabs((S[2]))), log10(fabs((S_test[2]))));
+		//fprintf(stderr, "tau: (%f, %f), S_1: (%f, %f) S_2: (%f, %f) S_3: (%f, %f)\n", log10(fabs((tau))), log10(fabs((tau_test))), log10(fabs((S[0]))), log10(fabs((S_test[0]))), log10(fabs((S[1]))), log10(fabs((S_test[1]))), log10(fabs((S[2]))), log10(fabs((S_test[2]))));
 	}
 
 	//Update B fields regardless to preserve Div.B==0 regardless if inversion is succesful
@@ -302,8 +302,8 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	if (retval != 0 || ii==maxitr) {
-		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
-		fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
+		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+		//fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 
 		retval = 1;
 		//return retval;
@@ -313,7 +313,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 	//Exit if Lorent factor smaller than 1
 	if (lfac < 1.0) {
-		fprintf(stderr, "Lfac failure! \n");
+		//fprintf(stderr, "Lfac failure! \n");
 		retval = 3;
 		//return retval;
 	}
@@ -366,12 +366,12 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 	//Exit if density or internal energy drops below 0
 	if (rho[0] < 0.) {
-		fprintf(stderr,"Density dropped below 0 in resistive inversion \n");
+		//fprintf(stderr,"Density dropped below 0 in resistive inversion \n");
 		retval = 2;
 		//return retval;
 	}
 	if (ug[0] < 0.) {
-		fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
+		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 		retval = 3;
 		//return retval;
 	}

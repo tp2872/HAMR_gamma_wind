@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 	int ind0, k;
 	for (zz = 0; zz < 50; zz++) {
 		for (n = 0; n < n_active; n++) {
-			ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-1, N3_GPU_offset[n_ord[n]] + BS_3) {
 				get_geometry(n_ord[n], i, j, z, CENT, &geom);
 
 				ind0 = index_3D(n_ord[n], i, j, z);
@@ -121,7 +121,13 @@ int main(int argc, char *argv[])
 					//p[nl[n_ord[n]]][ind0][E1] = 0.;
 					//p[nl[n_ord[n]]][ind0][E2] = 0.;
 					//p[nl[n_ord[n]]][ind0][E3] = 0.;
-	
+					
+					//ps[nl[n_ord[n]]][ind0][1] = 0.;
+					//ps[nl[n_ord[n]]][ind0][2] = 0.;
+					//ps[nl[n_ord[n]]][ind0][3] = 0.;
+					//psh[nl[n_ord[n]]][ind0][1] = 0.;
+					//psh[nl[n_ord[n]]][ind0][2] = 0.;
+					//psh[nl[n_ord[n]]][ind0][3] = 0.;
 					//Reset variables
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
 					esq = dot(q_res.econ, q_res.ecov);
 				
 					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.0);
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
 
 					if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);

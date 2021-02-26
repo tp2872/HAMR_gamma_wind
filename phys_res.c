@@ -92,39 +92,6 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[E3] -= (alpha * alpha / geom->g) * (Bcov[1] - Bcov[0]);
 	}
 	
-	/*if (dir == 0) {
-		int i1, j1, k1;
-		double sqrtgamma, gamma, B_guess[3], E_guess[3], vd_guess[3], B_D[3], E_D[3];
-		flux[E1] = pr[E1];
-		flux[E2] = pr[E2];
-		flux[E3] = pr[E3];
-		alpha = 1.0 / sqrt(-geom->gcon[0][0]);
-		sqrtgamma = geom->g / alpha; //determinant for spatial part of metric
-		gamma = alpha * q_res->ucon[0];
-		vd_guess[0] = q_res->ucov[1] / gamma;
-		vd_guess[1] = q_res->ucov[2] / gamma;
-		vd_guess[2] = q_res->ucov[3] / gamma;
-		B_guess[0] = alpha * pr[B1];
-		B_guess[1] = alpha * pr[B2];
-		B_guess[2] = alpha * pr[B3];
-
-		lower_3(B_guess, geom, B_D);
-		lower_3(E_guess, geom, E_D);
-
-		for (i1 = 0; i1 < 3; i1++) {
-			flux[E1 + i1] = 0.;
-			for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
-				if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
-				flux[E1 + i1] = flux[E1 + i1] - (1.0 / geom->g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
-			}
-		}
-	}
-	else {
-		flux[E1] = 0.;
-		flux[E2] = 0.;
-		flux[E3] = 0.;
-	}*/
-	
 	/* dual of Maxwell tensor */
 	lower_3(&pr[E1], geom, Ecov);
 
