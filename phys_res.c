@@ -483,7 +483,7 @@ double lvc3u(int i, int j, int k) {
 			
 	if ((i == j) || (j == k) || (k == i)) lvc3u = 0.;
 	else if ((i + 1 == j) || (i - 2 == j)) lvc3u = 1.;
-	else lvc3u = -1;
+	else lvc3u = -1.;
 
 	return (lvc3u);
 }

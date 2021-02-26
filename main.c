@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
 				bsq = dot(q_res.bcon, q_res.bcov);
 				esq = dot(q_res.econ, q_res.ecov);
 				//if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
-					p[nl[n_ord[n]]][ind0][B1] = 0.;
-					p[nl[n_ord[n]]][ind0][B2] = 0.;
-					p[nl[n_ord[n]]][ind0][B3] = 0.;
-					p[nl[n_ord[n]]][ind0][E1] = 0.;
-					p[nl[n_ord[n]]][ind0][E2] = 0.;
-					p[nl[n_ord[n]]][ind0][E3] = 0.;
+					//p[nl[n_ord[n]]][ind0][B1] = 0.;
+					//p[nl[n_ord[n]]][ind0][B2] = 0.;
+					//p[nl[n_ord[n]]][ind0][B3] = 0.;
+					//p[nl[n_ord[n]]][ind0][E1] = 0.;
+					//p[nl[n_ord[n]]][ind0][E2] = 0.;
+					//p[nl[n_ord[n]]][ind0][E3] = 0.;
 	
 					//Reset variables
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 					bsq = dot(q_res.bcon, q_res.bcov);
 					esq = dot(q_res.econ, q_res.ecov);
 				
-					//PLOOP p[nl[n_ord[n]]][ind0][k] *=2.0;
+					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
 					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.0);
 
 					if (pflag[nl[n_ord[n]]][ind0] != 0) {

@@ -129,7 +129,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	
 	double tau_test,h,lfac,esqr,bsqr, vU[3], B_D[3], Enew_D[3], S_test[3], ExB[3];
 	
-	//Recompute electric field
+	/*//Recompute electric field
 	for (i = 0; i < 3; i++) {
 		B_D[i] = 0.;
 		vU[i] = 0.;
@@ -172,7 +172,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		for (j = 0; j < 3; j++) {
 			vD_guess[i] += ggamma[i][j] * prim[U1 + j];
 		}
-	}
+	}*/
 	
 	
 	//NR Step, you get back gamma*v_i and E
@@ -406,7 +406,7 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
 	
 	//calculate new electric field
 	getdEdu_resistive(Enew, E, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac, dEdu);
-	
+
 	//lower Enew 
 	for (i=0;i<3;i++){
 		Enew_D[i] = 0.;
@@ -423,10 +423,10 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
 	tautilde = tau - (bsqr + esqr) * 0.5;
 	
 	for (i = 0; i < 3; i++){
-		ExB[i] == 0.;
+		ExB[i] = 0.;
 		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
 			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] = ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * B[k];
+			ExB[i] =  ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * Enew[k];
 		}
 	}
 	for (i=0;i<3;i++) Stilde_j[i] = S_j[i] - ExB[i]; 
