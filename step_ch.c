@@ -505,7 +505,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#endif
 
-			#if( DO_FONT_FIX ) 
+			#if(DO_FONT_FIX) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
@@ -636,6 +636,8 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);
+					//vchar_res(&geom, dir, &cmax_l, &cmin_l);
+					//vchar_res(&geom, dir, &cmax_r, &cmin_r);
 
 					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));

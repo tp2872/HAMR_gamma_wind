@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	struct of_state_res q_res;
 	struct of_geom geom;
 	struct of_state_rad q_rad;
-#if(RESISTIVE==1)
+#if(RESISTIVE)
 	int ind0, k;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3*D3) {
