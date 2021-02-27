@@ -103,9 +103,10 @@ int main(int argc, char *argv[])
 	struct of_state_rad q_rad;
 #if(RESISTIVE==1)
 	int ind0, k;
-	for (zz = 0; zz < 50; zz++) {
-		for (n = 0; n < n_active; n++) {
-			ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-1, N3_GPU_offset[n_ord[n]] + BS_3) {
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3*D3) {
+			for (zz = 0; zz < 50; zz++) {
+
 				get_geometry(n_ord[n], i, j, z, CENT, &geom);
 
 				ind0 = index_3D(n_ord[n], i, j, z);
@@ -114,7 +115,39 @@ int main(int argc, char *argv[])
 				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
 				bsq = dot(q_res.bcon, q_res.bcov);
 				esq = dot(q_res.econ, q_res.ecov);
-				//if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+				if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+					double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3], E_D[3];
+					struct of_state state;
+					get_geometry(n_ord[n], i, j, z, CENT, &geom);
+					get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
+					alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+					sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+					gamma = alpha * state.ucon[0];
+					vd_guess[0] = state.ucov[1] / gamma;
+					vd_guess[1] = state.ucov[2] / gamma;
+					vd_guess[2] = state.ucov[3] / gamma;
+					B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+					//E_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					//E_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					//E_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+			
+					lower_3(B_guess, &geom, B_D);
+					//lower_3(E_guess, &geom, E_D);
+					int i1, j1, k1;
+					for (i1 = 0; i1 < 3; i1++) {
+						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
+						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = 0.;
+						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = B_guess[i1] / alpha;
+
+							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
+							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = E_guess[i1] / alpha;
+						}
+					}
 					//p[nl[n_ord[n]]][ind0][B1] = 0.;
 					//p[nl[n_ord[n]]][ind0][B2] = 0.;
 					//p[nl[n_ord[n]]][ind0][B3] = 0.;
@@ -132,15 +165,12 @@ int main(int argc, char *argv[])
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
-					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
-					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
-					bsq = dot(q_res.bcon, q_res.bcov);
-					esq = dot(q_res.econ, q_res.ecov);
+
 				
 					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], 0.001*NEWT_TOL, BASIC, 0.1);
 
-					if (pflag[nl[n_ord[n]]][ind0] != 0) {
+					//if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);
 						bsq = dot(q_res.bcon, q_res.bcov);
 						esq = dot(q_res.econ, q_res.ecov);
@@ -150,10 +180,17 @@ int main(int argc, char *argv[])
 						bsq = dot(q_res.bcon, q_res.bcov);
 						esq = dot(q_res.econ, q_res.ecov);
 						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+						
+						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 1, &geom, U);
+						fprintf(stderr, "F[1][B2]: %f ", 10000. * U[B2]);
+						
+						get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
+						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 1, &geom, U);
+						fprintf(stderr, "F[1][B2]: %f \n", 10000.*U[B2]);
 
 
-					}
-				//}
+					//}
+				}
 			}
 		}
 	}
