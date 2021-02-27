@@ -167,10 +167,10 @@ int main(int argc, char *argv[])
 
 
 				
-					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], 0.001*NEWT_TOL, BASIC, 0.1);
+					//PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
+					//pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], 0.001*NEWT_TOL, BASIC, 0.1);
 
-					//if (pflag[nl[n_ord[n]]][ind0] != 0) {
+					if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);
 						bsq = dot(q_res.bcon, q_res.bcov);
 						esq = dot(q_res.econ, q_res.ecov);
@@ -182,14 +182,14 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
 						
 						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 1, &geom, U);
-						fprintf(stderr, "F[1][B2]: %f ", 10000. * U[B2]);
+						fprintf(stderr, "F[1][B2]: %f ", 10000. * U[B3]);
 						
 						get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
 						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 1, &geom, U);
-						fprintf(stderr, "F[1][B2]: %f \n", 10000.*U[B2]);
+						fprintf(stderr, "F[1][B2]: %f \n", 10000.*U[B3]);
 
 
-					//}
+					}
 				}
 			}
 		}

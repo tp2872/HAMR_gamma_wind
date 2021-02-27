@@ -1149,13 +1149,12 @@ void init_torus()
 	}
 	#endif
 
-
-
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
 	}
 
 	bound_prim(p, 1);
+
 	set_mag();
 
 	sourceflag=0.;
@@ -2449,7 +2448,7 @@ void set_mag(void){
 			//lower_3(E_guess, &geom, E_D);
 
 			for (i1 = 0; i1 < 3; i1++) {
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
+				//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = 0.;
 				for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
 					if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;

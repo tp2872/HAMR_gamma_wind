@@ -125,9 +125,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		}
 	}
 
-	
-	
-	double tau_test,h,lfac,esqr,bsqr, vU[3], B_D[3], Enew_D[3], S_test[3], ExB[3];
+	//double tau_test,h,lfac,esqr,bsqr, vU[3], B_D[3], Enew_D[3], S_test[3], ExB[3];
 	
 	/*//Recompute electric field
 	for (i = 0; i < 3; i++) {
@@ -179,19 +177,18 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	retval=invert_3DU(D, Dt*alpha, ETA, tau, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 
 	//Transform new primitive variables back if there was no problem
-	prim[RHO] = rho;
-	prim[UU] = ug;
-	for (i = 0; i < 3; i++) {
-		prim[U1 + i] = 0.0;
-		for (j = 0; j < 3; j++) {
-			prim[U1 + i] += ggammainv[i][j] * vD_guess[j];
+	if (retval > -10000) {
+		prim[RHO] = rho;
+		prim[UU] = ug;
+		for (i = 0; i < 3; i++) {
+			prim[U1 + i] = 0.0;
+			for (j = 0; j < 3; j++) {
+				prim[U1 + i] += ggammainv[i][j] * vD_guess[j];
+			}
 		}
-	}
-	prim[E1] = E_guess[0] / alpha;
-	prim[E2] = E_guess[1] / alpha;
-	prim[E3] = E_guess[2] / alpha;
-	if (retval == 0) {
-	
+		prim[E1] = E_guess[0] / alpha;
+		prim[E2] = E_guess[1] / alpha;
+		prim[E3] = E_guess[2] / alpha;
 	}
 	else {
 		//fprintf(stderr, "tau: %f, S_1: %f S_2: %f S_3: %f\n", log10(fabs((tau - tau_test) / tau_test)), log10(fabs((S[0] - S_test[0]) / S_test[0])), log10(fabs((S[1] - S_test[1]) / S_test[1])), log10(fabs((S[2] - S_test[2]) / S_test[2])));
@@ -209,10 +206,11 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 int invert_3DU(double D, double sigma, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double *rho, double *ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance){
 	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3];
 	double Enew_D[3], Stilde_j[3], ExB[3], Stilde_uj[3], Ssqr, bsqr, esqr, tautilde, z, eps;
-	int i,j,k, nit, maxitnr, ii;
-	double er, er_small=100000000.0, er1, normV, half;
+	int i,j,k, nit, ii;
+	double er, er_small=100000000.0, er1,normV, half;
 	int maxitr = 100;
-	int retval = 0;
+	int retval = 1;
+	int retval_matrix;
 	int tag=0;
 
 	int i1, j1;
@@ -229,7 +227,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	// Start of the Newton RAphson loop
     do{ 
     	nit = nit + 1;
-        /*if(nit>maxitr/2){
+        if(nit>maxitr/2){
         	// mix the last  value for convergence
 			for (i = 0; i < 3; i++) vD[i] = 0.5 * (vD[i] + vDprev[i]);
           	
@@ -238,7 +236,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
           	
 			// following avoids decrease of accuracy requirement every iteration step beyond maxitnr/2
          	nit = nit - maxitr/10;
-		}*/
+		}
         
         //Compute residual and derivatives
 		for (i = 0; i < 3; i++) xk_3du[i] = vD[i];
@@ -246,24 +244,14 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 		//Calculate jacobian and residuals
         res_3du_der(D, sigma, etares, tau, S, xk_3du, ggamma, ggammainv, sqrtgamma, B_guess, E_guess, J_3du, f_3du); 
 
-		//check size of error
-		er = 0.0;
-		for (i = 0; i < 3; i++)for (j = 0; j < 3; j++) {
-			er += (ggammainv[i][j] * f_3du[i] * f_3du[j]);
-		}
-		if (er < er_small && ii==1) {
-			er_small = er;
-			for (i = 0; i < 3; i++) vD_small[i] = vD[i];
-		}
-
         //Store previous ucov_tilde
         for (i=0;i<3;i++) vDprev[i] = vD[i];
         
 		//Find inverse of Jacobian 
-		retval=invert_matrix_3D(J_3du, J_3du_inv);
+		retval_matrix=invert_matrix_3D(J_3du, J_3du_inv);
 
 		//Print error if jacobian is singular
-		if (retval == 1) {
+		if (retval_matrix == 1) {
 			for (i1 = 0; i1 < 3; i1++)for (j1 = 0; j1 < 3; j1++) fprintf(stderr, "Jac(%d, %d): %f \n", i1, j1, J_3du[i][j]);
 			break;
 		}
@@ -284,10 +272,9 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 		if ((er < tolerance) || (er / (normV + 1.e-16) <= er1 * tolerance)) {
 			retval = 0;
-			tag = 1;
 			break; //solution found!!
 		}
-		tag = 0;
+
 		ii++;
 	} while (ii < maxitr); // End of the Newton cycle
 	
@@ -302,9 +289,8 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	if (retval != 0 || ii==maxitr) {
-		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
 		//fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
-
 		retval = 1;
 		//return retval;
 	}
@@ -366,7 +352,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 	//Exit if density or internal energy drops below 0
 	if (rho[0] < 0.) {
-		//fprintf(stderr,"Density dropped below 0 in resistive inversion \n");
+		fprintf(stderr,"Density dropped below 0 in resistive inversion \n");
 		retval = 2;
 		//return retval;
 	}
@@ -426,7 +412,7 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
 		ExB[i] = 0.;
 		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
 			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] =  ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * Enew[k];
+			ExB[i] =  ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * B[k];
 		}
 	}
 	for (i=0;i<3;i++) Stilde_j[i] = S_j[i] - ExB[i]; 
@@ -448,7 +434,7 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
 	enth = 1.0 + GAMMA / (GAMMA - 1.0) * p / D * lfac;
 
 	//compute residuals
-	res[0] = vD[0] - Stilde_j[0] / D / enth; 
+	res[0] = vD[0] - Stilde_j[0] / D / enth;
     res[1] = vD[1] - Stilde_j[1] / D / enth;
     res[2] = vD[2] - Stilde_j[2] / D / enth;
  
@@ -566,7 +552,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
 
 	//eta<1 case
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++) {	
 		Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
 	}
 	denom1 = etares + lfac * sigma;
@@ -609,7 +595,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 		dEdu[1][i] = -E[i] * etares / (denom1*denom1) * sigma * vU[1] / lfac 
 			- (-(sigma * sigma / (denom1 * denom1)) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) 
 				+ sigma / denom1 * (kxbU[i] 
-					+ etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
+					+ etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[1][i])));
 	}
 
 	// Derivative of u x B: dE/dv3
@@ -629,6 +615,6 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 		dEdu[2][i] = -E[i] * etares / (denom1*denom1) * sigma * vU[2] / lfac 
 			- (-(sigma * sigma / (denom1 * denom1)) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i]) 
 				+ sigma / denom1 * (kxbU[i] 
-					+ etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
+					+ etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / (denom2*denom2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[2][i])));
 	}
 }

@@ -75,9 +75,7 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	/*Maxwell tensor */
-	lower_3(&pr[B1], geom, Bcov);
-
-	
+	lower_3(&(pr[B1]), geom, Bcov);
 	if (dir == 0) {
 		flux[E1] = pr[E1];
 		flux[E2] = pr[E2];
@@ -87,14 +85,15 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[E1] = beta[1] * pr[E1 + (dir - 1)] - beta[dir] * pr[E1];
 		flux[E2] = beta[2] * pr[E1 + (dir - 1)] - beta[dir] * pr[E2];
 		flux[E3] = beta[3] * pr[E1 + (dir - 1)] - beta[dir] * pr[E3];
-		flux[E1] -= (alpha * alpha / geom->g) * (Bcov[2] - Bcov[1]);
-		flux[E2] -= (alpha * alpha / geom->g) * (Bcov[0] - Bcov[2]);
-		flux[E3] -= (alpha * alpha / geom->g) * (Bcov[1] - Bcov[0]);
+		for (k = 0; k < 3; k++) {
+			flux[E1] -= lvc3u(0, dir - 1, k) * (alpha * alpha / (geom->g)) * (Bcov[k]);
+			flux[E2] -= lvc3u(1, dir - 1, k) * (alpha * alpha / (geom->g)) * (Bcov[k]);
+			flux[E3] -= lvc3u(2, dir - 1, k) * (alpha * alpha / (geom->g)) * (Bcov[k]);
+		}
 	}
 	
 	/* dual of Maxwell tensor */
-	lower_3(&pr[E1], geom, Ecov);
-
+	lower_3(&(pr[E1]), geom, Ecov);
 	if (dir == 0) {
 		flux[B1] = pr[B1];
 		flux[B2] = pr[B2];
@@ -104,9 +103,11 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[B1] = beta[1] * pr[B1 + (dir - 1)] - beta[dir] * pr[B1];
 		flux[B2] = beta[2] * pr[B1 + (dir - 1)] - beta[dir] * pr[B2];
 		flux[B3] = beta[3] * pr[B1 + (dir - 1)] - beta[dir] * pr[B3];
-		flux[B1] += (alpha * alpha / geom->g) * (Ecov[2] - Ecov[1]);
-		flux[B2] += (alpha * alpha / geom->g) * (Ecov[0] - Ecov[2]);
-		flux[B3] += (alpha * alpha / geom->g) * (Ecov[1] - Ecov[0]);
+		for (k = 0; k < 3; k++) {
+			flux[B1] += lvc3u(0, dir - 1, k) * (alpha * alpha / (geom->g)) * (Ecov[k]);
+			flux[B2] += lvc3u(1, dir - 1, k) * (alpha * alpha / (geom->g)) * (Ecov[k]);
+			flux[B3] += lvc3u(2, dir - 1, k) * (alpha * alpha / (geom->g)) * (Ecov[k]);
+		}
 	}
 
 	//Entropy advection
@@ -180,8 +181,9 @@ void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* 
 	bcon[1] = alpha * (B_dot_v)*ncon[1] + gamma * (alpha * pr[B1]) - (alpha * alpha / geom->g) * (ucov[2] * Ecov[2] - ucov[3] * Ecov[1]);
 	bcon[2] = alpha * (B_dot_v)*ncon[2] + gamma * (alpha * pr[B2]) - (alpha * alpha / geom->g) * (ucov[3] * Ecov[0] - ucov[1] * Ecov[2]);
 	bcon[3] = alpha * (B_dot_v)*ncon[3] + gamma * (alpha * pr[B3]) - (alpha * alpha / geom->g) * (ucov[1] * Ecov[1] - ucov[2] * Ecov[0]);
+	bcon[0] = pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3];
 
-	return ;
+	return;
 	#endif
 }
 
