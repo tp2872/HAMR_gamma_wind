@@ -129,23 +129,19 @@ int main(int argc, char *argv[])
 					B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
 					B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
 					B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
-					//E_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
-					//E_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
-					//E_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+					//E_guess[0] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					//E_guess[1] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					//E_guess[2] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
 			
 					lower_3(B_guess, &geom, B_D);
 					//lower_3(E_guess, &geom, E_D);
 					int i1, j1, k1;
 					for (i1 = 0; i1 < 3; i1++) {
 						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
-						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = 0.;
 						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
 							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
 							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
-							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = B_guess[i1] / alpha;
-
 							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
-							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = E_guess[i1] / alpha;
 						}
 					}
 					//p[nl[n_ord[n]]][ind0][B1] = 0.;
@@ -165,8 +161,6 @@ int main(int argc, char *argv[])
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
-
-				
 					//PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
 					//pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], 0.001*NEWT_TOL, BASIC, 0.1);
 

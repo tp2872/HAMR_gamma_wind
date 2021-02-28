@@ -1004,6 +1004,7 @@ double fluxcalc_GPU(int n, int dir);
 void primtoflux_res(double* restrict pr, struct of_state_res* restrict q_res, int dir, struct of_geom* restrict geom, double* restrict flux);
 void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict ucov, double* restrict bcon);
 void bcon_calc_res(double* restrict pr, struct of_geom* restrict geom, double* restrict ucon, double* restrict ucov, double* restrict bcon);
+double bsq_calc_res(double* restrict pr, struct of_geom* restrict geom);
 void mhd_calc_res(double* restrict pr, int dir, struct of_geom* restrict geom, struct of_state_res* restrict q_res, double* restrict mhd);
 void source_res(double* restrict ph, struct of_geom* restrict geom, int n, int ii, int jj, int zz, double* restrict dU, double* q, double Dt);
 void get_state_res(double* restrict pr, struct of_geom* restrict geom, struct of_state_res* restrict q_res);

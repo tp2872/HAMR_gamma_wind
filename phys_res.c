@@ -1,47 +1,3 @@
-/***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
-                   Gabor Toth, and Luca Del Zanna
-
-                        HARM  version 1.0   (released May 1, 2006)
-
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
-    partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
-    stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
-
-    You are morally obligated to cite the following two papers in his/her 
-    scientific literature that results from use of any part of HARM:
-
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
-        Astrophysical Journal, 589, 444.
-
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
-        Astrophysical Journal, 641, 626.
-
-   
-    Further, we strongly encourage you to obtain the latest version of 
-    HARM directly from our distribution website:
-    http://rainman.astro.uiuc.edu/codelib/
-
-
-    HARM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    HARM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with HARM; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-***********************************************************************************/
-
 #include "decs.h"
 
 /***********************************************************************************************/
@@ -57,6 +13,7 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	#if(RESISTIVE)
 	int k;
 	double alpha, beta[NDIM], Ecov[3], Bcov[3];
+	double sqrtgamma_inv;
 
 	/* particle number flux */
 	flux[RHO] = pr[RHO]*q_res->ucon[dir] ;
@@ -74,6 +31,9 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	beta[2] = geom->gcon[0][2] * alpha * alpha;
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
+	//Inverse of 3-metric
+	sqrtgamma_inv = alpha / (geom->g);
+
 	/*Maxwell tensor */
 	lower_3(&(pr[B1]), geom, Bcov);
 	if (dir == 0) {
@@ -86,9 +46,9 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[E2] = beta[2] * pr[E1 + (dir - 1)] - beta[dir] * pr[E2];
 		flux[E3] = beta[3] * pr[E1 + (dir - 1)] - beta[dir] * pr[E3];
 		for (k = 0; k < 3; k++) {
-			flux[E1] -= lvc3u(0, dir - 1, k) * (alpha * alpha / (geom->g)) * (Bcov[k]);
-			flux[E2] -= lvc3u(1, dir - 1, k) * (alpha * alpha / (geom->g)) * (Bcov[k]);
-			flux[E3] -= lvc3u(2, dir - 1, k) * (alpha * alpha / (geom->g)) * (Bcov[k]);
+			flux[E1] -= lvc3u(0, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
+			flux[E2] -= lvc3u(1, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
+			flux[E3] -= lvc3u(2, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
 		}
 	}
 	
@@ -104,9 +64,9 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[B2] = beta[2] * pr[B1 + (dir - 1)] - beta[dir] * pr[B2];
 		flux[B3] = beta[3] * pr[B1 + (dir - 1)] - beta[dir] * pr[B3];
 		for (k = 0; k < 3; k++) {
-			flux[B1] += lvc3u(0, dir - 1, k) * (alpha * alpha / (geom->g)) * (Ecov[k]);
-			flux[B2] += lvc3u(1, dir - 1, k) * (alpha * alpha / (geom->g)) * (Ecov[k]);
-			flux[B3] += lvc3u(2, dir - 1, k) * (alpha * alpha / (geom->g)) * (Ecov[k]);
+			flux[B1] += lvc3u(0, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
+			flux[B2] += lvc3u(1, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
+			flux[B3] += lvc3u(2, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
 		}
 	}
 
@@ -142,13 +102,13 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 
 	//Dot product between magnetic field and velocity 3-vector time GAMMA!
 	lower_3(&(pr[B1]), geom, Bcov);
-	E_dot_v = pr[E1] * ucov[1] + pr[E2] * ucov[2] + pr[E3] * ucov[3];
+	E_dot_v = alpha*(pr[E1] * ucov[1] + pr[E2] * ucov[2] + pr[E3] * ucov[3]);
 
 	//Final calculation of rest frame magnetic field
-	econ[0] = alpha * (E_dot_v)*ncon[0];
-	econ[1] = alpha * (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha * alpha / geom->g) * (ucov[2] * Bcov[2] - ucov[3] * Bcov[1]);
-	econ[2] = alpha * (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha * alpha / geom->g) * (ucov[3] * Bcov[0] - ucov[1] * Bcov[2]);
-	econ[3] = alpha * (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha * alpha / geom->g) * (ucov[1] * Bcov[1] - ucov[2] * Bcov[0]);
+	econ[0] = (E_dot_v)*ncon[0];
+	econ[1] = (E_dot_v)*ncon[1] + gamma * (pr[E1]) + (alpha * alpha / geom->g) * (ucov[2] * Bcov[2] - ucov[3] * Bcov[1]);
+	econ[2] = (E_dot_v)*ncon[2] + gamma * (pr[E2]) + (alpha * alpha / geom->g) * (ucov[3] * Bcov[0] - ucov[1] * Bcov[2]);
+	econ[3] = (E_dot_v)*ncon[3] + gamma * (pr[E3]) + (alpha * alpha / geom->g) * (ucov[1] * Bcov[1] - ucov[2] * Bcov[0]);
 
 	return;
 	#endif
@@ -174,13 +134,13 @@ void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* 
 
 	//Dot product between magnetic field and velocity 3-vector time GAMMA
 	lower_3(&(pr[E1]), geom, Ecov);
-	B_dot_v = pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3];
+	B_dot_v = alpha * (pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3]);
 
 	//Final calculation of rest frame magnetic field
-	bcon[0] = alpha * (B_dot_v) * ncon[0];
-	bcon[1] = alpha * (B_dot_v)*ncon[1] + gamma * (alpha * pr[B1]) - (alpha * alpha / geom->g) * (ucov[2] * Ecov[2] - ucov[3] * Ecov[1]);
-	bcon[2] = alpha * (B_dot_v)*ncon[2] + gamma * (alpha * pr[B2]) - (alpha * alpha / geom->g) * (ucov[3] * Ecov[0] - ucov[1] * Ecov[2]);
-	bcon[3] = alpha * (B_dot_v)*ncon[3] + gamma * (alpha * pr[B3]) - (alpha * alpha / geom->g) * (ucov[1] * Ecov[1] - ucov[2] * Ecov[0]);
+	bcon[0] = (B_dot_v) * ncon[0];
+	bcon[1] = (B_dot_v) * ncon[1] + gamma * (pr[B1]) - (alpha * alpha / geom->g) * (ucov[2] * Ecov[2] - ucov[3] * Ecov[1]);
+	bcon[2] = (B_dot_v) * ncon[2] + gamma * (pr[B2]) - (alpha * alpha / geom->g) * (ucov[3] * Ecov[0] - ucov[1] * Ecov[2]);
+	bcon[3] = (B_dot_v) * ncon[3] + gamma * (pr[B3]) - (alpha * alpha / geom->g) * (ucov[1] * Ecov[1] - ucov[2] * Ecov[0]);
 
 	return;
 	#endif
@@ -191,11 +151,7 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 {
 	#if(RESISTIVE)
 	int j, lambda, beta, kappa;
-	double P,w,bsq,esq, eta,ptot, mhd_u[NDIM], mhd_d[NDIM], alpha;
-
-
-	//Lapse in 3+1
-	alpha = 1.0;
+	double P,w,bsq,esq, eta,ptot, mhd_u[NDIM], mhd_d[NDIM];
 
 	//Calculate contraction term
 	DLOOPA{
@@ -228,7 +184,7 @@ void mhd_calc_res(double * restrict pr, int dir, struct of_geom* restrict geom, 
 void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double *q, double Dt)
 {
 	#if(RESISTIVE)
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma, vdotE, q_local;
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg, J[NDIM], beta[NDIM], alpha, gamma;
 	int j,k ;
 	struct of_state_res q_res;
 
@@ -259,20 +215,15 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	if(ETA<0.000001)q_local = 0.;
-	else q_local = (alpha / geom->g) * q[0];
+	if (ETA < 0.000001) q[0] = 0.;
 
-	//Calculate explicit part of electric current J
+	//Calculate relative Lorentz factor
 	gamma = q_res.ucon[0] * alpha;
-	vdotE = alpha / gamma * (ph[E1] * q_res.ucov[1]+ ph[E2] * q_res.ucov[2] + ph[E3] * q_res.ucov[3]);
-	J[1] = q_local * ph[U1] / gamma;
-	J[2] = q_local * ph[U2] / gamma;
-	J[3] = q_local * ph[U3] / gamma;
 
-	//Calculate source term for electric field
-	dU[E1] = -alpha * J[1] + beta[1] * q_local / alpha;
-	dU[E2] = -alpha * J[2] + beta[2] * q_local / alpha;
-	dU[E3] = -alpha * J[3] + beta[3] * q_local / alpha;
+	//Calculate explicit part of electric current J sourceterm
+	dU[E1] = -alpha * q[0] * ph[U1] / gamma + beta[1] * q[0];
+	dU[E2] = -alpha * q[0] * ph[U2] / gamma + beta[2] * q[0];
+	dU[E3] = -alpha * q[0] * ph[U3] / gamma + beta[3] * q[0];
 
 	//Add disk cooling term
 	double X[NDIM], r, th, phi;
@@ -285,6 +236,18 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	#pragma ivdep
 	PLOOP dU[k] *= geom->g ;
 	#endif
+}
+
+/* returns b^2 (i.e., twice magnetic pressure) */
+double bsq_calc_res(double* restrict pr, struct of_geom* restrict geom)
+{
+	double ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM];
+	ucon_calc(pr, geom, ucon);
+	lower(ucon, geom, ucov);
+	bcon_calc(pr, ucon, ucov, bcon);
+	lower(bcon, geom, bcov);
+
+	return(dot(bcon, bcov));
 }
 
 /* find ucon, ucov, bcon, bcov from primitive variables */
@@ -306,7 +269,7 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 }
 
 void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin){
-	//#if(RESISTIVE)
+	#if(RESISTIVE)
 	double sqrtgamma, ncon_js,alpha,beta, vm, vp;
 	alpha = 1. / sqrt(-geom->gcon[0][0]);
 	beta= geom->gcon[0][js] * alpha * alpha;
@@ -325,8 +288,7 @@ void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, d
 		*vmax = vm;
 		*vmin = vp;
 	}
-
-	//#endif
+	#endif
 }
 
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z) {
@@ -342,18 +304,19 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 	if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = round(pow(2.0, (double)zlevel));
 	zoffset = (z - N3_GPU_offset[n]) % zsize;
+	dz = (N3 > 1) * zsize;
 	#endif
 
 	/* Constrained transport defn */
 	#if(STAGGERED_E)
 	#if(N1>1)
 	for (u = 0; u < zsize; u++) {
-		dive += 0.25 * (pse[nl[n]][index_3D(n, i + di, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i + di, j, z - zoffset + u)][FACE1] - pse[nl[n]][index_3D(n, i, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE1]) / ((double)(zsize)*dx[nl[n]][1]);
+		dive += 0.25 * (pse[nl[n]][index_3D(n, i + di, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i + di, j, z - zoffset + u)][FACE1] - pse[nl[n]][index_3D(n, i, j, z - zoffset + u)][1] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE1]) / ((double)*dx[nl[n]][1]);
 	}
 	#endif
 	#if(N2>1)
 	for (u = 0; u < zsize; u++) {
-		dive += 0.25 * (pse[nl[n]][index_3D(n, i, j + dj, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z - zoffset + u)][FACE2] - pse[nl[n]][index_3D(n, i, j, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE2]) / ((double)(zsize)*dx[nl[n]][2]);
+		dive += 0.25 * (pse[nl[n]][index_3D(n, i, j + dj, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j + dj, z - zoffset + u)][FACE2] - pse[nl[n]][index_3D(n, i, j, z - zoffset + u)][2] * gdet[nl[n]][index_2D(n, i, j, z - zoffset + u)][FACE2]) / ((double)*dx[nl[n]][2]);
 	}
 	#endif
 	#if(N3>1)
@@ -368,11 +331,11 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 			+ p[nl[n]][index_3D(n, i, j, z - dz)][E1] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
 			+ p[nl[n]][index_3D(n, i, j - dj, z)][E1] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
 			+ p[nl[n]][index_3D(n, i, j - dj, z - dz)][E1] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - 1, j, z)][E1] * gdet[nl[n]][index_2D(n, i - 1, j, z)][CENT]
-			- p[nl[n]][index_3D(n, i - 1, j, z - dz)][E1] * gdet[nl[n]][index_2D(n, i - 1, j, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - 1, j - dj, z)][E1] * gdet[nl[n]][index_2D(n, i - 1, j - dj, z)][CENT]
-			- p[nl[n]][index_3D(n, i - 1, j - dj, z - dz)][E1] * gdet[nl[n]][index_2D(n, i - 1, j - dj, z - dz)][CENT]
-			) / ((double)(zsize)*dx[nl[n]][1])
+			- p[nl[n]][index_3D(n, i - di, j, z)][E1] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j, z - dz)][E1] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j - dj, z)][E1] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j - dj, z - dz)][E1] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - dz)][CENT]
+			) / ((double)dx[nl[n]][1])
 		#endif
 		#if(N2>1)
 		+ 0.25 * (
@@ -380,11 +343,11 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 			+ p[nl[n]][index_3D(n, i, j, z - dz)][E2] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
 			+ p[nl[n]][index_3D(n, i - di, j, z)][E2] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
 			+ p[nl[n]][index_3D(n, i - di, j, z - dz)][E2] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i, j - 1, z)][E2] * gdet[nl[n]][index_2D(n, i, j - 1, z)][CENT]
-			- p[nl[n]][index_3D(n, i, j - 1, z - dz)][E2] * gdet[nl[n]][index_2D(n, i, j - 1, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - 1, z)][E2] * gdet[nl[n]][index_2D(n, i - di, j - 1, z)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - 1, z - dz)][E2] * gdet[nl[n]][index_2D(n, i - di, j - 1, z - dz)][CENT]
-			) / ((double)(zsize)*dx[nl[n]][2])
+			- p[nl[n]][index_3D(n, i, j - dj, z)][E2] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
+			- p[nl[n]][index_3D(n, i, j - dj, z - dz)][E2] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j - dj, z)][E2] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j - dj, z - dz)][E2] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - dz)][CENT]
+			) / ((double)dx[nl[n]][2])
 		#endif
 		#if(N3>1)
 		+ 0.25 * (
@@ -392,15 +355,15 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 			+ p[nl[n]][index_3D(n, i - di, j, z)][E3] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
 			+ p[nl[n]][index_3D(n, i, j - dj, z)][E3] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
 			+ p[nl[n]][index_3D(n, i - di, j - dj, z)][E3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
-			- p[nl[n]][index_3D(n, i, j, z - 1)][E3] * gdet[nl[n]][index_2D(n, i, j, z - 1)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j, z - 1)][E3] * gdet[nl[n]][index_2D(n, i - di, j, z - 1)][CENT]
-			- p[nl[n]][index_3D(n, i, j - dj, z - 1)][E3] * gdet[nl[n]][index_2D(n, i, j - dj, z - 1)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - dj, z - 1)][E3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - 1)][CENT]
+			- p[nl[n]][index_3D(n, i, j, z - dz)][E3] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j, z - dz)][E3] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
+			- p[nl[n]][index_3D(n, i, j - dj, z - dz)][E3] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
+			- p[nl[n]][index_3D(n, i - di, j - dj, z - dz)][E3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - dz)][CENT]
 			) / ((double)(zsize)*dx[nl[n]][3])
 		#endif
 	);
 	#endif
-	return dive;
+	return (dive / gdet[nl[n]][index_2D(n, i, j, z)][CENT]);
 	#else
 	return(0.0);
 	#endif

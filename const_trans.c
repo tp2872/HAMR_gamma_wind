@@ -25,10 +25,10 @@ void const_transport1(double(*restrict pb[NB_LOCAL])[NPR], int n){
 
 			//calculate the cell center values of the E-field
 			#if(N3G>0)
-			E_cent[1] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]);
-			E_cent[2] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
+			E_cent[1] = -geom.g * (q.ucon[2] * q.bcon[3] - q.ucon[3] * q.bcon[2]); //-F2[B3]
+			E_cent[2] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]); //-F3[B1]
 			#endif
-			E_cent[3] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
+			E_cent[3] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]); //-F1[B2]
 
 			//upwind the electric field based on transverse gradients conform gardiner&stone 2005/2015, not yet tested
 			#if(N3G>0)

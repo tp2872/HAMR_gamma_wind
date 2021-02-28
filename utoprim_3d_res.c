@@ -1,46 +1,3 @@
-/***********************************************************************************
-Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble,
-Gabor Toth, and Luca Del Zanna
-
-HARM  version 1.0   (released May 1, 2006)
-
-This file is part of HARM.  HARM is a program that solves hyperbolic
-partial differential equations in conservative form using high-resolution
-shock-capturing techniques.  This version of HARM has been configured to
-solve the relativistic magnetohydrodynamic equations of motion on a
-stationary black hole spacetime in Kerr-Schild coordinates to evolve
-an accretion disk model.
-
-You are morally obligated to cite the following two papers in his/her
-scientific literature that results from use of any part of HARM:
-
-[1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003,
-Astrophysical Journal, 589, 444.
-
-[2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006,
-Astrophysical Journal, 641, 626.
-
-
-Further, we strongly encourage you to obtain the latest version of
-HARM directly from our distribution website:
-http://rainman.astro.uiuc.edu/codelib/
-
-
-HARM is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-HARM is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with HARM; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-***********************************************************************************/
 
 /*************************************************************************************/
 /*************************************************************************************/
@@ -77,9 +34,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	double vD_guess[3], ggamma[3][3], ggammainv[3][3];
 
 	//Return if rho*gamma is negative
-	if (U[0] <= 0.) {
-		return(-100);
-	}
+	if (U[0] <= 0.) return(-100);
 
 	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0][0]);
@@ -125,59 +80,11 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		}
 	}
 
-	//double tau_test,h,lfac,esqr,bsqr, vU[3], B_D[3], Enew_D[3], S_test[3], ExB[3];
-	
-	/*//Recompute electric field
-	for (i = 0; i < 3; i++) {
-		B_D[i] = 0.;
-		vU[i] = 0.;
-		for (j = 0; j < 3; j++) {
-			B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
-			vU[i] = vU[i] + ggammainv[i][j] * vD_guess[j];
-		}
-	}
-
-	//calculate Lorentz factor
-	lfac = sqrt(1.0 + vU[0] * vD_guess[0] + vU[1] * vD_guess[1] + vU[2] * vD_guess[2]);
-
-	//lower Enew 
-	for (i = 0; i < 3; i++) {
-		Enew_D[i] = 0.;
-		for (j = 0; j < 3; j++) {
-			Enew_D[i] = Enew_D[i] + ggamma[i][j] * E_guess[j];
-		}
-	}
-
-	//calculate bsqr and esqr
-	bsqr = B_guess[0] * B_D[0] + B_guess[1] * B_D[1] + B_guess[2] * B_D[2];
-	esqr = E_guess[0] * Enew_D[0] + E_guess[1] * Enew_D[1] + E_guess[2] * Enew_D[2];
-	h = 1.0 + GAMMA * prim[UU] / prim[RHO];
-	tau_test = prim[RHO] * h * lfac*lfac - (GAMMA - 1.0) * prim[UU] - D + 0.5 * (esqr + bsqr);
-	for (i = 0; i < 3; i++) {
-		ExB[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] = ExB[i] + sqrtgamma * lvc3u(i, j, k) * E_guess[j] * B_guess[k];
-		}
-	}
-	S_test[0] = prim[RHO] * h * lfac * vD_guess[0] + ExB[0];
-	S_test[1] = prim[RHO] * h * lfac * vD_guess[1] + ExB[1];
-	S_test[2] = prim[RHO] * h * lfac * vD_guess[2] + ExB[2];
-	
-	//Guess of relative 4-velocity: gamma*v_i-->vD_guess (eq. 57)
-	for (i = 0; i < 3; i++) {
-		vD_guess[i] = 0.0;
-		for (j = 0; j < 3; j++) {
-			vD_guess[i] += ggamma[i][j] * prim[U1 + j];
-		}
-	}*/
-	
-	
 	//NR Step, you get back gamma*v_i and E
 	retval=invert_3DU(D, Dt*alpha, ETA, tau, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 
 	//Transform new primitive variables back if there was no problem
-	if (retval > -10000) {
+	if (retval == 0) {
 		prim[RHO] = rho;
 		prim[UU] = ug;
 		for (i = 0; i < 3; i++) {
@@ -189,10 +96,6 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		prim[E1] = E_guess[0] / alpha;
 		prim[E2] = E_guess[1] / alpha;
 		prim[E3] = E_guess[2] / alpha;
-	}
-	else {
-		//fprintf(stderr, "tau: %f, S_1: %f S_2: %f S_3: %f\n", log10(fabs((tau - tau_test) / tau_test)), log10(fabs((S[0] - S_test[0]) / S_test[0])), log10(fabs((S[1] - S_test[1]) / S_test[1])), log10(fabs((S[2] - S_test[2]) / S_test[2])));
-		//fprintf(stderr, "tau: (%f, %f), S_1: (%f, %f) S_2: (%f, %f) S_3: (%f, %f)\n", log10(fabs((tau))), log10(fabs((tau_test))), log10(fabs((S[0]))), log10(fabs((S_test[0]))), log10(fabs((S[1]))), log10(fabs((S_test[1]))), log10(fabs((S[2]))), log10(fabs((S_test[2]))));
 	}
 
 	//Update B fields regardless to preserve Div.B==0 regardless if inversion is succesful

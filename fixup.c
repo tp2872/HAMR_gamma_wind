@@ -72,30 +72,32 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	double ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], ucon[NDIM], vcon[NDIM], utcon[NDIM];
 	int m;
 	int k, flag, dofloor=0;
+	#if(RESISTIVE)
+	struct of_state_res q;
+	#else
 	struct of_state q;
+	#endif
 	struct of_geom geom;
 
 	coord(n, i,j, z, CENT,X) ;
 	bl_coord(X,&r,&th, &phi) ;
 
-	get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); // Danat addition: 11/18/19 - avoid rhoflr too large`
-	#if (0)
-		rhoscal = pow(r,-POWRHO) ;
-		uuscal = pow(rhoscal, gam);
-
-		rhoflr = RHOMIN*rhoscal;
-		uuflr  = UUMIN*uuscal;
-	#endif
+	// Danat addition: 11/18/19 - avoid rhoflr too large`
+	get_rho_u_floor (r, th, phi, &rhoflr, &uuflr); 
     
 	//compute the square of fluid frame magnetic field (twice magnetic pressure)
 	get_geometry(n,i,j,z,CENT,&geom) ;
-	bsq = bsq_calc(pv,&geom) ;
-  
+	#if(RESISTIVE)
+	bsq = bsq_calc_res(pv, &geom);
+	#else
+	bsq = bsq_calc(pv, &geom);
+	#endif
+
 	//tie floors to the local values of magnetic field and internal energy density
 	#if(1)
-	  if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
-	  if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
-	  if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+	if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
+	if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
+	if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
 	#endif
 
 	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
@@ -113,9 +115,13 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		dofloor = 1;
 	}
 
-	#if(0)
+	#if(DRIFT_FLOOR)
 	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
+		#if(RESISTIVE)
+		get_state_res(pv_prefloor, &geom, &q);
+		#else
 		get_state(pv_prefloor, &geom, &q);
+		#endif
 		if (trans > 1.) {
 			trans = 1.;
 		}
@@ -149,11 +155,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		eos_mode_rhou_pres(pv_prefloor[RHO], pv_prefloor[UU], &xP);
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] + xP;
 		#else
-		wold = pv_prefloor[RHO] + pv_prefloor[UU] * gam;
+		wold = pv_prefloor[RHO] + pv_prefloor[UU] * GAMMA;
 		#endif 
 
 		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
-		QdotB = udotB*wold*q.ucon[0];
+		QdotB = udotB * wold * q.ucon[0];
 
 		//enthalpy after the floors
 		#if (DOHELM)
@@ -209,7 +215,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	/* limit gamma wrt normal observer */
-	if( gamma_calc(pv,&geom,&gamma) ) { 
+	if(gamma_calc(pv,&geom,&gamma) ) { 
 		/* Treat gamma failure here as "fixable" for fixup_utoprim() */
 			fprintf(stderr, "Gamma fail: %d %d %d %d \n",n, i, j, z);
 		pflag[nl[n]][index_3D(n ,i,j,z)] = -333;
