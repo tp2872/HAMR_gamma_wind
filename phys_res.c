@@ -35,7 +35,7 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	sqrtgamma_inv = alpha / (geom->g);
 
 	/*Maxwell tensor */
-	lower_3(&(pr[B1]), geom, Bcov);
+	lower_3(&(pr[B1]), geom->gcov, Bcov);
 	if (dir == 0) {
 		flux[E1] = pr[E1];
 		flux[E2] = pr[E2];
@@ -53,7 +53,7 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 	}
 	
 	/* dual of Maxwell tensor */
-	lower_3(&(pr[E1]), geom, Ecov);
+	lower_3(&(pr[E1]), geom->gcov, Ecov);
 	if (dir == 0) {
 		flux[B1] = pr[B1];
 		flux[B2] = pr[B2];
@@ -101,14 +101,14 @@ void econ_calc_res(double* restrict pr, struct of_geom* restrict geom, double* r
 	gamma = ucon[0] * alpha;
 
 	//Dot product between magnetic field and velocity 3-vector time GAMMA!
-	lower_3(&(pr[B1]), geom, Bcov);
+	lower_3(&(pr[B1]), geom->gcov, Bcov);
 	E_dot_v = alpha*(pr[E1] * ucov[1] + pr[E2] * ucov[2] + pr[E3] * ucov[3]);
 
 	//Final calculation of rest frame magnetic field
 	econ[0] = (E_dot_v)*ncon[0];
-	econ[1] = (E_dot_v)*ncon[1] + gamma * (pr[E1]) + (alpha * alpha / geom->g) * (ucov[2] * Bcov[2] - ucov[3] * Bcov[1]);
-	econ[2] = (E_dot_v)*ncon[2] + gamma * (pr[E2]) + (alpha * alpha / geom->g) * (ucov[3] * Bcov[0] - ucov[1] * Bcov[2]);
-	econ[3] = (E_dot_v)*ncon[3] + gamma * (pr[E3]) + (alpha * alpha / geom->g) * (ucov[1] * Bcov[1] - ucov[2] * Bcov[0]);
+	econ[1] = (E_dot_v)*ncon[1] + gamma * (alpha * pr[E1]) + (alpha * alpha / geom->g) * (ucov[2] * Bcov[2] - ucov[3] * Bcov[1]);
+	econ[2] = (E_dot_v)*ncon[2] + gamma * (alpha * pr[E2]) + (alpha * alpha / geom->g) * (ucov[3] * Bcov[0] - ucov[1] * Bcov[2]);
+	econ[3] = (E_dot_v)*ncon[3] + gamma * (alpha * pr[E3]) + (alpha * alpha / geom->g) * (ucov[1] * Bcov[1] - ucov[2] * Bcov[0]);
 
 	return;
 	#endif
@@ -133,14 +133,14 @@ void bcon_calc_res(double * restrict pr, struct of_geom* restrict geom, double* 
 	gamma = ucon[0] * alpha;
 
 	//Dot product between magnetic field and velocity 3-vector time GAMMA
-	lower_3(&(pr[E1]), geom, Ecov);
+	lower_3(&(pr[E1]), geom->gcov, Ecov);
 	B_dot_v = alpha * (pr[B1] * ucov[1] + pr[B2] * ucov[2] + pr[B3] * ucov[3]);
 
 	//Final calculation of rest frame magnetic field
 	bcon[0] = (B_dot_v) * ncon[0];
-	bcon[1] = (B_dot_v) * ncon[1] + gamma * (pr[B1]) - (alpha * alpha / geom->g) * (ucov[2] * Ecov[2] - ucov[3] * Ecov[1]);
-	bcon[2] = (B_dot_v) * ncon[2] + gamma * (pr[B2]) - (alpha * alpha / geom->g) * (ucov[3] * Ecov[0] - ucov[1] * Ecov[2]);
-	bcon[3] = (B_dot_v) * ncon[3] + gamma * (pr[B3]) - (alpha * alpha / geom->g) * (ucov[1] * Ecov[1] - ucov[2] * Ecov[0]);
+	bcon[1] = (B_dot_v) * ncon[1] + gamma * (alpha * pr[B1]) - (alpha * alpha / geom->g) * (ucov[2] * Ecov[2] - ucov[3] * Ecov[1]);
+	bcon[2] = (B_dot_v) * ncon[2] + gamma * (alpha * pr[B2]) - (alpha * alpha / geom->g) * (ucov[3] * Ecov[0] - ucov[1] * Ecov[2]);
+	bcon[3] = (B_dot_v) * ncon[3] + gamma * (alpha * pr[B3]) - (alpha * alpha / geom->g) * (ucov[1] * Ecov[1] - ucov[2] * Ecov[0]);
 
 	return;
 	#endif
@@ -283,7 +283,7 @@ void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, d
 	if (vp > vm) {
 		*vmax = vp;
 		*vmin = vm;
-}
+	}
 	else {
 		*vmax = vm;
 		*vmin = vp;
@@ -326,40 +326,13 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 	/* Flux-ct defn */
 	dive = fabs(
 		#if(N1>1)
-		0.25 * (
-			+ p[nl[n]][index_3D(n, i, j, z)][E1] * gdet[nl[n]][index_2D(n, i, j, z)][CENT]
-			+ p[nl[n]][index_3D(n, i, j, z - dz)][E1] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
-			+ p[nl[n]][index_3D(n, i, j - dj, z)][E1] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
-			+ p[nl[n]][index_3D(n, i, j - dj, z - dz)][E1] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j, z)][E1] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j, z - dz)][E1] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - dj, z)][E1] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - dj, z - dz)][E1] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - dz)][CENT]
-			) / ((double)dx[nl[n]][1])
+			(p[nl[n]][index_3D(n, i, j, z)][E1] * gdet[nl[n]][index_2D(n, i, j, z)][CENT] - p[nl[n]][index_3D(n, i - di, j, z)][E1] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]) / ((double)dx[nl[n]][1])
 		#endif
 		#if(N2>1)
-		+ 0.25 * (
-			+ p[nl[n]][index_3D(n, i, j, z)][E2] * gdet[nl[n]][index_2D(n, i, j, z)][CENT]
-			+ p[nl[n]][index_3D(n, i, j, z - dz)][E2] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
-			+ p[nl[n]][index_3D(n, i - di, j, z)][E2] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
-			+ p[nl[n]][index_3D(n, i - di, j, z - dz)][E2] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i, j - dj, z)][E2] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
-			- p[nl[n]][index_3D(n, i, j - dj, z - dz)][E2] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - dj, z)][E2] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - dj, z - dz)][E2] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - dz)][CENT]
-			) / ((double)dx[nl[n]][2])
+			+ (p[nl[n]][index_3D(n, i, j, z)][E2] * gdet[nl[n]][index_2D(n, i, j, z)][CENT] - p[nl[n]][index_3D(n, i, j - dj, z)][E2] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]) / ((double)dx[nl[n]][2])
 		#endif
 		#if(N3>1)
-		+ 0.25 * (
-			+ p[nl[n]][index_3D(n, i, j, z)][E3] * gdet[nl[n]][index_2D(n, i, j, z)][CENT]
-			+ p[nl[n]][index_3D(n, i - di, j, z)][E3] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]
-			+ p[nl[n]][index_3D(n, i, j - dj, z)][E3] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]
-			+ p[nl[n]][index_3D(n, i - di, j - dj, z)][E3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z)][CENT]
-			- p[nl[n]][index_3D(n, i, j, z - dz)][E3] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j, z - dz)][E3] * gdet[nl[n]][index_2D(n, i - di, j, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i, j - dj, z - dz)][E3] * gdet[nl[n]][index_2D(n, i, j - dj, z - dz)][CENT]
-			- p[nl[n]][index_3D(n, i - di, j - dj, z - dz)][E3] * gdet[nl[n]][index_2D(n, i - di, j - dj, z - dz)][CENT]
-			) / ((double)(zsize)*dx[nl[n]][3])
+			+ (p[nl[n]][index_3D(n, i, j, z)][E3] * gdet[nl[n]][index_2D(n, i, j, z)][CENT] - p[nl[n]][index_3D(n, i, j, z - dz)][E3] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]) / ((double)(zsize)*dx[nl[n]][3])
 		#endif
 	);
 	#endif
@@ -370,14 +343,14 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 }
 
 /* Lowers a contravariant rank-1 tensor to a covariant one */
-void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restrict ucov)
+void lower_3(double* restrict ucon, double restrict gcov[NDIM][NDIM], double* restrict ucov)
 {
 	#if(RESISTIVE)
 	int i, j;
 	for (i = 0; i < 3; i++) {
 		ucov[i] = 0.0;
 		for (j = 0; j < 3; j++) {
-			ucov[i] += geom->gcov[i + 1][j + 1] * ucon[j];
+			ucov[i] += gcov[i + 1][j + 1] * ucon[j];
 		}
 	}
 	return;

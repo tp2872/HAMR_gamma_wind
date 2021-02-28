@@ -2442,7 +2442,7 @@ void set_mag(void){
 			//E_guess[1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
 			//E_guess[2] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
 
-			lower_3(B_guess, &geom, B_D);
+			lower_3(B_guess, geom.gcov, B_D);
 			//lower_3(E_guess, &geom, E_D);
 
 			for (i1 = 0; i1 < 3; i1++) {

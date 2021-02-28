@@ -578,7 +578,7 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR_U], int lim){
+int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;

@@ -262,7 +262,7 @@ void utoprim_M1_1_res(double Dt, int n){
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
-			divE_calc(p,n,i,j,z);
+			q=divE_calc(p,n,i,j,z);
 			source_res(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD1[nl[n]][ind0], &q, Dt);
 
 			#pragma ivdep
@@ -350,15 +350,12 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 	#if(RESISTIVE)
 	int i, j, z, k;
 	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR], q_charge;
-	double y = 1.0 - 1.0 / sqrt(2.0);
 	struct of_geom geom;
 	struct of_state_res q_res;
-	struct of_state_rad q_rad;
-	struct of_state q;
 
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q_res, U, dU, ind0, ind1, ind2,ind3, q)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q_res, U, dU, ind0, ind1, ind2,ind3)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -369,11 +366,7 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
-			//source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
-			//get_state(pi[nl[n]][ind0], &geom, &q);
-			//get_state_rad(pi[nl[n]][ind0], &geom, &q_rad);
-			//primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U);
-			
+			q_charge = divE_calc(pb, n, i, j, z);
 			source_res(pb[nl[n]][ind0], &geom, n, i, j, z, dU, &q_charge, Dt);
 			get_state_res(pi[nl[n]][ind0], &geom, &q_res);
 			primtoflux_res(pi[nl[n]][ind0], &q_res, 0, &geom, U);
@@ -401,8 +394,6 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			#endif
 			#endif
 
-
-			//pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC, Dt);
 		}
 	}

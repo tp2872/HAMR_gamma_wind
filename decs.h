@@ -1010,7 +1010,7 @@ void source_res(double* restrict ph, struct of_geom* restrict geom, int n, int i
 void get_state_res(double* restrict pr, struct of_geom* restrict geom, struct of_state_res* restrict q_res);
 void vchar_res(struct of_geom* restrict geom, int js, double* restrict vmax, double* restrict vmin);
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR], int n, int i, int j, int z);
-void lower_3(double* restrict ucon, struct of_geom* restrict geom, double* restrict ucov);
+void lower_3(double* restrict ucon, double restrict gcov[NDIM][NDIM], double* restrict ucov);
 double lvc4u(int i, int j, int k, int l);
 double lvc3u(int i, int j, int k);
 int invert_matrix_3D(double A[][3], double Ainv[][3]);

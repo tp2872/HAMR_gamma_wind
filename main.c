@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 					//E_guess[1] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
 					//E_guess[2] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
 			
-					lower_3(B_guess, &geom, B_D);
+					lower_3(B_guess, geom.gcov, B_D);
 					//lower_3(E_guess, &geom, E_D);
 					int i1, j1, k1;
 					for (i1 = 0; i1 < 3; i1++) {
@@ -157,12 +157,17 @@ int main(int argc, char *argv[])
 					//psh[nl[n_ord[n]]][ind0][1] = 0.;
 					//psh[nl[n_ord[n]]][ind0][2] = 0.;
 					//psh[nl[n_ord[n]]][ind0][3] = 0.;
+
+					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+
+
 					//Reset variables
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
 					//PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					//pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], 0.001*NEWT_TOL, BASIC, 0.1);
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
 
 					if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);
