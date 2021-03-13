@@ -88,7 +88,7 @@ double advance_res(int flag)
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
 		}
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) {
-			utoprim_M1_0_res(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+			utoprim_M1_0(dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 			fixup(p, n_ord[n]);
 		}
 	}
@@ -163,25 +163,25 @@ double advance_res(int flag)
 	#else
 	#if(DO_IMEX)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2_res(ph, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_res(p, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2(ph, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
 	#else
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_res(ph, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_res(p, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(ph, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
 	#endif
 	const_transport_bound();
 	#if(DO_IMEX)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_res(ps, ps, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_res(ps, psh, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, ps, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, psh, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	#else
 	for (n = 0; n < n_active; n++){
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport2_res(ps, ps, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2_res(ps, psh, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1)  const_transport2(ps, ps, dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, psh, 0.5*dt*(double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
 	}
 	#endif
 	#endif
@@ -352,10 +352,12 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 	double ndt, ndt1, ndt2, ndt3, U[NPR], U0[NPR], dU[NPR], dU_RAD0[NPR], dU_RAD1[NPR], q_charge;
 	struct of_geom geom;
 	struct of_state_res q_res;
+	struct of_state q;
+	struct of_state_rad q_rad;
 
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q_res, U, dU, ind0, ind1, ind2,ind3, q_charge)
+	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q_res, U, dU, ind0, ind1, ind2,ind3, q_charge, q)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
@@ -370,6 +372,10 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			source_res(pb[nl[n]][ind0], &geom, n, i, j, z, dU, &q_charge, Dt);
 			get_state_res(pi[nl[n]][ind0], &geom, &q_res);
 			primtoflux_res(pi[nl[n]][ind0], &q_res, 0, &geom, U);
+
+			//source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
+			//get_state(pi[nl[n]][ind0], &geom, &q);
+			//primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U);
 
 			#pragma ivdep
 			PLOOP{
@@ -395,6 +401,54 @@ void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOC
 			#endif
 
 			pflag[nl[n]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC, Dt);
+
+			#if(0)
+			#if(NEWMAN)
+			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			#else
+			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			#endif
+
+			#if(DO_FONT_FIX) 
+			if (pflag[nl[n]][ind0]) {
+				failimage[nl[n]][ind0][0]++;
+				#if DOKTOT
+				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+				#endif
+				if (pflag[nl[n]][ind0]) {
+					failimage[nl[n]][ind0][1]++;
+					pflag[nl[n]][ind0] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+					if (pflag[nl[n]][ind0]) {
+						pflag[nl[n]][index_3D(n, N1_GPU_offset[n] - N1G, N2_GPU_offset[n] - N2G, N3_GPU_offset[n] - N3G)] = 100;
+						failimage[nl[n]][ind0][2]++;
+					}
+				}
+			}
+			#endif
+
+			double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3];
+			struct of_state state;
+			get_state(pf[nl[n]][ind0], &geom, &state);
+			alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+			sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+			gamma = alpha * state.ucon[0];
+			vd_guess[0] = state.ucov[1] / gamma;
+			vd_guess[1] = state.ucov[2] / gamma;
+			vd_guess[2] = state.ucov[3] / gamma;
+			B_guess[0] = alpha * pf[nl[n]][ind0][B1];
+			B_guess[1] = alpha * pf[nl[n]][ind0][B2];
+			B_guess[2] = alpha * pf[nl[n]][ind0][B3];
+
+			lower_3(B_guess, geom.gcov, B_D);
+			int i1, j1, k1;
+			for (i1 = 0; i1 < 3; i1++) {
+				pf[nl[n]][ind0][E1 + i1] = 0.;
+				for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+					if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+					pf[nl[n]][ind0][E1 + i1] = pf[nl[n]][ind0][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+				}
+			}
+			#endif
 		}
 	}
 	#endif
@@ -484,6 +538,61 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 					}
 					#endif
 
+					#if(0)
+					double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3];
+					struct of_state state;
+					get_state(p_l, &geom, &state);
+					alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+					sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+					gamma = alpha * state.ucon[0];
+					vd_guess[0] = state.ucov[1] / gamma;
+					vd_guess[1] = state.ucov[2] / gamma;
+					vd_guess[2] = state.ucov[3] / gamma;
+					B_guess[0] = alpha * p_l[B1];
+					B_guess[1] = alpha * p_l[B2];
+					B_guess[2] = alpha * p_l[B3];
+
+					lower_3(B_guess, geom.gcov, B_D);
+					int i1, j1, k1;
+					for (i1 = 0; i1 < 3; i1++) {
+						p_l[E1 + i1] = 0.;
+						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+							p_l[E1 + i1] = p_l[E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+						}
+					}
+
+					get_state(p_r, &geom, &state);
+					alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+					sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+					gamma = alpha * state.ucon[0];
+					vd_guess[0] = state.ucov[1] / gamma;
+					vd_guess[1] = state.ucov[2] / gamma;
+					vd_guess[2] = state.ucov[3] / gamma;
+					B_guess[0] = alpha * p_r[B1];
+					B_guess[1] = alpha * p_r[B2];
+					B_guess[2] = alpha * p_r[B3];
+
+					lower_3(B_guess, geom.gcov, B_D);
+					for (i1 = 0; i1 < 3; i1++) {
+						p_r[E1 + i1] = 0.;
+						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+							p_r[E1 + i1] = p_r[E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+						}
+					}
+
+					//struct of_state state_l, state_r;
+					//get_state(p_l, &geom, &state_l);
+					//get_state(p_r, &geom, &state_r);
+
+					//primtoflux(p_l, &state_l, NULL, dir, &geom, F_l);
+					//primtoflux(p_r, &state_r, NULL, dir, &geom, F_r);
+
+					//primtoflux(p_l, &state_l, NULL, 0, &geom, U_l);
+					//primtoflux(p_r, &state_r, NULL, 0, &geom, U_r);
+					#endif
+
 					get_state_res(p_l, &geom, &state_l_res);
 					get_state_res(p_r, &geom, &state_r_res);
 				
@@ -493,8 +602,10 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 					primtoflux_res(p_l, &state_l_res, 0, &geom, U_l);
 					primtoflux_res(p_r, &state_r_res, 0, &geom, U_r);
 
-					vchar_res(&geom, dir, &cmax_l, &cmin_l);
-					vchar_res(&geom, dir, &cmax_r, &cmin_r);
+					//vchar_res(&geom, dir, &cmax_l, &cmin_l);
+					//vchar_res(&geom, dir, &cmax_r, &cmin_r);
+					vchar_res2(p_l, &state_l_res, &geom, dir, &cmax_l, &cmin_l);
+					vchar_res2(p_r, &state_r_res, &geom, dir, &cmax_r, &cmin_r);
 
 					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));

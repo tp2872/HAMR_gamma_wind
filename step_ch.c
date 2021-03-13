@@ -420,7 +420,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 
 			source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
 			get_state(pi[nl[n]][ind0], &geom, &q);
+			#if(RAD_M1)
 			get_state_rad(pi[nl[n]][ind0], &geom, &q_rad);
+			#endif
 			primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U);
 
 			#pragma ivdep
@@ -583,6 +585,8 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, i, j, z);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, i, j, z);
+					//vchar_res(&geom, dir, &cmax_l, &cmin_l);
+					//vchar_res(&geom, dir, &cmax_r, &cmin_r);
 
 					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));

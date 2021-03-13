@@ -93,7 +93,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		#else
 		double kappa = U[KTOT] / U[RHO];
 		#endif
-		//retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+		retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 	}
 	#endif
 
@@ -119,9 +119,9 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 				B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
 			}
 		}
-		vD_guess[0] = 0.;
-		vD_guess[1] = 0.;
-		vD_guess[2] = 0.;
+		//vD_guess[0] = 0.;
+		//vD_guess[1] = 0.;
+		//vD_guess[2] = 0.;
 
 		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
 		prim[E1] = E_guess[0] / alpha;
@@ -224,7 +224,6 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 	if (retval != 0 || ii==maxitr) {
 		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
-		//fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 		retval = 1;
 		return retval;
 	}

@@ -269,7 +269,6 @@ void get_state_res(double * restrict pr, struct of_geom * restrict geom, struct 
 }
 
 void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin){
-	#if(RESISTIVE)
 	double sqrtgamma, ncon_js,alpha,beta, vm, vp;
 	alpha = 1. / sqrt(-geom->gcon[0][0]);
 	beta= geom->gcon[0][js] * alpha * alpha;
@@ -288,7 +287,97 @@ void vchar_res( struct of_geom * restrict geom, int js,double * restrict vmax, d
 		*vmax = vm;
 		*vmin = vp;
 	}
-	#endif
+}
+
+void vchar_res2(double* restrict pr, struct of_state_res* restrict q, struct of_geom* restrict geom, int js, double* restrict vmax, double* restrict vmin)
+{
+	double discr, vp, vm, bsq, EE, EF, va2, cs2, cms2;
+	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
+	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
+	int j;
+
+#pragma ivdep
+	DLOOPA Acov[j] = 0.;
+	Acov[js] = 1.;
+	raise(Acov, geom, Acon);
+
+#pragma ivdep
+	DLOOPA Bcov[j] = 0.;
+	Bcov[0] = 1.;
+	raise(Bcov, geom, Bcon);
+
+	/* find fast magnetosonic speed */
+	bsq = dot(q->bcon, q->bcov);
+
+#if DOHELM
+	// Helmholtz EOS
+	double xpres;
+	eos_mode_rhou_pres_cs2(pr[RHO], pr[UU], &xpres, &cs2);
+	va2 = bsq / (bsq + pr[RHO] + pr[UU] + xpres);
+#else
+	// Ideal gas EOS
+	EF = pr[RHO] + GAMMA * pr[UU];
+	EE = bsq + EF;
+	va2 = bsq / EE;
+	cs2 = GAMMA * (GAMMA - 1.) * pr[UU] / EF;
+#endif
+
+	cms2 = cs2 + va2 - cs2 * va2;	/* and there it is... */
+
+	/* check on it! */
+	if (cms2 < 0.) {
+		fail(FAIL_COEFF_NEG);
+		cms2 = SMALL;
+	}
+	if (cms2 > 1.) {
+		fail(FAIL_COEFF_SUP);
+		cms2 = 1.;
+	}
+
+	/* now require that speed of wave measured by observer q->ucon is cms2 */
+	Asq = dot(Acon, Acov);
+	Bsq = dot(Bcon, Bcov);
+	Au = dot(Acov, q->ucon);
+	Bu = dot(Bcov, q->ucon);
+	AB = dot(Acon, Bcov);
+	Au2 = Au * Au;
+	Bu2 = Bu * Bu;
+	AuBu = Au * Bu;
+
+	A = Bu2 - (Bsq + Bu2) * cms2;
+	B = 2. * (AuBu - (AB + AuBu) * cms2);
+	C = Au2 - (Asq + Au2) * cms2;
+
+	discr = B * B - 4. * A * C;
+	if ((discr < 0.0) && (discr > -1.e-10)) discr = 0.0;
+	else if (discr < -1.e-10) {
+		fprintf(stderr, "\n\t %g %g %g %g %g\n", A, B, C, discr, cms2);
+		fprintf(stderr, "\n\t q->ucon: %g %g %g %g\n", q->ucon[0], q->ucon[1],
+			q->ucon[2], q->ucon[3]);
+		fprintf(stderr, "\n\t q->bcon: %g %g %g %g\n", q->bcon[0], q->bcon[1],
+			q->bcon[2], q->bcon[3]);
+		fprintf(stderr, "\n\t Acon: %g %g %g %g\n", Acon[0], Acon[1],
+			Acon[2], Acon[3]);
+		fprintf(stderr, "\n\t Bcon: %g %g %g %g\n", Bcon[0], Bcon[1],
+			Bcon[2], Bcon[3]);
+		fail(FAIL_VCHAR_DISCR);
+		discr = 0.;
+	}
+
+	discr = sqrt(discr);
+	vp = -(-B + discr) / (2. * A);
+	vm = -(-B - discr) / (2. * A);
+
+	if (vp > vm) {
+		*vmax = vp;
+		*vmin = vm;
+	}
+	else {
+		*vmax = vm;
+		*vmin = vp;
+	}
+
+	return;
 }
 
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z) {

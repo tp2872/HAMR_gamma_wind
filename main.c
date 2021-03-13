@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	struct of_state_res q_res;
 	struct of_geom geom;
 	struct of_state_rad q_rad;
-#if(RESISTIVE)
+	#if(RESISTIVE)
 	int ind0, k;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3*D3) {
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
 						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
 							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
-							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
 							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
 						}
 					}
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
 					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1*(ETA==0));
 
 					if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);
@@ -180,12 +180,12 @@ int main(int argc, char *argv[])
 						esq = dot(q_res.econ, q_res.ecov);
 						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
 						
-						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 1, &geom, U);
-						fprintf(stderr, "F[1][B2]: %f ", 10000. * U[B3]);
+						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 2, &geom, U);
+						fprintf(stderr, "F[2][B3]: %f ", 10000. * U[UU]);
 						
 						get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
-						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 1, &geom, U);
-						fprintf(stderr, "F[1][B2]: %f \n", 10000.*U[B3]);
+						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 2, &geom, U);
+						fprintf(stderr, "F[2][B3]: %f \n", 10000.*U[UU]);
 
 
 					}
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-#endif
+	#endif
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 50.;// 100.;
+	DTl = 500.;
 	DTd = 10.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;

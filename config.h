@@ -311,7 +311,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define RESISTIVE (1)
 
 /*Set resistivity coefficient*/
-#define ETA (0.00)
+#define ETA (0.0)
 
 /*Enable IMEX*/
 #define DO_IMEX (0)

@@ -2422,7 +2422,7 @@ void set_mag(void){
 		}
 	}
 
-	#if(RESISTIVE)
+	#if(RESISTIVE==10)
 	int i1, j1, k1, l1;
 	double alpha, sqrtgamma, B_guess[3], E_guess[3], B_D[3], E_D[3], vd_guess[3], gamma;
 	for (n = 0; n < n_active; n++) {

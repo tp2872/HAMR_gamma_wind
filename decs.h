@@ -1009,6 +1009,7 @@ void mhd_calc_res(double* restrict pr, int dir, struct of_geom* restrict geom, s
 void source_res(double* restrict ph, struct of_geom* restrict geom, int n, int ii, int jj, int zz, double* restrict dU, double* q, double Dt);
 void get_state_res(double* restrict pr, struct of_geom* restrict geom, struct of_state_res* restrict q_res);
 void vchar_res(struct of_geom* restrict geom, int js, double* restrict vmax, double* restrict vmin);
+void vchar_res2(double* restrict pr, struct of_state_res* restrict q, struct of_geom* restrict geom, int js, double* restrict vmax, double* restrict vmin);
 double divE_calc(double(*restrict p[NB_LOCAL])[NPR], int n, int i, int j, int z);
 void lower_3(double* restrict ucon, double restrict gcov[NDIM][NDIM], double* restrict ucov);
 double lvc4u(int i, int j, int k, int l);
