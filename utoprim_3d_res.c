@@ -93,7 +93,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		#else
 		double kappa = U[KTOT] / U[RHO];
 		#endif
-		retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+		//retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 	}
 	#endif
 
@@ -119,9 +119,6 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 				B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
 			}
 		}
-		//vD_guess[0] = 0.;
-		//vD_guess[1] = 0.;
-		//vD_guess[2] = 0.;
 
 		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
 		prim[E1] = E_guess[0] / alpha;
@@ -255,13 +252,9 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	//calculate tautilde and stilde
 	tautilde = tau - (bsqr + esqr) * 0.5;
 
-	for (i = 0; i < 3; i++){
-		ExB[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] = ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * B_guess[k];
-		}
-	}
+	ExB[0] = sqrtgamma * (Enew[1] * B_guess[2] - Enew[2] * B_guess[1]);
+	ExB[1] = sqrtgamma * (Enew[2] * B_guess[0] - Enew[0] * B_guess[2]);
+	ExB[2] = sqrtgamma * (Enew[0] * B_guess[1] - Enew[1] * B_guess[0]);
 	for (i = 0; i < 3; i++) Stilde_j[i] = S[i] - ExB[i];
 
 	//raise Stilde
@@ -341,13 +334,9 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
 	//calculate tautilde and stilde
 	tautilde = tau - (bsqr + esqr) * 0.5;
 	
-	for (i = 0; i < 3; i++){
-		ExB[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] =  ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * B[k];
-		}
-	}
+	ExB[0] = sqrtgamma * (Enew[1] * B[2] - Enew[2] * B[1]);
+	ExB[1] = sqrtgamma * (Enew[2] * B[0] - Enew[0] * B[2]);
+	ExB[2] = sqrtgamma * (Enew[0] * B[1] - Enew[1] * B[0]);
 	for (i=0;i<3;i++) Stilde_j[i] = S_j[i] - ExB[i]; 
 	
 	//raise Stilde
@@ -373,13 +362,9 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
  
 	//compute Jacobian
 	//1-direction
-	for (i = 0; i < 3; i++){
-		decrossb[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++){
-			if((j==k) || (j==i) || (k==i)) continue;
-			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[0][j] * B[k];
-		}
-	}
+	decrossb[0] = sqrtgamma * (dEdu[0][1] * B[2] - dEdu[0][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[0][2] * B[0] - dEdu[0][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[0][0] * B[1] - dEdu[0][1] * B[0]);
 	edotde = Enew_D[0]*dEdu[0][0]+Enew_D[1]*dEdu[0][1]+Enew_D[2]*dEdu[0][2]; 
     depsdu = vU[0]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[0]/(1.0+lfac) - (z*z/((1.0+lfac)* (1.0 + lfac)))*vU[0]/lfac;
     
@@ -396,13 +381,9 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
     Jac[2][0] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) *denthdu;
 	
 	//2-direction	
-	for (i = 0; i < 3; i++){
-		decrossb[i] = 0.;
-		for (j = 0; j < 3; j++) for (k = 0; k < 3; k++){
-			if((j==k) || (j==i) || (k==i)) continue;
-			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[1][j] * B[k];
-		}
-	}
+	decrossb[0] = sqrtgamma * (dEdu[1][1] * B[2] - dEdu[1][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[1][2] * B[0] - dEdu[1][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[1][0] * B[1] - dEdu[1][1] * B[0]);
 	edotde = Enew_D[0]*dEdu[1][0]+Enew_D[1]*dEdu[1][1]+Enew_D[2]*dEdu[1][2]; 
     depsdu = vU[1]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[1]/(1.0+lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) *vU[1]/lfac;
     
@@ -419,13 +400,9 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
     Jac[2][1] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth)*denthdu;
 
 	//3-direction
-	for (i = 0; i < 3; i++){
-		decrossb[i] == 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++){
-			if((j==k) || (j==i) || (k==i)) continue;
-			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[2][j] * B[k];
-		}
-	}
+	decrossb[0] = sqrtgamma * (dEdu[2][1] * B[2] - dEdu[2][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[2][2] * B[0] - dEdu[2][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[2][0] * B[1] - dEdu[2][1] * B[0]);
 	edotde = Enew_D[0]*dEdu[2][0]+Enew_D[1]*dEdu[2][1]+Enew_D[2]*dEdu[2][2]; 
     depsdu = vU[2]/lfac*tautilde/D - lfac*edotde/D + 2.0*vU[2]/(1.0+lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) *vU[2]/lfac;
     
@@ -446,17 +423,13 @@ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3
 //Recover E
 void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac){
 	double vxbU[3], e0dotv;
-	int i, j, k;
+	int i;
 		
 	// ucov x B_D
-	for (i=0; i < 3; i++){
-		vxbU[i] = 0.;
-		for (j = 0; j < 3; j++) for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			vxbU[i] = vxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * vD[j] * B_D[k];
-		}
-	} 
-	
+	vxbU[0] = sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
+	vxbU[1] = sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
+	vxbU[2] = sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
+
 	// ImEx: Eold_upper.ucov
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
 
@@ -473,13 +446,9 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	double e0dotv,  denom1, denom2;
 
 	// ucov x B_D
-	for (i = 0; i < 3; i++) {
-		vxbU[i] = 0.;
-		for (j = 0; j < 3; j++) for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			vxbU[i] = vxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * vD[j] * B_D[k];
-		}
-	}
+	vxbU[0] = sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
+	vxbU[1] = sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
+	vxbU[2] = sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
 
 	// ImEx: Eold_upper.ucov
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
@@ -495,13 +464,9 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	krond[0] = 1.0;
 	krond[1] = 0.0;
 	krond[2] = 0.0;
-	for (i = 0; i < 3; i++) {
-		kxbU[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			kxbU[i] = kxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * krond[j] * B_D[k];
-		}
-	}
+	kxbU[0] = 0.;
+	kxbU[1] = sqrtgamma * (-B_D[2]);
+	kxbU[2] = sqrtgamma * (B_D[1]);
 
 	//Build derivative
 	for (i = 0; i < 3; i++) {
@@ -512,16 +477,9 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	}
 
 	//Derivative of u x B: dE/dv2
-	krond[0] = 0.0;
-	krond[1] = 1.0;
-	krond[2] = 0.0;
-	for (i = 0; i < 3; i++) {
-		kxbU[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			kxbU[i] = kxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * krond[j] * B_D[k];
-		}
-	}
+	kxbU[0] = sqrtgamma * (B_D[2]);
+	kxbU[1] = 0.;
+	kxbU[2] = sqrtgamma * (-B_D[0]);
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
@@ -532,16 +490,9 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	}
 
 	// Derivative of u x B: dE/dv3
-	krond[0] = 0.0;
-	krond[1] = 0.0;
-	krond[2] = 1.0;
-	for (i = 0; i < 3; i++) {
-		kxbU[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			kxbU[i] = kxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * krond[j] * B_D[k];
-		}
-	}
+	kxbU[0] = sqrtgamma * (-B_D[1]);
+	kxbU[1] = sqrtgamma * (B_D[0]);
+	kxbU[2] = 0.;
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
@@ -711,13 +662,9 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 		}
 	}
 
-	for (i = 0; i < 3; i++) {
-		ExB[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] = ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * B[k];
-		}
-	}
+	ExB[0] = sqrtgamma * (Enew[1] * B[2] - Enew[2] * B[1]);
+	ExB[1] = sqrtgamma * (Enew[2] * B[0] - Enew[0] * B[2]);
+	ExB[2] = sqrtgamma * (Enew[0] * B[1] - Enew[1] * B[0]);
 	for (i = 0; i < 3; i++) Stilde_j[i] = S_j[i] - ExB[i];
 
 	//compute z, pressure and enthalpy
@@ -731,13 +678,9 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 
 	//compute Jacobian
 	//1-direction
-	for (i = 0; i < 3; i++) {
-		decrossb[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[0][j] * B[k];
-		}
-	}
+	decrossb[0] = sqrtgamma * (dEdu[0][1] * B[2] - dEdu[0][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[0][2] * B[0] - dEdu[0][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[0][0] * B[1] - dEdu[0][1] * B[0]);
 	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[0];
 	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[0] / lfac) / D;
 
@@ -746,13 +689,9 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 	Jac[2][0] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
 
 	//2-direction	
-	for (i = 0; i < 3; i++) {
-		decrossb[i] = 0.;
-		for (j = 0; j < 3; j++) for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[1][j] * B[k];
-		}
-	}
+	decrossb[0] = sqrtgamma * (dEdu[1][1] * B[2] - dEdu[1][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[1][2] * B[0] - dEdu[1][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[1][0] * B[1] - dEdu[1][1] * B[0]);
 	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[1];
 	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[1] / lfac) / D;
 
@@ -761,13 +700,9 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 	Jac[2][1] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
 
 	//3-direction
-	for (i = 0; i < 3; i++) {
-		decrossb[i] == 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[2][j] * B[k];
-		}
-	}
+	decrossb[0] = sqrtgamma * (dEdu[2][1] * B[2] - dEdu[2][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[2][2] * B[0] - dEdu[2][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[2][0] * B[1] - dEdu[2][1] * B[0]);
 	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[2];
 	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[2] / lfac) / D;
 

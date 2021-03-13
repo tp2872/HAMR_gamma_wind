@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
 					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
-					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1*(ETA==0));
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
 
-					if (pflag[nl[n_ord[n]]][ind0] != 0) {
+					//if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);
 						bsq = dot(q_res.bcon, q_res.bcov);
 						esq = dot(q_res.econ, q_res.ecov);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "F[2][B3]: %f \n", 10000.*U[UU]);
 
 
-					}
+					//}
 				}
 			}
 		}
