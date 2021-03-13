@@ -31,8 +31,8 @@ void res_3du_der_entropy(double D, double sigma, double etares, double entropy, 
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt){
 	double D, tau, S[3], B_guess[3], E_guess[3], ncov[NDIM], ncon[NDIM], U_tmp[NPR], rho , ug;
-	int i, j, k, retval = 0;
-	double alpha, etares,sqrtgamma;
+	int i, j, k, retval = 1;
+	double alpha,sqrtgamma;
 	double vD_guess[3], ggamma[3][3], ggammainv[3][3];
 
 	//Return if rho*gamma is negative
@@ -93,12 +93,12 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		#else
 		double kappa = U[KTOT] / U[RHO];
 		#endif
-		retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+		//retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 	}
 	#endif
 
 	//Transform new primitive variables back if there was no problem
-	if (retval >= -100000) {
+	if (retval == 0) {
 		prim[RHO] = rho;
 		prim[UU] = ug;
 		for (i = 0; i < 3; i++) {
@@ -107,6 +107,23 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 				prim[U1 + i] += ggammainv[i][j] * vD_guess[j];
 			}
 		}
+		prim[E1] = E_guess[0] / alpha;
+		prim[E2] = E_guess[1] / alpha;
+		prim[E3] = E_guess[2] / alpha;
+	}
+	else {
+		double B_D[3];
+		for (i = 0; i < 3; i++) {
+			B_D[i] = 0.;
+			for (j = 0; j < 3; j++) {
+				B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
+			}
+		}
+		vD_guess[0] = 0.;
+		vD_guess[1] = 0.;
+		vD_guess[2] = 0.;
+
+		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
 		prim[E1] = E_guess[0] / alpha;
 		prim[E2] = E_guess[1] / alpha;
 		prim[E3] = E_guess[2] / alpha;
@@ -206,10 +223,10 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	if (retval != 0 || ii==maxitr) {
-		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
 		//fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 		retval = 1;
-		//return retval;
+		return retval;
 	}
 	//calculate Lorentz factor
 	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
@@ -218,7 +235,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	if (lfac < 1.0) {
 		//fprintf(stderr, "Lfac failure! \n");
 		retval = 3;
-		//return retval;
+		return retval;
 	}
 
 	//Get E and ucov_tilde
@@ -271,12 +288,12 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	if (rho[0] < 0.) {
 		fprintf(stderr,"Density dropped below 0 in resistive inversion \n");
 		retval = 2;
-		//return retval;
+		return retval;
 	}
 	if (ug[0] < 0.) {
 		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 		retval = 3;
-		//return retval;
+		return retval;
 	}
 
 	//Set velocit and updated (implicit) electric field
@@ -538,7 +555,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 
 //gives back E and gamma*v_i
 int invert_3DU_entropy(double D, double sigma, double etares, double kappa, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
-	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3], z;
+	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3];
 	int i, j, k, nit, ii;
 	double er, er_small = 100000000.0, er1, normV, half;
 	int maxitr = 100;
@@ -622,10 +639,10 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 	}
 
 	if (retval != 0 || ii == maxitr) {
-		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
 		//fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 		retval = 1;
-		//return retval;
+		return retval;
 	}
 	//calculate Lorentz factor
 	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
@@ -634,14 +651,11 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 	if (lfac < 1.0) {
 		//fprintf(stderr, "Lfac failure! \n");
 		retval = 3;
-		//return retval;
+		return retval;
 	}
 
 	//Get E and ucov_tilde
 	getE_resistive(Enew, E_guess, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac);
-
-	//compute z and epsilon (eq 58 in Ripperda et al 2019)
-	z = sqrt(lfac * lfac - 1.0);
 
 	//Update inverted quantities
 	rho[0] = D / lfac;
@@ -649,14 +663,14 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 
 	//Exit if density or internal energy drops below 0
 	if (rho[0] < 0.) {
-		fprintf(stderr, "Density dropped below 0 in resistive inversion \n");
+		//fprintf(stderr, "Density dropped below 0 in resistive inversion \n");
 		retval = 2;
-		//return retval;
+		return retval;
 	}
 	if (ug[0] < 0.) {
 		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
 		retval = 3;
-		//return retval;
+		return retval;
 	}
 
 	//Set velocit and updated (implicit) electric field
@@ -671,7 +685,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 //gives jacobian and residuals
 void res_3du_der_entropy(double D, double sigma, double etares, double kappa, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
 	double Enew[3], Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], vU[3], decrossb[3];
-	double lfac, z, p, enth, denthdu, dpdu;
+	double lfac, p, enth, denthdu, dpdu;
 	int i, j, k;
 
 	//lower B and raise vD
@@ -688,7 +702,7 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
 
 	//calculate new electric field
-	getdEdu_resistive_entropy(Enew, E, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac, dEdu);
+	getdEdu_resistive(Enew, E, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac, dEdu);
 
 	//lower Enew 
 	for (i = 0; i < 3; i++) {
@@ -708,7 +722,6 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 	for (i = 0; i < 3; i++) Stilde_j[i] = S_j[i] - ExB[i];
 
 	//compute z, pressure and enthalpy
-	z = sqrt(lfac * lfac - 1.0);
 	p = kappa * pow(D / lfac, GAMMA);
 	enth = 1.0 + GAMMA / (GAMMA - 1.0) * p / D * lfac;
 

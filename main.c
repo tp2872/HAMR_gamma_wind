@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
-					//PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
+					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
 					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
 
 					if (pflag[nl[n_ord[n]]][ind0] != 0) {
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
 	/*Set dumping frequency*/
 	DTl = 50.;// 100.;
-	DTd = 1.0;
+	DTd = 10.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;

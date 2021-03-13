@@ -244,7 +244,7 @@ double bsq_calc_res(double* restrict pr, struct of_geom* restrict geom)
 	double ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM];
 	ucon_calc(pr, geom, ucon);
 	lower(ucon, geom, ucov);
-	bcon_calc(pr, ucon, ucov, bcon);
+	bcon_calc_res(pr, geom, ucon, ucov, bcon);
 	lower(bcon, geom, bcov);
 
 	return(dot(bcon, bcov));
