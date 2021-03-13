@@ -91,9 +91,9 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 		#if(FULL_ENTROPY)
 		double kappa = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
 		#else
-		double kappa = U[KTOT] / U[RHO];
+		double kappa = fabs(U[KTOT] / U[RHO]);
 		#endif
-		//retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+		retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
 	}
 	#endif
 
@@ -220,7 +220,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	if (retval != 0 || ii==maxitr) {
-		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
 		retval = 1;
 		return retval;
 	}
@@ -229,7 +229,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 	//Exit if Lorent factor smaller than 1
 	if (lfac < 1.0) {
-		//fprintf(stderr, "Lfac failure! \n");
+		fprintf(stderr, "Lfac failure! \n");
 		retval = 3;
 		return retval;
 	}
@@ -283,7 +283,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 		return retval;
 	}
 	if (ug[0] < 0.) {
-		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
+		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", log10(fabs(er)), normV, ug[0], lfac, tag);
 		retval = 3;
 		return retval;
 	}
@@ -507,7 +507,7 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 int invert_3DU_entropy(double D, double sigma, double etares, double kappa, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
 	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3];
 	int i, j, k, nit, ii;
-	double er, er_small = 100000000.0, er1, normV, half;
+	double er, er_init, er_small = 100000000.0, er1, normV, half;
 	int maxitr = 100;
 	int retval = 1;
 	int retval_matrix;
@@ -569,6 +569,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 			er += (ggammainv[i][j] * dvd[i] * dvd[j]);
 			normV += (ggammainv[i][j] * vD[i] * vD[j]);
 		}
+		if (ii == 1) er_init = er;
 
 		if ((er < tolerance) || (er / (normV + 1.e-16) <= er1 * tolerance)) {
 			retval = 0;
@@ -589,8 +590,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 	}
 
 	if (retval != 0 || ii == maxitr) {
-		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
-		//fprintf(stderr, "Inversion failure! (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
+		fprintf(stderr, "N: %d, retval: %d error_entropy: %f error_entropy_init: %f\n", ii, retval, log10(fabs(er)), log10(fabs(er_init)));
 		retval = 1;
 		return retval;
 	}
@@ -613,12 +613,12 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 
 	//Exit if density or internal energy drops below 0
 	if (rho[0] < 0.) {
-		//fprintf(stderr, "Density dropped below 0 in resistive inversion \n");
+		fprintf(stderr, "Density dropped below 0 in resistive entropy inversion \n");
 		retval = 2;
 		return retval;
 	}
 	if (ug[0] < 0.) {
-		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", er, normV, ug[0], lfac, tag);
+		fprintf(stderr, "Internal energy dropped below 0 in resistive entropy inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", log10(fabs(er)), normV, ug[0], lfac, tag);
 		retval = 3;
 		return retval;
 	}
@@ -634,7 +634,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 
 //gives jacobian and residuals
 void res_3du_der_entropy(double D, double sigma, double etares, double kappa, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
-	double Enew[3], Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], vU[3], decrossb[3];
+	double Enew[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], vU[3], decrossb[3];
 	double lfac, p, enth, denthdu, dpdu;
 	int i, j, k;
 
@@ -653,14 +653,6 @@ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, do
 
 	//calculate new electric field
 	getdEdu_resistive(Enew, E, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac, dEdu);
-
-	//lower Enew 
-	for (i = 0; i < 3; i++) {
-		Enew_D[i] = 0.;
-		for (j = 0; j < 3; j++) {
-			Enew_D[i] = Enew_D[i] + ggamma[i][j] * Enew[j];
-		}
-	}
 
 	ExB[0] = sqrtgamma * (Enew[1] * B[2] - Enew[2] * B[1]);
 	ExB[1] = sqrtgamma * (Enew[2] * B[0] - Enew[0] * B[2]);

@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 				get_geometry(n_ord[n], i, j, z, CENT, &geom);
 
 				ind0 = index_3D(n_ord[n], i, j, z);
-
+				p[nl[n_ord[n]]][ind0][UU] = fabs(p[nl[n_ord[n]]][ind0][UU]);
 				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
 				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
 				bsq = dot(q_res.bcon, q_res.bcov);
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
 						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
 							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
-							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
 							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
 						}
 					}
@@ -166,10 +166,10 @@ int main(int argc, char *argv[])
 					//if(zz==0)PLOOP p[nl[n_ord[n]]][ind0][k] += 0.1;
 					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
 
-					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
+					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.0001;
 					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1);
 
-					//if (pflag[nl[n_ord[n]]][ind0] != 0) {
+					if (pflag[nl[n_ord[n]]][ind0] != 0) {
 						get_state_res(p_old, &geom, &q_res);
 						bsq = dot(q_res.bcon, q_res.bcov);
 						esq = dot(q_res.econ, q_res.ecov);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "F[2][B3]: %f \n", 10000.*U[UU]);
 
 
-					//}
+					}
 				}
 			}
 		}
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 500.;
+	DTl = 10.;
 	DTd = 10.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
