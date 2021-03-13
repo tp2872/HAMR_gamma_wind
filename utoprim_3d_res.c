@@ -26,6 +26,8 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
 void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac);
 void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]);
+int invert_3DU_entropy(double D, double sigma, double etares, double entropy, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance);
+void res_3du_der_entropy(double D, double sigma, double etares, double entropy, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt){
 	double D, tau, S[3], B_guess[3], E_guess[3], ncov[NDIM], ncon[NDIM], U_tmp[NPR], rho , ug;
@@ -82,6 +84,18 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 
 	//NR Step, you get back gamma*v_i and E
 	retval=invert_3DU(D, Dt*alpha, ETA, tau, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+
+	//Backup entropy inversion
+	#if(DOKTOT)
+	if(retval!=0){
+		#if(FULL_ENTROPY)
+		double kappa = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+		#else
+		double kappa = U[KTOT] / U[RHO];
+		#endif
+		retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+	}
+	#endif
 
 	//Transform new primitive variables back if there was no problem
 	if (retval >= -100000) {
@@ -276,7 +290,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 //gives jacobian and residuals
 void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]){
-	double Enew[3],Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], ncov[NDIM], ncon[NDIM], ucon[NDIM], tautilde, vU[3], decrossb[3], Stilde_uj[3];
+	double Enew[3],Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], tautilde, vU[3], decrossb[3], Stilde_uj[3];
 	double lfac, z, esqr, bsqr, Ssqr, eps, p, enth, edotde, depsdu, denthdu, dpdu, S_ujdotdecrossb;
 	int i, j, k;
 
@@ -523,9 +537,8 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 }
 
 //gives back E and gamma*v_i
-int invert_3DU_entropy(double D, double sigma, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
-	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3];
-	double Enew_D[3], Stilde_j[3], ExB[3], Stilde_uj[3], Ssqr, bsqr, esqr, tautilde, z, eps;
+int invert_3DU_entropy(double D, double sigma, double etares, double kappa, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
+	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3], z;
 	int i, j, k, nit, ii;
 	double er, er_small = 100000000.0, er1, normV, half;
 	int maxitr = 100;
@@ -562,7 +575,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double tau, double
 		for (i = 0; i < 3; i++) xk_3du[i] = vD[i];
 
 		//Calculate jacobian and residuals
-		res_3du_der_entropy(D, sigma, etares, tau, S, xk_3du, ggamma, ggammainv, sqrtgamma, B_guess, E_guess, J_3du, f_3du);
+		res_3du_der_entropy(D, sigma, etares, kappa, S, xk_3du, ggamma, ggammainv, sqrtgamma, B_guess, E_guess, J_3du, f_3du);
 
 		//Store previous ucov_tilde
 		for (i = 0; i < 3; i++) vDprev[i] = vD[i];
@@ -627,48 +640,12 @@ int invert_3DU_entropy(double D, double sigma, double etares, double tau, double
 	//Get E and ucov_tilde
 	getE_resistive(Enew, E_guess, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac);
 
-	//lower Enew 
-	for (i = 0; i < 3; i++) {
-		Enew_D[i] = 0.;
-		for (j = 0; j < 3; j++) {
-			Enew_D[i] = Enew_D[i] + ggamma[i][j] * Enew[j];
-		}
-	}
-
-	//calculate bsqr and esqr
-	bsqr = B_guess[0] * B_D[0] + B_guess[1] * B_D[1] + B_guess[2] * B_D[2];
-	esqr = Enew[0] * Enew_D[0] + Enew[1] * Enew_D[1] + Enew[2] * Enew_D[2];
-
-	//calculate tautilde and stilde
-	tautilde = tau - (bsqr + esqr) * 0.5;
-
-	for (i = 0; i < 3; i++) {
-		ExB[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			ExB[i] = ExB[i] + sqrtgamma * lvc3u(i, j, k) * Enew[j] * B_guess[k];
-		}
-	}
-	for (i = 0; i < 3; i++) Stilde_j[i] = S[i] - ExB[i];
-
-	//raise Stilde
-	for (i = 0; i < 3; i++) {
-		Stilde_uj[i] = 0.;
-		for (j = 0; j < 3; j++) {
-			Stilde_uj[i] = Stilde_uj[i] + ggammainv[i][j] * Stilde_j[j];
-		}
-	}
-
-	//Calculate Stilde^2
-	Ssqr = Stilde_uj[0] * Stilde_j[0] + Stilde_uj[1] * Stilde_j[1] + Stilde_uj[2] * Stilde_j[2];
-
 	//compute z and epsilon (eq 58 in Ripperda et al 2019)
 	z = sqrt(lfac * lfac - 1.0);
-	eps = lfac * tautilde / D - z * sqrt(Ssqr) / D + z * z / (1.0 + lfac);
 
 	//Update inverted quantities
 	rho[0] = D / lfac;
-	ug[0] = rho[0] * eps;
+	ug[0] = (kappa * pow(rho[0], GAMMA)) / (GAMMA - 1.0);
 
 	//Exit if density or internal energy drops below 0
 	if (rho[0] < 0.) {
@@ -692,9 +669,9 @@ int invert_3DU_entropy(double D, double sigma, double etares, double tau, double
 }
 
 //gives jacobian and residuals
-void res_3du_der_entropy(double D, double sigma, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
-	double Enew[3], Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], ncov[NDIM], ncon[NDIM], ucon[NDIM], tautilde, vU[3], decrossb[3], Stilde_uj[3];
-	double lfac, z, esqr, bsqr, Ssqr, eps, p, enth, edotde, depsdu, denthdu, dpdu, S_ujdotdecrossb;
+void res_3du_der_entropy(double D, double sigma, double etares, double kappa, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
+	double Enew[3], Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], vU[3], decrossb[3];
+	double lfac, z, p, enth, denthdu, dpdu;
 	int i, j, k;
 
 	//lower B and raise vD
@@ -721,13 +698,6 @@ void res_3du_der_entropy(double D, double sigma, double etares, double tau, doub
 		}
 	}
 
-	//calculate bsqr and esqr
-	bsqr = B[0] * B_D[0] + B[1] * B_D[1] + B[2] * B_D[2];
-	esqr = Enew[0] * Enew_D[0] + Enew[1] * Enew_D[1] + Enew[2] * Enew_D[2];
-
-	//calculate tautilde and stilde
-	tautilde = tau - (bsqr + esqr) * 0.5;
-
 	for (i = 0; i < 3; i++) {
 		ExB[i] = 0.;
 		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
@@ -737,20 +707,9 @@ void res_3du_der_entropy(double D, double sigma, double etares, double tau, doub
 	}
 	for (i = 0; i < 3; i++) Stilde_j[i] = S_j[i] - ExB[i];
 
-	//raise Stilde
-	for (i = 0; i < 3; i++) {
-		Stilde_uj[i] = 0.;
-		for (j = 0; j < 3; j++) {
-			Stilde_uj[i] = Stilde_uj[i] + ggammainv[i][j] * Stilde_j[j];
-		}
-	}
-
-	Ssqr = Stilde_uj[0] * Stilde_j[0] + Stilde_uj[1] * Stilde_j[1] + Stilde_uj[2] * Stilde_j[2];
-
-	//compute pressure
+	//compute z, pressure and enthalpy
 	z = sqrt(lfac * lfac - 1.0);
-	eps = lfac * tautilde / D - z * sqrt(Ssqr) / D + z * z / (1.0 + lfac);
-	p = (GAMMA - 1.0) * D / lfac * eps;
+	p = kappa * pow(D / lfac, GAMMA);
 	enth = 1.0 + GAMMA / (GAMMA - 1.0) * p / D * lfac;
 
 	//compute residuals
@@ -767,15 +726,7 @@ void res_3du_der_entropy(double D, double sigma, double etares, double tau, doub
 			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[0][j] * B[k];
 		}
 	}
-	edotde = Enew_D[0] * dEdu[0][0] + Enew_D[1] * dEdu[0][1] + Enew_D[2] * dEdu[0][2];
-	depsdu = vU[0] / lfac * tautilde / D - lfac * edotde / D + 2.0 * vU[0] / (1.0 + lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) * vU[0] / lfac;
-
-	if (z != 0.0) depsdu = depsdu - vU[0] / z * sqrt(Ssqr) / D;
-
-	S_ujdotdecrossb = Stilde_uj[0] * decrossb[0] + Stilde_uj[1] * decrossb[1] + Stilde_uj[2] * decrossb[2];
-	if (Ssqr != 0.0) depsdu = depsdu + (z / D) * S_ujdotdecrossb / sqrt(Ssqr);
-
-	dpdu = (GAMMA - 1.0) * D * (depsdu / lfac - eps / (lfac * lfac * lfac) * vU[0]);
+	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[0];
 	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[0] / lfac) / D;
 
 	Jac[0][0] = 1.0 + decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
@@ -790,15 +741,7 @@ void res_3du_der_entropy(double D, double sigma, double etares, double tau, doub
 			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[1][j] * B[k];
 		}
 	}
-	edotde = Enew_D[0] * dEdu[1][0] + Enew_D[1] * dEdu[1][1] + Enew_D[2] * dEdu[1][2];
-	depsdu = vU[1] / lfac * tautilde / D - lfac * edotde / D + 2.0 * vU[1] / (1.0 + lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) * vU[1] / lfac;
-
-	if (z != 0.0) depsdu = depsdu - vU[1] / z * sqrt(Ssqr) / D;
-
-	S_ujdotdecrossb = Stilde_uj[0] * decrossb[0] + Stilde_uj[1] * decrossb[1] + Stilde_uj[2] * decrossb[2];
-	if (Ssqr != 0.0) depsdu = depsdu + (z / D) * S_ujdotdecrossb / sqrt(Ssqr);
-
-	dpdu = (GAMMA - 1.0) * D * (depsdu / lfac - eps / (lfac * lfac * lfac) * vU[1]);
+	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[1];
 	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[1] / lfac) / D;
 
 	Jac[0][1] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
@@ -813,128 +756,10 @@ void res_3du_der_entropy(double D, double sigma, double etares, double tau, doub
 			decrossb[i] = decrossb[i] + sqrtgamma * lvc3u(i, j, k) * dEdu[2][j] * B[k];
 		}
 	}
-	edotde = Enew_D[0] * dEdu[2][0] + Enew_D[1] * dEdu[2][1] + Enew_D[2] * dEdu[2][2];
-	depsdu = vU[2] / lfac * tautilde / D - lfac * edotde / D + 2.0 * vU[2] / (1.0 + lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) * vU[2] / lfac;
-
-	if (z != 0.0) depsdu = depsdu - vU[2] / z * sqrt(Ssqr) / D;
-
-	S_ujdotdecrossb = Stilde_uj[0] * decrossb[0] + Stilde_uj[1] * decrossb[1] + Stilde_uj[2] * decrossb[2];
-	if (Ssqr != 0.0) depsdu = depsdu + (z / D) * S_ujdotdecrossb / sqrt(Ssqr);
-
-	dpdu = (GAMMA - 1.0) * D * (depsdu / lfac - eps / (lfac * lfac * lfac) * vU[2]);
+	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[2];
 	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[2] / lfac) / D;
 
 	Jac[0][2] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
 	Jac[1][2] = decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
 	Jac[2][2] = 1.0 + decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
-}
-
-
-//Recover E
-void getE_resistive_entropy(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac) {
-	double vxbU[3], e0dotv;
-	int i, j, k;
-
-	// ucov x B_D
-	for (i = 0; i < 3; i++) {
-		vxbU[i] = 0.;
-		for (j = 0; j < 3; j++) for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			vxbU[i] = vxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * vD[j] * B_D[k];
-		}
-	}
-
-	// ImEx: Eold_upper.ucov
-	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
-
-	//eta<1 case
-	for (i = 0; i < 3; i++) {
-		Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
-	}
-}
-
-//Recover E and DE/du
-void getdEdu_resistive_entropy(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
-	double vxbU[3], kxbU[3], krond[3];
-	int i, j, k;
-	double e0dotv, denom1, denom2;
-
-	// ucov x B_D
-	for (i = 0; i < 3; i++) {
-		vxbU[i] = 0.;
-		for (j = 0; j < 3; j++) for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			vxbU[i] = vxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * vD[j] * B_D[k];
-		}
-	}
-
-	// ImEx: Eold_upper.ucov
-	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
-
-	//eta<1 case
-	for (i = 0; i < 3; i++) {
-		Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
-	}
-	denom1 = etares + lfac * sigma;
-	denom2 = etares * lfac + sigma;
-
-	// Derivative of u x B: dE/dv1
-	krond[0] = 1.0;
-	krond[1] = 0.0;
-	krond[2] = 0.0;
-	for (i = 0; i < 3; i++) {
-		kxbU[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			kxbU[i] = kxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * krond[j] * B_D[k];
-		}
-	}
-
-	//Build derivative
-	for (i = 0; i < 3; i++) {
-		dEdu[0][i] = -E[i] * etares / (denom1 * denom1) * sigma * vU[0] / lfac
-			- (-sigma * sigma / (denom1 * denom1) * vU[0] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i])
-				+ sigma / denom1 * (kxbU[i]
-					+ etares * (-E[0] / denom2 * vU[i] + etares * e0dotv / (denom2 * denom2) * vU[0] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
-	}
-
-	//Derivative of u x B: dE/dv2
-	krond[0] = 0.0;
-	krond[1] = 1.0;
-	krond[2] = 0.0;
-	for (i = 0; i < 3; i++) {
-		kxbU[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			kxbU[i] = kxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * krond[j] * B_D[k];
-		}
-	}
-
-	// Build derivative
-	for (i = 0; i < 3; i++) {
-		dEdu[1][i] = -E[i] * etares / (denom1 * denom1) * sigma * vU[1] / lfac
-			- (-(sigma * sigma / (denom1 * denom1)) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i])
-				+ sigma / denom1 * (kxbU[i]
-					+ etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / (denom2 * denom2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[1][i])));
-	}
-
-	// Derivative of u x B: dE/dv3
-	krond[0] = 0.0;
-	krond[1] = 0.0;
-	krond[2] = 1.0;
-	for (i = 0; i < 3; i++) {
-		kxbU[i] = 0.;
-		for (j = 0; j < 3; j++)for (k = 0; k < 3; k++) {
-			if ((j == k) || (j == i) || (k == i)) continue;
-			kxbU[i] = kxbU[i] + (1.0 / sqrtgamma) * lvc3u(i, j, k) * krond[j] * B_D[k];
-		}
-	}
-
-	// Build derivative
-	for (i = 0; i < 3; i++) {
-		dEdu[2][i] = -E[i] * etares / (denom1 * denom1) * sigma * vU[2] / lfac
-			- (-(sigma * sigma / (denom1 * denom1)) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i])
-				+ sigma / denom1 * (kxbU[i]
-					+ etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / (denom2 * denom2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[2][i])));
-	}
 }

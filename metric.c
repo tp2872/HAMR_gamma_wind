@@ -347,14 +347,46 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 /* load local geometry into structure geom */
 void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restrict geom)
 {
-	int i, j;
-	for (i = 0; i < NDIM; i++){
-		 #pragma ivdep
-		for (j = 0; j < NDIM; j++){
-			geom->gcon[i][j] = gcon[nl[n]][index_2D(n,ii, jj, zz)][ff][i][j];
-			geom->gcov[i][j] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
-		}
-	}
+	geom->gcon[0][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][0];
+	geom->gcov[0][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][0];
+	geom->gcon[0][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][1];
+	geom->gcov[0][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][1];
+	geom->gcon[0][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][2];
+	geom->gcov[0][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][2];
+	geom->gcon[0][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][3];
+	geom->gcov[0][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][3];
+	geom->gcon[1][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][0];
+	geom->gcov[1][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][0];
+	geom->gcon[1][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][1];
+	geom->gcov[1][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][1];
+	geom->gcon[1][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][2];
+	geom->gcov[1][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][2];
+	geom->gcon[1][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][3];
+	geom->gcov[1][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][3];
+	geom->gcon[2][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][0];
+	geom->gcov[2][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][0];
+	geom->gcon[2][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][1];
+	geom->gcov[2][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][1];
+	geom->gcon[2][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][2];
+	geom->gcov[2][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][2];
+	geom->gcon[2][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][3];
+	geom->gcov[2][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][3];
+	geom->gcon[3][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][0];
+	geom->gcov[3][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][0];
+	geom->gcon[3][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][1];
+	geom->gcov[3][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][1];
+	geom->gcon[3][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][2];
+	geom->gcov[3][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][2];
+	geom->gcon[3][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][3];
+	geom->gcov[3][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][3];
+
+	//for (i = 0; i < NDIM; i++){
+		// #pragma ivdep
+		//for (j = 0; j < NDIM; j++){
+		//	geom->gcon[i][j] = gcon[nl[n]][index_2D(n,ii, jj, zz)][ff][i][j];
+		//	geom->gcov[i][j] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
+		//}
+	//}
 	#if(GPU_DEBUG)
 	geom->gcon[1][0] = geom->gcon[0][1];
 	geom->gcov[1][0] = geom->gcov[0][1];
