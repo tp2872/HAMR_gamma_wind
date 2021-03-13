@@ -426,9 +426,9 @@ void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], dou
 	int i;
 		
 	// ucov x B_D
-	vxbU[0] = sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
-	vxbU[1] = sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
-	vxbU[2] = sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
+	vxbU[0] = 1.0 / sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
+	vxbU[1] = 1.0 / sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
+	vxbU[2] = 1.0 / sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
 
 	// ImEx: Eold_upper.ucov
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
@@ -446,9 +446,9 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	double e0dotv,  denom1, denom2;
 
 	// ucov x B_D
-	vxbU[0] = sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
-	vxbU[1] = sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
-	vxbU[2] = sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
+	vxbU[0] = 1.0 / sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
+	vxbU[1] = 1.0 / sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
+	vxbU[2] = 1.0 / sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
 
 	// ImEx: Eold_upper.ucov
 	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
@@ -465,8 +465,8 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	krond[1] = 0.0;
 	krond[2] = 0.0;
 	kxbU[0] = 0.;
-	kxbU[1] = sqrtgamma * (-B_D[2]);
-	kxbU[2] = sqrtgamma * (B_D[1]);
+	kxbU[1] = 1.0 / sqrtgamma * (-B_D[2]);
+	kxbU[2] = 1.0 / sqrtgamma * (B_D[1]);
 
 	//Build derivative
 	for (i = 0; i < 3; i++) {
@@ -477,9 +477,9 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	}
 
 	//Derivative of u x B: dE/dv2
-	kxbU[0] = sqrtgamma * (B_D[2]);
+	kxbU[0] = 1.0 / sqrtgamma * (B_D[2]);
 	kxbU[1] = 0.;
-	kxbU[2] = sqrtgamma * (-B_D[0]);
+	kxbU[2] = 1.0 / sqrtgamma * (-B_D[0]);
 
 	// Build derivative
 	for (i = 0; i < 3; i++) {
@@ -490,8 +490,8 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 	}
 
 	// Derivative of u x B: dE/dv3
-	kxbU[0] = sqrtgamma * (-B_D[1]);
-	kxbU[1] = sqrtgamma * (B_D[0]);
+	kxbU[0] = 1.0 / sqrtgamma * (-B_D[1]);
+	kxbU[1] = 1.0 / sqrtgamma * (B_D[0]);
 	kxbU[2] = 0.;
 
 	// Build derivative
