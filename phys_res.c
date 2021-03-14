@@ -296,12 +296,10 @@ void vchar_res2(double* restrict pr, struct of_state_res* restrict q, struct of_
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	int j;
 
-#pragma ivdep
 	DLOOPA Acov[j] = 0.;
 	Acov[js] = 1.;
 	raise(Acov, geom, Acon);
 
-#pragma ivdep
 	DLOOPA Bcov[j] = 0.;
 	Bcov[0] = 1.;
 	raise(Bcov, geom, Bcon);
@@ -309,18 +307,18 @@ void vchar_res2(double* restrict pr, struct of_state_res* restrict q, struct of_
 	/* find fast magnetosonic speed */
 	bsq = dot(q->bcon, q->bcov);
 
-#if DOHELM
+	#if DOHELM
 	// Helmholtz EOS
 	double xpres;
 	eos_mode_rhou_pres_cs2(pr[RHO], pr[UU], &xpres, &cs2);
 	va2 = bsq / (bsq + pr[RHO] + pr[UU] + xpres);
-#else
+	#else
 	// Ideal gas EOS
 	EF = pr[RHO] + GAMMA * pr[UU];
 	EE = bsq + EF;
 	va2 = bsq / EE;
 	cs2 = GAMMA * (GAMMA - 1.) * pr[UU] / EF;
-#endif
+	#endif
 
 	cms2 = cs2 + va2 - cs2 * va2;	/* and there it is... */
 

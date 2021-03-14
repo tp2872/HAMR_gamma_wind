@@ -73,7 +73,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	int m;
 	int k, flag, dofloor=0;
 	#if(RESISTIVE)
-	struct of_state q;
+	struct of_state_res q;
 	#else
 	struct of_state q;
 	#endif

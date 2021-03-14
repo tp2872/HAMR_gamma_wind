@@ -30,7 +30,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double entropy, do
 void res_3du_der_entropy(double D, double sigma, double etares, double entropy, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
 
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt){
-	double D, tau, S[3], B_guess[3], E_guess[3], ncov[NDIM], ncon[NDIM], U_tmp[NPR], rho , ug;
+	double D, tau, S[3], B_guess[3], E_guess[3], ncov_0, ncon[NDIM], U_tmp[NPR], rho , ug;
 	int i, j, k, retval = 1;
 	double alpha,sqrtgamma;
 	double vD_guess[3], ggamma[3][3], ggammainv[3][3];
@@ -41,13 +41,16 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	//Set the geometry variables
 	alpha = 1.0 / sqrt(-gcon[0][0]);
 	sqrtgamma = gdet / alpha; //determinant for spatial part of metric
-	ncov_calc(gcon, ncov);
-	raise_g(ncov, gcon, ncon);
+	ncov_0 = -alpha;
+	ncon[0] = ncov_0 * gcon[0][0];
+	ncon[1] = ncov_0 * gcon[0][1];
+	ncon[2] = ncov_0 * gcon[0][2];
+	ncon[3] = ncov_0 * gcon[0][3];
 
 	//Calculate covariant and contravariant 3+1 metrics
 	for (i=0;i<3; i++){
 		 for (j=0;j<3;j++){
-			ggamma[i][j] = gcov[i + 1][j + 1] + ncov[i + 1] * ncov[j + 1]; //gamma_{ij}
+			ggamma[i][j] = gcov[i + 1][j + 1]; //gamma_{ij}
 			ggammainv[i][j] = gcon[i + 1][j + 1] + ncon[i + 1] * ncon[j + 1]; //gamma^{ij}
 		 }
 	}
@@ -56,12 +59,12 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 	D = alpha * U[RHO] / gdet;
 
 	//Energy to 3+1
-	tau = ncov[0] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3]) / gdet - D;
+	tau = ncov_0 * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3]) / gdet - D;
 	
 	//Momentum to 3+1
-	S[0] = -ncov[0] * (U[U1] + ncov[1] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
-	S[1] = -ncov[0] * (U[U2] + ncov[2] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
-	S[2] = -ncov[0] * (U[U3] + ncov[3] * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3])) / gdet;
+	S[0] = -ncov_0 * (U[U1]) / gdet;
+	S[1] = -ncov_0 * (U[U2]) / gdet;
+	S[2] = -ncov_0 * (U[U3]) / gdet;
 
 	//Magnetic field to 3+1
 	#pragma ivdep
@@ -142,7 +145,6 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	int maxitr = 100;
 	int retval = 1;
 	int retval_matrix;
-	int tag=0;
 
 	int i1, j1;
 	for (i=0;i<3; i++) vD[i] = vD_guess[i];
@@ -283,7 +285,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 		return retval;
 	}
 	if (ug[0] < 0.) {
-		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", log10(fabs(er)), normV, ug[0], lfac, tag);
+		//fprintf(stderr, "Internal energy dropped below 0 in resistive inversion: (err: %f normV: %f ug: %f lfac: %f \n", log10(fabs(er)), normV, ug[0], lfac);
 		retval = 3;
 		return retval;
 	}
@@ -507,11 +509,10 @@ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], 
 int invert_3DU_entropy(double D, double sigma, double etares, double kappa, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
 	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac, vD_small[3];
 	int i, j, k, nit, ii;
-	double er, er_init, er_small = 100000000.0, er1, normV, half;
+	double er, er_init, er_small = 100000000.0, er1, normV;
 	int maxitr = 100;
 	int retval = 1;
 	int retval_matrix;
-	int tag = 0;
 
 	int i1, j1;
 	for (i = 0; i < 3; i++) vD[i] = vD_guess[i];
@@ -618,7 +619,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 		return retval;
 	}
 	if (ug[0] < 0.) {
-		fprintf(stderr, "Internal energy dropped below 0 in resistive entropy inversion: (err: %f normV: %f ug: %f lfac: %f, tag: %d \n", log10(fabs(er)), normV, ug[0], lfac, tag);
+		fprintf(stderr, "Internal energy dropped below 0 in resistive entropy inversion: (err: %f normV: %f ug: %f lfac: %f \n", log10(fabs(er)), normV, ug[0], lfac);
 		retval = 3;
 		return retval;
 	}

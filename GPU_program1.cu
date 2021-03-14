@@ -16,7 +16,7 @@ __device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], doub
 __device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
 __device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
 __device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q, const  double* __restrict__ gpu_eos_table);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, const  double* __restrict__ gpu_eos_table);
 __device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r, const  double* __restrict__ gpu_eos_table);
 __device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd, const  double* __restrict__ gpu_eos_table);
 __device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR], const  double* __restrict__ gpu_eos_table);
@@ -52,7 +52,7 @@ __device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], doub
 __device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
 __device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin);
 __device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin);
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, struct of_state* q);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom);
 __device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r);
 __device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd);
 __device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
@@ -100,6 +100,9 @@ __device__ void get_state_rad(double* pr, struct of_geom* geom, struct of_state_
 __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]);
 __device__ int LU_decompose(double A[][NDIM], int permute[]);
 __device__ void LU_substitution(double A[][NDIM], double B[], int permute[]);
+__device__ int invert_matrix_3D(double Am[][3], double Aminv[][3]);
+__device__ int LU_decompose_3D(double A[][3], int permute[]);
+__device__ void LU_substitution_3D(double A[][3], double B[], int permute[]);
 __device__ int gamma_calc_rad(double* pr, struct of_geom* geom, double* gamma_rad);
 
 /*Declare other functions*/
@@ -162,11 +165,12 @@ __device__ void primtoflux_res(double* pr, struct of_state_res* q_res, int dir, 
 __device__ void econ_calc_res(double* pr, struct of_geom* geom, double* ucon, double* ucov, double* econ);
 __device__ void bcon_calc_res(double* pr, struct of_geom* geom, double* ucon, double* ucov, double* bcon);
 __device__ void mhd_calc_res(double* pr, int dir, struct of_geom* geom, struct of_state_res* q_res, double* mhd);
-__device__ void source_res(double* ph, struct of_geom* geom, int n, int ii, int jj, int zz, double* dU, double* q, double Dt);
+__device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double* q, double Dt, const  double* __restrict__ conn_GPU, struct of_state_res* q_res, double r);
 __device__ double bsq_calc_res(double* pr, struct of_geom* geom);
 __device__ void get_state_res(double* pr, struct of_geom* geom, struct of_state_res* q_res);
 __device__ void vchar_res(struct of_geom* geom, int js, double* vmax, double* vmin);
 __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* geom, int js, double* vmax, double* vmin);
+__device__ double divE_calc(double* p, const  double* __restrict__ gdet, double _dx1, double _dx2, double _dx3, int ii, int jj, int zz);
 __device__ void lower_3(double* ucon, double gcov[10], double* ucov);
 __device__ double lvc4u(int i, int j, int k, int l);
 __device__ double lvc3u(int i, int j, int k);
@@ -783,7 +787,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
+	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0;
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -1101,7 +1105,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 , const double* __restrict__ gpu_eos_table
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4],  error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -1314,7 +1318,6 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
-				//fprintf(stderr, "error_i: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
 
 				//Set correct offset for Jacobian for next iteration
 				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
@@ -1337,8 +1340,6 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
-
-				//fprintf(stderr, "error_t: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
 
 				//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
 				if ((fabs(error_new[n_iter % 5]) <= 1.e-12) || (n_iter >= 20)) {
@@ -1398,7 +1399,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 , const double* __restrict__ gpu_eos_table
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dUb, dEdUb[4][4], dEdUb_inv[4][4],  error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -1654,8 +1655,6 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 
-				//fprintf(stderr, "error_t: %f, n_iter: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
-
 				//If we've reached the tolerance level or we exceeded more than 20 iterations, stop iterating
 				if ((fabs(error_new[n_iter % 5]) <= 1.e-12) || (n_iter >= 20)) {
 					keep_iterating = 0;
@@ -1720,7 +1719,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 , const double* __restrict__ gpu_eos_table
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4][4], dEdpb_inv[4][4], bsq, error_new[5], offset = pow(10., -8.);
+	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4][4], dEdpb_inv[4][4], error_new[5], offset = pow(10., -8.);
 	double T_GAS, norm, norm_S, D, tol;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -1971,7 +1970,6 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				//Set correct offset for Jacobian for next iteration
 				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
 				else offset = pow(10., -8.);
-				//fprintf(stderr, "error_i: %f, n_iter: %d, n_iter_fail: %d pb_uu: %f pb_uurad: %f \n", log10(error_new[n_iter % 5]), n_iter, n_iter_fail, log10(pb_new[UU]), log10(pb_new[UU_RAD]));
 
 				//Calculate total error
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
@@ -2051,7 +2049,715 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 	}
 	return(0);
 }
+__device__ int Utoprim_3d_res(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim, double Dt);
+__device__ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance);
+__device__ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
+__device__ void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac);
+__device__ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]);
+__device__ int invert_3DU_entropy(double D, double sigma, double etares, double entropy, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance);
+__device__ void res_3du_der_entropy(double D, double sigma, double etares, double entropy, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]);
 
+__device__ int Utoprim_3d_res(double U[NPR], double gcov[10], double gcon[10], double gdet, double prim[NPR], double tolerance, int lim, double Dt) {
+	double D, tau, S[3], B_guess[3], E_guess[3], ncov_0, ncon[NDIM], rho, ug;
+	int i, j, retval = 1;
+	double alpha, sqrtgamma;
+	double vD_guess[3], ggamma[3][3], ggammainv[3][3];
+
+	//Return if rho*gamma is negative
+	if (U[0] <= 0.) return(-100);
+
+	//Set the geometry variables
+	alpha = 1.0 / sqrt(-gcon[0]);
+	sqrtgamma = gdet / alpha; //determinant for spatial part of metric
+	ncov_0 = -alpha;
+	ncon[0] = ncov_0 * gcon[0];
+	ncon[1] = ncov_0 * gcon[1];
+	ncon[2] = ncov_0 * gcon[2];
+	ncon[3] = ncov_0 * gcon[3];
+
+	//Calculate covariant and contravariant 3+1 metrics
+	ggamma[0][0] = gcov[4]; 
+	ggamma[0][1] = gcov[5];
+	ggamma[0][2] = gcov[6];
+	ggamma[1][0] = gcov[5];
+	ggamma[1][1] = gcov[7];
+	ggamma[1][2] = gcov[8];
+	ggamma[2][0] = gcov[6];
+	ggamma[2][1] = gcov[8];
+	ggamma[2][2] = gcov[9];
+	ggammainv[0][0] = gcon[4] + ncon[1] * ncon[1];
+	ggammainv[0][1] = gcon[5] + ncon[1] * ncon[2];
+	ggammainv[0][2] = gcon[6] + ncon[1] * ncon[3];
+	ggammainv[1][0] = gcon[5] + ncon[2] * ncon[1];
+	ggammainv[1][1] = gcon[7] + ncon[2] * ncon[2];
+	ggammainv[1][2] = gcon[8] + ncon[2] * ncon[3];
+	ggammainv[2][0] = gcon[6] + ncon[3] * ncon[1];
+	ggammainv[2][1] = gcon[8] + ncon[3] * ncon[2];
+	ggammainv[2][2] = gcon[9] + ncon[3] * ncon[3];
+
+	//Transform the CONSERVED variables to 3+1
+	D = alpha * U[RHO] / gdet;
+
+	//Energy to 3+1
+	tau = ncov_0 * (ncon[0] * (U[UU] - U[RHO]) + ncon[1] * U[U1] + ncon[2] * U[U2] + ncon[3] * U[U3]) / gdet - D;
+
+	//Momentum to 3+1
+	S[0] = -ncov_0 * (U[U1]) / gdet;
+	S[1] = -ncov_0 * (U[U2]) / gdet;
+	S[2] = -ncov_0 * (U[U3]) / gdet;
+
+	//Magnetic field to 3+1
+	B_guess[0] = alpha * U[B1] / gdet;
+	B_guess[1] = alpha * U[B2] / gdet;
+	B_guess[2] = alpha * U[B3] / gdet;
+
+	//Electric field to 3+1
+	E_guess[0] = alpha * U[E1] / gdet;
+	E_guess[1] = alpha * U[E2] / gdet;
+	E_guess[2] = alpha * U[E3] / gdet;
+
+	//Guess of relative 4-velocity: gamma*v_i-->vD_guess (eq. 57)
+	for (i = 0; i < 3; i++) {
+		vD_guess[i] = 0.0;
+		for (j = 0; j < 3; j++) {
+			vD_guess[i] += ggamma[i][j] * prim[U1 + j];
+		}
+	}
+
+	//NR Step, you get back gamma*v_i and E
+	retval = invert_3DU(D, Dt * alpha, ETA, tau, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+
+	//Backup entropy inversion
+	#if(DOKTOT)
+	if (retval != 0) {
+		#if(FULL_ENTROPY)
+		double kappa = exp((U[KTOT] / U[RHO]) * (GAMMA - 1.));
+		#else
+		double kappa = fabs(U[KTOT] / U[RHO]);
+		#endif
+		retval = invert_3DU_entropy(D, Dt * alpha, ETA, kappa, S, ggamma, ggammainv, sqrtgamma, &rho, &ug, B_guess, E_guess, vD_guess, tolerance);
+	}
+	#endif
+
+	//Transform new primitive variables back if there was no problem
+	if (retval == 0) {
+		prim[RHO] = rho;
+		prim[UU] = ug;
+		for (i = 0; i < 3; i++) {
+			prim[U1 + i] = 0.0;
+			for (j = 0; j < 3; j++) {
+				prim[U1 + i] += ggammainv[i][j] * vD_guess[j];
+			}
+		}
+		prim[E1] = E_guess[0] / alpha;
+		prim[E2] = E_guess[1] / alpha;
+		prim[E3] = E_guess[2] / alpha;
+	}
+	else {
+		double B_D[3];
+		for (i = 0; i < 3; i++) {
+			B_D[i] = 0.;
+			for (j = 0; j < 3; j++) {
+				B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
+			}
+		}
+
+		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
+		prim[E1] = E_guess[0] / alpha;
+		prim[E2] = E_guess[1] / alpha;
+		prim[E3] = E_guess[2] / alpha;
+	}
+
+	//Update B fields regardless to preserve Div.B==0 regardless if inversion is succesful
+	for (i = BCON1; i <= BCON3; i++) prim[i] = U[i] / gdet;
+
+	return(retval);
+}
+
+//gives back E and gamma*v_i
+__device__ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
+	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac;
+	double Enew_D[3], Stilde_j[3], ExB[3], Stilde_uj[3], Ssqr, bsqr, esqr, tautilde, z, eps;
+	int i, j, nit, ii;
+	double er, er1, normV;
+	int maxitr = 100;
+	int retval = 1;
+	int retval_matrix;
+
+	for (i = 0; i < 3; i++) vD[i] = vD_guess[i];
+
+	//Newton-Raphson iteration
+	er = 1.0;
+	er1 = 1.0;
+	nit = 0;
+
+	for (i = 0; i < 3; i++) vDprev[i] = vD[i];
+	ii = 1;
+
+	// Start of the Newton RAphson loop
+	do {
+		nit = nit + 1;
+		if (nit > maxitr / 2) {
+			// mix the last  value for convergence
+			for (i = 0; i < 3; i++) vD[i] = 0.5 * (vD[i] + vDprev[i]);
+
+			// relax accuracy requirement
+			er1 = 10.0 * er1;
+
+			// following avoids decrease of accuracy requirement every iteration step beyond maxitnr/2
+			nit = nit - maxitr / 10;
+		}
+
+		//Compute residual and derivatives
+		for (i = 0; i < 3; i++) xk_3du[i] = vD[i];
+
+		//Calculate jacobian and residuals
+		res_3du_der(D, sigma, etares, tau, S, xk_3du, ggamma, ggammainv, sqrtgamma, B_guess, E_guess, J_3du, f_3du);
+
+		//Store previous ucov_tilde
+		for (i = 0; i < 3; i++) vDprev[i] = vD[i];
+
+		//Find inverse of Jacobian 
+		retval_matrix = invert_matrix_3D(J_3du, J_3du_inv);
+
+		//Print error if jacobian is singular
+		if (retval_matrix == 1) {
+			break;
+		}
+
+		//Update ucov_tilde
+		for (i = 0; i < 3; i++) {
+			dvd[i] = (J_3du_inv[i][0] * f_3du[0] + J_3du_inv[i][1] * f_3du[1] + J_3du_inv[i][2] * f_3du[2]);
+			vD[i] = vD[i] - dvd[i];
+		}
+
+		//check convergence of ucov to exit loop
+		er = 0.0;
+		normV = 0.0;
+		for (i = 0; i < 3; i++)for (j = 0; j < 3; j++) {
+			er += (ggammainv[i][j] * dvd[i] * dvd[j]);
+			normV += (ggammainv[i][j] * vD[i] * vD[j]);
+		}
+
+		if ((er < tolerance) || (er / (normV + 1.e-16) <= er1 * tolerance)) {
+			retval = 0;
+			break; //solution found!!
+		}
+
+		ii++;
+	} while (ii < maxitr); // End of the Newton cycle
+
+	//Recompute electric field
+	for (i = 0; i < 3; i++) {
+		B_D[i] = 0.;
+		vU[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
+		}
+	}
+
+	if (retval != 0 || ii == maxitr) {
+		retval = 1;
+		return retval;
+	}
+	//calculate Lorentz factor
+	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
+
+	//Exit if Lorent factor smaller than 1
+	if (lfac < 1.0) {
+		retval = 3;
+		return retval;
+	}
+
+	//Get E and ucov_tilde
+	getE_resistive(Enew, E_guess, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac);
+
+	//lower Enew 
+	for (i = 0; i < 3; i++) {
+		Enew_D[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			Enew_D[i] = Enew_D[i] + ggamma[i][j] * Enew[j];
+		}
+	}
+
+	//calculate bsqr and esqr
+	bsqr = B_guess[0] * B_D[0] + B_guess[1] * B_D[1] + B_guess[2] * B_D[2];
+	esqr = Enew[0] * Enew_D[0] + Enew[1] * Enew_D[1] + Enew[2] * Enew_D[2];
+
+	//calculate tautilde and stilde
+	tautilde = tau - (bsqr + esqr) * 0.5;
+
+	ExB[0] = sqrtgamma * (Enew[1] * B_guess[2] - Enew[2] * B_guess[1]);
+	ExB[1] = sqrtgamma * (Enew[2] * B_guess[0] - Enew[0] * B_guess[2]);
+	ExB[2] = sqrtgamma * (Enew[0] * B_guess[1] - Enew[1] * B_guess[0]);
+	for (i = 0; i < 3; i++) Stilde_j[i] = S[i] - ExB[i];
+
+	//raise Stilde
+	for (i = 0; i < 3; i++) {
+		Stilde_uj[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			Stilde_uj[i] = Stilde_uj[i] + ggammainv[i][j] * Stilde_j[j];
+		}
+	}
+
+	//Calculate Stilde^2
+	Ssqr = Stilde_uj[0] * Stilde_j[0] + Stilde_uj[1] * Stilde_j[1] + Stilde_uj[2] * Stilde_j[2];
+
+	//compute z and epsilon (eq 58 in Ripperda et al 2019)
+	z = sqrt(lfac * lfac - 1.0);
+	eps = lfac * tautilde / D - z * sqrt(Ssqr) / D + z * z / (1.0 + lfac);
+
+	//Update inverted quantities
+	rho[0] = D / lfac;
+	ug[0] = rho[0] * eps;
+
+	//Exit if density or internal energy drops below 0
+	if (rho[0] < 0.) {
+		retval = 2;
+		return retval;
+	}
+	if (ug[0] < 0.) {
+		retval = 3;
+		return retval;
+	}
+
+	//Set velocit and updated (implicit) electric field
+	for (i = 0; i < 3; i++) {
+		E_guess[i] = Enew[i];
+		vD_guess[i] = vD[i];
+	}
+
+	return retval;
+}
+
+//gives jacobian and residuals
+__device__ void res_3du_der(double D, double sigma, double etares, double tau, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
+	double Enew[3], Enew_D[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], tautilde, vU[3], decrossb[3], Stilde_uj[3];
+	double lfac, z, esqr, bsqr, Ssqr, eps, p, enth, edotde, depsdu, denthdu, dpdu, S_ujdotdecrossb;
+	int i, j;
+
+	//lower B and raise vD
+	for (i = 0; i < 3; i++) {
+		B_D[i] = 0.;
+		vU[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			B_D[i] = B_D[i] + ggamma[i][j] * B[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
+		}
+	}
+
+	//calculate Lorentz factor
+	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
+
+	//calculate new electric field
+	getdEdu_resistive(Enew, E, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac, dEdu);
+
+	//lower Enew 
+	for (i = 0; i < 3; i++) {
+		Enew_D[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			Enew_D[i] = Enew_D[i] + ggamma[i][j] * Enew[j];
+		}
+	}
+
+	//calculate bsqr and esqr
+	bsqr = B[0] * B_D[0] + B[1] * B_D[1] + B[2] * B_D[2];
+	esqr = Enew[0] * Enew_D[0] + Enew[1] * Enew_D[1] + Enew[2] * Enew_D[2];
+
+	//calculate tautilde and stilde
+	tautilde = tau - (bsqr + esqr) * 0.5;
+
+	ExB[0] = sqrtgamma * (Enew[1] * B[2] - Enew[2] * B[1]);
+	ExB[1] = sqrtgamma * (Enew[2] * B[0] - Enew[0] * B[2]);
+	ExB[2] = sqrtgamma * (Enew[0] * B[1] - Enew[1] * B[0]);
+	for (i = 0; i < 3; i++) Stilde_j[i] = S_j[i] - ExB[i];
+
+	//raise Stilde
+	for (i = 0; i < 3; i++) {
+		Stilde_uj[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			Stilde_uj[i] = Stilde_uj[i] + ggammainv[i][j] * Stilde_j[j];
+		}
+	}
+
+	Ssqr = Stilde_uj[0] * Stilde_j[0] + Stilde_uj[1] * Stilde_j[1] + Stilde_uj[2] * Stilde_j[2];
+
+	//compute pressure
+	z = sqrt(lfac * lfac - 1.0);
+	eps = lfac * tautilde / D - z * sqrt(Ssqr) / D + z * z / (1.0 + lfac);
+	p = (GAMMA - 1.0) * D / lfac * eps;
+	enth = 1.0 + GAMMA / (GAMMA - 1.0) * p / D * lfac;
+
+	//compute residuals
+	res[0] = vD[0] - Stilde_j[0] / D / enth;
+	res[1] = vD[1] - Stilde_j[1] / D / enth;
+	res[2] = vD[2] - Stilde_j[2] / D / enth;
+
+	//compute Jacobian
+	//1-direction
+	decrossb[0] = sqrtgamma * (dEdu[0][1] * B[2] - dEdu[0][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[0][2] * B[0] - dEdu[0][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[0][0] * B[1] - dEdu[0][1] * B[0]);
+	edotde = Enew_D[0] * dEdu[0][0] + Enew_D[1] * dEdu[0][1] + Enew_D[2] * dEdu[0][2];
+	depsdu = vU[0] / lfac * tautilde / D - lfac * edotde / D + 2.0 * vU[0] / (1.0 + lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) * vU[0] / lfac;
+
+	if (z != 0.0) depsdu = depsdu - vU[0] / z * sqrt(Ssqr) / D;
+
+	S_ujdotdecrossb = Stilde_uj[0] * decrossb[0] + Stilde_uj[1] * decrossb[1] + Stilde_uj[2] * decrossb[2];
+	if (Ssqr != 0.0) depsdu = depsdu + (z / D) * S_ujdotdecrossb / sqrt(Ssqr);
+
+	dpdu = (GAMMA - 1.0) * D * (depsdu / lfac - eps / (lfac * lfac * lfac) * vU[0]);
+	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[0] / lfac) / D;
+
+	Jac[0][0] = 1.0 + decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
+	Jac[1][0] = decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
+	Jac[2][0] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
+
+	//2-direction	
+	decrossb[0] = sqrtgamma * (dEdu[1][1] * B[2] - dEdu[1][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[1][2] * B[0] - dEdu[1][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[1][0] * B[1] - dEdu[1][1] * B[0]);
+	edotde = Enew_D[0] * dEdu[1][0] + Enew_D[1] * dEdu[1][1] + Enew_D[2] * dEdu[1][2];
+	depsdu = vU[1] / lfac * tautilde / D - lfac * edotde / D + 2.0 * vU[1] / (1.0 + lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) * vU[1] / lfac;
+
+	if (z != 0.0) depsdu = depsdu - vU[1] / z * sqrt(Ssqr) / D;
+
+	S_ujdotdecrossb = Stilde_uj[0] * decrossb[0] + Stilde_uj[1] * decrossb[1] + Stilde_uj[2] * decrossb[2];
+	if (Ssqr != 0.0) depsdu = depsdu + (z / D) * S_ujdotdecrossb / sqrt(Ssqr);
+
+	dpdu = (GAMMA - 1.0) * D * (depsdu / lfac - eps / (lfac * lfac * lfac) * vU[1]);
+	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[1] / lfac) / D;
+
+	Jac[0][1] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
+	Jac[1][1] = 1.0 + decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
+	Jac[2][1] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
+
+	//3-direction
+	decrossb[0] = sqrtgamma * (dEdu[2][1] * B[2] - dEdu[2][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[2][2] * B[0] - dEdu[2][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[2][0] * B[1] - dEdu[2][1] * B[0]);
+	edotde = Enew_D[0] * dEdu[2][0] + Enew_D[1] * dEdu[2][1] + Enew_D[2] * dEdu[2][2];
+	depsdu = vU[2] / lfac * tautilde / D - lfac * edotde / D + 2.0 * vU[2] / (1.0 + lfac) - (z * z / ((1.0 + lfac) * (1.0 + lfac))) * vU[2] / lfac;
+
+	if (z != 0.0) depsdu = depsdu - vU[2] / z * sqrt(Ssqr) / D;
+
+	S_ujdotdecrossb = Stilde_uj[0] * decrossb[0] + Stilde_uj[1] * decrossb[1] + Stilde_uj[2] * decrossb[2];
+	if (Ssqr != 0.0) depsdu = depsdu + (z / D) * S_ujdotdecrossb / sqrt(Ssqr);
+
+	dpdu = (GAMMA - 1.0) * D * (depsdu / lfac - eps / (lfac * lfac * lfac) * vU[2]);
+	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[2] / lfac) / D;
+
+	Jac[0][2] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
+	Jac[1][2] = decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
+	Jac[2][2] = 1.0 + decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
+
+}
+
+//Recover E
+__device__ void getE_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac) {
+	double vxbU[3], e0dotv;
+	int i;
+
+	// ucov x B_D
+	vxbU[0] = 1.0 / sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
+	vxbU[1] = 1.0 / sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
+	vxbU[2] = 1.0 / sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
+
+	// ImEx: Eold_upper.ucov
+	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
+
+	//eta<1 case
+	for (i = 0; i < 3; i++) {
+		Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
+	}
+}
+
+//Recover E and DE/du
+__device__ void getdEdu_resistive(double Enew[3], double E[3], double vU[3], double vD[3], double B_D[3], double sigma, double etares, double ggammainv[3][3], double sqrtgamma, double lfac, double dEdu[3][3]) {
+	double vxbU[3], kxbU[3];
+	int i;
+	double e0dotv, denom1, denom2;
+
+	// ucov x B_D
+	vxbU[0] = 1.0 / sqrtgamma * (vD[1] * B_D[2] - vD[2] * B_D[1]);
+	vxbU[1] = 1.0 / sqrtgamma * (vD[2] * B_D[0] - vD[0] * B_D[2]);
+	vxbU[2] = 1.0 / sqrtgamma * (vD[0] * B_D[1] - vD[1] * B_D[0]);
+
+	// ImEx: Eold_upper.ucov
+	e0dotv = E[0] * vD[0] + E[1] * vD[1] + E[2] * vD[2];
+
+	//eta<1 case
+	for (i = 0; i < 3; i++) {
+		Enew[i] = etares * E[i] / (etares + lfac * sigma) - sigma / (etares + lfac * sigma) * (vxbU[i] - etares * e0dotv / (etares * lfac + sigma) * vU[i]);
+	}
+	denom1 = etares + lfac * sigma;
+	denom2 = etares * lfac + sigma;
+
+	// Derivative of u x B: dE/dv1
+	kxbU[0] = 0.;
+	kxbU[1] = 1.0 / sqrtgamma * (-B_D[2]);
+	kxbU[2] = 1.0 / sqrtgamma * (B_D[1]);
+
+	//Build derivative
+	for (i = 0; i < 3; i++) {
+		dEdu[0][i] = -E[i] * etares / (denom1 * denom1) * sigma * vU[0] / lfac
+			- (-sigma * sigma / (denom1 * denom1) * vU[0] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i])
+				+ sigma / denom1 * (kxbU[i]
+					+ etares * (-E[0] / denom2 * vU[i] + etares * e0dotv / (denom2 * denom2) * vU[0] / lfac * vU[i] - e0dotv / denom2 * ggammainv[0][i])));
+	}
+
+	//Derivative of u x B: dE/dv2
+	kxbU[0] = 1.0 / sqrtgamma * (B_D[2]);
+	kxbU[1] = 0.;
+	kxbU[2] = 1.0 / sqrtgamma * (-B_D[0]);
+
+	// Build derivative
+	for (i = 0; i < 3; i++) {
+		dEdu[1][i] = -E[i] * etares / (denom1 * denom1) * sigma * vU[1] / lfac
+			- (-(sigma * sigma / (denom1 * denom1)) * vU[1] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i])
+				+ sigma / denom1 * (kxbU[i]
+					+ etares * (-E[1] / denom2 * vU[i] + etares * e0dotv / (denom2 * denom2) * vU[1] / lfac * vU[i] - e0dotv / denom2 * ggammainv[1][i])));
+	}
+
+	// Derivative of u x B: dE/dv3
+	kxbU[0] = 1.0 / sqrtgamma * (-B_D[1]);
+	kxbU[1] = 1.0 / sqrtgamma * (B_D[0]);
+	kxbU[2] = 0.;
+
+	// Build derivative
+	for (i = 0; i < 3; i++) {
+		dEdu[2][i] = -E[i] * etares / (denom1 * denom1) * sigma * vU[2] / lfac
+			- (-(sigma * sigma / (denom1 * denom1)) * vU[2] / lfac * (vxbU[i] - etares * e0dotv / denom2 * vU[i])
+				+ sigma / denom1 * (kxbU[i]
+					+ etares * (-E[2] / denom2 * vU[i] + etares * e0dotv / (denom2 * denom2) * vU[2] / lfac * vU[i] - e0dotv / denom2 * ggammainv[2][i])));
+	}
+}
+
+//gives back E and gamma*v_i
+__device__ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, double S[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double* rho, double* ug, double B_guess[3], double E_guess[3], double vD_guess[3], double tolerance) {
+	double vD[3], vU[3], vDprev[3], xk_3du[3], J_3du[3][3], J_3du_inv[3][3], f_3du[3], Enew[3], B_D[3], dvd[3], lfac;
+	int i, j, nit, ii;
+	double er, er1, normV;
+	int maxitr = 100;
+	int retval = 1;
+	int retval_matrix;
+
+	for (i = 0; i < 3; i++) vD[i] = vD_guess[i];
+
+	//Newton-Raphson iteration
+	er = 1.0;
+	er1 = 1.0;
+	nit = 0;
+
+	for (i = 0; i < 3; i++) vDprev[i] = vD[i];
+	ii = 1;
+
+	// Start of the Newton RAphson loop
+	do {
+		nit = nit + 1;
+		if (nit > maxitr / 2) {
+			// mix the last  value for convergence
+			for (i = 0; i < 3; i++) vD[i] = 0.5 * (vD[i] + vDprev[i]);
+
+			// relax accuracy requirement
+			er1 = 10.0 * er1;
+
+			// following avoids decrease of accuracy requirement every iteration step beyond maxitnr/2
+			nit = nit - maxitr / 10;
+		}
+
+		//Compute residual and derivatives
+		for (i = 0; i < 3; i++) xk_3du[i] = vD[i];
+
+		//Calculate jacobian and residuals
+		res_3du_der_entropy(D, sigma, etares, kappa, S, xk_3du, ggamma, ggammainv, sqrtgamma, B_guess, E_guess, J_3du, f_3du);
+
+		//Store previous ucov_tilde
+		for (i = 0; i < 3; i++) vDprev[i] = vD[i];
+
+		//Find inverse of Jacobian 
+		retval_matrix = invert_matrix_3D(J_3du, J_3du_inv);
+
+		//Print error if jacobian is singular
+		if (retval_matrix == 1) {
+			break;
+		}
+
+		//Update ucov_tilde
+		for (i = 0; i < 3; i++) {
+			dvd[i] = (J_3du_inv[i][0] * f_3du[0] + J_3du_inv[i][1] * f_3du[1] + J_3du_inv[i][2] * f_3du[2]);
+			vD[i] = vD[i] - dvd[i];
+		}
+
+		//check convergence of ucov to exit loop
+		er = 0.0;
+		normV = 0.0;
+		for (i = 0; i < 3; i++)for (j = 0; j < 3; j++) {
+			er += (ggammainv[i][j] * dvd[i] * dvd[j]);
+			normV += (ggammainv[i][j] * vD[i] * vD[j]);
+		}
+
+		if ((er < tolerance) || (er / (normV + 1.e-16) <= er1 * tolerance)) {
+			retval = 0;
+			break; //solution found!!
+		}
+
+		ii++;
+	} while (ii < maxitr); // End of the Newton cycle
+
+	//Recompute electric field
+	for (i = 0; i < 3; i++) {
+		B_D[i] = 0.;
+		vU[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
+		}
+	}
+
+	if (retval != 0 || ii == maxitr) {
+		retval = 1;
+		return retval;
+	}
+	//calculate Lorentz factor
+	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
+
+	//Exit if Lorent factor smaller than 1
+	if (lfac < 1.0) {
+		retval = 3;
+		return retval;
+	}
+
+	//Get E and ucov_tilde
+	getE_resistive(Enew, E_guess, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac);
+
+	//Update inverted quantities
+	rho[0] = D / lfac;
+	ug[0] = (kappa * pow(rho[0], GAMMA)) / (GAMMA - 1.0);
+
+	//Exit if density or internal energy drops below 0
+	if (rho[0] < 0.) {
+		retval = 2;
+		return retval;
+	}
+	if (ug[0] < 0.) {
+		retval = 3;
+		return retval;
+	}
+
+	//Set velocit and updated (implicit) electric field
+	for (i = 0; i < 3; i++) {
+		E_guess[i] = Enew[i];
+		vD_guess[i] = vD[i];
+	}
+
+	return retval;
+}
+
+//gives jacobian and residuals
+__device__ void res_3du_der_entropy(double D, double sigma, double etares, double kappa, double S_j[3], double vD[3], double ggamma[3][3], double ggammainv[3][3], double sqrtgamma, double B[3], double E[3], double Jac[3][3], double res[3]) {
+	double Enew[3], B_D[3], dEdu[3][3], Stilde_j[3], ExB[3], vU[3], decrossb[3];
+	double lfac, p, enth, denthdu, dpdu;
+	int i, j;
+
+	//lower B and raise vD
+	for (i = 0; i < 3; i++) {
+		B_D[i] = 0.;
+		vU[i] = 0.;
+		for (j = 0; j < 3; j++) {
+			B_D[i] = B_D[i] + ggamma[i][j] * B[j];
+			vU[i] = vU[i] + ggammainv[i][j] * vD[j];
+		}
+	}
+
+	//calculate Lorentz factor
+	lfac = sqrt(1.0 + vU[0] * vD[0] + vU[1] * vD[1] + vU[2] * vD[2]);
+
+	//calculate new electric field
+	getdEdu_resistive(Enew, E, vU, vD, B_D, sigma, etares, ggammainv, sqrtgamma, lfac, dEdu);
+
+	ExB[0] = sqrtgamma * (Enew[1] * B[2] - Enew[2] * B[1]);
+	ExB[1] = sqrtgamma * (Enew[2] * B[0] - Enew[0] * B[2]);
+	ExB[2] = sqrtgamma * (Enew[0] * B[1] - Enew[1] * B[0]);
+	for (i = 0; i < 3; i++) Stilde_j[i] = S_j[i] - ExB[i];
+
+	//compute z, pressure and enthalpy
+	p = kappa * pow(D / lfac, GAMMA);
+	enth = 1.0 + GAMMA / (GAMMA - 1.0) * p / D * lfac;
+
+	//compute residuals
+	res[0] = vD[0] - Stilde_j[0] / D / enth;
+	res[1] = vD[1] - Stilde_j[1] / D / enth;
+	res[2] = vD[2] - Stilde_j[2] / D / enth;
+
+	//compute Jacobian
+	//1-direction
+	decrossb[0] = sqrtgamma * (dEdu[0][1] * B[2] - dEdu[0][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[0][2] * B[0] - dEdu[0][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[0][0] * B[1] - dEdu[0][1] * B[0]);
+	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[0];
+	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[0] / lfac) / D;
+
+	Jac[0][0] = 1.0 + decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
+	Jac[1][0] = decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
+	Jac[2][0] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
+
+	//2-direction	
+	decrossb[0] = sqrtgamma * (dEdu[1][1] * B[2] - dEdu[1][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[1][2] * B[0] - dEdu[1][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[1][0] * B[1] - dEdu[1][1] * B[0]);
+	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[1];
+	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[1] / lfac) / D;
+
+	Jac[0][1] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
+	Jac[1][1] = 1.0 + decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
+	Jac[2][1] = decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
+
+	//3-direction
+	decrossb[0] = sqrtgamma * (dEdu[2][1] * B[2] - dEdu[2][2] * B[1]);
+	decrossb[1] = sqrtgamma * (dEdu[2][2] * B[0] - dEdu[2][0] * B[2]);
+	decrossb[2] = sqrtgamma * (dEdu[2][0] * B[1] - dEdu[2][1] * B[0]);
+	dpdu = -GAMMA * kappa * pow(D, GAMMA) / pow(lfac, GAMMA + 2.0) * vU[2];
+	denthdu = GAMMA / (GAMMA - 1.0) * (dpdu * lfac + p * vU[2] / lfac) / D;
+
+	Jac[0][2] = decrossb[0] / (D * enth) + Stilde_j[0] / (D * enth * enth) * denthdu;
+	Jac[1][2] = decrossb[1] / (D * enth) + Stilde_j[1] / (D * enth * enth) * denthdu;
+	Jac[2][2] = 1.0 + decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
+}
+
+//3D Matrix inversion
+__device__ int invert_matrix_3D(double Am[][3], double Aminv[][3])
+{
+
+	int i, j;
+	int n = 3;
+	int permute[3];
+	double dxm[3], Amtmp[3][3];
+
+	for (i = 0; i < 3 * 3; i++) { Amtmp[0][i] = Am[0][i]; }
+
+	// Get the LU matrix:
+	if (LU_decompose_3D(Amtmp, permute) != 0) {
+		return(1);
+	}
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) { dxm[j] = 0.; }
+		dxm[i] = 1.;
+
+		/* Solve the linear system for the i^th column of the inverse matrix: :  */
+		LU_substitution_3D(Amtmp, dxm, permute);
+
+		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
+
+	}
+
+	return(0);
+}
+
+
+//4D Matrix Inversion
 __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]){
 	int i, j;
 	int permute[NDIM];
@@ -2075,7 +2781,95 @@ __device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]){
 	return(0);
 }
 
+//3D LU-decomposition
+__device__ int LU_decompose_3D(double A[][3], int permute[])
+{
+	double row_norm[3];
+	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+	double  absmax, maxtemp;
+	int i, j, k, max_row;
+	int n = 3;
 
+	max_row = 0;
+	for (i = 0; i < n; i++) {
+		absmax = 0.;
+
+		for (j = 0; j < n; j++) {
+
+			maxtemp = fabs(A[i][j]);
+
+			if (maxtemp > absmax) {
+				absmax = maxtemp;
+			}
+		}
+
+		if (absmax == 0.) {
+			return(1);
+		}
+
+		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	}
+
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < j; i++) {
+			for (k = 0; k < i; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+		}
+
+		absmax = 0.0;
+
+		for (i = j; i < n; i++) {
+			for (k = 0; k < j; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+
+			maxtemp = fabs(A[i][j]) * row_norm[i];
+
+			if (maxtemp >= absmax) {
+				absmax = maxtemp;
+				max_row = i;
+			}
+		}
+
+		if (max_row != j) {
+			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+				max_row = j;
+			}
+			else {
+				for (k = 0; k < n; k++) {
+
+					maxtemp = A[j][k];
+					A[j][k] = A[max_row][k];
+					A[max_row][k] = maxtemp;
+
+				}
+				row_norm[max_row] = row_norm[j];
+			}
+		}
+
+		permute[j] = max_row;
+
+		if (A[j][j] == 0.) {
+			A[j][j] = absmin;
+		}
+
+		if (j != (n - 1)) {
+			maxtemp = 1. / A[j][j];
+
+			for (i = (j + 1); i < n; i++) {
+				A[i][j] *= maxtemp;
+			}
+		}
+
+	}
+
+	return(0);
+
+	/* End of LU_decompose() */
+}
+
+//4D LU-decomposition
 __device__ int LU_decompose(double A[][NDIM], int permute[]){
 	double row_norm[NDIM];
 	double  absmax, maxtemp;
@@ -2151,9 +2945,31 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
 	}
 
 	return(0);
-	/* End of LU_decompose() */
 }
 
+//3D LU-Substitution
+__device__ void LU_substitution_3D(double A[][3], double B[], int permute[])
+{
+	int i, j;
+	int n = 3;
+	double tmpvar;
+
+	for (i = 0; i < n; i++) {
+		tmpvar = B[permute[i]];
+		B[permute[i]] = B[i];
+		for (j = (i - 1); j >= 0; j--) {
+			tmpvar -= A[i][j] * B[j];
+		}
+		B[i] = tmpvar;
+	}
+
+	for (i = (n - 1); i >= 0; i--) {
+		for (j = (i + 1); j < n; j++) {
+			B[i] -= A[i][j] * B[j];
+		}
+		B[i] /= A[i][i];
+	}
+}
 
 __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 {
@@ -2179,10 +2995,9 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 		}
 		B[i] /= A[i][i];
 	}
-
-	/* End of LU_substitution() */
 }
 
+//3D
 //Inversion from radiation conserved to primitive quantities
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim){
 	double U_tmp[NPR_R], prim_tmp[NPR_R];
@@ -3691,7 +4506,7 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 }
 
 //Apply floors to a cell
-__device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_state* q
+__device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -3699,6 +4514,11 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 	#if(!CARTESIAN)
 	double rhoscal, uuscal, rhoflr, uuflr, bsq, wold, wnew, QdotB, trans, vpar, one_over_ucondr_t, x, f;
 	double pf_prefloor[NPR_U], betapar, betasq, betasqmax, gamma, ucondr[NDIM], Bcon[NDIM], Bcov[NDIM], vcon[NDIM], ucon[NDIM], utcon[NDIM], B, Bsq, udotB, ut;
+	#if(RESISTIVE)
+	struct of_state_res q;
+	#else
+	struct of_state q;
+	#endif
 	int dofloor=0, flag = 0, m, k;
 
 	rhoscal = pow(r, -POWRHO);
@@ -3707,8 +4527,12 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 	rhoflr = RHOMIN * rhoscal;
 	uuflr = UUMIN * uuscal;
 
-	get_state(pf, geom, q);
-	bsq = dot(q->bcon, q->bcov);
+	#if(RESISTIVE)
+	get_state_res(pf, geom, &q);
+	#else
+	get_state(pf, geom, &q);
+	#endif
+	bsq = dot(q.bcon, q.bcov);
 
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
@@ -3735,21 +4559,21 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 	trans = 10. * bsq / MY_MIN(pf[RHO], pf[UU]) - 1.;
 	if (dofloor && (trans) > 0.) {
 		if (trans > 1.) trans = 1.;
-		betapar = -q->bcon[0] / ((bsq + SMALL) * q->ucon[0]);
+		betapar = -q.bcon[0] / ((bsq + SMALL) * q.ucon[0]);
 		betasq = betapar * betapar * bsq;
 		betasqmax = 1. - 1. / (GAMMAMAX * GAMMAMAX);
 		if (betasq > betasqmax) betasq = betasqmax;
 
 		gamma = 1. / sqrt(1 - betasq);
 		#pragma unroll 4
-		for (m = 0; m < NDIM; m++) ucondr[m] = gamma * (q->ucon[m] + betapar * q->bcon[m]);
+		for (m = 0; m < NDIM; m++) ucondr[m] = gamma * (q.ucon[m] + betapar * q.bcon[m]);
 
 		Bcon[0] = 0.;
 		#pragma unroll 3
 		for (m = 1; m < NDIM; m++) Bcon[m] = pf[B1 - 1 + m];
 
 		lower(Bcon, geom->gcov, Bcov);
-		udotB = dot(q->ucon, Bcov);
+		udotB = dot(q.ucon, Bcov);
 		Bsq = dot(Bcon, Bcov);
 		B = sqrt(Bsq);
 
@@ -3763,7 +4587,7 @@ __device__ int fixup_cell(double *pf, double r, struct of_geom* geom, struct of_
 		#endif
 
 		//B^\mu Q_\mu = (B^\mu u_\mu) (\rho+u+p) u^t (eq. (26) divided by alpha; Noble et al. 2006)
-		QdotB = udotB * wold * q->ucon[0];
+		QdotB = udotB * wold * q.ucon[0];
 
 		//enthalpy after the floors
 		#if (DOHELM)
@@ -5407,12 +6231,16 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	int idel, jdel, zdel, i, face;
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double factor;
-	double cmax_r, cmin_r, cmax, cmin, cmax_l, cmin_l, ctop, ctop_rad;
+	double cmax_r, cmin_r, cmax, cmin, cmax_l, cmin_l, ctop;
 	double temp1[NPR], temp2[NPR], temp3[NPR], temp4[NPR], p[NPR];
 	struct of_geom geom;
+	#if(RESISTIVE)
+	struct of_state_res state;
+	#else
 	struct of_state state;
+	#endif
 	#if(RAD_M1)
-	double cmax_r_rad, cmin_r_rad, cmax_l_rad, cmin_l_rad, cmax_rad, cmin_rad;
+	double cmax_r_rad, cmin_r_rad, cmax_l_rad, cmin_l_rad, cmax_rad, cmin_rad, ctop_rad;
 	struct of_state_rad state_rad;
 	#endif
 
@@ -5463,6 +6291,16 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		}
 		#endif
 
+		#if(RESISTIVE)
+		get_state_res(p, &geom, &state);
+		primtoflux_res(p, &state, dir, &geom, temp1);
+		primtoflux_res(p, &state, 0, &geom, temp2);
+		//#if(ETA==0.0)
+		vchar_res2(p, &state, &geom, dir, &cmax_l, &cmin_l);
+		//#else
+		//vchar_res(&geom, dir, &cmax_l, &cmin_l);
+		//#endif
+		#else
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l
 			#if (DOHELM)
@@ -5474,6 +6312,8 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			, gpu_eos_table
 			#endif
 		);
+		#endif
+
 		#if(RAD_M1)
 		get_state_rad(p, &geom, &state_rad);
 		primtoflux_rad(p, &state_rad, dir, &geom, temp1);
@@ -5512,6 +6352,14 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			}
 		}
 		#endif
+
+		#if(RESISTIVE)
+		get_state_res(p, &geom, &state);
+		primtoflux_res(p, &state, dir, &geom, temp3);
+		primtoflux_res(p, &state, 0, &geom, temp4);
+		if(ETA==0.0) vchar_res2(p, &state, &geom, dir, &cmax_r, &cmin_r);
+		else vchar_res(&geom, dir, &cmax_r, &cmin_r);
+		#else
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r
 			#if (DOHELM)
@@ -5523,6 +6371,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			, gpu_eos_table
 			#endif
 		);
+		#endif
 
 		cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 		cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
@@ -5578,7 +6427,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			}
 		}
 		#else
-		for (k = 0; k < NPR_U; k++) {
+		for (k = 0; k < NPR; k++) {
 			#if(HLLF)
 			F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
 			#else
@@ -5962,30 +6811,57 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	int jsize = BS_3 + 2 * N3G;
 
 	if (k==1){
-		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2*(ksize)+global_id];
-		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize*D2] - F3[B2*(ksize)+global_id - jsize*D2];
-		double dE_RIGHT_13_1 = F3[B2*(ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
-		double dE_RIGHT_13_2 = F3[B2*(ksize)+global_id + D3 - jsize*D2 - D3] - E_cent[1 * (ksize)+global_id - jsize*D2 - D3];
-		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3*(ksize)+global_id];
-		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + F2[B3*(ksize)+global_id - D3];
-		double dE_RIGHT_12_1 = -F2[B3*(ksize)+global_id + D2*jsize - D2*jsize] - E_cent[1 * (ksize)+global_id - D2*jsize];
-		double dE_RIGHT_12_2 = -F2[B3*(ksize)+global_id + D2*jsize - D2*jsize - D3] - E_cent[1 * (ksize)+global_id - D2*jsize - D3];
-		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3*(ksize)+global_id];
-		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3*(ksize)+global_id - D3];
-		double dE_RIGHT_21_1 = F1[B3*(ksize)+global_id + D1*isize - D1*isize] - E_cent[2 * (ksize)+global_id - D1*isize];
-		double dE_RIGHT_21_2 = F1[B3*(ksize)+global_id + D1*isize - D1*isize - D3] - E_cent[2 * (ksize)+global_id - D1*isize - D3];
-		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1*(ksize)+global_id];
-		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1*isize] + F3[B1*(ksize)+global_id - D1*isize];
-		double dE_RIGHT_23_1 = -F3[B1*(ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
-		double dE_RIGHT_23_2 = -F3[B1*(ksize)+global_id + D3 - isize*D1 - D3] - E_cent[2 * (ksize)+global_id - isize*D1 - D3];
-		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2*(ksize)+global_id];
-		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2*jsize] + F1[B2*(ksize)+global_id - D2*jsize];
-		double dE_RIGHT_31_1 = -F1[B2*(ksize)+global_id + D1*isize - D1*isize] - E_cent[3 * (ksize)+global_id - D1*isize];
-		double dE_RIGHT_31_2 = -F1[B2*(ksize)+global_id + D1*isize - D1*isize - D2*jsize] - E_cent[3 * (ksize)+global_id - D1*isize - D2*jsize];
-		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1*(ksize)+global_id];
-		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1*isize] - F2[B1*(ksize)+global_id - D1*isize];
-		double dE_RIGHT_32_1 = F2[B1*(ksize)+global_id + D2*jsize - D2*jsize] - E_cent[3 * (ksize)+global_id - D2*jsize];
-		double dE_RIGHT_32_2 = F2[B1*(ksize)+global_id + D2*jsize - D1*isize - D2*jsize] - E_cent[3 * (ksize)+global_id - D1*isize - D2*jsize];
+		#if(RESISTIVE)
+		double dE_LEFT_13_1 = 0.;
+		double dE_LEFT_13_2 = 0.;
+		double dE_RIGHT_13_1 = 0.;
+		double dE_RIGHT_13_2 = 0.;
+		double dE_LEFT_12_1 = 0.;
+		double dE_LEFT_12_2 = 0.;
+		double dE_RIGHT_12_1 = 0.;
+		double dE_RIGHT_12_2 = 0.;
+		double dE_LEFT_21_1 = 0.;
+		double dE_LEFT_21_2 = 0.;
+		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = 0.;
+		double dE_LEFT_23_1 = 0.;
+		double dE_LEFT_23_2 = 0.;
+		double dE_RIGHT_23_1 = 0.;
+		double dE_RIGHT_23_2 = 0.;
+		double dE_LEFT_31_1 = 0.;
+		double dE_LEFT_31_2 = 0.;
+		double dE_RIGHT_31_1 = 0.;
+		double dE_RIGHT_31_2 = 0.;
+		double dE_LEFT_32_1 = 0.;
+		double dE_LEFT_32_2 = 0.;
+		double dE_RIGHT_32_1 = 0.;
+		double dE_RIGHT_32_2 = 0.;
+		#else
+		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
+		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
+		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
+		double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
+		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id];
+		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + F2[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
+		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id];
+		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3];
+		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
+		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id];
+		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
+		double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
+		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id];
+		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id];
+		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		#endif
 
 		emf[1 * (ksize)+global_id] = 0.25*((-F2[B3*(ksize)+global_id] - (dE_LEFT_13_1* (double)(F2[RHO*(ksize)+global_id] <= 0.0) + dE_LEFT_13_2* (double)(F2[RHO*(ksize)+global_id]>0.0)))
 			+ (-F2[B3*(ksize)+global_id - D3] + (dE_RIGHT_13_1* (double)(F2[RHO*(ksize)+global_id - D3] <= 0.0) + dE_RIGHT_13_2* (double)(F2[RHO*(ksize)+global_id - D3]>0.0))) +
@@ -6027,6 +6903,32 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 	int jsize = BS_3 + 2 * N3G;
 
 	if (k == 1) {
+		#if(RESISTIVE)
+		double dE_LEFT_13_1 = 0.;
+		double dE_LEFT_13_2 = 0.;
+		double dE_RIGHT_13_1 = 0.;
+		double dE_RIGHT_13_2 = 0.;
+		double dE_LEFT_12_1 = 0.;
+		double dE_LEFT_12_2 = 0.;
+		double dE_RIGHT_12_1 = 0.;
+		double dE_RIGHT_12_2 = 0.;
+		double dE_LEFT_21_1 = 0.;
+		double dE_LEFT_21_2 = 0.;
+		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = 0.;
+		double dE_LEFT_23_1 = 0.;
+		double dE_LEFT_23_2 = 0.;
+		double dE_RIGHT_23_1 = 0.;
+		double dE_RIGHT_23_2 = 0.;
+		double dE_LEFT_31_1 = 0.;
+		double dE_LEFT_31_2 = 0.;
+		double dE_RIGHT_31_1 = 0.;
+		double dE_RIGHT_31_2 = 0.;
+		double dE_LEFT_32_1 = 0.;
+		double dE_LEFT_32_2 = 0.;
+		double dE_RIGHT_32_1 = 0.;
+		double dE_RIGHT_32_2 = 0.;
+		#else
 		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
 		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
 		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
@@ -6051,6 +6953,7 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
 		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
 		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		#endif
 		
 		emf[1 * (ksize)+global_id] *= 0.5;
 		emf[2 * (ksize)+global_id] *= 0.5;
@@ -6125,11 +7028,15 @@ __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  do
 	#if(NSY)
 	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
 	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	#if(N3G>0)
 	int index3 = FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
+	#endif
 	#else
 	int index1 = FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
 	int index2 = FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	#if(N3G>0)
 	int index3 = FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	#endif
 	#endif
 
 	if (icurr >= imin[0] && jcurr >= jmin[0] && zcurr >= zmin[0] && icurr<imax[0] && jcurr<jmax[0]  && zcurr<zmax[0] && k==1){
@@ -6252,11 +7159,15 @@ __global__ void consttransport3_post(double dx_1, double dx_2, double dx_3, cons
 	#if(NSY)
 	int index1 = FACE1*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr+(k==2))*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + zcurr;
 	int index2 = FACE2*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + (jcurr + (k == 4))*(BS_3 + 2 * N3G) + zcurr;
+	#if(N3G>0)
 	int index3 = FACE3*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) + jcurr*(BS_3 + 2 * N3G) + (zcurr + (k==6));
+	#endif
 	#else
 	int index1 = FACE1*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + (icurr + (k == 2))*(BS_2 + 2 * N2G) + jcurr;
 	int index2 = FACE2*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + (jcurr + (k == 4));
+	#if(N3G>0)
 	int index3 = FACE3*((BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem2) + icurr*(BS_2 + 2 * N2G) + jcurr;
+	#endif
 	#endif
 
 	if (k >= 1){
@@ -6565,7 +7476,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		);
 
 		//Apply floors in ZAMO frame or drift frame
-		//if (fixup_cell(p, radius[icurr], &geom, &q
+		//if (fixup_cell(p, radius[icurr], &geom
 		//	#if (DOHELM)
 		//	, gpu_eos_table
 		//	#endif
@@ -6723,7 +7634,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		pflag_rad[global_id] = Rtoprim(U_2, geom.gcov, geom.gcon, geom.g, ph, y_max, BASIC);
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(ph, radius[icurr], &geom, &q
+		if (fixup_cell(ph, radius[icurr], &geom
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
@@ -6769,9 +7680,12 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#endif
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	struct of_geom geom;
-	struct of_state q;
 	double pf[NPR], dU[NPR], U[NPR];
-
+	#if(RESISTIVE)
+	struct of_state_res q;
+	#else
+	struct of_state q;
+	#endif
 	int zsize = 1, zoffset = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -6791,12 +7705,18 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0 / ((double)zsize)) * pi_i[k * (ksize)+global_id - zoffset + u];
 				}
 			}
+			#if(RESISTIVE)
+			get_state_res(pf, &geom, &q);
+			primtoflux_res(pf, &q, 0, &geom, U);
+			#else
 			get_state(pf, &geom, &q);
 			primtoflux(pf, &q, 0, &geom, U, NULL, NULL
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
 			);
+			#endif
+
 			#if(RAD_M1)
 			struct of_state_rad q_rad;
 			get_state_rad(pf, &geom, &q_rad);
@@ -6818,7 +7738,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0 / ((double)zsize)) * pb_i[k * (ksize)+global_id - zoffset + u];
 				}
 			}
+			#if(RESISTIVE)
+			get_state_res(pf, &geom, &q);
+			#else
 			get_state(pf, &geom, &q);
+			#endif
 		}
 
 		#pragma unroll 9	
@@ -6836,11 +7760,18 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#endif
 		}
 
+		#if(RESISTIVE)
+		double q_charge;
+		if (ETA == 0.0) q_charge = 0.;
+		else q_charge = divE_calc(pb_i, gdet, dx_1, dx_2, dx_3, icurr, jcurr, zcurr);
+		source_res(pf, &geom, icurr, jcurr, zcurr, dU, &q_charge, Dt, conn, &q, radius[icurr]);
+		#else
 		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
 		);
+		#endif
 
 		#pragma unroll 9
 		for (k = 0; k < NPR; k++) {
@@ -6882,6 +7813,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
 		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max);
 		#else
+		#if(RESISTIVE)
+		pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
+		#else
 		#if(NEWMAN)
 		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
 			#if (DOHELM)
@@ -6899,13 +7833,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#if( DO_FONT_FIX ) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
-			#if DOKTOT
 			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
 			);
-			#endif
 			if (pflag[global_id]) {
 				failimage[1 * (ksize)+global_id]++;
 				#if(!DOHELM)
@@ -6919,9 +7851,10 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		}
 		#endif
 		#endif
+		#endif
 
 		//Apply floors in ZAMO frame or drift frame
-		if (fixup_cell(pf, radius[icurr], &geom, &q
+		if (fixup_cell(pf, radius[icurr], &geom
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
@@ -7117,7 +8050,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			#endif
 
 			//Apply floors in ZAMO frame or drift frame
-			if (fixup_cell(pf, radius[icurr], &geom, &q
+			if (fixup_cell(pf, radius[icurr], &geom
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
@@ -7401,6 +8334,9 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			pv[U2_RAD * (ksize)+isize * icurr + j * (BS_3 + 2 * N3G) + zcurr] *= -1.;
 			#endif
 			pv[B2 * (ksize)+isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
+			#if(RESISTIVE)
+			pv[E2 * (ksize)+isize * icurr + j * (BS_3 + 2 * N3G) + zcurr] *= -1.;
+			#endif
 		}
 
 		#if(STAGGERED)
@@ -7466,6 +8402,9 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			pv[U2_RAD * (ksize)+isize * icurr + j * (BS_3 + 2 * N3G) + zcurr] *= -1.;
 			#endif
 			pv[B2 * (ksize)+isize*icurr + j*(BS_3 + 2 * N3G) + zcurr] *= -1.;
+			#if(RESISTIVE)
+			pv[E2 * (ksize)+isize * icurr + j * (BS_3 + 2 * N3G) + zcurr] *= -1.;
+			#endif
 		}
 
 		#if(STAGGERED)
@@ -7506,6 +8445,10 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 			#endif
 			pv[B2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
 			pv[B3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			#if(RESISTIVE)
+			pv[E2 * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[E3 * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			#endif
 
 			#if(STAGGERED)
 			ps[0 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (-j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
@@ -7542,6 +8485,10 @@ __global__ void boundprim_trans(double *  pv, const  double* __restrict__ gdet, 
 			#endif
 			pv[B2*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
 			pv[B3*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			#if(RESISTIVE)
+			pv[E2 * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			pv[E3 * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] *= -1.0;
+			#endif
 
 			#if(STAGGERED)
 			ps[0 * (ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = ps[0 * (ksize)+isize*icurr + (2 * BS_2 - j - 1 + N2G)*(BS_3 + 2 * N3G) + (zcurr - N3G + BS_3 / 2) % BS_3 + N3G];
@@ -9898,6 +10845,105 @@ __device__ void mhd_calc_res(double* pr, int dir, struct of_geom* geom, struct o
 	#endif
 }
 
+/* add in geometrical and cooling source terms to equations of motion */
+__device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double* q, double Dt, const  double* __restrict__ conn_GPU, struct of_state_res* q_res, double r) {
+	double conn, mhd_res[NDIM][NDIM];
+	int k;
+	double alpha, beta[4], gamma;
+	#if(NSY)
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id = icurr * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jcurr * (BS_3 + 2 * N3G) + zcurr;
+	#else
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id = icurr * (BS_2 + 2 * N2G) + jcurr;
+	#endif
+
+	mhd_calc_res(ph, 0, geom, q_res, mhd_res[0]);
+	mhd_calc_res(ph, 1, geom, q_res, mhd_res[1]);
+	mhd_calc_res(ph, 2, geom, q_res, mhd_res[2]);
+	mhd_calc_res(ph, 3, geom, q_res, mhd_res[3]);
+
+	/* contract mhd stress tensor with connection */
+	PLOOP dU[k] = 0.;
+
+	#pragma unroll 4
+	for (k = 0; k < NDIM; k++) {
+		#if(NSY)
+		dU[UU] += mhd_res[0][k] * conn_GPU[0 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd_res[1][k] * conn_GPU[4 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd_res[2][k] * conn_GPU[7 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U3] += mhd_res[3][k] * conn_GPU[9 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[1 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd_res[1][k] * conn;
+		dU[U1] += mhd_res[0][k] * conn;
+		conn = conn_GPU[2 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd_res[2][k] * conn;
+		dU[U2] += mhd_res[0][k] * conn;
+		conn = conn_GPU[3 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd_res[3][k] * conn;
+		dU[U3] += mhd_res[0][k] * conn;
+		conn = conn_GPU[5 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd_res[2][k] * conn;
+		dU[U2] += mhd_res[1][k] * conn;
+		conn = conn_GPU[6 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd_res[3][k] * conn;
+		dU[U3] += mhd_res[1][k] * conn;
+		conn = conn_GPU[8 * NDIM * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd_res[3][k] * conn;
+		dU[U3] += mhd_res[2][k] * conn;
+		#else
+		dU[UU] += mhd_res[0][k] * conn_GPU[0 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd_res[1][k] * conn_GPU[4 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd_res[2][k] * conn_GPU[7 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U3] += mhd_res[3][k] * conn_GPU[9 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		conn = conn_GPU[1 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd_res[1][k] * conn;
+		dU[U1] += mhd_res[0][k] * conn;
+		conn = conn_GPU[2 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd_res[2][k] * conn;
+		dU[U2] += mhd_res[0][k] * conn;
+		conn = conn_GPU[3 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[UU] += mhd_res[3][k] * conn;
+		dU[U3] += mhd_res[0][k] * conn;
+		conn = conn_GPU[5 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd_res[2][k] * conn;
+		dU[U2] += mhd_res[1][k] * conn;
+		conn = conn_GPU[6 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U1] += mhd_res[3][k] * conn;
+		dU[U3] += mhd_res[1][k] * conn;
+		conn = conn_GPU[8 * NDIM * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + k * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id];
+		dU[U2] += mhd_res[3][k] * conn;
+		dU[U3] += mhd_res[2][k] * conn;
+		#endif
+	}
+
+	//Lapse in 3+1
+	alpha = 1.0 / sqrt(-geom->gcon[0]);
+
+	//Beta in 3+1
+	beta[1] = geom->gcon[1] * alpha * alpha;
+	beta[2] = geom->gcon[2] * alpha * alpha;
+	beta[3] = geom->gcon[3] * alpha * alpha;
+
+	//Calculate charge density from divergence of electric field
+	if (ETA < 0.000001) q[0] = 0.;
+
+	//Calculate relative Lorentz factor
+	gamma = q_res->ucon[0] * alpha;
+
+	//Calculate explicit part of electric current J sourceterm
+	dU[E1] = -alpha * q[0] * ph[U1] / gamma + beta[1] * q[0];
+	dU[E2] = -alpha * q[0] * ph[U2] / gamma + beta[2] * q[0];
+	dU[E3] = -alpha * q[0] * ph[U3] / gamma + beta[3] * q[0];
+
+	//Add cooling term if needed
+	#if (COOL_DISK)
+	misc_source(ph, icurr, jcurr, geom, q, dU, r, Dt);
+	#endif
+
+	PLOOP dU[k] *= geom->g;
+}
+
 //returns b^2 (i.e., twice magnetic pressure)
 __device__ double bsq_calc_res(double* pr, struct of_geom* geom)
 {
@@ -9971,7 +11017,7 @@ __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* g
 		Acon_js = geom->gcon[9];
 	}
 
-	double P, w, bsq, eta;
+	double w, bsq, eta;
 	// EOS-specific calls:
 	#if (DOHELM)
 	// 1. Helmholtz EOS
@@ -9980,7 +11026,6 @@ __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* g
 	w = pr[RHO] + pr[UU] + P;
 	#else
 	// 2. Ideal gas EOS
-	P = (GAMMA - 1.) * pr[UU];
 	#if(AMD)
 	w = fma(GAMMA, pr[UU], pr[RHO]);
 	#else
@@ -10085,4 +11130,54 @@ __device__ double lvc3u(int i, int j, int k) {
 	else lvc3u = -1.;
 
 	return (lvc3u);
+}
+
+__device__ double divE_calc(double* p, const  double* __restrict__ gdet, double _dx1, double _dx2, double _dx3, int ii, int jj, int zz) {
+	#if(RESISTIVE)
+	double divE;
+	int isize = (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G);
+	int jsize = (BS_3 + 2 * N3G);
+	int global_id = ii * (BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) + jj * (BS_3 + 2 * N3G) + zz;
+	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
+	#if(NSY)
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int ind0 = CENT * ((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id;
+	#else
+	int fix_mem2 = LOCAL_WORK_SIZE - ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
+	int global_id_2D = ii * (BS_2 + 2 * N2G) + jj;
+	int ind0 = CENT * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + global_id_2D;
+	#endif
+
+	int zsize = 1, zoffset = 0, zlevel = 0;
+
+	#if(N_LEVELS_1D_INT>0 && D3>0 && GPU_ENABLED==1)
+	if ((block[n][AMR_POLE] == 1 || block[n][AMR_POLE] == 3) && j < N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(j - N2_GPU_offset[n]) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize = round(pow(2.0, (double)zlevel));
+	zoffset = (z - N3_GPU_offset[n]) % zsize;
+	dz = (N3 > 1) * zsize;
+	#endif
+
+	/* Constrained transport defn */
+	#if(STAGGERED_E)
+
+	#else
+	/* Flux-ct defn */
+	divE = fabs(
+		#if(N1>1)
+		(p[E1 * ksize + global_id + isize] * gdet[ind0 + (!NSY) * (BS_1 + 2 * N1G) + NSY * isize] - p[E1 * ksize + global_id - isize] * gdet[ind0 - (!NSY) * (BS_1 + 2 * N1G) - NSY * isize]) / (2.0 * _dx1)
+		#endif
+		#if(N2>1)
+		+ (p[E2 * ksize + global_id + jsize] * gdet[ind0 + (!NSY) + jsize * NSY] - p[E2 * ksize + global_id - jsize] * gdet[ind0 - (!NSY) - jsize * NSY]) / (2.0 * _dx2)
+		#endif
+		#if(N3>1)
+		+ (p[E3 * ksize + global_id + zsize] * gdet[ind0 + NSY * zsize] - p[E3 * ksize + global_id - zsize] * gdet[ind0 - NSY*zsize]) / (2.0 * (double)(zsize)*_dx3)
+		#endif
+	);
+	#endif
+	return (divE / gdet[ind0]);
+	#else
+	return(0.0);
+	#endif
 }
