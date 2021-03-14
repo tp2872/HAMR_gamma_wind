@@ -2161,7 +2161,16 @@ __device__ int Utoprim_3d_res(double U[NPR], double gcov[10], double gcon[10], d
 				B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
 			}
 		}
-		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
+
+		double vU_guess[3], lfac_guess;
+		for (i = 0; i < 3; i++) {
+			vU_guess[i] = 0.;
+			for (j = 0; j < 3; j++) {
+				vU_guess[i] = vU_guess[i] + ggammainv[i][j] * vD_guess[j];
+			}
+		}
+		lfac_guess = sqrt(1.0 + vU_guess[0] * vD_guess[0] + vU_guess[1] * vD_guess[1] + vU_guess[2] * vD_guess[2]);
+		getE_resistive(E_guess, E_guess, vU_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, lfac_guess);
 		prim[E1] = E_guess[0] / alpha;
 		prim[E2] = E_guess[1] / alpha;
 		prim[E3] = E_guess[2] / alpha;
@@ -10912,9 +10921,6 @@ __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcur
 	beta[1] = geom->gcon[1] * alpha * alpha;
 	beta[2] = geom->gcon[2] * alpha * alpha;
 	beta[3] = geom->gcon[3] * alpha * alpha;
-
-	//Calculate charge density from divergence of electric field
-	//q[0] = 0.;
 
 	//Calculate relative Lorentz factor
 	gamma = q_res->ucon[0] * alpha;

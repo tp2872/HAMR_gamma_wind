@@ -123,7 +123,15 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 			}
 		}
 
-		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
+		double vU_guess[3], lfac_guess;
+		for (i = 0; i < 3; i++) {
+			vU_guess[i] = 0.;
+			for (j = 0; j < 3; j++) {
+				vU_guess[i] = vU_guess[i] + ggammainv[i][j] * vD_guess[j];
+			}
+		}
+		lfac_guess = sqrt(1.0 + vU_guess[0] * vD_guess[0] + vU_guess[1] * vD_guess[1] + vU_guess[2] * vD_guess[2]);
+		getE_resistive(E_guess, E_guess, vU_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, lfac_guess);
 		prim[E1] = E_guess[0] / alpha;
 		prim[E2] = E_guess[1] / alpha;
 		prim[E3] = E_guess[2] / alpha;

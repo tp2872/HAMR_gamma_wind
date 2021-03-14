@@ -209,9 +209,6 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[2] = geom->gcon[0][2] * alpha * alpha;
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
-	//Calculate charge density from divergence of electric field
-	if (ETA < 0.00000000001) q[0] = 0.;
-
 	//Calculate relative Lorentz factor
 	gamma = q_res.ucon[0] * alpha;
 
@@ -221,8 +218,8 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	dU[E3] = -alpha * q[0] * ph[U3] / gamma + beta[3] * q[0];
 
 	//Add disk cooling term
-	double X[NDIM], r, th, phi;
 	#if(COOL_DISK)
+	double X[NDIM], r, th, phi;
 	coord(n, ii, jj, zz, CENT, X);
 	bl_coord(X, &r, &th, &phi);
 	misc_source(ph, ii, jj, geom, &q, dU, r, Dt);
