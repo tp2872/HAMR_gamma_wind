@@ -88,7 +88,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	//compute the square of fluid frame magnetic field (twice magnetic pressure)
 	get_geometry(n,i,j,z,CENT,&geom) ;
 	#if(RESISTIVE)
-	bsq = bsq_calc(pv, &geom);
+	bsq = bsq_calc_res(pv, &geom);
 	#else
 	bsq = bsq_calc(pv, &geom);
 	#endif
@@ -118,7 +118,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#if(DRIFT_FLOOR)
 	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {
 		#if(RESISTIVE)
-		get_state(pv_prefloor, &geom, &q);
+		get_state_res(pv_prefloor, &geom, &q);
 		#else
 		get_state(pv_prefloor, &geom, &q);
 		#endif

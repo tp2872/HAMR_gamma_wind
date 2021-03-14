@@ -163,13 +163,13 @@ double advance_res(int flag)
 	#else
 	#if(DO_IMEX)
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2(ph, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_M1_2_res(ph, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_res(p, n_ord[n]);
 	}
 	#else
 	for (n = 0; n < n_active; n++) {
-		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(ph, n_ord[n]);
-		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
+		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_res(ph, n_ord[n]);
+		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1_res(p, n_ord[n]);
 	}
 	#endif
 	const_transport_bound();
@@ -602,10 +602,13 @@ double fluxcalc_res(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_L
 					primtoflux_res(p_l, &state_l_res, 0, &geom, U_l);
 					primtoflux_res(p_r, &state_r_res, 0, &geom, U_r);
 
-					//vchar_res(&geom, dir, &cmax_l, &cmin_l);
-					//vchar_res(&geom, dir, &cmax_r, &cmin_r);
+					//#if(ETA==0.0)
 					vchar_res2(p_l, &state_l_res, &geom, dir, &cmax_l, &cmin_l);
 					vchar_res2(p_r, &state_r_res, &geom, dir, &cmax_r, &cmin_r);
+					//#else
+					//vchar_res(&geom, dir, &cmax_l, &cmin_l);
+					//vchar_res(&geom, dir, &cmax_r, &cmin_r);
+					//#endif
 
 					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));

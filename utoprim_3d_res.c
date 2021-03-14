@@ -220,7 +220,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 	}
 
 	if (retval != 0 || ii==maxitr) {
-		fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
+		//fprintf(stderr, "N: %d, retval: %d error: %f \n", ii, retval, log10(fabs(er)));
 		retval = 1;
 		return retval;
 	}

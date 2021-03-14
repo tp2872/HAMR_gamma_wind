@@ -447,7 +447,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 		fail(FAIL_COEFF_SUP) ;
 		cms2 = 1. ;
 	}
-
+	//cms2 = 0.95;
 	/* now require that speed of wave measured by observer q->ucon is cms2 */
 	Asq = dot(Acon,Acov) ;
 	Bsq = dot(Bcon,Bcov) ;

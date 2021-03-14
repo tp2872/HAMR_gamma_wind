@@ -232,10 +232,6 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Whether or not to use a stagger electric field*/
 #define STAGGERED_E (0)
 
-/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (1)
-#define LAXF  (0)
-
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
 
@@ -315,6 +311,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable IMEX*/
 #define DO_IMEX (0)
+
+/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
+#if(RESISTIVE)
+#define HLLF  (0)
+#define LAXF  (1)
+#else
+#define HLLF  (1)
+#define LAXF  (0)
+#endif
 
 //Abundace constants
 #define Z_AB (0.02)
