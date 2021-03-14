@@ -185,7 +185,7 @@ int invert_3DU(double D, double sigma, double etares, double tau, double S[3], d
 
 		//Print error if jacobian is singular
 		if (retval_matrix == 1) {
-			for (i1 = 0; i1 < 3; i1++)for (j1 = 0; j1 < 3; j1++) fprintf(stderr, "Jac(%d, %d): %f \n", i1, j1, J_3du[i][j]);
+			//for (i1 = 0; i1 < 3; i1++)for (j1 = 0; j1 < 3; j1++) fprintf(stderr, "Jac(%d, %d): %f \n", i1, j1, J_3du[i1][j1]);
 			break;
 		}
 
@@ -553,7 +553,7 @@ int invert_3DU_entropy(double D, double sigma, double etares, double kappa, doub
 
 		//Print error if jacobian is singular
 		if (retval_matrix == 1) {
-			for (i1 = 0; i1 < 3; i1++)for (j1 = 0; j1 < 3; j1++) fprintf(stderr, "Jac(%d, %d): %f \n", i1, j1, J_3du[i][j]);
+			//for (i1 = 0; i1 < 3; i1++)for (j1 = 0; j1 < 3; j1++) fprintf(stderr, "Jac(%d, %d): %f \n", i1, j1, J_3du[i1][j1]);
 			break;
 		}
 

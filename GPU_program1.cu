@@ -2161,7 +2161,6 @@ __device__ int Utoprim_3d_res(double U[NPR], double gcov[10], double gcon[10], d
 				B_D[i] = B_D[i] + ggamma[i][j] * B_guess[j];
 			}
 		}
-
 		getE_resistive(E_guess, E_guess, vD_guess, vD_guess, B_D, Dt * alpha, ETA, ggammainv, sqrtgamma, 1.0);
 		prim[E1] = E_guess[0] / alpha;
 		prim[E2] = E_guess[1] / alpha;
@@ -6357,8 +6356,8 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		get_state_res(p, &geom, &state);
 		primtoflux_res(p, &state, dir, &geom, temp3);
 		primtoflux_res(p, &state, 0, &geom, temp4);
-		if(ETA==0.0) vchar_res2(p, &state, &geom, dir, &cmax_r, &cmin_r);
-		else vchar_res(&geom, dir, &cmax_r, &cmin_r);
+		//vchar_res2(p, &state, &geom, dir, &cmax_r, &cmin_r);
+		vchar_res(&geom, dir, &cmax_r, &cmin_r);
 		#else
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r
@@ -6772,13 +6771,33 @@ __global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_c
 	int ksize = isize*(BS_1 + 2 * N1G) + fix_mem1;
 	double pb[NPR];
 	struct of_geom geom;
-	struct of_state q;
 
 	if (k==1){
 		for (k = 0; k<NPR; k++){
 			pb[k] = pb_i[k*(ksize)+global_id];
 		}
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
+		#if(RESISTIVE)
+		double alpha, beta[3], E_cov[3];
+		//Lapse in 3+1
+		alpha = 1.0 / sqrt(-geom.gcon[0]);
+
+		//Beta in 3+1
+		beta[0] = geom.gcon[1] * alpha * alpha;
+		beta[1] = geom.gcon[2] * alpha * alpha;
+		beta[2] = geom.gcon[3] * alpha * alpha;
+
+		/* dual of Maxwell tensor */
+		lower_3(&(pb[E1]), geom.gcov, E_cov);
+
+		//calculate the cell center values of the E-field
+		#if(N3G>0)
+		E_cent[1 * ksize + global_id] = geom.g * (beta[1] * pb[B3] - beta[2] * pb[B2] + (alpha * alpha / geom.g) * E_cov[0]); //-F2[B3], F3[B2]
+		E_cent[2 * ksize + global_id] = geom.g * (beta[2] * pb[B1] - beta[0] * pb[B3] + (alpha * alpha / geom.g) * E_cov[1]); //-F3[B1], F1[B3]
+		#endif
+		E_cent[3 * ksize + global_id] = geom.g * (beta[0] * pb[B2] - beta[1] * pb[B1] + (alpha * alpha / geom.g) * E_cov[2]); //-F1[B2], F2[B1]
+		#else
+		struct of_state q;
 		ucon_calc(pb, &geom, q.ucon);
 		lower(q.ucon, geom.gcov, q.ucov);
 		bcon_calc(pb, q.ucon, q.ucov, q.bcon);
@@ -6788,6 +6807,7 @@ __global__ void consttransport1(const  double* __restrict__  pb_i, double *  E_c
 		E_cent[2 * ksize + global_id] = -geom.g * (q.ucon[3] * q.bcon[1] - q.ucon[1] * q.bcon[3]);
 		#endif
 		E_cent[3 * ksize + global_id] = -geom.g * (q.ucon[1] * q.bcon[2] - q.ucon[2] * q.bcon[1]);
+		#endif
 	}
 }
 
@@ -6812,30 +6832,30 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 
 	if (k==1){
 		#if(RESISTIVE)
-		double dE_LEFT_13_1 = 0.;
-		double dE_LEFT_13_2 = 0.;
-		double dE_RIGHT_13_1 = 0.;
-		double dE_RIGHT_13_2 = 0.;
-		double dE_LEFT_12_1 = 0.;
-		double dE_LEFT_12_2 = 0.;
-		double dE_RIGHT_12_1 = 0.;
-		double dE_RIGHT_12_2 = 0.;
-		double dE_LEFT_21_1 = 0.;
-		double dE_LEFT_21_2 = 0.;
-		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_21_2 = 0.;
-		double dE_LEFT_23_1 = 0.;
-		double dE_LEFT_23_2 = 0.;
-		double dE_RIGHT_23_1 = 0.;
-		double dE_RIGHT_23_2 = 0.;
-		double dE_LEFT_31_1 = 0.;
-		double dE_LEFT_31_2 = 0.;
-		double dE_RIGHT_31_1 = 0.;
-		double dE_RIGHT_31_2 = 0.;
-		double dE_LEFT_32_1 = 0.;
-		double dE_LEFT_32_2 = 0.;
-		double dE_RIGHT_32_1 = 0.;
-		double dE_RIGHT_32_2 = 0.;
+		double dE_LEFT_13_1 = 0.0;
+		double dE_LEFT_13_2 = 0.0;
+		double dE_RIGHT_13_1 = 0.0;
+		double dE_RIGHT_13_2 = 0.0;
+		double dE_LEFT_12_1 = 0.0;
+		double dE_LEFT_12_2 = 0.0;
+		double dE_RIGHT_12_1 = 0.0;
+		double dE_RIGHT_12_2 = 0.0;
+		double dE_LEFT_21_1 = 0.0;
+		double dE_LEFT_21_2 = 0.0;
+		double dE_RIGHT_21_1 = 0.0;
+		double dE_RIGHT_21_2 = 0.0;
+		double dE_LEFT_23_1 = 0.0;
+		double dE_LEFT_23_2 = 0.0;
+		double dE_RIGHT_23_1 = 0.0;
+		double dE_RIGHT_23_2 = 0.0;
+		double dE_LEFT_31_1 = 0.0;
+		double dE_LEFT_31_2 = 0.0;
+		double dE_RIGHT_31_1 = 0.0;
+		double dE_RIGHT_31_2 = 0.0;
+		double dE_LEFT_32_1 = 0.0;
+		double dE_LEFT_32_2 = 0.0;
+		double dE_RIGHT_32_1 = 0.0;
+		double dE_RIGHT_32_2 = 0.0;
 		#else
 		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
 		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
@@ -6903,32 +6923,6 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 	int jsize = BS_3 + 2 * N3G;
 
 	if (k == 1) {
-		#if(RESISTIVE)
-		double dE_LEFT_13_1 = 0.;
-		double dE_LEFT_13_2 = 0.;
-		double dE_RIGHT_13_1 = 0.;
-		double dE_RIGHT_13_2 = 0.;
-		double dE_LEFT_12_1 = 0.;
-		double dE_LEFT_12_2 = 0.;
-		double dE_RIGHT_12_1 = 0.;
-		double dE_RIGHT_12_2 = 0.;
-		double dE_LEFT_21_1 = 0.;
-		double dE_LEFT_21_2 = 0.;
-		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_21_2 = 0.;
-		double dE_LEFT_23_1 = 0.;
-		double dE_LEFT_23_2 = 0.;
-		double dE_RIGHT_23_1 = 0.;
-		double dE_RIGHT_23_2 = 0.;
-		double dE_LEFT_31_1 = 0.;
-		double dE_LEFT_31_2 = 0.;
-		double dE_RIGHT_31_1 = 0.;
-		double dE_RIGHT_31_2 = 0.;
-		double dE_LEFT_32_1 = 0.;
-		double dE_LEFT_32_2 = 0.;
-		double dE_RIGHT_32_1 = 0.;
-		double dE_RIGHT_32_2 = 0.;
-		#else
 		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
 		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
 		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
@@ -6953,7 +6947,6 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
 		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
 		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
-		#endif
 		
 		emf[1 * (ksize)+global_id] *= 0.5;
 		emf[2 * (ksize)+global_id] *= 0.5;
@@ -7762,8 +7755,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		#if(RESISTIVE)
 		double q_charge;
-		if (ETA == -100.0) q_charge = 0.;
-		else q_charge = divE_calc(pb_i, gdet, dx_1, dx_2, dx_3, icurr, jcurr, zcurr);
+		q_charge = divE_calc(pb_i, gdet, dx_1, dx_2, dx_3, icurr, jcurr, zcurr);
 		source_res(pf, &geom, icurr, jcurr, zcurr, dU, &q_charge, Dt, conn, &q, radius[icurr]);
 		#else
 		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
@@ -10712,11 +10704,9 @@ __device__ void primtoflux_res(double* pr, struct of_state_res* q_res, int dir, 
 		flux[E1] = beta[1] * pr[E1 + (dir - 1)] - beta[dir] * pr[E1];
 		flux[E2] = beta[2] * pr[E1 + (dir - 1)] - beta[dir] * pr[E2];
 		flux[E3] = beta[3] * pr[E1 + (dir - 1)] - beta[dir] * pr[E3];
-		for (k = 0; k < 3; k++) {
-			flux[E1] -= lvc3u(0, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
-			flux[E2] -= lvc3u(1, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
-			flux[E3] -= lvc3u(2, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
-		}
+		flux[E1] -= lvc3u(0, dir - 1, (3 - 0 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Bcov[(3 - 0 - (dir - 1))]);
+		flux[E2] -= lvc3u(1, dir - 1, (3 - 1 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Bcov[(3 - 1 - (dir - 1))]);
+		flux[E3] -= lvc3u(2, dir - 1, (3 - 2 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Bcov[(3 - 2 - (dir - 1))]);
 	}
 
 	/* dual of Maxwell tensor */
@@ -10730,11 +10720,9 @@ __device__ void primtoflux_res(double* pr, struct of_state_res* q_res, int dir, 
 		flux[B1] = beta[1] * pr[B1 + (dir - 1)] - beta[dir] * pr[B1];
 		flux[B2] = beta[2] * pr[B1 + (dir - 1)] - beta[dir] * pr[B2];
 		flux[B3] = beta[3] * pr[B1 + (dir - 1)] - beta[dir] * pr[B3];
-		for (k = 0; k < 3; k++) {
-			flux[B1] += lvc3u(0, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
-			flux[B2] += lvc3u(1, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
-			flux[B3] += lvc3u(2, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
-		}
+		flux[B1] += lvc3u(0, dir - 1, (3 - 0 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Ecov[(3 - 0 - (dir - 1))]);
+		flux[B2] += lvc3u(1, dir - 1, (3 - 1 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Ecov[(3 - 1 - (dir - 1))]);
+		flux[B3] += lvc3u(2, dir - 1, (3 - 2 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Ecov[(3 - 2 - (dir - 1))]);
 	}
 
 	//Entropy advection
@@ -10926,7 +10914,7 @@ __device__ void source_res(double* ph, struct of_geom* geom, int icurr, int jcur
 	beta[3] = geom->gcon[3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	if (ETA < 0.000001) q[0] = 0.;
+	//q[0] = 0.;
 
 	//Calculate relative Lorentz factor
 	gamma = q_res->ucon[0] * alpha;
@@ -11156,26 +11144,22 @@ __device__ double divE_calc(double* p, const  double* __restrict__ gdet, double 
 	if ((block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3) && j >= N2_GPU_offset[n] + BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(j - N2_GPU_offset[n], BS_2 - D2)))) / log(2.)), N_LEVELS_1D_INT);
 	zsize = round(pow(2.0, (double)zlevel));
 	zoffset = (z - N3_GPU_offset[n]) % zsize;
-	dz = (N3 > 1) * zsize;
 	#endif
 
 	/* Constrained transport defn */
-	#if(STAGGERED_E)
 
-	#else
 	/* Flux-ct defn */
-	divE = fabs(
-		#if(N1>1)
+	divE = (
+		#if(N1G>1)
 		(p[E1 * ksize + global_id + isize] * gdet[ind0 + (!NSY) * (BS_1 + 2 * N1G) + NSY * isize] - p[E1 * ksize + global_id - isize] * gdet[ind0 - (!NSY) * (BS_1 + 2 * N1G) - NSY * isize]) / (2.0 * _dx1)
 		#endif
-		#if(N2>1)
+		#if(N2G>1)
 		+ (p[E2 * ksize + global_id + jsize] * gdet[ind0 + (!NSY) + jsize * NSY] - p[E2 * ksize + global_id - jsize] * gdet[ind0 - (!NSY) - jsize * NSY]) / (2.0 * _dx2)
 		#endif
-		#if(N3>1)
+		#if(N3G>1)
 		+ (p[E3 * ksize + global_id + zsize] * gdet[ind0 + NSY * zsize] - p[E3 * ksize + global_id - zsize] * gdet[ind0 - NSY*zsize]) / (2.0 * (double)(zsize)*_dx3)
 		#endif
 	);
-	#endif
 	return (divE / gdet[ind0]);
 	#else
 	return(0.0);

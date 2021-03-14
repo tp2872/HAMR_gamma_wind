@@ -45,13 +45,11 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[E1] = beta[1] * pr[E1 + (dir - 1)] - beta[dir] * pr[E1];
 		flux[E2] = beta[2] * pr[E1 + (dir - 1)] - beta[dir] * pr[E2];
 		flux[E3] = beta[3] * pr[E1 + (dir - 1)] - beta[dir] * pr[E3];
-		for (k = 0; k < 3; k++) {
-			flux[E1] -= lvc3u(0, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
-			flux[E2] -= lvc3u(1, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
-			flux[E3] -= lvc3u(2, dir - 1, k) * (alpha * sqrtgamma_inv) * (Bcov[k]);
-		}
+		flux[E1] -= lvc3u(0, dir - 1, (3 - 0 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Bcov[(3 - 0 - (dir - 1))]);
+		flux[E2] -= lvc3u(1, dir - 1, (3 - 1 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Bcov[(3 - 1 - (dir - 1))]);
+		flux[E3] -= lvc3u(2, dir - 1, (3 - 2 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Bcov[(3 - 2 - (dir - 1))]);
 	}
-	
+
 	/* dual of Maxwell tensor */
 	lower_3(&(pr[E1]), geom->gcov, Ecov);
 	if (dir == 0) {
@@ -63,13 +61,10 @@ void primtoflux_res(double * restrict pr, struct of_state_res * restrict q_res, 
 		flux[B1] = beta[1] * pr[B1 + (dir - 1)] - beta[dir] * pr[B1];
 		flux[B2] = beta[2] * pr[B1 + (dir - 1)] - beta[dir] * pr[B2];
 		flux[B3] = beta[3] * pr[B1 + (dir - 1)] - beta[dir] * pr[B3];
-		for (k = 0; k < 3; k++) {
-			flux[B1] += lvc3u(0, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
-			flux[B2] += lvc3u(1, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
-			flux[B3] += lvc3u(2, dir - 1, k) * (alpha * sqrtgamma_inv) * (Ecov[k]);
-		}
+		flux[B1] += lvc3u(0, dir - 1, (3 - 0 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Ecov[(3 - 0 - (dir - 1))]);
+		flux[B2] += lvc3u(1, dir - 1, (3 - 1 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Ecov[(3 - 1 - (dir - 1))]);
+		flux[B3] += lvc3u(2, dir - 1, (3 - 2 - (dir - 1))) * (alpha * sqrtgamma_inv) * (Ecov[(3 - 2 - (dir - 1))]);
 	}
-
 	//Entropy advection
 	#if(FULL_ENTROPY)
 	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA));
@@ -215,7 +210,7 @@ void source_res(double * restrict ph,  struct of_geom * restrict geom, int n, in
 	beta[3] = geom->gcon[0][3] * alpha * alpha;
 
 	//Calculate charge density from divergence of electric field
-	if (ETA < 0.000001) q[0] = 0.;
+	if (ETA < 0.00000000001) q[0] = 0.;
 
 	//Calculate relative Lorentz factor
 	gamma = q_res.ucon[0] * alpha;
@@ -411,15 +406,15 @@ double divE_calc(double(*restrict p[NB_LOCAL])[NPR],  int n, int i, int j, int z
 	#endif
 	#else
 	/* Flux-ct defn */
-	dive = fabs(
+	dive = (
 		#if(N1>1)
-			(p[nl[n]][index_3D(n, i, j, z)][E1] * gdet[nl[n]][index_2D(n, i, j, z)][CENT] - p[nl[n]][index_3D(n, i - di, j, z)][E1] * gdet[nl[n]][index_2D(n, i - di, j, z)][CENT]) / ((double)dx[nl[n]][1])
+			(p[nl[n]][index_3D(n, i+D1, j, z)][E1] * gdet[nl[n]][index_2D(n, i+D1, j, z)][CENT] - p[nl[n]][index_3D(n, i - D1, j, z)][E1] * gdet[nl[n]][index_2D(n, i - D1, j, z)][CENT]) / (2.0*(double)dx[nl[n]][1])
 		#endif
 		#if(N2>1)
-			+ (p[nl[n]][index_3D(n, i, j, z)][E2] * gdet[nl[n]][index_2D(n, i, j, z)][CENT] - p[nl[n]][index_3D(n, i, j - dj, z)][E2] * gdet[nl[n]][index_2D(n, i, j - dj, z)][CENT]) / ((double)dx[nl[n]][2])
+			+ (p[nl[n]][index_3D(n, i, j+D2, z)][E2] * gdet[nl[n]][index_2D(n, i, j+D2, z)][CENT] - p[nl[n]][index_3D(n, i, j - D2, z)][E2] * gdet[nl[n]][index_2D(n, i, j - D2, z)][CENT]) / (2.0*(double)dx[nl[n]][2])
 		#endif
 		#if(N3>1)
-			+ (p[nl[n]][index_3D(n, i, j, z)][E3] * gdet[nl[n]][index_2D(n, i, j, z)][CENT] - p[nl[n]][index_3D(n, i, j, z - dz)][E3] * gdet[nl[n]][index_2D(n, i, j, z - dz)][CENT]) / ((double)(zsize)*dx[nl[n]][3])
+			+ (p[nl[n]][index_3D(n, i, j, z+D3*zsize)][E3] * gdet[nl[n]][index_2D(n, i, j, z+D3*zsize)][CENT] - p[nl[n]][index_3D(n, i, j, z - D3*zsize)][E3] * gdet[nl[n]][index_2D(n, i, j, z - D3*zsize)][CENT]) / (2.0*(double)(zsize)*dx[nl[n]][3])
 		#endif
 	);
 	#endif
