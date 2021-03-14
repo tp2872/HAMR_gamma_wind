@@ -6296,9 +6296,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		primtoflux_res(p, &state, dir, &geom, temp1);
 		primtoflux_res(p, &state, 0, &geom, temp2);
 		//#if(ETA==0.0)
-		vchar_res2(p, &state, &geom, dir, &cmax_l, &cmin_l);
+		//vchar_res2(p, &state, &geom, dir, &cmax_l, &cmin_l);
 		//#else
-		//vchar_res(&geom, dir, &cmax_l, &cmin_l);
+		vchar_res(&geom, dir, &cmax_l, &cmin_l);
 		//#endif
 		#else
 		get_state(p, &geom, &state);
@@ -7762,7 +7762,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		#if(RESISTIVE)
 		double q_charge;
-		if (ETA == 0.0) q_charge = 0.;
+		if (ETA == -100.0) q_charge = 0.;
 		else q_charge = divE_calc(pb_i, gdet, dx_1, dx_2, dx_3, icurr, jcurr, zcurr);
 		source_res(pf, &geom, icurr, jcurr, zcurr, dU, &q_charge, Dt, conn, &q, radius[icurr]);
 		#else
