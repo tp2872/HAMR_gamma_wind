@@ -114,6 +114,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[UU] = uuflr;
 		dofloor = 1;
 	}
+	#if(RAD_M1)
+	if (pv[UU_RAD] < pow(10., -30.)) {
+		pv[UU_RAD] = pow(10., -30.);
+	}
+	#endif
 
 	#if(DRIFT_FLOOR)
 	if (dofloor && (trans = 10.*bsq / MY_MIN(pv[RHO], pv[UU]) - 1.) > 0.) {

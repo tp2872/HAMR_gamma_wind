@@ -310,7 +310,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0)
 
 /*Enable IMEX*/
-#define DO_IMEX (0)
+#define DO_IMEX (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
