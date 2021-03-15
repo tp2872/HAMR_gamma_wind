@@ -502,7 +502,7 @@ void init_truncdisk()
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
 				#if(RAD_M1)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = pow(10., -5.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.0 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
@@ -631,7 +631,7 @@ void init_truncdisk()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
 			#if(RAD_M1)
-			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
 
 			//Calculate optical depth of one cell
@@ -1007,6 +1007,13 @@ void init_torus()
 			else
 				lnh = 1. ;
 
+			#if(RAD_M1)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.0;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
+			#endif
+
 			/* regions outside torus */
 			if(lnh < 0. || r < rin) {
 				rho = 1.e-7*RHOMIN ;
@@ -1021,12 +1028,7 @@ void init_torus()
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U1] = ur;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U2] = uh;
 				p[nl[n_ord[n]]][index_3D(n_ord[n] ,i,j,z)][U3] = up;
-				#if(RAD_M1)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = pow(10., -5.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
-				#endif
+			
 			}
 			/* region inside magnetized torus; u^i is calculated in
 			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
@@ -1112,7 +1114,7 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
 			#if(RAD_M1)
-			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
 
 			//Calculate optical depth of one cell
@@ -2467,8 +2469,6 @@ void set_mag(void){
 			if (((GAMMA - 1.) *p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + (4. / 3. - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]) > pmax && (j > 4) && (j < N2 * pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]+(4./3.-1.)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD];
 			}
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = (p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] + p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.0001*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
 			#else
 			if ((GAMMA - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] > pmax && (j > 4) && (j < N2*pow(1 + REF_2, block[n_ord[n]][AMR_LEVEL2]) - 4)) {
 				pmax = (GAMMA-1.)*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];

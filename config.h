@@ -28,7 +28,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -129,8 +129,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 256
-#define BS_2 256
+#define BS_1 128
+#define BS_2 128
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -202,7 +202,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
-#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)
@@ -301,19 +301,19 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable Resistivity*/
-#define RESISTIVE (1)
+#define RESISTIVE (0)
 
 /*Set resistivity coefficient*/
-#define ETA (0.00001)
+#define ETA (0.0)
 
 /*Enable IMEX*/
 #define DO_IMEX (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#if(RESISTIVE)
+#if(RESISTIVE || RAD_M1)
 #define HLLF  (0)
 #define LAXF  (1)
 #else

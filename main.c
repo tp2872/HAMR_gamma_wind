@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
 			check_refcrit();
 			#endif
 		}	
-		restart_write();
-		close_rdump();
+		//restart_write();
+		//close_rdump();
 	}
 
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS

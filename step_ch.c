@@ -621,6 +621,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					if (flag == 1 && DO_IMEX) {
 						for (k = UU_RAD; k <= U3_RAD; k++) {
 							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k])));
+							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k])));
 						}
 					}
 					else {
