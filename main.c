@@ -474,9 +474,10 @@ void set_arrays(int n)
 	p[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	ph[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	U[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	U_n[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
-	dU_MHD1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	U_0[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	U_1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	dU_RAD0[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	dU_RAD1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	#else
@@ -1090,13 +1091,17 @@ void free_arrays(int n){
 	free(ps[nl[n]]);
 	free(psh[nl[n]]);
 	#endif
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	free(U_n[nl[n]]);
+	free(U_0[nl[n]]);
+	free(U_1[nl[n]]);
 	free(dU_MHD1[nl[n]]);
 	free(dU_RAD0[nl[n]]);
 	free(dU_RAD1[nl[n]]);
+	#endif
+	#if(RAD_M1)
 	free(pflag_rad[nl[n]]);
-	#else
+	#endif
 	free(U[nl[n]]);
 	#endif
 	free(dq[nl[n]]);

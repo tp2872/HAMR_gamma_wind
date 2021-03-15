@@ -163,7 +163,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (0)
+#define N_LEVELS_1D_INT (2)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -310,7 +310,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0)
 
 /*Enable IMEX*/
-#define DO_IMEX (1)
+#define DO_IMEX (0)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)

@@ -1114,7 +1114,7 @@ void init_torus()
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
 			#if(RAD_M1)
-			//init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
 
 			//Calculate optical depth of one cell
@@ -1226,9 +1226,9 @@ void init_rad_pres(double pi[NPR]) {
 		//pi[UU_RAD] = 0.;
 	}
 	else {
-		//pgas = pi[RHO] * T_new;
-		//pi[UU] = pgas / (GAMMA - 1.);
-		//pi[UU_RAD] = arad*pow(T_new,4.);
+		pgas = pi[RHO] * T_new;
+		pi[UU] = pgas / (GAMMA - 1.);
+		pi[UU_RAD] = arad*pow(T_new,4.);
 	}
 
 	pi[U1_RAD] = pi[U1];

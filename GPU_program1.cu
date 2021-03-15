@@ -350,7 +350,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		}
 		else {
 			//If error is below set margin, accept solution, otherwise try PMHD
-			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
+			//if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0);
 
 		//	if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
 		//		#if(DOHELM)
@@ -366,11 +366,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			//if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0
-			//	#if(DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//);
+			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+			);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0);
@@ -514,7 +514,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[0] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_f[U2_RAD] - U_i[U2_RAD] - Dt * dU[U2_RAD]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_f[U3_RAD] - U_i[U3_RAD] - Dt * dU[U3_RAD]) / norm);
 }
-
 
 __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged 
 #if(DOHELM)
@@ -1567,13 +1566,13 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				#endif
 			);
 			#if(DO_FONT_FIX)
-			if (flag && (n_iter_fail > -1)) {
-				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
-				#if (DOHELM)
-				, gpu_eos_table
-				#endif
-				);
-			}
+			//if (flag && (n_iter_fail > -1)) {
+			//	flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+			//	#if (DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//	);
+			//}
 			#endif
 
 			if (flag == 0) {
@@ -1998,19 +1997,19 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					keep_iterating = 0;
+				//	keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-					count_increase++;
-					if (count_increase >= 5) keep_iterating = 0;
+				//	count_increase++;
+					//if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
 				if (pb_new[UU] < 0.) {
-					count_increase_gas++;
-					if (count_increase > 2) keep_iterating = 0;
+				//	count_increase_gas++;
+				//	if (count_increase > 2) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -2023,14 +2022,14 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (fabs(error_new[n_iter % 5]) < error_t[0]) {
+				//if (fabs(error_new[n_iter % 5]) < error_t[0]) {
 					error_t[0] = error_new[n_iter % 5];
 					for (k = 0; k < NPR; k++) {
 						pb[k] = pb_new[k];
 						U_f[k] = U_new[k];
 						dU[k] = dU_new[k];
 					}
-				}
+				//}
 				break;
 			}
 			else {
@@ -6302,11 +6301,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		get_state_res(p, &geom, &state);
 		primtoflux_res(p, &state, dir, &geom, temp1);
 		primtoflux_res(p, &state, 0, &geom, temp2);
-		//#if(ETA==0.0)
-		//vchar_res2(p, &state, &geom, dir, &cmax_l, &cmin_l);
-		//#else
 		vchar_res(&geom, dir, &cmax_l, &cmin_l);
-		//#endif
 		#else
 		get_state(p, &geom, &state);
 		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l
@@ -6364,7 +6359,6 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		get_state_res(p, &geom, &state);
 		primtoflux_res(p, &state, dir, &geom, temp3);
 		primtoflux_res(p, &state, 0, &geom, temp4);
-		//vchar_res2(p, &state, &geom, dir, &cmax_r, &cmin_r);
 		vchar_res(&geom, dir, &cmax_r, &cmin_r);
 		#else
 		get_state(p, &geom, &state);
@@ -7398,7 +7392,6 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			#endif
 		);
 
-
 		for (k = 0; k < NPR; k++) {
 			UU1[k] = 0.;
 			for (u = 0; u < zsize; u++) {
@@ -7437,7 +7430,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			UU1[B2] += (psh[1 * ksize + global_id - zoffset + u] * gdet[FACE2 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psh[1 * ksize + global_id + (BS_3 + 2 * N3G) - zoffset + u] * gdet[FACE2 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + (jcurr + D2)]) / (2.0 * (double)zsize);
 		}
 		#if(N3G>0)
-		U1[B3] = (psh[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psh[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr]) / 2.0;
+		UU1[B3] = (psh[2 * ksize + global_id - zoffset] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr] + psh[2 * ksize + global_id - zoffset + zsize * D3] * gdet[FACE3 * ((BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem2) + icurr * (BS_2 + 2 * N2G) + jcurr]) / 2.0;
 		#endif
 		#endif
 		#endif
@@ -7454,15 +7447,15 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		);
 
 		//Apply floors in ZAMO frame or drift frame
-		//if (fixup_cell(p, radius[icurr], &geom
-		//	#if (DOHELM)
-		//	, gpu_eos_table
-		//	#endif
-		//)) {
-		//	pflag[global_id] = -333;
-		//	pflag[0] = global_id;;
-		//	failimage[3 * (ksize)+global_id]++;
-		//}
+		if (fixup_cell(p, radius[icurr], &geom
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
+		)) {
+			pflag[global_id] = -333;
+			pflag[0] = global_id;;
+			failimage[3 * (ksize)+global_id]++;
+		}
 
 		#pragma unroll 9	
 		for (k = 0; k < NPR; k++) {

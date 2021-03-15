@@ -152,7 +152,7 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	cudaMalloc(&Bufferradius[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
 	cudaMalloc(&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	cudaMalloc(&BufferU_n[nl[n]], NPR* ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	cudaMalloc(&BufferU_0[nl[n]], NPR* ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	cudaMalloc(&BufferU_1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
@@ -2617,14 +2617,14 @@ void GPU_finish(int n, int force_delete)
 	#endif
 	status += cudaFree(Bufferradius[nl[n]]);
 	status += cudaFree(Bufferstorage1[nl[n]]);
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	status += cudaFree(BufferU_n[nl[n]]);
 	status += cudaFree(BufferU_0[nl[n]]);
 	status += cudaFree(BufferU_1[nl[n]]);
 	status += cudaFree(BufferdU_RAD0[nl[n]]);
 	status += cudaFree(BufferdU_RAD1[nl[n]]);
 	#endif
-	#if(N_LEVELS_1D_INT>0 || RAD_M1 || RESISTIVE)
+	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE)
 	status += cudaFree(Bufferstorage2[nl[n]]);
 	status += cudaFree(Bufferstorage3[nl[n]]);
 	#endif
