@@ -125,12 +125,12 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 128
+#define BS_1 256
+#define BS_2 512
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -301,7 +301,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable Resistivity*/
 #define RESISTIVE (0)

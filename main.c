@@ -1102,6 +1102,7 @@ void free_arrays(int n){
 	#if(RAD_M1)
 	free(pflag_rad[nl[n]]);
 	#endif
+	free(U[nl[n]]);
 	free(dq[nl[n]]);
 	free(F1[nl[n]]);
 	free(F2[nl[n]]);
