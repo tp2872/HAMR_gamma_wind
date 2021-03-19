@@ -1451,7 +1451,9 @@ void balance_load(void){
 					#pragma omp parallel for collapse(3) schedule(static, (BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G)/nthreads)  private(i, j, z, k)
 					ZSLOOP3D(N1_GPU_offset[n_ord_total_RM[n]] - N1G, N1_GPU_offset[n_ord_total_RM[n]] + BS_1 - 1 + N1G, N2_GPU_offset[n_ord_total_RM[n]] - N2G, N2_GPU_offset[n_ord_total_RM[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord_total_RM[n]] - N3G, N3_GPU_offset[n_ord_total_RM[n]] + BS_3 - 1 + N3G) {
 						PLOOP p[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_p[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+#if(STAGGERED)
 						for (k = 0; k < NDIM; k++) ps[nl[n_ord_total_RM[n]]][index_3D(n_ord_total_RM[n], i, j, z)][k] = temp_ps[n_ord_total_RM[n]][index_3D(n_ord_total_RM[n], i, j, z)][k];
+#endif
 					}
 					free(temp_p[n_ord_total_RM[n]]);
 					free(temp_ps[n_ord_total_RM[n]]);
@@ -2893,7 +2895,7 @@ double calc_refcrit(int n){
 	struct of_geom geom;
 
 	#if(CARTESIAN)
-	if (block[n][AMR_COORD1] / pow(1 + REF_1, block[n][AMR_LEVEL1]) == 1 && block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]) == 1) {
+	if (block[n][AMR_COORD1] / pow(1 + REF_1, block[n][AMR_LEVEL1]) == 1 && block[n][AMR_COORD2] / pow(1 + REF_2, block[n][AMR_LEVEL2]) == 1 && block[n][AMR_COORD3] / pow(1 + REF_3, block[n][AMR_LEVEL3]) == 1) {
 		ref_val = 100.0;
 	}
 	#elif(REFINE_GIBWA)

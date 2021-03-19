@@ -11,7 +11,7 @@ void set_timelevel(int tag){
 	nz = NB_3;
 	
 	const int i_max = log(AMR_MAXTIMELEVEL) / log(2);
-	#if(CARTESIAN)
+	#if(CARTESIAN==-10)
 	if (nstep > 0) {
 		for (n = 0; n < n_active; n++) {
 			block[n_ord[n]][AMR_TIMELEVEL] = 1;

@@ -120,7 +120,7 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (20)
+#define MAX_BLOCKS (40)
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
@@ -163,7 +163,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -176,10 +176,10 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 8
+#define AMR_MAXTIMELEVEL 16
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 8
+#define AMR_SWITCHTIMELEVEL 16
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
 #define DUMPFACTOR (300)
@@ -202,7 +202,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
-#define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)
@@ -236,7 +236,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1*((BS_3*NB_3)>1))
+#define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -301,7 +301,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable Resistivity*/
 #define RESISTIVE (0)
