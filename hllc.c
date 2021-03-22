@@ -446,6 +446,10 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 
 					if (do_hydro) {
 						calc_HLLC_hydro(dir, l_ucon, r_ucon, int_velocity, cmin_roe, cmax_roe, F_FT, F_HLL, F_l, F_r, U_l, U_r);
+						for (k = 0; k < NPR; k++) {
+							F_FT[0][k] = F_HLL[0][k];
+							F_FT[1][k] = F_HLL[1][k];
+						}
 					}
 					else {
 						#if(HLLD)

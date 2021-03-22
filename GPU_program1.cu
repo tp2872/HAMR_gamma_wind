@@ -2150,8 +2150,12 @@ __device__ int Utoprim_3d_res(double U[NPR], double gcov[10], double gcon[10], d
 		}
 
 		double vU_guess[3], lfac_guess;
+		vD_guess[0] = 0.;
+		vD_guess[1] = 0.;
+		vD_guess[2] = 0.;
 		for (i = 0; i < 3; i++) {
 			vU_guess[i] = 0.;
+			
 			for (j = 0; j < 3; j++) {
 				vU_guess[i] = vU_guess[i] + ggammainv[i][j] * vD_guess[j];
 			}
@@ -5390,10 +5394,10 @@ __device__ double calc_kappa_abs(double* ph
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
 	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO]) * pow(Tg, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 
@@ -5418,10 +5422,10 @@ __device__ double calc_kappa_emmit(double* ph
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
 	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO]) * pow(Tg, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 
@@ -6805,7 +6809,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 	int jsize = BS_3 + 2 * N3G;
 
 	if (k==1){
-		#if(RESISTIVE)
+		#if(RESISTIVE || CARTESIAN)
 		double dE_LEFT_13_1 = 0.0;
 		double dE_LEFT_13_2 = 0.0;
 		double dE_RIGHT_13_1 = 0.0;
