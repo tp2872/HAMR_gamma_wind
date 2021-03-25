@@ -182,8 +182,10 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#else
-	double dK_dS = (GAMMA - 1.)* (GAMMA - 1.)* (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
-	dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	//double dK_dS = (GAMMA - 1.)* (GAMMA - 1.)* (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	//dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA-1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#endif
 	#endif
 

@@ -205,7 +205,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	}
 	#endif
 
-	#if DOKTOT
+	/*#if DOKTOT
 	#if (DOHELM)
 	double xentr;
 	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
@@ -217,6 +217,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
 	//pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
 	#endif
+	#endif*/
+	#if(FULL_ENTROPY)
+	pv[KTOT] = 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+	#else
+	pv[KTOT] = (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
 	#endif
 
 	/* limit gamma wrt normal observer */

@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 
 				//Print
 				if (fabs(p_old[UU_RAD] - p[nl[n_ord[n]]][ind0][UU_RAD])/(p_old[UU_RAD] + p[nl[n_ord[n]]][ind0][UU_RAD])>pow(10.,-12.)) {
-					fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
+					fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), fabs(q_rad.ucon[0]));
 					get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
 					fprintf(stderr, "uu_new (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p[nl[n_ord[n]]][ind0][UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
 				}

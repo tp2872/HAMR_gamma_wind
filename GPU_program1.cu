@@ -224,10 +224,10 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		U_n_temp[k] = U_n[k];
 		U_i_temp[k] = U_i[k];
 	}
-	#if(!FULL_ENTROPY)
-	U_n_temp[KTOT] = log(U_n_temp[KTOT] / U_n_temp[RHO]) * U_n_temp[RHO] / (GAMMA - 1.);
-	U_i_temp[KTOT] = log(U_i_temp[KTOT] / U_i_temp[RHO]) * U_i_temp[RHO] / (GAMMA - 1.);
-	#endif
+	//#if(!FULL_ENTROPY)
+//	U_n_temp[KTOT] = log(U_n_temp[KTOT] / U_n_temp[RHO]) * U_n_temp[RHO] / (GAMMA - 1.);
+//	U_i_temp[KTOT] = log(U_i_temp[KTOT] / U_i_temp[RHO]) * U_i_temp[RHO] / (GAMMA - 1.);
+//	#endif
 
 	//Initialize temporary variables
 	PLOOP{
@@ -245,10 +245,10 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 	//If we've reached the tolerance level, exit immediately and update variables
 	if (error_t < 1.e-12) {
-		#if(!FULL_ENTROPY)
-		U_i_temp[KTOT] = exp((U_i_temp[KTOT] / U_i_temp[RHO]) * (GAMMA - 1.)) * U_i_temp[RHO];
-		U_ft[KTOT] = exp((U_ft[KTOT] / U_ft[RHO]) * (GAMMA - 1.)) * U_ft[RHO];
-		#endif
+		//#if(!FULL_ENTROPY)
+		//U_i_temp[KTOT] = exp((U_i_temp[KTOT] / U_i_temp[RHO]) * (GAMMA - 1.)) * U_i_temp[RHO];
+		//U_ft[KTOT] = exp((U_ft[KTOT] / U_ft[RHO]) * (GAMMA - 1.)) * U_ft[RHO];
+		//#endif
 		PLOOP{
 			U_f[k] = U_ft[k];
 			dU[k] = (U_ft[k] - U_i_temp[k]) / Dt;
@@ -405,10 +405,10 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		if (error_t > 1.e-7) {
 			//subcycle_rad_solve(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, cell_size);
 		}
-		#if(!FULL_ENTROPY)
-		U_i_temp[KTOT] = exp((U_i_temp[KTOT] / U_i_temp[RHO]) * (GAMMA - 1.)) * U_i_temp[RHO];
-		U_ft[KTOT] = exp((U_ft[KTOT] / U_ft[RHO]) * (GAMMA - 1.)) * U_ft[RHO];
-		#endif
+		//#if(!FULL_ENTROPY)
+		//U_i_temp[KTOT] = exp((U_i_temp[KTOT] / U_i_temp[RHO]) * (GAMMA - 1.)) * U_i_temp[RHO];
+		//U_ft[KTOT] = exp((U_ft[KTOT] / U_ft[RHO]) * (GAMMA - 1.)) * U_ft[RHO];
+		//#endif
 		PLOOP{
 			U_f[k] = U_ft[k];
 			dU[k] = (U_ft[k] - U_i_temp[k]) / Dt;
@@ -449,13 +449,13 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		);
 		#if(!DO_FONT_FIX)
 		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1
+			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
 				);		
 		}
-		if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, 1);
+		if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
@@ -475,7 +475,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	U_f[UU] += U_f[RHO];
 
 	//Recompute entropy for consistency
+	#if(FULL_ENTROPY)
 	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA));
+	#else
+	U_f[KTOT] = geom->g * pb[RHO] * q.ucon[0] *(GAMMA - 1.) * pb[UU] * pow(pb[RHO], -GAMMA);
+	#endif
 
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
@@ -557,6 +561,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					pb_new[i] = pb_old[i] + dpb;
 				}
 
+				// Compute (new conserved vars) S u^t and T^+mu from gas P_i+1
 				get_state(pb_new, geom, &q);
 				pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0]; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 				U_new[RHO] = U_i[RHO];
@@ -564,11 +569,16 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					#if(DOHELM)
 					, gpu_eos_table
 					#endif
-				); // Compute (new conserved vars) S u^t and T^+mu from gas P_i+1
+				); 
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] = U_new[UU] + U_new[RHO];
+				
 				if (do_entropy == 1) {
-					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
+					#if(FULL_ENTROPY)
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+					#else
+					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+					#endif				
 				}
 
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -663,11 +673,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 		U_new[UU] = U_new[UU] + U_new[RHO];
 
-		//#if(FULL_ENTROPY)
+		#if(FULL_ENTROPY)
 		U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-		//#else
-		//U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-		//#endif
+		#else
+		U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+		#endif
 
 		//Derive new conserved quantaties for radiation variables
 		U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -700,15 +710,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 		if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 		else {
+			#if(FULL_ENTROPY)
 			T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-			//#if(FULL_ENTROPY)
-			norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
-			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm+norm_S);
-			//#else
-			//double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (pb_new[UU]) / pow(pb_new[RHO], GAMMA);
-			//norm_S = T_GAS * (fabs(U_i[RHO] / (GAMMA - 1.) * log(U_i[KTOT] / U_i[RHO])) + fabs(U_new[RHO] / (GAMMA - 1.) * log(U_new[KTOT] / U_new[RHO])) + fabs(Dt * dU_new[KTOT] / dK_dS));
-			//error_new[n_iter % 5] += 0.25 * T_GAS * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / dK_dS) / (norm);
-			//#endif
+			error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
+			#else
+			double dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+			error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / dK_dS)) / (norm);
+			#endif
 		}
 
 		//Set correct offset for Jacobian for next iteration
@@ -731,13 +739,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//If error increasing stop iterating
 		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-			//keep_iterating = 0;
+			keep_iterating = 0;
 		}
 
 		//If error increased more than 4 times stop iterating
 		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-			//count_increase++;
-			//if (count_increase >= 5) keep_iterating = 0;
+			count_increase++;
+			if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//Reset variables if Newton step succesfull
@@ -826,13 +834,13 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
-					//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1
+					//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
 					//#if (DOHELM)
 					//, gpu_eos_table
 					//#endif
 					//);
 					if (flag) {
-						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1
+						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
 						//#if (DOHELM)
 						//, gpu_eos_table
 						//#endif
@@ -855,11 +863,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
-					//#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#else
-					//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-					//#endif
+					#else
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -953,13 +961,13 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 			);
 			#if(DO_FONT_FIX)
 			if (flag && (n_iter_fail > 1)) {
-				//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+				//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 				//#if (DOHELM)
 				//, gpu_eos_table
 				//#endif
 				//);
 				if (flag) {
-					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 					//#if (DOHELM)
 					//, gpu_eos_table
 					//#endif
@@ -986,11 +994,11 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
-				//#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#else
-				//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-				//#endif
+				#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -1013,23 +1021,21 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
 				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+				else {
+					#if(FULL_ENTROPY)
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
+					#else
+					double dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / dK_dS)) / (norm);
+					#endif
+				}
 
 				//Set correct offset for Jacobian for next iteration
 				if (error_new[n_iter % 5] < 1.e-9) offset = 1.e-10;
 				//else offset = 1.e-8;
 
 				//Calculate total error
-				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-					//#if(FULL_ENTROPY)
-					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
-					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm_S);
-					//#else
-					//double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (pb_new[UU]) / pow(pb_new[RHO], GAMMA);
-					//norm_S = T_GAS * (fabs(U_i[RHO] / (GAMMA - 1.) * log(U_i[KTOT] / U_i[RHO])) + fabs(U_new[RHO] / (GAMMA - 1.) * log(U_new[KTOT] / U_new[RHO])) + fabs(Dt * dU_new[KTOT] / dK_dS));
-					//error_new[n_iter % 5] += 0.25 * T_GAS * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / dK_dS) / (norm);
-					//#endif
-				}
 				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 				if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1_RAD]) + fabs(U_new[U1_RAD]) + fabs(Dt * dU_new[U1_RAD]));
@@ -1136,12 +1142,12 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 				//Invert conserved MHD quantities using entropy based methods
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
-				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1			
+				flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY		
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
 				);
-				if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1);
+				if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY);
 
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
@@ -1155,11 +1161,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
-					//#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#else
-					//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-					//#endif
+					#else
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+					#endif
 
 					//Set radiation conserved quantities
 					U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -1211,51 +1217,51 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				U_new[k] = U_old[k];
 			}
 
-				/* Make the newton step: */
-				if (do_staged == 0) {
-					D = 1.0 / pow(2.0, (double)n_iter_fail);
+			/* Make the newton step: */
+			if (do_staged == 0) {
+				D = 1.0 / pow(2.0, (double)n_iter_fail);
+				for (k = 0; k < 4; k++) {
+					dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
+					if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
+					else U_new[k + UU] = U_old[k + UU] + dUb;
+				}
+			}
+			else {
+				//Set damping factor for Newton Raphson method
+				if (n_iter == 0 || n_iter == 4) D = 0.5 / pow(2.0, (double)n_iter_fail);
+				else if (n_iter == 8) D = 0.25 / pow(2.0, (double)n_iter_fail);
+				else D = 1. / pow(2.0, (double)n_iter_fail);
+
+				if ((n_iter / 4) == 0) { //momentum only step
 					for (k = 0; k < 4; k++) {
-						dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
+						dUb = -D * (E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
+						if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
+						else U_new[k + UU] = U_old[k + UU] + dUb;
+					}
+				}
+				if ((n_iter / 4) == 1) {
+					for (k = 0; k < 4; k++) { //energy only step
+						dUb = -D * (E_old[0] * dEdUb_inv[k][0]);
 						if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
 						else U_new[k + UU] = U_old[k + UU] + dUb;
 					}
 				}
 				else {
-					//Set damping factor for Newton Raphson method
-					if (n_iter == 0 || n_iter == 4) D = 0.5 / pow(2.0, (double)n_iter_fail);
-					else if (n_iter == 8) D = 0.25 / pow(2.0, (double)n_iter_fail);
-					else D = 1. / pow(2.0, (double)n_iter_fail);
-
-					if ((n_iter / 4) == 0) { //momentum only step
-						for (k = 0; k < 4; k++) {
-							dUb = -D * (E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
-							if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
-							else U_new[k + UU] = U_old[k + UU] + dUb;
-						}
-					}
-					if ((n_iter / 4) == 1) {
-						for (k = 0; k < 4; k++) { //energy only step
-							dUb = -D * (E_old[0] * dEdUb_inv[k][0]);
-							if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
-							else U_new[k + UU] = U_old[k + UU] + dUb;
-						}
-					}
-					else {
-						for (k = 0; k < 4; k++) { //full 4d step
-							dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
-							if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
-							else U_new[k + UU] = U_old[k + UU] + dUb;
-						}
+					for (k = 0; k < 4; k++) { //full 4d step
+						dUb = -D * (E_old[0] * dEdUb_inv[k][0] + E_old[1] * dEdUb_inv[k][1] + E_old[2] * dEdUb_inv[k][2] + E_old[3] * dEdUb_inv[k][3]);
+						if (k == 0) U_new[KTOT] = U_old[KTOT] + dUb;
+						else U_new[k + UU] = U_old[k + UU] + dUb;
 					}
 				}
+			}
 
 			//Invert conserved MHD quantities using entropy based methods
-			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+			flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 				#if (DOHELM)
 				, gpu_eos_table
 				#endif
 			);
-			if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1);
+			if (flag) flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY);
 
 			if (flag == 0) {
 				//Make sure that internal energy stays positive
@@ -1272,11 +1278,11 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
-				//#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#else
-				//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-				//#endif
+				#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				#endif
 
 				//Derive new conserved quantaties for MHD variables
 				U_new[UU_RAD] = U_i[UU_RAD] - (U_new[UU] - U_i[UU]);
@@ -1305,23 +1311,20 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2] - U_i[U2] - Dt * dU_new[U2]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3] - U_i[U3] - Dt * dU_new[U3]) / norm);
 				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
-
+				else {
+					#if(FULL_ENTROPY)
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
+					#else
+					double dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / dK_dS)) / (norm);
+					#endif
+				}
 				//Set correct offset for Jacobian for next iteration
 				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
 				else offset = pow(10., -8.);
 
 				//Calculate total error	
-				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-					//#if(FULL_ENTROPY)
-					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
-					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
-					//#else
-					//double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (pb_new[UU]) / pow(pb_new[RHO], GAMMA);
-					//norm_S = T_GAS * (fabs(U_i[RHO] / (GAMMA - 1.) * log(U_i[KTOT] / U_i[RHO])) + fabs(U_new[RHO] / (GAMMA - 1.) * log(U_new[KTOT] / U_new[RHO])) + fabs(Dt * dU_new[KTOT] / dK_dS));
-					//error_new[n_iter % 5] += 0.25 * T_GAS * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / dK_dS) / (norm);
-					//#endif
-				}
 				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 				if (do_entropy == 0 && flag_rad == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
@@ -1332,11 +1335,6 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				if ((fabs(error_new[n_iter % 5]) <= 1.e-12) || (n_iter >= 20)) {
 					keep_iterating = 0;
 				}
-
-				//If the residual drops below machine precision, stop iterating
-				//if (((fabs(U_new[UU] / U_old[UU]) - 1.0) + (fabs(U_new[U1] / U_old[U1]) - 1.0) + (fabs(U_new[U2] / U_old[U2]) - 1.0) + (fabs(U_new[U3] / U_old[U3]) - 1.0)) < 10. * epsem) {
-					//keep_iterating = 0;
-				//}
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
@@ -1359,7 +1357,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5]) < pow(10., -4.)) {
+				if (fabs(error_new[n_iter % 5]) < error_t[0]) {
 					error_t[0] = error_new[n_iter % 5];
 					for (k = 0; k < NPR; k++) {
 						pb[k] = pb_new[k];
@@ -1432,7 +1430,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				U_new[U1] = U_i[U1] - (U_new[U1_RAD] - U_i[U1_RAD]);
 				U_new[U2] = U_i[U2] - (U_new[U2_RAD] - U_i[U2_RAD]);
 				U_new[U3] = U_i[U3] - (U_new[U3_RAD] - U_i[U3_RAD]);
-				U_new[KTOT] = U_i[KTOT];// +Dt * dU_old[KTOT];
+				U_new[KTOT] = U_i[KTOT] + Dt * dU_old[KTOT];
 
 				tol = NEWT_TOL;// 0.01 * offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2)));
 				flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, BASIC			
@@ -1442,7 +1440,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > -1)) {
-					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1			
+					flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY			
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
@@ -1464,11 +1462,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
-					//#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#else
-					//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-					//#endif
+					#else
+					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+					#endif
 
 					//Recompute R_t^mu for consistency
 					get_state_rad(pb_new, geom, &q_rad);
@@ -1562,7 +1560,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			);
 			#if(DO_FONT_FIX)
 			//if (flag && (n_iter_fail > -1)) {
-			//	flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+			//	flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 			//	#if (DOHELM)
 			//	, gpu_eos_table
 			//	#endif
@@ -1588,11 +1586,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
-				//#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#else
-				//U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
-				//#endif
+				#else
+				U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA);
+				#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -1613,9 +1611,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				error_new[n_iter % 5] = 0.25 * sqrt(geom->gcon[4]) * (fabs(U_new[U1_RAD] - U_i[U1_RAD] - Dt * dU_new[U1_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_new[U2_RAD] - U_i[U2_RAD] - Dt * dU_new[U2_RAD]) / norm);
 				error_new[n_iter % 5] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_new[U3_RAD] - U_i[U3_RAD] - Dt * dU_new[U3_RAD]) / norm);
-				norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
 
-				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
+				if (do_entropy == 0) {
+					norm = (fabs(U_i[UU_RAD]) + fabs(U_new[UU_RAD]) + fabs(Dt * dU_new[UU_RAD]));
+					error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]) / norm);
+				}
 
 				//Set correct offset for Jacobian for next iteration
 				if (error_new[n_iter % 5] < pow(10., -9.))offset = pow(10., -10.);
@@ -1623,18 +1623,17 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 				//Calculate total error
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
-				if (do_entropy == 1) {
-					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-					//#if(FULL_ENTROPY)
-					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
-					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
-					//#else
-					//double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (pb_new[UU]) / pow(pb_new[RHO], GAMMA);
-					//norm_S = T_GAS * (fabs(U_i[RHO] / (GAMMA - 1.) * log(U_i[KTOT] / U_i[RHO])) + fabs(U_new[RHO] / (GAMMA - 1.) * log(U_new[KTOT] / U_new[RHO])) + fabs(Dt * dU_new[KTOT] / dK_dS));
-					//error_new[n_iter % 5] += 0.25 * T_GAS * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / dK_dS) / (norm);
-					//#endif
-				}
+
 				if (do_entropy == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+				else {
+					#if(FULL_ENTROPY)
+					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
+					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
+					#else
+					double dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / dK_dS)) / (norm);
+					#endif
+				}
 				norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
 				norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2]) + fabs(U_new[U2]) + fabs(Dt * dU_new[U2]));
 				norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3]) + fabs(U_new[U3]) + fabs(Dt * dU_new[U3]));
@@ -1646,12 +1645,6 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				if ((fabs(error_new[n_iter % 5]) <= 1.e-12) || (n_iter >= 20)) {
 					keep_iterating = 0;
 				}
-
-				//If the residual drops below machine precision, stop iterating
-				//if (((fabs(U_new[UU_RAD] / U_old[UU_RAD]) - 1.0) + (fabs(U_new[U1_RAD] / U_old[U1_RAD]) - 1.0) + (fabs(U_new[U2_RAD] / U_old[U2_RAD]) - 1.0) + (fabs(U_new[U3_RAD] / U_old[U3_RAD]) - 1.0)) < 10. * epsem) {
-					//keep_iterating = 0;
-				//}
-
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
@@ -1772,13 +1765,13 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
-					//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1
+					//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
 					//#if (DOHELM)
 					//, gpu_eos_table
 					//#endif
 					//);
 					if (flag) {
-						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, 1
+						//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, tol, TYPE2, FULL_ENTROPY
 						//#if (DOHELM)
 						//, gpu_eos_table
 						//#endif
@@ -1800,11 +1793,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					U_new[UU] += U_new[RHO];
 
 					//Compute new entropy from MHD variables
-					//#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-					//#else
-					//U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-					//#endif
+					#else
+					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+					#endif
 
 					//Calculate source function and jacobian
 					source_rad(pb_new, geom, dU_new
@@ -1902,13 +1895,13 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			);
 			#if(DO_FONT_FIX)
 			if (flag) {
-				//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+				//flag = Utoprim_1dvsq2fix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 				//#if (DOHELM)
 				//, gpu_eos_table
 				//#endif
 				//);
 				if (flag){
-					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, 1
+					//flag = Utoprim_1dfix1(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, TYPE2, FULL_ENTROPY
 					//#if (DOHELM)
 					//, gpu_eos_table
 					//#endif
@@ -1930,11 +1923,11 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				U_new[UU] += U_new[RHO];
 
 				//Compute new entropy from MHD variables
-				//#if(FULL_ENTROPY)
+				#if(FULL_ENTROPY)
 				U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA)));
-				//#else
-				//U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-				//#endif
+				#else
+				U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
+				#endif
 
 				//Get radiative source term
 				source_rad(pb_new, geom, dU_new
@@ -1960,18 +1953,16 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 
 				//Calculate total error
 				norm = (fabs(U_i[UU]) + fabs(U_new[UU]) + fabs(Dt * dU_new[UU]));
-				if (do_entropy == 1) {
+				if (do_entropy == 0)error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
+				else {
+					#if(FULL_ENTROPY)
 					T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
-					//#if(FULL_ENTROPY)
-					norm_S = T_GAS * (fabs(U_i[KTOT]) + fabs(U_new[KTOT]) + fabs(Dt * dU_new[KTOT]));
 					error_new[n_iter % 5] += 0.25 * T_GAS * (fabs(U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / (norm);
-					//#else
-					//double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (pb_new[UU]) / pow(pb_new[RHO], GAMMA);
-					//norm_S = T_GAS * (fabs(U_i[RHO] / (GAMMA - 1.) * log(U_i[KTOT] / U_i[RHO])) + fabs(U_new[RHO] / (GAMMA - 1.) * log(U_new[KTOT] / U_new[RHO])) + fabs(Dt * dU_new[KTOT] / dK_dS));
-					//error_new[n_iter % 5] += 0.25 * T_GAS * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT])) / dK_dS) / (norm);
-					//#endif
+					#else
+					double dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA - 1.0);
+					error_new[n_iter % 5] += 0.25 * (fabs((U_new[KTOT] - U_i[KTOT] - Dt * dU_new[KTOT]) / dK_dS)) / (norm);
+					#endif
 				}
-				if (do_entropy == 0) error_new[n_iter % 5] += 0.25 * (fabs(U_new[UU] - U_i[UU] - Dt * dU_new[UU]) / norm);
 				norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
 				norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2]) + fabs(U_new[U2]) + fabs(Dt * dU_new[U2]));
 				norm += sqrt(geom->gcon[9]) * (fabs(U_i[U3]) + fabs(U_new[U3]) + fabs(Dt * dU_new[U3]));
@@ -1984,27 +1975,21 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					keep_iterating = 0;
 				}
 
-				//If the residual drops below machine precision, stop iterating
-				//if (((fabs(U_new[UU_RAD] / U_old[UU_RAD]) - 1.0) + (fabs(U_new[U1_RAD] / U_old[U1_RAD]) - 1.0) + (fabs(U_new[U2_RAD] / U_old[U2_RAD]) - 1.0) + (fabs(U_new[U3_RAD] / U_old[U3_RAD]) - 1.0)) < 10. * epsem) {
-					//keep_iterating = 0;
-				//}
-
-
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-				//	keep_iterating = 0;
+					keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
-				//	count_increase++;
-					//if (count_increase >= 5) keep_iterating = 0;
+					count_increase++;
+					if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
 				if (pb_new[UU] < 0.) {
-				//	count_increase_gas++;
-				//	if (count_increase > 2) keep_iterating = 0;
+					count_increase_gas++;
+					if (count_increase > 2) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -2017,14 +2002,14 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				//if (fabs(error_new[n_iter % 5]) < error_t[0]) {
+				if (fabs(error_new[n_iter % 5]) < error_t[0]) {
 					error_t[0] = error_new[n_iter % 5];
 					for (k = 0; k < NPR; k++) {
 						pb[k] = pb_new[k];
 						U_f[k] = U_new[k];
 						dU[k] = dU_new[k];
 					}
-				//}
+				}
 				break;
 			}
 			else {
@@ -4700,6 +4685,12 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		}
 	}
 
+	//#if(FULL_ENTROPY)
+	//pf[KTOT]= 1. / (GAMMA - 1.) * log((GAMMA-1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
+	//#else
+	//pf[KTOT]= (GAMMA-1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
+	//#endif
+	
 	return flag;
 	#else 
 	return(0);
@@ -5049,8 +5040,8 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#else
-	double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
-	dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	double dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
+	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#endif
 	#endif
 
@@ -5188,8 +5179,10 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
 	//flux[KTOT] = flux[RHO] * (1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA)) + ENTROPY_CONST);
 	//flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+	//flux[KTOT] = flux[RHO] * pr[KTOT];
 	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 	#else
+	//flux[KTOT] = flux[RHO] * pr[KTOT];
 	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
 	#endif
 	#endif
@@ -7572,8 +7565,8 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 			#endif
 		);
 		#else
-		pflag[global_id] = Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC
-			#if (DOHELM)
+		pflag[global_id] =  Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC
+		#if (DOHELM)
 			, gpu_eos_table
 			#endif
 		);
