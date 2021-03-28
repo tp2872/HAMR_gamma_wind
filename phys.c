@@ -225,7 +225,7 @@ double calc_kappa_abs(double* ph) {
 	double Tg;
 	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
 	#else
-	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	double Tg = fabs(MU_G * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
 	#endif
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
@@ -248,7 +248,7 @@ double calc_kappa_emmit(double* ph) {
 	double Tg;
 	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
 	#else
-	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	double Tg = fabs(MU_G * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
 	#endif
 	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
@@ -269,7 +269,7 @@ double calc_kappa_es(double * restrict ph) {
 	double Tg;
 	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
 	#else
-	double Tg = MMW*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	double Tg = MU_G*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
 	#endif
 	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
 	kappa_es = 0.2*(1 + X_AB);
@@ -668,35 +668,51 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 }
 
 #if(TWO_T)
+double calc_fel(double* restrict ph, double game, double gami) {
+	double fel;
+	#if(FixedGamma)
+	double Te = ph[ENTRE] * pow(ph[RHO], game);
+	double Ti = ph[ENTRI] * pow(ph[RHO], gami);
+	#else
+	double Te = ph[ENTRE] * pow(ph[RHO], game);
+	double Ti = ph[ENTRI] * pow(ph[RHO], gami);
+	#endif
+	double c1 = 0.91;
+	double c2 = 1.6 * Te / Ti;
+	double c3 = 18.0 + 5.0 * log(Ti / Te);
+	double beta = (GAMMA - 1.0) * ph[UU] / bsq;
+	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) * sqrt(MH_CGS * Ti / (ME_CGS * Te)) * exp(-1.0 / beta);
+	return fel;
+}
+
 void heating(double* restrict ph)
 {
-	double u_e, u_i, ugharm, ughat;
-	double fel, game, gamp;
+	double u_e, u_i, ughat;
+	double fel, game, gami;
 
-	fel = 0.01;   // To be update. fixed value temporarily. 
+	fel = calc_fel(ph, game, gami);   // To be update. fixed value temporarily. 
 
 	#if(FixedGamma)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
-	gamp = GAMMA;
+	gami = GAMMA;
 
 	u_e = 1. / (game - 1.) * ph[ENTRE] * pow(ph[RHO], game);
-	u_i = 1. / (gamp - 1.) * ph[ENTRI] * pow(ph[RHO], gamp);
+	u_i = 1. / (gami - 1.) * ph[ENTRI] * pow(ph[RHO], gami);
 
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	u_e = calc_ufromsrho(ph[ENTRE], ph[RHO], ELECTRONS);
 	u_i = calc_ufromsrho(ph[ENTRI], ph[RHO], IONS);
 	#endif
 
-	ugharm = ph[UU];
 	ughat = u_e + u_i;
 
-	u_e += fel * max(ugharm - ughat, 0);
-	u_i += (1. - fel) * max(ugharm - ughat, 0);
+	u_e += fel * max(ph[UU] - ughat, 0);
+	u_i += (1. - fel) * max(ph[UU] - ughat, 0);
 
 	// convert back to entropy 
 	#if(FixedGamma)
 	ph[ENTRE] = (game - 1.) * u_e * pow(ph[RHO], -game);
-	ph[ENTRI] = (gamp - 1.) * u_i * pow(ph[RHO], -gamp);
+	ph[ENTRI] = (gami - 1.) * u_i * pow(ph[RHO], -gami);
 	#else
 	ph[ENTRE] = calc_sfromrhou(ph[RHO], u_e, ELECTRONS);
 	ph[ENTRI] = calc_sfromrhou(ph[RHO], u_i, IONS);
@@ -796,11 +812,11 @@ double calc_sfromrhou(double rho, double uint, int type) {
 
 	if (type == IONS) {
 		mass = MH_CGS * MU_I;            // mass of particle in code unit
-		numd = rho / MH_CGS / MU_I;      // number desity in code unit
+		numd = rho / (MH_CGS * MU_I);      // number desity in code unit
 	}
 	else if (type == ELECTRONS) {
 		mass = ME_CGS*MU_E;
-		numd = rho / MH_CGS / MU_E;
+		numd = rho / (MH_CGS * MU_E);
 	}
 	else {
 		fprintf(stderr, "error in the type of fluids \n");

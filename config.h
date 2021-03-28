@@ -318,6 +318,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
 #define GAMMAE (4./3.)
 
+/*Enable or disable library with Bessel functions*/
+#define GSL_ENABLED (0)
+
 /*Enable Resistivity*/
 #define RESISTIVE (0)
 
@@ -359,6 +362,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define G_CGS (6.67259e-8) /* Gravitational constant */
 #define MU_I (4.0/(4.0*X_AB+Y_AB))
 #define MU_E (2.0/(1.0+X_AB))
+#define MU_G (4.0/(6*X_AB+Y_AB+2.0))
 #define BASIC (0)
 #define TYPE2 (1)
 #define IONS (0)
