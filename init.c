@@ -1270,6 +1270,31 @@ void init_torus()
 	calc_source();
 	#endif
 
+	/* initialize the entropies for two temperature fluids (electrons and ions) */
+	#if(TWO_T)
+	double fel0, felfloor, u_e, u_i;
+	fel0 = 0.01;   // initial Tel/Ttot (temperature ratio)
+	felfloor = 0.01;   // floor value for the temperature ratio
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+
+			#if(FixedGamma)   // fixed gamma: Ressler+15, Ryan+17
+			kappae = (GAMMAE - 1.) * fel0 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
+			kappap = (GAMMA - 1.) * (1. - fel0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = kappae;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = kappap;
+			#else   // variable gamma: Sadowski+17, Chael+19
+			u_e = fel0 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			u_i = (1. - fel0) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_e, ELECTRONS);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_i, IONS);
+			#endif	
+		}
+	}
+
 	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
 	double den, ener, pres;
