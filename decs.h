@@ -954,6 +954,16 @@ double calc_kappa_abs(double * restrict ph);
 double calc_kappa_emmit(double * restrict ph);
 double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
+#if(TWO_T)
+void heating(double* restrict ph);
+double calc_sfromrhou(double rho, double uint, int type);
+double solve_thetafromnmu(double n, double m, double u);
+double calc_sfromntheta(double numd, double theta);
+//double solve_Tfromnmu(double n, double m, double u);
+//double calc_sfromrhoT(double rho, double Temperature, int type);
+double calc_thetafromsnm(double s, double numd, double mass);
+double calc_ufromsrho(double s, double rho, int type);
+#endif
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);

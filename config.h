@@ -86,6 +86,9 @@ Physical Parameters section
 #define GAMMAMAX (80.)
 #define GAMMAMAX_RAD (50.000625)
 
+/*Max value of electron temperature in Kelvin*/
+#define TMAX (1.e15)
+
 /*Runtime in hours*/
 #define RUNTIME (24.0)
 
@@ -303,8 +306,17 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
+/*Enable photon number evolution*/
+#define P_NUM (0)
+
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)
+
+/*Wheter to use fixed or variable gamma*/
+#define FixedGamma (1)
+
+/*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
+#define GAMMAE (4./3.)
 
 /*Enable Resistivity*/
 #define RESISTIVE (0)
@@ -332,6 +344,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // CGS constants needed for radiation
 #define ARAD (7.5657e-15) /*Radiation density constant*/
 #define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
+#define ME_CGS (9.1094e-28) /*Mass hydrogen molecule*/
 #define MMW (1.69) /*Mean molecular weight*/
 #define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
 #define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
@@ -344,8 +357,12 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define G_CGS (6.67259e-8) /* Gravitational constant */
+#define MU_I (4.0/(4.0*X_AB+Y_AB))
+#define MU_E (2.0/(1.0+X_AB))
 #define BASIC (0)
 #define TYPE2 (1)
+#define IONS (0)
+#define ELECTRONS (1)
 
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
@@ -371,13 +388,16 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
-#define UU_RAD	(9)
-#define U1_RAD	(10)
-#define U2_RAD	(11)
-#define U3_RAD	(12)
-#define E1 (9)
-#define E2 (10)
-#define E3 (11)
+#define UU_RAD	(8+DOKTOT)
+#define U1_RAD	(8+DOKTOT+1)
+#define U2_RAD	(8+DOKTOT+2)
+#define U3_RAD	(8+DOKTOT+3)
+#define E1 (8+DOKTOT+RAD_M1*4)
+#define E2 (8+DOKTOT+RAD_M1*4+1)
+#define E3 (8+DOKTOT+RAD_M1*4+2)
+#define ENTRE (8+DOKTOT+RAD_M1*4+RESISTIVE*3)
+#define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
+#define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -788,27 +808,22 @@ Section with derived quantities
 #define D2 (N2>1)
 #define D3 (N3>1)
 
-#if(RAD_M1)
-#define NPRDUMP (14+TWO_T)
-#elif(RESISTIVE)
-#define NPRDUMP (12+TWO_T)
-#else
-#define NPRDUMP (9+TWO_T)
-#endif
-
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
-#define NPR_2T     (1)        /* number of hydrodynamic primitive variables */
+#define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
+#define NPR_PH     (1)        /* Number density of photons*/
 #define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T)        /* total number of primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
+
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)
