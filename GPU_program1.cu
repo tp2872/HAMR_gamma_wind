@@ -210,7 +210,6 @@ struct of_state_rad {
 
 #include <stdio.h>
 
-
 __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max
 #if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
@@ -224,10 +223,6 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		U_n_temp[k] = U_n[k];
 		U_i_temp[k] = U_i[k];
 	}
-	//#if(!FULL_ENTROPY)
-//	U_n_temp[KTOT] = log(U_n_temp[KTOT] / U_n_temp[RHO]) * U_n_temp[RHO] / (GAMMA - 1.);
-//	U_i_temp[KTOT] = log(U_i_temp[KTOT] / U_i_temp[RHO]) * U_i_temp[RHO] / (GAMMA - 1.);
-//	#endif
 
 	//Initialize temporary variables
 	PLOOP{
@@ -245,10 +240,6 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 	//If we've reached the tolerance level, exit immediately and update variables
 	if (error_t < 1.e-12) {
-		//#if(!FULL_ENTROPY)
-		//U_i_temp[KTOT] = exp((U_i_temp[KTOT] / U_i_temp[RHO]) * (GAMMA - 1.)) * U_i_temp[RHO];
-		//U_ft[KTOT] = exp((U_ft[KTOT] / U_ft[RHO]) * (GAMMA - 1.)) * U_ft[RHO];
-		//#endif
 		PLOOP{
 			U_f[k] = U_ft[k];
 			dU[k] = (U_ft[k] - U_i_temp[k]) / Dt;
@@ -405,10 +396,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 		if (error_t > 1.e-7) {
 			//subcycle_rad_solve(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, cell_size);
 		}
-		//#if(!FULL_ENTROPY)
-		//U_i_temp[KTOT] = exp((U_i_temp[KTOT] / U_i_temp[RHO]) * (GAMMA - 1.)) * U_i_temp[RHO];
-		//U_ft[KTOT] = exp((U_ft[KTOT] / U_ft[RHO]) * (GAMMA - 1.)) * U_ft[RHO];
-		//#endif
+
 		PLOOP{
 			U_f[k] = U_ft[k];
 			dU[k] = (U_ft[k] - U_i_temp[k]) / Dt;

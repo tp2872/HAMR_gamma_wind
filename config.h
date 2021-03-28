@@ -124,13 +124,13 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
+#define NB_1 4
 #define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 128
+#define BS_1 256
+#define BS_2 512
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -302,6 +302,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /*Enable Radiation*/
 #define RAD_M1 (1)
+
+/*Enable 2-temperature evolution*/
+#define TWO_T (1)
 
 /*Enable Resistivity*/
 #define RESISTIVE (0)
@@ -786,19 +789,20 @@ Section with derived quantities
 #define D3 (N3>1)
 
 #if(RAD_M1)
-#define NPRDUMP 14
+#define NPRDUMP (14+TWO_T)
 #elif(RESISTIVE)
-#define NPRDUMP 12
+#define NPRDUMP (12+TWO_T)
 #else
-#define NPRDUMP 9
+#define NPRDUMP (9+TWO_T)
 #endif
 
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
+#define NPR_2T     (1)        /* number of hydrodynamic primitive variables */
 #define NPR_E      (3)        /* number of electric field primitive variables */
-#define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E)        /* total number of primitive variables */
+#define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
