@@ -1,47 +1,3 @@
-  /***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
-                   Gabor Toth, and Luca Del Zanna
-
-                        HARM  version 1.0   (released May 1, 2006)
-
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
-    partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
-    stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
-
-    You are morally obligated to cite the following two papers in his/her 
-    scientific literature that results from use of any part of HARM:
-
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
-        Astrophysical Journal, 589, 444.
-
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
-        Astrophysical Journal, 641, 626.
-
-   
-    Further, we strongly encourage you to obtain the latest version of 
-    HARM directly from our distribution website:
-    http://rainman.astro.uiuc.edu/codelib/
-
-
-    HARM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    HARM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with HARM; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-***********************************************************************************/
-//new
 #include "decs_MPI.h"
 void bound_prim1(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
 void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_LOCAL])[NDIM], int n);
@@ -263,14 +219,21 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							if (k == B1 || k == B2 || (N3 > 1 && k == B3))
 							//don't touch magnetic fields
 							continue;
+							#if(RESISTIVE)
+							if (k == E1 || k == E2 || (N3 > 1 && k == E3))
+							//don't touch electric fields
+							continue;
+							#endif
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
 							}
+							#if(RAD_M1)
 							else if (k == U2_RAD) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, jref, z)][k];
 							}
+							#endif
 							else {
 								//everything else copy (both poles)
 								prim[nl[n]][index_3D(n, i, j, z)][k] = prim[nl[n]][index_3D(n, i, jref, z)][k];
@@ -292,14 +255,21 @@ void bound_prim2(double(*restrict prim[NB_LOCAL])[NPR], double(*restrict ps[NB_L
 							if (k == B1 || k == B2 || (N3 > 1 && k == B3))
 							//don't touch magnetic fields
 							continue;
+							#if(RESISTIVE)
+							if (k == E1 || k == E2 || (N3 > 1 && k == E3))
+								//don't touch electric fields
+								continue;
+							#endif
 							else if (k == U2) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
+							#if(RAD_M1)
 							else if (k == U2_RAD) {
 								//linear interpolation of transverse velocity (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = (j + 0.5) / (jref + 0.5) * prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];
 							}
+							#endif
 							else {
 								//everything else copy (both poles)
 								prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - j, z)][k] = prim[nl[n]][index_3D(n, i, N2 * pow(1 + REF_2, block[n][AMR_LEVEL2]) - 1 - jref, z)][k];

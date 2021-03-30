@@ -152,13 +152,14 @@ void set_arrays_GPU(int n, int device){
 	#endif
 	cudaMalloc(&Bufferradius[nl[n]], (BS_1 + 2 * N1G)*sizeof(double));
 	cudaMalloc(&Bufferstorage1[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double));
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	cudaMalloc(&BufferU_n[nl[n]], NPR* ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
-	cudaMalloc(&BufferdU_MHD1[nl[n]], NPR* ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	cudaMalloc(&BufferU_0[nl[n]], NPR* ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
+	cudaMalloc(&BufferU_1[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	cudaMalloc(&BufferdU_RAD0[nl[n]], NPR * ((BS_3 + 2 * N3G) * (BS_2 + 2 * N2G) * (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	cudaMalloc(&BufferdU_RAD1[nl[n]], NPR* ((BS_3 + 2 * N3G)* (BS_2 + 2 * N2G)* (BS_1 + 2 * N1G) + fix_mem[nl[n]]) * sizeof(double));
 	#endif
-	#if((N_LEVELS_1D_INT>0) || RAD_M1)
+	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE)
 	cudaMalloc(&Bufferstorage2[nl[n]], NPR*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double)); //Temp storage for conserved quantities
 	cudaMalloc(&Bufferstorage3[nl[n]], NDIM*((BS_3 + 2 * N3G)*(BS_2 + 2 * N2G)*(BS_1 + 2 * N1G) + fix_mem[nl[n]])*sizeof(double)); //Temp storage for cell centered electric field
 	#else
@@ -2062,7 +2063,7 @@ void GPU_Utoprim_M1_0(int n, double Dt)
 	int POLE_2 = block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3);
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) % LOCAL_WORK_SIZE) + (BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G)) / LOCAL_WORK_SIZE;
 
-	Utoprim_M1_0 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
+	Utoprim_M1_0 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferdU_RAD0[nl[n]], Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
 		, GPU_eos_table[0]
 		#endif
@@ -2081,7 +2082,7 @@ void GPU_Utoprim_M1_1(int n, double Dt)
 
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1) * (BS_2) * (BS_3)) % LOCAL_WORK_SIZE) + (BS_1) * (BS_2) * (BS_3)) / LOCAL_WORK_SIZE;
 
-	Utoprim_M1_1 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferdU_MHD1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
+	Utoprim_M1_1 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferpsh_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
 		, GPU_eos_table[0]
@@ -2100,7 +2101,7 @@ void GPU_Utoprim_M1_2(int n, double Dt)
 	int POLE_2 = block[n][AMR_NBR3] < 0 || (block[n][AMR_POLE] == 2 || block[n][AMR_POLE] == 3);
 	nr_workgroups_local[0] = ((LOCAL_WORK_SIZE - ((BS_1) * (BS_2) * (BS_3)) % LOCAL_WORK_SIZE) + (BS_1) * (BS_2) * (BS_3)) / LOCAL_WORK_SIZE;
 	
-	Utoprim_M1_2 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferdU_MHD1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]], 
+	Utoprim_M1_2 << <nr_workgroups_local[0], local_work_size[0], 0, commandQueueGPU[nl[n]] >> > (Bufferph_1[nl[n]], Bufferp_1[nl[n]], BufferU_n[nl[n]], BufferU_0[nl[n]], BufferU_1[nl[n]], BufferdU_RAD0[nl[n]], BufferdU_RAD1[nl[n]], Bufferps_1[nl[n]], BufferF1_1[nl[n]], BufferF2_1[nl[n]], BufferF3_1[nl[n]],
 		Bufferradius[nl[n]], Bufferpflag[nl[n]], Bufferpflag_RAD[nl[n]], Bufferfailimage[nl[n]], Buffergcov[nl[n]], Buffergcon[nl[n]], Buffergdet[nl[n]], Bufferconn[nl[n]], dx[nl[n]][1], dx[nl[n]][2], dx[nl[n]][3], Dt, y_max, POLE_1, POLE_2
 		#if (DOHELM) 
 		, GPU_eos_table[0]
@@ -2616,14 +2617,14 @@ void GPU_finish(int n, int force_delete)
 	#endif
 	status += cudaFree(Bufferradius[nl[n]]);
 	status += cudaFree(Bufferstorage1[nl[n]]);
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	status += cudaFree(BufferU_n[nl[n]]);
-
-	status += cudaFree(BufferdU_MHD1[nl[n]]);
+	status += cudaFree(BufferU_0[nl[n]]);
+	status += cudaFree(BufferU_1[nl[n]]);
 	status += cudaFree(BufferdU_RAD0[nl[n]]);
 	status += cudaFree(BufferdU_RAD1[nl[n]]);
 	#endif
-	#if(N_LEVELS_1D_INT>0 || RAD_M1)
+	#if((N_LEVELS_1D_INT>0) || RAD_M1 || RESISTIVE)
 	status += cudaFree(Bufferstorage2[nl[n]]);
 	status += cudaFree(Bufferstorage3[nl[n]]);
 	#endif

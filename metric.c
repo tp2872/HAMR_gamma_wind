@@ -1,48 +1,3 @@
-
-/***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
-                   Gabor Toth, and Luca Del Zanna
-
-                        HARM  version 1.0   (released May 1, 2006)
-
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
-    partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
-    stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
-
-    You are morally obligated to cite the following two papers in his/her 
-    scientific literature that results from use of any part of HARM:
-
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
-        Astrophysical Journal, 589, 444.
-
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
-        Astrophysical Journal, 641, 626.
-
-   
-    Further, we strongly encourage you to obtain the latest version of 
-    HARM directly from our distribution website:
-    http://rainman.astro.uiuc.edu/codelib/
-
-
-    HARM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    HARM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with HARM; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-***********************************************************************************/
-
 #include "decs.h"
 /* insert metric here */
 void gcov_func(double *X, double gcovp[][NDIM])
@@ -392,14 +347,46 @@ void dxdxp_func(double *X, double dxdxp[][NDIM])
 /* load local geometry into structure geom */
 void get_geometry(int n, int ii, int jj, int zz, int ff, struct of_geom * restrict geom)
 {
-	int i, j;
-	for (i = 0; i < NDIM; i++){
-		 #pragma ivdep
-		for (j = 0; j < NDIM; j++){
-			geom->gcon[i][j] = gcon[nl[n]][index_2D(n,ii, jj, zz)][ff][i][j];
-			geom->gcov[i][j] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
-		}
-	}
+	geom->gcon[0][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][0];
+	geom->gcov[0][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][0];
+	geom->gcon[0][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][1];
+	geom->gcov[0][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][1];
+	geom->gcon[0][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][2];
+	geom->gcov[0][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][2];
+	geom->gcon[0][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][0][3];
+	geom->gcov[0][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][0][3];
+	geom->gcon[1][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][0];
+	geom->gcov[1][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][0];
+	geom->gcon[1][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][1];
+	geom->gcov[1][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][1];
+	geom->gcon[1][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][2];
+	geom->gcov[1][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][2];
+	geom->gcon[1][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][1][3];
+	geom->gcov[1][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][1][3];
+	geom->gcon[2][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][0];
+	geom->gcov[2][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][0];
+	geom->gcon[2][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][1];
+	geom->gcov[2][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][1];
+	geom->gcon[2][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][2];
+	geom->gcov[2][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][2];
+	geom->gcon[2][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][2][3];
+	geom->gcov[2][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][2][3];
+	geom->gcon[3][0] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][0];
+	geom->gcov[3][0] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][0];
+	geom->gcon[3][1] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][1];
+	geom->gcov[3][1] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][1];
+	geom->gcon[3][2] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][2];
+	geom->gcov[3][2] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][2];
+	geom->gcon[3][3] = gcon[nl[n]][index_2D(n, ii, jj, zz)][ff][3][3];
+	geom->gcov[3][3] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][3][3];
+
+	//for (i = 0; i < NDIM; i++){
+		// #pragma ivdep
+		//for (j = 0; j < NDIM; j++){
+		//	geom->gcon[i][j] = gcon[nl[n]][index_2D(n,ii, jj, zz)][ff][i][j];
+		//	geom->gcov[i][j] = gcov[nl[n]][index_2D(n, ii, jj, zz)][ff][i][j];
+		//}
+	//}
 	#if(GPU_DEBUG)
 	geom->gcon[1][0] = geom->gcon[0][1];
 	geom->gcov[1][0] = geom->gcov[0][1];

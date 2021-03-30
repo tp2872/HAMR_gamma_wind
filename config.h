@@ -28,7 +28,7 @@ Physical Parameters section
 #define REFINE_GIBWA (0)
 
 /*Select adiabatic index and BH spin*/
-#define GAMMA	(5./3.)
+#define GAMMA	(4./3.)
 #define BH_SPIN (0.9375)
 
 /*Wheter or not to tilt the disk*/
@@ -47,13 +47,16 @@ Physical Parameters section
 #define FULL_DISP (0)
 
 /* Whether Helmholtz EOS is used; defined before the FIXUP parameters to set floors for torus problem */
-#define DOHELM (1)
+#define DOHELM (0)
 #define DOHELM_FULLENTROPY (0) // Doesn't change much in case of 1d inversion only, checked on TORUS problem up to 350rg
 #define EOS_GAMMALAW (0)
 #define KTOT_FACTOR (1e-5) // Factor by which to multiply to avoid overflow in exp() in case of Kappa advection
 #define inversion_w_edits   (1)
 #define enable_input_check  (1)
 #define revert_gamma        (1)
+
+// subcycling testing
+#define RADM1_SUBCYCLING (1)
 
 #define EOS_BISECTION (0)
 #define eos_nr_debug (0)
@@ -133,18 +136,18 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (20)
+#define MAX_BLOCKS (40)
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
-#define NB_2 3
-#define NB_3 2
+#define NB_1 2
+#define NB_2 2
+#define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 42
-#define BS_3 48
+#define BS_1 64
+#define BS_2 64
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -176,7 +179,7 @@ Numerical Parameters section
 #define DEREFINE_POLE (0)
 
 /*Number of internal derefinement levels*/
-#define N_LEVELS_1D_INT (2)
+#define N_LEVELS_1D_INT (0)
 
 /*Enable very fast hierarchical timestepping routine in combination with DEREFINE_POLE and REF_1=0, REF_2=0, REF_3=1. Do not use! Deprecated: With new load balancing and AMR there is no speedup*/
 #define TIMESTEP_JET 0
@@ -189,13 +192,13 @@ Numerical Parameters section
 
 /*Set maximum timelevel for AMR (ie 1,2,4,8 etc). This determines how often the timestep is changed so setting it to an absurd high value may cause code crashes
 If a very high value is needed, lowerin Courant factor may increase stability*/
-#define AMR_MAXTIMELEVEL 16
+#define AMR_MAXTIMELEVEL 1
 
 /*The minimum timeinterval at which refinement takes place, TREF can't go below it*/
-#define AMR_SWITCHTIMELEVEL 16
+#define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (160)
+#define DUMPFACTOR (300)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -239,12 +242,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable or disable the HLLD solver. Does not work yet!*/
 #define HLLD (0)
 
-/*Whether or not to use a staggered grid*/
+/*Whether or not to use a stagger magnetic field*/
 #define STAGGERED (1)
 
-/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
-#define HLLF  (1)
-#define LAXF  (0)
+/*Whether or not to use a stagger electric field*/
+#define STAGGERED_E (0)
 
 /*Wheter or not to use a non symmetric metric for tilted disk. Not fully implemented in this version!*/
 #define NSY (0)
@@ -317,8 +319,23 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
+/*Enable Resistivity*/
+#define RESISTIVE (0)
+
+/*Set resistivity coefficient*/
+#define ETA (0.0)
+
 /*Enable IMEX*/
-#define DO_IMEX (1)
+#define DO_IMEX (0)
+
+/* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
+#if(RESISTIVE || RAD_M1)
+#define HLLF  (0)
+#define LAXF  (1)
+#else
+#define HLLF  (1)
+#define LAXF  (0)
+#endif
 
 //Abundace constants
 #define Z_AB (0.02)
@@ -346,7 +363,12 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
+#if (RADM1_SUBCYCLING)
+#define MASS_DENSITY_SCALE (0.00001)
+#else
+//#define MASS_DENSITY_SCALE (0.00001)
 #define MASS_DENSITY_SCALE (3.1)
+#endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
@@ -371,6 +393,9 @@ MNEMONICS SECTION
 #define U1_RAD	(10)
 #define U2_RAD	(11)
 #define U3_RAD	(12)
+#define E1 (9)
+#define E2 (10)
+#define E3 (11)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -784,6 +809,8 @@ Section with derived quantities
 
 #if(RAD_M1)
 #define NPRDUMP 14
+#elif(RESISTIVE)
+#define NPRDUMP 12
 #else
 #define NPRDUMP 9
 #endif
@@ -791,8 +818,9 @@ Section with derived quantities
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
+#define NPR_E      (3)        /* number of electric field primitive variables */
 #define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R)        /* total number of primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */

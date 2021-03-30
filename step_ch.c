@@ -1,57 +1,4 @@
-/***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
-                   Gabor Toth, and Luca Del Zanna
-
-                        HARM  version 1.0   (released May 1, 2006)
-
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
-    partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
-    stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
-
-    You are morally obligated to cite the following two papers in his/her 
-    scientific literature that results from use of any part of HARM:
-
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
-        Astrophysical Journal, 589, 444.
-
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
-        Astrophysical Journal, 641, 626.
-
-   
-    Further, we strongly encourage you to obtain the latest version of 
-    HARM directly from our distribution website:
-    http://rainman.astro.uiuc.edu/codelib/
-
-
-    HARM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    HARM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with HARM; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-***********************************************************************************/
-
-/**
- *
- * this contains the generic piece of code for advancing
- * the primitive variables 
- *
-**/
 #include "decs_MPI.h"
-/** algorithmic choices **/
-
-
 /***********************************************************************************************/
 /***********************************************************************************************
   step_ch():
@@ -242,9 +189,11 @@ double advance(int flag)
 	set_iprobe(0, &flag_local);
 	for (n = 0; n < n_active; n++) if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_rec3(F3, Bufferp_1, n_ord[n], 2);
 	#endif
+
 	#if(!TRANS_BOUND && !CARTESIAN)
 	for (n = 0; n < n_active; n++) if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) fix_flux(F1, F2, F3, n_ord[n]);
 	#endif
+
 	#if(!STAGGERED)
 	for (n = 0; n < n_active; n++)if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) flux_ct(F1, F2, F3, n_ord[n]);
 	#else
@@ -259,7 +208,9 @@ double advance(int flag)
 		else if (nstep % (block[n_ord[n]][AMR_TIMELEVEL]) == block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport1(p, n_ord[n]);
 	}
 	#endif
+
 	const_transport_bound();
+
 	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) const_transport2(ps, ps, dt * (double)block[n_ord[n]][AMR_TIMELEVEL], n_ord[n]);
@@ -272,6 +223,7 @@ double advance(int flag)
 	}
 	#endif
 	#endif
+
 	#if(RAD_M1 && DO_IMEX)
 	for (n = 0; n < n_active; n++) {
 		if (nstep % (2 * block[n_ord[n]][AMR_TIMELEVEL]) == 2 * block[n_ord[n]][AMR_TIMELEVEL] - 1) {
@@ -308,12 +260,12 @@ double advance(int flag)
 void utoprim_M1_0(double Dt, int n)
 {
 	int i, j, z, k, ind0;
-	double cell_size, U_0[NPR];
+	double cell_size;
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
 
-	#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom, U_0, q, q_rad, ind0, cell_size)
+	#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom,  q, q_rad, ind0, cell_size)
 	{
 		#pragma omp for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n]-N1G, N1_GPU_offset[n] + BS_1 + N1G - 1, N2_GPU_offset[n] - N2G, N2_GPU_offset[n] + BS_2 + N2G - 1, N3_GPU_offset[n] - N3G, N3_GPU_offset[n] + BS_3 +N3G - 1) {
@@ -330,7 +282,7 @@ void utoprim_M1_0(double Dt, int n)
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]);
 
 				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size);
+				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size);
 			}
 		}
 	}
@@ -338,10 +290,10 @@ void utoprim_M1_0(double Dt, int n)
 
 void utoprim_M1_1(double Dt, int n){
 	int i, j, z, k;
-	double cell_size, U_1[NPR];
+	double cell_size, dU_MHD[NPR];
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
-	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, U_1, geom, ind0, ind1, ind2, ind3, cell_size)
+	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, dU_MHD, ind0, ind1, ind2, ind3, cell_size)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1){
@@ -352,11 +304,10 @@ void utoprim_M1_1(double Dt, int n){
 			ind2 = index_3D(n, i, j + D2, z);
 			ind3 = index_3D(n, i, j, z + D3);
 
-			source(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD1[nl[n]][ind0], Dt);
+			source(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD, Dt);
 
-			#pragma ivdep
 			PLOOP{
-				U_1[k] =  U_n[nl[n]][ind0][k] + Dt * (
+				U_1[nl[n]][ind0][k] = (((3.0 * Y_IMEX - 1.0) / Y_IMEX) * U_n[nl[n]][ind0][k] + ((1.0 - 2.0 * Y_IMEX) / Y_IMEX) * U_0[nl[n]][ind0][k])  + Dt * (
 				#if( N1G > 0 )
 				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
 				#endif
@@ -366,20 +317,20 @@ void utoprim_M1_1(double Dt, int n){
 				#if( N3G > 0 )
 				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif	
-				+ dU_MHD1[nl[n]][ind0][k] + (1. - 2. * Y_IMEX) * dU_RAD0[nl[n]][ind0][k]);
+				+ dU_MHD[k]);
 			}
 
 			#if STAGGERED
-			U_1[B1] = 0.5*(psh[nl[n]][ind0][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + psh[nl[n]][index_3D(n, i + D1, j, z)][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
-			U_1[B2] = 0.5*(psh[nl[n]][ind0][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + psh[nl[n]][index_3D(n, i, j + D2, z)][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
+			U_1[nl[n]][ind0][B1] = 0.5*(psh[nl[n]][ind0][1] * gdet[nl[n]][index_2D(n, i, j, z)][FACE1] + psh[nl[n]][index_3D(n, i + D1, j, z)][1] * gdet[nl[n]][index_2D(n, i + D1, j, z)][FACE1]);
+			U_1[nl[n]][ind0][B2] = 0.5*(psh[nl[n]][ind0][2] * gdet[nl[n]][index_2D(n, i, j, z)][FACE2] + psh[nl[n]][index_3D(n, i, j + D2, z)][2] * gdet[nl[n]][index_2D(n, i, j + D2, z)][FACE2]);
 			#if(N3G>0)
-			U_1[B3] = 0.5*(psh[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psh[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
+			U_1[nl[n]][ind0][B3] = 0.5*(psh[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psh[nl[n]][index_3D(n, i, j, z + D3)][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
 
 			PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1, U_1, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Y_IMEX*Dt, cell_size);
+			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Y_IMEX*Dt, cell_size);
 		}
 	}
 }
@@ -403,17 +354,17 @@ void utoprim_M1_2(double Dt, int n){
 
 			#pragma ivdep
 			PLOOP{
-				U_2[k] = U_n[nl[n]][ind0][k] + Dt * (
+				U_2[k] = 0.5 * (U_n[nl[n]][ind0][k] + U_1[nl[n]][ind0][k]) + Dt * (
 				#if( N1G > 0 )
-				- (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
+				- 0.5 * (F1[nl[n]][ind1][k] - F1[nl[n]][ind0][k]) / dx[nl[n]][1]
 				#endif
 				#if( N2G > 0 )
-				- (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
+				- 0.5 * (F2[nl[n]][ind2][k] - F2[nl[n]][ind0][k]) / dx[nl[n]][2]
 				#endif
 				#if( N3G > 0 )
-				- (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
+				- 0.5 * (F3[nl[n]][ind3][k] - F3[nl[n]][ind0][k]) / dx[nl[n]][3]
 				#endif
-				+ 0.5* (dU[k] + dU_MHD1[nl[n]][ind0][k] + dU_RAD0[nl[n]][ind0][k] +  dU_RAD1[nl[n]][ind0][k]));
+				+ (0.5 * dU[k] + Y_IMEX * dU_RAD0[nl[n]][ind0][k] + 0.5 * (1.0 - Y_IMEX) * dU_RAD1[nl[n]][ind0][k]));
 			}
 
 			#if STAGGERED
@@ -468,7 +419,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 
 			source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
 			get_state(pi[nl[n]][ind0], &geom, &q);
+			#if(RAD_M1)
 			get_state_rad(pi[nl[n]][ind0], &geom, &q_rad);
+			#endif
 			primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U);
 
 			#pragma ivdep
@@ -500,7 +453,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#endif
 
-			#if( DO_FONT_FIX ) 
+			#if(DO_FONT_FIX) 
 			if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
@@ -637,24 +590,12 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					ctop = MY_MAX(cmax, cmin);
 
 					#if(RAD_M1)
-					#pragma ivdep
-					if (flag == 1 && DO_IMEX) {
-						for (k = 0; k <= KTOT; k++) {
-							#if(HLLF)
-							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL));
-							#else
-							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k])));
-							#endif
-						}
-					}
-					else {
-						for (k = 0; k <= KTOT; k++) {
-							#if(HLLF)
-							F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
-							#else
-							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
-							#endif
-						}
+					for (k = 0; k <= KTOT; k++) {
+						#if(HLLF)
+						F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
+						#else
+						F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
+						#endif
 					}
 
 					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
@@ -664,15 +605,8 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 					ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 
-					if (flag == 1 && DO_IMEX) {
-						for (k = UU_RAD; k <= U3_RAD; k++) {
-							F[nl[n]][ind0][k] = 0.5 * (F[nl[n]][ind0][k] + 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k])));
-						}
-					}
-					else {
-						for (k = UU_RAD; k <= U3_RAD; k++) {
-							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k]));
-						}
+					for (k = UU_RAD; k <= U3_RAD; k++) {
+						F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k]));
 					}
 					#else
 					#pragma ivdep

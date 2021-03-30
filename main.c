@@ -92,7 +92,135 @@ int main(int argc, char *argv[])
 			#endif
 		}	
 		//restart_write();
+		//close_rdump();
 	}
+
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	double den, ener, pres, bsq, esq,f, U[NPR], gamma, p_old[NPR];
+	int zz;
+	struct of_state_res q_res;
+	struct of_geom geom;
+	struct of_state q;
+	struct of_state_rad q_rad;
+	#if(RESISTIVE)
+	int ind0, k;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]]-1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]]-1, N2_GPU_offset[n_ord[n]] + BS_2 , N3_GPU_offset[n_ord[n]]-D3, N3_GPU_offset[n_ord[n]] + BS_3*D3) {
+			for (zz = 0; zz < 1; zz++) {
+
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+
+				ind0 = index_3D(n_ord[n], i, j, z);
+				p[nl[n_ord[n]]][ind0][UU] = fabs(p[nl[n_ord[n]]][ind0][UU]);
+				get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+				primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+				bsq = dot(q_res.bcon, q_res.bcov);
+				esq = dot(q_res.econ, q_res.ecov);
+				if (bsq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001 || esq / p[nl[n_ord[n]]][ind0][RHO] > 0.000001) {
+					double alpha, sqrtgamma, gamma, vd_guess[3], B_guess[3], B_D[3], E_D[3];
+					struct of_state state;
+					get_geometry(n_ord[n], i, j, z, CENT, &geom);
+					get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &state);
+					alpha = 1.0 / sqrt(-geom.gcon[0][0]);
+					sqrtgamma = geom.g / alpha; //determinant for spatial part of metric
+					gamma = alpha * state.ucon[0];
+					vd_guess[0] = state.ucov[1] / gamma;
+					vd_guess[1] = state.ucov[2] / gamma;
+					vd_guess[2] = state.ucov[3] / gamma;
+					B_guess[0] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					B_guess[1] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					B_guess[2] = alpha * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+					//E_guess[0] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1];
+					//E_guess[1] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2];
+					//E_guess[2] = alpha*p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3];
+			
+					lower_3(B_guess, geom.gcov, B_D);
+					//lower_3(E_guess, &geom, E_D);
+					int i1, j1, k1;
+					for (i1 = 0; i1 < 3; i1++) {
+						p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = 0.;
+						for (j1 = 0; j1 < 3; j1++)for (k1 = 0; k1 < 3; k1++) {
+							if ((j1 == k1) || (j1 == i1) || (k1 == i1)) continue;
+							p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][E1 + i1] - (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * B_D[k1]);
+							//p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1 + i1] + (1.0 / geom.g * lvc3u(i1, j1, k1) * vd_guess[j1] * E_D[k1]);
+						}
+					}
+					//p[nl[n_ord[n]]][ind0][B1] = 0.;
+					//p[nl[n_ord[n]]][ind0][B2] = 0.;
+					//p[nl[n_ord[n]]][ind0][B3] = 0.;
+					//p[nl[n_ord[n]]][ind0][E1] = 0.;
+					//p[nl[n_ord[n]]][ind0][E2] = 0.;
+					//p[nl[n_ord[n]]][ind0][E3] = 0.;
+					
+					//ps[nl[n_ord[n]]][ind0][1] = 0.;
+					//ps[nl[n_ord[n]]][ind0][2] = 0.;
+					//ps[nl[n_ord[n]]][ind0][3] = 0.;
+					//psh[nl[n_ord[n]]][ind0][1] = 0.;
+					//psh[nl[n_ord[n]]][ind0][2] = 0.;
+					//psh[nl[n_ord[n]]][ind0][3] = 0.;
+
+					get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+					primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 0, &geom, U);
+
+
+					//Reset variables
+					PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
+
+					PLOOP p[nl[n_ord[n]]][ind0][k] +=0.1;
+					pflag[nl[n_ord[n]]][ind0] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, p[nl[n_ord[n]]][ind0], NEWT_TOL, BASIC, 0.1*(ETA<0.000000000000001));
+
+					if (pflag[nl[n_ord[n]]][ind0] != 0) {
+						get_state_res(p_old, &geom, &q_res);
+						bsq = dot(q_res.bcon, q_res.bcov);
+						esq = dot(q_res.econ, q_res.ecov);
+						fprintf(stderr, "zz: %d rho_old (%d, %d, %d): %f ug_old: %f uu_0-1: %f, bsq_old: %f esq_old: %f\n", zz, i, j, z, log10(p_old[RHO]), log10(p_old[UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+
+						get_state_res(p[nl[n_ord[n]]][ind0], &geom, &q_res);
+						bsq = dot(q_res.bcon, q_res.bcov);
+						esq = dot(q_res.econ, q_res.ecov);
+						fprintf(stderr, "zz: %d rho_new (%d, %d, %d): %f ug_new: %f uu_0-1: %f, bsq_new: %f esq_new: %f\n",zz, i, j, z, log10(p[nl[n_ord[n]]][ind0][RHO]), log10(p[nl[n_ord[n]]][ind0][UU]), log10(fabs(q_res.ucon[0] - 1.)), log10(bsq), log10(esq));
+						
+						primtoflux_res(p[nl[n_ord[n]]][ind0], &q_res, 2, &geom, U);
+						fprintf(stderr, "F[2][B3]: %f ", 10000. * U[UU]);
+						
+						get_state(p[nl[n_ord[n]]][ind0], &geom, &state);
+						primtoflux(p[nl[n_ord[n]]][ind0], &state, &q_rad, 2, &geom, U);
+						fprintf(stderr, "F[2][B3]: %f \n", 10000.*U[UU]);
+
+
+					}
+				}
+			}
+		}
+	}
+	#endif
+	#if(RAD_M1)
+	int ind0, k;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - 1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3 * D3) {
+			for (zz = 0; zz < 1; zz++) {
+				ind0 = index_3D(n_ord[n], i, j, z);
+				get_geometry(n_ord[n], i, j, z, CENT, &geom);
+				get_state(p[nl[n_ord[n]]][ind0], &geom, &q);
+				get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
+				primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U);
+
+				//Reset variables
+				PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
+
+				//Invert
+				pflag[nl[n_ord[n]]][ind0] = Rtoprim(U, geom.gcov, geom.gcon, geom.g, p[nl[n]][ind0], BASIC);
+
+				//Print
+				if (fabs(p_old[UU_RAD] - p[nl[n_ord[n]]][ind0][UU_RAD])/(p_old[UU_RAD] + p[nl[n_ord[n]]][ind0][UU_RAD])>pow(10.,-12.)) {
+					fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
+					get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
+					fprintf(stderr, "uu_new (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p[nl[n_ord[n]]][ind0][UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
+				}
+			}
+		}
+	}
+	#endif
 
 	/* do initial diagnostics */
 	bound_prim(p, 1);
@@ -124,7 +252,11 @@ int main(int argc, char *argv[])
 		GPU_step_ch();
 		#endif
 		#if(CPU_OPENMP)
+		#if(RESISTIVE)
+		step_ch_res();
+		#else
 		step_ch();
+		#endif
 		#endif
 
 		/*Used for debugging*/
@@ -266,13 +398,13 @@ void MPI_initialize(int argc, char *argv[])
 
 	#pragma omp parallel shared(nthreads) private(threadid)
 	{
-#ifdef __APPLE__
+		#ifdef __APPLE__
         threadid = 0;
         nthreads = 1;
-#else
+		#else
         threadid = omp_get_thread_num();
 		nthreads = omp_get_num_threads();
-#endif
+		#endif
 		if (threadid == 0 && rank == 0) {
 			fprintf(stderr, "nthreads = %d\n", nthreads);
 		}
@@ -342,9 +474,10 @@ void set_arrays(int n)
 	p[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	ph[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G)*(BS_2 + 2 * N2G)*(BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	U[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	U_n[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
-	dU_MHD1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	U_0[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
+	U_1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	dU_RAD0[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	dU_RAD1[nl[n]] = (double(*)[NPR])malloc((BS_1 + 2 * N1G) * (BS_2 + 2 * N2G) * (BS_3 + 2 * N3G) * sizeof(double[NPR]));
 	#else
@@ -958,15 +1091,18 @@ void free_arrays(int n){
 	free(ps[nl[n]]);
 	free(psh[nl[n]]);
 	#endif
-	#if(RAD_M1)
+	#if(DO_IMEX && RAD_M1)
 	free(U_n[nl[n]]);
+	free(U_0[nl[n]]);
+	free(U_1[nl[n]]);
 	free(dU_MHD1[nl[n]]);
 	free(dU_RAD0[nl[n]]);
 	free(dU_RAD1[nl[n]]);
-	free(pflag_rad[nl[n]]);
-	#else
-	free(U[nl[n]]);
 	#endif
+	#if(RAD_M1)
+	free(pflag_rad[nl[n]]);
+	#endif
+	free(U[nl[n]]);
 	free(dq[nl[n]]);
 	free(F1[nl[n]]);
 	free(F2[nl[n]]);

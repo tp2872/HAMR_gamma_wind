@@ -1,47 +1,3 @@
-/***********************************************************************************
-    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
-                   Gabor Toth, and Luca Del Zanna
-
-                        HARM  version 1.0   (released May 1, 2006)
-
-    This file is part of HARM.  HARM is a program that solves hyperbolic 
-    partial differential equations in conservative form using high-resolution
-    shock-capturing techniques.  This version of HARM has been configured to 
-    solve the relativistic magnetohydrodynamic equations of motion on a 
-    stationary black hole spacetime in Kerr-Schild coordinates to evolve
-    an accretion disk model. 
-
-    You are morally obligated to cite the following two papers in his/her 
-    scientific literature that results from use of any part of HARM:
-
-    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
-        Astrophysical Journal, 589, 444.
-
-    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
-        Astrophysical Journal, 641, 626.
-
-   
-    Further, we strongly encourage you to obtain the latest version of 
-    HARM directly from our distribution website:
-    http://rainman.astro.uiuc.edu/codelib/
-
-
-    HARM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    HARM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with HARM; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-***********************************************************************************/
-
 #include "decs.h"
 
 /***********************************************************************************************/
@@ -252,12 +208,6 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], doubl
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
 	}
 }
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(T_CGS, 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * C_CGS * C_CGS) / (BOLTZ_CGS * ph[RHO]), 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow((GAMMA - 1.) * ph[UU]/ph[RHO], 4.)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-//lambda_CGS = c_CGS * kappa_CGS * ARAD * pow(Tg, 4.) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-//lambda = c_CGS * kappa_CGS * pow(Tg, 4.) * ARAD / (ENERGY_DE NSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.); //in units of erg/s/cm^3
-
 
 //Calculate total absorption opacity
 double calc_kappa_abs(double* ph) {
@@ -321,10 +271,13 @@ double calc_kappa_es(double * restrict ph) {
 /* returns b^2 (i.e., twice magnetic pressure) */
 double bsq_calc(double * restrict pr, struct of_geom * restrict geom)
 {
-	struct of_state q ;
+	double ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM];
+	ucon_calc(pr, geom, ucon);
+	lower(ucon, geom, ucov);
+	bcon_calc(pr, ucon, ucov, bcon);
+	lower(bcon, geom, bcov);
 
-	get_state(pr,geom,&q) ;
-	return( dot(q.bcon,q.bcov) ) ;
+	return(dot(bcon, bcov));
 }
 
 /* find ucon, ucov, bcon, bcov from primitive variables */
@@ -494,7 +447,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 		fail(FAIL_COEFF_SUP) ;
 		cms2 = 1. ;
 	}
-
+	//cms2 = 0.95;
 	/* now require that speed of wave measured by observer q->ucon is cms2 */
 	Asq = dot(Acon,Acov) ;
 	Bsq = dot(Bcon,Bcov) ;
