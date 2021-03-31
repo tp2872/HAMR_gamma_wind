@@ -668,7 +668,8 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 }
 
 #if(TWO_T)
-double calc_fel(double* restrict ph, double game, double gami) {
+//Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep
+double calc_fel(double* restrict ph, double game, struct of_state *q, double gami) {
 	double fel;
 	#if(FixedGamma)
 	double Te = ph[ENTRE] * pow(ph[RHO], game);
@@ -680,6 +681,7 @@ double calc_fel(double* restrict ph, double game, double gami) {
 	double c1 = 0.91;
 	double c2 = 1.6 * Te / Ti;
 	double c3 = 18.0 + 5.0 * log(Ti / Te);
+	double bsq = dot(q->bcon, q->bcov);
 	double beta = (GAMMA - 1.0) * ph[UU] / bsq;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) * sqrt(MH_CGS * Ti / (ME_CGS * Te)) * exp(-1.0 / beta);
 	return fel;
