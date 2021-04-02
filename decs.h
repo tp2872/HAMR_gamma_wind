@@ -955,7 +955,9 @@ double calc_kappa_emmit(double * restrict ph);
 double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 #if(TWO_T)
-void heating(double* restrict ph);
+double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, double pgas);
+void heating(double* restrict ph, struct of_state* q);
+double calc_gamma_gas(double* S, double rho);
 double calc_sfromrhou(double rho, double uint, int type);
 double solve_thetafromnmu(double n, double m, double u);
 double calc_sfromntheta(double numd, double theta);

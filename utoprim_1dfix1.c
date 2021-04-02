@@ -535,25 +535,25 @@ static void func_1d_orig1(double x[], double dx[], double resid[], double jac[][
     rho_for_gnr2_old = rho_for_gnr2; 
     rho = rho_for_gnr2 = x_rho[0];
 
-    Dc = D_3;
-    t1 = Dc*Dc;
-    t2 = QdotBsq3*t1;
-    t3 = t2*Bsq3;
-    t5 = Bsq3*Bsq3;
-    t8 = t1*Bsq3;
-    t10 = t1*W;
-    t21 = W*W;
-    t23 = rho*rho;
-    t26 = 1/t1;
-    resid[0] = (t3+(2.0*t2+((Qtsq3-t5)*t1+(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq3+W)*W)*t21*t23)*t26/t21;
-    t29 = t1*t1;
+    Dc = D_3; //D
+    t1 = Dc*Dc; //D*D
+    t2 = QdotBsq3*t1; //QdotBsq*D*D
+    t3 = t2*Bsq3; //QdotBsq*D*D*Bsq
+    t5 = Bsq3*Bsq3; //Bsq*Bsq
+    t8 = t1*Bsq3; //D*D*Bsq
+    t10 = t1*W; //D*D*W
+    t21 = W*W; //W*W
+    t23 = rho*rho; //rho*rho
+    t26 = 1/t1; //1/(D*D)
+    resid[0] = (t3+(2.0*t2+((Qtsq3-t5)*t1+(-2.0*t8-t10)*W)*W)*W+(t5+(2.0*Bsq3+W)*W)*t21*t23)*t26/t21; //eq27
+    t29 = t1*t1; //D*D*D*D
     t30 = QdotBsq3*t29;
-    t32 = GAMMA*K_atm3;
+    t32 = GAMMA*K_atm3; //GAMMA*kappa
     t33 = pow(rho,1.0*GAMMA);
-    t34 = t32*t33;
+    t34 = t32*t33; //GAMMA*kappa*rho^gamma
     t38 = t23 * t33;
     t51 = GAMMA*t1*K_atm3*t33;
-    t67 = t21*W;
+    t67 = t21*W; //W*W*W
    
     jac[0][0] = -2.0*(t30*Bsq3*t34+(t30*t34 +((-t38*Bsq3*t32+Bsq3*GAMMA*t1*K_atm3*t33)*t1+(-t38*GAMMA*K_atm3+t51)*t1*W)*t21)*W +((-t3+(-t2+(-t8-t10)*t21)*W)*W+(-t5-Bsq3*W)*t67*t23)*t23)*t26/(t51-W*t23)/t67;
     dx[0] = -resid[0]/jac[0][0];

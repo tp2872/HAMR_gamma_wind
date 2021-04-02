@@ -484,7 +484,7 @@ static double W_of_vsq(double vsq, double *p, double *rho, double *u){
 dW/dvsq as a function of v^2, rho, p
 */
 static double dWdvsq_calc(double vsq, double rho, double p){
-    return((GAMMA * (2. - G_ATM) * p + (GAMMA - 1.) * rho) / (2. * (GAMMA - 1.) * (1. - vsq) * (1. - vsq)));
+    return((GAMMA * (2. - GAMMA) * p + (GAMMA - 1.) * rho) / (2. * (GAMMA - 1.) * (1. - vsq) * (1. - vsq)));
 }
 
 

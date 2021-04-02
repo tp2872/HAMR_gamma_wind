@@ -446,15 +446,15 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			U[B3] = 0.5 * (psf[nl[n]][ind0][3] * gdet[nl[n]][index_2D(n, i, j, z)][FACE3] + psf[nl[n]][ind3][3] * gdet[nl[n]][index_2D(n, i, j, z + D3)][FACE3]);
 			#endif
 			#endif
-			
-			#if(NEWMAN)
+
+			#if(!NEWMAN)
 			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#else
 			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#endif
 
 			#if(DO_FONT_FIX) 
-			if (pflag[nl[n]][ind0]) {
+			/*if (pflag[nl[n]][ind0]) {
 				failimage[nl[n]][ind0][0]++;
 				#if DOKTOT
 				pflag[nl[n]][ind0] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
@@ -467,7 +467,18 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 						failimage[nl[n]][ind0][2]++;
 					}
 				}
-			}
+			}*/
+
+			#if(TWO_T)
+			get_state(pf[nl[n]][ind0], &geom, &q);
+			heating(pf[nl[n]][ind0], &q);
+			#if(!NEWMAN)
+			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			#else
+			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			#endif
+			#endif
+
 			#endif
 			#if(RAD_M1)
 			pflag_rad[nl[n]][ind0] = Rtoprim(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], BASIC);
@@ -610,12 +621,14 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					}
 					#else
 					#pragma ivdep
-					for (k = 0; k <= KTOT; k++) {
-						#if(HLLF)
-						F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
-						#else
-						F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
-						#endif
+					for (k = 0; k < NPR; k++) {
+						if (!(k >= UU_RAD && k <= U3_RAD && RAD_M1)) {
+							#if(HLLF)
+							F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
+							#else
+							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
+							#endif
+						}
 					}
 					#endif
 

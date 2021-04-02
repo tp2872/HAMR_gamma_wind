@@ -668,57 +668,109 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 }
 
 #if(TWO_T)
-//Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep
-double calc_fel(double* restrict ph, double game, struct of_state *q, double gami) {
-	double fel;
-	#if(FixedGamma)
-	double Te = ph[ENTRE] * pow(ph[RHO], game);
-	double Ti = ph[ENTRI] * pow(ph[RHO], gami);
-	#else
-	double Te = ph[ENTRE] * pow(ph[RHO], game);
-	double Ti = ph[ENTRI] * pow(ph[RHO], gami);
-	#endif
-	double c1 = 0.91;
-	double c2 = 1.6 * Te / Ti;
-	double c3 = 18.0 + 5.0 * log(Ti / Te);
-	double bsq = dot(q->bcon, q->bcov);
-	double beta = (GAMMA - 1.0) * ph[UU] / bsq;
-	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) * sqrt(MH_CGS * Ti / (ME_CGS * Te)) * exp(-1.0 / beta);
+//Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
+double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, double pgas) {
+	double fel, c1, c2, c3, bsq, beta;
+	c1 = 0.91;
+	if (Ti > Te) {		
+		c2 = 1.6 * Te / Ti;
+		c3 = 18.0 + 5.0 * log10(Ti / Te);
+	}
+	else {
+		c2 = 1.2 * Te / Ti;
+		c3 = 18.0;
+	}
+	bsq = dot(q->bcon, q->bcov);
+	beta = 1.0;
+	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) * sqrt(Ti / (Te)) * exp(-1.0 / beta);
 	return fel;
 }
 
-void heating(double* restrict ph)
+void heating(double* ph, struct of_state* q)
 {
-	double u_e, u_i, ughat;
-	double fel, game, gami;
+	double u_e, u_i, dis, ughat;
+	double fel, game, gami, pgas;
 
-	fel = calc_fel(ph, game, gami);   // To be update. fixed value temporarily. 
-
-	#if(FixedGamma)   // fixed gamma: Ressler+15 & Ryan+17
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
-
-	u_e = 1. / (game - 1.) * ph[ENTRE] * pow(ph[RHO], game);
-	u_i = 1. / (gami - 1.) * ph[ENTRI] * pow(ph[RHO], gami);
-
+		#if(FULL_ENTROPY)
+		u_e = exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game);
+		u_i = exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami);
+		#else
+		u_e = ph[ENTRE] * pow(ph[RHO], game) / (game - 1.0);
+		u_i = ph[ENTRI] * pow(ph[RHO], gami) / (gami - 1.0);
+		#endif
+		pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	u_e = calc_ufromsrho(ph[ENTRE], ph[RHO], ELECTRONS);
 	u_i = calc_ufromsrho(ph[ENTRI], ph[RHO], IONS);
 	#endif
 
-	ughat = u_e + u_i;
+	//Calculate which fraction goes into electrons
+	fel = 0.1;//1.0 / (1.0 + calc_fel(ph, q, MU_E * (game - 1.0) * u_e, MU_I * (gami - 1.0) * u_i, pgas));
 
-	u_e += fel * max(ph[UU] - ughat, 0);
-	u_i += (1. - fel) * max(ph[UU] - ughat, 0);
+	//Total adiabatic evolution of ions and electrons
+	ughat = (u_e + u_i); //MATTHEW_MARK: Remove ion entropy and recast
 
+	//Calculate dissipation
+	dis = max(ph[UU] - ughat, 0.);
+
+	//Update internal energies
+	u_e += fel * dis;
+	u_i += (1. - fel) * dis;
+	if (u_e < 0.01 * u_i) {
+		ughat = u_e + u_i;
+		u_e = 0.01 * ughat;
+		u_i = 0.99 * ughat;
+	}
+	else if (u_i < 0.01 * u_e) {
+		ughat = u_i + u_e;
+		u_i = 0.01 * ughat;
+		u_e = 0.99 * ughat;
+	}
+	if (isnan(u_i))fprintf(stderr, "nanerror: %f \n", u_i);
 	// convert back to entropy 
-	#if(FixedGamma)
-	ph[ENTRE] = (game - 1.) * u_e * pow(ph[RHO], -game);
-	ph[ENTRI] = (gami - 1.) * u_i * pow(ph[RHO], -gami);
+	#if(FIXEDGAMMA)
+		#if(FULL_ENTROPY)
+		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.) * u_e * pow(ph[RHO], -game));
+		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.) * u_i * pow(ph[RHO], -gami));
+		#else
+		ph[ENTRE] = (game - 1.) * u_e * pow(ph[RHO], -game);
+		ph[ENTRI] = (gami - 1.) * u_i * pow(ph[RHO], -gami);
+		#endif
 	#else
 	ph[ENTRE] = calc_sfromrhou(ph[RHO], u_e, ELECTRONS);
 	ph[ENTRI] = calc_sfromrhou(ph[RHO], u_i, IONS);
 	#endif
+}
+
+//Calculate EOS gamma based on electron (and ion or total entropy) 
+double calc_gamma_gas(double*  S, double rho) {
+	double gamg, game, gami, Te, Ti;
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	game = GAMMAE;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = (game - 1.0) * exp(S[0]) * pow(rho, game - 1.0) * MU_E;
+		Ti = (gami - 1.0) * exp(S[1]) * pow(rho, gami - 1.0) * MU_I;
+		#else
+		Te = S[0] * pow(rho, game - 1.0) * MU_E;
+		Ti = S[1] * pow(rho, gami - 1.0) * MU_I;
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * MU_E;
+		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I;
+		#else
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) * MU_E;
+		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) * MU_I;
+		#endif
+	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
+	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Ti);
+	#endif
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Ti / Te)) / ((Ti / Te) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	return gamg;
 }
 
 void Coulomb_exchange(double* restrict ph, double Dt)
@@ -734,7 +786,7 @@ void Coulomb_exchange(double* restrict ph, double Dt)
 	entr_e = ph[ENTRE];
 	entr_i = ph[ENTRI];
 
-	#if(FixedGamma)   // fixed gamma: Ressler+15 & Ryan+17
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gamp = GAMMA;
 	#else     // variable gamma: Sadowski+17 & Chael+19
@@ -748,7 +800,7 @@ void Coulomb_exchange(double* restrict ph, double Dt)
 	iter_uu = 0;
 	// Start of subcycle: in each subcycle the internal temperature is allowed to be at most halved
 	do {
-		#if(FixedGamma)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 		u_e = 1. / (game - 1.) * entr_e * pow(ph[RHO], game);
 		u_i = 1. / (gamp - 1.) * entr_i * pow(ph[RHO], gamp);
 
@@ -795,7 +847,7 @@ void Coulomb_exchange(double* restrict ph, double Dt)
 			u_i -= 0.5 * u_i * frac_uu;
 		}
 
-		#if(FixedGamma)
+		#if(FIXEDGAMMA)
 		entr_e = (game - 1.) * u_e * pow(ph[RHO], -game);
 		entr_i = (gamp - 1.) * u_i * pow(ph[RHO], -gamp);
 		#else
