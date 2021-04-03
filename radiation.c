@@ -104,11 +104,7 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	U_f[RHO] = U_i[RHO];
 	get_state(pb, geom, &q);
 	if (pflag) pb[RHO] = U_i[RHO] / geom->g / q.ucon[0];
-	mhd_calc(pb, 0, &q, &U_f[UU]
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
-	);
+	mhd_calc(pb, 0, &q, &U_f[UU], GAMMA);
 	for (k = UU; k <= U3; k++)U_f[k] *= geom->g;
 	U_f[UU] += U_f[RHO];
 
@@ -203,11 +199,7 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 				get_state(pb_new, geom, &q);
 				pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0]; //Obtain rho0 = U_1 / u^t from newly updates P_i+1
 				U_new[RHO] = U_i[RHO];
-				mhd_calc(pb_new, 0, &q, &U_new[UU]
-					#if(DOHELM)
-					, gpu_eos_table
-					#endif
-				);
+				mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] = U_new[UU] + U_new[RHO];
 
@@ -303,11 +295,7 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 		get_state(pb_new, geom, &q);
 		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
-		mhd_calc(pb_new, 0, &q, &U_new[UU]
-			#if(DOHELM)
-			, gpu_eos_table
-			#endif
-		);
+		mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 		for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 		U_new[UU] = U_new[UU] + U_new[RHO];
 
@@ -478,7 +466,7 @@ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
@@ -589,7 +577,7 @@ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
@@ -744,7 +732,7 @@ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
@@ -849,7 +837,7 @@ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
@@ -1027,7 +1015,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 
@@ -1138,7 +1126,7 @@ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] += U_new[RHO];
 
@@ -1321,7 +1309,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 				if (flag == 0) {
 					//Recompute T_t^mu for consistency
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 					for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 					U_new[UU] += U_i[RHO];
 
@@ -1430,7 +1418,7 @@ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], do
 			if (flag == 0) {
 				//Recompute T_t^mu for consistency
 				get_state(pb_new, geom, &q);
-				mhd_calc(pb_new, 0, &q, &U_new[UU]);
+				mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 				for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
 				U_new[UU] += U_i[RHO];
 
@@ -1611,7 +1599,7 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 				//Recompute T_t^mu for consistency
 				Uh[RHO] = U_i[RHO];
 				get_state(ph, geom, &q);
-				mhd_calc(ph, 0, &q, &Uh[UU]);
+				mhd_calc(ph, 0, &q, &Uh[UU], GAMMA);
 				for (k = UU; k <= U3; k++)Uh[k] *= geom->g;
 				Uh[UU] += Uh[RHO];
 
@@ -1655,7 +1643,7 @@ int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double 
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
-					mhd_calc(pb_new, 0, &q, &U_new[UU]);
+					mhd_calc(pb_new, 0, &q, &U_new[UU], GAMMA);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 					U_new[UU] += U_new[RHO];
 

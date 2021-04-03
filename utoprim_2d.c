@@ -499,12 +499,12 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
 	double gtmp, gamma_eos, rho, factor1, factor2, dvsq, dfactordvsq;
 	rho= D * sqrt(1.0 - vsq);
 	gtmp = 1. - vsq;
-	gamma_eos = calc_gamma_gas(S, rho);
+	gamma_eos = calc_gamma_gas_conserved(S, rho);
 	factor1 = (gamma_eos - 1.) / gamma_eos;
 	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
 	dPdW = factor1 * gtmp;
 	dvsq = 0.0000000001;
-	factor2 = calc_gamma_gas(S, D * sqrt(1.0 - (vsq + dvsq)));
+	factor2 = calc_gamma_gas_conserved(S, D * sqrt(1.0 - (vsq + dvsq)));
 	factor2 = (factor2 - 1.) / factor2;
 	dfactordvsq = (factor2 - factor1) / (dvsq);
 	dPdvsq = factor1*(0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp))*dfactordvsq;
@@ -602,7 +602,7 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], int lim){
+int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], double tolerance, int lim){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
@@ -637,7 +637,7 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	S[1] = U[ENTRI] / U[RHO];
 	#endif
 
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, NEWT_TOL, lim);
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -708,7 +708,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     #else
     // Ideal gas EOS
 	#if(TWO_T)
-	gamma_eos = calc_gamma_gas(S, prim[RHO]);
+	gamma_eos = calc_gamma_gas_conserved(S, prim[RHO]);
 	#else
 	gamma_eos = GAMMA;
 	#endif
@@ -745,14 +745,12 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         #else
         // Ideal gas EOS
 			#if(TWO_T)
-			gamma_eos = calc_gamma_gas(S, rho0);
+			gamma_eos = calc_gamma_gas_conserved(S, rho0);
 			#else
 			gamma_eos = GAMMA;
 			#endif
-
 		u = (w - rho0) / gamma_eos;
         #endif
-
 
 		iter++;
 		iter_tot++;
@@ -810,7 +808,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_new = xpres;
         #else
 		#if(TWO_T)
-		gamma_eos = calc_gamma_gas(S, rho0);
+		gamma_eos = calc_gamma_gas_conserved(S, rho0);
 		#else
 		gamma_eos = GAMMA;
 		#endif

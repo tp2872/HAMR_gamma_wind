@@ -7560,7 +7560,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		);
 		#endif
 
-		#if( DO_FONT_FIX ) 
+		#if(DO_FONT_FIX) 
 		if (pflag[global_id]) {
 			failimage[global_id]++;
 			pflag[global_id] = Utoprim_1dvsq2fix1(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC, FULL_ENTROPY

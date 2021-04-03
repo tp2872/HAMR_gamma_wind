@@ -8,7 +8,7 @@
         
 ***********************************************************************************************/
 
-void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux)
+void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux, double gamma_g)
 {
 	int j,k ;
 
@@ -16,7 +16,7 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
 
 	/* MHD stress-energy tensor w/ first index up, * second index down. */
-	mhd_calc(pr, dir, q, &flux[UU]) ;
+	mhd_calc(pr, dir, q, &flux[UU], gamma_g) ;
 	flux[UU] += flux[RHO];
 
     //Radiation energy tensor
@@ -38,9 +38,9 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 
 	//Entropy advection
 	#if(FULL_ENTROPY)
-	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA));
+	flux[KTOT] = flux[RHO] * 1. / (gamma_g - 1.) * log((gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g));
 	#else
-	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
+	flux[KTOT] = flux[RHO] * (gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g);
 	#endif
     
 	#pragma ivdep
@@ -61,7 +61,7 @@ void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict u
 }
 
 /* MHD stress tensor, with first index up, second index down */
-void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd)
+void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd, double gamma_g)
 {
 	int j ;
 	double r,u,P,w,bsq,eta,ptot ;
@@ -72,9 +72,9 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
     #if DOHELM
     // Helmholtz EOS
     eos_mode_rhou_pres (r, u, &P);
-    #else
+	#else
     // Ideal gas EOS
-	P = (GAMMA - 1.) * u;
+	P = (gamma_g - 1.) * u;
     #endif
     
     w = P + r + u ;
@@ -97,7 +97,7 @@ void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict 
 }
 
 /* add in (explicit) geometricc source terms to equations of motion */
-void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt)
+void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt, double gamma_g)
 {
     double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
 	int j,k ;
@@ -105,10 +105,10 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
     struct of_state_rad q_rad;
 
 	get_state(ph, geom, &q) ;
-	mhd_calc(ph, 0, &q, mhd[0]) ;
-	mhd_calc(ph, 1, &q, mhd[1]) ;
-	mhd_calc(ph, 2, &q, mhd[2]) ;
-	mhd_calc(ph, 3, &q, mhd[3]) ;
+	mhd_calc(ph, 0, &q, mhd[0], gamma_g) ;
+	mhd_calc(ph, 1, &q, mhd[1], gamma_g) ;
+	mhd_calc(ph, 2, &q, mhd[2], gamma_g) ;
+	mhd_calc(ph, 3, &q, mhd[3], gamma_g) ;
 
 	#pragma ivdep
 	PLOOP dU[k] = 0.;
@@ -151,7 +151,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 }
 
 /* Add implicit radiation 4-force source term to equations of motion */
-void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU)
+void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU, double gamma_g)
 {
 	#if(RAD_M1)
 	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
@@ -184,14 +184,21 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	dU[U3_RAD] = -Gcov[3];
 
 	#if(DOKTOT)
-	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
+	Tg = (gamma_g - 1.)*(ph[UU]) / (ph[RHO]);
 	#if(FULL_ENTROPY)
 	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#else
-	//double dK_dS = (GAMMA - 1.)* (GAMMA - 1.)* (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
-	//dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA-1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	#if(TWO_T)
+		#if(FIXEDGAMMA)
+		double dK_dS = (gamma_g - 1.) / pow(ph[RHO], gamma_g - 1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		#else
+		fprintf(stderr, "Source rad is not fully implemented yet! \n");
+		#endif
+	#else
+	double dK_dS = (gamma_g - 1.)/ pow(ph[RHO], gamma_g -1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
 	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	#endif
 	#endif
 	#endif
 
@@ -411,7 +418,7 @@ int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
  * 
  */
 
-void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin, int a, int b, int c)
+void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin, double gamma_g)
 {
 	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2;
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
@@ -438,10 +445,10 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
     va2 = bsq/(bsq + pr[RHO] + pr[UU] + xpres);
     #else
     // Ideal gas EOS
-    EF = pr[RHO] + GAMMA * pr[UU];
+    EF = pr[RHO] + gamma_g * pr[UU];
     EE = bsq + EF ;
     va2 = bsq/EE ;
-    cs2 = GAMMA *(GAMMA - 1.)* pr[UU] /EF ;
+    cs2 = gamma_g *(gamma_g - 1.)* pr[UU] /EF ;
     #endif
 
 	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */
@@ -708,7 +715,7 @@ void heating(double* ph, struct of_state* q)
 	#endif
 
 	//Calculate which fraction goes into electrons
-	fel = 0.1;//1.0 / (1.0 + calc_fel(ph, q, MU_E * (game - 1.0) * u_e, MU_I * (gami - 1.0) * u_i, pgas));
+	fel = 0.1;// 1.0 / (1.0 + calc_fel(ph, q, MU_E * (game - 1.0) * u_e, MU_I * (gami - 1.0) * u_i, pgas));
 
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i); //MATTHEW_MARK: Remove ion entropy and recast
@@ -730,6 +737,7 @@ void heating(double* ph, struct of_state* q)
 		u_e = 0.99 * ughat;
 	}
 	if (isnan(u_i))fprintf(stderr, "nanerror: %f \n", u_i);
+	
 	// convert back to entropy 
 	#if(FIXEDGAMMA)
 		#if(FULL_ENTROPY)
@@ -745,26 +753,56 @@ void heating(double* ph, struct of_state* q)
 	#endif
 }
 
-//Calculate EOS gamma based on electron (and ion or total entropy) 
-double calc_gamma_gas(double*  S, double rho) {
+//Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
+double calc_gamma_gas_conserved(double*  S, double rho) {
 	double gamg, game, gami, Te, Ti;
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Te = (game - 1.0) * exp(S[0]) * pow(rho, game - 1.0) * MU_E;
-		Ti = (gami - 1.0) * exp(S[1]) * pow(rho, gami - 1.0) * MU_I;
+		Te = (game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E;
+		Ti = (gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)) * MU_I;
 		#else
 		Te = S[0] * pow(rho, game - 1.0) * MU_E;
 		Ti = S[1] * pow(rho, gami - 1.0) * MU_I;
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
+		fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
 		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * MU_E;
 		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I;
 		#else
 		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) * MU_E;
 		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) * MU_I;
+		#endif
+	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
+	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Ti);
+	#endif
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Ti / Te)) / ((Ti / Te) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	return gamg;
+}
+
+//Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
+double calc_gamma_gas_prim(double* pr) {
+	double gamg, game, gami, Te, Ti;
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	game = GAMMAE;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = (game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * MU_E;
+		Ti = (gami - 1.0) * exp(pr[ENTRI] * pow(pr[RHO], gami - 1.0)) * MU_I;
+		#else
+		Te = pr[ENTRE] * pow(pr[RHO], game - 1.0) * MU_E;
+		Ti = pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I;
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+	fprintf(stderr, "Var gamma not implemented yet! \n")
+		#if(FULL_ENTROPY)
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * MU_E;
+		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I;
+		#else
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * MU_E;
+		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I;
 		#endif
 	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
 	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Ti);

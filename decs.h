@@ -925,10 +925,10 @@ void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G
 void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 void step_ch(void);
-void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict fl);
+void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux, double gamma_gas);
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
-void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
+void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt, double gamma_g);
 void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
 void calc_ymax(void);
 void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
@@ -948,7 +948,7 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
-void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd);
+void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd, double gamma_g);
 void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad);
 double calc_kappa_abs(double * restrict ph);
 double calc_kappa_emmit(double * restrict ph);
@@ -957,7 +957,8 @@ void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict
 #if(TWO_T)
 double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, double pgas);
 void heating(double* restrict ph, struct of_state* q);
-double calc_gamma_gas(double* S, double rho);
+double calc_gamma_gas_prim(double* pr);
+double calc_gamma_gas_conserved(double* S, double rho);
 double calc_sfromrhou(double rho, double uint, int type);
 double solve_thetafromnmu(double n, double m, double u);
 double calc_sfromntheta(double numd, double theta);
@@ -977,7 +978,7 @@ int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDI
 int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
-void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, int a, int b, int c);
+void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, double gamma_g);
 void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx);
 void step_ch_debug();
 void GPU_benchmark(void);
