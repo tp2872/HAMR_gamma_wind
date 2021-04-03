@@ -677,19 +677,21 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 #if(TWO_T)
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
 double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, double pgas) {
-	double fel, c1, c2, c3, bsq, beta;
+	double fel, c1, c2, c3, bsq, beta, ratio;
+	ratio = fabs(Ti / Te);
 	c1 = 0.91;
 	if (Ti > Te) {		
 		c2 = 1.6 * Te / Ti;
-		c3 = 18.0 + 5.0 * log10(Ti / Te);
+		c3 = 18.0 + 5.0 * log10(ratio);
 	}
 	else {
-		c2 = 1.2 * Te / Ti;
+		c2 = 1.2 * ratio;
 		c3 = 18.0;
 	}
 	bsq = dot(q->bcon, q->bcov);
-	beta = 1.0;
-	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(Ti / Te))) * sqrt(Ti / (Te)) * exp(-1.0 / beta);
+	beta = pgas/(0.5*bsq);
+	if ((beta > 0.000001 && beta < 100000)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
+	else fel = 1.0;
 	return fel;
 }
 
@@ -710,12 +712,13 @@ void heating(double* ph, struct of_state* q)
 		#endif
 		pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
 	#else     // variable gamma: Sadowski+17 & Chael+19
+	fprintf(stderr, "Calculate gammas first! \n");
 	u_e = calc_ufromsrho(ph[ENTRE], ph[RHO], ELECTRONS);
 	u_i = calc_ufromsrho(ph[ENTRI], ph[RHO], IONS);
 	#endif
 
 	//Calculate which fraction goes into electrons
-	fel = 0.1;// 1.0 / (1.0 + calc_fel(ph, q, MU_E * (game - 1.0) * u_e, MU_I * (gami - 1.0) * u_i, pgas));
+	fel = 1.0 / (1.0 + calc_fel(ph, q, MU_E * (game - 1.0) * u_e, MU_I * (gami - 1.0) * u_i, pgas));
 
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i); //MATTHEW_MARK: Remove ion entropy and recast
