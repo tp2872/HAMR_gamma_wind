@@ -814,6 +814,54 @@ double calc_gamma_gas_prim(double* pr) {
 	return gamg;
 }
 
+//Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
+double calc_gamma_gas_w(double* S, double rho, double w) {
+	double gamg, game, gami, Te, Ti, quantg, quanti, quante, S_new[2];
+
+	quantg = w - rho; //quant=gamma*ug=gamma/(gamma-1)*p
+
+	//Figure out if electron quant_e energy is bigger than quant_g
+	#if(FIXEDGAMMA)   
+	game = GAMMAE;
+	gami = GAMMA;
+	#if(FULL_ENTROPY)
+	Te = (game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E;
+	#else
+	Te = S[0] * pow(rho, game - 1.0) * MU_E;
+	#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+	fprintf(stderr, "Var gamma not implemented yet! \n")
+		#if(FULL_ENTROPY)
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * MU_E;
+		#else
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) * MU_E;
+		#endif
+	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
+	#endif
+
+	quante = game / (game - 1.0) * Te / MU_E;
+
+	if (quante > quantg) {
+		quante = 0.99 * quantg;
+		quanti = 0.01 * quantg;
+		#if(FIXEDGAMMA)
+			Te = 0.99 * Te;
+			#if(FULL_ENTROPY)
+			S_new[0] = 1.0 / (game - 1.0) * log(Te * pow(rho, 1.0 - game) / MU_E);
+			#else
+			S_new[0] = Te * pow(rho, 1.0 - game) / MU_E;
+			#endif
+		#else
+		//Use analytical inversions
+		Te = 0.4625 * quante * MU_E + 0.0125 * sqrt(1369.0 * quante * MU_E * quante * MU_E - 192.0 * quante * MU_E);
+		Ti = 0.4625 * quanti * MU_I + 0.0125 * sqrt(1369.0 * quanti * MU_I * quanti * MU_I - 192.0 * quanti * MU_I);
+		#endif
+	}
+
+
+	return gamg;
+}
+
 void Coulomb_exchange(double* restrict ph, double Dt)
 {
 	double u_e, u_i, m_e, m_i, n_e, n_i, th_e, th_i, entr_e, entr_i, q_coulomb, dU_coulomb;
