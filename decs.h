@@ -959,6 +959,8 @@ double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, d
 void heating(double* restrict ph, struct of_state* q);
 double calc_gamma_gas_prim(double* pr);
 double calc_gamma_gas_conserved(double* S, double rho);
+double calc_gamma_gas_w(double* S, double rho, double w);
+double set_S_w(double* S, double rho, double w);
 double calc_sfromrhou(double rho, double uint, int type);
 double solve_thetafromnmu(double n, double m, double u);
 double calc_sfromntheta(double numd, double theta);

@@ -745,7 +745,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         #else
         // Ideal gas EOS
 			#if(TWO_T)
-			gamma_eos = calc_gamma_gas_conserved(S, rho0);
+			gamma_eos = calc_gamma_gas_w(S, rho0, w);
 			#else
 			gamma_eos = GAMMA;
 			#endif
@@ -808,7 +808,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_new = xpres;
         #else
 		#if(TWO_T)
-		gamma_eos = calc_gamma_gas_conserved(S, rho0);
+		gamma_eos = set_S_w(S, rho0, w);
 		#else
 		gamma_eos = GAMMA;
 		#endif

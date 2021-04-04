@@ -704,8 +704,8 @@ void heating(double* ph, struct of_state* q)
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		u_e = exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game);
-		u_i = exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami);
+		u_e = exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) / (game - 1.0);
+		u_i = exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) / (gami - 1.0);
 		#else
 		u_e = ph[ENTRE] * pow(ph[RHO], game) / (game - 1.0);
 		u_i = ph[ENTRI] * pow(ph[RHO], gami) / (gami - 1.0);
@@ -758,65 +758,65 @@ void heating(double* ph, struct of_state* q)
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
 double calc_gamma_gas_conserved(double*  S, double rho) {
-	double gamg, game, gami, Te, Ti;
+	double gamg, game, gami, Theta_e, Theta_i;
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Te = (game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E;
-		Ti = (gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)) * MU_I;
+		Theta_e = (game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E; //Actually theta_e=MU_E*Te meant
+		Theta_i = (gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)) * MU_I;
 		#else
-		Te = S[0] * pow(rho, game - 1.0) * MU_E;
-		Ti = S[1] * pow(rho, gami - 1.0) * MU_I;
+		Theta_e = S[0] * pow(rho, game - 1.0) * MU_E;
+		Theta_i = S[1] * pow(rho, gami - 1.0) * MU_I;
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
-		fprintf(stderr, "Var gamma not implemented yet! \n")
+	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * MU_E;
-		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) * MU_I;
+		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0);
 		#else
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) * MU_E;
-		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) * MU_I;
+		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0);
 		#endif
-	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
-	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Ti);
+	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Theta_e);
+	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Ti / Te)) / ((Ti / Te) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
 double calc_gamma_gas_prim(double* pr) {
-	double gamg, game, gami, Te, Ti;
+	double gamg, game, gami, Theta_e, Theta_i;
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Te = (game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * MU_E;
-		Ti = (gami - 1.0) * exp(pr[ENTRI] * pow(pr[RHO], gami - 1.0)) * MU_I;
+		Theta_e = (game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * MU_E;
+		Theta_i = (gami - 1.0) * exp(pr[ENTRI] * pow(pr[RHO], gami - 1.0)) * MU_I;
 		#else
-		Te = pr[ENTRE] * pow(pr[RHO], game - 1.0) * MU_E;
-		Ti = pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I;
+		Theta_e = pr[ENTRE] * pow(pr[RHO], game - 1.0) * MU_E;
+		Theta_i = pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I;
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0) * MU_E;
-		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0) * MU_I;
+		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0);
 		#else
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0) * MU_E;
-		Ti = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0) * MU_I;
+		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0);
 		#endif
-	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
-	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Ti);
+	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Theta_e);
+	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Ti / Te)) / ((Ti / Te) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
 double calc_gamma_gas_w(double* S, double rho, double w) {
-	double gamg, game, gami, Te, Ti, quantg, quanti, quante, S_new[2];
+	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante;
 
 	quantg = w - rho; //quant=gamma*ug=gamma/(gamma-1)*p
 
@@ -825,39 +825,109 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	game = GAMMAE;
 	gami = GAMMA;
 	#if(FULL_ENTROPY)
-	Te = (game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E;
+	Te = exp((game - 1.0) * S[0] * pow(rho, game - 1.0));
 	#else
-	Te = S[0] * pow(rho, game - 1.0) * MU_E;
+	Te = S[0] * pow(rho, game - 1.0);
 	#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) * MU_E;
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0);
 		#else
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) * MU_E;
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0);
 		#endif
-	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Te);
+	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
 	#endif
 
-	quante = game / (game - 1.0) * Te / MU_E;
+	pe = Te * rho;
+	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
+	//quante*MU_E/rho = (10.0 * 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 * 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
 
-	if (quante > quantg) {
-		quante = 0.99 * quantg;
-		quanti = 0.01 * quantg;
-		#if(FIXEDGAMMA)
-			Te = 0.99 * Te;
-			#if(FULL_ENTROPY)
-			S_new[0] = 1.0 / (game - 1.0) * log(Te * pow(rho, 1.0 - game) / MU_E);
-			#else
-			S_new[0] = Te * pow(rho, 1.0 - game) / MU_E;
-			#endif
+	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	if (quante > quantg) quante = 0.99 * quantg;
+	quanti = quantg - quante;
+
+	#if(FIXEDGAMMA)
+	pe = (game - 1.0) / game * quante;
+	pi = (gami - 1.0) / gami * quanti;
+	#else
+	//Use analytical inversions
+	pe = (MU_E / rho) * 0.4625 * (quante * MU_E / rho) + 0.0125 * sqrt(1369.0 * (quante * MU_E / rho) * (quante * MU_E / rho) - 192.0 * (quante * MU_E / rho));
+	pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
+	Te = pe / rho;
+	Ti = pi / rho;
+	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	gami = (10.0 * 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	#endif
+
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + (Ti * MU_I) / (Te * MU_E))) / (((Ti * MU_I) / (Te * MU_E)) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+
+	return gamg;
+}
+
+//Update electron and ion entropy based on found w in Newton Raphson solver
+double set_S_w(double* S, double rho, double w) {
+	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante, S_new[2];
+
+	quantg = w - rho; //quant=gamma*ug=gamma/(gamma-1)*p
+
+	//Figure out if electron quant_e energy is bigger than quant_g
+	#if(FIXEDGAMMA)   
+	game = GAMMAE;
+	gami = GAMMA;
+	#if(FULL_ENTROPY)
+	Te = exp((game - 1.0) * S[0] * pow(rho, game - 1.0));
+	#else
+	Te = S[0] * pow(rho, game - 1.0);
+	#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+	fprintf(stderr, "Var gamma not implemented yet! \n")
+		#if(FULL_ENTROPY)
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0);
 		#else
-		//Use analytical inversions
-		Te = 0.4625 * quante * MU_E + 0.0125 * sqrt(1369.0 * quante * MU_E * quante * MU_E - 192.0 * quante * MU_E);
-		Ti = 0.4625 * quanti * MU_I + 0.0125 * sqrt(1369.0 * quanti * MU_I * quanti * MU_I - 192.0 * quanti * MU_I);
+		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0);
 		#endif
-	}
+	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	#endif
 
+	pe = Te * rho;
+	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
+	//quante*MU_E/rho = (10.0 * 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 * 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
+
+	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	if (quante > quantg) quante = 0.99 * quantg;
+	quanti = quantg - quante;
+
+	#if(FIXEDGAMMA)
+	pe = (game - 1.0) / game * quante;
+	pi = (gami - 1.0) / gami * quanti;
+		#if(FULL_ENTROPY)
+		S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game) / MU_E);
+		S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami) / MU_I);
+		#else
+		S[0] = pe * pow(rho, -game) / MU_E;
+		S[1] = pi * pow(rho, -gami) / MU_I;
+		#endif
+	#else
+	//Use analytical inversions
+	pe = (MU_E / rho) * 0.4625 * (quante * MU_E / rho) + 0.0125 * sqrt(1369.0 * (quante * MU_E / rho) * (quante * MU_E / rho) - 192.0 * (quante * MU_E / rho));
+	pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
+	Te = pe / rho;
+	Ti = pi / rho;
+	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	gami = (10.0 * 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+		#if(FULL_ENTROPY)
+		S[0] = pow(Te * MU_E, 1.5) * pow(Te * MU_E + 0.4, 1.5) / rho;
+		S[1] = pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho;
+		#else
+		S[0] = log(pow(Te * MU_E, 1.5) * pow(Te * MU_E + 0.4, 1.5) / rho);
+		S[1] = log(pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho);
+		#endif
+	#endif
+
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + (Ti * MU_I) / (Te * MU_E))) / (((Ti * MU_I) / (Te * MU_E)) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 
 	return gamg;
 }
