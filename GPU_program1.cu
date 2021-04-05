@@ -364,6 +364,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
+			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0);
 
 			//if (error_t > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
@@ -4507,10 +4508,14 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	bsq = dot(q.bcon, q.bcov);
 
 	//tie floors to the local values of magnetic field and internal energy density
-	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);	
+	#if(RAD_M1)
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < (pf[UU]+pf[UU_RAD]) / UORHOMAX)  rhoflr = (pf[UU] + pf[UU_RAD]) / (UORHOMAX);
+	#else
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < pf[UU] / UORHOMAX) rhoflr = pf[UU] / (UORHOMAX);
-
+	#endif
 	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
 	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
 
@@ -4522,10 +4527,17 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		dofloor = 1;
 	}
 
+	#if(RAD_M1)
+	if (pf[UU] + pf[UU_RAD] < uuflr) {
+		pf[UU] = uuflr -pf[UU_RAD];
+		dofloor = 1;
+	}
+	#else
 	if (pf[UU] < uuflr) {
 		pf[UU] = uuflr;
 		dofloor = 1;
 	}
+	#endif
 
 	#if(RAD_M1)
 	if (pf[UU_RAD] < pow(10., -30.)) {
@@ -5404,9 +5416,9 @@ __device__ double calc_kappa_emmit(double* ph
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
-	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tg, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6 * (Tg / Tg));
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6 * (Tg / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 

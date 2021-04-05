@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 				get_geometry(n_ord[n], i, j, z, CENT, &geom);
 				get_state(p[nl[n_ord[n]]][ind0], &geom, &q);
 				get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
-				primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U);
+				primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U, GAMMA);
 
 				//Reset variables
 				PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 
 		//Put out log file and rdump file
 		if (t >= tlog && nstep % (2 * AMR_SWITCHTIMELEVEL) == 0) {
-			//restart_write(); //do restart dump simultaneous with log
+			restart_write(); //do restart dump simultaneous with log
 			tlog += DTl;
 		}
 

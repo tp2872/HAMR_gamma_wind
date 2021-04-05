@@ -94,26 +94,36 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	//tie floors to the local values of magnetic field and internal energy density
-	#if(1)
-	if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
-	if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
-	if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+	#if(RAD_M1)
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < (pv[UU] + pv[UU_RAD]) / UORHOMAX)  rhoflr = (pv[UU] + pv[UU_RAD]) / (UORHOMAX);
+	#else
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < pv[UU] / UORHOMAX) rhoflr = pv[UU] / (UORHOMAX);
 	#endif
+	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
 
-	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
-	if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
-
-	/* floor on density and internal energy density (momentum *not* conserved) */
-	#pragma ivdep
-	PLOOP pv_prefloor[k] = pv[k];
-	if (pv[RHO] < rhoflr){
+	//floor on density and internal energy density (momentum *not* conserved) 
+	for (k = 0; k < NPR_U; k++) pv_prefloor[k] = pv[k];
+	if (pv[RHO] < rhoflr) {
 		pv[RHO] = rhoflr;
 		dofloor = 1;
 	}
-	if (pv[UU] < uuflr){
+
+	#if(RAD_M1)
+	if (pv[UU] + pv[UU_RAD] < uuflr) {
+		pv[UU] = uuflr - pv[UU_RAD];
+		dofloor = 1;
+	}
+	#else
+	if (pv[UU] < uuflr) {
 		pv[UU] = uuflr;
 		dofloor = 1;
 	}
+	#endif
+
 	#if(RAD_M1)
 	if (pv[UU_RAD] < pow(10., -30.)) {
 		pv[UU_RAD] = pow(10., -30.);

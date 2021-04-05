@@ -365,7 +365,7 @@ void utoprim_M1_2(double Dt, int n){
 			#else
 			gamma_g = GAMMA;
 			#endif	
-			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt);
+			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt, gamma_g);
 
 			#pragma ivdep
 			PLOOP{
@@ -479,7 +479,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			PLOOP dU[k] = 0.;
 
 			//Perform implicit solve
-			double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
+			double cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
 			implicit_rad_solve(pf[nl[n]][ind0], U, U, U_0, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU, Dt, cell_size);
 			#else
 
@@ -620,12 +620,21 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					get_state_rad(p_l, &geom, &state_l_rad);
 					get_state_rad(p_r, &geom, &state_r_rad);
 					#endif
+
+					#if(TWO_T)
 					gamma_g = calc_gamma_gas_prim(p_l);
+					#else
+					gamma_g = GAMMA;
+					#endif
 					primtoflux(p_l, &state_l, &state_l_rad, dir, &geom, F_l, gamma_g);
 					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l, gamma_g);
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, gamma_g);
 
+					#if(TWO_T)
 					gamma_g = calc_gamma_gas_prim(p_r);
+					#else
+					gamma_g = GAMMA;
+					#endif
 					primtoflux(p_r, &state_r, &state_r_rad, dir, &geom, F_r, gamma_g);
 					primtoflux(p_r, &state_r, &state_r_rad, 0, &geom, U_r, gamma_g);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, gamma_g);
