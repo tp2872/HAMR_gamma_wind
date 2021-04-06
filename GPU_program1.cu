@@ -355,13 +355,6 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0);
 
 			#if (!RADM1_SUBCYCLING)
-			if (error_t > 1.e-9)implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0
-				#if(DOHELM)
-				, gpu_eos_table
-				#endif
-			);
-
-
 			//If error is still below set margin, accept solution, otherwise try URAD
 			if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size,y_max, 0, 0
 				#if(DOHELM)
@@ -418,8 +411,290 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 }
 
 #if(RADM1_SUBCYCLING)
+__device__ void calc_J_implicit(double J_ini, double* dJ, double Dt, double* p);
+__device__ void calc_H_implicit(double* H_ini, double* dH, double Dt, double* p);
+__device__ void source_rad_subcycle(double* ph, struct of_geom* geom, double* dU, double Dt
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
+__device__ void source_rad_subcycle_francois(double* ph, struct of_geom* geom, double* U_old, double* dU, double Dt);
+
+__device__ void calc_J_implicit(double J_ini, double* dJ, double Dt, double* p) {
+	double kappa_abs = calc_kappa_abs(p);
+	double eta_e = calc_kappa_emmit(p);
+	double Tg = (GAMMA - 1.) * p[UU] / p[RHO];
+	double arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+	double lambda = eta_e * arad * pow(Tg, 4.);
+	
+	*dJ = (-kappa_abs * J_ini + lambda) * Dt;
+	//*dJ = (J_ini + lambda * Dt) / (1.0 + kappa_abs * Dt) - J_ini;
+
+	return;
+}
+
+__device__ void calc_H_implicit(double* H_ini, double* dH, double Dt, double* p) {
+	double kappa_abs = calc_kappa_abs(p);
+	double kappa_es = calc_kappa_es(p);
+
+	for (int i = 0; i < 4; i++) *dH = - *H_ini * (kappa_abs + kappa_es) * Dt; //*dH = *H_ini / (1.0 + (kappa_abs + kappa_es) * Dt) - *H_ini;
+
+	return;
+}
+
+// __device__ void calc_Gcov_implicit(double dJ, double* dH, double* ph, struct of_geom* geom, double* Gcov) {
+// 	struct of_state_rad q_rad;
+// 	double mhd_rad[NDIM][NDIM], ucon[NDIM], utcon[NDIM], utcov[NDIM], gamma_t;
+// 	double Gcon[NDIM], lorentz_boost[10];
+// 	int i;
+// 
+// 	get_state_rad(ph, geom, &q_rad);
+// 	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
+// 	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
+// 	mhd_calc_rad(ph, 2, &q_rad, mhd_rad[2]);
+// 	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
+// 	ucon_calc(ph, geom, ucon);
+// 
+// 	// 1. Contravariant fluid velocity in ZAMO frame (utcon)
+// 	ucon_to_utcon(ucon, geom, utcon);
+// 	// 2. ZAMO relative Lorentz factor
+// 	lower(utcon, geom->gcov, utcov);
+// 	gamma_t = 0.0;
+// 	for (i = 1; i < NDIM; i++) gamma_t += utcon[i] * utcov[i];
+// 	// 3. ZAMO relative Lorentz boost
+// 	lorentz_boost[0][0] = gamma_t;
+// 	for (i = 1; i < NDIM; i++) lorentz_boost[i] = utcon[i];
+// 	lorentz_boost[4] = 1. + utcon[1] * utcon[1] / (1. + gamma_t);
+// 	lorentz_boost[7] = 1. + utcon[2] * utcon[2] / (1. + gamma_t);
+// 	lorentz_boost[9] = 1. + utcon[3] * utcon[3] / (1. + gamma_t);
+// 	lorentz_boost[5] = utcon[1] * utcon[2] / (1. + gamma_t);
+// 	lorentz_boost[6] = utcon[1] * utcon[3] / (1. + gamma_t);
+// 	lorentz_boost[8] = utcon[2] * utcon[3] / (1. + gamma_t);
+// 	// 4. Gcon in ZAMO frame
+// 	Gcon[0] = lorentz_boost[0] * dJ + lorentz_boost[1] * dH[1] + lorentz_boost[2] * dH[2] + lorentz_boost[3] * dH[3];
+// 	Gcon[1] = lorentz_boost[1] * dJ + lorentz_boost[4] * dH[1] + lorentz_boost[5] * dH[2] + lorentz_boost[6] * dH[3];
+// 	Gcon[2] = lorentz_boost[2] * dJ + lorentz_boost[5] * dH[1] + lorentz_boost[7] * dH[2] + lorentz_boost[8] * dH[3];
+// 	Gcon[3] = lorentz_boost[3] * dJ + lorentz_boost[6] * dH[1] + lorentz_boost[8] * dH[2] + lorentz_boost[9] * dH[3];
+// 	// 5. Gcov from Gcon
+// 	lower(Gcon, geom->gcov, Gcov);
+// 
+// 	for (i = 0; i < NDIM; i++) Gcov[i] *= geom->g;
+// 
+// 	return;
+// }
+
+__device__ void source_rad_subcycle(double* ph, struct of_geom* geom, double* dU, double Dt
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+)
+{
+	#if(RAD_M1)
+	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], utcon[NDIM], utcov[NDIM], Tg, lorentz_boost[10], gamma_t, R_dot_ucon[NDIM];
+	int i, k;
+	struct of_state_rad q_rad;
+	double J, H[NDIM], dJ, dH[NDIM];
+
+	PLOOP dU[k] = 0.;
+
+	//Compute J and H^i in the beginning of the implicit step
+	get_state_rad(ph, geom, &q_rad);
+	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
+	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
+	mhd_calc_rad(ph, 2, &q_rad, mhd_rad[2]);
+	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
+	ucon_calc(ph, geom, ucon);
+	lower(ucon, geom->gcov, ucov);
+
+	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
+	J = (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]);
+	for (i = 0; i < NDIM; i++) H[i] = -R_dot_ucon[i] - J * ucon[i];
+
+	//Compute dJ, dH^i implicitly 
+	calc_J_implicit(J, &dJ, Dt, ph);
+	calc_H_implicit(H, dH, Dt, ph);
+
+	// 1. Contravariant fluid velocity in ZAMO frame (utcon)
+	ucon_to_utcon(ucon, geom, utcon);
+	//for (i = 1; i < NDIM; i++) utcon[i] = ucon[i];
+	// 2. ZAMO relative Lorentz factor
+	//lower(utcon, geom->gcov, utcov);
+	//gamma_t = sqrt(1. + utcon[1] * utcov[1] + utcon[2] * utcov[2] + utcon[3] * utcov[3]);
+	gamma_t = sqrt(geom->gcov[4] * utcon[1] * utcon[1] + geom->gcov[7] * utcon[2] * utcon[2] + geom->gcov[9] * utcon[3] * utcon[3] + 2. * (geom->gcov[5] * utcon[1] * utcon[2] + geom->gcov[6] * utcon[1] * utcon[3] + geom->gcov[8] * utcon[2] * utcon[3]));
+	//gamma_calc(ph, geom, &gamma_t);
+	// 3. ZAMO relative Lorentz boost
+	lorentz_boost[0] = gamma_t;
+	for (i = 1; i < NDIM; i++) lorentz_boost[i] = utcon[i];
+	lorentz_boost[4] = 1. + utcon[1] * utcon[1] / (1. + gamma_t);
+	lorentz_boost[7] = 1. + utcon[2] * utcon[2] / (1. + gamma_t);
+	lorentz_boost[9] = 1. + utcon[3] * utcon[3] / (1. + gamma_t);
+	lorentz_boost[5] = utcon[1] * utcon[2] / (1. + gamma_t);
+	lorentz_boost[6] = utcon[1] * utcon[3] / (1. + gamma_t);
+	lorentz_boost[8] = utcon[2] * utcon[3] / (1. + gamma_t);
+	// 4. Gcon in ZAMO frame
+	Gcon[0] = lorentz_boost[0] * dJ + lorentz_boost[1] * dH[1] + lorentz_boost[2] * dH[2] + lorentz_boost[3] * dH[3];
+	Gcon[1] = lorentz_boost[1] * dJ + lorentz_boost[4] * dH[1] + lorentz_boost[5] * dH[2] + lorentz_boost[6] * dH[3];
+	Gcon[2] = lorentz_boost[2] * dJ + lorentz_boost[5] * dH[1] + lorentz_boost[7] * dH[2] + lorentz_boost[8] * dH[3];
+	Gcon[3] = lorentz_boost[3] * dJ + lorentz_boost[6] * dH[1] + lorentz_boost[8] * dH[2] + lorentz_boost[9] * dH[3];
+	// 5. Gcov from Gcon
+
+	//printf("====\n%e, %e, %e, %e\n %e", dJ, dH[1], dH[2], dH[3], gamma_t);
+
+
+	lower(Gcon, geom->gcov, Gcov);
+	printf("%e %e %e %e\n", Gcov[0], Gcov[1], Gcov[2], Gcov[3]);
+
+	dU[UU] = Gcov[0];
+	dU[U1] = Gcov[1];
+	dU[U2] = Gcov[2];
+	dU[U3] = Gcov[3];
+
+	dU[UU_RAD] = -Gcov[0];
+	dU[U1_RAD] = -Gcov[1];
+	dU[U2_RAD] = -Gcov[2];
+	dU[U3_RAD] = -Gcov[3];
+
+	#if(DOKTOT)
+	#if (DOHELM)
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
+	Tg *= BOLTZ_CGS * MASS_DENSITY_SCALE / (MMW * MH_CGS * ENERGY_DENSITY_SCALE);
+	#else
+	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
+	#if(FULL_ENTROPY)
+	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	#else
+	double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	dU[KTOT] = -dK_dS / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	#endif
+	#endif
+
+	#pragma ivdep
+	PLOOP dU[k] *= (-1.) * geom->g * sqrt(-geom->gcon[0]);
+	#endif
+}
+
+
+__device__ void source_rad_subcycle_francois(double* ph, struct of_geom* geom, double* U_old, double* dU, double Dt) {
+
+	int i, j;
+	double mhd_rad[NDIM][NDIM], U_0[NDIM], R_dot_ncon[NDIM];
+	double ucon[NDIM], ucov[NDIM], ncon[NDIM], ncov[NDIM];
+	struct of_state_rad q_rad;
+
+	get_state_rad(ph, geom, &q_rad);
+	mhd_calc_rad(ph, 0, &q_rad, mhd_rad[0]);
+	mhd_calc_rad(ph, 1, &q_rad, mhd_rad[1]);
+	mhd_calc_rad(ph, 2, &q_rad, mhd_rad[2]);
+	mhd_calc_rad(ph, 3, &q_rad, mhd_rad[3]);
+
+	// Calculate n^mu and n_mu
+	ncon[0] = sqrt(-geom->gcon[0]);
+	for (i = 1; i < NDIM; i++) ncon[i] = geom->gcon[i] * ncon[0];
+	//lower(ncon, geom->gcov, ncov);
+	ncov[0] = -1. / ncon[0];
+	ncov[1] = ncov[2] = ncov[3] = 0.;
+
+	// u^mu, u_mu
+	ucon_calc(ph, geom, ucon);
+	lower(ucon, geom->gcov, ucov);
+
+	double dt = Dt; // fabs(-Dt * ncov[0]);
+	// What to do with the timestep? 
+	// 1. dt = Dt * alpha -- instead just multiply the U vector by sqrt(-g) in the end
+	// 2. dt = Dt
+
+	// Set U_0 = sqrt(gamma) * (E, F_j)
+	for (i = 0; i < NDIM; i++) R_dot_ncon[i] = (mhd_rad[i][0] * ncon[0] + mhd_rad[i][1] * ncon[1] + mhd_rad[i][2] * ncon[2] + mhd_rad[i][3] * ncon[3]);
+	U_0[0] = (R_dot_ncon[0] * ncov[0] + R_dot_ncon[1] * ncov[1] + R_dot_ncon[2] * ncov[2] + R_dot_ncon[3] * ncov[3]);
+	double Fcon[NDIM], Fcov[NDIM];
+	Fcon[0] = 0.;
+	for (i = 1; i < NDIM; i++) Fcon[i] = -R_dot_ncon[i] - U_0[0] * ncon[i];
+	lower(Fcon, geom->gcov, Fcov);
+	U_0[1] = Fcov[1]; U_0[2] = Fcov[2]; U_0[3] = Fcov[3];
+
+	// Calculate P_tilde / E
+	double P_over_E[NDIM][NDIM], P_dot_ucov[NDIM], Puu = 0.;
+	for (i = 0; i < NDIM; i++) for (j = 0; j < NDIM; j++) P_over_E[i][j] = (mhd_rad[i][j] - Fcon[i] * ncov[j] - ncon[i] * Fcov[j]) / U_0[0] - ncon[i] * ncov[j];
+	for (i = 0; i < NDIM; i++) P_dot_ucov[i] = (P_over_E[0][i] * ucov[0] + P_over_E[1][i] * ucov[1] + P_over_E[2][i] * ucov[2] + P_over_E[3][i] * ucov[3]);
+	for (i = 1; i < NDIM; i++) for (j = 1; j < NDIM; j++) Puu += P_over_E[i][j] * ucov[i] * ucon[j];
+
+	double kappa_abs, eta, kappa_es, lambda;
+	// Set -->
+	kappa_abs = calc_kappa_abs(ph);
+	kappa_es = calc_kappa_es(ph);
+	eta = calc_kappa_emmit(ph);
+	double Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	double arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+	lambda = eta * arad * pow(Tg, 4.);
+	
+	double vcon[NDIM], vcov[NDIM], W;
+	// Set vcon
+	W = -ucon[0] * ncov[0];
+	vcon[0] = 0.;
+	for (i = 1; i < NDIM; i++) vcon[i] = ucon[i] / W - ncon[i];
+	lower(vcon, geom->gcov, vcov);
+
+	double implicit_RHS[NDIM];
+	// Set implicit_RHS
+	implicit_RHS[0] = dt * W * lambda + U_0[0];
+	implicit_RHS[1] = dt * W * lambda * vcov[1] + U_0[1];
+	implicit_RHS[2] = dt * W * lambda * vcov[2] + U_0[2];
+	implicit_RHS[3] = dt * W * lambda * vcov[3] + U_0[3];
+
+	double implicit_A[NDIM][NDIM], implicit_A_inv[NDIM][NDIM];
+	double SEdF = dt * W * (kappa_abs + kappa_es * (1. - 2. * W * W));
+	// Start to fill the matrix
+	implicit_A[0][0] = 1. + dt * W * ((kappa_abs + kappa_es * (1. - W * W)) - kappa_es * Puu);
+	implicit_A[0][1] = -vcon[1] * SEdF;
+	implicit_A[0][2] = -vcon[2] * SEdF;
+	implicit_A[0][3] = -vcon[3] * SEdF;
+
+	implicit_A[1][0] = -dt * ((kappa_abs + kappa_es) * P_dot_ucov[1] + kappa_es * ucov[1] * (W * W + Puu));
+	implicit_A[2][0] = -dt * ((kappa_abs + kappa_es) * P_dot_ucov[2] + kappa_es * ucov[2] * (W * W + Puu));
+	implicit_A[3][0] = -dt * ((kappa_abs + kappa_es) * P_dot_ucov[3] + kappa_es * ucov[3] * (W * W + Puu));
+
+	for (i = 1; i < NDIM; i++) for (j = 1; j < NDIM; j++) implicit_A[i][j] = delta(i, j) * (1. + dt * W * (kappa_abs + kappa_es)) + dt * kappa_es * 2. * W * W * ucov[i] * vcon[j];
+
+	int flag = invert_matrix(implicit_A, implicit_A_inv);
+	if (flag) {
+		printf("FF 4d inversion: %d\n- %e %e %e %e\n- %e %e %e %e\n- %e %e %e %e\n- %e %e %e %e\n", flag, implicit_A[0][0], implicit_A[0][1], implicit_A[0][2], implicit_A[0][3], implicit_A[1][0], implicit_A[1][1], implicit_A[1][2], implicit_A[1][3], implicit_A[2][0], implicit_A[2][1], implicit_A[2][2], implicit_A[2][3], implicit_A[3][0], implicit_A[3][1], implicit_A[3][2], implicit_A[3][3]);
+	}
+	double U_1[NDIM];
+	for (i = 0; i < NDIM; i++) U_1[i] = implicit_A_inv[i][0] * implicit_RHS[0] + implicit_A_inv[i][1] * implicit_RHS[1] + implicit_A_inv[i][2] * implicit_RHS[2] + implicit_A_inv[i][3] * implicit_RHS[3];
+
+	// Convert from U_1 to conserved quantities vector
+	// U_new[0] = -U_1[0] - (U_1[1] * U_1[1] + U_1[2] * U_1[2] + U_1[3] * U_1[3]);
+	// U_new[1] = ncon[1] * U_1[1];
+	// U_new[2] = ncon[2] * U_1[2];
+	// U_new[3] = ncon[3] * U_1[3];
+
+	dU[UU_RAD] = (geom->g * (-U_1[0] - (U_1[1] * ncon[1] + U_1[2] * ncon[2] + U_1[3] * ncon[3])) - U_old[UU_RAD]) / Dt;
+	dU[U1_RAD] = (geom->g * ncon[0] * U_1[1] - U_old[U1_RAD]) / Dt;
+	dU[U2_RAD] = (geom->g * ncon[0] * U_1[2] - U_old[U2_RAD]) / Dt;
+	dU[U3_RAD] = (geom->g * ncon[0] * U_1[3] - U_old[U3_RAD]) / Dt;
+
+	dU[UU] = -dU[UU_RAD];
+	dU[U1] = -dU[U1_RAD];
+	dU[U2] = -dU[U2_RAD];
+	dU[U3] = -dU[U3_RAD];
+
+	// Add DOKTOT
+	#if(DOKTOT)
+	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#if(FULL_ENTROPY)
+	dU[KTOT] = -1. / Tg * (dU[UU] * ucon[0] + dU[U1] * ucon[1] + dU[U2] * ucon[2] + dU[U3] * ucon[3]);
+	#else
+	double dK_dS = (GAMMA - 1.) * (GAMMA - 1.) * (ph[UU]) / pow(ph[RHO], GAMMA); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	dU[KTOT] = -dK_dS / Tg * (dU[UU] * ucon[0] + dU[U1] * ucon[1] + dU[U2] * ucon[2] + dU[U3] * ucon[3]);
+	#endif
+	#endif
+
+	return;
+}
+
 __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max) {
-	double factor, remainder = 1.0, Uh[NPR], U_1[NPR], U_new[NPR], ph[NPR], pb_new[NPR], pb_old[NPR], fraction;
+	double factor = 1.0, remainder = 1.0, Uh[NPR], U_1[NPR], U_new[NPR], ph[NPR], pb_new[NPR], pb_old[NPR], fraction;
 	double dUrad[4], dUrad_con[4];
 	double kappa_abs, kappa_emmit, kappa_es, tau;
 	double errE, errF, error_subcycling;
@@ -430,22 +705,23 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 
 	for (k = 0; k < NPR; k++) pb_old[k] = pb[k];
 
+	kappa_abs = calc_kappa_abs(pb);
+	kappa_es = calc_kappa_es(pb);
+	tau = (kappa_abs + kappa_es) * cell_size;
+
 	//Get primitive variables belonging to U_i
-	flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2);
+	flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC);
 	#if(DO_FONT_FIX)
 	if (flag) {
-		flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2, 1);
+		flag = Utoprim_1dvsq2fix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC, 1);
 		if (flag) {
-			flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2, 1);
+			flag = Utoprim_1dfix1(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, BASIC, 1);
 		}
 	}
 	#endif
 
 	if (!flag) {
 		Rtoprim(U_i, geom->gcov, geom->gcon, geom->g, pb_old, y_max, TYPE2);
-
-		//Something like Courant number in implicity scheme; e.g. we do not let the source term in each step be bigger than this
-		factor = 0.25;
 
 		//Set temporary variables to their initial values
 		for (k = 0; k < NPR; k++) {
@@ -456,10 +732,10 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 		}
 
 		while (keep_iterating && nstep < nsteps) {
-			//Calculate source term for half-step
-			source_rad(pb_new, geom, dU);
 
-			// Danat: U_{1}
+			// Danat: U_{1} (using a Dt timestep)
+			//source_rad_subcycle(pb_new, geom, dU, factor * Dt);
+			source_rad_subcycle_francois(pb_new, geom, U_new, dU, factor * Dt);
 			U_1[UU_RAD] = U_new[UU_RAD] + factor * Dt * dU[UU_RAD];
 			U_1[U1_RAD] = U_new[U1_RAD] + factor * Dt * dU[U1_RAD];
 			U_1[U2_RAD] = U_new[U2_RAD] + factor * Dt * dU[U2_RAD];
@@ -470,7 +746,9 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 			U_1[U3] = U_new[U3] + factor * Dt * dU[U3];
 			U_1[KTOT] = U_new[KTOT] + factor * Dt * dU[KTOT];
 
-			// Danat: U_{1/2}
+			// Danat: U_{1/2} (using a Dt/2 timestep)
+			//source_rad_subcycle(pb_new, geom, dU, 0.5*factor*Dt);
+			source_rad_subcycle_francois(pb_new, geom, U_new, dU, 0.5 * factor * Dt);
 			Uh[UU_RAD] = U_new[UU_RAD] + 0.5 * factor * Dt * dU[UU_RAD];
 			Uh[U1_RAD] = U_new[U1_RAD] + 0.5 * factor * Dt * dU[U1_RAD];
 			Uh[U2_RAD] = U_new[U2_RAD] + 0.5 * factor * Dt * dU[U2_RAD];
@@ -494,28 +772,29 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 			if (!flag) {
 				Rtoprim(Uh, geom->gcov, geom->gcon, geom->g, ph, y_max, TYPE2);
 
-				//Recompute T_t^mu for consistency
-				Uh[RHO] = U_i[RHO];
-				get_state(ph, geom, &q);
-				mhd_calc(ph, 0, &q, &Uh[UU]);
-				for (k = UU; k <= U3; k++)Uh[k] *= geom->g;
-				Uh[UU] += Uh[RHO];
+				// //Recompute T_t^mu for consistency
+				// Uh[RHO] = U_i[RHO];
+				// get_state(ph, geom, &q);
+				// mhd_calc(ph, 0, &q, &Uh[UU]);
+				// for (k = UU; k <= U3; k++)Uh[k] *= geom->g;
+				// Uh[UU] += Uh[RHO];
+				// 
+				// //Recompute entropy for consistency
+				// #if(FULL_ENTROPY)
+				// Uh[KTOT] = geom->g * ph[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * ph[UU] * pow(ph[RHO], -GAMMA));
+				// #else
+				// Uh[KTOT] = geom->g * ph[RHO] * q.ucon[0] * (GAMMA - 1.) * ph[UU] * pow(pb[RHO], -GAMMA);
+				// #endif
 
-				//Recompute entropy for consistency
-				#if(FULL_ENTROPY)
-				Uh[KTOT] = geom->g * ph[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * ph[UU] * pow(ph[RHO], -GAMMA));
-				#else
-				Uh[KTOT] = geom->g * ph[RHO] * q.ucon[0] * (GAMMA - 1.) * ph[UU] * pow(pb[RHO], -GAMMA);
-				#endif
-
-				//Recompute R_t^mu for consistency
-				get_state_rad(ph, geom, &q_rad);
-				mhd_calc_rad(ph, 0, &q_rad, &Uh[UU_RAD]);
-				for (k = UU_RAD; k <= U3_RAD; k++)Uh[k] *= geom->g;
+				// //Recompute R_t^mu for consistency
+				// get_state_rad(ph, geom, &q_rad);
+				// mhd_calc_rad(ph, 0, &q_rad, &Uh[UU_RAD]);
+				// for (k = UU_RAD; k <= U3_RAD; k++)Uh[k] *= geom->g;
 
 				//Calculate source term for full step
 				// Danat: U_new = U_h + (factor * Dt) * SourceTerm (P = P_1/2) = U_{2}
-				source_rad(ph, geom, dU);
+				//source_rad_subcycle(ph, geom, dU, 0.5*factor*Dt);
+				source_rad_subcycle_francois(ph, geom, Uh, dU, 0.5 * factor * Dt);
 				U_new[UU_RAD] = Uh[UU_RAD] + 0.5 * factor * Dt * dU[UU_RAD];
 				U_new[U1_RAD] = Uh[U1_RAD] + 0.5 * factor * Dt * dU[U1_RAD];
 				U_new[U2_RAD] = Uh[U2_RAD] + 0.5 * factor * Dt * dU[U2_RAD];
@@ -529,18 +808,17 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 				// Danat: calculate linearization error
 				errE = fabs((U_new[UU_RAD] - U_1[UU_RAD]) / (2.0 * U_new[UU_RAD] - U_1[UU_RAD]));
 
-				// for (k = UU_RAD; k <= U3_RAD; k++) {
-				// 	dUrad[k - UU_RAD] = U_new[k] - U_1[k];
-				// }
-				// raise(dUrad, geom->gcon, dUrad_con);
-				
-				errF = 0.0; // fabs((dUrad_con[1] * dUrad[1] + dUrad_con[2] * dUrad[2] + dUrad_con[3] * dUrad[3]) / (2.0 * U_new[UU_RAD] - U_1[UU_RAD]));
+				//for (k = UU_RAD; k <= U3_RAD; k++) {
+				//	dUrad[k - UU_RAD] = U_new[k] - U_1[k];
+				//}
+				//raise(dUrad, geom->gcon, dUrad_con);
+
+				errF = 0.0; //fabs((dUrad_con[1] * dUrad[1] + dUrad_con[2] * dUrad[2] + dUrad_con[3] * dUrad[3]) / (2.0 * U_new[UU_RAD] - U_1[UU_RAD]));
 
 				// If error > 10 set the timestep
 				error_subcycling = MY_MAX(errE, errF);
 				if (error_subcycling > 10.0) {
-					factor = MY_MIN( sqrt(0.9 / error_subcycling), remainder );
-					printf("\n%e, %e, %f\n", errE, errF, remainder);
+					factor = MY_MIN(sqrt(0.9 / error_subcycling), remainder);
 				}
 				else {
 					flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC);
@@ -556,24 +834,24 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 					if (!flag) {
 						Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, BASIC);
 
-						//Recompute T_t^mu for consistency
-						U_new[RHO] = U_i[RHO];
-						get_state(pb_new, geom, &q);
-						mhd_calc(pb_new, 0, &q, &U_new[UU]);
-						for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
-						U_new[UU] += U_new[RHO];
-
-						//Recompute entropy for consistency
-						#if(FULL_ENTROPY)
-						U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * ph[UU] * pow(pb_new[RHO], -GAMMA));
-						#else
-						U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * ph[UU] * pow(pb_new[RHO], -GAMMA);
-						#endif
-
-						//Recompute R_t^mu for consistency
-						get_state_rad(pb_new, geom, &q_rad);
-						mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-						for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+						// //Recompute T_t^mu for consistency
+						// U_new[RHO] = U_i[RHO];
+						// get_state(pb_new, geom, &q);
+						// mhd_calc(pb_new, 0, &q, &U_new[UU]);
+						// for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
+						// U_new[UU] += U_new[RHO];
+						// 
+						// //Recompute entropy for consistency
+						// #if(FULL_ENTROPY)
+						// U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * ph[UU] * pow(pb_new[RHO],  -//GAMMA));
+						// #else
+						// U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * ph[UU] * pow(pb_new[RHO], -GAMMA);
+						// #endif
+						// 
+						// //Recompute R_t^mu for consistency
+						// get_state_rad(pb_new, geom, &q_rad);
+						// mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+						// for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 						remainder -= factor;
 					}
@@ -582,23 +860,25 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 
 			//In case of inversion failure reset and start over again with smaller step
 			if (flag) {
-				keep_iterating = 0;
+				//factor = MY_MIN(0.25 * factor, 0.1);
+				if (error_subcycling > 10.0) keep_iterating = 1;
+				else keep_iterating = 0; //factor = MY_MIN(0.5 * factor, 0.1);
 			}
 			if (remainder < pow(10., -5.)) keep_iterating = 0;
 			nstep++;
 		}
 	}
 
-	if (nstep >= 100) {
-		//fprintf(stderr, "Error in subcycling: too many timesteps! \n");
+	if (nstep >= nsteps) {
+		printf("Error in subcycling: too many timesteps!, t=%e \n", tau);
 		return 1;
 	}
 	else if (flag) {
-		//fprintf(stderr, "Failed MHD inversion! \n");
+		printf("Failed MHD inversion!\nka, ks, t = %e %e %e (rho, nstep, rem = %e %d %e)\n", kappa_abs, kappa_es, tau, pb[RHO], nstep, remainder);
 		return 2;
 	}
 	else if (remainder >= pow(10., -5.)) {
-		//fprintf(stderr, "Error in subcycling: Remainder not 0 ! \n");
+		printf("Error in subcycling: Remainder not 0!, t=%e \n", tau);
 		return 3;
 	}
 	else {

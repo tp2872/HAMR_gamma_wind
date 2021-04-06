@@ -364,7 +364,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
 #if (RADM1_SUBCYCLING)
-#define MASS_DENSITY_SCALE (0.00001)
+#define MASS_DENSITY_SCALE (0.0000001)
 #else
 //#define MASS_DENSITY_SCALE (0.00001)
 #define MASS_DENSITY_SCALE (3.1)
