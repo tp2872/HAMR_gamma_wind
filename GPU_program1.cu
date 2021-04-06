@@ -4509,7 +4509,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);	
-	#if(RAD_M1)
+	#if(1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < (pf[UU]+pf[UU_RAD]) / UORHOMAX)  rhoflr = (pf[UU] + pf[UU_RAD]) / (UORHOMAX);
 	#else
@@ -4534,7 +4534,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	#if(RAD_M1)
 	if (pf[UU_RAD] < pow(10., -30.)) {
-		pf[UU_RAD] = pow(10.,-30.);
+		pf[UU_RAD] = pow(10., -30.);
 	}
 	#endif
 
@@ -5317,7 +5317,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
-	));
+	) + calc_kappa_abs(pr));
 	tau = kappa_tot * sqrt(geom->gcov[(dir == 1) * 4 + (dir == 2) * 7 + (dir == 3) * 9]) * dx;
 	crad2 = MY_MIN(pow(4. / (3. * tau), 2.), 1.);
 

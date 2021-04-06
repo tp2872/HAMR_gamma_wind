@@ -751,12 +751,12 @@ void heating(double* ph, struct of_state* q)
 	}
 	if (isnan(u_i))fprintf(stderr, "nanerror: %f \n", u_i);
 	
-	//Calculate Theta
-	Theta_e = ue * (game - 1.0) * MU_E;
-	Theta_i = ui * (gami - 1.0) * MU_I;
-
 	// convert back to entropy 
 	#if(FIXEDGAMMA)
+		//Calculate Theta
+		Theta_e = ue / ph[RHO] * (game - 1.0) * MU_E;
+		Theta_i = ui / ph[RHO] * (gami - 1.0) * MU_I;
+
 		#if(FULL_ENTROPY)
 		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.) * Theta_e / MU_E * pow(ph[RHO], -game));
 		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.) * Theta_i / MU_I * pow(ph[RHO], -gami));
@@ -765,6 +765,12 @@ void heating(double* ph, struct of_state* q)
 		ph[ENTRI] = Theta_i / MU_I * pow(ph[RHO], -gami);
 		#endif
 	#else
+		//Calculate Theta
+		double u_o_rho = ue / ph[RHO];
+		Theta_e = 0.0333333 * (sqrt(25.0 * MU_E * MU_E * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + rho + 36.0) + 5.0 * MU_E * u_o_rho - 6.0);
+		u_o_rho = ui / ph[RHO];
+		Theta_i = 0.0333333 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
+
 		#if(FULL_ENTROPY)
 		ph[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho;
 		ph[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / rho;
@@ -773,6 +779,8 @@ void heating(double* ph, struct of_state* q)
 		ph[ENTRI] = log(pow(Theta_I, 1.5) * pow(Theta_i + 0.4, 1.5) / rho);
 		#endif
 	#endif
+
+	return;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
@@ -800,7 +808,8 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + 1.0 * (gami - 1.0));
+
 	return gamg;
 }
 
@@ -829,7 +838,8 @@ double calc_gamma_gas_prim(double* pr) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + 1.0 * (gami - 1.0));
+
 	return gamg;
 }
 
@@ -880,7 +890,7 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + (Ti * MU_I) / (Te * MU_E))) / (((Ti * MU_I) / (Te * MU_E)) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Ti / Te)) / ((Ti / Te) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 
 	return gamg;
 }
@@ -946,7 +956,7 @@ double set_S_w(double* S, double rho, double w) {
 		#endif
 	#endif
 
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + (Ti * MU_I) / (Te * MU_E))) / (((Ti * MU_I) / (Te * MU_E)) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Ti / Te)) / ((Ti / Te) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 
 	return gamg;
 }
