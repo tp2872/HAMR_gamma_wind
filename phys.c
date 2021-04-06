@@ -697,28 +697,38 @@ double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, d
 
 void heating(double* ph, struct of_state* q)
 {
-	double u_e, u_i, dis, ughat;
+	double Theta_e, Theta_i, ue, ui, dis, ughat;
 	double fel, game, gami, pgas;
 
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		u_e = exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) / (game - 1.0);
-		u_i = exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) / (gami - 1.0);
+		Theta_e = exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) * MU_E ;
+		Theta_i = exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) * MU_I;
 		#else
-		u_e = ph[ENTRE] * pow(ph[RHO], game) / (game - 1.0);
-		u_i = ph[ENTRI] * pow(ph[RHO], gami) / (gami - 1.0);
+		Theta_e = ph[ENTRE] * pow(ph[RHO], game) * MU_E;
+		Theta_i = ph[ENTRI] * pow(ph[RHO], gami) * MU_I;
 		#endif
 		pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
 	#else     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Calculate gammas first! \n");
-	u_e = calc_ufromsrho(ph[ENTRE], ph[RHO], ELECTRONS);
-	u_i = calc_ufromsrho(ph[ENTRI], ph[RHO], IONS);
+		#if(FULL_ENTROPY)
+		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0);
+		#else
+		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0);
+		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0);
+		#endif
+		game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
+		gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
+	
+	//Calculate internal energy
+	ue = Theta_e / MU_E * rho / (game - 1.0);
+	ui = Theta_i / MU_I * rho / (gami - 1.0);
 
 	//Calculate which fraction goes into electrons
-	fel = 1.0 / (1.0 + calc_fel(ph, q, MU_E * (game - 1.0) * u_e, MU_I * (gami - 1.0) * u_i, pgas));
+	fel = 1.0 / (1.0 + calc_fel(ph, q, Theta_e, Theta_i, pgas));
 
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i); //MATTHEW_MARK: Remove ion entropy and recast
@@ -741,18 +751,27 @@ void heating(double* ph, struct of_state* q)
 	}
 	if (isnan(u_i))fprintf(stderr, "nanerror: %f \n", u_i);
 	
+	//Calculate Theta
+	Theta_e = ue * (game - 1.0) * MU_E;
+	Theta_i = ui * (gami - 1.0) * MU_I;
+
 	// convert back to entropy 
 	#if(FIXEDGAMMA)
 		#if(FULL_ENTROPY)
-		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.) * u_e * pow(ph[RHO], -game));
-		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.) * u_i * pow(ph[RHO], -gami));
+		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.) * Theta_e / MU_E * pow(ph[RHO], -game));
+		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.) * Theta_i / MU_I * pow(ph[RHO], -gami));
 		#else
-		ph[ENTRE] = (game - 1.) * u_e * pow(ph[RHO], -game);
-		ph[ENTRI] = (gami - 1.) * u_i * pow(ph[RHO], -gami);
+		ph[ENTRE] = Theta_e / MU_E * pow(ph[RHO], -game);
+		ph[ENTRI] = Theta_i / MU_I * pow(ph[RHO], -gami);
 		#endif
 	#else
-	ph[ENTRE] = calc_sfromrhou(ph[RHO], u_e, ELECTRONS);
-	ph[ENTRI] = calc_sfromrhou(ph[RHO], u_i, IONS);
+		#if(FULL_ENTROPY)
+		ph[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho;
+		ph[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / rho;
+		#else
+		ph[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho);
+		ph[ENTRI] = log(pow(Theta_I, 1.5) * pow(Theta_i + 0.4, 1.5) / rho);
+		#endif
 	#endif
 }
 
@@ -778,8 +797,8 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0);
 		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0);
 		#endif
-	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Theta_e);
-	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Theta_i);
+	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
+	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 	return gamg;
@@ -807,8 +826,8 @@ double calc_gamma_gas_prim(double* pr) {
 		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0);
 		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0);
 		#endif
-	game = (10.0 * 20.0 * Te) / (6.0 + 15.0 * Theta_e);
-	gami = (10.0 * 20.0 * Ti) / (6.0 + 15.0 * Theta_i);
+	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
+	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
 	return gamg;
@@ -857,8 +876,8 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
 	Te = pe / rho;
 	Ti = pi / rho;
-	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
-	gami = (10.0 * 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + (Ti * MU_I) / (Te * MU_E))) / (((Ti * MU_I) / (Te * MU_E)) * (game - 1.0) + (MU_I / MU_E) * (gami - 1.0));
@@ -916,8 +935,8 @@ double set_S_w(double* S, double rho, double w) {
 	pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
 	Te = pe / rho;
 	Ti = pi / rho;
-	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
-	gami = (10.0 * 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 		#if(FULL_ENTROPY)
 		S[0] = pow(Te * MU_E, 1.5) * pow(Te * MU_E + 0.4, 1.5) / rho;
 		S[1] = pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho;
