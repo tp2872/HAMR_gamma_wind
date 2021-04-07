@@ -444,13 +444,13 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		);
 		#if(!DO_FONT_FIX)
 		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-				#if (DOHELM)
-				, gpu_eos_table
-				#endif
-				);		
+			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
+			//	#if (DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//	);		
 		}
-		if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
+		//if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
@@ -3034,7 +3034,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
 	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0.) {
-		prim[0] = 1.e-150;
+		prim[0] = 1.e-30;
 		prim[1] = 0.;
 		prim[2] = 0.;
 		prim[3] = 0.;
@@ -3072,7 +3072,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[2] = 0.;
 			prim[3] = 0.;
 			pressure = -Qdotn / (4. * 1. - 1.);
-			prim[0] = fabs(pressure * 3.); // Erad = 3*p_rad		
+			prim[0] = 1.e-30;
 		}
 		return 0;
 		//else if (y>1.-100.*NUMEPSILON){
@@ -4515,7 +4515,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);	
-	#if(0)
+	#if(1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < (pf[UU]+pf[UU_RAD]) / UORHOMAX)  rhoflr = (pf[UU] + pf[UU_RAD]) / (UORHOMAX);
 	#else
