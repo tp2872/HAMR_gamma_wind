@@ -733,12 +733,13 @@ void heating(double* ph, struct of_state* q)
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i); 
 
-	//Calculate dissipation
+	//Calculate dissipation: ph[UU] is allways positive (guaranteed by utoprim)
 	dis = max(ph[UU] - ughat, 0.);
 
 	//Update internal energies
 	u_e += fel * dis;
 	u_i += (1. - fel) * dis;
+
 	if (u_e < 0.01 * u_i) {
 		ughat = u_e + u_i;
 		u_e = 0.01 * ughat;

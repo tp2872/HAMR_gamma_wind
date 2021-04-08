@@ -444,13 +444,13 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		);
 		#if(!DO_FONT_FIX)
 		if (pflag) {
-			//pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-			//	#if (DOHELM)
-			//	, gpu_eos_table
-			//	#endif
-			//	);		
+			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+				);		
 		}
-		//if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
+		if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues

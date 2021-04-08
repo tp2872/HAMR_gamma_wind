@@ -127,13 +127,13 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 4
+#define NB_1 6
 #define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 128
-#define BS_2 256
+#define BS_1 302
+#define BS_2 512
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/

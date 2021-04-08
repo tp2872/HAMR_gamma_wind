@@ -496,15 +496,16 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
     dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
 	#elif(TWO_T)
-	double gtmp, gamma_eos, rho, factor1, factor2, dvsq, dfactordvsq;
+	double gtmp, gamma_eos, w, rho, factor1, factor2, dvsq, dfactordvsq;
+	w = W * (1.0 - vsq);
 	rho= D * sqrt(1.0 - vsq);
 	gtmp = 1. - vsq;
-	gamma_eos = calc_gamma_gas_conserved(S, rho);
+	gamma_eos = calc_gamma_gas_w(S, rho0, w);
 	factor1 = (gamma_eos - 1.) / gamma_eos;
 	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
 	dPdW = factor1 * gtmp;
 	dvsq = 0.0000000001;
-	factor2 = calc_gamma_gas_conserved(S, D * sqrt(1.0 - (vsq + dvsq)));
+	factor2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq+dvsq)));
 	factor2 = (factor2 - 1.) / factor2;
 	dfactordvsq = (factor2 - factor1) / (dvsq);
 	dPdvsq = factor1*(0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp))*dfactordvsq;
