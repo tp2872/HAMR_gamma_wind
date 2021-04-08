@@ -704,20 +704,20 @@ void heating(double* ph, struct of_state* q)
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Theta_e = exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) * MU_E ;
-		Theta_i = exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) * MU_I;
+		Theta_e = fabs(exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) * MU_E);
+		Theta_i = fabs(exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) * MU_I);
 		#else
-		Theta_e = ph[ENTRE] * pow(ph[RHO], game) * MU_E;
-		Theta_i = ph[ENTRI] * pow(ph[RHO], gami) * MU_I;
+		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game) * MU_E);
+		Theta_i = fabs(ph[ENTRI] * pow(ph[RHO], gami) * MU_I);
 		#endif
 		pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
 	#else     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
-		Theta_e = 0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = 0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0);
+		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
 		#endif
 		game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 		gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -787,20 +787,20 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Theta_e = (game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E; //Actually theta_e=MU_E*Te meant
-		Theta_i = (gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)) * MU_I;
+		Theta_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E); //Actually theta_e=MU_E*Te meant
+		Theta_i = fabs((gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)) * MU_I);
 		#else
-		Theta_e = S[0] * pow(rho, game - 1.0) * MU_E;
-		Theta_i = S[1] * pow(rho, gami - 1.0) * MU_I;
+		Theta_e = fabs(S[0] * pow(rho, game - 1.0) * MU_E);
+		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0);
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0);
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[1], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -817,20 +817,20 @@ double calc_gamma_gas_prim(double* pr) {
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Theta_e = (game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * MU_E;
-		Theta_i = (gami - 1.0) * exp(pr[ENTRI] * pow(pr[RHO], gami - 1.0)) * MU_I;
+		Theta_e = fabs((game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * MU_E);
+		Theta_i = fabs((gami - 1.0) * exp(pr[ENTRI] * pow(pr[RHO], gami - 1.0)) * MU_I);
 		#else
-		Theta_e = pr[ENTRE] * pow(pr[RHO], game - 1.0) * MU_E;
-		Theta_i = pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I;
+		Theta_e = fabs(pr[ENTRE] * pow(pr[RHO], game - 1.0) * MU_E);
+		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0);
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0));
 		#else
-		Theta_e = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0);
-		Theta_i = 0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0);
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
@@ -844,23 +844,23 @@ double calc_gamma_gas_prim(double* pr) {
 double calc_gamma_gas_w(double* S, double rho, double w) {
 	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante;
 
-	quantg = w - rho; //quant=gamma*ug=gamma/(gamma-1)*p
+	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
 	#if(FIXEDGAMMA)   
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Te = exp((game - 1.0) * S[0] * pow(rho, game - 1.0));
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
 		#else
-		Te = S[0] * pow(rho, game - 1.0);
+		Te = fabs(S[0] * pow(rho, game - 1.0));
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0);
+		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0));
 		#else
-		Te = 0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0);
+		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0));
 		#endif
 	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
 	#endif
@@ -896,23 +896,23 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 double set_S_w(double* S, double rho, double w) {
 	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante, S_new[2];
 
-	quantg = w - rho; //quant=gamma*ug=gamma/(gamma-1)*p
+	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
 	#if(FIXEDGAMMA)   
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Te = exp((game - 1.0) * S[0] * pow(rho, game - 1.0));
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
 		#else
-		Te = S[0] * pow(rho, game - 1.0);
+		Te = fabs(S[0] * pow(rho, game - 1.0));
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = 0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / MU_E;
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / MU_E);
 		#else
-		Te = 0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / MU_E;
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / MU_E);
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
 	#endif
