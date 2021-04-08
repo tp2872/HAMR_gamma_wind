@@ -500,7 +500,7 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
 	w = W * (1.0 - vsq);
 	rho= D * sqrt(1.0 - vsq);
 	gtmp = 1. - vsq;
-	gamma_eos = calc_gamma_gas_w(S, rho0, w);
+	gamma_eos = calc_gamma_gas_w(S, rho, w);
 	factor1 = (gamma_eos - 1.) / gamma_eos;
 	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
 	dPdW = factor1 * gtmp;

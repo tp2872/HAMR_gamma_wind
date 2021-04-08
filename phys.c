@@ -681,7 +681,7 @@ double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, d
 	ratio = fabs(Ti / Te);
 	c1 = 0.91;
 	if (Ti > Te) {		
-		c2 = 1.6 * Te / Ti;
+		c2 = 1.6 * ratio;
 		c3 = 18.0 + 5.0 * log10(ratio);
 	}
 	else {
@@ -689,7 +689,7 @@ double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, d
 		c3 = 18.0;
 	}
 	bsq = dot(q->bcon, q->bcov);
-	beta = pgas/(0.5*bsq);
+	beta = pgas / (0.5 * bsq);
 	if ((beta > 0.000001 && beta < 100000)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
 	else fel = 1.0;
 	return fel;
@@ -710,7 +710,7 @@ void heating(double* ph, struct of_state* q)
 		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game) * MU_E);
 		Theta_i = fabs(ph[ENTRI] * pow(ph[RHO], gami) * MU_I);
 		#endif
-		pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
+	pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
 	#else     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
@@ -719,8 +719,8 @@ void heating(double* ph, struct of_state* q)
 		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
 		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
 		#endif
-		game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
-		gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
+	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
+	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
 	
 	//Calculate internal energy
@@ -763,10 +763,11 @@ void heating(double* ph, struct of_state* q)
 		#endif
 	#else
 		//Calculate Theta
+		//u_o_rho=theta_e/MU/( (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e)-1)
 		double u_o_rho = ue / ph[RHO];
-		Theta_e = 0.0333333 * (sqrt(25.0 * MU_E * MU_E * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + rho + 36.0) + 5.0 * MU_E * u_o_rho - 6.0);
+		Theta_e = 1.0 / 30.0 * (sqrt(25.0 * MU_E * MU_E * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + 36.0) + 5.0 * MU_E * u_o_rho - 6.0);
 		u_o_rho = ui / ph[RHO];
-		Theta_i = 0.0333333 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
+		Theta_i = 1.0 / 30.0 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
 
 		#if(FULL_ENTROPY)
 		ph[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho;
@@ -858,17 +859,17 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0)) / MU_E;
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0));
+		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0)) / MU_E;
 		#endif
 	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
 	#endif
 
 	pe = Te * rho;
-	quante = fabs(game / (game - 1.0) * pe); //quant=(gam)/(gam-1)*p
+	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
 	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
-	//quante*MU_E/rho = (10.0 * 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 * 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
+	//quante = C * ((10.0 + 20.0 * x) / (6.0 + 15.0 * x)) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * x; C=rho/MU_E, x=Te*MU_E
 
 	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
 	if (quante > quantg) quante = 0.99 * quantg;
@@ -879,8 +880,12 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	pi = (gami - 1.0) / gami * quanti;
 	#else
 	//Use analytical inversions
-	pe = (MU_E / rho) * 0.4625 * (quante * MU_E / rho) + 0.0125 * sqrt(1369.0 * (quante * MU_E / rho) * (quante * MU_E / rho) - 192.0 * (quante * MU_E / rho));
-	pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
+	//pe = (MU_E / rho) * 0.4625 * (quante * MU_E / rho) + 0.0125 * sqrt(1369.0 * (quante * MU_E / rho) * (quante * MU_E / rho) - 192.0 * (quante * MU_E / rho));
+	//pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
+	double C = rho / MU_E;
+	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
+	C = rho / MU_I;
+	pi= -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);

@@ -101,6 +101,7 @@ Numerical Parameters section
 /*Set execution mode. Note that GPU needs double precision support. Enable CPU_OPENMP to run on CPU. Do not use GPU_DEBUG*/
 #define GPU_ENABLED 1
 #define GPU_DEBUG 0
+
 #define CPU_OPENMP 0
 #define TIMER 1
 
