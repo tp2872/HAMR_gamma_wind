@@ -3076,7 +3076,6 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 			// Get Ebar and p_rad as usual
 			if (Qdotn < 0.0) {
-				pressure = -Qdotn / (4. - 1.);
 				prim[0] = pressure * 3.; // Erad = 3*p_rad
 			}
 		}

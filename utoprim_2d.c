@@ -25,7 +25,7 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
 double Bsq, QdotBsq, Qtsq, Qdotn, D, S[2];
-#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
+#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D, S)
 
 // Declarations:
 static double vsq_calc(double W);
@@ -647,12 +647,13 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 			prim[i] = prim_tmp[i];
 		}
 
-		//Set entropy variables
-		#if(TWO_T)
-		prim[ENTRE] = S[0];
-		prim[ENTRI] = S[1];
-		#endif
 	}
+
+	//Set entropy variables
+#if(TWO_T)
+	prim[ENTRE] = S[0];
+	prim[ENTRI] = S[1];
+#endif
 
 	#if(DOKTOT)
 	prim[KTOT] = U[KTOT] / U[RHO];
@@ -746,7 +747,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         #else
         // Ideal gas EOS
 			#if(TWO_T)
-			gamma_eos = calc_gamma_gas_w(S, rho0, w);
+		gamma_eos = calc_gamma_gas_w(S, rho0, w);
 			#else
 			gamma_eos = GAMMA;
 			#endif
@@ -809,7 +810,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_new = xpres;
         #else
 		#if(TWO_T)
-		gamma_eos = set_S_w(S, rho0, w);
+		gamma_eos = GAMMA;//set_S_w(S, rho0, w);
 		#else
 		gamma_eos = GAMMA;
 		#endif

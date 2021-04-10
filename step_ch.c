@@ -421,9 +421,9 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
 
-	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3, gamma_g)
+	//#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3, gamma_g)
 	{
-		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
+		//#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
 		ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
 			get_geometry(n, i, j, z, CENT, &geom);
 
@@ -433,7 +433,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			ind3 = index_3D(n, i, j, z + D3);
 
 			#if(TWO_T)
-			gamma_g = calc_gamma_gas_prim(pb[nl[n]][ind0]);
+			gamma_g = GAMMA;//calc_gamma_gas_prim(pb[nl[n]][ind0]);
 			#else
 			gamma_g = GAMMA;
 			#endif
@@ -444,7 +444,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			get_state_rad(pi[nl[n]][ind0], &geom, &q_rad);
 			#endif
 			#if(TWO_T)
-			gamma_g = calc_gamma_gas_prim(pi[nl[n]][ind0]);
+			gamma_g = GAMMA;// calc_gamma_gas_prim(pi[nl[n]][ind0]);
 			#else
 			gamma_g = GAMMA;
 			#endif
@@ -507,12 +507,12 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif*/
 
 			#if(TWO_T)
-			get_state(pf[nl[n]][ind0], &geom, &q);
-			heating(pf[nl[n]][ind0], &q);
+			//get_state(pf[nl[n]][ind0], &geom, &q);
+			//heating(pf[nl[n]][ind0], &q);
 			#if(NEWMAN)
-			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			//pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#else
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+			//pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
 			#endif
 			#endif
 			#endif
@@ -622,7 +622,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					#endif
 
 					#if(TWO_T)
-					gamma_g = calc_gamma_gas_prim(p_l);
+					gamma_g = GAMMA;// calc_gamma_gas_prim(p_l);
 					#else
 					gamma_g = GAMMA;
 					#endif
@@ -631,7 +631,7 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, gamma_g);
 
 					#if(TWO_T)
-					gamma_g = calc_gamma_gas_prim(p_r);
+					gamma_g = GAMMA;//calc_gamma_gas_prim(p_r);
 					#else
 					gamma_g = GAMMA;
 					#endif

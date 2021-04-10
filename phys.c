@@ -697,7 +697,7 @@ double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, d
 
 void heating(double* ph, struct of_state* q)
 {
-	double Theta_e, Theta_i, ue, ui, dis, ughat;
+	double Theta_e, Theta_i, u_e, u_i, dis, ughat;
 	double fel, game, gami, pgas;
 
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
@@ -710,7 +710,6 @@ void heating(double* ph, struct of_state* q)
 		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game) * MU_E);
 		Theta_i = fabs(ph[ENTRI] * pow(ph[RHO], gami) * MU_I);
 		#endif
-	pgas = (game - 1.0) * u_e + (gami - 1.0) * u_i;
 	#else     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
@@ -723,9 +722,12 @@ void heating(double* ph, struct of_state* q)
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
 	
+	//Calculate total gas pressure and internal energies
+	pgas = (Theta_e / MU_E + Theta_i / MU_I) * ph[RHO];
+
 	//Calculate internal energy
-	ue = (Theta_e / MU_E) * (rho / (game - 1.0));
-	ui = (Theta_i / MU_I) * (rho / (gami - 1.0));
+	u_e = (Theta_e / MU_E) * (ph[RHO] * (game - 1.0));
+	u_i = (Theta_i / MU_I) * (ph[RHO] * (gami - 1.0));
 
 	//Calculate which fraction goes into electrons
 	fel = 1.0 / (1.0 + calc_fel(ph, q, Theta_e, Theta_i, pgas));
@@ -758,15 +760,15 @@ void heating(double* ph, struct of_state* q)
 		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.0) * ue * pow(ph[RHO], -game));
 		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.0) * ui * pow(ph[RHO], -gami));
 		#else
-		ph[ENTRE] = (game - 1.0) * ue * pow(ph[RHO], -game);
-		ph[ENTRI] = (gami - 1.0) * ui * pow(ph[RHO], -gami);
+		ph[ENTRE] = (game - 1.0) * u_e * pow(ph[RHO], -game);
+		ph[ENTRI] = (gami - 1.0) * u_i * pow(ph[RHO], -gami);
 		#endif
 	#else
 		//Calculate Theta
 		//u_o_rho=theta_e/MU/( (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e)-1)
-		double u_o_rho = ue / ph[RHO];
+		double u_o_rho = u_e / ph[RHO];
 		Theta_e = 1.0 / 30.0 * (sqrt(25.0 * MU_E * MU_E * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + 36.0) + 5.0 * MU_E * u_o_rho - 6.0);
-		u_o_rho = ui / ph[RHO];
+		u_o_rho = u_i / ph[RHO];
 		Theta_i = 1.0 / 30.0 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
 
 		#if(FULL_ENTROPY)
@@ -807,6 +809,7 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / MU_E * (gami - 1.0));
+	if (!isfinite(gamg) || gamg > 2.0 || gamg < 1.0) fprintf(stderr, "Gamma_error_conserved: %f %f %f %f \n", gamg, log10(S[0]), log10(S[1]), log10(rho));
 
 	return gamg;
 }
@@ -837,7 +840,7 @@ double calc_gamma_gas_prim(double* pr) {
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / MU_E * (gami - 1.0));
-
+	if (!isfinite(gamg) || gamg> 2.0 || gamg<1.0) fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
 	return gamg;
 }
 
@@ -867,7 +870,7 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#endif
 
 	pe = Te * rho;
-	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	quante = game / (game - 1.0) * pe;
 	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
 	//quante = C * ((10.0 + 20.0 * x) / (6.0 + 15.0 * x)) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * x; C=rho/MU_E, x=Te*MU_E
 
@@ -878,14 +881,14 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
+	Te = pe / rho;
+	Ti = pi / rho;
 	#else
 	//Use analytical inversions
-	//pe = (MU_E / rho) * 0.4625 * (quante * MU_E / rho) + 0.0125 * sqrt(1369.0 * (quante * MU_E / rho) * (quante * MU_E / rho) - 192.0 * (quante * MU_E / rho));
-	//pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
 	double C = rho / MU_E;
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
 	C = rho / MU_I;
-	pi= -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
@@ -893,6 +896,8 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#endif
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	if (!isfinite(gamg)) fprintf(stderr, "Gamma_error_w: %f \n", gamg);
+	//gamg = 5. / 3.;
 
 	return gamg;
 }
@@ -935,16 +940,20 @@ double set_S_w(double* S, double rho, double w) {
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
 		#if(FULL_ENTROPY)
-		S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game) / MU_E);
-		S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami) / MU_I);
+		//S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game) / MU_E);
+		//S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami) / MU_I);
 		#else
-		S[0] = pe * pow(rho, -game) / MU_E;
-		S[1] = pi * pow(rho, -gami) / MU_I;
+		//S[0] = pe * pow(rho, -game) / MU_E;
+		//S[1] = pi * pow(rho, -gami) / MU_I;
 		#endif
+	Te = pe / rho;
+	Ti = pi / rho;
 	#else
 	//Use analytical inversions
-	pe = (MU_E / rho) * 0.4625 * (quante * MU_E / rho) + 0.0125 * sqrt(1369.0 * (quante * MU_E / rho) * (quante * MU_E / rho) - 192.0 * (quante * MU_E / rho));
-	pi = (MU_I / rho) * 0.4625 * (quanti * MU_I / rho) + 0.0125 * sqrt(1369.0 * (quanti * MU_I / rho) * (quanti * MU_I / rho) - 192.0 * (quanti * MU_I / rho));
+	double C = rho / MU_E;
+	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
+	C = rho / MU_I;
+	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
 	Te = pe / rho;
 	Ti = pi / rho;
 	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
@@ -959,8 +968,14 @@ double set_S_w(double* S, double rho, double w) {
 	#endif
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	if (!isfinite(gamg)) fprintf(stderr, "Gamma_error_w2: %f \n", gamg);
+	gamg = 5. / 3.;
 
 	return gamg;
+}
+
+double set_S_u(double* S, double rho, double u) {
+	
 }
 
 void Coulomb_exchange(double* restrict ph, double Dt)
