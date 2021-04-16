@@ -362,6 +362,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
+#define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
 #define MU_I (4.0/(4.0*X_AB+Y_AB))
 #define MU_E (2.0/(1.0+X_AB))
@@ -657,7 +658,7 @@ Variable Inversion Section
 #endif
 
 //Use Newman&Hamhin inversion
-#define NEWMAN (1)
+#define NEWMAN (0)
 
 #define MAX_NEWT_ITER 30     /* Max. # of Newton-Raphson iterations for find_root_2D(); */
 #define NEWT_TOL   1.0e-10    /* Min. of tolerance allowed for Newton-Raphson iterations */

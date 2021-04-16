@@ -219,8 +219,8 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
 		pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
 		#else
-		//pv[ENTRE] = 0.5*(GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
-		//pv[ENTRI] = 0.5*(GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+		pv[ENTRE] = 0.5*(GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
+		pv[ENTRI] = 0.5*(GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
 		#endif
 		#else
 

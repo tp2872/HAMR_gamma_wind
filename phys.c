@@ -704,10 +704,10 @@ void heating(double* ph, struct of_state* q)
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Theta_e = fabs(exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) * MU_E);
+		Theta_e = fabs(exp((game - 1.0) * ph[ENTRE])* pow(ph[RHO], game) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(exp((gami - 1.0) * ph[ENTRI])* pow(ph[RHO], gami) * MU_I);
 		#else
-		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game) * MU_E);
+		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(ph[ENTRI] * pow(ph[RHO], gami) * MU_I);
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
@@ -723,14 +723,14 @@ void heating(double* ph, struct of_state* q)
 	#endif
 	
 	//Calculate total gas pressure and internal energies
-	pgas = (Theta_e / MU_E + Theta_i / MU_I) * ph[RHO];
+	pgas = (Theta_e / (MU_E * MASS_RATIO) + Theta_i / MU_I) * ph[RHO];
 
 	//Calculate internal energy
-	u_e = (Theta_e / MU_E) * (ph[RHO] * (game - 1.0));
-	u_i = (Theta_i / MU_I) * (ph[RHO] * (gami - 1.0));
+	u_e = (Theta_e / (MU_E * MASS_RATIO)) * ph[RHO] / (game - 1.0);
+	u_i = (Theta_i / MU_I) * ph[RHO] / (gami - 1.0);
 
 	//Calculate which fraction goes into electrons
-	fel = 1.0 / (1.0 + calc_fel(ph, q, Theta_e, Theta_i, pgas));
+	fel = 1.0 / (1.0 + calc_fel(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
 
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i); 
@@ -767,7 +767,7 @@ void heating(double* ph, struct of_state* q)
 		//Calculate Theta
 		//u_o_rho=theta_e/MU/( (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e)-1)
 		double u_o_rho = u_e / ph[RHO];
-		Theta_e = 1.0 / 30.0 * (sqrt(25.0 * MU_E * MU_E * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + 36.0) + 5.0 * MU_E * u_o_rho - 6.0);
+		Theta_e = 1.0 / 30.0 * (sqrt(25.0 * (MU_E * MASS_RATIO) * (MU_E * MASS_RATIO) * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + 36.0) + 5.0 * (MU_E * MASS_RATIO) * u_o_rho - 6.0);
 		u_o_rho = u_i / ph[RHO];
 		Theta_i = 1.0 / 30.0 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
 
@@ -790,10 +790,10 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Theta_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * MU_E); //Actually theta_e=MU_E*Te meant
+		Theta_e = fabs((game - 1.0) * exp(S[0] * pow(rho, game - 1.0)) * (MU_E * MASS_RATIO)); //Actually theta_e=MU_E*Te meant
 		Theta_i = fabs((gami - 1.0) * exp(S[1] * pow(rho, gami - 1.0)) * MU_I);
 		#else
-		Theta_e = fabs(S[0] * pow(rho, game - 1.0) * MU_E);
+		Theta_e = fabs(S[0] * pow(rho, game - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(S[1] * pow(rho, gami - 1.0) * MU_I);
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
@@ -808,7 +808,7 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / MU_E * (gami - 1.0));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 	if (!isfinite(gamg) || gamg > 2.0 || gamg < 1.0) fprintf(stderr, "Gamma_error_conserved: %f %f %f %f \n", gamg, log10(S[0]), log10(S[1]), log10(rho));
 
 	return gamg;
@@ -821,10 +821,10 @@ double calc_gamma_gas_prim(double* pr) {
 	game = GAMMAE;
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Theta_e = fabs((game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * MU_E);
+		Theta_e = fabs((game - 1.0) * exp(pr[ENTRE] * pow(pr[RHO], game - 1.0)) * (MU_E * MASS_RATIO));
 		Theta_i = fabs((gami - 1.0) * exp(pr[ENTRI] * pow(pr[RHO], gami - 1.0)) * MU_I);
 		#else
-		Theta_e = fabs(pr[ENTRE] * pow(pr[RHO], game - 1.0) * MU_E);
+		Theta_e = fabs(pr[ENTRE] * pow(pr[RHO], game - 1.0) * (MU_E * MASS_RATIO));
 		Theta_i = fabs(pr[ENTRI] * pow(pr[RHO], gami - 1.0) * MU_I);
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
@@ -839,8 +839,11 @@ double calc_gamma_gas_prim(double* pr) {
 	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
 	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
 	#endif
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / MU_E + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / MU_E * (gami - 1.0));
-	if (!isfinite(gamg) || gamg> 2.0 || gamg<1.0) fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
+	if (!isfinite(gamg) || gamg > 1.00001*GAMMA || gamg < 0.99999*GAMMAE) {
+		fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
+	}
+	
 	return gamg;
 }
 
@@ -862,11 +865,11 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0)) / MU_E;
+		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E*MASS_RATIO);
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0)) / MU_E;
+		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0)) / (MU_E*MASS_RATIO);
 		#endif
-	game = (10.0 * 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
 	#endif
 
 	pe = Te * rho;
@@ -875,7 +878,9 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	//quante = C * ((10.0 + 20.0 * x) / (6.0 + 15.0 * x)) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * x; C=rho/MU_E, x=Te*MU_E
 
 	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
-	if (quante > quantg) quante = 0.99 * quantg;
+	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+
 	quanti = quantg - quante;
 
 	#if(FIXEDGAMMA)
@@ -885,20 +890,19 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 	Ti = pi / rho;
 	#else
 	//Use analytical inversions
-	double C = rho / MU_E;
+	double C = rho / (MU_E * MASS_RATIO);
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
 	C = rho / MU_I;
 	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
 	Te = pe / rho;
 	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	if (!isfinite(gamg)) fprintf(stderr, "Gamma_error_w: %f \n", gamg);
-	//gamg = 5. / 3.;
-
+	//if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w: %f %f %f %f\n", gamg, log10(Te), log10(Ti), log10(fabs(rho)));
+	
 	return gamg;
 }
 
@@ -920,9 +924,9 @@ double set_S_w(double* S, double rho, double w) {
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / MU_E);
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / MU_E);
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
 		#endif
 	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
 	#endif
@@ -930,47 +934,48 @@ double set_S_w(double* S, double rho, double w) {
 	pe = Te * rho;
 	//quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
 	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
-	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 * 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
+	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
 
 	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
-	if (quante > quantg) quante = 0.99 * quantg;
+	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+
 	quanti = quantg - quante;
 
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
 		#if(FULL_ENTROPY)
-		//S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game) / MU_E);
-		//S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami) / MU_I);
+		S[0] = 1.0 / (game - 1.0) * log(pe * pow(rho, -game));
+		S[1] = 1.0 / (gami - 1.0) * log(pi * pow(rho, -gami));
 		#else
-		//S[0] = pe * pow(rho, -game) / MU_E;
-		//S[1] = pi * pow(rho, -gami) / MU_I;
+		S[0] = pe * pow(rho, -game);
+		S[1] = pi * pow(rho, -gami);
 		#endif
 	Te = pe / rho;
 	Ti = pi / rho;
 	#else
 	//Use analytical inversions
-	double C = rho / MU_E;
+	double C = rho / (MU_E * MASS_RATIO);
 	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
 	C = rho / MU_I;
 	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
 	Te = pe / rho;
 	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
 	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 		#if(FULL_ENTROPY)
-		S[0] = pow(Te * MU_E, 1.5) * pow(Te * MU_E + 0.4, 1.5) / rho;
+		S[0] = pow(Te * (MU_E * MASS_RATIO), 1.5) * pow(Te * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho;
 		S[1] = pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho;
 		#else
-		S[0] = log(pow(Te * MU_E, 1.5) * pow(Te * MU_E + 0.4, 1.5) / rho);
+		S[0] = log(pow(Te * (MU_E * MASS_RATIO), 1.5) * pow(Te * (MU_E * MASS_RATIO) + 0.4, 1.5) / rho);
 		S[1] = log(pow(Ti * MU_I, 1.5) * pow(Ti * MU_I + 0.4, 1.5) / rho);
 		#endif
 	#endif
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	if (!isfinite(gamg)) fprintf(stderr, "Gamma_error_w2: %f \n", gamg);
-	gamg = 5. / 3.;
-
+	if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w2: %f \n", gamg);
+	
 	return gamg;
 }
 
