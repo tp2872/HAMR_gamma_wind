@@ -206,6 +206,14 @@ __device__ void lower_3(double* ucon, double gcov[10], double* ucov);
 __device__ double lvc4u(int i, int j, int k, int l);
 __device__ double lvc3u(int i, int j, int k);
 
+//Declare 2T related functions
+__device__ double calc_fel(double* ph, struct of_state* q, double Te, double Ti, double pgas);
+__device__ void heating(double* ph, struct of_state* q);
+__device__ double calc_gamma_gas_conserved(double* S, double rho);
+__device__ double calc_gamma_gas_prim(double* pr);
+__device__ double calc_gamma_gas_w(double* S, double rho, double w);
+__device__ double set_S_w(double* S, double rho, double w);
+
 /*Declare structs for 'other functions'*/
 struct of_geom {
 	double gcov[10];
@@ -954,6 +962,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 						#if(DOHELM)
 						, gpu_eos_table
 						#endif
+						#if(TWO_T)
+						, gamma_g
+						#endif
 					);
 
 					//Calculate source function and jacobian
@@ -1090,6 +1101,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				source_rad(pb_new, geom, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 
@@ -1237,9 +1251,15 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
+					#if(TWO_T)
+					gamma_g = calc_gamma_gas_prim(pb_new);
+					#endif
 					mhd_calc(pb_new, 0, &q, &U_new[UU]
 						#if(DOHELM)
 						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
 						#endif
 					);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
@@ -1268,6 +1288,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					source_rad(pb_new, geom, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
 						#endif
 					);
 
@@ -1354,9 +1377,15 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
+				#if(TWO_T)
+				gamma_g = calc_gamma_gas_prim(pb_new);
+					#endif
 				mhd_calc(pb_new, 0, &q, &U_new[UU]
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
@@ -1386,6 +1415,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				source_rad(pb_new, geom, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 
@@ -1473,6 +1505,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, n_iter_jacob, flag = 0, flag_rad = 0, count_increase = 0, count_increase_gas = 0;
+	#if(TWO_T)
+	double gamma_g;
+	#endif
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -1538,9 +1573,15 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
+					#if(TWO_T)
+					gamma_g = calc_gamma_gas_prim(pb_new);
+					#endif
 					mhd_calc(pb_new, 0, &q, &U_new[UU]
 						#if(DOHELM)
 						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
 						#endif
 					);
 					for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
@@ -1561,6 +1602,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					source_rad(pb_new, geom, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
 						#endif
 					);
 
@@ -1662,9 +1706,15 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
+				#if(TWO_T)
+				gamma_g = calc_gamma_gas_prim(pb_new);
+				#endif
 				mhd_calc(pb_new, 0, &q, &U_new[UU]
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
@@ -1685,6 +1735,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				source_rad(pb_new, geom, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 
@@ -1788,6 +1841,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, flag, n_iter_jacob, count_increase = 0, count_increase_gas = 0;
+	#if(TWO_T)
+	double gamma_g;
+	#endif
 
 	//Set error to 0
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -1868,9 +1924,15 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					//Recompute T_t^mu for consistency
 					U_new[RHO] = U_i[RHO];
 					get_state(pb_new, geom, &q);
+					#if(TWO_T)
+					gamma_g = calc_gamma_gas_prim(pb_new);
+					#endif
 					mhd_calc(pb_new, 0, &q, &U_new[UU]
 						#if(DOHELM)
 						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
 						#endif
 					);
 					for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
@@ -1887,6 +1949,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					source_rad(pb_new, geom, dU_new
 						#if(DOHELM)
 						, gpu_eos_table
+						#endif
+						#if(TWO_T)
+						, gamma_g
 						#endif
 					);
 					for (k = U1_RAD; k <= U3_RAD; k++) {
@@ -1998,9 +2063,15 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				//Recompute T_t^mu for consistency
 				U_new[RHO] = U_i[RHO];
 				get_state(pb_new, geom, &q);
+				#if(TWO_T)
+				gamma_g = calc_gamma_gas_prim(pb_new);
+				#endif
 				mhd_calc(pb_new, 0, &q, &U_new[UU]
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 				for (k = UU; k <= U3; k++) U_new[k] *= geom->g;
@@ -2017,6 +2088,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				source_rad(pb_new, geom, dU_new
 					#if(DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, gamma_g
 					#endif
 				);
 
@@ -2105,12 +2179,6 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 	}
 	return(0);
 }
-
-__device__ double calc_fel(double* ph, struct of_state* q, double Te, double Ti, double pgas);
-__device__ void heating(double* ph, struct of_state* q);
-__device__ double calc_gamma_gas_conserved(double* S, double rho);
-__device__ double calc_gamma_gas_w(double* S, double rho, double w);
-__device__ double set_S_w(double* S, double rho, double w);
 
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
 __device__ double calc_fel(double* ph, struct of_state* q, double Te, double Ti, double pgas) {
@@ -5021,8 +5089,8 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 				pf[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE));
 				pf[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
 				#else
-				pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pf[RHO], -GAMMAE);
-				pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pf[RHO], -GAMMA);
+				pf[ENTRE] = 0.5 * (GAMMAE - 1.0) * pf[UU] * pow(pf[RHO], -GAMMAE);
+				pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 				#endif
 			#else
 
@@ -6702,6 +6770,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 	double cmax_r_rad, cmin_r_rad, cmax_l_rad, cmin_l_rad, cmax_rad, cmin_rad, ctop_rad;
 	struct of_state_rad state_rad;
 	#endif
+	#if(TWO_T)
+	double gamma_g;
+	#endif
 
 	local_dtij[local_id] = 1.e9;
 	int zsize = 1, zoffset = 0;
@@ -6757,14 +6828,23 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		vchar_res(&geom, dir, &cmax_l, &cmin_l);
 		#else
 		get_state(p, &geom, &state);
+		#if(TWO_T)
+		gamma_g = calc_gamma_gas_prim(p);
+		#endif
 		primtoflux(p, &state, dir, &geom, temp1, &cmax_l, &cmin_l
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 		primtoflux(p, &state, 0, &geom, temp2, &cmax_l, &cmin_l
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 		#endif
@@ -6815,14 +6895,23 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		vchar_res(&geom, dir, &cmax_r, &cmin_r);
 		#else
 		get_state(p, &geom, &state);
+		#if(TWO_T)
+		gamma_g = calc_gamma_gas_prim(p);
+		#endif
 		primtoflux(p, &state, dir, &geom, temp3, &cmax_r, &cmin_r
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 		primtoflux(p, &state, 0, &geom, temp4, &cmax_r, &cmin_r
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 		#endif
@@ -7820,6 +7909,9 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	double p[NPR], dU[NPR], UU1[NPR], U_n_tmp[NPR], cell_size;
 	int zsize = 1, zoffset = 0, u;
 	int pflag_local, pflag_rad_local;
+	#if(TWO_T)
+	double gamma_g
+	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	int zlevel = 0;
@@ -7839,9 +7931,15 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		}
 
 		get_state(p, &geom, &q);
+		#if(TWO_T)
+		gamma_g = calc_gamma_gas_prim(p);
+		#endif
 		source(p, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 
@@ -7951,6 +8049,9 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	struct of_state q;
 	double ph[NPR], dU[NPR], U_2[NPR];
 	int zsize = 1, zoffset = 0, u;
+	#if(TWO_T)
+	double gamma_g
+	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	int zlevel = 0;
@@ -7970,9 +8071,15 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		}
 
 		get_state(ph, &geom, &q);
+		#if(TWO_T)
+		gamma_g = calc_gamma_gas_prim(ph);
+		#endif
 		source(ph, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 
@@ -8110,6 +8217,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	#else
 	struct of_state q;
 	#endif
+	#if(TWO_T)
+	double gamma_g;
+	#endif
 	int zsize = 1, zoffset = 0, u;
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -8129,6 +8239,10 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0 / ((double)zsize)) * pi_i[k * (ksize)+global_id - zoffset + u];
 				}
 			}
+
+			#if(TWO_T)
+			gamma_g = calc_gamma_gas_prim(pf);
+			#endif
 			#if(RESISTIVE)
 			get_state_res(pf, &geom, &q);
 			primtoflux_res(pf, &q, 0, &geom, U);
@@ -8137,6 +8251,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			primtoflux(pf, &q, 0, &geom, U, NULL, NULL
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, gamma_g
 				#endif
 			);
 			#endif
@@ -8162,6 +8279,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					pf[k] += (1.0 / ((double)zsize)) * pb_i[k * (ksize)+global_id - zoffset + u];
 				}
 			}
+			#if(TWO_T)
+			gamma_g = calc_gamma_gas_prim(pf);
+			#endif
 			#if(RESISTIVE)
 			get_state_res(pf, &geom, &q);
 			#else
@@ -8192,6 +8312,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		source(pf, &geom, icurr, jcurr, zcurr, dU, Dt, conn, &q, radius[icurr]
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, gamma_g
 			#endif
 		);
 		#endif
@@ -8368,6 +8491,9 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	struct of_state q;
 	double pf[NPR], U[NPR];
 	int zsize = 1, zoffset = 0, u;
+	#if(TWO_T)
+	double gamma_g;
+	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
 	int zlevel = 0;
@@ -8388,9 +8514,15 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 				}
 			}
 			get_state(pf, &geom, &q);
+			#if(TWO_T)
+			gamma_g = calc_gamma_gas_prim(pf);
+			#endif
 			primtoflux(pf, &q, 0, &geom, U, NULL, NULL
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, gamma_g
 				#endif
 			);
 
