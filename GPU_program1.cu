@@ -4541,7 +4541,7 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 	, const  double* __restrict__ gpu_eos_table
 	#endif
 ){
-	double U_tmp[NPR_U], prim_tmp[NPR_HD];
+	double U_tmp[NPR_U], prim_tmp[NPR_HD+TWO_T*NPR_2T];
 	int i, ret;
 	double alpha;
 
@@ -4568,6 +4568,12 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 	#pragma unroll 5
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
+	//Calculate entropy variable for 2T fluids to recover EOS gamma
+	#if(TWO_T)
+	prim_tmp[NPR_HD] = U[ENTRE] / U[RHO];
+	prim_tmp[NPR_HD + 1] = U[ENTRI] / U[RHO];
+	#endif
+
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim
 		#if (DOHELM)
 		, gpu_eos_table
@@ -4580,6 +4586,11 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
+
+		#if(TWO_T)
+		prim[ENTRE] = prim_tmp[NPR_HD];
+		prim[ENTRI] = prim_tmp[NPR_HD + 1];
+		#endif
 	}
 
 	return(ret);
@@ -4595,6 +4606,9 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 	double rho0, u, p, w, gammasq, gamma, gtmp, W_last, W, utsq, vsq;
 	int i, retval=0, i_increase;
 	double Bsq, QdotBsq, Qtsq, Qdotn, D;
+	#if(TWO_T)
+	double gamma_g;
+	#endif
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
 	Bcon[0] = 0.;
@@ -4661,6 +4675,9 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     #if (DOHELM)
     // 1. Helmholtz EOS
     eos_mode_rhou_pres (gpu_eos_table, rho0, u, &p);
+	#elif(TWO_T)
+	gamma_g = calc_gamma_gas_conserved(&(prim[NPR_HD]), prim[RHO]);
+	p = (gamma_g - 1.) * u;
     #else
     // 2. Ideal gas EOS
 	p = (GAMMA - 1.)*u;
@@ -4718,6 +4735,10 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     #if (DOHELM)
     // 1. Helmholtz EOS
     eos_mode_rhow_pres_u (gpu_eos_table, rho0, w, &p, &u);
+	#elif(TWO_T)
+	gamma_g = set_S_w(&(prim[NPR_HD]), rho0, w);
+	u = (w - rho0) / gamma_g;
+	p = (gamma_g - 1.0) * u;
     #else
     // 2. Ideal gas EOS
 	p = (GAMMA - 1.)*(w - rho0) / GAMMA;
@@ -4978,7 +4999,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 
 	//tie floors to the local values of magnetic field and internal energy density
 	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);	
-	#if(1)
+	#if(RAD_M1)
 	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
 	if (rhoflr < (pf[UU]+pf[UU_RAD]) / UORHOMAX)  rhoflr = (pf[UU] + pf[UU_RAD]) / (UORHOMAX);
 	#else
@@ -5566,15 +5587,24 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
 	);
 	kappa_emmit = calc_kappa_emmit(ph
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
 	);
 	kappa_es = calc_kappa_es(ph
 		#if(DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
 		#endif
 	);
 
@@ -5634,7 +5664,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	P = (GAMMA - 1.) * pr[UU];
     #endif
 
-	w = pr[RHO] + P;
+	w = pr[RHO] + P + pr[UU];
 	bsq = dot(q->bcon, q->bcov);
 	eta = w + bsq;
 	#if(AMD)
@@ -5671,6 +5701,12 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	flux[B1] = q->bcon[1] * q->ucon[dir] - q->bcon[dir] * q->ucon[1];
 	flux[B2] = q->bcon[2] * q->ucon[dir] - q->bcon[dir] * q->ucon[2];
 	flux[B3] = q->bcon[3] * q->ucon[dir] - q->bcon[dir] * q->ucon[3];
+	#endif
+
+	#if(TWO_T)
+	/* Flux of Entropy */
+	flux[ENTRE] = flux[RHO] * pr[ENTRE];
+	flux[ENTRI] = flux[RHO] * pr[ENTRI];
 	#endif
 
 	#if(DOKTOT)
@@ -5832,7 +5868,17 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
-	) + calc_kappa_abs(pr));
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	) + calc_kappa_abs(pr
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	));
 	tau = kappa_tot * sqrt(geom->gcov[(dir == 1) * 4 + (dir == 2) * 7 + (dir == 3) * 9]) * dx;
 	crad2 = MY_MIN(pow(4. / (3. * tau), 2.), 1.);
 
@@ -5882,6 +5928,9 @@ __device__ double calc_kappa_abs(double* ph
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double gamma_g
+	#endif
 ) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
@@ -5889,6 +5938,8 @@ __device__ double calc_kappa_abs(double* ph
 	double Tg;
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
+	#elif(TWO_T)
+	double Tg = fabs(MMW * MH_CGS * (gamma_g - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#else
 	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#endif
@@ -5901,7 +5952,8 @@ __device__ double calc_kappa_abs(double* ph
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
-
+	
+	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
 	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
 }
 
@@ -5910,35 +5962,18 @@ __device__ double calc_kappa_emmit(double* ph
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double gamma_g
+	#endif
 ) {
-	/*double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
-	double Ye = (1. + X_AB) / 2.;
-#if (DOHELM)
-	double Tg;
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
-	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
-#else
-	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
-#endif
-	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
-
-	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
-	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
-
-	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);*/
-	
-	
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
 	double Tg;
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
+	#elif(TWO_T)
+	double Tg = fabs(MMW * MH_CGS * (gamma_g - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#else
 	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE) *MY_MIN(fabs(ph[UU]/ph[RHO]), UORHOMAX));
 	if (isnan(fabs(ph[UU] / ph[RHO]))) Tg = 1.0;
@@ -5952,7 +5987,8 @@ __device__ double calc_kappa_emmit(double* ph
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
-	if (isnan(kappa_abs)) kappa_abs = 0.0;
+	
+	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
 	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
 }
 
@@ -5961,17 +5997,24 @@ __device__ double calc_kappa_es(double* ph
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double gamma_g
+	#endif
 ) {
 	double kappa_es;
 	#if (DOHELM)
 	double Tg;
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
+	#elif(TWO_T)
+	double Tg = fabs(MMW * MH_CGS * (gamma_g - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#else
 	double Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE);
 	#endif
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Tg / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
+
+	if (!isfinite(kappa_es)) kappa_es = 0.0;
 	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
@@ -8361,44 +8404,63 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
 		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max);
 		#else
-		#if(RESISTIVE)
-		pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
-		#else
-		#if(NEWMAN)
-		pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
-		);
-		#else
-		// DIMARK: entropy test
-		pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
-			#if (DOHELM)
-			, gpu_eos_table
-			#endif
-		);
-		#endif
-		#if( DO_FONT_FIX ) 
-		if (pflag[global_id]) {
-			failimage[global_id]++;
-			pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
-				#if(DOHELM)
-				, gpu_eos_table
+			#if(RESISTIVE)
+			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
+			#else
+				#if(NEWMAN)
+				pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
+				#else
+				// DIMARK: entropy test
+				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+					#if (DOHELM)
+					, gpu_eos_table
+					#endif
+				);
 				#endif
-			);
-			if (pflag[global_id]) {
-				failimage[1 * (ksize)+global_id]++;
-				#if(!DOHELM)
-				pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY);
-				#endif
-				if (pflag[global_id]){
-					pflag[0] = global_id;
-					failimage[2 * (ksize)+global_id]++;
+				
+				if (pflag[global_id]) {
+					failimage[global_id]++;
+					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
+						#if(DOHELM)
+						, gpu_eos_table
+						#endif
+					);
+					if (pflag[global_id]) {
+						failimage[1 * (ksize)+global_id]++;
+						#if(!DOHELM)
+						pflag[global_id] = Utoprim_1dfix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY);
+						#endif
+						if (pflag[global_id]){
+							pflag[0] = global_id;
+							failimage[2 * (ksize)+global_id]++;
+						}
+					}
 				}
-			}
-		}
-		#endif
-		#endif
+				#if(TWO_T)
+				get_state(pf, &geom, &q);
+				heating(pf, &q);
+				if (GAMMA != GAMMAE) {
+					#if(NEWMAN)
+					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
+					#else
+					// DIMARK: entropy test
+					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
+						#if (DOHELM)
+						, gpu_eos_table
+						#endif
+					);
+					#endif
+				}
+				#endif
+			#endif
 		#endif
 
 		//Apply floors in ZAMO frame or drift frame

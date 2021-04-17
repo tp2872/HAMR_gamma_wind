@@ -506,15 +506,17 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			}
 			#endif*/
 
-			#if(TWO_T)
-			get_state(pf[nl[n]][ind0], &geom, &q);
-			heating(pf[nl[n]][ind0], &q);
-			#if(NEWMAN)
-			pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
-			#else
-			pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
-			#endif
-			#endif
+				#if(TWO_T)
+				get_state(pf[nl[n]][ind0], &geom, &q);
+				heating(pf[nl[n]][ind0], &q);
+				//if(GAMMA!=GAMMAE){
+					#if(NEWMAN)
+					pflag[nl[n]][ind0] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+					#else
+					pflag[nl[n]][ind0] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf[nl[n]][ind0], NEWT_TOL, BASIC);
+					#endif
+				//}
+				#endif
 			#endif
 		}
 	}
