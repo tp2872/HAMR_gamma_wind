@@ -2341,7 +2341,7 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
@@ -5581,6 +5581,8 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	arad = ARAD / (ENERGY_DENSITY_SCALE);
+	#elif(TWO_T)
+	Tg = (gamma_g - 1.) * ph[UU] / ph[RHO];
 	#else
 	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
