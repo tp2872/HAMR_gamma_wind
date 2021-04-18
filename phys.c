@@ -907,8 +907,8 @@ double calc_gamma_gas_w(double* S, double rho, double w) {
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
-double set_S_w(double* S, double rho, double w) {
-	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante, S_new[2];
+double set_S_w(double* S, double rho, double w, double fel) {
+	double gamg, game, gami, Te, pe, pi, Ti, ue, ui, ug_hat, quantg, quanti, quante, S_new[2];
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
@@ -918,25 +918,49 @@ double set_S_w(double* S, double rho, double w) {
 	gami = GAMMA;
 		#if(FULL_ENTROPY)
 		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
 		#else
 		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gam1 - 1.0));
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
 		#else
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
+	//Calculate gamma assuming purely adiabatic evolution
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+
+	//Calculate gas pressures
 	pe = Te * rho;
+	pi = Ti * rho;
+
+	//Calculate internal energy
+	u_e = pe / (game - 1.0);
+	u_i = pi / (gami - 1.0);
+
+	//Total adiabatic evolution of ions and electrons
+	ughat = (u_e + u_i);
+
+	//Calculate dissipation assuming gamg didn't change
+	dis = max(quantg / gamg - ughat, 0.);
+
+	//Update internal energy of electrons
+	u_e += fel * dis;
+
 	//quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
 	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
 	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
 
-	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	quante = game * ue; //quant=(gam)/(gam-1)*p
 	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 
