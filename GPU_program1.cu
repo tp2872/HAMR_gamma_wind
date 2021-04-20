@@ -207,7 +207,7 @@ __device__ double lvc4u(int i, int j, int k, int l);
 __device__ double lvc3u(int i, int j, int k);
 
 //Declare 2T related functions
-__device__ double calc_fel(double* ph, struct of_state* q, double Te, double Ti, double pgas);
+__device__ double calc_delta(double* ph, struct of_state* q, double Te, double Ti, double pgas);
 __device__ void heating(double* ph, struct of_state* q);
 __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
@@ -253,6 +253,9 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 #if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
 #endif
+#if(TWO_T)
+	, double fel
+#endif
 ) {
 	double error_t = 1.e-3;
 	int k;
@@ -272,9 +275,12 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 	//Set initial values and error before attempting implicit solver
 	implicit_rad_solve_init(pb_i, U_n_temp, U_i_temp, U_ft, geom, dU, Dt, &error_t, cell_size, y_max
-	#if(DOHELM)
+		#if(DOHELM)
 		, gpu_eos_table
-	#endif
+		#endif
+		#if(TWO_T)
+		, fel
+		#endif
 	);
 
 	//If we've reached the tolerance level, exit immediately and update variables
@@ -452,9 +458,12 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 }
 //Calculate initial error for source term and set initial guess values
 __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max
-#if(DOHELM)
+	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
-#endif
+	#endif
+	#if(TWO_T)
+	double fel
+	#endif
 ) {
 	double kappa_abs, kappa_es, tau = 0., norm;
 	int k, pflag, pflag_rad;
@@ -489,6 +498,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		pflag =  Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, fel
 			#endif
 		);
 		#if(!DO_FONT_FIX)
@@ -2181,7 +2193,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 }
 
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
-__device__ double calc_fel(double* ph, struct of_state* q, double Te, double Ti, double pgas) {
+__device__ double calc_delta(double* ph, struct of_state* q, double Te, double Ti, double pgas) {
 	double fel, c1, c2, c3, bsq, beta, ratio;
 	ratio = fabs(Ti / Te);
 	c1 = 0.91;
@@ -2235,7 +2247,7 @@ __device__ void heating(double* ph, struct of_state* q)
 	u_i = (Theta_i / MU_I) * ph[RHO] / (gami - 1.0);
 
 	//Calculate which fraction goes into electrons
-	fel = 1.0 / (1.0 + calc_fel(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
+	fel = 1.0 / (1.0 + calc_delta(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
 
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i);
@@ -8263,7 +8275,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 	struct of_state q;
 	#endif
 	#if(TWO_T)
-	double gamma_g;
+	double gamma_g, fel;
 	#endif
 	int zsize = 1, zoffset = 0, u;
 
@@ -8342,7 +8354,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				#endif
 				#if( N2G > 0 )
 				U[k] -= Dt * (F2[k * (ksize)+global_id + (BS_3 + 2 * N3G) - zoffset + u] - F2[k * (ksize)+global_id - zoffset + u]) / (dx_2 * (double)zsize);
-				#endif
+				#endif 
 			}
 			#if( N3G > 0 )
 			U[k] -= Dt * (F3[k * (ksize)+global_id - zoffset + zsize] - F3[k * (ksize)+global_id - zoffset]) / (dx_3 * (double)zsize);
@@ -8395,6 +8407,10 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		#endif
 		#endif
 
+		#if(TWO_T)
+		fel = calc_delta(pf, dot(q.bcon, q.bcov));
+		#endif
+
 		#if(RAD_M1)
 		double U_0[NPR];
 		int pflag_local, pflag_rad_local;
@@ -8412,12 +8428,18 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
+					#if(TWO_T)
+					, fel
+					#endif
 				);
 				#else
 				// DIMARK: entropy test
 				pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
 					#if (DOHELM)
 					, gpu_eos_table
+					#endif
+					#if(TWO_T)
+					, fel
 					#endif
 				);
 				#endif
@@ -8440,26 +8462,6 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 						}
 					}
 				}
-				#if(TWO_T)
-				get_state(pf, &geom, &q);
-				heating(pf, &q);
-				if (GAMMA != GAMMAE) {
-					#if(NEWMAN)
-					pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
-						#if (DOHELM)
-						, gpu_eos_table
-						#endif
-					);
-					#else
-					// DIMARK: entropy test
-					pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
-						#if (DOHELM)
-						, gpu_eos_table
-						#endif
-					);
-					#endif
-				}
-				#endif
 			#endif
 		#endif
 

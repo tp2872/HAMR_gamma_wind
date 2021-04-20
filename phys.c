@@ -151,7 +151,7 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 }
 
 /* Add implicit radiation 4-force source term to equations of motion */
-void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU, double gamma_g)
+void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU)
 {
 	#if(RAD_M1)
 	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
@@ -190,13 +190,13 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	#else
 	#if(TWO_T)
 		#if(FIXEDGAMMA)
-		double dK_dS = (gamma_g - 1.) / pow(ph[RHO], gamma_g - 1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+		double dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
 		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 		#else
 		fprintf(stderr, "Source rad is not fully implemented yet! \n");
 		#endif
 	#else
-	double dK_dS = (gamma_g - 1.)/ pow(ph[RHO], gamma_g -1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+	double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA -1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
 	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 	#endif
 	#endif
@@ -676,9 +676,31 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 
 #if(TWO_T)
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
-double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, double pgas) {
-	double fel, c1, c2, c3, bsq, beta, ratio;
-	ratio = fabs(Ti / Te);
+double calc_delta(double* restrict ph, double bsq) {
+	double fel, c1, c2, c3, Te, Ti, beta, ratio, delta;
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	double game = GAMMAE;
+	double gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * ph[ENTRE]) * pow(ph[RHO], game));
+		Ti = fabs(exp((gami - 1.0) * ph[ENTRI]) * pow(ph[RHO], gami));
+		#else
+		Te = fabs(ph[ENTRE] * pow(ph[RHO], game));
+		Ti = fabs(ph[ENTRI] * pow(ph[RHO], gami));
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0)) / MU_I;
+		#else
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0)) / MU_I;
+		#endif
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	#endif
+	
+	ratio = fabs(Ti * MU_I / (Te * MU_E));
 	c1 = 0.91;
 	if (Ti > Te) {		
 		c2 = 1.6 * ratio;
@@ -688,17 +710,21 @@ double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, d
 		c2 = 1.2 * ratio;
 		c3 = 18.0;
 	}
-	bsq = dot(q->bcon, q->bcov);
-	beta = pgas / (0.5 * bsq);
-	if ((beta > 0.000001 && beta < 100000)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
-	else fel = 1.0;
-	return fel;
+
+	beta = ph[RHO] * (Te + Ti) / (0.5 * bsq);
+	if (isfinite(beta)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
+	else fel = 0.0;
+
+	//Calculate delta
+	delta = 1. / (1. + fel);
 }
 
 void heating(double* ph, struct of_state* q)
 {
 	double Theta_e, Theta_i, u_e, u_i, dis, ughat;
 	double fel, game, gami, pgas;
+
+	fprintf(stderr, "Function heating not implemented! \n");
 
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
 	game = GAMMAE;
@@ -730,7 +756,7 @@ void heating(double* ph, struct of_state* q)
 	u_i = (Theta_i / MU_I) * ph[RHO] / (gami - 1.0);
 
 	//Calculate which fraction goes into electrons
-	fel = 1.0 / (1.0 + calc_fel(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
+	//fel = 1.0 / (1.0 + calc_delta(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
 
 	//Total adiabatic evolution of ions and electrons
 	ughat = (u_e + u_i); 
@@ -848,80 +874,21 @@ double calc_gamma_gas_prim(double* pr) {
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
-double calc_gamma_gas_w(double* S, double rho, double w) {
-	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante;
+double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
 	//Figure out if electron quant_e energy is bigger than quant_g
 	#if(FIXEDGAMMA)   
 	game = GAMMAE;
-	gami = GAMMA;
-		#if(FULL_ENTROPY)
-		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
-		#else
-		Te = fabs(S[0] * pow(rho, game - 1.0));
-		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Var gamma not implemented yet! \n")
-		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E*MASS_RATIO);
-		#else
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0)) / (MU_E*MASS_RATIO);
-		#endif
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
-	#endif
-
-	pe = Te * rho;
-	quante = game / (game - 1.0) * pe;
-	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
-	//quante = C * ((10.0 + 20.0 * x) / (6.0 + 15.0 * x)) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * x; C=rho/MU_E, x=Te*MU_E
-
-	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-
-	quanti = quantg - quante;
-
-	#if(FIXEDGAMMA)
-	pe = (game - 1.0) / game * quante;
-	pi = (gami - 1.0) / gami * quanti;
-	Te = pe / rho;
-	Ti = pi / rho;
-	#else
-	//Use analytical inversions
-	double C = rho / (MU_E * MASS_RATIO);
-	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
-	C = rho / MU_I;
-	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
-	Te = pe / rho;
-	Ti = pi / rho;
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
-	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
-	#endif
-
-	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	//if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w: %f %f %f %f\n", gamg, log10(Te), log10(Ti), log10(fabs(rho)));
-	
-	return gamg;
-}
-
-//Update electron and ion entropy based on found w in Newton Raphson solver
-double set_S_w(double* S, double rho, double w, double fel) {
-	double gamg, game, gami, Te, pe, pi, Ti, ue, ui, ug_hat, quantg, quanti, quante, S_new[2];
-
-	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
-
-	//Figure out if electron quant_e energy is bigger than quant_g
-	#if(FIXEDGAMMA)   
-	game = GAMMAE;
-	gami = GAMMA;
+		gami = GAMMA;
 		#if(FULL_ENTROPY)
 		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
 		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
 		#else
 		Te = fabs(S[0] * pow(rho, game - 1.0));
-		Ti = fabs(S[1] * pow(rho, gam1 - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 	fprintf(stderr, "Var gamma not implemented yet! \n")
@@ -960,7 +927,89 @@ double set_S_w(double* S, double rho, double w, double fel) {
 	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
 	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
 
-	quante = game * ue; //quant=(gam)/(gam-1)*p
+	quante = game * u_e; //quant=(gam)/(gam-1)*p
+	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+
+	quanti = quantg - quante;
+	#if(FIXEDGAMMA)
+	pe = (game - 1.0) / game * quante;
+	pi = (gami - 1.0) / gami * quanti;
+	Te = pe / rho;
+	Ti = pi / rho;
+	#else
+	//Use analytical inversions
+	double C = rho / (MU_E * MASS_RATIO);
+	pe = -(0.25 * (C - 0.5 * quante)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quante + 5.0 * quante * quante);
+	C = rho / MU_I;
+	pi = -(0.25 * (C - 0.5 * quanti)) + 0.0559017 * sqrt(20.0 * C * C + 44.0 * C * quanti + 5.0 * quanti * quanti);
+	Te = pe / rho;
+	Ti = pi / rho;
+	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	#endif
+
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+	//if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w: %f %f %f %f\n", gamg, log10(Te), log10(Ti), log10(fabs(rho)));
+	
+	return gamg;
+}
+
+//Update electron and ion entropy based on found w in Newton Raphson solver
+double set_S_w(double* S, double rho, double w, double fel) {
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
+
+	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
+
+	//Figure out if electron quant_e energy is bigger than quant_g
+	#if(FIXEDGAMMA)   
+	game = GAMMAE;
+	gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
+		#else
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+	fprintf(stderr, "Var gamma not implemented yet! \n")
+		#if(FULL_ENTROPY)
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
+		#else
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
+		#endif
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	#endif
+
+	//Calculate gamma assuming purely adiabatic evolution
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+
+	//Calculate gas pressures
+	pe = Te * rho;
+	pi = Ti * rho;
+
+	//Calculate internal energy
+	u_e = pe / (game - 1.0);
+	u_i = pi / (gami - 1.0);
+
+	//Total adiabatic evolution of ions and electrons
+	ughat = (u_e + u_i);
+
+	//Calculate dissipation assuming gamg didn't change
+	dis = max(quantg / gamg - ughat, 0.);
+
+	//Update internal energy of electrons
+	u_e += fel * dis;
+
+	//quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
+	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
+
+	quante = game * u_e; //quant=(gam)/(gam-1)*p
 	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 

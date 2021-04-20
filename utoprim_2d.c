@@ -24,8 +24,8 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
-double Bsq, QdotBsq, Qtsq, Qdotn, D, S[2];
-#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D, S)
+double Bsq, QdotBsq, Qtsq, Qdotn, D, S[2], fel;
+#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D, S, fel)
 
 // Declarations:
 static double vsq_calc(double W);
@@ -73,7 +73,11 @@ gcov = gcon = diag(-1,1,1,1)  and gdet = 1.  ;
 
 ******************************************************************/
 
-int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim){
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+	#if(TWO_T)
+	, double fel_input
+	#endif
+){
 	double U_tmp[NPR_U],  prim_tmp[NPR_HD];
 	int i, j, ret;
 	double alpha;
@@ -105,6 +109,7 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	#if(TWO_T)
 	S[0] = U[ENTRE] / U[RHO];
 	S[1] = U[ENTRI] / U[RHO];
+	fel = fel_input;
 	#endif
 
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
@@ -293,7 +298,7 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     #else
     // Ideal gas EOS
 	#if(TWO_T)
-	gamma_eos = set_S_w(S, rho0, w);
+	gamma_eos = set_S_w(S, rho0, w, fel);
 	u = (w - rho0) / gamma_eos;
 	p = (gamma_eos - 1.0) * u;
 	#else
@@ -615,7 +620,11 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], double tolerance, int lim){
+int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], double tolerance, int lim
+	#if(TWO_T)
+	, double fel_input
+	#endif
+){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD], S2[NPR_2T];
 	int i, ret;
 	double alpha;
@@ -648,6 +657,7 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	#if(TWO_T)
 	S2[0] = U[ENTRE] / U[RHO];
 	S2[1] = U[ENTRI] / U[RHO];
+	fel = fel_input;
 	#endif
 	if (U[ENTRE] == 0.0 || U[ENTRI] == 0) fprintf(stderr, "U-error: %f %f \n");
 
@@ -666,12 +676,6 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 		prim[ENTRI] = S2[1];
 		#endif
 	}
-
-	//Set entropy variables
-	#if(TWO_T)
-	double gamma_g = calc_gamma_gas_prim(prim);
-	if (gamma_g < 0.0) fprintf(stderr, "Invert: %f %f \n", i, log10(prim[ENTRE]), log10(prim[ENTRE]));
-	#endif
 
 	#if(DOKTOT)
 	prim[KTOT] = U[KTOT] / U[RHO];
@@ -829,7 +833,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         p_new = xpres;
         #else
 		#if(TWO_T)
-		gamma_eos = set_S_w(S2, rho0, w);
+		gamma_eos = set_S_w(S2, rho0, w, fel);
 		#else
 		gamma_eos = GAMMA;
 		#endif

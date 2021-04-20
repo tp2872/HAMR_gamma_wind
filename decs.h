@@ -955,13 +955,13 @@ double calc_kappa_emmit(double * restrict ph);
 double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 #if(TWO_T)
-double calc_fel(double* restrict ph, struct of_state* q, double Te, double Ti, double pgas);
+double calc_delta(double* restrict ph, double bsq);
 void heating(double* restrict ph, struct of_state* q);
 double calc_gamma_gas_prim(double* pr);
 double calc_gamma_gas_conserved(double* S, double rho);
 double calc_gamma_gas_w(double* S, double rho, double w);
-double set_S_w(double* S, double rho, double w);
-double set_S_u(double* S, double rho, double u);
+double set_S_w(double* S, double rho, double w, double fel);
+double set_S_u(double* S, double rho, double u, double fel);
 double calc_sfromrhou(double rho, double uint, int type);
 double solve_thetafromnmu(double n, double m, double u);
 double calc_sfromntheta(double numd, double theta);
@@ -976,9 +976,17 @@ void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
-int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+#if(TWO_T)
+	, double fel
+#endif
+);
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt);
-int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
+int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+#if(TWO_T)
+	, double fel
+#endif
+);
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, double gamma_g);
