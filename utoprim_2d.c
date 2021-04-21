@@ -517,12 +517,12 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
 	w = W * (1.0 - vsq);
 	rho= D * sqrt(1.0 - vsq);
 	gtmp = 1. - vsq;
-	gamma_eos = calc_gamma_gas_w(S, rho, w);
+	gamma_eos = calc_gamma_gas_w(S, rho, w, fel);
 	factor1 = (gamma_eos - 1.) / gamma_eos;
 	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
 	dPdW = factor1 * gtmp;
 	dvsq = 0.0000000001;
-	factor2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq+dvsq)));
+	factor2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq+dvsq)), fel);
 	factor2 = (factor2 - 1.) / factor2;
 	dfactordvsq = (factor2 - factor1) / (dvsq);
 	dPdvsq = factor1*(0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp))*dfactordvsq;
@@ -659,7 +659,7 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	S2[1] = U[ENTRI] / U[RHO];
 	fel = fel_input;
 	#endif
-	if (U[ENTRE] == 0.0 || U[ENTRI] == 0) fprintf(stderr, "U-error: %f %f \n");
+	if (U[ENTRE] == 0.0 || U[ENTRI] == 0) fprintf(stderr, "U-error \n");
 
 	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, S2, tolerance, lim);
 
@@ -671,7 +671,7 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 		}
 
 		#if(TWO_T)
-		if (prim[ENTRE] == 0.0 || prim[ENTRI] == 0) fprintf(stderr, "0-error: %f %f \n");
+		if (prim[ENTRE] == 0.0 || prim[ENTRI] == 0) fprintf(stderr, "0-error\n");
 		prim[ENTRE] = S2[0];
 		prim[ENTRI] = S2[1];
 		#endif
@@ -769,7 +769,7 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         #else
         // Ideal gas EOS
 			#if(TWO_T)
-			gamma_eos = calc_gamma_gas_w(S2, rho0, w);
+			gamma_eos = calc_gamma_gas_w(S2, rho0, w, fel);
 			if (isnan(gamma_eos))gamma_eos = GAMMA;
 			#else
 			gamma_eos = GAMMA;

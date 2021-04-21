@@ -959,7 +959,7 @@ double calc_delta(double* restrict ph, double bsq);
 void heating(double* restrict ph, struct of_state* q);
 double calc_gamma_gas_prim(double* pr);
 double calc_gamma_gas_conserved(double* S, double rho);
-double calc_gamma_gas_w(double* S, double rho, double w);
+double calc_gamma_gas_w(double* S, double rho, double w, double fel);
 double set_S_w(double* S, double rho, double w, double fel);
 double set_S_u(double* S, double rho, double u, double fel);
 double calc_sfromrhou(double rho, double uint, int type);

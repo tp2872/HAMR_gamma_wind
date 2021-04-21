@@ -39,17 +39,45 @@ __device__ double calc_kappa_abs(double* ph, const  double* __restrict__ gpu_eos
 __device__ double calc_kappa_emmit(double* ph, const  double* __restrict__ gpu_eos_table);
 __device__ double calc_kappa_es(double* ph, const  double* __restrict__ gpu_eos_table);
 #else 
-__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
-__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim);
-__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance);
-__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D);
+__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
+__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
+	#if(TWO_T)
+	, double* S
+	, double fel
+	#endif
+);
 __device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy);
 __device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm);
 __device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim);
 __device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
 __device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance);
-__device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
-__device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim);
+__device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+__device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+	#if(TWO_T)
+	, double *S
+	, double fel
+	#endif
+);
 __device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin);
 __device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin
 	#if(TWO_T)
@@ -69,8 +97,16 @@ __device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd
 );
 __device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
 __device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin);
-__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max);
-__device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max);
+__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+__device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max
+	#if(TWO_T)
+	, double fel
+	#endif
+);
 
 /*Declarations of functions related to (M1) radiation inversion scheme*/
 __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged);
@@ -207,12 +243,12 @@ __device__ double lvc4u(int i, int j, int k, int l);
 __device__ double lvc3u(int i, int j, int k);
 
 //Declare 2T related functions
-__device__ double calc_delta(double* ph, struct of_state* q, double Te, double Ti, double pgas);
+__device__ double calc_delta(double* ph, double bsq);
 __device__ void heating(double* ph, struct of_state* q);
 __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
-__device__ double calc_gamma_gas_w(double* S, double rho, double w);
-__device__ double set_S_w(double* S, double rho, double w);
+__device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel);
+__device__ double set_S_w(double* S, double rho, double w, double fel);
 
 /*Declare structs for 'other functions'*/
 struct of_geom {
@@ -250,12 +286,12 @@ struct of_state_rad {
 #include <stdio.h>
 
 __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max
-#if(DOHELM)
+	#if(DOHELM)
 	, const double* __restrict__ gpu_eos_table
-#endif
-#if(TWO_T)
+	#endif
+	#if(TWO_T)
 	, double fel
-#endif
+	#endif
 ) {
 	double error_t = 1.e-3;
 	int k;
@@ -410,9 +446,9 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 		//	if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0
-#if(DOHELM)
+				//#if(DOHELM)
 		//		, gpu_eos_table
-#endif
+				//#endif
 		//	);
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
@@ -462,7 +498,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, const double* __restrict__ gpu_eos_table
 	#endif
 	#if(TWO_T)
-	double fel
+	, double fel
 	#endif
 ) {
 	double kappa_abs, kappa_es, tau = 0., norm;
@@ -920,6 +956,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
 				);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
@@ -1055,6 +1094,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, 0.0
 				#endif
 			);
 			#if(DO_FONT_FIX)
@@ -1568,6 +1610,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
 				);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > -1)) {
@@ -1696,6 +1741,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, 0.0
 				#endif
 			);
 			#if(DO_FONT_FIX)
@@ -1914,6 +1962,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					#if (DOHELM)
 					, gpu_eos_table
 					#endif
+					#if(TWO_T)
+					, 0.0
+					#endif
 				);
 				#if(DO_FONT_FIX)
 				if (flag && (n_iter_jacob > 1)) {
@@ -2052,6 +2103,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			flag = Utoprim_2d(U_new, geom->gcov, geom->gcon, geom->g, pb_new, NEWT_TOL, BASIC
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, 0.0
 				#endif
 			);
 			#if(DO_FONT_FIX)
@@ -2193,9 +2247,32 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 }
 
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
-__device__ double calc_delta(double* ph, struct of_state* q, double Te, double Ti, double pgas) {
-	double fel, c1, c2, c3, bsq, beta, ratio;
-	ratio = fabs(Ti / Te);
+__device__ double calc_delta(double* ph, double bsq) {
+	double fel, c1, c2, c3, Te, Ti, beta, ratio, delta;
+	
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+	double game = GAMMAE;
+	double gami = GAMMA;
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * ph[ENTRE]) * pow(ph[RHO], game));
+		Ti = fabs(exp((gami - 1.0) * ph[ENTRI]) * pow(ph[RHO], gami));
+		#else
+		Te = fabs(ph[ENTRE] * pow(ph[RHO], game));
+		Ti = fabs(ph[ENTRI] * pow(ph[RHO], gami));
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0)) / MU_I;
+		#else
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0)) / MU_I;
+		#endif
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
+	#endif
+
+	ratio = fabs(Ti * MU_I / (Te * MU_E));
 	c1 = 0.91;
 	if (Ti > Te) {
 		c2 = 1.6 * ratio;
@@ -2205,97 +2282,20 @@ __device__ double calc_delta(double* ph, struct of_state* q, double Te, double T
 		c2 = 1.2 * ratio;
 		c3 = 18.0;
 	}
-	bsq = dot(q->bcon, q->bcov);
-	beta = pgas / (0.5 * bsq);
-	if ((beta > 0.000001 && beta < 100000)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
-	else fel = 1.0;
-	return fel;
+
+	beta = ph[RHO] * (Te + Ti) / (0.5 * bsq);
+	if (isfinite(beta)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
+	else fel = 0.0;
+
+	//Calculate delta
+	delta = 1. / (1. + fel);
+
+	return delta;
 }
 
 __device__ void heating(double* ph, struct of_state* q)
 {
-	double Theta_e, Theta_i, u_e, u_i, dis, ughat;
-	double fel, game, gami, pgas;
-
-	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-	game = GAMMAE;
-	gami = GAMMA;
-		#if(FULL_ENTROPY)
-		Theta_e = fabs(exp((game - 1.0) * ph[ENTRE]) * pow(ph[RHO], game - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(exp((gami - 1.0) * ph[ENTRI]) * pow(ph[RHO], gami - 1.0) * MU_I);
-		#else
-		Theta_e = fabs(ph[ENTRE] * pow(ph[RHO], game - 1.0) * (MU_E * MASS_RATIO));
-		Theta_i = fabs(ph[ENTRI] * pow(ph[RHO], gami - 1.0) * MU_I);
-		#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
-		#if(FULL_ENTROPY)
-		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRE]), 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * exp(pr[ENTRI]), 2. / 3.)) - 1.0));
-		#else
-		Theta_e = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0));
-		Theta_i = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0));
-		#endif
-	game = (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e);
-	gami = (10.0 + 20.0 * Theta_i) / (6.0 + 15.0 * Theta_i);
-	#endif
-
-	//Calculate total gas pressure and internal energies
-	pgas = (Theta_e / (MU_E * MASS_RATIO) + Theta_i / MU_I) * ph[RHO];
-
-	//Calculate internal energy
-	u_e = (Theta_e / (MU_E * MASS_RATIO)) * ph[RHO] / (game - 1.0);
-	u_i = (Theta_i / MU_I) * ph[RHO] / (gami - 1.0);
-
-	//Calculate which fraction goes into electrons
-	fel = 1.0 / (1.0 + calc_delta(ph, q, Theta_e / MASS_RATIO, Theta_i, pgas));
-
-	//Total adiabatic evolution of ions and electrons
-	ughat = (u_e + u_i);
-
-	//Calculate dissipation: ph[UU] is allways positive (guaranteed by utoprim)
-	dis = max(ph[UU] - ughat, 0.);
-
-	//Update internal energies
-	u_e += fel * dis;
-	u_i += (1. - fel) * dis;
-
-	if (u_e < 0.01 * u_i) {
-		ughat = u_e + u_i;
-		u_e = 0.01 * ughat;
-		u_i = 0.99 * ughat;
-	}
-	else if (u_i < 0.01 * u_e) {
-		ughat = u_i + u_e;
-		u_i = 0.01 * ughat;
-		u_e = 0.99 * ughat;
-	}
-
-	// convert back to entropy 
-	#if(FIXEDGAMMA)
-		#if(FULL_ENTROPY)
-		ph[ENTRE] = 1.0 / (game - 1.) * log((game - 1.0) * ue * pow(ph[RHO], -game));
-		ph[ENTRI] = 1.0 / (gami - 1.) * log((gami - 1.0) * ui * pow(ph[RHO], -gami));
-		#else
-		ph[ENTRE] = (game - 1.0) * u_e * pow(ph[RHO], -game);
-		ph[ENTRI] = (gami - 1.0) * u_i * pow(ph[RHO], -gami);
-		#endif
-	#else
-	//Calculate Theta
-	//u_o_rho=theta_e/MU/( (10.0 + 20.0 * Theta_e) / (6.0 + 15.0 * Theta_e)-1)
-	double u_o_rho = u_e / ph[RHO];
-	Theta_e = 1.0 / 30.0 * (sqrt(25.0 * (MU_E * MASS_RATIO) * (MU_E * MASS_RATIO) * u_o_rho * u_o_rho + 180.0 * MU_E * u_o_rho + 36.0) + 5.0 * (MU_E * MASS_RATIO) * u_o_rho - 6.0);
-	u_o_rho = u_i / ph[RHO];
-	Theta_i = 1.0 / 30.0 * (sqrt(25.0 * MU_I * MU_I * u_o_rho * u_o_rho + 180.0 * MU_I * u_o_rho + 36.0) + 5.0 * MU_I * u_o_rho - 6.0);
-		#if(FULL_ENTROPY)
-		ph[ENTRE] = pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho;
-		ph[ENTRI] = pow(Theta_i, 1.5) * pow(Theta_i + 0.4, 1.5) / rho;
-		#else
-		ph[ENTRE] = log(pow(Theta_e, 1.5) * pow(Theta_e + 0.4, 1.5) / rho);
-		ph[ENTRI] = log(pow(Theta_I, 1.5) * pow(Theta_i + 0.4, 1.5) / rho);
-		#endif
-	#endif
-
-	return;
+	
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
@@ -2357,8 +2357,8 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
-__device__ double calc_gamma_gas_w(double* S, double rho, double w) {
-	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante;
+__device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel) {
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante;
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
@@ -2366,32 +2366,54 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#if(FIXEDGAMMA)   
 	game = GAMMAE;
 	gami = GAMMA;
-	#if(FULL_ENTROPY)
-	Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
-	#else
-	Te = fabs(S[0] * pow(rho, game - 1.0));
-	#endif
-	#else     // variable gamma: Sadowski+17 & Chael+19
-	fprintf(stderr, "Var gamma not implemented yet! \n")
 		#if(FULL_ENTROPY)
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
 		#else
-		Te = fabs(0.2 * (sqrt(1.0 * pow(25.0 * rho * S[0], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
 		#endif
-	game = (10.0 + 20.0 * Te * (MU_E * MASS_RATIO)) / (6.0 + 15.0 * Te * (MU_E * MASS_RATIO));
+	#else     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
+		#else
+		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
+		#endif
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
-	pe = Te * rho;
-	quante = game / (game - 1.0) * pe;
-	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
-	//quante = C * ((10.0 + 20.0 * x) / (6.0 + 15.0 * x)) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * x; C=rho/MU_E, x=Te*MU_E
+	//Calculate gamma assuming purely adiabatic evolution
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	//Calculate gas pressures
+	pe = Te * rho;
+	pi = Ti * rho;
+
+	//Calculate internal energy
+	u_e = pe / (game - 1.0);
+	u_i = pi / (gami - 1.0);
+
+	//Total adiabatic evolution of ions and electrons
+	ughat = (u_e + u_i);
+
+	//Calculate dissipation assuming gamg didn't change
+	dis = max(quantg / gamg - ughat, 0.);
+
+	//Update internal energy of electrons
+	u_e += fel * dis;
+
+	//quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
+	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
+
+	quante = game * u_e; //quant=(gam)/(gam-1)*p
 	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 
 	quanti = quantg - quante;
-
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
@@ -2410,14 +2432,13 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w) {
 	#endif
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
-	//if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w: %f %f %f %f\n", gamg, log10(Te), log10(Ti), log10(fabs(rho)));
 
 	return gamg;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
-__device__ double set_S_w(double* S, double rho, double w) {
-	double gamg, game, gami, Te, pe, pi, Ti, quantg, quanti, quante, S_new[2];
+__device__ double set_S_w(double* S, double rho, double w, double fel) {
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
@@ -2425,26 +2446,50 @@ __device__ double set_S_w(double* S, double rho, double w) {
 	#if(FIXEDGAMMA)   
 	game = GAMMAE;
 	gami = GAMMA;
-	#if(FULL_ENTROPY)
-	Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
-	#else
-	Te = fabs(S[0] * pow(rho, game - 1.0));
-	#endif
+		#if(FULL_ENTROPY)
+		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
+		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));
+		#else
+		Te = fabs(S[0] * pow(rho, game - 1.0));
+		Ti = fabs(S[1] * pow(rho, gami - 1.0));
+		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[0]), 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * exp(S[1]), 2. / 3.)) - 1.0) / (MU_I));
 		#else
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[0], 2. / 3.)) - 1.0) / (MU_E * MASS_RATIO));
+		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * rho * S[1], 2. / 3.)) - 1.0) / (MU_I));
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E) / (6.0 + 15.0 * Te * MU_E);
+	game = (10.0 + 20.0 * Te * MU_E * MASS_RATO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
+	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
+	//Calculate gamma assuming purely adiabatic evolution
+	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
+
+	//Calculate gas pressures
 	pe = Te * rho;
+	pi = Ti * rho;
+
+	//Calculate internal energy
+	u_e = pe / (game - 1.0);
+	u_i = pi / (gami - 1.0);
+
+	//Total adiabatic evolution of ions and electrons
+	ughat = (u_e + u_i);
+
+	//Calculate dissipation assuming gamg didn't change
+	dis = max(quantg / gamg - ughat, 0.);
+
+	//Update internal energy of electrons
+	u_e += fel * dis;
+
 	//quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
 	//quante = game / (game - 1.0) * (Te*MU_E)/MU_E*rho;
 	//quante*MU_E/rho = (10.0 + 20.0 * x) / (6.0 + 15.0 * x) / ((10.0 + 20.0 * x) / (6.0 + 15.0 * x) - 1.0) * (x); x=MU_E*Te
 
-	quante = game / (game - 1.0) * pe; //quant=(gam)/(gam-1)*p
+	quante = game * u_e; //quant=(gam)/(gam-1)*p
 	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 
@@ -3656,10 +3701,16 @@ __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gd
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double fel
+	#endif
 ){
 	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
+	#if(TWO_T)
+	double S[NPR_2T];
+	#endif
 
 	//If mass flux negative, return immediately
 	if (U[0] <= 0.) return(-100);
@@ -3679,17 +3730,30 @@ __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gd
 	//Transform the PRIMITIVE variables into the new system
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
+	#if(TWO_T)
+	S[0] = U[ENTRE] / U[RHO];
+	S[1] = U[ENTRI] / U[RHO];
+	#endif
+
 	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim
-                            #if (DOHELM)
-                            , gpu_eos_table
-                            #endif
-                          );
+		#if (DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, S
+		, fel
+		#endif
+    );
 
 	//Transform new primitive variables back if there was no problem : */
 	if (ret == 0) {
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
+		#if(TWO_T)
+		prim[ENTRE] = S[0];
+		prim[ENTRI] = S[1];
+		#endif
 	}
 
 	return(ret);
@@ -3699,9 +3763,13 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double *S
+	, double fel
+	#endif
 ) {
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq, Qtcon[NDIM];
-	double rho0, u,  w,  gamma,   vsq, errx;
+	double rho0, u,  w,  gamma,   vsq, errx, gamma_eos;
 	double Bsq, QdotBsq, Qtsq, Qdotn;
 	int i;
 
@@ -3747,11 +3815,16 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
     double xpres;
     eos_mode_rhotemp_pres_min (gpu_eos_table, prim[RHO], &xpres);
     p_array[0] = xpres;
-    #else
-    // 2. Ideal gas EOS
-	p_array[0] = (GAMMA - 1.)*prim[UU];
-    #endif
-
+	#else
+		// Ideal gas EOS
+		#if(TWO_T)
+		gamma_eos = calc_gamma_gas_conserved(S, prim[RHO]);
+		#else
+		gamma_eos = GAMMA;
+		#endif
+	p_array[0] = (gamma_eos - 1.) * prim[UU];
+	#endif
+	
 	p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
 	if (d < 0.0) return(1);
@@ -3779,19 +3852,25 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
 		double xpres;
 		eos_mode_rhow_pres_u(gpu_eos_table, rho0, w, &xpres, &u);
 		#else
-		// 2. Ideal gas EOS
-		u = (w - rho0) / GAMMA;
+			// Ideal gas EOS
+			#if(TWO_T)
+			gamma_eos = calc_gamma_gas_w(S, rho0, w, fel);
+			if (isnan(gamma_eos))gamma_eos = GAMMA;
+			#else
+			gamma_eos = GAMMA;
+			#endif
+		u = (w - rho0) / gamma_eos;
 		#endif
 
 		iter++;
 		iter_tot++;
 
-		#if (DOHELM)
-		// 1. Helmholtz EOS
+		#if DOHELM
+		// Helmholtz EOS
 		p_array[iter] = xpres;
 		#else
-		// 2. Ideal gas EOS
-		p_array[iter] = (GAMMA - 1.) * u;
+		// Ideal gas EOS
+		p_array[iter] = (gamma_eos - 1.) * u;
 		#endif
 
 		p_old = p_array[iter - 1];
@@ -3834,11 +3913,16 @@ __device__ int Utoprim_NM_calc(double *U, double gcov[10], double gcon[10], doub
         #if (DOHELM)
         // 1. Helmholtz EOS
         eos_mode_rhow_pres_u (gpu_eos_table, rho0, w, &p_new, &u);
-        #else
-        // 2. Ideal gas EOS
-		u = (w - rho0) / GAMMA;
-		p_new = (GAMMA - 1.) * u;
-        #endif
+		#else
+			#if(TWO_T)
+			gamma_eos = set_S_w(S, rho0, w, fel);
+			#else
+			gamma_eos = GAMMA;
+			#endif
+		// Ideal gas EOS
+		u = (w - rho0) / gamma_eos;
+		p_new = (gamma_eos - 1.) * u;
+		#endif
 	}
 
 	//If density or internal energy is negative return error code
@@ -4548,14 +4632,20 @@ __device__ void dWdvsq_calc2_helmholtz(const double* __restrict__ gpu_eos_table,
 }
 #endif
 
-__device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
+__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
-){
-	double U_tmp[NPR_U], prim_tmp[NPR_HD+TWO_T*NPR_2T];
+	#if(TWO_T)
+	, double fel
+	#endif
+) {
+	double U_tmp[NPR_U], prim_tmp[NPR_HD + TWO_T * NPR_2T];
 	int i, ret;
 	double alpha;
+	#if(TWO_T)
+	double S[NPR_2T];
+	#endif
 
 	if (U[0] <= 0.) {
 		return(-100);
@@ -4582,13 +4672,17 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 
 	//Calculate entropy variable for 2T fluids to recover EOS gamma
 	#if(TWO_T)
-	prim_tmp[NPR_HD] = U[ENTRE] / U[RHO];
-	prim_tmp[NPR_HD + 1] = U[ENTRI] / U[RHO];
+	S[0] = U[ENTRE] / U[RHO];
+	S[1] = U[ENTRI] / U[RHO];
 	#endif
 
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim
 		#if (DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, S
+		, fel
 		#endif
 	);
 
@@ -4600,8 +4694,8 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 		}
 
 		#if(TWO_T)
-		prim[ENTRE] = prim_tmp[NPR_HD];
-		prim[ENTRI] = prim_tmp[NPR_HD + 1];
+		prim[ENTRE] = S[0];
+		prim[ENTRI] = S[1];
 		#endif
 	}
 
@@ -4611,6 +4705,10 @@ __device__ int Utoprim_2d(double *U, double gcov[10], double gcon[10], double gd
 __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double *S
+	, double fel
 	#endif
 ){
 	double x_2d[NEWT_DIM_2];
@@ -4688,7 +4786,7 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     // 1. Helmholtz EOS
     eos_mode_rhou_pres (gpu_eos_table, rho0, u, &p);
 	#elif(TWO_T)
-	gamma_g = calc_gamma_gas_conserved(&(prim[NPR_HD]), prim[RHO]);
+	gamma_g = calc_gamma_gas_conserved(S, prim[RHO]);
 	p = (gamma_g - 1.) * u;
     #else
     // 2. Ideal gas EOS
@@ -4712,6 +4810,10 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
 	retval = general_newton_raphson(x_2d, Bsq, Qtsq, QdotBsq, Qdotn, D, tolerance
 		#if (DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, S
+		, fel
 		#endif
 	);
 
@@ -4748,7 +4850,11 @@ __device__ int Utoprim_new_body(double *U, double gcov[10], double gcon[10], dou
     // 1. Helmholtz EOS
     eos_mode_rhow_pres_u (gpu_eos_table, rho0, w, &p, &u);
 	#elif(TWO_T)
-	gamma_g = set_S_w(&(prim[NPR_HD]), rho0, w);
+	gamma_g = set_S_w(S, rho0, w
+		#if(TWO_T)
+		, fel
+		#endif
+	);
 	u = (w - rho0) / gamma_g;
 	p = (gamma_g - 1.0) * u;
     #else
@@ -4821,6 +4927,10 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double *S
+	, double fel
+	#endif
 ){
 	double f, df, dx[NEWT_DIM_2], x_old[NEWT_DIM_2];
 	double resid[NEWT_DIM_2], jac[NEWT_DIM_2][NEWT_DIM_2];
@@ -4841,6 +4951,10 @@ __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, doubl
 		func_vsq(x, dx, resid, jac, &f, &df, Bsq, Qtsq, QdotBsq, Qdotn, D
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, S
+			, fel
 			#endif
 		);  /* returns with new dx, f, df */
 
@@ -4890,6 +5004,10 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
+	#if(TWO_T)
+	, double *S
+	, double fel
+	#endif
 ){
 	double Wsq, p_tmp, dPdvsq, dPdW, gtmp;
 	double t11, t16, t18, t2, t21, t23,t24, t25, t3, t35, t36, t4, t40, t9;
@@ -4913,7 +5031,22 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 	double dpdvsq_2 = -0.5 * (x[0] + p_tmp / sqrt(gtmp)) / rho;
 	dPdW = (dpdeps_o_rho / (1.0 + dpdeps_o_rho)) * gtmp;
 	dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2) / (1.0 + dpdeps_o_rho);
-
+	#elif(TWO_T)
+	double gamma_eos, w,  vsq, W, rho, factor1, factor2, dvsq, dfactordvsq;
+	W = x[0];
+	vsq = x[1];
+	w = W * (1.0 - vsq);
+	rho = D * sqrt(1.0 - vsq);
+	gtmp = 1. - vsq;
+	gamma_eos = calc_gamma_gas_w(S, rho, w, fel);
+	factor1 = (gamma_eos - 1.) / gamma_eos;
+	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
+	dPdW = factor1 * gtmp;
+	dvsq = 0.0000000001;
+	factor2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq + dvsq)), fel);
+	factor2 = (factor2 - 1.) / factor2;
+	dfactordvsq = (factor2 - factor1) / (dvsq);
+	dPdvsq = factor1 * (0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp)) * dfactordvsq;
 	#else
 	// 2. Ideal gas EOS
 	#if(AMD)
@@ -5166,11 +5299,17 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
+			#if(TWO_T)
+			, 0.0
+			#endif
 		);
 		#else
 		flag = Utoprim_2d(U, geom->gcov, geom->gcon, geom->g, pf, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, 0.0
 			#endif
 		);
 		#endif
@@ -7896,6 +8035,9 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	double p[NPR], dU[NPR], U[NPR], UU0[NPR], cell_size;
 	int zsize = 1, zoffset = 0, u;
 	int pflag_local, pflag_rad_local;
+	#if(TWO_T)
+	double gamma_g, fel;
+	#endif
 
 	if (k == 1) {
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
@@ -7906,6 +8048,9 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 			}
 		}
 
+		#if(TWO_T)
+		gamma_g = calc_gamma_gas_prim(p);
+		#endif
 		get_state(p, &geom, &q);
 		primtoflux(p, &q, 0, &geom, U, NULL, NULL
 			#if (DOHELM)
@@ -7914,12 +8059,18 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 		);
 		get_state_rad(p, &geom, &q_rad);
 		primtoflux_rad(p, &q_rad, 0, &geom, U);
+		#if(TWO_T)
+		fel = calc_delta(p, dot(q.bcon, q.bcov));
+		#endif
 
 		//Perform implicit solve
 		cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
 		implicit_rad_solve(p, U, U, UU0, &pflag_local, &pflag_rad_local, &geom, dU, Dt * Y_IMEX, cell_size, y_max
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, fel
 			#endif
 		);
 
@@ -7967,7 +8118,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	int zsize = 1, zoffset = 0, u;
 	int pflag_local, pflag_rad_local;
 	#if(TWO_T)
-	double gamma_g
+	double gamma_g, fel;
 	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -7999,6 +8150,9 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			, gamma_g
 			#endif
 		);
+		#if(TWO_T)
+		fel = calc_delta(p, dot(q.bcon, q.bcov));
+		endif
 
 		for (k = 0; k < NPR; k++) {
 			UU1[k] = 0.;
@@ -8051,6 +8205,9 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		implicit_rad_solve(p, U_n_tmp, UU1, UU1, &pflag_local, &pflag_rad_local, &geom, dU, Y_IMEX * Dt, cell_size, y_max
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, fel
 			#endif
 		);
 
@@ -8107,7 +8264,7 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 	double ph[NPR], dU[NPR], U_2[NPR];
 	int zsize = 1, zoffset = 0, u;
 	#if(TWO_T)
-	double gamma_g
+	double gamma_g, fel;
 	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -8183,16 +8340,26 @@ __global__ void Utoprim_M1_2(const  double* __restrict__ ph_i, double* p_i, cons
 		#endif
 		#endif
 
+		#if(TWO_T)
+		fel = calc_delta(ph, dot(q.bcon, q.bcov));
+		#endif
+
 		#if(NEWMAN)
 		pflag[global_id] = Utoprim_NM(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, fel
 			#endif
 		);
 		#else
 		pflag[global_id] =  Utoprim_2d(U_2, geom.gcov, geom.gcon, geom.g, ph, NEWT_TOL, BASIC
 		#if (DOHELM)
 			, gpu_eos_table
+			#endif
+			#if(TWO_T)
+			, fel
 			#endif
 		);
 		#endif
@@ -8418,7 +8585,11 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		//Perform implicit solve
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
-		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max);
+		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max
+			#if(TWO_T)
+			, fel
+			#endif
+		);
 		#else
 			#if(RESISTIVE)
 			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
@@ -8558,7 +8729,7 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 	double pf[NPR], U[NPR];
 	int zsize = 1, zoffset = 0, u;
 	#if(TWO_T)
-	double gamma_g;
+	double gamma_g, fel;
 	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -8633,16 +8804,26 @@ __global__ void fixup_post(double* pi_i, double* pb_i, double* pf_i, const  doub
 			#endif
 			#endif
 
+			#if(TWO_T)
+			fel = calc_delta(pf, dot(q.bcon, q.bcov));
+			#endif
+
 			#if(NEWMAN)
 			pflag[global_id] = Utoprim_NM(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, fel
 				#endif
 			);
 			#else
 			pflag[global_id] = Utoprim_2d(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC
 				#if (DOHELM)
 				, gpu_eos_table
+				#endif
+				#if(TWO_T)
+				, fel
 				#endif
 			);
 			#endif

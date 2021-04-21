@@ -464,7 +464,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#endif
 			#if(TWO_T)
 			gamma_g = calc_gamma_gas_prim(pi[nl[n]][ind0]);
-			fel = calc_delta(pb, dot(q.bcon, q.bcov));
+			fel = calc_delta(pb[nl[n]][ind0], dot(q.bcon, q.bcov));
 			#else
 			gamma_g = GAMMA;
 			#endif
