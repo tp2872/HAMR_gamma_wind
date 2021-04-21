@@ -718,7 +718,7 @@ double calc_delta(double* restrict ph, double bsq) {
 	//Calculate delta
 	delta = 1. / (1. + fel);
 
-	return 0.0;
+	return delta;
 }
 
 void heating(double* ph, struct of_state* q)

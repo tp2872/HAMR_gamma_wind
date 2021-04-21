@@ -446,9 +446,9 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 		//	if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0
-				//#if(DOHELM)
+#if(DOHELM)
 		//		, gpu_eos_table
-				//#endif
+#endif
 		//	);
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
@@ -8035,9 +8035,6 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 	double p[NPR], dU[NPR], U[NPR], UU0[NPR], cell_size;
 	int zsize = 1, zoffset = 0, u;
 	int pflag_local, pflag_rad_local;
-	#if(TWO_T)
-	double gamma_g, fel;
-	#endif
 
 	if (k == 1) {
 		get_geometry(icurr, jcurr, zcurr, CENT, &geom, gcov, gcon, gdet);
@@ -8048,9 +8045,6 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 			}
 		}
 
-		#if(TWO_T)
-		gamma_g = calc_gamma_gas_prim(p);
-		#endif
 		get_state(p, &geom, &q);
 		primtoflux(p, &q, 0, &geom, U, NULL, NULL
 			#if (DOHELM)
@@ -8059,18 +8053,12 @@ __global__ void Utoprim_M1_0( double* p_i, double* U_n, double* U_0, double* dU_
 		);
 		get_state_rad(p, &geom, &q_rad);
 		primtoflux_rad(p, &q_rad, 0, &geom, U);
-		#if(TWO_T)
-		fel = calc_delta(p, dot(q.bcon, q.bcov));
-		#endif
 
 		//Perform implicit solve
 		cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
 		implicit_rad_solve(p, U, U, UU0, &pflag_local, &pflag_rad_local, &geom, dU, Dt * Y_IMEX, cell_size, y_max
 			#if (DOHELM)
 			, gpu_eos_table
-			#endif
-			#if(TWO_T)
-			, fel
 			#endif
 		);
 
@@ -8118,7 +8106,7 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 	int zsize = 1, zoffset = 0, u;
 	int pflag_local, pflag_rad_local;
 	#if(TWO_T)
-	double gamma_g, fel;
+	double gamma_g
 	#endif
 
 	#if(N_LEVELS_1D_INT>0 && D3>0)
@@ -8150,9 +8138,6 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 			, gamma_g
 			#endif
 		);
-		#if(TWO_T)
-		fel = calc_delta(p, dot(q.bcon, q.bcov));
-		endif
 
 		for (k = 0; k < NPR; k++) {
 			UU1[k] = 0.;
@@ -8205,9 +8190,6 @@ __global__ void Utoprim_M1_1(double* ph_i, const  double* __restrict__ p_i, cons
 		implicit_rad_solve(p, U_n_tmp, UU1, UU1, &pflag_local, &pflag_rad_local, &geom, dU, Y_IMEX * Dt, cell_size, y_max
 			#if (DOHELM)
 			, gpu_eos_table
-			#endif
-			#if(TWO_T)
-			, fel
 			#endif
 		);
 
@@ -8585,11 +8567,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		//Perform implicit solve
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
-		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max
-			#if(TWO_T)
-			, fel
-			#endif
-		);
+		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max);
 		#else
 			#if(RESISTIVE)
 			pflag[global_id] = Utoprim_3d_res(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, Dt);
