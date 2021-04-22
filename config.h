@@ -325,7 +325,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define GSL_ENABLED (0)
 
 /*Enable Resistivity*/
-#define RESISTIVE (0)
+#define RESISTIVE (0) 
 
 /*Set resistivity coefficient*/
 #define ETA (0.0)

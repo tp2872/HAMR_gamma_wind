@@ -2255,14 +2255,12 @@ __device__ double calc_delta(double* ph, double bsq) {
 	double fel, c1, c2, c3, Te, Ti, beta, ratio, delta;
 	
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-	double game = GAMMAE;
-	double gami = GAMMA;
 		#if(FULL_ENTROPY)
-		Te = fabs(exp((game - 1.0) * ph[ENTRE]) * pow(ph[RHO], game));
-		Ti = fabs(exp((gami - 1.0) * ph[ENTRI]) * pow(ph[RHO], gami));
+		Te = fabs(exp((game - 1.0) * ph[ENTRE]) * pow(ph[RHO], GAMMAE));
+		Ti = fabs(exp((gami - 1.0) * ph[ENTRI]) * pow(ph[RHO], GAMMA));
 		#else
-		Te = fabs(ph[ENTRE] * pow(ph[RHO], game));
-		Ti = fabs(ph[ENTRI] * pow(ph[RHO], gami));
+		Te = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE));
+		Ti = fabs(ph[ENTRI] * pow(ph[RHO], GAMMA));
 		#endif
 	#else     // variable gamma: Sadowski+17 & Chael+19
 		#if(FULL_ENTROPY)
@@ -2272,24 +2270,22 @@ __device__ double calc_delta(double* ph, double bsq) {
 		Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRE], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
 		Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * pr[RHO] * pr[ENTRI], 2. / 3.)) - 1.0)) / MU_I;
 		#endif
-	game = (10.0 + 20.0 * Te * MU_E * MASS_RATIO) / (6.0 + 15.0 * Te * MU_E * MASS_RATIO);
-	gami = (10.0 + 20.0 * Ti * MU_I) / (6.0 + 15.0 * Ti * MU_I);
 	#endif
 
-	ratio = fabs(Ti * MU_I / (Te * MU_E));
-	c1 = 0.91;
-	if (Ti > Te) {
+	ratio = fabs((Te * MU_E) / (Ti * MU_I));
+	c1 = 0.92;
+	if ((Ti * MU_I) > (Te * MU_E)) {
 		c2 = 1.6 * ratio;
-		c3 = 18.0 + 5.0 * log10(ratio);
+		c3 = 18.0 - 5.0 * log10(ratio);
 	}
 	else {
 		c2 = 1.2 * ratio;
 		c3 = 18.0;
 	}
 
-	beta = ph[RHO] * (Te + Ti) / (0.5 * bsq);
-	if (isfinite(beta)) fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt(MH_CGS / ME_CGS * ratio) * exp(-1.0 / beta);
-	else fel = 0.0;
+	beta = (Te + Ti) / (0.5 * bsq);
+	if (!isfinite(beta)) beta = 10000.0;
+	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
 	//Calculate delta
 	delta = 1. / (1. + fel);
