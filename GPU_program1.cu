@@ -125,7 +125,11 @@ __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], doub
 	, double gamma_g
 	#endif
 );
-__device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx);
+__device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 __device__ double calc_kappa_abs(double* ph
 	#if(TWO_T)
 	, double gamma_g
@@ -4640,7 +4644,7 @@ __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gd
 	, double fel
 	#endif
 ) {
-	double U_tmp[NPR_U], prim_tmp[NPR_HD + TWO_T * NPR_2T];
+	double U_tmp[NPR_U], prim_tmp[NPR_HD];
 	int i, ret;
 	double alpha;
 	#if(TWO_T)
@@ -5883,6 +5887,10 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 
 	#pragma unroll 9
 	for (k = 0; k < NPR_U;k++) flux[k] *= geom->g;
+	#if(TWO_T)
+	flux[ENTRE] *= geom->g;
+	flux[ENTRI] *= geom->g;
+	#endif
 
 	//Calculate wavespeed
 	if (dir != 0){
@@ -5960,6 +5968,9 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int dir, double* vmax, double* vmin, double dx
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
+	#endif
+	#if(TWO_T)
+	, double gamma_g
 	#endif
 ) {
 	#if(RAD_M1)
@@ -7053,6 +7064,9 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
+			#if(TWO_T)
+			, gamma_g
+			#endif
 		);
 		#endif
 
@@ -7117,12 +7131,17 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop = MY_MAX(cmax, cmin);
 
 		#if(RAD_M1)
-		for (k = 0; k < NPR_U; k++) {
-			#if(HLLF)
-			F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
-			#else
-			F[k * (ksize)+global_id] = (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k])));
-			#endif
+		for (k = 0; k < NPR; k++) {
+			if(k >= UU_RAD && k <= U3_RAD) {
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
+			}
+			else {
+				#if(HLLF)
+				F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+				#else
+				F[k * (ksize)+global_id] = (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k])));
+				#endif
+			}
 		}
 
 		get_state_rad(p, &geom, &state_rad);
@@ -7133,15 +7152,13 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
+			#if(TWO_T)
+			, gamma_g
+			#endif
 		);
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
-
-	
-		for (k = UU_RAD; k <= U3_RAD; k++) {
-			F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
-		}
 		#else
 		for (k = 0; k < NPR; k++) {
 			#if(HLLF)
@@ -8618,7 +8635,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 				);
 				#endif
 				
-				if (pflag[global_id]) {
+				/*if (pflag[global_id]) {
 					failimage[global_id]++;
 					pflag[global_id] = Utoprim_1dvsq2fix1(U, geom.gcov, geom.gcon, geom.g, pf, NEWT_TOL, BASIC, FULL_ENTROPY
 						#if(DOHELM)
@@ -8635,7 +8652,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 							failimage[2 * (ksize)+global_id]++;
 						}
 					}
-				}
+				}*/
 			#endif
 		#endif
 
@@ -9122,6 +9139,11 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 			#if DOKTOT
 			pv[KTOT*(ksize)+isize*icurr + (j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
 			#endif
+
+			#if(TWO_T)
+			pv[ENTRE * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[ENTRE * (ksize)+isize * icurr + (jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
+			pv[ENTRI * (ksize)+isize * icurr + (j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[ENTRI * (ksize)+isize * icurr + (jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
+			#endif
 		}
 		#pragma unroll 9
 		for (k = 0; k<NPR; k++){
@@ -9189,6 +9211,11 @@ __global__ void boundprim2(double *  pv, const  double* __restrict__ gdet, int N
 
 			#if DOKTOT
 			pv[KTOT*(ksize)+isize*icurr + (BS_2 - 1 - j + N2G)*(BS_3 + 2 * N3G) + zcurr] = pv[KTOT*(ksize)+isize*icurr + (BS_2 - 1 - jref + N2G)*(BS_3 + 2 * N3G) + zcurr];
+			#endif
+
+			#if(TWO_T)
+			pv[ENTRE * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[ENTRE * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
+			pv[ENTRI * (ksize)+isize * icurr + (BS_2 - 1 - j + N2G) * (BS_3 + 2 * N3G) + zcurr] = pv[ENTRI * (ksize)+isize * icurr + (BS_2 - 1 - jref + N2G) * (BS_3 + 2 * N3G) + zcurr];
 			#endif
 		}
 		#pragma unroll 9

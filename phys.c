@@ -43,8 +43,11 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	flux[KTOT] = flux[RHO] * (gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g);
 	#endif
     
-	#pragma ivdep
-	PLOOP flux[k] *= geom->g ;
+	for (k = 0; k < NPR_U; k++) flux[k] *= geom->g;
+	#if(TWO_T)
+	flux[ENTRE] *= geom->g;
+	flux[ENTRI] *= geom->g;
+	#endif
 }
 
 /* calculate magnetic field four-vector */
