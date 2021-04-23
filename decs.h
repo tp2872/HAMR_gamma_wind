@@ -955,6 +955,7 @@ double calc_kappa_emmit(double * restrict ph);
 double calc_kappa_es(double * restrict ph);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
 #if(TWO_T)
+double source_Coulomb(double* p);
 double calc_delta(double* restrict ph, double bsq);
 void heating(double* restrict ph, struct of_state* q);
 double calc_gamma_gas_prim(double* pr);
@@ -1044,6 +1045,12 @@ double lvc3u(int i, int j, int k);
 int invert_matrix_3D(double A[][3], double Ainv[][3]);
 int LU_decompose_3D(double A[][3], int permute[]);
 void LU_substitution_3D(double A[][3], double B[], int permute[]);
+int invert_matrix_5D(double A[][5], double Ainv[][5]);
+int LU_decompose_5D(double A[][5], int permute[]);
+void LU_substitution_5D(double A[][5], double B[], int permute[]);
+int invert_matrix_6D(double A[][6], double Ainv[][6]);
+int LU_decompose_6D(double A[][6], int permute[]);
+void LU_substitution_6D(double A[][6], double B[], int permute[]);
 void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
 
 //In step_ch_res.c

@@ -1307,6 +1307,78 @@ double calc_Tfromtheta(double theta, int type)
 	return res;
 }
 
+double source_Coulomb(double *p){
+	double th_mean, th_sum, Theta_e, Theta_i, coeff, ne_cgs, T_e, T_i;
+	double K2e, K2i, K0, K1;
+	double theta_min = 1.e-2;
+	double coulog = 20.;   // Coulomb logarithm ( ln Lambda )
+	double res;
+
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(FULL_ENTROPY)
+		Theta_e = fabs((game - 1.0) * exp(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0)) * (MU_E * MASS_RATIO));
+		Theta_i = fabs((gami - 1.0) * exp(p[ENTRI] * pow(p[RHO], GAMMA - 1.0)) * MU_I);
+		#else
+		Theta_e = fabs(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));
+		#else
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * p[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * p[ENTRI], 2. / 3.)) - 1.0));
+		#endif
+	#endif
+
+	coeff = 1.5 * ME_CGS / MH_CGS * coulog * C_CGS * BOLTZ_CGS * THOMSON_CGS;
+	//note that average number density in Sadowski+17 (eq (20)) is assumed to be n_ave = ne_cgs.this can be updated 
+	ne_cgs = p[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);    // calculation in cgs unit
+
+	T_e = Theta_e * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS * MASS_RATIO);
+	T_i = Theta_i * BOLTZ_CGS / (MH_CGS * C_CGS * C_CGS);
+
+	coeff *= ne_cgs * ne_cgs * (T_i - T_e);
+
+	th_sum = Theta_e + Theta_i;
+	th_mean = Theta_e * Theta_i / (Theta_e + Theta_i);
+
+
+	if (Theta_i < theta_min && Theta_e < theta_min) // approximated equations at small theta
+	{
+		res = coeff / sqrt(0.5 * M_PI * th_sum * th_sum * th_sum) * (2. * th_sum * th_sum + 2. * th_sum + 1.);
+	}
+	else if (Theta_i < theta_min)
+	{
+		//bessel function
+		K2e = bessk(2.0, 1. / Theta_e);
+		res = coeff / K2e / exp(1. / Theta_e) * sqrt(Theta_e) / sqrt(th_sum * th_sum * th_sum) * (2. * th_sum * th_sum + 2. * th_sum + 1.);
+	}
+	else if (Theta_e < theta_min)
+	{
+		//bessel function
+		K2i = bessk(2.0, 1. / Theta_i);
+
+		res = coeff / K2i / exp(1. / Theta_i) * sqrt(Theta_i) / sqrt(th_sum * th_sum * th_sum) * (2. * th_sum * th_sum + 2. * th_sum + 1.);
+	}
+	else // general form in Sadowski+17 (eq 20)
+	{
+		//bessel functions
+		K2e = bessk(2.0, 1. / Theta_e);
+		K2i = bessk(2.0, 1. / Theta_i);
+		K0 = bessk0(1.0 / th_mean);
+		K1 = bessk1(1.0 / th_mean);
+
+		res = coeff / (K2e * K2i) * ((2. * th_sum * th_sum + 1.) / th_sum * K1 + 2. * K0);
+	}
+
+	if (!isfinite(res)) res = 0.;
+
+	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
+	return res;
+}
+
 double calc_CoulombCoupling(double n_e, double theta_e, double theta_i)
 {
 	double th_mean, th_sum, coeff, ne_cgs, T_e, T_i;

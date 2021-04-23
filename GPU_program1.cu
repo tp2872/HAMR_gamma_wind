@@ -174,6 +174,12 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[]);
 __device__ int invert_matrix_3D(double Am[][3], double Aminv[][3]);
 __device__ int LU_decompose_3D(double A[][3], int permute[]);
 __device__ void LU_substitution_3D(double A[][3], double B[], int permute[]);
+__device__ int invert_matrix_5D(double Am[][5], double Aminv[][5]);
+__device__ int LU_decompose_5D(double A[][5], int permute[]);
+__device__ void LU_substitution_5D(double A[][5], double B[], int permute[]);
+__device__ int invert_matrix_6D(double Am[][6], double Aminv[][6]);
+__device__ int LU_decompose_6D(double A[][6], int permute[]);
+__device__ void LU_substitution_6D(double A[][6], double B[], int permute[]);
 __device__ int gamma_calc_rad(double* pr, struct of_geom* geom, double* gamma_rad);
 
 /*Declare other functions*/
@@ -3220,6 +3226,31 @@ __device__ void res_3du_der_entropy(double D, double sigma, double etares, doubl
 	Jac[2][2] = 1.0 + decrossb[2] / (D * enth) + Stilde_j[2] / (D * enth * enth) * denthdu;
 }
 
+
+//4D Matrix Inversion
+__device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]){
+	int i, j;
+	int permute[NDIM];
+	double dxm[NDIM], Amtmp[NDIM][NDIM];
+
+	for (i = 0; i < NDIM*NDIM; i++) Amtmp[0][i] = Am[0][i];
+
+	//Get the LU matrix:
+	if (LU_decompose(Amtmp, permute) != 0) return(1);
+
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) { dxm[j] = 0.; }
+		dxm[i] = 1.;
+
+		//Solve the linear system for the i^th column of the inverse matrix
+		LU_substitution(Amtmp, dxm, permute);
+
+		for (j = 0; j < NDIM; j++) Aminv[j][i] = dxm[j];
+	}
+
+	return(0);
+}
+
 //3D Matrix inversion
 __device__ int invert_matrix_3D(double Am[][3], double Aminv[][3])
 {
@@ -3250,117 +3281,64 @@ __device__ int invert_matrix_3D(double Am[][3], double Aminv[][3])
 	return(0);
 }
 
+//5D Matrix inversion
+__device__ int invert_matrix_5D(double Am[][5], double Aminv[][5])
+{
 
-//4D Matrix Inversion
-__device__ int invert_matrix(double Am[][NDIM], double Aminv[][NDIM]){
 	int i, j;
-	int permute[NDIM];
-	double dxm[NDIM], Amtmp[NDIM][NDIM];
+	int n = 5;
+	int permute[5];
+	double dxm[5], Amtmp[5][5];
 
-	for (i = 0; i < NDIM*NDIM; i++) Amtmp[0][i] = Am[0][i];
+	for (i = 0; i < 5 * 5; i++) { Amtmp[0][i] = Am[0][i]; }
 
-	//Get the LU matrix:
-	if (LU_decompose(Amtmp, permute) != 0) return(1);
+	// Get the LU matrix:
+	if (LU_decompose_5D(Amtmp, permute) != 0) {
+		return(1);
+	}
 
-	for (i = 0; i < NDIM; i++) {
-		for (j = 0; j < NDIM; j++) { dxm[j] = 0.; }
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) { dxm[j] = 0.; }
 		dxm[i] = 1.;
 
-		//Solve the linear system for the i^th column of the inverse matrix
-		LU_substitution(Amtmp, dxm, permute);
+		/* Solve the linear system for the i^th column of the inverse matrix: :  */
+		LU_substitution_5D(Amtmp, dxm, permute);
 
-		for (j = 0; j < NDIM; j++) Aminv[j][i] = dxm[j];
+		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
+
 	}
 
 	return(0);
 }
 
-//3D LU-decomposition
-__device__ int LU_decompose_3D(double A[][3], int permute[])
+//6D Matrix inversion
+__device__ int invert_matrix_6D(double Am[][6], double Aminv[][6])
 {
-	double row_norm[3];
-	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
-	double  absmax, maxtemp;
-	int i, j, k, max_row;
-	int n = 3;
 
-	max_row = 0;
-	for (i = 0; i < n; i++) {
-		absmax = 0.;
+	int i, j;
+	int n = 6;
+	int permute[6];
+	double dxm[6], Amtmp[6][6];
 
-		for (j = 0; j < n; j++) {
+	for (i = 0; i < 6 * 6; i++) { Amtmp[0][i] = Am[0][i]; }
 
-			maxtemp = fabs(A[i][j]);
-
-			if (maxtemp > absmax) {
-				absmax = maxtemp;
-			}
-		}
-
-		if (absmax == 0.) {
-			return(1);
-		}
-
-		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	// Get the LU matrix:
+	if (LU_decompose_6D(Amtmp, permute) != 0) {
+		return(1);
 	}
 
-	for (j = 0; j < n; j++) {
-		for (i = 0; i < j; i++) {
-			for (k = 0; k < i; k++) {
-				A[i][j] -= A[i][k] * A[k][j];
-			}
-		}
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) { dxm[j] = 0.; }
+		dxm[i] = 1.;
 
-		absmax = 0.0;
+		/* Solve the linear system for the i^th column of the inverse matrix: :  */
+		LU_substitution_6D(Amtmp, dxm, permute);
 
-		for (i = j; i < n; i++) {
-			for (k = 0; k < j; k++) {
-				A[i][j] -= A[i][k] * A[k][j];
-			}
-
-			maxtemp = fabs(A[i][j]) * row_norm[i];
-
-			if (maxtemp >= absmax) {
-				absmax = maxtemp;
-				max_row = i;
-			}
-		}
-
-		if (max_row != j) {
-			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
-				max_row = j;
-			}
-			else {
-				for (k = 0; k < n; k++) {
-
-					maxtemp = A[j][k];
-					A[j][k] = A[max_row][k];
-					A[max_row][k] = maxtemp;
-
-				}
-				row_norm[max_row] = row_norm[j];
-			}
-		}
-
-		permute[j] = max_row;
-
-		if (A[j][j] == 0.) {
-			A[j][j] = absmin;
-		}
-
-		if (j != (n - 1)) {
-			maxtemp = 1. / A[j][j];
-
-			for (i = (j + 1); i < n; i++) {
-				A[i][j] *= maxtemp;
-			}
-		}
+		for (j = 0; j < n; j++) { Aminv[j][i] = dxm[j]; }
 
 	}
 
 	return(0);
-
-	/* End of LU_decompose() */
 }
 
 //4D LU-decomposition
@@ -3441,6 +3419,209 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
 	return(0);
 }
 
+//5D LU-decomposition
+__device__ int LU_decompose_5D(double A[][5], int permute[])
+{
+	double row_norm[5];
+	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+	double  absmax, maxtemp;
+	int i, j, k, max_row;
+	int n = 5;
+
+	max_row = 0;
+	for (i = 0; i < n; i++) {
+		absmax = 0.;
+
+		for (j = 0; j < n; j++) {
+
+			maxtemp = fabs(A[i][j]);
+
+			if (maxtemp > absmax) {
+				absmax = maxtemp;
+			}
+		}
+
+		if (absmax == 0.) {
+			return(1);
+		}
+
+		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	}
+
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < j; i++) {
+			for (k = 0; k < i; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+		}
+
+		absmax = 0.0;
+
+		for (i = j; i < n; i++) {
+			for (k = 0; k < j; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+
+			maxtemp = fabs(A[i][j]) * row_norm[i];
+
+			if (maxtemp >= absmax) {
+				absmax = maxtemp;
+				max_row = i;
+			}
+		}
+
+		if (max_row != j) {
+			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+				max_row = j;
+			}
+			else {
+				for (k = 0; k < n; k++) {
+
+					maxtemp = A[j][k];
+					A[j][k] = A[max_row][k];
+					A[max_row][k] = maxtemp;
+
+				}
+				row_norm[max_row] = row_norm[j];
+			}
+		}
+
+		permute[j] = max_row;
+
+		if (A[j][j] == 0.) {
+			A[j][j] = absmin;
+		}
+
+		if (j != (n - 1)) {
+			maxtemp = 1. / A[j][j];
+
+			for (i = (j + 1); i < n; i++) {
+				A[i][j] *= maxtemp;
+			}
+		}
+
+	}
+
+	return(0);
+
+	/* End of LU_decompose() */
+}
+
+//6D LU-decomposition
+__device__ int LU_decompose_6D(double A[][6], int permute[])
+{
+	double row_norm[6];
+	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+	double  absmax, maxtemp;
+	int i, j, k, max_row;
+	int n = 6;
+
+	max_row = 0;
+	for (i = 0; i < n; i++) {
+		absmax = 0.;
+
+		for (j = 0; j < n; j++) {
+
+			maxtemp = fabs(A[i][j]);
+
+			if (maxtemp > absmax) {
+				absmax = maxtemp;
+			}
+		}
+
+		if (absmax == 0.) {
+			return(1);
+		}
+
+		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	}
+
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < j; i++) {
+			for (k = 0; k < i; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+		}
+
+		absmax = 0.0;
+
+		for (i = j; i < n; i++) {
+			for (k = 0; k < j; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+
+			maxtemp = fabs(A[i][j]) * row_norm[i];
+
+			if (maxtemp >= absmax) {
+				absmax = maxtemp;
+				max_row = i;
+			}
+		}
+
+		if (max_row != j) {
+			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+				max_row = j;
+			}
+			else {
+				for (k = 0; k < n; k++) {
+
+					maxtemp = A[j][k];
+					A[j][k] = A[max_row][k];
+					A[max_row][k] = maxtemp;
+
+				}
+				row_norm[max_row] = row_norm[j];
+			}
+		}
+
+		permute[j] = max_row;
+
+		if (A[j][j] == 0.) {
+			A[j][j] = absmin;
+		}
+
+		if (j != (n - 1)) {
+			maxtemp = 1. / A[j][j];
+
+			for (i = (j + 1); i < n; i++) {
+				A[i][j] *= maxtemp;
+			}
+		}
+
+	}
+
+	return(0);
+
+	/* End of LU_decompose() */
+}
+
+__device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
+{
+	int i, j;
+	double tmpvar;
+
+	/* Perform the forward substitution using the LU matrix.
+	*/
+	for (i = 0; i < NDIM; i++) {
+		tmpvar = B[permute[i]];
+		B[permute[i]] = B[i];
+		for (j = (i - 1); j >= 0; j--) {
+			tmpvar -= A[i][j] * B[j];
+		}
+		B[i] = tmpvar;
+	}
+
+	/* Perform the backward substitution using the LU matrix.
+	*/
+	for (i = (NDIM - 1); i >= 0; i--) {
+		for (j = (i + 1); j < NDIM; j++) {
+			B[i] -= A[i][j] * B[j];
+		}
+		B[i] /= A[i][i];
+	}
+}
+
+
 //3D LU-Substitution
 __device__ void LU_substitution_3D(double A[][3], double B[], int permute[])
 {
@@ -3465,14 +3646,14 @@ __device__ void LU_substitution_3D(double A[][3], double B[], int permute[])
 	}
 }
 
-__device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
+//5D LU-Substitution
+__device__ void LU_substitution_5D(double A[][5], double B[], int permute[])
 {
 	int i, j;
+	int n = 5;
 	double tmpvar;
 
-	/* Perform the forward substitution using the LU matrix.
-	*/
-	for (i = 0; i < NDIM; i++) {
+	for (i = 0; i < n; i++) {
 		tmpvar = B[permute[i]];
 		B[permute[i]] = B[i];
 		for (j = (i - 1); j >= 0; j--) {
@@ -3481,10 +3662,32 @@ __device__ void LU_substitution(double A[][NDIM], double B[], int permute[])
 		B[i] = tmpvar;
 	}
 
-	/* Perform the backward substitution using the LU matrix.
-	*/
-	for (i = (NDIM - 1); i >= 0; i--) {
-		for (j = (i + 1); j < NDIM; j++) {
+	for (i = (n - 1); i >= 0; i--) {
+		for (j = (i + 1); j < n; j++) {
+			B[i] -= A[i][j] * B[j];
+		}
+		B[i] /= A[i][i];
+	}
+}
+
+//6D LU-Substitution
+__device__ void LU_substitution_6D(double A[][6], double B[], int permute[])
+{
+	int i, j;
+	int n = 6;
+	double tmpvar;
+
+	for (i = 0; i < n; i++) {
+		tmpvar = B[permute[i]];
+		B[permute[i]] = B[i];
+		for (j = (i - 1); j >= 0; j--) {
+			tmpvar -= A[i][j] * B[j];
+		}
+		B[i] = tmpvar;
+	}
+
+	for (i = (n - 1); i >= 0; i--) {
+		for (j = (i + 1); j < n; j++) {
 			B[i] -= A[i][j] * B[j];
 		}
 		B[i] /= A[i][i];
