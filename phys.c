@@ -1336,8 +1336,8 @@ double source_Coulomb(double *p){
 	//note that average number density in Sadowski+17 (eq (20)) is assumed to be n_ave = ne_cgs.this can be updated 
 	ne_cgs = p[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);    // calculation in cgs unit
 
-	T_e = Theta_e * BOLTZ_CGS / (ME_CGS * C_CGS * C_CGS * MASS_RATIO);
-	T_i = Theta_i * BOLTZ_CGS / (MH_CGS * C_CGS * C_CGS);
+	T_e = Theta_e / BOLTZ_CGS * (ME_CGS * C_CGS * C_CGS);
+	T_i = Theta_i / BOLTZ_CGS * (MH_CGS * C_CGS * C_CGS);
 
 	coeff *= ne_cgs * ne_cgs * (T_i - T_e);
 

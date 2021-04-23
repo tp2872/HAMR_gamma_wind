@@ -255,6 +255,7 @@ __device__ double lvc3u(int i, int j, int k);
 //Declare 2T related functions
 __device__ double calc_delta(double* ph, double bsq);
 __device__ void heating(double* ph, struct of_state* q);
+__device__ double source_Coulomb(double* p);
 __device__ double calc_gamma_gas_conserved(double* S, double rho);
 __device__ double calc_gamma_gas_prim(double* pr);
 __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel);
@@ -604,6 +605,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif
 	);
 
+	#if(TWO_T)
+	U_f[ENTRE] = U_i[ENTRE];
+	dU[ENTRE] = source_Coulomb(pb);
+	#endif
+
 	//Calculate iterated error at start of iteration
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
 	error_t[0] = 0.25 * (fabs(U_f[UU] - U_i[UU] - Dt * dU[UU]) / norm);
@@ -613,6 +619,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[0] += 0.25 * sqrt(geom->gcon[4]) * (fabs(U_f[U1] - U_i[U1] - Dt * dU[U1]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_f[U2] - U_i[U2] - Dt * dU[U2]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_f[U3] - U_i[U3] - Dt * dU[U3]) / norm);
+	#if(TWO_T)
+	double dK_dS = (GAMMA - 1.) / pow(pb_new[RHO], GAMMA_E - 1.0);
+	norm=
+	error_t[0] += 0.25  * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / norm);
+	#endif
 
 	//Calculate total error at start of iteration
 	norm = (fabs(U_i[UU_RAD]) + fabs(U_f[UU_RAD]) + fabs(Dt * dU[UU_RAD]));
@@ -2302,6 +2313,78 @@ __device__ double calc_delta(double* ph, double bsq) {
 __device__ void heating(double* ph, struct of_state* q)
 {
 	
+}
+
+__device__ double source_Coulomb(double* p) {
+	double th_mean, th_sum, Theta_e, Theta_i, coeff, ne_cgs, T_e, T_i;
+	double K2e, K2i, K0, K1;
+	double theta_min = 1.e-2;
+	double coulog = 20.;   // Coulomb logarithm ( ln Lambda )
+	double res;
+
+	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
+		#if(FULL_ENTROPY)
+		Theta_e = fabs((game - 1.0) * exp(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0)) * (MU_E * MASS_RATIO));
+		Theta_i = fabs((gami - 1.0) * exp(p[ENTRI] * pow(p[RHO], GAMMA - 1.0)) * MU_I);
+		#else
+		Theta_e = fabs(p[ENTRE] * pow(p[RHO], GAMMAE - 1.0) * (MU_E * MASS_RATIO));
+		Theta_i = fabs(p[ENTRI] * pow(p[RHO], GAMMA - 1.0) * MU_I);
+		#endif
+	#else     // variable gamma: Sadowski+17 & Chael+19
+		#if(FULL_ENTROPY)
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRE]), 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * exp(p[ENTRI]), 2. / 3.)) - 1.0));
+		#else
+		Theta_e = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * p[ENTRE], 2. / 3.)) - 1.0));
+		Theta_i = fabs(0.2 * (sqrt(1.0 * pow(25.0 * p[RHO] * p[ENTRI], 2. / 3.)) - 1.0));
+		#endif
+	#endif
+
+	coeff = 1.5 * ME_CGS / MH_CGS * coulog * C_CGS * BOLTZ_CGS * THOMSON_CGS;
+	//note that average number density in Sadowski+17 (eq (20)) is assumed to be n_ave = ne_cgs.this can be updated 
+	ne_cgs = p[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);    // calculation in cgs unit
+
+	T_e = Theta_e / BOLTZ_CGS * (ME_CGS * C_CGS * C_CGS);
+	T_i = Theta_i / BOLTZ_CGS * (MH_CGS * C_CGS * C_CGS);
+
+	coeff *= ne_cgs * ne_cgs * (T_i - T_e);
+
+	th_sum = Theta_e + Theta_i;
+	th_mean = Theta_e * Theta_i / (Theta_e + Theta_i);
+
+
+	if (Theta_i < theta_min && Theta_e < theta_min) // approximated equations at small theta
+	{
+		res = coeff / sqrt(0.5 * M_PI * th_sum * th_sum * th_sum) * (2. * th_sum * th_sum + 2. * th_sum + 1.);
+	}
+	else if (Theta_i < theta_min)
+	{
+		//bessel function
+		K2e = bessk(2.0, 1. / Theta_e);
+		res = coeff / K2e / exp(1. / Theta_e) * sqrt(Theta_e) / sqrt(th_sum * th_sum * th_sum) * (2. * th_sum * th_sum + 2. * th_sum + 1.);
+}
+	else if (Theta_e < theta_min)
+	{
+		//bessel function
+		K2i = bessk(2.0, 1. / Theta_i);
+
+		res = coeff / K2i / exp(1. / Theta_i) * sqrt(Theta_i) / sqrt(th_sum * th_sum * th_sum) * (2. * th_sum * th_sum + 2. * th_sum + 1.);
+	}
+	else // general form in Sadowski+17 (eq 20)
+	{
+		//bessel functions
+		K2e = bessk(2.0, 1. / Theta_e);
+		K2i = bessk(2.0, 1. / Theta_i);
+		K0 = bessk0(1.0 / th_mean);
+		K1 = bessk1(1.0 / th_mean);
+
+		res = coeff / (K2e * K2i) * ((2. * th_sum * th_sum + 1.) / th_sum * K1 + 2. * K0);
+	}
+
+	if (!isfinite(res)) res = 0.;
+
+	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
+	return res;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
