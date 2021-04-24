@@ -2470,7 +2470,7 @@ __device__ double source_Coulomb(double* p) {
 	#endif
 
 	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
-	return (res*dK_dS);
+	return (0.0);
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
