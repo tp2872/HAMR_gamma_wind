@@ -613,6 +613,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//Set electron entropy variables
 	#if(TWO_T)
 	if (pflag == 0) U_i[ENTRE] = pb[ENTRE] * U_i[RHO]; //Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
+	U_f[ENTRE] = U_i[ENTRE];
 	dU[ENTRE] = source_Coulomb(pb);
 	#endif
 
@@ -2470,7 +2471,7 @@ __device__ double source_Coulomb(double* p) {
 	#endif
 
 	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
-	return (0.0);
+	return (res*dK_dS);
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
@@ -6132,7 +6133,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 )
 {
 	#if(RAD_M1)
-	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg;
+	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg, dK_dS;
 	int k;
 	struct of_state_rad q_rad;
 
@@ -6168,19 +6169,34 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	dU[U2_RAD] = -Gcov[2];
 	dU[U3_RAD] = -Gcov[3];
 
+	//Entropy source term
 	#if(DOKTOT)
-	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
-	Tg *= BOLTZ_CGS * MASS_DENSITY_SCALE / (MMW * MH_CGS * ENERGY_DENSITY_SCALE);
-	#else
-	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+		#if (DOHELM)
+		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
+		Tg *= BOLTZ_CGS * MASS_DENSITY_SCALE / (MMW * MH_CGS * ENERGY_DENSITY_SCALE);
+		#else
+		Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+		#endif
+		#if(FULL_ENTROPY)
+		dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		#else
+		dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
+		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		#endif
 	#endif
-	#if(FULL_ENTROPY)
-	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	#else
-	double dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
-	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	#endif
+
+	//Electron entropy source term
+	#if(TWO_T)
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
+			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+			#else
+			Tg = (GAMMAE - 1.) * ph[UU] / ph[RHO];
+			dU[ENTRE] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+			#endif
+		#else
+		#endif
 	#endif
 
 	#pragma ivdep
