@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 	}
 	#endif
 	#if(RAD_M1)
-	int ind0, k;
+	/*int ind0, k;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - 1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3 * D3) {
 			for (zz = 0; zz < 1; zz++) {
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-	}
+	}*/
 	#endif
 
 	/* do initial diagnostics */

@@ -187,22 +187,22 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	dU[U3_RAD] = -Gcov[3];
 
 	#if(DOKTOT)
-	Tg = (gamma_g - 1.)*(ph[UU]) / (ph[RHO]);
-	#if(FULL_ENTROPY)
-	dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	#else
-	#if(TWO_T)
-		#if(FIXEDGAMMA)
-		double dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
-		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
+		#if(FULL_ENTROPY)
+		dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 		#else
-		fprintf(stderr, "Source rad is not fully implemented yet! \n");
+			#if(TWO_T)
+				#if(FIXEDGAMMA)
+				double dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+				dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+				#else
+				fprintf(stderr, "Source rad is not fully implemented yet! \n");
+				#endif
+			#else
+		double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA -1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 		#endif
-	#else
-	double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA -1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
-	dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-	#endif
-	#endif
+		#endif
 	#endif
 
 	#pragma ivdep
@@ -1453,7 +1453,7 @@ double calc_CoulombCoupling(double n_e, double theta_e, double theta_i)
 #endif
 
 #if(!GSL_ENABLED)
-// Some bessel functiosn
+// Some bessel functions
 double bessi0(double x) {
 	double ax, ans, y;
 
@@ -1490,7 +1490,7 @@ double bessi1(double x) {
 		ans *= (exp(ax) / sqrt(ax));
 	}
 
-	return x < 0.0 ? -ans : ans;
+	return (x < 0.0 ? -ans : ans);
 }
 
 double bessk0(double x) {

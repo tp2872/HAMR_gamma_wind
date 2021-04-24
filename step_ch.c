@@ -350,9 +350,7 @@ void utoprim_M1_2(double Dt, int n){
 	double ndt, ndt1, ndt2, ndt3, U_2[NPR], dU[NPR], gamma_g;
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
-	#if(TWO_T)
 	double fel;
-	#endif
 
 	#pragma omp  parallel shared(n, gdet, p, ps, dU_MHD1, failimage, Dt, F1, F2, F3, pflag, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, fel, dU, U_2, geom, ind0, ind1, ind2, ind3, gamma_g)
 	{
@@ -436,9 +434,7 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 	struct of_state q;
 	struct of_state_rad q_rad;
 	int ind0, ind1, ind2, ind3;
-	#if(TWO_T)
 	double fel;
-	#endif
 
 	#pragma omp  parallel shared(n,gdet, pi,pb, pf, psf, dU_s, Katm, failimage, Dt, F1, F2,F3, pflag, dx,  N1_GPU_offset,N2_GPU_offset,N3_GPU_offset, nthreads, gam) private(i,j,z,k, fel, geom, q,q_rad, U, dU, ind0, ind1, ind2,ind3, gamma_g)
 	{

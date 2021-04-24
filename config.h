@@ -132,8 +132,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 64
+#define BS_1 32
+#define BS_2 32
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -185,7 +185,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 8
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (300)
+#define DUMPFACTOR (600)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -304,7 +304,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable advenced Roseland and energy opacities*/
 #define OP_EXTRA (0)
@@ -313,7 +313,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Wheter to use fixed or variable gamma*/
 #define FIXEDGAMMA (1)
@@ -375,7 +375,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
-#define MASS_DENSITY_SCALE (3.1)
+#define MASS_DENSITY_SCALE (0.0120)
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
