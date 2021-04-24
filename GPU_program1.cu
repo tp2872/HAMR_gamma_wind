@@ -7593,19 +7593,6 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop = MY_MAX(cmax, cmin);
 
 		#if(RAD_M1)
-		for (k = 0; k < NPR; k++) {
-			if(k >= UU_RAD && k <= U3_RAD) {
-				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
-			}
-			else {
-				#if(HLLF)
-				F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
-				#else
-				F[k * (ksize)+global_id] = (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k])));
-				#endif
-			}
-		}
-
 		get_state_rad(p, &geom, &state_rad);
 		primtoflux_rad(p, &state_rad, dir, &geom, temp3);
 		primtoflux_rad(p, &state_rad, 0, &geom, temp4);
@@ -7621,6 +7608,19 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 		cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
+
+		for (k = 0; k < NPR; k++) {
+			if (k >= UU_RAD && k <= U3_RAD) {
+				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
+			}
+			else {
+				#if(HLLF)
+				F[k * (ksize)+global_id] = (cmax * temp1[k] + cmin * temp3[k] - cmax * cmin * (temp4[k] - temp2[k])) / (cmax + cmin + SMALL);
+				#else
+				F[k * (ksize)+global_id] = (0.5 * (temp1[k] + temp3[k] - ctop * (temp4[k] - temp2[k])));
+				#endif
+			}
+		}
 		#else
 		for (k = 0; k < NPR; k++) {
 			#if(HLLF)
