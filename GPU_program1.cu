@@ -4101,14 +4101,14 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[1] *= f;
 		prim[2] *= f;
 		prim[3] *= f;
+		prim[0] = 1.e-30;
 
-		if (y < 1. - 100. * NUMEPSILON) {
+		if (y < (1. - 100. * NUMEPSILON)) {
 			if (lim == TYPE2) Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			returnval = (prim[0] < 0.);
 		}
 		else {
-			prim[0] = 1.e-30;
 			prim[1] = 0.;
 			prim[2] = 0.;
 			prim[3] = 0.;
