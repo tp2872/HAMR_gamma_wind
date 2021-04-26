@@ -209,6 +209,8 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	PLOOP dU[k] *= geom->g;
 	#endif
 }
+//gamg*(ue+ui)=gami*ui+game*ue
+//gamg=(gami*ui+game*ue)/(ue+ui)
 
 //Calculate radiation 4-force
 void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
@@ -883,7 +885,7 @@ double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
 
 	//Figure out if electron quant_e energy is bigger than quant_g
 	#if(FIXEDGAMMA)   
-	game = GAMMAE;
+		game = GAMMAE;
 		gami = GAMMA;
 		#if(FULL_ENTROPY)
 		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));

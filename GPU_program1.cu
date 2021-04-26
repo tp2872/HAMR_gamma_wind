@@ -556,14 +556,14 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			#endif
 		);
 		#if(DO_FONT_FIX)
-		if (pflag) {
-			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-				#if (DOHELM)
-				, gpu_eos_table
-				#endif
-				);		
-		}
-	    if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
+		//if (pflag) {
+		//	pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
+		//		#if (DOHELM)
+		//		, gpu_eos_table
+		//		#endif
+		//		);		
+		//}
+	   // if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
@@ -614,7 +614,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#if(TWO_T)
 	if (pflag == 0) U_i[ENTRE] = pb[ENTRE] * U_i[RHO]; //Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
 	U_f[ENTRE] = U_i[ENTRE];
-	dU[ENTRE] = source_Coulomb(pb);
+	U_f[ENTRI] = U_i[ENTRI];
 	#endif
 
 	//Calculate iterated error at start of iteration
@@ -676,6 +676,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	while (keep_iterating) {
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+		#if(TWO_T)
+		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+		#endif
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
@@ -710,14 +713,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				#if(TWO_T)
 					//Set for 2T fluid entropy of ions based on electron entropy
 					#if(FIXEDGAMMA)
-					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE);
+					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
+					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+					pb_new[ENTRE]= (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
-					pb_new[ENTRI] = ui * pow(pb_new[RHO], -GAMMAE);
+					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 					#else
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
-				U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-				U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
+				U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
+				U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
 				gamma_g = calc_gamma_gas_prim(pb_new);
 				#endif
 				mhd_calc(pb_new, 0, &q, &U_new[UU]
@@ -751,20 +757,15 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
-				//Calculate source radiative source term
+				//Calculate radiative (including coulomb) source term
 				source_rad(pb_new, geom, dU_new
-				#if(DOHELM)
+					#if(DOHELM)
 					, gpu_eos_table
-				#endif
-				#if(TWO_T)
+					#endif
+					#if(TWO_T)
 					, gamma_g
-				#endif
+					#endif
 				);
-
-				//Get Coulomb source term
-				#if(TWO_T)
-				dU_new[ENTRE] = source_Coulomb(pb_new);
-				#endif
 
 				//Calculate Jacobian
 				for (k = U1; k <= U3; k++) {
@@ -803,14 +804,18 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		/* Make the newton step: */
 		if (do_staged == 0) {
 			D = 1.0;
-			for (k = 0; k < 4 + TWO_T; k++) {
+			for (k = 0; k < 4; k++) {
 				dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]
 					#if(TWO_T)
-					+ E_old[3 + TWO_T] * dEdpb_inv[k][3 + TWO_T]
+					 + E_old[4] * dEdpb_inv[k][4]
 					#endif
 					);
 				pb_new[k + UU] = pb_old[k + UU] + dpb;
 			}
+			#if(TWO_T)
+			dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]);
+			pb_new[ENTRE] = pb_old[ENTRE] + dpb;
+			#endif
 		}
 		else {
 			//Set damping factor for Newton Raphson method
@@ -819,7 +824,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			else D = 1.;
 
 			if (n_iter / 4 == 0) { //momentum only step
-				for (k = 0; k < 4 + TWO_T; k++) {
+				for (k = 0; k < 4; k++) {
 					dpb = -D * (E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]
 						#if(TWO_T)
 						+E_old[3 + TWO_T] * dEdpb_inv[k][3 + TWO_T]
@@ -829,7 +834,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				}
 			}
 			if (n_iter / 4 == 1) {
-				for (k = 0; k < 4 + TWO_T; k++) { //energy only step
+				for (k = 0; k < 4; k++) { //energy only step
 					dpb = -D * (E_old[0] * dEdpb_inv[k][0]
 						#if(TWO_T)
 						+E_old[3 + TWO_T] * dEdpb_inv[k][3 + TWO_T]
@@ -839,7 +844,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				}
 			}
 			else {
-				for (k = 0; k < 4 + TWO_T; k++) { //full 4d step
+				for (k = 0; k < 4; k++) { //full 4d step
 					dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]
 						#if(TWO_T)
 						+E_old[3 + TWO_T] * dEdpb_inv[k][3 + TWO_T]
@@ -848,27 +853,36 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					pb_new[k + UU] = pb_old[k + UU] + dpb;
 				}
 			}
+			#if(TWO_T)
+			dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]);
+			pb_new[ENTRE] = pb_old[ENTRE] + dpb;
+			#endif
 		}
 
 		//Make sure that internal energy stays positive
 		if (pb_new[UU] < 0.0) pb_new[UU] = 0.5 * fabs(pb_new[UU]);
+		#if(TWO_T)
+		if (pb_new[ENTRE] < 0.0) pb_new[ENTRE] = 0.5 * fabs(pb_new[ENTRE]);
+		#endif
 
 		//Obtain new conserved quantaties from MHD variables
 		get_state(pb_new, geom, &q);
 		U_new[RHO] = U_i[RHO];
 		pb_new[RHO] = (U_i[RHO] / geom->g) / q.ucon[0];
 		#if(TWO_T)
-			//Set for 2T fluid entropy of ions based on electron entropy
 			#if(FIXEDGAMMA)
-			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE);
+			ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
+			if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
+			if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
+			pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 			ui = pb_new[UU] - ue;
-			pb_new[ENTRI] = ui * pow(pb_new[RHO], -GAMMAE);
+			pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 			#else
 			fprintf(stderr, "Not implemented yet! \n");
 			#endif
-		U_new[ENTRE] = U_new[RHO] * pb_new[ENTRE];
-		U_new[ENTRI] = U_new[RHO] * pb_new[ENTRI];
-		gamma_g = calc_gamma_gas_prim(pb);
+		U_new[ENTRE] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRE];
+		U_new[ENTRI] = geom->g * pb_new[RHO] * q.ucon[0] * pb_new[ENTRI];
+		gamma_g = calc_gamma_gas_prim(pb_new);
 		#endif
 		mhd_calc(pb_new, 0, &q, &U_new[UU]
 			#if(DOHELM)
@@ -911,11 +925,6 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 			#endif
 		);
 
-		//Get Coulomb source term
-		#if(TWO_T)
-		dU_new[ENTRE] = source_Coulomb(pb_new);
-		#endif
-
 		//Calculate iterated error
 		norm = sqrt(geom->gcon[4]) * (fabs(U_i[U1]) + fabs(U_new[U1]) + fabs(Dt * dU_new[U1]));
 		norm += sqrt(geom->gcon[7]) * (fabs(U_i[U2]) + fabs(U_new[U2]) + fabs(Dt * dU_new[U2]));
@@ -936,11 +945,12 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 		#if(TWO_T)
 			#if(FIXEDGAMMA)
-			dK_dS = (GAMMAE - 1.) / pow(pb[RHO], GAMMAE - 1.0);
+			dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 			#else
 			fprintf(stderr, "Not implemented yet! \n");
 			#endif
-		error_t[0] += 0.25 * (fabs(U_f[ENTRE] - U_i[ENTRE] - Dt * dU[ENTRE]) / dK_dS / norm);
+			//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
+			error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 		#endif
 
 		//Set correct offset for Jacobian for next iteration
@@ -2464,14 +2474,8 @@ __device__ double source_Coulomb(double* p) {
 
 	if (!isfinite(res)) res = 0.;
 
-	#if(FIXEDGAMMA)
-	dK_dS = (GAMMAE - 1.) / pow(p[RHO], GAMMAE - 1.0);
-	#else
-	fprintf(stderr, "This is not implemented yet! \n");
-	#endif
-
 	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
-	return (res*dK_dS);
+	return (res);
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy and gas density
@@ -6185,15 +6189,17 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 		#endif
 	#endif
 
-	//Electron entropy source term
+	//Electron entropy source term for radiative cooling and coulomb coupling
 	#if(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
-			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
-			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-			#else
 			Tg = (GAMMAE - 1.) * ph[UU] / ph[RHO];
 			dU[ENTRE] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+			dU[ENTRE] += 1. / Tg * source_Coulomb(ph);
+			#else
+			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
+			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+			dU[ENTRE] += dK_dS * source_Coulomb(ph);
 			#endif
 		#else
 		#endif
@@ -6245,7 +6251,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	arad = ARAD / (ENERGY_DENSITY_SCALE);
 	#elif(TWO_T)
-	Tg = (gamma_g - 1.) * ph[UU] / ph[RHO];
+	Tg = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 	#else
 	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
@@ -6572,18 +6578,24 @@ __device__ double calc_kappa_abs(double* ph
 	, double gamma_g
 	#endif
 ) {
-	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, Tg, Tr;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
-	double Tg;
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
-	double Tg = fabs(MMW * MH_CGS * (gamma_g - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			#else
+			Tg = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
+			#endif
+		#else
+		#endif
+	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else
-	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
+	Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#endif
-	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
+	Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
@@ -6606,19 +6618,25 @@ __device__ double calc_kappa_emmit(double* ph
 	, double gamma_g
 	#endif
 ) {
-	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, Tg, Tr;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
-	double Tg;
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
-	double Tg = fabs(MMW * MH_CGS * (gamma_g - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			#else
+			Tg = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
+			#endif
+		#else
+		#endif
+	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else
-	double Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE) *MY_MIN(fabs(ph[UU]/ph[RHO]), UORHOMAX));
+	Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE) *MY_MIN(fabs(ph[UU]/ph[RHO]), UORHOMAX));
 	if (isnan(fabs(ph[UU] / ph[RHO]))) Tg = 1.0;
 	#endif
-	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
+	Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
@@ -6641,15 +6659,21 @@ __device__ double calc_kappa_es(double* ph
 	, double gamma_g
 	#endif
 ) {
-	double kappa_es;
+	double kappa_es, Tg;
 	#if (DOHELM)
-	double Tg;
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
-	double Tg = fabs(MMW * MH_CGS * (gamma_g - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			#else
+			Tg = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
+			#endif
+		#else
+		#endif
+	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else
-	double Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE);
+	Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE);
 	#endif
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Tg / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);

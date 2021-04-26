@@ -232,8 +232,8 @@ int main(int argc, char *argv[])
 	dump_cnt0 = dump_cnt;
 
 	/*Set dumping frequency*/
-	DTl = 50;
-	DTd = 10.0;
+	DTl = 10;
+	DTd = 5.0;
 	DTd_reduced = 50.0;
 	tdump = t + DTd;
 	tdump_reduced = t + DTd_reduced;

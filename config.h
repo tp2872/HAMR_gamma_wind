@@ -128,12 +128,12 @@ Numerical Parameters section
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
 #define NB_1 4
-#define NB_2 4
+#define NB_2 2
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 32
-#define BS_2 32
+#define BS_1 256
+#define BS_2 512
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -375,7 +375,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
 #define R_GOC_CGS (R_G_CGS / C_CGS) /*Light-crossing time*/
-#define MASS_DENSITY_SCALE (0.0120)
+#define MASS_DENSITY_SCALE (0.0031)
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
 #define PRESSURE_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
