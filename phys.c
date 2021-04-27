@@ -715,7 +715,7 @@ double calc_delta(double* restrict ph, double bsq) {
 
 	beta = (Te + Ti) / (0.5 * bsq);
 	if (!isfinite(beta)) beta = 10000.0;
-	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
+	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
 	//Calculate delta
 	delta = 1. / (1. + fel);

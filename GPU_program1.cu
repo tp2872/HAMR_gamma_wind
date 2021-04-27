@@ -570,6 +570,13 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
 	//}
 
+	//Set electron entropy variables
+	#if(TWO_T)
+	if (pflag == 0) U_i[ENTRE] = pb[ENTRE] * U_i[RHO]; //Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
+	U_f[ENTRE] = U_i[ENTRE];
+	U_f[ENTRI] = U_i[ENTRI];
+	#endif
+
 	//Recompute T_t^mu for consistency
 	U_f[RHO] = U_i[RHO];
 	get_state(pb, geom, &q);
@@ -609,13 +616,6 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, gamma_g
 		#endif
 	);
-
-	//Set electron entropy variables
-	#if(TWO_T)
-	if (pflag == 0) U_i[ENTRE] = pb[ENTRE] * U_i[RHO]; //Apply heating only if primary (energy based) inversion succeeds; Otherwise assume adiabatic evolution of electrons
-	U_f[ENTRE] = U_i[ENTRE];
-	U_f[ENTRI] = U_i[ENTRI];
-	#endif
 
 	//Calculate iterated error at start of iteration
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
@@ -835,13 +835,17 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				pb_new[k + UU] = pb_old[k + UU] + dpb;
 			}
 			#if(TWO_T)
-			dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]);
+			dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]
+				#if(P_NUM)
+				+ E_old[4 + TWO_T] * dEdpb_inv[4][4 + TWO_T]
+				#endif	
+				);
 			pb_new[ENTRE] = pb_old[ENTRE] + dpb;
 			#endif
 			#if(P_NUM)
 			dpb = -D * (E_old[0] * dEdpb_inv[4 + TWO_T][0] + E_old[1] * dEdpb_inv[4 + TWO_T][1] + E_old[2] * dEdpb_inv[4 + TWO_T][2] + E_old[3] * dEdpb_inv[4 + TWO_T][3] + E_old[4 + TWO_T] * dEdpb_inv[4 + TWO_T][4]
 				#if(TWO_T)
-				+ E_old[4 + TWO_T] * dEdpb_inv[4+TWO_T][4 + TWO_T]
+				+ E_old[4 + TWO_T] * dEdpb_inv[4 + TWO_T][4 + TWO_T]
 				#endif			
 			);
 			pb_new[PHOTON] = pb_old[PHOTON] + dpb;
@@ -893,7 +897,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				}
 			}
 			#if(TWO_T)
-			dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]);
+			dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]
+				#if(P_NUM)
+				+E_old[4 + P_NUM] * dEdpb_inv[4][4 + P_NUM]
+				#endif	
+				);
 			pb_new[ENTRE] = pb_old[ENTRE] + dpb;
 			#endif
 			#if(P_NUM)
@@ -2447,7 +2455,7 @@ __device__ double calc_delta(double* ph, double bsq) {
 
 	beta = (Te + Ti) / (0.5 * bsq);
 	if (!isfinite(beta)) beta = 10000.0;
-	fel = c1 * (c2 * c2 + pow(beta, 2.0 - 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 - 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
+	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
 	//Calculate delta
 	delta = 1. / (1. + fel);
@@ -2559,7 +2567,7 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
@@ -2588,7 +2596,7 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
@@ -2668,7 +2676,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel) 
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
@@ -2763,7 +2771,7 @@ __device__ double set_S_w(double* S, double rho, double w, double fel) {
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 // Some bessel functions
@@ -4104,7 +4112,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[0] = 1.e-30;
 
 		if (y < (1. - 100. * NUMEPSILON)) {
-			if (lim == TYPE2) Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
+			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			returnval = (prim[0] < 0.);
 		}
@@ -4112,13 +4120,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[1] = 0.;
 			prim[2] = 0.;
 			prim[3] = 0.;
-			pressure = -Qdotn / (4. * 1. - 1.);		
+			pressure = fabs(-Qdotn) / (4. * 1. - 1.);
+			prim[0] = pressure * 3.; // Erad = 3*p_rad		
 		}
 
-		// Get Ebar and p_rad as usual
-		if (Qdotn < 0.0) {
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
-		}
 		return 0;
 		//else if (y>1.-100.*NUMEPSILON){
 		//	prim[1] = 0.;
@@ -6310,8 +6315,8 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	Tg = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
 	#else
 	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
-	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	#endif
+	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/s/cm^3
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
@@ -6659,10 +6664,10 @@ __device__ double calc_kappa_abs(double* ph
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
+	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
-	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -6700,10 +6705,10 @@ __device__ double calc_kappa_emmit(double* ph
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
+	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
-	return(kappa_abs * pow(ph[RHO] * MASS_DENSITY_SCALE, 1.) * R_G_CGS);
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total (electron) scattering opacity
