@@ -304,7 +304,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable advenced Roseland and energy opacities*/
 #define OP_EXTRA (0)
