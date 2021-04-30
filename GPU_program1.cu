@@ -461,11 +461,11 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			);
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-		//	if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0
-				//#if(DOHELM)
-		//		, gpu_eos_table
-				//#endif
-		//	);
+			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0
+			//	#if(DOHELM)
+			//	, gpu_eos_table
+			//	#endif
+			//);
 			//If error is still below set margin, accept solution, otherwise try URAD
 			//if (error_t > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 0, 0);
 			//if (error_t > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, &error_t, cell_size, y_max, 1, 0);
@@ -2454,7 +2454,7 @@ __device__ double calc_delta(double* ph, double bsq) {
 	}
 
 	beta = (Te + Ti) / (0.5 * bsq);
-	if (!isfinite(beta)) beta = 10000.0;
+	if (!isfinite(beta) || beta>10000.0 || beta<0.000001) beta = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
 	//Calculate delta
@@ -4082,7 +4082,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
-	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0.) {
+	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0. || isnan(Qtsq)) {
 		prim[0] = 1.e-30;
 		prim[1] = 0.;
 		prim[2] = 0.;
@@ -4096,7 +4096,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		return 0;
 	}
-	if (y > y_max) {
+	else if (y > y_max) {
 		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
 		for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
 
@@ -4121,7 +4121,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[2] = 0.;
 			prim[3] = 0.;
 			pressure = fabs(-Qdotn) / (4. * 1. - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad		
+			if(!isnan(Qdotn)) prim[0] = pressure * 3.; // Erad = 3*p_rad		
 		}
 
 		return 0;
@@ -6403,10 +6403,15 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	flux[B3] = q->bcon[3] * q->ucon[dir] - q->bcon[dir] * q->ucon[3];
 	#endif
 
+	//Flux of electron and ion entropies
 	#if(TWO_T)
-	/* Flux of Entropy */
 	flux[ENTRE] = flux[RHO] * pr[ENTRE];
 	flux[ENTRI] = flux[RHO] * pr[ENTRI];
+	#endif
+
+	//Flux of photon number
+	#if(P_NUM)
+	flux[PHOTON] = pr[PHOTON] * q->ucon[dir];
 	#endif
 
 	#if(DOKTOT)
@@ -6435,6 +6440,9 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	#if(TWO_T)
 	flux[ENTRE] *= geom->g;
 	flux[ENTRI] *= geom->g;
+	#endif
+	#if(P_NUM)
+	flux[PHOTON] *= geom->g;
 	#endif
 
 	//Calculate wavespeed

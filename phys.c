@@ -30,10 +30,15 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 		flux[k] = q->bcon[k-4] * q->ucon[dir] - q->bcon[dir] * q->ucon[k-4];
 	}
 
+	//Flux of electron and ion entropies
 	#if(TWO_T)
-	/* Flux of Entropy */
 	flux[ENTRE] = flux[RHO] * pr[ENTRE];
 	flux[ENTRI] = flux[RHO] * pr[ENTRI];
+	#endif
+
+	//Flux of photon number
+	#if(P_NUM)
+	flux[PHOTON] = pr[PHOTON] * q->ucon[dir];
 	#endif
 
 	//Entropy advection
@@ -714,7 +719,7 @@ double calc_delta(double* restrict ph, double bsq) {
 	}
 
 	beta = (Te + Ti) / (0.5 * bsq);
-	if (!isfinite(beta)) beta = 10000.0;
+	if (!isfinite(beta) || beta>10000.0) beta = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
 	//Calculate delta

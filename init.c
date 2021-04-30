@@ -1294,11 +1294,13 @@ void init_torus()
 
 	/* initialize the entropies for two temperature fluids (electrons and ions) */
 	#if(TWO_T)
-	double fel0, u_e, u_i;
-	fel0 = 0.5;   // initial Tel/Ttot (temperature ratio)
+	double fel0, u_e, u_i, bsq;
 
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//fel0 = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+			fel0 = 0.5;
 			#if(FIXEDGAMMA)   // fixed gamma: Ressler+15, Ryan+17
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* fel0* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - fel0)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
@@ -1361,6 +1363,9 @@ void init_rad_pres(double pi[NPR]) {
 		pi[UU_RAD] = arad*pow(T_new,4.);
 	}
 
+	#if(P_NUM)
+	pi[PHOTON] = pi[UU_RAD] * ENERGY_DENSITY_SCALE / (2.7012 * BOLTZ_CGS * T_new);
+	#endif
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
