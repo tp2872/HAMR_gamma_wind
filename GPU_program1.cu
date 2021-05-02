@@ -2457,6 +2457,8 @@ __device__ double calc_delta(double* ph, double bsq) {
 	if (!isfinite(beta) || beta>10000.0 || beta<0.000001) beta = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
+	if (!isfinite(delta))fel = 0.5;
+
 	//Calculate delta
 	delta = 1. / (1. + fel);
 
@@ -2567,7 +2569,7 @@ __device__ double calc_gamma_gas_conserved(double* S, double rho) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
@@ -2596,7 +2598,7 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
@@ -2676,7 +2678,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel) 
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
@@ -2771,7 +2773,7 @@ __device__ double set_S_w(double* S, double rho, double w, double fel) {
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 // Some bessel functions
@@ -6411,7 +6413,7 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 
 	//Flux of photon number
 	#if(P_NUM)
-	flux[PHOTON] = pr[PHOTON] * q->ucon[dir];
+	flux[PHOTON] = pr[PHOTON] * q_rad->ucon[dir];
 	#endif
 
 	#if(DOKTOT)
@@ -8213,7 +8215,7 @@ __global__ void consttransport2(double *  emf, const  double* __restrict__  E_ce
 __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E_cent, const  double* __restrict__  F1, const  double* __restrict__  F2, const  double* __restrict__  F3,
 	const  double* __restrict__  pb_i, const  double* __restrict__ gcov, const  double* __restrict__ gcon, const  double* __restrict__ gdet, int POLE_1, int POLE_2)
 {
-	int global_id = blockDim.x * blockIdx.x + threadIdx.x;
+	/*int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 	int isize, icurr, jcurr, zcurr, k = 0;
 	isize = (BS_3 + D3) * (BS_2 + D2);
 	zcurr = (global_id % (isize)) % (BS_3 + D3);
@@ -8228,32 +8230,47 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 	int fix_mem1 = LOCAL_WORK_SIZE - (isize * (BS_1 + 2 * N1G)) % LOCAL_WORK_SIZE;
 	int ksize = isize * (BS_1 + 2 * N1G) + fix_mem1;
 	int jsize = BS_3 + 2 * N3G;
+	int zsize0 = 1, zsize1 = 1;
+	#if(N_LEVELS_1D_INT>0 && D3>0)
+	int zlevel0 = 0;
+	int zoffset0;
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs((jcurr-D2) - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN((jcurr - D2) - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize0 = (int)(0.001 + pow(2.0, (double)zlevel0));
+	zoffset0 = (zcurr - N3G) % zsize0;
+	int zlevel1 = 0;
+	int zoffset1;
+	if (POLE_1 == 1 && jcurr - N2G < BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (abs(jcurr - N2G) + D2))) / log(2.)), N_LEVELS_1D_INT);
+	if (POLE_2 == 1 && jcurr - N2G >= BS_2 / 2) zlevel = MY_MIN((int)(0.001 + log((double)(BS_2 / (BS_2 - MY_MIN(jcurr - N2G, BS_2 - 1)))) / log(2.)), N_LEVELS_1D_INT);
+	zsize1 = (int)(0.001 + pow(2.0, (double)zlevel1));
+	zoffset1 = (zcurr - N3G) % zsize1;
+	#endif
 
 	if (k == 1) {
 		double dE_LEFT_13_1 = E_cent[1 * (ksize)+global_id] - F3[B2 * (ksize)+global_id];
 		double dE_LEFT_13_2 = E_cent[1 * (ksize)+global_id - jsize * D2] - F3[B2 * (ksize)+global_id - jsize * D2];
-		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id + D3 - D3] - E_cent[1 * (ksize)+global_id - D3];
-		double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id + D3 - jsize * D2 - D3] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3];
+		double dE_RIGHT_13_1 = F3[B2 * (ksize)+global_id ] - E_cent[1 * (ksize)+global_id - D3 * zsize1];
+		double dE_RIGHT_13_2 = F3[B2 * (ksize)+global_id - jsize * D2] - E_cent[1 * (ksize)+global_id - jsize * D2 - D3 * zsize0];
 		double dE_LEFT_12_1 = E_cent[1 * (ksize)+global_id] + F2[B3 * (ksize)+global_id];
-		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3] + F2[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[1 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id + D2 * jsize - D2 * jsize - D3] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3];
+		double dE_LEFT_12_2 = E_cent[1 * (ksize)+global_id - D3 * zsize1] + F2[B3 * (ksize)+global_id - D3 * zsize1];
+		double dE_RIGHT_12_1 = -F2[B3 * (ksize)+global_id] - E_cent[1 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_12_2 = -F2[B3 * (ksize)+global_id - D3 * zsize0] - E_cent[1 * (ksize)+global_id - D2 * jsize - D3 * zsize0];
 		double dE_LEFT_21_1 = E_cent[2 * (ksize)+global_id] - F1[B3 * (ksize)+global_id];
 		double dE_LEFT_21_2 = E_cent[2 * (ksize)+global_id - D3] - F1[B3 * (ksize)+global_id - D3];
-		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[2 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id + D1 * isize - D1 * isize - D3] - E_cent[2 * (ksize)+global_id - D1 * isize - D3];
+		double dE_RIGHT_21_1 = F1[B3 * (ksize)+global_id] - E_cent[2 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_21_2 = F1[B3 * (ksize)+global_id - D3 * zsize1] - E_cent[2 * (ksize)+global_id - D1 * isize - D3*zsize1];
 		double dE_LEFT_23_1 = E_cent[2 * (ksize)+global_id] + F3[B1 * (ksize)+global_id];
 		double dE_LEFT_23_2 = E_cent[2 * (ksize)+global_id - D1 * isize] + F3[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id + D3 - D3] - E_cent[2 * (ksize)+global_id - D3];
-		double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id + D3 - isize * D1 - D3] - E_cent[2 * (ksize)+global_id - isize * D1 - D3];
+		double dE_RIGHT_23_1 = -F3[B1 * (ksize)+global_id] - E_cent[2 * (ksize)+global_id - D3 * zsize1];
+		double dE_RIGHT_23_2 = -F3[B1 * (ksize)+global_id - isize * D1] - E_cent[2 * (ksize)+global_id - isize * D1 - D3 * zsize1];
 		double dE_LEFT_31_1 = E_cent[3 * (ksize)+global_id] + F1[B2 * (ksize)+global_id];
 		double dE_LEFT_31_2 = E_cent[3 * (ksize)+global_id - D2 * jsize] + F1[B2 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id + D1 * isize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		double dE_RIGHT_31_1 = -F1[B2 * (ksize)+global_id] - E_cent[3 * (ksize)+global_id - D1 * isize];
+		double dE_RIGHT_31_2 = -F1[B2 * (ksize)+global_id - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
 		double dE_LEFT_32_1 = E_cent[3 * (ksize)+global_id] - F2[B1 * (ksize)+global_id];
 		double dE_LEFT_32_2 = E_cent[3 * (ksize)+global_id - D1 * isize] - F2[B1 * (ksize)+global_id - D1 * isize];
-		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id + D2 * jsize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D2 * jsize];
-		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id + D2 * jsize - D1 * isize - D2 * jsize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
+		double dE_RIGHT_32_1 = F2[B1 * (ksize)+global_id] - E_cent[3 * (ksize)+global_id - D2 * jsize];
+		double dE_RIGHT_32_2 = F2[B1 * (ksize)+global_id - D1 * isize] - E_cent[3 * (ksize)+global_id - D1 * isize - D2 * jsize];
 		
 		emf[1 * (ksize)+global_id] *= 0.5;
 		emf[2 * (ksize)+global_id] *= 0.5;
@@ -8278,7 +8295,7 @@ __global__ void consttransport2_M1_2(double* emf, const  double* __restrict__  E
 			emf[1 * (ksize)+global_id] += -0.5 * 0.5 * (F2[B3 * (ksize)+global_id] + F2[B3 * (ksize)+global_id - D3]);
 		}
 		#endif
-	}
+	}*/
 }
 
 __global__ void consttransport3(double dx_1, double dx_2, double dx_3, const  double* __restrict__ gdet_GPU, double *  psi, double *  psf,
