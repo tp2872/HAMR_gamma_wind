@@ -32,11 +32,11 @@ __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, dou
 __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
 
 __device__ void source_rad(double* ph, struct of_geom* geom, double* dU, const  double* __restrict__ gpu_eos_table);
-__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM], const  double* __restrict__ gpu_eos_table);
+__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM],  double bsq,const  double* __restrict__ gpu_eos_table);
 
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx, const  double* __restrict__ gpu_eos_table);
-__device__ double calc_kappa_abs(double* ph, const  double* __restrict__ gpu_eos_table);
-__device__ double calc_kappa_emmit(double* ph, const  double* __restrict__ gpu_eos_table);
+__device__ double calc_kappa_abs(double* ph, double bsq, double Tr, const  double* __restrict__ gpu_eos_table);
+__device__ double calc_kappa_emmit(double* ph, double bsq, double Tr, const  double* __restrict__ gpu_eos_table);
 __device__ double calc_kappa_es(double* ph, const  double* __restrict__ gpu_eos_table);
 #else 
 __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
@@ -120,7 +120,7 @@ __device__ void source_rad(double* ph, struct of_geom* geom, double* dU
 	, double gamma_g
 	#endif
 );
-__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]
+__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM], double bsq
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -130,12 +130,12 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	, double gamma_g
 	#endif
 );
-__device__ double calc_kappa_abs(double* ph
+__device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
-__device__ double calc_kappa_emmit(double* ph
+__device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -517,7 +517,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double fel
 	#endif
 ) {
-	double kappa_abs, kappa_es, tau = 0., norm;
+	double kappa_abs, kappa_es, norm;
 	int k, pflag, pflag_rad;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -527,23 +527,23 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 
 	//Calculate optical depth
-	kappa_abs = calc_kappa_abs(pb
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
-		#if(TWO_T)
-		, gamma_g
-		#endif
-	);
-	kappa_es = calc_kappa_es(pb
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
-		#if(TWO_T)
-		, gamma_g
-		#endif
-	);
-	tau = (kappa_abs + kappa_es) * cell_size;
+	//kappa_abs = calc_kappa_abs(pb
+	//	#if(DOHELM)
+	//	, gpu_eos_table
+	//	#endif
+	//	#if(TWO_T)
+	//	, gamma_g
+	//	#endif
+	//);
+	//kappa_es = calc_kappa_es(pb
+	//	#if(DOHELM)
+	//	, gpu_eos_table
+	//	#endif
+	//	#if(TWO_T)
+	//	, gamma_g
+	//	#endif
+	//);
+	//tau = (kappa_abs + kappa_es) * cell_size;
 
 	//if (tau < 0.66) {
 		//Set guess values for primitives after implicit step based on optical depth
@@ -6200,7 +6200,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 )
 {
 	#if(RAD_M1)
-	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], Tg, dK_dS;
+	double mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM], Tg, dK_dS, bsq;
 	int k;
 	struct of_state_rad q_rad;
 
@@ -6216,7 +6216,11 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	//Add radiation 4-force
 	ucon_calc(ph, geom, ucon);
 	lower(ucon, geom->gcov, ucov);
-	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad
+	bcon_calc(ph, geom, bcon);
+	lower(bcon, geom->gcov, bcov);
+	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
+
+	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad, bsq
 		#if (DOHELM)
 		, gpu_eos_table
 		#endif
@@ -6274,7 +6278,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 }
 
 //Calculate radiation 4-force
-__device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]
+__device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM], double bsq
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -6284,8 +6288,20 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 ) {
 	#if(RAD_M1)
 	int i;
-	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad;
-	kappa_abs = calc_kappa_abs(ph
+	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr;
+	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+
+	//Get radiation temperature either assuming blackbody or diluted blackbody
+	#if(P_NUM)
+	double E_hat = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
+	double C = 8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
+	double N_hat = ph[PHOTON] * (ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
+	Tr = E_hat / (N_hat) * (3. - 2.449724 * pow(N_hat, 4.) / (C * E_hat * E_hat * E_hat)));
+	#else
+	Tr = pow(ph[UU_RAD] / arad, 0.25);
+	#endif
+
+	kappa_abs = calc_kappa_abs(ph, bsq, Tr
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -6293,7 +6309,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		, gamma_g
 		#endif
 	);
-	kappa_emmit = calc_kappa_emmit(ph
+	kappa_emmit = calc_kappa_emmit(ph, bsq, Tr
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -6318,12 +6334,18 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#else
 	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	#endif
-	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/s/cm^3
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs * R_dot_ucon[i] + lambda * ucon[i]) - kappa_es * (R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[i]);
 	}
+
+	//Evaluate comptonization term
+	#if(P_NUM)
+	double G0 = kappa_es * ph[RHO] * E_hat * (Tg - Tr) * (1.0 + 3.683 * tg + 4.0 * Tg * Tg) / (1.0 + Tg);
+	for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+	#endif
+
 	#endif
 }
 
@@ -6529,7 +6551,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	#endif
 ) {
 	#if(RAD_M1)
-	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd;
+	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd, bsq, Tr;
 	double Acon_0, Acon_js;
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 
@@ -6581,14 +6603,15 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	}
 
 	/* find radiation wave speed */
-	kappa_tot = (calc_kappa_es(pr
+	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
+	kappa_tot = (calc_kappa_es(pr, bsq, Tr
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
 		#if(TWO_T)
 		, gamma_g
 		#endif
-	) + calc_kappa_abs(pr
+	) + calc_kappa_abs(pr, bsq, Tr
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -6641,7 +6664,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 }
 
 //Calculate total absorption opacity
-__device__ double calc_kappa_abs(double* ph
+__device__ double calc_kappa_abs(double* ph, double bsq, double Tr, 
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -6649,11 +6672,11 @@ __device__ double calc_kappa_abs(double* ph
 	, double gamma_g
 	#endif
 ) {
-	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, Tg, Tr;
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Tg, ne, zeta;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
-	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
+	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
@@ -6666,14 +6689,16 @@ __device__ double calc_kappa_abs(double* ph
 	#else
 	Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#endif
-	Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
+	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
+	zeta = 4. * M_PI * ME_CS * ME_CS * ME_CS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq) * Tg * Tg);
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.)*pow(zeta,-3.)*(1.+5.444*pow(zeta,-0.666666)+7.218*pow(zeta, -4.3333333));
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff + kappa_sy));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
@@ -6681,7 +6706,7 @@ __device__ double calc_kappa_abs(double* ph
 }
 
 //Calculate total emmission opacity
-__device__ double calc_kappa_emmit(double* ph
+__device__ double calc_kappa_emmit(double* ph, double bsq, double Tr,
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -6689,11 +6714,11 @@ __device__ double calc_kappa_emmit(double* ph
 	, double gamma_g
 	#endif
 ) {
-	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, Tg, Tr;
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Tg, ne;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
-	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
+	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
@@ -6707,14 +6732,15 @@ __device__ double calc_kappa_emmit(double* ph
 	Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE) *MY_MIN(fabs(ph[UU]/ph[RHO]), UORHOMAX));
 	if (isnan(fabs(ph[UU] / ph[RHO]))) Tg = 1.0;
 	#endif
-	Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
+	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tg, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.);
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff + kappa_sy));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
@@ -6733,7 +6759,7 @@ __device__ double calc_kappa_es(double* ph
 	double kappa_es, Tg;
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
-	//Tg *= (MMW * MH_CGS / BOLTZ_CGS);
+	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#elif(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
