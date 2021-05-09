@@ -6289,14 +6289,18 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#if(RAD_M1)
 	int i;
 	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr;
-	arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+	
+	//Calculate misc quantities
+	arad = ARAD / (ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
-	double E_hat = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
-	double C = 8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
-	double N_hat = ph[PHOTON] * (ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
-	Tr = E_hat / (N_hat) * (3. - 2.449724 * pow(N_hat, 4.) / (C * E_hat * E_hat * E_hat)));
+	double E_hat, C, N_hat;
+	E_hat = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
+	C = 8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
+	N_hat = ph[PHOTON] * (ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
+	Tr = E_hat / (N_hat * (3. - 2.449724 * pow(N_hat, 4.) / (C * E_hat * E_hat * E_hat)));
 	#else
 	Tr = pow(ph[UU_RAD] / arad, 0.25);
 	#endif
@@ -6334,15 +6338,18 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#else
 	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	#endif
-	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/s/cm^3
-	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
+
+	//Calculate emmission rate
+	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/(Rg/c)/cm^3
+
+	//Calculate non-Compton scattering source term
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs * R_dot_ucon[i] + lambda * ucon[i]) - kappa_es * (R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[i]);
 	}
 
 	//Evaluate comptonization term
 	#if(P_NUM)
-	double G0 = kappa_es * ph[RHO] * E_hat * (Tg - Tr) * (1.0 + 3.683 * tg + 4.0 * Tg * Tg) / (1.0 + Tg);
+	double G0 = kappa_es * E_hat * (Tg - Tr) * (1.0 + 3.683 * tg + 4.0 * Tg * Tg) / (1.0 + Tg);
 	for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 	#endif
 
@@ -6449,11 +6456,8 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	// DIMARK: entropy test
 	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
 	//flux[KTOT] = flux[RHO] * (1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA)) + ENTROPY_CONST);
-	//flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
-	//flux[KTOT] = flux[RHO] * pr[KTOT];
 	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
 	#else
-	//flux[KTOT] = flux[RHO] * pr[KTOT];
 	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
 	#endif
 	#endif
