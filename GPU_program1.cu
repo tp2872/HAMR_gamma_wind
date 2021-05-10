@@ -120,11 +120,12 @@ __device__ void source_rad(double* ph, struct of_geom* geom, double* dU
 	, double gamma_g
 	#endif
 );
-__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM], double bsq
+__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
+__device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]);
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx
 	#if(TWO_T)
 	, double gamma_g
@@ -6220,7 +6221,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	lower(bcon, geom->gcov, bcov);
 	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
 
-	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad, bsq
+	calc_Gcon(ph, Gcon, ucon, ucov, q_rad.ucon, q_rad.ucov, mhd_rad, bsq
 		#if (DOHELM)
 		, gpu_eos_table
 		#endif
@@ -6277,8 +6278,31 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	#endif
 }
 
+//Calculate radiation temperature in rest frame of fluid
+__device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]) {
+	double Tr, arad, u_dot_urad, urad_dot_urad, Ehat, Nhat;
+
+	arad = ARAD / (ENERGY_DENSITY_SCALE)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+	urad_dot_urad = ucon[0]_rad * ucov_rad[0] + ucon[_rad1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+	Ehat = (4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad);
+	Nhat = -ph[PHOTON] * u_dot_urad;
+
+	//Get radiation temperature either assuming blackbody or diluted blackbody
+	#if(P_NUM)
+	double  C, N_hat;
+	C = 8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
+	Tr = Ehat / (Nhat * (3. - 2.449724 * pow(Nhat, 4.) / (C * Ehat * Ehat * Ehat)));
+	#else
+	Tr = pow(Ehat / arad, 0.25);
+	#endif
+
+	return Tr;
+}
+
+
 //Calculate radiation 4-force
-__device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM], double bsq
+__device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -6290,20 +6314,8 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	int i;
 	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr;
 	
-	//Calculate misc quantities
-	arad = ARAD / (ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
-	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
-
-	//Get radiation temperature either assuming blackbody or diluted blackbody
-	#if(P_NUM)
-	double E_hat, C, N_hat;
-	E_hat = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
-	C = 8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
-	N_hat = ph[PHOTON] * (ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
-	Tr = E_hat / (N_hat * (3. - 2.449724 * pow(N_hat, 4.) / (C * E_hat * E_hat * E_hat)));
-	#else
-	Tr = pow(ph[UU_RAD] / arad, 0.25);
-	#endif
+	//Calculate radiation temperature in rest frame of fluid
+	Tr = calc_Tr(ph, ucon, ucov, ucon_rad, ucov_rad);
 
 	kappa_abs = calc_kappa_abs(ph, bsq, Tr
 		#if(DOHELM)
@@ -6314,7 +6326,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		#endif
 	);
 	kappa_emmit = calc_kappa_emmit(ph, bsq, Tr
-		#if(DOHELM)
+		#if(DOHELM) 
 		, gpu_eos_table
 		#endif
 		#if(TWO_T)
@@ -6343,6 +6355,8 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/(Rg/c)/cm^3
 
 	//Calculate non-Compton scattering source term
+	arad = ARAD / (ENERGY_DENSITY_SCALE)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs * R_dot_ucon[i] + lambda * ucon[i]) - kappa_es * (R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[i]);
 	}
@@ -6572,7 +6586,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		Acon_js = geom->gcon[9];
 	}
 
-	/* find radiation wave speed */
+	/* find radiation wave speed at 1./3. speed of light (==isotrpic in radiation frame) */
 	crad2 = 1.0 / 3.0;
 
 	/* now require that speed of wave measured by observer q->ucon is crad2 */
@@ -6606,8 +6620,10 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 		cmin_rad = vp;
 	}
 
-	/* find radiation wave speed */
-	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
+	/* find radiation wave speed in fluid frame based on optical depth */
+	//Calculate optical depth
+	bsq = q->bcon[0] * q->bcov[0] + q->bcon[1] * q->bcov[1] + q->bcon[2] * q->bcov[2] + q->bcon[3] * q->bcov[3];
+	Tr = calc_Tr(pr, q->ucon, q->ucov, q_rad->ucon, q_rad->ucov);
 	kappa_tot = (calc_kappa_es(pr, bsq, Tr
 		#if(DOHELM)
 		, gpu_eos_table
