@@ -364,6 +364,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
+#define CK_CGS (8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS))
 #define MU_I (4.0/(4.0*X_AB+Y_AB))
 #define MU_E (2.0/(1.0+X_AB))
 #define MU_G (4.0/(6*X_AB+Y_AB+2.0))

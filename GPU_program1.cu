@@ -4031,7 +4031,7 @@ __device__ void LU_substitution_6D(double A[][6], double B[], int permute[])
 //3D
 //Inversion from radiation conserved to primitive quantities
 __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim){
-	double U_tmp[NPR_R], prim_tmp[NPR_R];
+	double U_tmp[NPR_R + P_NUM], prim_tmp[NPR_R+P_NUM];
 	int i, ret;
 	double alpha;
 
@@ -4039,10 +4039,10 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	alpha = 1.0 / sqrt(-gcon[0]);
 
 	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha 
-	for (i = 0; i <= U3_RAD - UU_RAD; i++) U_tmp[i] = alpha * U[i + NPR_U] / gdet;
+	for (i = 0; i <= U3_RAD - UU_RAD + P_NUM; i++) U_tmp[i] = alpha * U[i + NPR_U] / gdet;
 
 	//Transform the PRIMITIVE variables into the new system
-	for (i = 0; i <= U3_RAD - UU_RAD; i++) prim_tmp[i] = prim[i + NPR_U]; //radiation prims
+	for (i = 0; i <= U3_RAD - UU_RAD + P_NUM; i++) prim_tmp[i] = prim[i + NPR_U]; //radiation prims
 
 	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp, y_max, lim);
 
@@ -4050,6 +4050,10 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	for (i = 0; i <= U3_RAD - UU_RAD; i++) {
 		prim[i + NPR_U] = prim_tmp[i];
 	}
+
+	#if(P_NUM)
+	prim[PHOTON] = prim_tmp[PHOTON];
+	#endif
 
 	return(ret);
 }
@@ -4085,6 +4089,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
+	#if(P_NUM)
+	prim[4] = U[4] / (alpha*sqrt(gammasq));
+	#endif
+
 	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0. || isnan(Qtsq)) {
 		prim[0] = 1.e-30;
 		prim[1] = 0.;
@@ -4097,6 +4105,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[0] = pressure * 3.; // Erad = 3*p_rad
 		}
 
+		#if(P_NUM)
+		prim[4] = U[4] / (alpha * sqrt(gammasq));
+		#endif
 		return 0;
 	}
 	else if (y > y_max) {
@@ -4127,6 +4138,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			if(!isnan(Qdotn)) prim[0] = pressure * 3.; // Erad = 3*p_rad		
 		}
 
+		#if(P_NUM)
+		prim[4] = U[4] / (alpha * sqrt(gammasq));
+		#endif
 		return 0;
 		//else if (y>1.-100.*NUMEPSILON){
 		//	prim[1] = 0.;
@@ -6280,26 +6294,23 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 
 //Calculate radiation temperature in rest frame of fluid
 __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]) {
-	double Tr, arad, u_dot_urad, urad_dot_urad, Ehat, Nhat;
+	double Tr, u_dot_urad, urad_dot_urad, Ehat, Nhat;
 
-	arad = ARAD / (ENERGY_DENSITY_SCALE)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
-	urad_dot_urad = ucon[0]_rad * ucov_rad[0] + ucon[_rad1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
-	Ehat = (4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad);
-	Nhat = -ph[PHOTON] * u_dot_urad;
+	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad));
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
-	double  C, N_hat;
-	C = 8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
-	Tr = Ehat / (Nhat * (3. - 2.449724 * pow(Nhat, 4.) / (C * Ehat * Ehat * Ehat)));
+	double  N_hat;
+	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
+	Tr = Ehat / (Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	#else
-	Tr = pow(Ehat / arad, 0.25);
+	Tr = pow(Ehat / ARAD, 0.25);
 	#endif
 
 	return Tr;
 }
-
 
 //Calculate radiation 4-force
 __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
@@ -6346,16 +6357,23 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 	arad = ARAD / (ENERGY_DENSITY_SCALE);
 	#elif(TWO_T)
-	Tg = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet! \n")
+			#else
+			Tg = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
+			#endif
+		#else
+		#endif
 	#else
 	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	#endif
 
 	//Calculate emmission rate
-	lambda = kappa_emmit * arad * pow(Tg, 4.); //in units of erg/(Rg/c)/cm^3
+	arad = ARAD / (ENERGY_DENSITY_SCALE)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	lambda = kappa_emmit * arad * Tg * Tg * Tg * Tg; //in units of erg/(Rg/c)/cm^3
 
 	//Calculate non-Compton scattering source term
-	arad = ARAD / (ENERGY_DENSITY_SCALE)*pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
 		Gcon[i] = -(kappa_abs * R_dot_ucon[i] + lambda * ucon[i]) - kappa_es * (R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[i]);
@@ -6363,7 +6381,10 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 
 	//Evaluate comptonization term
 	#if(P_NUM)
-	double G0 = kappa_es * E_hat * (Tg - Tr) * (1.0 + 3.683 * tg + 4.0 * Tg * Tg) / (1.0 + Tg);
+	double Ehat, G0;
+	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad));
+	Tg *= MU_E * MASS_RATIO;
+	G0 = kappa_es * E_hat * (Tg - Tr) * (1.0 + 3.683 * Tg + 4.0 * Tg * Tg) / (1.0 + Tg);
 	for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 	#endif
 
