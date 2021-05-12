@@ -90,6 +90,7 @@ double lfish_calc(double r);
 void init_rad_pres(double pi[NPR]);
 void init_sndwave();
 void init_entwave();
+void init_radpulse();
 
 double global_kappa, aphipow;
 
@@ -152,6 +153,10 @@ void init()
 		case ENT_WAVE:
 		init_entwave();
 		break;
+		case RAD_PULSE:
+		init_radpulse();
+		break;
+
 		case TRUNC_PROBLEM:
 		init_truncdisk();
 
@@ -163,6 +168,76 @@ void init()
 	for (n = 0; n < n_active;n++) GPU_write(n_ord[n]);
 	GPU_boundprim(1);
 	#endif
+}
+
+void init_radpulse()
+{
+	int i, j, k, z, n;
+	double x, y, zz, sth, cth;
+	double ur, uh, up, u, rho;
+	double X[NDIM];
+	struct of_geom geom;
+
+	double sigma = 1.56e-64;
+	double T0 = 1e6;
+	double w2 = 5.0 * 5.0;
+	double myrho = 1.;
+	double xc = 0.5;
+	double T_rad;
+
+	/* some physics parameters */
+	gam = GAMMA;
+
+	/* some numerical parameters */
+	lim = MC;
+	failed = 0;	/* start slow */
+	dt = 1.e-5;
+
+	t = 0.;
+
+	/* output choices */
+	tf = 1000.;
+
+	/* start diagnostic counters */
+	dump_cnt = 0;
+	dump_cnt_reduced = 0;
+	image_cnt = 0;
+	rdump_cnt = 0;
+	defcon = 1.;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - N1G, BS_1 + N1_GPU_offset[n_ord[n]] - 1 + N1G, N2_GPU_offset[n_ord[n]] - N2G, N2_GPU_offset[n_ord[n]] + BS_2 - 1 + N2G, N3_GPU_offset[n_ord[n]] - N3G, N3_GPU_offset[n_ord[n]] + BS_3 - 1 + N3G) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &x, &y, &zz);
+			//applying the perturbations
+			T_rad = T0 * (1. + 100. * exp(-(x - xc) * (x - xc) / w2));
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myrho * T_rad / (GAMMA - 1.);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][2] = 0.;
+			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = 0.;
+
+#if(RAD_M1)
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 4. * sigma * pow(T_rad, 4.0);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = 0.;
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = 0.;
+#endif
+		}
+	}
+
+	/* enforce boundary conditions */
+	for (n = 0; n < n_active; n++) {
+		fixup(p, n_ord[n]);
+	}
+	bound_prim(p, 1);
 }
 
 void init_entwave()
@@ -1053,7 +1128,7 @@ void init_torus()
 					#pragma omp critical
 					rhomax = rho;
 				}
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u *(1. + 4.e-2 * (ranc(0) - 0.5)); 
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;// *(1. + 4.e-2 * (ranc(0) - 0.5)); // DIMARK: no perturbation
 				if(u > umax && r > rin){
 					#pragma omp critical
 					umax = u ;
@@ -1113,9 +1188,9 @@ void init_torus()
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-			#if (0)
+			//#if (0)
 			#if(RAD_M1)
-			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]); // Danat: Does nothing!
+			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
 			#endif
 
 			//Calculate optical depth of one cell
@@ -1132,7 +1207,7 @@ void init_torus()
 				#pragma omp critical
 				taumax = tau;
 			}
-			#endif
+			//#endif
 		}
 	}
 	umax /= rhomax ;
@@ -1145,12 +1220,12 @@ void init_torus()
 	#endif
 	#endif
 
-	// #if(RAD_M1)
-	// //Print maximum optical depth in grid
-	// if (rank == 0) {
-	// 	fprintf(stderr, "taumax: %g\n", taumax);
-	// }
-	// #endif
+	#if(RAD_M1)
+	//Print maximum optical depth in grid
+	if (rank == 0) {
+		fprintf(stderr, "taumax: %g\n", taumax);
+	}
+	#endif
 
 	for (n = 0; n < n_active; n++){
 		fixup(p, n_ord[n]);
@@ -1165,51 +1240,52 @@ void init_torus()
 	calc_source();
 	#endif
 
-	for (n = 0; n < n_active; n++) {
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			#if(RAD_M1)
-			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]); // Danat: Does nothing!
-			#endif
-
-			#if (DOHELM)
-			// Use Helmholtz EOS to set u given rho and p = (GAMMA - 1)*u
-			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], (gam_local - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], &p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
-			#endif
-
-			#if(RAD_M1)
-			//Calculate optical depth of one cell
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			#if(D3>1)
-			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
-			#else
-			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
-			#endif
-			// DIMARK: 
-			//if (i == 100 && j == 71 && z == 0) {
-			//	fprintf(stderr, "%e %e %e (%e %e)\n", kappa_abs, kappa_es, tau, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
-			//}
-			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_es + kappa_abs) * cell_size;
-			if (tau > taumax) {
-				#pragma omp critical
-				taumax = tau;
-			}
-			#endif
-		}
-	}
-
-	#if(RAD_M1)
-	//Print maximum optical depth in grid
-	if (rank == 0) {
-		fprintf(stderr, "taumax: %g\n", taumax);
-	}
-	#endif
-
-	#if (DOHELM)
+	// DIMARK: correct for DOHELM
+	//or (n = 0; n < n_active; n++) {
+	//	ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord//[n]] + BS_3 - 1) {
+	//		#if(RAD_M1)
+	//		init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]); // Danat: Does nothing!
+	//		#endif
+	//
+	//		#if (DOHELM)
+	//		// Use Helmholtz EOS to set u given rho and p = (GAMMA - 1)*u
+	//		eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], (gam_local - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], &p[nl[n_ord[n]]][index_3D(n_ord//[n], i, j, z)][UU]);
+	//		#endif
+	//
+	//		#if(RAD_M1)
+	//		//Calculate optical depth of one cell
+	//		get_geometry(n_ord[n], i, j, z, CENT, &geom);
+	//		#if(D3>1)
+	//		cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
+	//		#else
+	//		cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+	//		#endif
+	//		// DIMARK: 
+	//		//if (i == 100 && j == 71 && z == 0) {
+	//		//	fprintf(stderr, "%e %e %e (%e %e)\n", kappa_abs, kappa_es, tau, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
+	//		//}
+	//		kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+	//		kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+	//		tau = (kappa_es + kappa_abs) * cell_size;
+	//		if (tau > taumax) {
+	//			#pragma omp critical
+	//			taumax = tau;
+	//		}
+	//		#endif
+	//	}
+	//
+	// 
+	// #if(RAD_M1)
+	// //Print maximum optical depth in grid
+	// if (rank == 0) {
+	// 	fprintf(stderr, "taumax: %g\n", taumax);
+	// }
+	// #endif
+	// 
+	// #if (DOHELM)
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
 	bound_prim(p, 1);
-	#endif
+	// #endif
 }
 
 void init_rad_pres(double pi[NPR]) {

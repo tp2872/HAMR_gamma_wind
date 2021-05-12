@@ -15,6 +15,7 @@ Physical Parameters section
 #define ENT_WAVE 11
 #define TRUNC_PROBLEM 12
 #define POSTMERGER_PROBLEM 13
+#define RAD_PULSE 14
 
 #define WHICHPROBLEM TORUS_PROBLEM
 
@@ -37,7 +38,7 @@ Physical Parameters section
 
 /*Wheter to activate an untilted elliptical disk*/
 #define ELLIPTICAL (0)
-#define ELLIPTICAL2 (0)
+#define ELLIPTICAL2 (0) 
 
 /*Wheter to cool the disk to predifined thickness H_OVER_R. Not implemented in CPU version*/
 #define COOL_DISK (0)
@@ -56,7 +57,7 @@ Physical Parameters section
 #define revert_gamma        (1)
 
 // subcycling testing
-#define RADM1_SUBCYCLING (1)
+#define RADM1_SUBCYCLING (0)
 
 #define EOS_BISECTION (0)
 #define eos_nr_debug (0)
@@ -87,10 +88,15 @@ Physical Parameters section
     //#define RHOMINLIMIT (1.e-30)
     //#define UUMINLIMIT  (1.e-30)
 #else
-    #define RHOMIN	(1.e-7)
-    #define UUMIN	(1.e-9)
-    #define RHOMINLIMIT (1.e-20)
-    #define UUMINLIMIT  (1.e-20)
+    #define RHOMIN    (1.e-14)
+    #define UUMIN    (1.e-16)
+    #define RHOMINLIMIT (1.e-30)
+    #define UUMINLIMIT  (1.e-30)
+
+    //#define RHOMIN	(1.e-7)
+    //#define UUMIN	(1.e-9)
+    //#define RHOMINLIMIT (1.e-20)
+    //#define UUMINLIMIT  (1.e-20)
 #endif
 #define POWRHO (2.0)
 #define FLOORFACTOR (1.0)
@@ -140,14 +146,14 @@ Numerical Parameters section
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 2
-#define NB_2 2
+#define NB_1 1
+#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 64
-#define BS_2 64
-#define BS_3 1
+#define BS_1 150
+#define BS_2 150
+#define BS_3 150
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -252,7 +258,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define NSY (0)
 
 /*Use transmissive boundary condition at pole*/
-#define TRANS_BOUND (1*((BS_3*NB_3)>1))
+#define TRANS_BOUND (1*((BS_3*NB_3)>1) && !CARTESIAN)
 
 /* how many cells near the poles to stabilize, choose 0 for no stabilization */
 #define POLEFIX 2
@@ -317,7 +323,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (1)
+#define RAD_M1 (0)
 
 /*Enable Resistivity*/
 #define RESISTIVE (0)
@@ -354,7 +360,11 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ERM_CGS (9.10938215e-28) /*Electron rest mass*/
 #define E_CGS (4.80320427e-10) /*Elementary charge*/
 #define C_CGS (2.99792458e10) /*Speed of light*/
+#if (RADM1_SUBCYCLING)
+#define M_SGRA_SOLAR (0.1) /* Solar masses */
+#else
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
+#endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
 #define G_CGS (6.67259e-8) /* Gravitational constant */
 #define BASIC (0)
