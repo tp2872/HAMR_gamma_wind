@@ -4039,20 +4039,27 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	alpha = 1.0 / sqrt(-gcon[0]);
 
 	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha 
-	for (i = 0; i <= U3_RAD - UU_RAD + P_NUM; i++) U_tmp[i] = alpha * U[i + NPR_U] / gdet;
+	for (i = 0; i < NPR_R; i++) U_tmp[i] = alpha * U[i + UU_RAD] / gdet;
+	#if(P_NUM)
+	U_tmp[4] = alpha * U[PHOTOM] / gdet;
+	#endif
 
 	//Transform the PRIMITIVE variables into the new system
-	for (i = 0; i <= U3_RAD - UU_RAD + P_NUM; i++) prim_tmp[i] = prim[i + NPR_U]; //radiation prims
+	for (i = 0; i < NPR_R; i++) prim_tmp[i] = prim[i + UU_RAD]; //radiation prims
+	#if(P_NUM)
+	prim_tmp[4] = prim[PHOTOM];
+	#endif
 
+	//Do inversion
 	ret = Rtoprim_calc(U_tmp, gcov, gcon, gdet, prim_tmp, y_max, lim);
 
 	//Transform new primitive variables back if there was no problem
-	for (i = 0; i <= U3_RAD - UU_RAD; i++) {
-		prim[i + NPR_U] = prim_tmp[i];
+	for (i = 0; i < NPR_R; i++) {
+		prim[i + UU_RAD] = prim_tmp[i];
 	}
 
 	#if(P_NUM)
-	prim[PHOTON] = prim_tmp[PHOTON];
+	prim[PHOTON] = prim_tmp[4];
 	#endif
 
 	return(ret);
@@ -4079,7 +4086,8 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
-	y = Qtsq / (Qdotn * Qdotn + 1.e-150); //Definition from McKinney2013. Should only range [0,1].
+	y = Qtsq / (Qdotn * Qdotn + 1.e-30); //Definition from McKinney2013. Should only range [0,1].
+	if (y < 0.) y = 0.;
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
 
 	// Get Ebar and p_rad as usual
@@ -4090,23 +4098,42 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
 	#if(P_NUM)
-	prim[4] = U[4] / (alpha*sqrt(gammasq));
+	prim[4] = U[4] / sqrt(gammasq);
 	#endif
 
-	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0. || isnan(Qtsq)) {
-		prim[0] = 1.e-30;
-		prim[1] = 0.;
-		prim[2] = 0.;
-		prim[3] = 0.;
+	if (isnan(Qdotn) || isnan(Qtsq) || Qdotn > 0. || isnan(y)) {
+		if(isnan(Qdotn)) Qdotn= -(1.e-30);
+		if (isnan(Qtsq)) Qtsq = 0.0;
 
-		// Get Ebar and p_rad as usual
-		if (!isnan(Qdotn) && Qdotn < 0.0) {
-			pressure = -Qdotn / (4. - 1.);
+		if (lim == TYPE2) {
+			Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
+			for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
+
+			qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
+				+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
+			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+			gammasq = 1. + qsq;
+
+			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+			prim[1] *= f;
+			prim[2] *= f;
+			prim[3] *= f;
+
+			Qdotn = -(1.e-30 + sqrt(Qtsq / y_max));
+			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+			returnval = (Qdotn > 0.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad
+		}
+		else {
+			prim[0] = 1.e-30;
+			prim[1] = 0.;
+			prim[2] = 0.;
+			prim[3] = 0.;
+			gammasq = 1.0;
 		}
 
 		#if(P_NUM)
-		prim[4] = U[4] / (alpha * sqrt(gammasq));
+		prim[4] = U[4] / sqrt(gammasq);
 		#endif
 		return 0;
 	}
@@ -4125,30 +4152,15 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[3] *= f;
 		prim[0] = 1.e-30;
 
-		if (y < (1. - 100. * NUMEPSILON)) {
+		if (lim == TYPE2) {
 			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			returnval = (prim[0] < 0.);
-		}
-		else {
-			prim[1] = 0.;
-			prim[2] = 0.;
-			prim[3] = 0.;
-			pressure = fabs(-Qdotn) / (4. * 1. - 1.);
-			if(!isnan(Qdotn)) prim[0] = pressure * 3.; // Erad = 3*p_rad		
+			prim[0] = pressure * 3.; // Erad = 3*p_rad
 		}
 
 		#if(P_NUM)
-		prim[4] = U[4] / (alpha * sqrt(gammasq));
+		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
 		#endif
-		return 0;
-		//else if (y>1.-100.*NUMEPSILON){
-		//	prim[1] = 0.;
-		//	prim[2] = 0.;
-		//	prim[3] = 0.;
-		//	pressure = -Qdotn / (4. - 1.);
-		//	prim[0] = pressure * 3.; // Erad = 3*p_rad
-		//}
 	}
 	return(returnval);
 }
