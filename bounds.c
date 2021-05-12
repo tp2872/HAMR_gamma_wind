@@ -509,6 +509,8 @@ void inflow_check(double * restrict pr, int n, int ii, int jj, int zz, int type)
 		pr[U1_RAD] /= gamma_rad;
 		pr[U2_RAD] /= gamma_rad;
 		pr[U3_RAD] /= gamma_rad;
+		alpha = 1. / sqrt(-geom.gcon[0][0]);
+		beta1 = geom.gcon[0][1] * alpha * alpha;
 
 		/* reset radial velocity so radial 4-velocity is zero */
 		pr[U1_RAD] = beta1 / alpha;
