@@ -540,7 +540,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, gamma_g
 		#endif
 	);
-	kappa_es = calc_kappa_es(pb,
+	kappa_es = calc_kappa_es(pb
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -551,7 +551,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	tau = (kappa_abs + kappa_es) * cell_size;
 
 	//Set guess values for primitives after implicit step based on optical depth
-	if (tau < 0.66) {
+	//if (tau < 0.66) {
 		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
@@ -573,7 +573,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
 		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
-	}
+	//}
 
 	//Set electron entropy variables
 	#if(TWO_T)
@@ -624,7 +624,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//In low optical depth limit reset U_i to U_f
 	if (tau < 0.66) {
-		for (k = 0; k < NPR; k++) U_i[k] = U_f[k];
+		//for (k = 0; k < NPR; k++) U_i[k] = U_f[k];
 	}
 
 	//Calculate iterated error at start of iteration
@@ -4075,7 +4075,7 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 }
 
 __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim) {
-	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
+	/*double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
 	int i, returnval = 0;
@@ -4174,12 +4174,8 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
 		#endif
 	}
-	return(returnval);
-}
-
-/*
-__device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double y_max, int lim){
-	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
+	*/
+double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
 	int i, returnval = 0;
@@ -4199,55 +4195,71 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
-	y = Qtsq / (Qdotn * Qdotn + 1.e-150); //Definition from McKinney2013. Should only range [0,1].
+	//Check for bad values of -Erad and U_tilde^2; If values are nan floor them
+	if (!isfinite(Qdotn)) Qdotn = -(1.e-30);
+	if (!isfinite(Qtsq)) Qtsq = 0.0;
+
+	y = Qtsq / (Qdotn * Qdotn + 1.e-30); //Definition from McKinney2013. Should only range [0,1].
+	if (y < 0. || isnan(y)) y = 0.;
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
 
 	// Get Ebar and p_rad as usual
-	pressure = -Qdotn / (4. * gammasq - 1.); // HELMEOS: do I need to use it here?
-	prim[0] = pressure * 3.; // Erad = 3*p_rad
+	pressure = -Qdotn / (4. * gammasq - 1.);
+	prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
 
-	if (isnan(-Qdotn)) {
-		prim[0] = 1.e-150;
-		//if (y > 1. || isnan(y)) returnval = 1;
-		y = 0.;
-	}
-	if (prim[0] < 0) {
-		prim[1] = 1.e-150;
-		prim[2] = 0.;
-		prim[3] = 0.;
-		prim[0] = 0.0 * fabs(prim[0]);
-		Qdotn *= -1.0;
-	}
-	if (y <= 0.) {
-		for (i = 1; i < 4; i++) prim[i] = 0.0;
-		y = 0.;
-	}
-	if (y >= 1.0 || isnan(y)) {
-		prim[1] = 0.;
-		prim[2] = 0.;
-		prim[3] = 0.;
-		gammasq = 1.0;
+	#if(P_NUM)
+	prim[4] = U[4] / sqrt(gammasq);
+	#endif
 
-		// Get Ebar and p_rad as usual
-		pressure = -Qdotn / (4. * gammasq - 1.);
-		prim[0] = pressure * 3.; // Erad = 3*p_rad
 
-		// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
-		for (i = 1; i < 4; i++) {
-			if (!isnan(Qtcon[i])) {
-				//prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
+
+	if (Qdotn > 0.) { //Negative internal energy
+		if (lim == TYPE2) {
+			Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
+			for (i = 1; i < 4; i++) {
+				if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
+				prim[i] = Qtcon[i] / Uabs;
 			}
+
+			qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
+				+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
+			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+			gammasq = 1. + qsq;
+
+			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+			prim[1] *= f;
+			prim[2] *= f;
+			prim[3] *= f;
+			//prim[1] = 0;
+			//prim[2] = 0;
+			//prim[3] = 0;
+			Qdotn = -(1.e-150 + sqrt(fabs(Qtsq) / y_max));
+			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
+			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
+
+			returnval = 0;
 		}
-		y = 0.;
-		returnval = 0;
+		else {
+			prim[0] = 1.e-30;
+			prim[1] = 0.;
+			prim[2] = 0.;
+			prim[3] = 0.;
+			gammasq = 1.0;
+		}
+
+		#if(P_NUM)
+		prim[4] = U[4] / sqrt(gammasq);
+		#endif
 	}
 	if (y > y_max) {
-		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
-		for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
-
+		Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
+		for (i = 1; i < 4; i++) {
+			if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
+			prim[i] = Qtcon[i] / Uabs;
+		}
 		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
 			+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
 		if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
@@ -4257,17 +4269,25 @@ __device__ int Rtoprim_calc(double *U, double gcov[10], double gcon[10], double 
 		prim[1] *= f;
 		prim[2] *= f;
 		prim[3] *= f;
-
+		prim[1] = 0;
+		prim[2] = 0;
+		prim[3] = 0;
 		if (lim == TYPE2) {
-			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
+			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad		
-			returnval = 0;
+			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
 		}
+		else if (!isfinite(prim[0])) {
+			prim[0] = 1.e-30;
+		}
+
+		#if(P_NUM)
+		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
+		#endif
 	}
-	return(returnval);
+	return returnval;
 }
-*/
+
 __device__ int Utoprim_NM(double *U, double gcov[10], double gcon[10], double gdet, double *prim, double tolerance, int lim
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
@@ -6669,7 +6689,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	//Calculate optical depth
 	bsq = q->bcon[0] * q->bcov[0] + q->bcon[1] * q->bcov[1] + q->bcon[2] * q->bcov[2] + q->bcon[3] * q->bcov[3];
 	Tr = calc_Tr(pr, q->ucov, q_rad->ucon, q_rad->ucov);
-	kappa_tot = (calc_kappa_es(pr,
+	kappa_tot = (calc_kappa_es(pr
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
@@ -6729,7 +6749,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 }
 
 //Calculate total absorption opacity
-__device__ double calc_kappa_abs(double* ph, double bsq, double Tr, 
+__device__ double calc_kappa_abs(double* ph, double bsq, double Tr 
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -6755,14 +6775,14 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr,
 	Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MY_MAX(ph[RHO], RHOMINLIMIT) * MASS_DENSITY_SCALE));
 	#endif
 	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
-	zeta = 4. * M_PI * ME_CS * ME_CS * ME_CS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq) * Tg * Tg);
+	zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq) * Tg * Tg);
 
 	kappa_m = 0.1 * Z_AB;
 	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.)*pow(zeta,-3.)*(1.+5.444*pow(zeta,-0.666666)+7.218*pow(zeta, -4.3333333));
+	kappa_sy = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff + kappa_sy));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
@@ -6771,7 +6791,7 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr,
 }
 
 //Calculate total emmission opacity
-__device__ double calc_kappa_emmit(double* ph, double bsq, double Tr,
+__device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#if (DOHELM)
 	, const  double* __restrict__ gpu_eos_table
 	#endif
@@ -6795,7 +6815,7 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr,
 	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else
 	Tg = fabs(MMW * MH_CGS * (GAMMA - 1.) * (ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * MASS_DENSITY_SCALE) *MY_MIN(fabs(ph[UU]/ph[RHO]), UORHOMAX));
-	if (isnan(fabs(ph[UU] / ph[RHO]))) Tg = 1.0;
+	if (isnan(Tg)) Tg = 1.0;
 	#endif
 	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
 
@@ -6804,7 +6824,7 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr,
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tg, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.);
+	kappa_sy = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff + kappa_sy));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
