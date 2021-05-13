@@ -1325,7 +1325,7 @@ void init_rad_pres(double pi[NPR]) {
 
 	keep_iterating = 1;
 	n_iter = 0;
-	arad = ARAD/(MASS_DENSITY_SCALE*C_CGS*C_CGS/pow(MMW*MH_CGS*C_CGS*C_CGS/BOLTZ_CGS,4.));
+	arad = ARAD / (MASS_DENSITY_SCALE * C_CGS * C_CGS) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	T_old = (GAMMA - 1.)*pi[UU] / pi[RHO];
 	T_new = T_old;
 	ptot = (GAMMA - 1.)*pi[UU];

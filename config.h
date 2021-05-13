@@ -313,7 +313,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Wheter to use fixed or variable gamma*/
 #define FIXEDGAMMA (1)

@@ -518,7 +518,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	, double fel
 	#endif
 ) {
-	double kappa_abs, kappa_es, norm;
+	double kappa_abs, kappa_es, tau, norm, bsq, Tr;
 	int k, pflag, pflag_rad;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -528,27 +528,31 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 
 	//Calculate optical depth
-	//kappa_abs = calc_kappa_abs(pb
-	//	#if(DOHELM)
-	//	, gpu_eos_table
-	//	#endif
-	//	#if(TWO_T)
-	//	, gamma_g
-	//	#endif
-	//);
-	//kappa_es = calc_kappa_es(pb
-	//	#if(DOHELM)
-	//	, gpu_eos_table
-	//	#endif
-	//	#if(TWO_T)
-	//	, gamma_g
-	//	#endif
-	//);
-	//tau = (kappa_abs + kappa_es) * cell_size;
+	get_state(pb, geom, &q);
+	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+	get_state_rad(pb, geom, &q_rad);
+	Tr = calc_Tr(pb, q.ucon, q_rad.ucon, q_rad.ucov);
+	kappa_abs = calc_kappa_abs(pb, bsq, Tr
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	kappa_es = calc_kappa_es(pb,
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	tau = (kappa_abs + kappa_es) * cell_size;
 
-	//if (tau < 0.66) {
-		//Set guess values for primitives after implicit step based on optical depth
-		pflag =  Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
+	//Set guess values for primitives after implicit step based on optical depth
+	if (tau < 0.66) {
+		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
@@ -556,20 +560,20 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 			, fel
 			#endif
 		);
-		#if(DO_FONT_FIX)
-		//if (pflag) {
-		//	pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
-		//		#if (DOHELM)
-		//		, gpu_eos_table
-		//		#endif
-		//		);		
-		//}
-	   // if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
+		#if(DO_FONT_FIX==-10)
+		if (pflag) {
+			pflag = Utoprim_1dvsq2fix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY
+				#if (DOHELM)
+				, gpu_eos_table
+				#endif
+			);
+			if (pflag) pflag = Utoprim_1dfix1(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC, FULL_ENTROPY);
+		}
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
-		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
-	//}
+		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
+	}
 
 	//Set electron entropy variables
 	#if(TWO_T)
@@ -606,7 +610,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
 	mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
-	for (k = UU_RAD; k <= U3_RAD; k++)U_f[k] *= geom->g;
+	for (k = UU_RAD; k <= U3_RAD; k++) U_f[k] *= geom->g;
 
 	//Calculate source term for U_i
 	source_rad(pb, geom, dU
@@ -617,6 +621,11 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		, gamma_g
 		#endif
 	);
+
+	//In low optical depth limit reset U_i to U_f
+	if (tau < 0.66) {
+		for (k = 0; k < NPR; k++) U_i[k] = U_f[k];
+	}
 
 	//Calculate iterated error at start of iteration
 	norm = (fabs(U_i[UU]) + fabs(U_f[UU]) + fabs(Dt * dU[UU]));
@@ -4041,13 +4050,13 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 	//Transform the CONSERVED variables into eulerian observers frame nu_Mu=alpha 
 	for (i = 0; i < NPR_R; i++) U_tmp[i] = alpha * U[i + UU_RAD] / gdet;
 	#if(P_NUM)
-	U_tmp[4] = alpha * U[PHOTOM] / gdet;
+	U_tmp[4] = alpha * U[PHOTON] / gdet;
 	#endif
 
 	//Transform the PRIMITIVE variables into the new system
 	for (i = 0; i < NPR_R; i++) prim_tmp[i] = prim[i + UU_RAD]; //radiation prims
 	#if(P_NUM)
-	prim_tmp[4] = prim[PHOTOM];
+	prim_tmp[4] = prim[PHOTON];
 	#endif
 
 	//Do inversion
@@ -4086,13 +4095,17 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	for (i = 0; i < 4; i++) Qsq += Qcov[i] * Qcon[i];
 	Qtsq = Qsq + Qdotn * Qdotn; //Utilde^2 in McKinney2013
 
+	//Check for bad values of -Erad and U_tilde^2; If values are nan floor them
+	if (!isfinite(Qdotn)) Qdotn = -(1.e-30);
+	if (!isfinite(Qtsq)) Qtsq = 0.0;
+
 	y = Qtsq / (Qdotn * Qdotn + 1.e-30); //Definition from McKinney2013. Should only range [0,1].
-	if (y < 0.) y = 0.;
+	if (y < 0. || isnan(y)) y = 0.;
 	gammasq = (2. - y + sqrt(4. - 3. * y)) / (4. - 4. * y);
 
 	// Get Ebar and p_rad as usual
 	pressure = -Qdotn / (4. * gammasq - 1.);
-	prim[0] = pressure * 3.; // Erad = 3*p_rad
+	prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
 
 	// utilde ^i _rad = gam_rad * Utilde^i / (4 * p * gam_rad^2)
 	for (i = 1; i < 4; i++) prim[i] = sqrt(gammasq) * Qtcon[i] / (4. * pressure * gammasq);
@@ -4101,10 +4114,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	prim[4] = U[4] / sqrt(gammasq);
 	#endif
 
-	if (isnan(Qdotn) || isnan(Qtsq) || Qdotn > 0. || isnan(y)) {
-		if(isnan(Qdotn)) Qdotn= -(1.e-30);
-		if (isnan(Qtsq)) Qtsq = 0.0;
-
+	if (Qdotn > 0.) { //Negative internal energy
 		if (lim == TYPE2) {
 			Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
 			for (i = 1; i < 4; i++)prim[i] = Qtcon[i] / Uabs;
@@ -4121,8 +4131,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 			Qdotn = -(1.e-30 + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
-			returnval = (Qdotn > 0.);
-			prim[0] = pressure * 3.; // Erad = 3*p_rad
+			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
+
+			returnval = 1;
 		}
 		else {
 			prim[0] = 1.e-30;
@@ -4135,7 +4146,6 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		#if(P_NUM)
 		prim[4] = U[4] / sqrt(gammasq);
 		#endif
-		return 0;
 	}
 	else if (y > y_max) {
 		Uabs = 0.5 * (sqrt(Qtsq) + fabs(Qdotn) + 1.e-150);
@@ -4150,12 +4160,14 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[1] *= f;
 		prim[2] *= f;
 		prim[3] *= f;
-		prim[0] = 1.e-30;
 
 		if (lim == TYPE2) {
-			Qdotn = -(1.e-150 + sqrt(Qtsq / y_max));
+			Qdotn = -(1.e-30 + sqrt(Qtsq / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = pressure * 3.; // Erad = 3*p_rad
+		}
+		else if(!isfinite(prim[0])){
+			prim[0] = 1.e-30;
 		}
 
 		#if(P_NUM)
@@ -6243,7 +6255,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	//Add radiation 4-force
 	ucon_calc(ph, geom, ucon);
 	lower(ucon, geom->gcov, ucov);
-	bcon_calc(ph, geom, bcon);
+	bcon_calc(ph, ucon, ucov, bcon);
 	lower(bcon, geom->gcov, bcov);
 	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
 
@@ -6338,7 +6350,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr;
 	
 	//Calculate radiation temperature in rest frame of fluid
-	Tr = calc_Tr(ph, ucon, ucov, ucon_rad, ucov_rad);
+	Tr = calc_Tr(ph, ucon, ucon_rad, ucov_rad);
 
 	kappa_abs = calc_kappa_abs(ph, bsq, Tr
 		#if(DOHELM)
@@ -6656,8 +6668,8 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	/* find radiation wave speed in fluid frame based on optical depth */
 	//Calculate optical depth
 	bsq = q->bcon[0] * q->bcov[0] + q->bcon[1] * q->bcov[1] + q->bcon[2] * q->bcov[2] + q->bcon[3] * q->bcov[3];
-	Tr = calc_Tr(pr, q->ucon, q->ucov, q_rad->ucon, q_rad->ucov);
-	kappa_tot = (calc_kappa_es(pr, bsq, Tr
+	Tr = calc_Tr(pr, q->ucov, q_rad->ucon, q_rad->ucov);
+	kappa_tot = (calc_kappa_es(pr,
 		#if(DOHELM)
 		, gpu_eos_table
 		#endif
