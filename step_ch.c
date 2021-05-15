@@ -280,7 +280,7 @@ void utoprim_M1_0(double Dt, int n)
 				get_state(p[nl[n]][ind0], &geom, &q);
 				get_state_rad(p[nl[n]][ind0], &geom, &q_rad);		
 				#if(TWO_T)
-				gamma_g = calc_gamma_gas_prim(p);
+				gamma_g = calc_gamma_gas_prim(p[nl[n]][ind0]);
 				#else
 				gamma_g = GAMMA;
 				#endif				
@@ -310,7 +310,7 @@ void utoprim_M1_1(double Dt, int n){
 			ind3 = index_3D(n, i, j, z + D3);
 
 			#if(TWO_T)
-			gamma_g = calc_gamma_gas_prim(p);
+			gamma_g = calc_gamma_gas_prim(p[nl[n]][ind0]);
 			#else
 			gamma_g = GAMMA;
 			#endif	
@@ -363,7 +363,7 @@ void utoprim_M1_2(double Dt, int n){
 			ind3 = index_3D(n, i, j, z + D3);
 			#if(TWO_T)
 			fprintf(stderr, "calc_delta not implemented! \n");
-			gamma_g = calc_gamma_gas_prim(ph);
+			gamma_g = calc_gamma_gas_prim(ph[nl[n]][ind0]);
 			#else
 			gamma_g = GAMMA;
 			#endif	

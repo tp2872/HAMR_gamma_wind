@@ -237,10 +237,10 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
 	}
 	#if(P_NUM)
-	double C = 8.0 * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
-	double n_dot_ucon = ph[PHOTON]*(ucon[0]*ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
-	double R_dot_ucon_ucov = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
-	Gcon[5] = -ph[RHO] * (kappa_abs * R_dot_ucon / (MU_G * MH_CGS * Tr) / (3.0 - 2.449724 * pow(n_dot_ucon, 4.0) / (C * C_CGS * C_CGS * pow(R_dot_ucon_ucov, 3.0))) - lambda / (MU_G * MH_CGS * Tg * 2.701178));
+//	double C = 8.0 * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
+	//double n_dot_ucon = ph[PHOTON]*(ucon[0]*ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
+	//double R_dot_ucon_ucov = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
+	//Gcon[5] = -ph[RHO] * (kappa_abs * R_dot_ucon / (MU_G * MH_CGS * Tr) / (3.0 - 2.449724 * pow(n_dot_ucon, 4.0) / (C * C_CGS * C_CGS * pow(R_dot_ucon_ucov, 3.0))) - lambda / (MU_G * MH_CGS * Tg * 2.701178));
 	#endif
 }
 

@@ -652,7 +652,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//Calculate total error at start of iteration
 	norm = (fabs(U_i[UU_RAD]) + fabs(U_f[UU_RAD]) + fabs(Dt * dU[UU_RAD]));
-	error_t[0] += 0.25 * (fabs(U_f[UU_RAD] - U_i[UU_RAD] - Dt * dU[UU]) / norm);
+	if (pflag_rad == 0)error_t[0] += 0.25 * (fabs(U_f[UU_RAD] - U_i[UU_RAD] - Dt * dU[UU]) / norm);
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1_RAD]) + fabs(U_f[U1_RAD]) + fabs(Dt * dU[U1_RAD]));
 	norm += (fabs(sqrt(geom->gcon[7]) * U_i[U2_RAD]) + fabs(U_f[U2_RAD]) + fabs(Dt * dU[U2_RAD]));
 	norm += (fabs(sqrt(geom->gcon[9]) * U_i[U3_RAD]) + fabs(U_f[U3_RAD]) + fabs(Dt * dU[U3_RAD]));
@@ -666,7 +666,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 , const double* __restrict__ gpu_eos_table
 #endif
 ) {
-	double U_new[NPR], U_old[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5], offset = 1.e-8;
+	double U_new[NPR], U_old[NPR], U_prev[NPR], pb_new[NPR], pb_old[NPR], dU_new[NPR], dU_old[NPR], E_old[NPR], E_new[NPR], dpb, dEdpb[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], dEdpb_inv[4 + TWO_T + P_NUM][4 + TWO_T + P_NUM], error_new[5], offset = 1.e-8;
 	double T_GAS, dK_dS, norm, norm_S, D;
 	struct of_state q;
 	struct of_state_rad q_rad;
@@ -977,6 +977,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		//Get new radiation primitives using TYPE2 limiter
 		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+		if (flag_rad) for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_new[k];
 
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
@@ -1075,6 +1076,16 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		n_iter++;
 	}
+
+	if (flag_rad) {
+		Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_new, y_max, BASIC);
+
+		//Recompute R_t^mu for consistency
+		get_state_rad(pb_new, geom, &q_rad);
+		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+	}
+
 	return(0);
 }
 
@@ -2467,7 +2478,7 @@ __device__ double calc_delta(double* ph, double bsq) {
 	if (!isfinite(beta) || beta>10000.0 || beta<0.000001) beta = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
-	if (!isfinite(delta))fel = 0.5;
+	if (!isfinite(fel))fel = 0.5;
 
 	//Calculate delta
 	delta = 1. / (1. + fel);
@@ -2481,7 +2492,7 @@ __device__ void heating(double* ph, struct of_state* q)
 }
 
 __device__ double source_Coulomb(double* p) {
-	double th_mean, th_sum, Theta_e, Theta_i, coeff, n_cgs, ne_cgs, T_e, T_i, dK_dS;
+	double th_mean, th_sum, Theta_e, Theta_i, coeff, n_cgs, ne_cgs, T_e, T_i;
 	double K2e, K2i, K0, K1;
 	double theta_min = 1.e-2;
 	double coulog = 20.;   // Coulomb logarithm ( ln Lambda )
@@ -2693,7 +2704,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel) 
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
 __device__ double set_S_w(double* S, double rho, double w, double fel) {
-	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
+	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante;
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
 
@@ -4226,21 +4237,20 @@ double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qd
 
 			qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
 				+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-			if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+			if (qsq < 1.E-10) qsq = 1.E-10; // set floor
 			gammasq = 1. + qsq;
 
-			f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-			prim[1] *= f;
-			prim[2] *= f;
-			prim[3] *= f;
-			//prim[1] = 0;
-			//prim[2] = 0;
-			//prim[3] = 0;
+			f = 0.;// sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
+			if (f < 10000000.0) {
+				prim[1] *= f;
+				prim[2] *= f;
+				prim[3] *= f;
+			}
 			Qdotn = -(1.e-150 + sqrt(fabs(Qtsq) / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
 
-			returnval = 0;
+			returnval = 1;
 		}
 		else {
 			prim[0] = 1.e-30;
@@ -4254,7 +4264,7 @@ double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qd
 		prim[4] = U[4] / sqrt(gammasq);
 		#endif
 	}
-	if (y > y_max) {
+	else if (y > y_max) {
 		Uabs = 0.5 * (sqrt(fabs(Qtsq)) + fabs(Qdotn) + 1.e-150);
 		for (i = 1; i < 4; i++) {
 			if (!isfinite(Qtcon[i]))Qtcon[i] = 0.;
@@ -4262,25 +4272,30 @@ double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qd
 		}
 		qsq = gcov[4] * prim[1] * prim[1] + gcov[7] * prim[2] * prim[2] + gcov[9] * prim[3] * prim[3]
 			+ 2. * (gcov[5] * prim[1] * prim[2] + gcov[6] * prim[1] * prim[3] + gcov[8] * prim[2] * prim[3]);
-		if (qsq < 0. && fabs(qsq) < 1.E-10) qsq = 1.E-10; // set floor
+		if (qsq < 1.E-10 || !isfinite(qsq)) qsq = 1.E-10; // set floor
 		gammasq = 1. + qsq;
 
 		f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-		prim[1] *= f;
-		prim[2] *= f;
-		prim[3] *= f;
-		prim[1] = 0;
-		prim[2] = 0;
-		prim[3] = 0;
+		if (f < 10000000.0 && y<1.0-0.000000001){
+			prim[1] *= f;
+			prim[2] *= f;
+			prim[3] *= f;
+		}
+		else {
+			prim[1] = 0;
+			prim[2] = 0;
+			prim[3] = 0;
+		}
 		if (lim == TYPE2) {
 			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
 			prim[0] = MY_MAX(pressure * 3., 1.e-30); // Erad = 3*p_rad
+			returnval = 1;
 		}
 		else if (!isfinite(prim[0])) {
 			prim[0] = 1.e-30;
 		}
-
+	
 		#if(P_NUM)
 		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
 		#endif
@@ -6338,7 +6353,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 
 //Calculate radiation temperature in rest frame of fluid
 __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]) {
-	double Tr, u_dot_urad, urad_dot_urad, Ehat, Nhat;
+	double Tr, u_dot_urad, urad_dot_urad, Ehat;
 
 	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
 	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
@@ -6346,7 +6361,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
-	double  N_hat;
+	double  Nhat;
 	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
 	Tr = Ehat / (Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
 	#else
@@ -6425,10 +6440,16 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 
 	//Evaluate comptonization term
 	#if(P_NUM)
-	double Ehat, G0;
+	double Ehat, G0, u_dot_urad, urad_dot_urad;
+
+	//Misc variables
+	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
 	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad));
 	Tg *= MU_E * MASS_RATIO;
-	G0 = kappa_es * E_hat * (Tg - Tr) * (1.0 + 3.683 * Tg + 4.0 * Tg * Tg) / (1.0 + Tg);
+
+	//Final quantity
+	G0 = kappa_es * Ehat * (Tg - Tr) * (1.0 + 3.683 * Tg + 4.0 * Tg * Tg) / (1.0 + Tg);
 	for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 	#endif
 
@@ -6443,6 +6464,12 @@ __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, 
 	mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
 	#endif
 	for (k = UU_RAD; k <= U3_RAD; k++) flux[k] *= geom->g;
+
+	//Flux of photon number
+	#if(P_NUM)
+	flux[PHOTON] = pr[PHOTON] * q_rad->ucon[dir];
+	flux[PHOTON] *= geom->g;
+	#endif
 
 	return;
 }
@@ -6519,11 +6546,6 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	flux[ENTRI] = flux[RHO] * pr[ENTRI];
 	#endif
 
-	//Flux of photon number
-	#if(P_NUM)
-	flux[PHOTON] = pr[PHOTON] * q_rad->ucon[dir];
-	#endif
-
 	#if(DOKTOT)
 	#if(DOHELM)
 	double xentr;
@@ -6547,9 +6569,6 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	#if(TWO_T)
 	flux[ENTRE] *= geom->g;
 	flux[ENTRI] *= geom->g;
-	#endif
-	#if(P_NUM)
-	flux[PHOTON] *= geom->g;
 	#endif
 
 	//Calculate wavespeed
@@ -6782,8 +6801,8 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_sy = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
-	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff + kappa_sy));
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
@@ -6824,8 +6843,8 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tg, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Tg);
-	kappa_sy = 0.0;// 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.);
-	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff + kappa_sy));
+	kappa_sy =  1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Tg, -2.);
+	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
 	
 	if (!isfinite(kappa_abs)) kappa_abs = 0.0;

@@ -84,7 +84,7 @@ Physical Parameters section
 
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
-#define GAMMAMAX_RAD (50.000625)
+#define GAMMAMAX_RAD (50.)
 
 /*Max value of electron temperature in Kelvin*/
 #define TMAX (1.e15)
@@ -310,10 +310,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Wheter to use fixed or variable gamma*/
 #define FIXEDGAMMA (1)
