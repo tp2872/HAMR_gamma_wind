@@ -519,7 +519,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	#endif
 ) {
 	double kappa_abs, kappa_es, tau, norm, bsq, Tr;
-	int k, pflag, pflag_rad;
+	int k, pflag=0, pflag_rad=0;
 	struct of_state q;
 	struct of_state_rad q_rad;
 
@@ -549,9 +549,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif
 	);
 	tau = (kappa_abs + kappa_es) * cell_size;
-
+	tau = 0.0;
 	//Set guess values for primitives after implicit step based on optical depth
-	//if (tau < 0.66) {
+	if (tau < 0.66) {
 		pflag = Utoprim_2d(U_f, geom->gcov, geom->gcon, geom->g, pb, NEWT_TOL, BASIC
 			#if (DOHELM)
 			, gpu_eos_table
@@ -572,8 +572,8 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
-		pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
-	//}
+		if(!pflag)pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
+	}
 
 	//Set electron entropy variables
 	#if(TWO_T)
