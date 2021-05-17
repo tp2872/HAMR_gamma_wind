@@ -1072,19 +1072,20 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_f[k] = U_new[k];
 				dU[k] = dU_new[k];
 			}
+			if (flag_rad) {
+				Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb, y_max, BASIC);
+
+				//Recompute R_t^mu for consistency
+				get_state_rad(pb, geom, &q_rad);
+				mhd_calc_rad(pb, 0, &q_rad, &U_new[UU_RAD]);
+				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
+			}
+
 		}
 
 		n_iter++;
 	}
 
-	if (flag_rad) {
-		Rtoprim(U_prev, geom->gcov, geom->gcon, geom->g, pb_new, y_max, BASIC);
-
-		//Recompute R_t^mu for consistency
-		get_state_rad(pb_new, geom, &q_rad);
-		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
-		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
-	}
 
 	return(0);
 }
@@ -4276,16 +4277,16 @@ double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qd
 		gammasq = 1. + qsq;
 
 		f = sqrt((GAMMAMAX_RAD * GAMMAMAX_RAD - 1.) / (gammasq - 1.));
-		if (f < 10000000.0 && y<1.0-0.000000001){
+		//if (f < 10000000.0 && y<1.0-0.000000001){
 			prim[1] *= f;
 			prim[2] *= f;
 			prim[3] *= f;
-		}
-		else {
-			prim[1] = 0;
-			prim[2] = 0;
-			prim[3] = 0;
-		}
+		//}
+		//else {
+		//	prim[1] = 0;
+		//	prim[2] = 0;
+		//	prim[3] = 0;
+	//	}
 		if (lim == TYPE2) {
 			Qdotn = -(1.e-30 + sqrt(fabs(Qtsq) / y_max));
 			pressure = -Qdotn / (4. * GAMMAMAX_RAD * GAMMAMAX_RAD - 1.);
