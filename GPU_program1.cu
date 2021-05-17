@@ -6358,7 +6358,7 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 
 	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
 	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
-	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad));
+	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)

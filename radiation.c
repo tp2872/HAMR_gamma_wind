@@ -1902,6 +1902,5 @@ void calc_ymax(void) {
 		n_iter++;
 	}   // END of while(keep_iterating)
 	y_max = y_new;
-	fprintf(stderr, "Gamma_RAD set to : %f\n", sqrt((2.0 - y_old + sqrt(4.0 - 3.0 * y_old)) / (4.0 - 4.0 * y_old)));
 }
 #endif
