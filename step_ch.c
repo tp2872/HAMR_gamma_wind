@@ -1093,6 +1093,69 @@ double advance_GPU(void)
 	return defcon * ndt;
 }
 
+void benchmark_GPU(int n)
+{
+	#if(RAD_M1)
+	int i;
+	gpu = 1;
+	clock_t start, end;
+	start = clock();
+	for (i = 0; i < AMR_SWITCHTIMELEVEL * DUMPFACTOR / 10; i++) {
+		#if(RAD_M1 && DO_IMEX)
+		if(i%2==-10) GPU_Utoprim_M1_0(n, dt * (double)block[n][AMR_TIMELEVEL]); //do not use
+		#endif
+
+		#if(N3G>0)		
+		GPU_fluxcalc2D(3, 0, n);
+		#if(N_LEVELS_1D_INT>0)
+		GPU_reconstruct_internal(0, n);
+		#endif
+		#endif
+
+		#if(N2G>0)
+		GPU_fluxcalc2D(2, 0, n);
+		#endif
+
+		#if(N1G>0)
+		GPU_fluxcalc2D(1, 0, n);
+		#endif
+
+		gpu = 1;
+		#if(!TRANS_BOUND && !CARTESIAN)
+		GPU_fix_flux(n);
+		#endif
+		#if(STAGGERED)
+		GPU_consttransport1(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
+		#if(RAD_M1 && DO_IMEX)
+		GPU_consttransport2(0, dt * (double)block[n][AMR_TIMELEVEL], n);
+		#else
+		GPU_consttransport2(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
+		#endif
+
+		#if(RAD_M1 && DO_IMEX)
+		GPU_consttransport3(0, dt * (double)block[n][AMR_TIMELEVEL], n);
+		#else
+		GPU_consttransport3(0, 0.5 * dt * (double)block[n][AMR_TIMELEVEL], n);
+		#endif
+		#else
+		GPU_flux_ct1(n);
+		GPU_flux_ct2(n);
+		#endif
+
+		#if(RAD_M1 && DO_IMEX)
+		GPU_Utoprim_M1_1(n, dt * (double)block[n][AMR_TIMELEVEL]);
+		#else
+		GPU_fixup(0, n, 0.5 * dt * (double)block[n][AMR_TIMELEVEL]);
+		#endif
+	}
+	end = clock();
+
+	bench_time[n] = (double)(end - start) / CLOCKS_PER_SEC;
+	#else
+	bench_time[n] = 1.0;
+	#endif
+}
+
 /*Used for debugging. Compares output from CPU version to output from GPU version*/
 void step_ch_debug()
 {
