@@ -3711,8 +3711,8 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
 
 		for (j = 0; j < NDIM; j++) {
 			maxtemp = fabs(A[i][j]);
-
-			if (maxtemp > absmax) absmax = maxtemp;
+			if(!isfinite((A[i][j]))) return(1);
+			absmax = MY_MAX(absmax, maxtemp);
 		}
 
 		//Make sure that there is at least one non-zero element in this row:
@@ -3790,10 +3790,8 @@ __device__ int LU_decompose_5D(double A[][5], int permute[])
 		for (j = 0; j < n; j++) {
 
 			maxtemp = fabs(A[i][j]);
-
-			if (maxtemp > absmax) {
-				absmax = maxtemp;
-			}
+			if (!isfinite((A[i][j]))) return(1);
+			absmax = MY_MAX(absmax, maxtemp);
 		}
 
 		if (absmax == 0.) {
@@ -3878,10 +3876,8 @@ __device__ int LU_decompose_6D(double A[][6], int permute[])
 		for (j = 0; j < n; j++) {
 
 			maxtemp = fabs(A[i][j]);
-
-			if (maxtemp > absmax) {
-				absmax = maxtemp;
-			}
+			if (!isfinite((A[i][j]))) return(1);
+			absmax = MY_MAX(absmax, maxtemp);
 		}
 
 		if (absmax == 0.) {
@@ -6315,19 +6311,42 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	dU[U2_RAD] = -Gcov[2];
 	dU[U3_RAD] = -Gcov[3];
 
+	#if(P_NUM)
+	double kappa_abs, kappa_emmit;
+	kappa_abs = calc_kappa_abs_ph(ph, bsq, Tr
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	kappa_emmit = calc_kappa_emmit_ph(ph, bsq, Tr
+		#if(DOHELM) 
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+
+	dU[PHOTON] = kappa_emmit * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)))) 
+		- (kappa_abs * arad * Tg * Tg * Tg * Tg / (BOLTZ_CGS * Tg)) / 2.701178;
+	#endif
+
 	//Entropy source term
 	#if(DOKTOT)
 		#if (DOHELM)
 		eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
 		Tg *= BOLTZ_CGS * MASS_DENSITY_SCALE / (MMW * MH_CGS * ENERGY_DENSITY_SCALE);
 		#else
-		Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
-		#endif
-		#if(FULL_ENTROPY)
-		dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-		#else
-		dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
-		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+		Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];	
+			#if(FULL_ENTROPY)
+			dU[KTOT] = -1. / Tg * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+			#else
+			dK_dS = (GAMMA - 1.) / pow(ph[RHO], GAMMA - 1.0); 
+			dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
+			#endif
 		#endif
 	#endif
 
@@ -6341,7 +6360,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 			#else
 			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
 			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-			dU[ENTRE] += dK_dS * source_Coulomb(ph);
+			//dU[ENTRE] += dK_dS * source_Coulomb(ph);
 			#endif
 		#else
 		#endif
@@ -6446,7 +6465,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	//Misc variables
 	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
 	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
-	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * (urad_dot_urad));
+	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
 	Tg *= MU_E * MASS_RATIO;
 
 	//Final quantity
