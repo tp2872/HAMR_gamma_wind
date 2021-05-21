@@ -1325,7 +1325,7 @@ void init_rad_pres(double pi[NPR]) {
 
 	keep_iterating = 1;
 	n_iter = 0;
-	arad = ARAD / (MASS_DENSITY_SCALE * C_CGS * C_CGS) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	T_old = (GAMMA - 1.)*pi[UU] / pi[RHO];
 	T_new = T_old;
 	ptot = (GAMMA - 1.)*pi[UU];
@@ -1364,7 +1364,7 @@ void init_rad_pres(double pi[NPR]) {
 	}
 
 	#if(P_NUM)
-	pi[PHOTON] = pi[UU_RAD] * ENERGY_DENSITY_SCALE / (2.7012 * BOLTZ_CGS * T_new);
+	pi[PHOTON] = pi[UU_RAD] / (2.701178 * BOLTZ_CGS * T_new);
 	#endif
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
