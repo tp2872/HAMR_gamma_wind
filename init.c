@@ -112,13 +112,13 @@ typedef struct {
 
 void init()
 {
-	void init_bondi(void);
 	void init_torus(void);
 	void init_torus_grb();
 	void init_disruption(void);
 	void init_monopole(double Rout_val);
 	void init_thindisk();
 	void init_truncdisk();
+	void init_postmerger();
 
 	switch( WHICHPROBLEM ) {
 		case MONOPOLE_PROBLEM_1D:
@@ -145,8 +145,6 @@ void init()
 		break;
 		case BONDI_PROBLEM_1D:
 		case BONDI_PROBLEM_2D:
-		init_bondi();
-		break;
 		case SOUND_WAVE:
 		init_sndwave();
 		break;
@@ -178,11 +176,12 @@ void init_radpulse()
 	double X[NDIM];
 	struct of_geom geom;
 
-	double sigma = 1.56e-64;
+	double sigma = 1.56e-54;
 	double T0 = 1e6;
-	double w2 = 5.0 * 5.0;
 	double myrho = 1.;
 	double xc = 0.5;
+	double yc = 0.5;
+	double w = 0.05;
 	double T_rad;
 
 	/* some physics parameters */
@@ -193,10 +192,10 @@ void init_radpulse()
 	failed = 0;	/* start slow */
 	dt = 1.e-5;
 
-	t = 0.;
+	t = 0.; 
 
 	/* output choices */
-	tf = 1000.;
+	tf = 1.;
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
@@ -210,10 +209,12 @@ void init_radpulse()
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &x, &y, &zz);
 			//applying the perturbations
-			T_rad = T0 * (1. + 100. * exp(-(x - xc) * (x - xc) / w2));
+			//T_rad = T0 * (1. + 100. * exp(- ((x - xc) * (x - xc) + (y - yc) * (y - yc)) / (w * w)));
+			//T_rad = T0 * (100. * exp(- ((x - xc) * (x - xc)) / (w * w)));
+			T_rad = T0 * (1. + 100. * exp(-((x - xc) * (x - xc)) / (w * w)));
 
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = myrho;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myrho * T_rad / (GAMMA - 1.);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = myrho * T0 / (GAMMA - 1.);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = 0.;
@@ -232,6 +233,7 @@ void init_radpulse()
 #endif
 		}
 	}
+
 
 	/* enforce boundary conditions */
 	for (n = 0; n < n_active; n++) {

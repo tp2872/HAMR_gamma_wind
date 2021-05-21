@@ -17,10 +17,10 @@ Physical Parameters section
 #define POSTMERGER_PROBLEM 13
 #define RAD_PULSE 14
 
-#define WHICHPROBLEM TORUS_PROBLEM
+#define WHICHPROBLEM RAD_PULSE
 
 /*Set Cartesian grid for test problems*/
-#define CARTESIAN (0)
+#define CARTESIAN (1)
 
 /*Enable special refinement criterion for large scale jet simulations*/
 #define REFINE_JET (0)
@@ -151,9 +151,9 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 150
-#define BS_2 150
-#define BS_3 150
+#define BS_1 101
+#define BS_2 101
+#define BS_3 1
 
 /*Set the maximum number of refinement levels*/
 #define N_LEVELS_3D 1
@@ -264,8 +264,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define POLEFIX 2
 
 /*Set periodic boundary conditions only in the third dimension is supported*/
-#define PERIODIC1 CARTESIAN
-#define PERIODIC2 CARTESIAN
+#define PERIODIC1 0 //CARTESIAN
+#define PERIODIC2 0 //CARTESIAN
 #if (BS_3*NB_3==1)
 #define PERIODIC3 0
 #else
@@ -323,7 +323,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MPI_enable 1
 
 /*Enable Radiation*/
-#define RAD_M1 (0)
+#define RAD_M1 (1)
 
 /*Enable Resistivity*/
 #define RESISTIVE (0)
@@ -332,7 +332,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define ETA (0.0)
 
 /*Enable IMEX*/
-#define DO_IMEX (0)
+#define DO_IMEX (1)
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
@@ -377,7 +377,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define MASS_DENSITY_SCALE (0.0000001)
 #else
 //#define MASS_DENSITY_SCALE (0.00001)
-#define MASS_DENSITY_SCALE (3.1)
+#define MASS_DENSITY_SCALE (1.)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)

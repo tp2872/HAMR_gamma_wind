@@ -6295,7 +6295,7 @@ __device__ double calc_kappa_abs(double* ph
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
-#if(!WHICHPROBLEM == RAD_PULSE)
+#if(WHICHPROBLEM == RAD_PULSE)
 	kappa_abs = 0.;
 #endif
 
@@ -6326,7 +6326,7 @@ __device__ double calc_kappa_emmit(double* ph
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Tg), -7. / 2.) * pow(MH_CGS, -2.);
-#if(!WHICHPROBLEM == RAD_PULSE)
+#if(WHICHPROBLEM == RAD_PULSE)
 	kappa_abs = 0.;
 #endif
 
@@ -6349,11 +6349,13 @@ __device__ double calc_kappa_es(double* ph
 	#endif
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Tg / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
-#if(!WHICHPROBLEM == RAD_PULSE)
-	kappa_es = 1e-6;
+#if(WHICHPROBLEM == RAD_PULSE)
+	kappa_es = 1e5;// 1e-6;
+	return (kappa_es);
+#else 
+	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 #endif
 
-	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 __device__ double NewtonRaphson(double start, int max_count, int dir, double *  ucon, double *  bcon, double E, double vasq, double csq)
