@@ -900,8 +900,8 @@ double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
 
 	//Figure out if electron quant_e energy is bigger than quant_g
 	#if(FIXEDGAMMA)   
-		game = GAMMAE;
-		gami = GAMMA;
+	game = GAMMAE;
+	gami = GAMMA;
 		#if(FULL_ENTROPY)
 		Te = fabs(exp((game - 1.0) * S[0] * pow(rho, game - 1.0)));
 		Ti = fabs(exp((gami - 1.0) * S[1] * pow(rho, gami - 1.0)));

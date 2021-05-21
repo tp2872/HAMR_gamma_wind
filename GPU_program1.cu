@@ -5643,7 +5643,6 @@ __device__ void func_vsq(double x[], double dx[], double resid[], double jac[][N
 	vsq = x[1];
 	w = W * (1.0 - vsq);
 	rho = D * sqrt(1.0 - vsq);
-	gtmp = 1. - vsq;
 	gamma_eos = calc_gamma_gas_w(S, rho, w, fel);
 	factor1 = (gamma_eos - 1.) / gamma_eos;
 	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
@@ -5760,23 +5759,41 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
 	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
 
-	//floor on density and internal energy density (momentum *not* conserved) 
+	//Store old values
 	#pragma unroll 9
 	for (k = 0; k < NPR_U; k++) pf_prefloor[k] = pf[k];
+
+	//floor on density 
 	if (pf[RHO] < rhoflr) {
 		pf[RHO] = rhoflr;
 		dofloor = 1;
 	}
 
+	//Internal energy floor
+	#if(RAD_M1)
+	if (pf[UU] + pf[UU_RAD] < uuflr) {
+		pf[UU] = uuflr - pf[UU_RAD];
+		dofloor = 1;
+	}
+	#else
 	if (pf[UU] < uuflr) {
 		pf[UU] = uuflr;
 		dofloor = 1;
 	}
+	#endif
 
+	//Floor on radiation energy density
 	#if(RAD_M1)
 	if (pf[UU_RAD] < pow(10., -30.)) {
 		pf[UU_RAD] = pow(10., -30.);
 	}
+	#endif
+
+	//Floor on photon number
+	#if(P_NUM)
+	double Tr;
+	Tr = pow(pf[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+	pf[PHOTON] = pf[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 	#endif
 
 	#if(DRIFT_FLOOR)
@@ -5930,8 +5947,7 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 			pf[ENTRI] = 0.5 * (GAMMA - 1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
 			#endif
 		#else
-
-
+		fprintf(stderr, "Not implemented yet!\n");
 		#endif
 	}
 	#endif
@@ -5949,12 +5965,6 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		}
 	}
 
-	//#if(FULL_ENTROPY)
-	//pf[KTOT]= 1. / (GAMMA - 1.) * log((GAMMA-1.0) * pf[UU] * pow(pf[RHO], -GAMMA));
-	//#else
-	//pf[KTOT]= (GAMMA-1.0) * pf[UU] * pow(pf[RHO], -GAMMA);
-	//#endif
-	
 	return flag;
 	#else 
 	return(0);
@@ -6575,21 +6585,18 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	#endif
 
 	#if(DOKTOT)
-	#if(DOHELM)
-	double xentr;
-	eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
-	flux[KTOT] = flux[RHO] * xentr;
-	//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
-	#else 
-	#if(FULL_ENTROPY)
-	// DIMARK: entropy test
-	//double ENTROPY_CONST = 2.5 * (1. - log(MASS_DENSITY_SCALE * avo / MMW)) + 1.5 * log(PRESSURE_SCALE * 2. * M_PI * MH_CGS / (PLANCK_CGS * PLANCK_CGS));
-	//flux[KTOT] = flux[RHO] * (1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA)) + ENTROPY_CONST);
-	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
-	#else
-	flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
-	#endif
-	#endif
+		#if(DOHELM)
+		double xentr;
+		eos_mode_rhou_entr(gpu_eos_table, pr[RHO], pr[UU], &xentr);
+		flux[KTOT] = flux[RHO] * xentr;
+		//flux[KTOT] = flux[RHO] * exp(KTOT_FACTOR * xentr);
+		#else 
+			#if(FULL_ENTROPY)
+			flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log(P * pow(pr[RHO], -GAMMA));
+			#else
+			flux[KTOT] = flux[RHO] * P * pow(pr[RHO], -GAMMA);
+			#endif
+		#endif
 	#endif
 
 	#pragma unroll 9
@@ -6789,8 +6796,7 @@ __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q
 	/*Set velocity as minimum of optically thin and optically thick limit*/
 	*vmax = MY_MIN(cmax_mhd, cmax_rad);
 	*vmin = MY_MAX(cmin_mhd, cmin_rad);
-	//*vmax = cmax_rad;
-	//*vmin = cmin_rad;
+
 	return;
 	#endif
 }
@@ -6812,10 +6818,12 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#elif(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet!\n");
 			#else
 			Tg = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
 			#endif
 		#else
+		fprintf(stderr, "Not implemented yet!\n");
 		#endif
 	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else
@@ -6854,10 +6862,12 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#elif(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet!\n");
 			#else
 			Tg = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
 			#endif
 		#else
+		fprintf(stderr, "Not implemented yet!\n");
 		#endif
 	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else
@@ -6895,10 +6905,12 @@ __device__ double calc_kappa_es(double* ph
 	#elif(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet!\n");
 			#else
 			Tg = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
 			#endif
 		#else
+		fprintf(stderr, "Not implemented yet!\n");
 		#endif
 	Tg *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
 	#else

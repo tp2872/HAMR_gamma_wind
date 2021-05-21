@@ -1364,7 +1364,8 @@ void init_rad_pres(double pi[NPR]) {
 	}
 
 	#if(P_NUM)
-	pi[PHOTON] = pi[UU_RAD] / (2.701178 * BOLTZ_CGS * T_new);
+	T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
 	#endif
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
