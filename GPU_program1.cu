@@ -6435,41 +6435,41 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		Gcon[i] = -(kappa_abs * R_dot_ucon[i] + lambda * ucon[i]) - kappa_es * (R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[i]);
 	}
 
-	//Evaluate comptonization term
-	#if(P_NUM)
-	double Ehat, Nhat G0, u_dot_urad, urad_dot_urad, factor;
+		//Evaluate comptonization term
+		#if(P_NUM)
+		double Ehat, Nhat G0, u_dot_urad, urad_dot_urad, factor;
 
-	//Misc variables
-	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
-	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
-	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
-	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
-	Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE);
+		//Misc variables
+		u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+		urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+		Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
+		Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
+		Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * C_CGS *C_CGS) / (BOLTZ_CGS * ph[RHO]);
 
-	//kappa_abs = calc_kappa_abs_ph(ph, bsq, Tr
-	//	#if(DOHELM)
-	//	, gpu_eos_table
-	//	#endif
-	//	#if(TWO_T)
-	//	, gamma_g
-	//	#endif
-	//);
-	//kappa_emmit = calc_kappa_emmit_ph(ph, bsq, Tr
-	//	#if(DOHELM) 
-	//	, gpu_eos_table
-	//	#endif
-	//	#if(TWO_T)
-	//	, gamma_g
-	//	#endif
-	//);
-	source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
-		+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Tg * Tg * Tg * Tg / (BOLTZ_CGS * Tg * 2.701178));
+		//kappa_abs = calc_kappa_abs_ph(ph, bsq, Tr
+		//	#if(DOHELM)
+		//	, gpu_eos_table
+		//	#endif
+		//	#if(TWO_T)
+		//	, gamma_g
+		//	#endif
+		//);
+		//kappa_emmit = calc_kappa_emmit_ph(ph, bsq, Tr
+		//	#if(DOHELM) 
+		//	, gpu_eos_table
+		//	#endif
+		//	#if(TWO_T)
+		//	, gamma_g
+		//	#endif
+		//);
+		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
+			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Tg * Tg * Tg * Tg / (BOLTZ_CGS * Tg * 2.701178));
 
-	//Compton scattering term is added
-	factor = BOLTZ_CGS / MMW * MH_CGS; 
-	G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Tg * factor - Tr * factor) * (1.0 + 3.683 * Tg * factor + 4.0 * Tg * factor * Tg * factor) / ((1.0 + Tg * factor));
-	for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
-	#endif
+		//Compton scattering term is added
+		factor = BOLTZ_CGS / MMW * MH_CGS; 
+		G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Tg * factor - Tr * factor) * (1.0 + 3.683 * Tg * factor + 4.0 * Tg * factor * Tg * factor) / ((1.0 + Tg * factor));
+		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+		#endif
 
 	#endif
 }
@@ -6495,12 +6495,11 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 }
 
 __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, struct of_geom* geom, double* flux){
+	#if(RAD_M1)
 	int k;
 
 	//Radiation energy tensor
-	#if(RAD_M1)
 	mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
-	#endif
 	for (k = UU_RAD; k <= U3_RAD; k++) flux[k] *= geom->g;
 
 	//Flux of photon number
@@ -6508,7 +6507,7 @@ __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, 
 	flux[PHOTON] = pr[PHOTON] * q_rad->ucon[dir];
 	flux[PHOTON] *= geom->g;
 	#endif
-
+	#endif
 	return;
 }
 
@@ -6525,17 +6524,13 @@ __device__ void primtoflux(double *  pr, struct of_state *  q,  int dir, struct 
 	double P, w, bsq, eta, ptot;
 
 	/*Calculate misc quantities*/
-
     // EOS-specific calls:
     #if (DOHELM)
-    // 1. Helmholtz EOS
     double cs2_helm;
     eos_mode_rhou_pres_cs2 (gpu_eos_table, pr[RHO], pr[UU], &P, &cs2_helm);
-	w = pr[RHO] + pr[UU] + P;
 	#elif(TWO_T)
 	P = (gamma_g - 1.) * pr[UU];
     #else
-    // 2. Ideal gas EOS
 	P = (GAMMA - 1.) * pr[UU];
     #endif
 

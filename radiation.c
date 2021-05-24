@@ -6,7 +6,11 @@ void lower_g(double vcon[], double gcov[][NDIM], double vcov[]);
 void ncov_calc(double gcon[][NDIM], double ncov[]); 
 int Rtoprim_calc(double U[NPR_R], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_R], int lim);
 #if(RAD_M1)
-void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size) {
+void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int *pflag, int *pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size
+	#if(TWO_T)
+	, double fel
+	#endif
+) {
 	double error_t = 1.e-3;
 	int k;
 	double U_ft[NPR], pb_i[NPR], U_n_temp[NPR], U_i_temp[NPR];
@@ -27,6 +31,9 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 	implicit_rad_solve_init(pb_i, U_n_temp, U_i_temp, U_ft, geom, dU, Dt, &error_t, cell_size
 		#if(DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, fel
 		#endif
 	);
 
@@ -59,24 +66,36 @@ void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double
 }
 
 //Calculate initial error for source term and set initial guess values
-void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size) {
-	double kappa_abs, kappa_es, tau = 0., norm;
+void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size
+	#if(TWO_T)
+	, double fel
+	#endif
+) {
+	double kappa_abs, kappa_es, tau = 0., norm, bsq ,Tr;
 	int k, pflag, pflag_rad;
 	struct of_state q;
 	struct of_state_rad q_rad;
-	#if(TWO_T)
-	double fel;
-	#endif
+
 
 	//Calculate optical depth
-	kappa_abs = calc_kappa_abs(pb
+	get_state(pb, geom, &q);
+	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+	get_state_rad(pb, geom, &q_rad);
+	Tr = calc_Tr(pb, q.ucon, q_rad.ucon, q_rad.ucov);
+	kappa_abs = calc_kappa_abs(pb, bsq, Tr
 		#if(DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
 		#endif
 	);
 	kappa_es = calc_kappa_es(pb
 		#if(DOHELM)
 		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
 		#endif
 	);
 	tau = (kappa_abs + kappa_es) * cell_size;

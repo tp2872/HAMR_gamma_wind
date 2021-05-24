@@ -19,16 +19,16 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	mhd_calc(pr, dir, q, &flux[UU], gamma_g) ;
 	flux[UU] += flux[RHO];
 
-    //Radiation energy tensor
-    #if(RAD_M1)
-    mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
-    #endif
-    
 	/* dual of Maxwell tensor */
 	#pragma ivdep
 	for (k = B1; k <= B3; k++){
 		flux[k] = q->bcon[k-4] * q->ucon[dir] - q->bcon[dir] * q->ucon[k-4];
 	}
+
+	//Radiation energy tensor
+	#if(RAD_M1)
+	mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
+	#endif
 
 	//Flux of electron and ion entropies
 	#if(TWO_T)
@@ -48,11 +48,7 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	flux[KTOT] = flux[RHO] * (gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g);
 	#endif
     
-	for (k = 0; k < NPR_U; k++) flux[k] *= geom->g;
-	#if(TWO_T)
-	flux[ENTRE] *= geom->g;
-	flux[ENTRI] *= geom->g;
-	#endif
+	for (k = 0; k < NPR; k++) flux[k] *= geom->g;
 }
 
 /* calculate magnetic field four-vector */
@@ -101,7 +97,26 @@ void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict 
     int j;
     /* single row of mhd stress tensor, first index up, second index down */
     #pragma ivdep
-    DLOOPA mhd_rad[j] = 4./3.*pr[UU_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + 1./3.*pr[UU_RAD]*delta(dir, j);
+    DLOOPA mhd_rad[j] = (4./3.)*pr[UU_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + (1./3.)*pr[UU_RAD]*delta(dir, j);
+}
+
+double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]) {
+	double Tr, u_dot_urad, urad_dot_urad, Ehat;
+
+	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
+
+	//Get radiation temperature either assuming blackbody or diluted blackbody
+	#if(P_NUM)
+	double  Nhat;
+	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
+	Tr = Ehat / (Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
+	#else
+	Tr = pow(Ehat / ARAD, 0.25);
+	#endif
+
+	return Tr;
 }
 
 /* add in (explicit) geometricc source terms to equations of motion */
@@ -159,10 +174,14 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
 }
 
 /* Add implicit radiation 4-force source term to equations of motion */
-void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU)
+void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * restrict dU
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+)
 {
 	#if(RAD_M1)
-	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM+P_NUM], ucon[NDIM], ucov[NDIM], Tg;
+	double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM+P_NUM], ucon[NDIM], ucov[NDIM], bcon[NDIM], bcov[NDIM], Tg, bsq;
 	int j, k;
 	struct of_state_rad q_rad;
 	
@@ -177,10 +196,21 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 
 	//Add radiation 4-force
 	ucon_calc(ph, geom, ucon);
-	lower(ucon, geom, ucov);
-	calc_Gcon(ph, Gcon, ucon, ucov, mhd_rad);
-	lower(Gcon, geom, Gcov);
+	lower(ucon, geom->gcov, ucov);
+	bcon_calc(ph, ucon, ucov, bcon);
+	lower(bcon, geom->gcov, bcov);
+	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
 
+	calc_Gcon(ph, Gcon, ucon, ucov, q_rad.ucon, q_rad.ucov, mhd_rad, bsq
+		#if(TWO_T)
+		, gamma_g
+		#endif
+		#if(P_NUM)
+		& (dU[PHOTON])
+		#endif
+	);
+
+	lower(Gcon, geom->gcov, Gcov);
 	dU[UU] = Gcov[0];
 	dU[U1] = Gcov[1];
 	dU[U2] = Gcov[2];
@@ -190,10 +220,6 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	dU[U1_RAD] = -Gcov[1];
 	dU[U2_RAD] = -Gcov[2];
 	dU[U3_RAD] = -Gcov[3];
-
-	#if(P_NUM)
-	dU[PHOTON] = Gcon[5];
-	#endif
 
 	#if(DOKTOT)
 	Tg = (GAMMA - 1.)*(ph[UU]) / (ph[RHO]);
@@ -208,7 +234,7 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 				fprintf(stderr, "Source rad is not fully implemented yet! \n");
 				#endif
 			#else
-		double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA -1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
+		double dK_dS = (GAMMA - 1.)/ pow(ph[RHO], GAMMA - 1.0); //Multiply the next line with this to get evolution for K=P/rho^gamma instead of S=1/(gamma-1)*log(P/rho^gamma)
 		dU[KTOT] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 		#endif
 		#endif
@@ -218,34 +244,119 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 	PLOOP dU[k] *= geom->g;
 	#endif
 }
-//gamg*(ue+ui)=gami*ui+game*ue
-//gamg=(gami*ui+game*ue)/(ue+ui)
 
 //Calculate radiation 4-force
-void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]) {
+void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM],  double mhd_rad[NDIM][NDIM], double bsq
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+	#if(P_NUM)
+	, double* source_photon
+	#endif
+) {
+#if(RAD_M1)
 	int i;
-	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad;
-	kappa_abs =  calc_kappa_abs(ph);
-	kappa_emmit = calc_kappa_emmit(ph);
-	kappa_es = calc_kappa_es(ph);
-	arad = ARAD / (ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr;
 
-	Tg = (GAMMA - 1.)*ph[UU] / ph[RHO];
-	lambda = kappa_emmit * arad* pow(Tg, 4.); //in units of erg/s/cm^3
+	//Calculate radiation temperature in rest frame of fluid
+	Tr = calc_Tr(ph, ucon, ucon_rad, ucov_rad);
+
+	kappa_abs = calc_kappa_abs(ph, bsq, Tr
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	kappa_emmit = calc_kappa_emmit(ph, bsq, Tr
+		#if(DOHELM) 
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	kappa_es = calc_kappa_es(ph
+		#if(DOHELM)
+		, gpu_eos_table
+		#endif
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+
+	#if (DOHELM)
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
+	arad = ARAD / (ENERGY_DENSITY_SCALE);
+	#elif(TWO_T)
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet! \n")
+			#else
+			Tg = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
+			#endif
+		#else
+		fprintf(stderr, "Not implemented yet! \n")
+		#endif
+	#else
+	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
+
+	//Calculate emmission rate
+	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
+	lambda = kappa_emmit * arad * Tg * Tg * Tg * Tg; //in units of erg/(Rg/c)/cm^3
+
+	//Calculate non-Compton scattering source term
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
 	for (i = 0; i < NDIM; i++) {
-		Gcon[i] = -(kappa_abs*R_dot_ucon[i] + lambda*ucon[i]) - kappa_es*(R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3])*ucon[i]);
+		Gcon[i] = -(kappa_abs * R_dot_ucon[i] + lambda * ucon[i]) - kappa_es * (R_dot_ucon[i] + (R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3]) * ucon[i]);
 	}
-	#if(P_NUM)
-//	double C = 8.0 * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS);
-	//double n_dot_ucon = ph[PHOTON]*(ucon[0]*ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3]);
-	//double R_dot_ucon_ucov = R_dot_ucon[0] * ucov[0] + R_dot_ucon[1] * ucov[1] + R_dot_ucon[2] * ucov[2] + R_dot_ucon[3] * ucov[3];
-	//Gcon[5] = -ph[RHO] * (kappa_abs * R_dot_ucon / (MU_G * MH_CGS * Tr) / (3.0 - 2.449724 * pow(n_dot_ucon, 4.0) / (C * C_CGS * C_CGS * pow(R_dot_ucon_ucov, 3.0))) - lambda / (MU_G * MH_CGS * Tg * 2.701178));
+
+		//Evaluate comptonization term
+		#if(P_NUM)
+		double Ehat, Nhat G0, u_dot_urad, urad_dot_urad, factor;
+
+		//Misc variables
+		u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
+		urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
+		Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
+		Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
+		Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * C_CGS * C_CGS) / (BOLTZ_CGS * ph[RHO]);
+
+		//kappa_abs = calc_kappa_abs_ph(ph, bsq, Tr
+		//	#if(DOHELM)
+		//	, gpu_eos_table
+		//	#endif
+		//	#if(TWO_T)
+		//	, gamma_g
+		//	#endif
+		//);
+		//kappa_emmit = calc_kappa_emmit_ph(ph, bsq, Tr
+		//	#if(DOHELM) 
+		//	, gpu_eos_table
+		//	#endif
+		//	#if(TWO_T)
+		//	, gamma_g
+		//	#endif
+		//);
+		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
+			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Tg * Tg * Tg * Tg / (BOLTZ_CGS * Tg * 2.701178));
+
+		//Compton scattering term is added
+		factor = BOLTZ_CGS / MMW * MH_CGS;
+		G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Tg * factor - Tr * factor) * (1.0 + 3.683 * Tg * factor + 4.0 * Tg * factor * Tg * factor) / ((1.0 + Tg * factor));
+		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+		#endif
 	#endif
 }
 
 //Calculate total absorption opacity
-double calc_kappa_abs(double* ph) {
+double calc_kappa_abs(double* ph, double bsq, double Tr
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+	) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
@@ -268,7 +379,11 @@ double calc_kappa_abs(double* ph) {
 }
 
 //Calculate total emmission opacity
-double calc_kappa_emmit(double* ph) {
+double calc_kappa_emmit(double* ph, double bsq, double Tr
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+	) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
@@ -290,7 +405,11 @@ double calc_kappa_emmit(double* ph) {
 	return(kappa_abs * ph[RHO] * MASS_DENSITY_SCALE * R_G_CGS);
 }
 //Calculate total (electron) scattering opacity
-double calc_kappa_es(double * restrict ph) {
+double calc_kappa_es(double * restrict ph
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+	) {
 	double kappa_es;
 	#if (DOHELM)
 	double Tg;
@@ -530,8 +649,12 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
 }
 
 //Calculate radiative wave velocity
-void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx){
-	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd;
+void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+){
+	double discr, vp, vm, tau, kappa_tot, crad2, cmin_rad, cmax_rad, cmin_mhd, cmax_mhd, bsq, Tr;
 	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	int j;
@@ -565,7 +688,6 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	}
 
 	/* now require that speed of wave measured by observer q->ucon is crad2 */
-
 	Au = dot(Acov, q_rad->ucon);
 	Bu = dot(Bcov, q_rad->ucon);
 
@@ -605,10 +727,21 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 		cmin_rad = vp;
 	}
 
-	/* find radiation wave speed */
-	kappa_tot = calc_kappa_abs(pr) + calc_kappa_es(pr);
+	/* find radiation wave speed in fluid frame based on optical depth */
+	//Calculate optical depth
+	bsq = q->bcon[0] * q->bcov[0] + q->bcon[1] * q->bcov[1] + q->bcon[2] * q->bcov[2] + q->bcon[3] * q->bcov[3];
+	Tr = calc_Tr(pr, q->ucov, q_rad->ucon, q_rad->ucov);
+	kappa_tot = (calc_kappa_es(pr
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	) + calc_kappa_abs(pr, bsq, Tr
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	));
 	tau = kappa_tot * sqrt(geom->gcov[js][js]) * dx;
-	crad2 = MY_MIN(pow(4. / (3. * tau), 2.), 0.999999999);
+	crad2 = MY_MIN(pow(4. / (3. * tau), 2.), 1./3.);
 
 	/* check on it! */
 	if (crad2 < 0.) {

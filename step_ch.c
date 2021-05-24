@@ -280,6 +280,7 @@ void utoprim_M1_0(double Dt, int n)
 				get_state(p[nl[n]][ind0], &geom, &q);
 				get_state_rad(p[nl[n]][ind0], &geom, &q_rad);		
 				#if(TWO_T)
+				double fel = calc_delta(p[nl[n]][ind0], dot(q.bcon, q.bcov));
 				gamma_g = calc_gamma_gas_prim(p[nl[n]][ind0]);
 				#else
 				gamma_g = GAMMA;
@@ -287,7 +288,11 @@ void utoprim_M1_0(double Dt, int n)
 				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0], gamma_g);
 
 				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size);
+				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size
+				#if(TWO_T)
+					, fel
+				#endif
+				);
 			}
 		}
 	}
@@ -310,6 +315,8 @@ void utoprim_M1_1(double Dt, int n){
 			ind3 = index_3D(n, i, j, z + D3);
 
 			#if(TWO_T)
+			struct of state q=get_state(p[nl[n]][ind0], &geom, &q);
+			double fel = calc_delta(p[nl[n]][ind0], dot(q.bcon, q.bcov));
 			gamma_g = calc_gamma_gas_prim(p[nl[n]][ind0]);
 			#else
 			gamma_g = GAMMA;
@@ -340,7 +347,11 @@ void utoprim_M1_1(double Dt, int n){
 
 			PLOOP ph[nl[n]][ind0][k] = p[nl[n]][ind0][k];
 			cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Y_IMEX*Dt, cell_size);
+			implicit_rad_solve(ph[nl[n]][ind0], U_n[nl[n]][ind0], U_1[nl[n]][ind0], U_1[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD1[nl[n]][ind0], Y_IMEX*Dt, cell_size
+				#if(TWO_T)
+				, fel
+				#endif	
+			);
 		}
 	}
 }
@@ -496,7 +507,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 
 			//Perform implicit solve
 			double cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
-			implicit_rad_solve(pf[nl[n]][ind0], U, U, U_0, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU, Dt, cell_size);
+			implicit_rad_solve(pf[nl[n]][ind0], U, U, U_0, &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU, Dt, cell_size
+				#if(TWO_T)
+				, fel
+				#endif
+			);
 			#else
 
 			#if(NEWMAN)
@@ -644,11 +659,17 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					primtoflux(p_l, &state_l, &state_l_rad, dir, &geom, F_l, gamma_g);
 					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l, gamma_g);
 					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, gamma_g);
+					#if(RAD_M1)
+					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
+					#endif
 
 					#if(TWO_T)
 					gamma_g = calc_gamma_gas_prim(p_r);
 					if (gamma_g < 0.0) fprintf(stderr, "2: (%d, %d, %d): %f %f %f %f \n", i, j, z, log10(pr[nl[n]][ind1][ENTRE]), log10(pr[nl[n]][ind0][k]), log10(pr[nl[n]][index_3D(n, i + idel, j + jdel, z + zdel)][k]), log10(p_l[ENTRI]));
-
 					#else
 					gamma_g = GAMMA;
 					#endif
@@ -656,18 +677,23 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					primtoflux(p_r, &state_r, &state_r_rad, 0, &geom, U_r, gamma_g);
 					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, gamma_g);
 
-					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
-					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
-					ctop = MY_MAX(cmax, cmin);
-
 					#if(RAD_M1)
-					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]);
-					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]);
+					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
 
+					//Find radiation wavespeeds
 					cmax_rad = fabs(MY_MAX(MY_MAX(0., cmax_l_rad), cmax_r_rad));
 					cmin_rad = fabs(MY_MAX(MY_MAX(0., -cmin_l_rad), -cmin_r_rad));
 					ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 					#endif
+
+					//Find MHD wavespeeds
+					cmax = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
+					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
+					ctop = MY_MAX(cmax, cmin);
 
 					for (k = 0; k < NPR; k++) {
 						if (!(k >= UU_RAD && k <= U3_RAD && RAD_M1)) {
