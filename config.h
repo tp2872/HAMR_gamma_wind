@@ -197,7 +197,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 5.0
+#define TREF 100.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)

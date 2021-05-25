@@ -8,7 +8,11 @@
         
 ***********************************************************************************************/
 
-void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux, double gamma_g)
+void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+)
 {
 	int j,k ;
 
@@ -16,7 +20,11 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 	flux[RHO] = pr[RHO]*q->ucon[dir] ;
 
 	/* MHD stress-energy tensor w/ first index up, * second index down. */
-	mhd_calc(pr, dir, q, &flux[UU], gamma_g) ;
+	mhd_calc(pr, dir, q, &flux[UU] 
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
 	flux[UU] += flux[RHO];
 
 	/* dual of Maxwell tensor */
@@ -43,9 +51,9 @@ void primtoflux(double * restrict pr, struct of_state * restrict q, struct of_st
 
 	//Entropy advection
 	#if(FULL_ENTROPY)
-	flux[KTOT] = flux[RHO] * 1. / (gamma_g - 1.) * log((gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g));
+	flux[KTOT] = flux[RHO] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA));
 	#else
-	flux[KTOT] = flux[RHO] * (gamma_g - 1.) * pr[UU] * pow(pr[RHO], -gamma_g);
+	flux[KTOT] = flux[RHO] * (GAMMA - 1.) * pr[UU] * pow(pr[RHO], -GAMMA);
 	#endif
     
 	for (k = 0; k < NPR; k++) flux[k] *= geom->g;
@@ -65,8 +73,11 @@ void bcon_calc(double * restrict pr, double * restrict ucon, double * restrict u
 }
 
 /* MHD stress tensor, with first index up, second index down */
-void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd, double gamma_g)
-{
+void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd 
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+){
 	int j ;
 	double r,u,P,w,bsq,eta,ptot ;
 
@@ -76,9 +87,11 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
     #if DOHELM
     // Helmholtz EOS
     eos_mode_rhou_pres (r, u, &P);
-	#else
+	#elif(TWO_T)
     // Ideal gas EOS
 	P = (gamma_g - 1.) * u;
+	#else
+	P = (GAMMA - 1.) * u;
     #endif
     
     w = P + r + u ;
@@ -98,6 +111,44 @@ void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict 
     /* single row of mhd stress tensor, first index up, second index down */
     #pragma ivdep
     DLOOPA mhd_rad[j] = (4./3.)*pr[UU_RAD]*q_rad->ucon[dir] * q_rad->ucov[j] + (1./3.)*pr[UU_RAD]*delta(dir, j);
+}
+
+double calc_Te(double* ph) {
+	double Te;
+
+	#if (TWO_T)
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet!\n");
+			#else
+			Te = fabs(ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0));
+			#endif
+		#else
+		fprintf(stderr, "Not implemented yet!\n");
+		#endif
+	#else
+	Te = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
+	return Te;
+}
+
+double calc_Ti(double* ph) {
+	double Ti;
+
+	#if (TWO_T)
+		#if(FIXEDGAMMA)
+			#if(FULL_ENTROPY)
+			fprintf(stderr, "Not implemented yet!\n");
+			#else
+			Ti = fabs(ph[ENTRI] * pow(ph[RHO], GAMMA - 1.0));
+			#endif
+		#else
+		fprintf(stderr, "Not implemented yet!\n");
+		#endif
+	#else
+	Ti = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	#endif
+	return Ti;
 }
 
 double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]) {
@@ -120,7 +171,11 @@ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov
 }
 
 /* add in (explicit) geometricc source terms to equations of motion */
-void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt, double gamma_g)
+void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict dU, double Dt
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+)
 {
     double mhd[NDIM][NDIM], mhd_rad[NDIM][NDIM], Gcov[NDIM], Gcon[NDIM], Tg;
 	int j,k ;
@@ -128,10 +183,26 @@ void source(double * restrict ph, struct of_geom * restrict geom, int n, int ii,
     struct of_state_rad q_rad;
 
 	get_state(ph, geom, &q) ;
-	mhd_calc(ph, 0, &q, mhd[0], gamma_g) ;
-	mhd_calc(ph, 1, &q, mhd[1], gamma_g) ;
-	mhd_calc(ph, 2, &q, mhd[2], gamma_g) ;
-	mhd_calc(ph, 3, &q, mhd[3], gamma_g) ;
+	mhd_calc(ph, 0, &q, mhd[0]
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	) ;
+	mhd_calc(ph, 1, &q, mhd[1]
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	mhd_calc(ph, 2, &q, mhd[2]
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
+	mhd_calc(ph, 3, &q, mhd[3]
+		#if(TWO_T)
+		, gamma_g
+		#endif
+	);
 
 	#pragma ivdep
 	PLOOP dU[k] = 0.;
@@ -196,9 +267,9 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 
 	//Add radiation 4-force
 	ucon_calc(ph, geom, ucon);
-	lower(ucon, geom->gcov, ucov);
+	lower(ucon, geom, ucov);
 	bcon_calc(ph, ucon, ucov, bcon);
-	lower(bcon, geom->gcov, bcov);
+	lower(bcon, geom, bcov);
 	bsq = bcon[0] * bcov[0] + bcon[1] * bcov[1] + bcon[2] * bcov[2] + bcon[3] * bcov[3];
 
 	calc_Gcon(ph, Gcon, ucon, ucov, q_rad.ucon, q_rad.ucov, mhd_rad, bsq
@@ -206,11 +277,12 @@ void source_rad(double * restrict ph, struct of_geom * restrict geom,  double * 
 		, gamma_g
 		#endif
 		#if(P_NUM)
-		& (dU[PHOTON])
+		, &(dU[PHOTON])
 		#endif
 	);
+	lower(Gcon, geom, Gcov);
 
-	lower(Gcon, geom->gcov, Gcov);
+	//Add source term
 	dU[UU] = Gcov[0];
 	dU[U1] = Gcov[1];
 	dU[U2] = Gcov[2];
@@ -256,56 +328,37 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 ) {
 #if(RAD_M1)
 	int i;
-	double lambda, Tg, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr;
+	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr, Te;
 
 	//Calculate radiation temperature in rest frame of fluid
 	Tr = calc_Tr(ph, ucon, ucon_rad, ucov_rad);
 
 	kappa_abs = calc_kappa_abs(ph, bsq, Tr
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
 		#if(TWO_T)
 		, gamma_g
 		#endif
 	);
 	kappa_emmit = calc_kappa_emmit(ph, bsq, Tr
-		#if(DOHELM) 
-		, gpu_eos_table
-		#endif
 		#if(TWO_T)
 		, gamma_g
 		#endif
 	);
 	kappa_es = calc_kappa_es(ph
-		#if(DOHELM)
-		, gpu_eos_table
-		#endif
 		#if(TWO_T)
 		, gamma_g
 		#endif
 	);
 
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Tg);
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	arad = ARAD / (ENERGY_DENSITY_SCALE);
-	#elif(TWO_T)
-		#if(FIXEDGAMMA)
-			#if(FULL_ENTROPY)
-			fprintf(stderr, "Not implemented yet! \n")
-			#else
-			Tg = ph[ENTRE] * pow(ph[RHO], GAMMAE - 1.0);
-			#endif
-		#else
-		fprintf(stderr, "Not implemented yet! \n")
-		#endif
 	#else
-	Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
+	Te = calc_Te(ph);
 	#endif
 
 	//Calculate emmission rate
 	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
-	lambda = kappa_emmit * arad * Tg * Tg * Tg * Tg; //in units of erg/(Rg/c)/cm^3
+	lambda = kappa_emmit * arad * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
 
 	//Calculate non-Compton scattering source term
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
@@ -315,14 +368,14 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 
 		//Evaluate comptonization term
 		#if(P_NUM)
-		double Ehat, Nhat G0, u_dot_urad, urad_dot_urad, factor;
+		double Ehat, Nhat, G0, u_dot_urad, urad_dot_urad, factor;
 
 		//Misc variables
 		u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
 		urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
 		Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
 		Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
-		Tg = MMW * MH_CGS * (GAMMA - 1.) * (ph[UU] * C_CGS * C_CGS) / (BOLTZ_CGS * ph[RHO]);
+		Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS;
 
 		//kappa_abs = calc_kappa_abs_ph(ph, bsq, Tr
 		//	#if(DOHELM)
@@ -341,11 +394,11 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 		//	#endif
 		//);
 		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
-			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Tg * Tg * Tg * Tg / (BOLTZ_CGS * Tg * 2.701178));
+			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 
 		//Compton scattering term is added
 		factor = BOLTZ_CGS / MMW * MH_CGS;
-		G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Tg * factor - Tr * factor) * (1.0 + 3.683 * Tg * factor + 4.0 * Tg * factor * Tg * factor) / ((1.0 + Tg * factor));
+		G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
 		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif
 	#endif
@@ -357,25 +410,28 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	, double gamma_g
 	#endif
 	) {
-	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne, zeta;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
-	double Tg;
-	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#else
-	double Tg = fabs(MU_G * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
-	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
+	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
+	zeta = 4. * M_PI * ME_CGS * ME_CGS * ME_CGS * pow(C_CGS, 5.0) * Tr / (3.0 * E_CGS * BOLTZ_CGS * PLANCK_CGS * sqrt(bsq) * Te * Te);
 
 	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -1.7) * pow(Tr, -3.);
-	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Tr, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	//kappa_abs = kappa_bf;//1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
+	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs * ph[RHO] * MASS_DENSITY_SCALE * R_G_CGS);
+	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 //Calculate total emmission opacity
@@ -383,26 +439,29 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#if(TWO_T)
 	, double gamma_g
 	#endif
-	) {
-	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff;
+) {
+	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
-	double Tg;
-	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#else
-	double Tg = fabs(MU_G * MH_CGS * (GAMMA - 1.) * (ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * ph[RHO] * MASS_DENSITY_SCALE));
+	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
-	double Tr = fabs(pow(ph[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25));
+
+	ne = ph[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);
 
 	kappa_m = 0.1 * Z_AB;
-	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Tg, 7.7);
-	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Tg, -4.7);
-	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5)  * log(1. + 1.6 * (Tg / Tg));
-	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Tg, -3.5) * log(1. + 1.6 * (Tg / Tg)) * (1. + 4.4 * pow(10., -10.) * Tg);
+	kappa_h = 1.1 * pow(10., -25.) * sqrt(Z_AB * ph[RHO] * MASS_DENSITY_SCALE) * pow(Te, 7.7);
+	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
+	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
+	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Te, -2.);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
-	//kappa_abs = kappa_bf;//1.7 * pow(10., -25.) * pow(Tg, -7. / 2.) * pow(MH_CGS, -2.);
+	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
-	return(kappa_abs * ph[RHO] * MASS_DENSITY_SCALE * R_G_CGS);
+	if (!isfinite(kappa_abs)) kappa_abs = 0.0;
+	return(kappa_abs * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 //Calculate total (electron) scattering opacity
 double calc_kappa_es(double * restrict ph
@@ -410,16 +469,18 @@ double calc_kappa_es(double * restrict ph
 	, double gamma_g
 	#endif
 	) {
-	double kappa_es;
+	double kappa_es, Te;
 	#if (DOHELM)
-	double Tg;
-	eos_mode_rhou_temp(ph[RHO], ph[UU], &Tg);
+	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#else
-	double Tg = MU_G*MH_CGS*(GAMMA - 1.)*(ph[UU] * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS*ph[RHO] * MASS_DENSITY_SCALE);
+	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
-	kappa_es = 0.2*(1 + X_AB) / (1. + pow(Tg / (4.5*pow(10., 8.)), 0.86));
-	kappa_es = 0.2*(1 + X_AB);
-	return(kappa_es* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);
+	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Te / (4.5 * pow(10., 8.)), 0.86));
+	kappa_es = 0.2 * (1 + X_AB);
+
+	if (!isfinite(kappa_es)) kappa_es = 0.0;
+	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
 }
 
 /* returns b^2 (i.e., twice magnetic pressure) */
@@ -557,7 +618,11 @@ int gamma_calc_rad(double * restrict pr, struct of_geom * restrict geom, double 
  * 
  */
 
-void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin, double gamma_g)
+void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * restrict geom, int js,double * restrict vmax, double * restrict vmin
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+)
 {
 	double discr,vp,vm,bsq,EE,EF,va2,cs2,cms2;
 	double Acov[NDIM],Bcov[NDIM],Acon[NDIM],Bcon[NDIM] ;
@@ -584,10 +649,18 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
     va2 = bsq/(bsq + pr[RHO] + pr[UU] + xpres);
     #else
     // Ideal gas EOS
+	#if(TWO_T)
     EF = pr[RHO] + gamma_g * pr[UU];
+	#else
+	EF = pr[RHO] + GAMMA * pr[UU];
+	#endif
     EE = bsq + EF ;
     va2 = bsq/EE ;
+	#if(TWO_T)
     cs2 = gamma_g *(gamma_g - 1.)* pr[UU] /EF ;
+	#else
+	cs2 = GAMMA * (GAMMA - 1.) * pr[UU] / EF;
+	#endif
     #endif
 
 	cms2 = cs2 + va2 - cs2*va2 ;	/* and there it is... */

@@ -260,10 +260,11 @@ double advance(int flag)
 void utoprim_M1_0(double Dt, int n)
 {
 	int i, j, z, k, ind0;
-	double cell_size, gamma_g;
+	double cell_size;
 	struct of_geom geom;
 	struct of_state q;
 	struct of_state_rad q_rad;
+	double gamma_g;
 
 	#pragma omp  parallel shared(n, p, Dt, pflag, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset) private(i, j, z, k, geom,  q, q_rad, ind0, cell_size, gamma_g)
 	{
@@ -282,10 +283,12 @@ void utoprim_M1_0(double Dt, int n)
 				#if(TWO_T)
 				double fel = calc_delta(p[nl[n]][ind0], dot(q.bcon, q.bcov));
 				gamma_g = calc_gamma_gas_prim(p[nl[n]][ind0]);
-				#else
-				gamma_g = GAMMA;
 				#endif				
-				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0], gamma_g);
+				primtoflux(p[nl[n]][ind0], &q, &q_rad, 0, &geom, U_n[nl[n]][ind0]
+					#if(TWO_T)
+					, gamma_g
+					#endif
+				);
 
 				cell_size = MY_MAX(MY_MAX(dx[nl[n]][1] * sqrt(geom.gcov[1][1]), dx[nl[n]][2] * sqrt(geom.gcov[2][2])), dx[nl[n]][3] * sqrt(geom.gcov[3][3]));
 				implicit_rad_solve(p[nl[n]][ind0], U_n[nl[n]][ind0], U_n[nl[n]][ind0], U_0[nl[n]][ind0], &pflag[nl[n]][ind0], &pflag_rad[nl[n]][ind0], &geom, dU_RAD0[nl[n]][ind0], Dt * Y_IMEX, cell_size
@@ -300,9 +303,11 @@ void utoprim_M1_0(double Dt, int n)
 
 void utoprim_M1_1(double Dt, int n){
 	int i, j, z, k;
-	double cell_size, dU_MHD[NPR], gamma_g;
+	double cell_size, dU_MHD[NPR];
 	struct of_geom geom;
 	int ind0, ind1, ind2, ind3;
+	double gamma_g;
+
 	#pragma omp  parallel shared(n, gdet, psh, dU_MHD1, Dt, F1, F2, F3, dx, N1_GPU_offset, N2_GPU_offset, N3_GPU_offset, nthreads, gam) private(i, j, z, k, geom, dU_MHD, ind0, ind1, ind2, ind3, cell_size, gamma_g)
 	{
 		#pragma omp for collapse(3) schedule(static,BS_1*BS_2*BS_3/nthreads)
@@ -315,13 +320,16 @@ void utoprim_M1_1(double Dt, int n){
 			ind3 = index_3D(n, i, j, z + D3);
 
 			#if(TWO_T)
-			struct of state q=get_state(p[nl[n]][ind0], &geom, &q);
+			struct of_state q;
+			get_state(p[nl[n]][ind0], &geom, &q);
 			double fel = calc_delta(p[nl[n]][ind0], dot(q.bcon, q.bcov));
 			gamma_g = calc_gamma_gas_prim(p[nl[n]][ind0]);
-			#else
-			gamma_g = GAMMA;
 			#endif	
-			source(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD, Dt, gamma_g);
+			source(p[nl[n]][ind0], &geom, n, i, j, z, dU_MHD, Dt
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
 
 			PLOOP{
 				U_1[nl[n]][ind0][k] = (((3.0 * Y_IMEX - 1.0) / Y_IMEX) * U_n[nl[n]][ind0][k] + ((1.0 - 2.0 * Y_IMEX) / Y_IMEX) * U_0[nl[n]][ind0][k])  + Dt * (
@@ -378,7 +386,11 @@ void utoprim_M1_2(double Dt, int n){
 			#else
 			gamma_g = GAMMA;
 			#endif	
-			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt, gamma_g);
+			source(ph[nl[n]][ind0], &geom, n, i, j, z, dU, Dt
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
 
 			#pragma ivdep
 			PLOOP{
@@ -463,7 +475,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#else
 			gamma_g = GAMMA;
 			#endif
-			source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt, gamma_g);
+			source(pb[nl[n]][ind0], &geom, n, i, j, z, dU, Dt
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
 
 			get_state(pi[nl[n]][ind0], &geom, &q);
 			#if(RAD_M1)
@@ -475,7 +491,11 @@ void utoprim(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])
 			#else
 			gamma_g = GAMMA;
 			#endif
-			primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U, gamma_g);
+			primtoflux(pi[nl[n]][ind0], &q, &q_rad, 0, &geom, U
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
 
 			#pragma ivdep
 			PLOOP{
@@ -656,9 +676,21 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					#else
 					gamma_g = GAMMA;
 					#endif
-					primtoflux(p_l, &state_l, &state_l_rad, dir, &geom, F_l, gamma_g);
-					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l, gamma_g);
-					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l, gamma_g);
+					primtoflux(p_l, &state_l, &state_l_rad, dir, &geom, F_l
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
+					primtoflux(p_l, &state_l, &state_l_rad, 0, &geom, U_l
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
+					vchar(p_l, &state_l, &geom, dir, &cmax_l, &cmin_l
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
 					#if(RAD_M1)
 					vchar_rad(p_l, &state_l, &state_l_rad, &geom, dir, &cmax_l_rad, &cmin_l_rad, dx[nl[n]][dir]
 						#if(TWO_T)
@@ -673,9 +705,21 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					#else
 					gamma_g = GAMMA;
 					#endif
-					primtoflux(p_r, &state_r, &state_r_rad, dir, &geom, F_r, gamma_g);
-					primtoflux(p_r, &state_r, &state_r_rad, 0, &geom, U_r, gamma_g);
-					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r, gamma_g);
+					primtoflux(p_r, &state_r, &state_r_rad, dir, &geom, F_r
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
+					primtoflux(p_r, &state_r, &state_r_rad, 0, &geom, U_r
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
+					vchar(p_r, &state_r, &geom, dir, &cmax_r, &cmin_r
+						#if(TWO_T)
+						, gamma_g
+						#endif
+					);
 
 					#if(RAD_M1)
 					vchar_rad(p_r, &state_r, &state_r_rad, &geom, dir, &cmax_r_rad, &cmin_r_rad, dx[nl[n]][dir]
