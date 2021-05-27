@@ -315,6 +315,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable 2-temperature evolution*/
 #define TWO_T (0)
 
+/*Wheter to use dynamical load balancing*/
+#define DYNAMIC_LOADBALANCE (0)
+
 /*Wheter to use fixed or variable gamma*/
 #define FIXEDGAMMA (1)
 
@@ -832,7 +835,7 @@ Section with derived quantities
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
 
-#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE)
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

@@ -147,6 +147,9 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
 	mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
+	#if(P_NUM)
+	U_f[PHOTON] = geom->g * pb[PHOTON] * q_rad.ucon[0];
+	#endif
 	for (k = UU_RAD; k <= U3_RAD; k++) U_f[k] *= geom->g;
 
 	//Calculate source term for U_i
@@ -308,6 +311,9 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				#if(P_NUM)
+				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+				#endif
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Calculate radiative (including coulomb) source term
@@ -512,6 +518,9 @@ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, i
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
 		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		#if(P_NUM)
+		U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+		#endif
 		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 		//Get radiative source term

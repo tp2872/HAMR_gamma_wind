@@ -615,6 +615,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	//Recompute R_t^mu for consistency
 	get_state_rad(pb, geom, &q_rad);
 	mhd_calc_rad(pb, 0, &q_rad, &U_f[UU_RAD]);
+	#if(P_NUM)
+	U_f[PHOTON] = geom->g * pb[PHOTON] * q_rad.ucon[0];
+	#endif
 	for (k = UU_RAD; k <= U3_RAD; k++) U_f[k] *= geom->g;
 
 	//Calculate source term for U_i
@@ -699,7 +702,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
 		#endif
 		#if(P_NUM)
-		E_old[4+TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
 		#endif
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
@@ -783,6 +786,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+				#if(P_NUM)
+				U_new[PHOTON] = geom->g*pb_new[PHOTON] * q_rad.ucon[0];
+				#endif
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 				//Calculate radiative (including coulomb) source term
@@ -987,6 +993,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		//Recompute R_t^mu for consistency
 		get_state_rad(pb_new, geom, &q_rad);
 		mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
+		#if(P_NUM)
+		U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
+		#endif
 		for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
 		//Get radiative source term
@@ -1070,7 +1079,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error decreased compared to start value, update variables
-		if (fabs(error_new[n_iter % 5]) < error_t[0] && fabs(error_new[n_iter % 5]) < 0.00001) {
+		if (fabs(error_new[n_iter % 5]) < error_t[0]) {
 			error_t[0] = error_new[n_iter % 5];
 			for (k = 0; k < NPR; k++) {
 				pb[k] = pb_new[k];
@@ -2672,7 +2681,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double fel) 
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	dis = max(quantg / gamg - ughat, 0.);
+	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
 	u_e += fel * dis;
@@ -2752,7 +2761,7 @@ __device__ double set_S_w(double* S, double rho, double w, double fel) {
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	dis = max(quantg / gamg - ughat, 0.);
+	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
 	u_e += fel * dis;
@@ -6354,7 +6363,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 			#else
 			dK_dS = (GAMMAE - 1.) / pow(ph[RHO], GAMMAE - 1.0);
 			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
-			//dU[ENTRE] += dK_dS * source_Coulomb(ph);
+			dU[ENTRE] += dK_dS * source_Coulomb(ph);
 			#endif
 		#else
 		#endif
@@ -6412,7 +6421,7 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
 	arad = ARAD / (ENERGY_DENSITY_SCALE);
-	#else(TWO_T)
+	#else
 	Te = calc_Te(ph);
 	#endif
 
@@ -6455,11 +6464,11 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		//);
 		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
 			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
-
+		source_photon[0] = 0.0;
 		//Compton scattering term is added
 		factor = BOLTZ_CGS / MMW * MH_CGS; 
 		G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
-		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+		//for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif
 
 	#endif
@@ -6471,14 +6480,14 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 
 	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
 	urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
-	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
+	Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * urad_dot_urad);
 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
 	double  Nhat;
 	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
 	Tr = Ehat / (Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
-	#else
+	//#else
 	Tr = pow(Ehat / ARAD, 0.25);
 	#endif
 
@@ -6531,11 +6540,11 @@ __device__ void primtoflux_rad(double* pr, struct of_state_rad* q_rad, int dir, 
 	mhd_calc_rad(pr, dir, q_rad, &flux[UU_RAD]);
 	for (k = UU_RAD; k <= U3_RAD; k++) flux[k] *= geom->g;
 
-	//Flux of photon number
-	#if(P_NUM)
-	flux[PHOTON] = pr[PHOTON] * q_rad->ucon[dir];
-	flux[PHOTON] *= geom->g;
-	#endif
+		//Flux of photon number
+		#if(P_NUM)
+		flux[PHOTON] = pr[PHOTON] * q_rad->ucon[dir];
+		flux[PHOTON] *= geom->g;
+		#endif
 	#endif
 	return;
 }

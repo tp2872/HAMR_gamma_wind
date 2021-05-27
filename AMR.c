@@ -1295,7 +1295,7 @@ void balance_load(void){
 	if (numtasks_local > NB && rank == 0) fprintf(stderr, "Warning: numtasks_local is smaller than NB. Watch out for crashes! \n");
 
 
-	#if(RAD_M1)
+	#if(DYNAMIC_LOADBALANCE)
 	if (nstep>0) {
 		double max_time = 0.0;
 		double min_time = 1000000000000.0;
