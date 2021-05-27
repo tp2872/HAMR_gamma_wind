@@ -1169,8 +1169,12 @@ void benchmark_GPU(int n)
 	int i;
 	gpu = 1;
 	clock_t start, end;
+	
+	//Synchronize GPU
+	cudaDeviceSynchronize();
 	start = clock();
-	for (i = 0; i < AMR_SWITCHTIMELEVEL * DUMPFACTOR / 10; i++) {
+
+	for (i = 0; i < AMR_SWITCHTIMELEVEL * DUMPFACTOR / 3; i++) {
 		#if(RAD_M1 && DO_IMEX)
 		if(i%2==-10) GPU_Utoprim_M1_0(n, dt * (double)block[n][AMR_TIMELEVEL]); //do not use
 		#endif
@@ -1218,6 +1222,7 @@ void benchmark_GPU(int n)
 		GPU_fixup(0, n, 0.5 * dt * (double)block[n][AMR_TIMELEVEL]);
 		#endif
 	}
+	cudaDeviceSynchronize();
 	end = clock();
 
 	bench_time[n] = (double)(end - start) / CLOCKS_PER_SEC;

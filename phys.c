@@ -987,7 +987,7 @@ void heating(double* ph, struct of_state* q)
 	ughat = (u_e + u_i); 
 
 	//Calculate dissipation: ph[UU] is allways positive (guaranteed by utoprim)
-	dis = max(ph[UU] - ughat, 0.);
+	dis = MY_MAX(ph[UU] - ughat, 0.);
 
 	//Update internal energies
 	u_e += fel * dis;
@@ -1143,7 +1143,7 @@ double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	dis = max(quantg / gamg - ughat, 0.);
+	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
 	u_e += fel * dis;
@@ -1225,7 +1225,7 @@ double set_S_w(double* S, double rho, double w, double fel) {
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	dis = max(quantg / gamg - ughat, 0.);
+	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
 	u_e += fel * dis;
@@ -1407,7 +1407,7 @@ double calc_thetafromnmu(double n, double m, double u) {
 	theta_max = TMAX * BOLTZ_CGS / m;
 	if (isfinite(res))
 	{
-		res = min(res, theta_max);
+		res = MY_MIN(res, theta_max);
 	}
 	else
 	{

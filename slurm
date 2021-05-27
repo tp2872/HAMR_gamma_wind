@@ -1,17 +1,22 @@
-#!/bin/bash
-# Begin LSF Directives
-#BSUB -P PHY129
-#BSUB -W 0:30
-#BSUB -nnodes 1
-#BSUB -alloc_flags "smt1"
-#BSUB -N danat.issa@gmail.com
-#BSUB -J RunSim123
-#BSUB -o RunSim123.%J
-#BSUB -e RunSim123.%J
+#!/bin/bash -l
+#SBATCH --job-name="THIN_GIBWA"
+#SBATCH --account="s952"
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=matthewliska92@gmail.com
+#SBATCH --time=00:15:00
+#SBATCH --nodes=200
+#SBATCH --ntasks-per-core=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --partition=normal
+#SBATCH --constraint=gpu
+#SBATCH --hint=multithread
 
-module load xl
-module load cuda 
-cd $PROJWORK/phy129/IC_danat/harm2d
-make clean
-make -j
-jsrun --smpiargs "-gpu" -n1 -a6 -g6 -c42 -bpacked:7 ./harm
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export MPICH_RDMA_ENABLED_CUDA=1
+module load cdt/20.08
+module switch PrgEnv-cray PrgEnv-gnu
+module load daint-gpu
+module load craype-accel-nvidia60
+cd /scratch/snx3000/mliska/test
+srun ./harm

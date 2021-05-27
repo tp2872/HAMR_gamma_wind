@@ -1279,7 +1279,7 @@ void balance_load(void){
 	int n_active_total_t[10], (*n_ord_total_RM_t)[10], n_active_local_gpu[N_GPU], n_active_local_max,n_active_local_min;
 	double(*temp_ps[NB])[NDIM];
 	double(*temp_p[NB])[NPR];
-	int timelevel_cutoff = MY_MIN(AMR_MAXTIMELEVEL, 8);
+	int timelevel_cutoff = MY_MIN(AMR_MAXTIMELEVEL * (1 + 31 * RAD_M1), 8 * (1 + 31 * RAD_M1));
 	int numtasks_local = numtasks*N_GPU;
 	int min_steps, max_steps, total_steps;
 	double val;
@@ -1299,6 +1299,8 @@ void balance_load(void){
 	if (nstep>0) {
 		double max_time = 0.0;
 		double min_time = 1000000000000.0;
+		double avg_time = 0.0;
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		if (rank == 0) fprintf(stderr, "Starting benchmarking step! \n");
 		//First benchmark blocks on node
@@ -1312,14 +1314,28 @@ void balance_load(void){
 			MPI_Wait(&request_timelevel[n_ord_total[n]], &Statbound[0][0]);
 			max_time = MY_MAX(max_time, bench_time[n_ord_total[n]]);
 			min_time = MY_MIN(min_time, bench_time[n_ord_total[n]]);
+			avg_time += bench_time[n_ord_total[n]];
 		}
+		avg_time /= (double)n_active_total;
 
-		if (rank == 0)  fprintf(stderr, "max_time: %f, min_time: %f\n", max_time, min_time);
-
+		if (rank == 0)  fprintf(stderr, "max_time: %f, min_time: %f, avg_time: %f \n", max_time, min_time, avg_time);
 		for (n = 0; n < n_active_total; n++) {
-			block[n_ord_total[n]][AMR_WEIGHT] = (int)pow(2, floor(log(max_time / bench_time[n_ord_total[n]]) / log(2)));
-			//if (rank == 0)  fprintf(stderr, "AMR_WEIGHT: %d \n", block[n_ord_total[n]][AMR_WEIGHT]);
+			block[n_ord_total[n]][AMR_WEIGHT] = 32;
+			if (bench_time[n_ord_total[n]] > 0.25 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 16;
+			if (bench_time[n_ord_total[n]] > 0.5 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 8;
+			if (bench_time[n_ord_total[n]] > 1.5 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 4;
+			if (bench_time[n_ord_total[n]] > 3.0 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 2;
+			if (bench_time[n_ord_total[n]] > 6.0 * avg_time)block[n_ord_total[n]][AMR_WEIGHT] = 1;
+			max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
 		}
+
+		//for (n = 0; n < n_active_total; n++) {
+		//	block[n_ord_total[n]][AMR_WEIGHT] = (int)pow(2, round(log(max_time / bench_time[n_ord_total[n]]) / log(2)));
+		//	max_weight = MY_MAX(max_weight, block[n_ord_total[n]][AMR_WEIGHT]);
+		//	//if (rank == 0)  fprintf(stderr, "AMR_WEIGHT: %d \n", block[n_ord_total[n]][AMR_WEIGHT]);
+		//}
+
+		MPI_Barrier(MPI_COMM_WORLD);
 
 		if (rank == 0) fprintf(stderr, "Benchmarking step finished! \n");
 	}
@@ -1432,7 +1448,7 @@ void balance_load(void){
 		if(rank==0)fprintf(stderr, "Error in balance_load: Too many blocks present, increase MAX_BLOCKS if you have enough (GPU)RAM! \n");
 		//exit(0);
 	}
-	if (rank == 0) fprintf(stderr, "Load balance started with cutoff timelevel %d! \n", timelevel_cutoff);
+	if (rank == 0) fprintf(stderr, "Load balance started with cutoff balancing level %d! \n", timelevel_cutoff);
 	
 	//#pragma omp parallel for schedule(dynamic,1) private(n, rc)
 	for (n = 0; n < n_active_total; n++) {
