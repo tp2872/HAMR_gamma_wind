@@ -577,7 +577,9 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 		#endif	 
 
 		//Even if MHD inversion fails, use updated value of radiation variable as gues
-		if(!pflag)pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
+		if (!pflag) {
+			pflag_rad = Rtoprim(U_f, geom->gcov, geom->gcon, geom->g, pb, y_max, TYPE2);
+		}
 	}
 
 	//Set electron entropy variables
@@ -682,6 +684,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 	#if(TWO_T)
 	double gamma_g, ue, ui;
 	#endif
+	#if(P_NUM)
+	double temp;
+	#endif
 
 	//Set error to previous value
 	for (k = 0; k < 5; k++) error_new[k] = error_t[0];
@@ -728,8 +733,8 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				#endif
 				#if(P_NUM)
 				else if (i == U3 + TWO_T + P_NUM) {
-					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[PHOTON]);
-					pb_new[PHOTON] = pb_old[PHOTON] + dpb;
+					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[PHOTON]);
+					U_new[PHOTON] = U_old[PHOTON] + dpb;
 				}
 				#endif
 				else {
@@ -781,7 +786,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				U_new[U2_RAD] = U_i[U2_RAD] - (U_new[U2] - U_i[U2]);
 				U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
+				//#if(P_NUM)
+				//temp = pb_new[PHOTON];
+				//#endif
 				Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+				//#if(P_NUM)
+				//pb_new[PHOTON] = temp;
+				//#endif
 
 				//Recompute R_t^mu for consistency
 				get_state_rad(pb_new, geom, &q_rad);
@@ -869,7 +880,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				+ E_old[4 + TWO_T] * dEdpb_inv[4 + TWO_T][4 + TWO_T]
 				#endif			
 			);
-			pb_new[PHOTON] = pb_old[PHOTON] + dpb;
+			U_new[PHOTON] = U_old[PHOTON] + dpb;
 			#endif
 		}
 		else {
@@ -931,7 +942,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				+ E_old[4 + TWO_T] * dEdpb_inv[4 + TWO_T][4 + TWO_T]
 				#endif			
 				);
-			pb_new[PHOTON] = pb_old[PHOTON] + dpb;
+			U_new[PHOTON] = U_old[PHOTON] + dpb;
 			#endif
 		}
 
@@ -941,7 +952,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		if (pb_new[ENTRE] < 0.0) pb_new[ENTRE] = 0.5 * fabs(pb_new[ENTRE]);
 		#endif
 		#if(P_NUM)
-		if (pb_new[PHOTON] < 0.0) pb_new[PHOTON] = 0.5 * fabs(pb_new[PHOTON]);
+		if (U_new[PHOTON] < 0.0) U_new[PHOTON] = 0.5 * fabs(U_new[PHOTON]);
 		#endif
 
 		//Obtain new conserved quantaties from MHD variables
@@ -987,7 +998,13 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		U_new[U3_RAD] = U_i[U3_RAD] - (U_new[U3] - U_i[U3]);
 
 		//Get new radiation primitives using TYPE2 limiter
+		//#if(P_NUM)
+		//temp= pb_new[PHOTON];
+		//#endif
 		flag_rad = Rtoprim(U_new, geom->gcov, geom->gcon, geom->g, pb_new, y_max, TYPE2);
+		//#if(P_NUM)
+		//pb_new[PHOTON] = temp;
+		//#endif
 		if (flag_rad) for (k = UU_RAD; k <= U3_RAD; k++) U_prev[k] = U_new[k];
 
 		//Recompute R_t^mu for consistency
@@ -6464,11 +6481,11 @@ __device__ void calc_Gcon(double * ph, double Gcon[NDIM], double ucon[NDIM], dou
 		//);
 		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
 			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
-		source_photon[0] = 0.0;
+
 		//Compton scattering term is added
-		factor = BOLTZ_CGS / MMW * MH_CGS; 
+		factor = BOLTZ_CGS / (MMW * MH_CGS * C_CGS* C_CGS); 
 		G0 = kappa_es / ENERGY_DENSITY_SCALE * Ehat * 4 * (Te * factor - Tr * factor) * (1.0 + 3.683 * Te * factor + 4.0 * Te * factor * Te * factor) / ((1.0 + Te * factor));
-		//for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
+		for (i = 0; i < NDIM; i++) Gcon[i] += ucon[i] * G0;
 		#endif
 
 	#endif
@@ -6485,9 +6502,9 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 	//Get radiation temperature either assuming blackbody or diluted blackbody
 	#if(P_NUM)
 	double  Nhat;
-	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
-	Tr = Ehat / (Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
-	//#else
+	Nhat = fabs(-ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad);
+	Tr = Ehat / (BOLTZ_CGS * Nhat * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
+	#else
 	Tr = pow(Ehat / ARAD, 0.25);
 	#endif
 
