@@ -310,7 +310,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (0)
