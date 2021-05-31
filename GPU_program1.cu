@@ -2128,7 +2128,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 	struct of_state_rad q_rad;
 	int i, k, n_iter = 0, n_iter_fail = 0, keep_iterating = 1, flag, n_iter_jacob, count_increase = 0, count_increase_gas = 0;
 	#if(TWO_T)
-	double gamma_g, ue, ui;
+	double gamma_g, ue, ui, dK_dS;
 	#endif
 
 	//Set error to 0
