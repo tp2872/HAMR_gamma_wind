@@ -338,8 +338,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
-#define HLLF  (0)
-#define LAXF  (1)
+#define HLLF  (1)
+#define LAXF  (0)
 #else
 #define HLLF  (1)
 #define LAXF  (0)
