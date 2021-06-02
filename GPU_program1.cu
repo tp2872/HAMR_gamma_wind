@@ -460,7 +460,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t[1] > 1.e-9) implicit_rad_solve_PRAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
+			if (error_t[1] > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -634,7 +634,7 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 	//In low optical depth limit reset U_i to U_f
 	//if (tau < 0.66) {
-		for (k = 0; k < NPR; k++) U_i[k] = U_f[k];
+		//for (k = 0; k < NPR; k++) U_i[k] = U_f[k];
 	//}
 
 	//Calculate iterated error at start of iteration
@@ -659,8 +659,10 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 	error_t[0] += 0.25 * sqrt(geom->gcon[7]) * (fabs(U_f[U2] - U_i[U2] - Dt * dU[U2]) / norm);
 	error_t[0] += 0.25 * sqrt(geom->gcon[9]) * (fabs(U_f[U3] - U_i[U3] - Dt * dU[U3]) / norm);
 	
-	//Calculate total error at start of iteration
+	//Set total error to iterated error
 	error_t[1] = error_t[0];
+
+	//Calculate total error at start of iteration
 	norm = (fabs(U_i[UU_RAD]) + fabs(U_f[UU_RAD]) + fabs(0.0 * Dt * dU[UU_RAD]));
 	if (pflag_rad == 0)error_t[1] += 0.25 * (fabs(U_f[UU_RAD] - U_i[UU_RAD] - Dt * dU[UU]) / norm);
 	norm = (fabs(sqrt(geom->gcon[4]) * U_i[U1_RAD]) + fabs(U_f[U1_RAD]) + fabs(0.0 * Dt * dU[U1_RAD]));
@@ -913,7 +915,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		#if(TWO_T)
 		dpb = -D * (E_old[0] * dEdpb_inv[4][0] + E_old[1] * dEdpb_inv[4][1] + E_old[2] * dEdpb_inv[4][2] + E_old[3] * dEdpb_inv[4][3] + E_old[4] * dEdpb_inv[4][4]
 			#if(P_NUM)
-			+E_old[4 + P_NUM] * dEdpb_inv[4][4 + P_NUM]
+			+ E_old[4 + P_NUM] * dEdpb_inv[4][4 + P_NUM]
 			#endif	
 			);
 		pb_new[ENTRE] = pb_old[ENTRE] + dpb;
@@ -1470,7 +1472,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				}
 				#if(TWO_T)
 					#if(FIXEDGAMMA)
-					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					double dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 					#else
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
@@ -1506,13 +1508,13 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					keep_iterating = 0;
+					//keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 					count_increase++;
-					if (count_increase >= 5) keep_iterating = 0;
+					//if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -1525,7 +1527,7 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1]) {
+				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1] && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
 					error_t[1] = error_new[n_iter % 5 + 5];
 					for (k = 0; k < NPR; k++) {
@@ -1878,7 +1880,7 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				}
 				#if(TWO_T)
 					#if(FIXEDGAMMA)
-					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					double dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 					#else
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
@@ -1911,13 +1913,13 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					keep_iterating = 0;
+					//keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 					count_increase++;
-					if (count_increase >= 5) keep_iterating = 0;
+					//if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -1930,10 +1932,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1]) {
+				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1] && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
 					error_t[1] = error_new[n_iter % 5 + 5];
-
 					for (k = 0; k < NPR; k++) {
 						pb[k] = pb_new[k];
 						U_f[k] = U_new[k];
@@ -2098,11 +2099,11 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					}
 					#if(TWO_T)
 					E_new[4] = (U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]);
-					dEdUb[4][i - UU] = (E_new[4] - E_old[4]) / dUb;
+					dEdUb[4][i - UU_RAD] = (E_new[4] - E_old[4]) / dUb;
 					#endif
 					#if(P_NUM)
 					E_new[4 + TWO_T] = (U_new[PHOTON] - U_i[PHOTON] - Dt * dU_new[PHOTON]);
-					dEdUb[4 + TWO_T][i - UU] = (E_new[4 + TWO_T] - E_old[4 + TWO_T]) / dUb;
+					dEdUb[4 + TWO_T][i - UU_RAD] = (E_new[4 + TWO_T] - E_old[4 + TWO_T]) / dUb;
 					#endif
 					if (do_entropy == 1) {
 						T_GAS = (GAMMA - 1.) * pb_new[UU] / pb_new[RHO];
@@ -2300,7 +2301,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				}
 				#if(TWO_T)
 					#if(FIXEDGAMMA)
-					dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
+					double dK_dS = (GAMMAE - 1.) / pow(pb_new[RHO], GAMMAE - 1.0);
 					#else
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
@@ -2345,19 +2346,19 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					keep_iterating = 0;
+					//keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 					count_increase++;
-					if (count_increase >= 5) keep_iterating = 0;
+					//if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
 				if (pb_new[UU] < 0.) {
 					count_increase_gas++;
-					if (count_increase > 2) keep_iterating = 0;
+					//if (count_increase > 2) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -2370,7 +2371,7 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1]) {
+				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1] && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
 					error_t[1] = error_new[n_iter % 5 + 5];
 					for (k = 0; k < NPR; k++) {
@@ -2798,19 +2799,19 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 
 				//If error increasing stop iterating
 				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					keep_iterating = 0;
+					//keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
 				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
 					count_increase++;
-					if (count_increase >= 5) keep_iterating = 0;
+					//if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
 				if (pb_new[UU] < 0.) {
 					count_increase_gas++;
-					if (count_increase > 2) keep_iterating = 0;
+					//if (count_increase > 2) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -2823,7 +2824,7 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error decreased compared to start value, update variables
-				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1]) {
+				if (fabs(error_new[n_iter % 5 + 5]) < error_t[1] && fabs(error_new[n_iter % 5 + 5]) < 0.01) {
 					error_t[0] = error_new[n_iter % 5];
 					error_t[1] = error_new[n_iter % 5 + 5];
 					for (k = 0; k < NPR; k++) {
