@@ -460,7 +460,7 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 
 
 			//If error is still below set margin, accept solution, otherwise try URAD
-			if (error_t[1] > 1.e-9) implicit_rad_solve_UMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
+			if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
 				#if(DOHELM)
 				, gpu_eos_table
 				#endif
@@ -721,10 +721,9 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
 
 		//Calculate jacobian dEdpb
-		for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
-			n_iter_jacob = 0;
-
-			do {
+		n_iter_jacob = 0;
+		do {
+			for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
 				PLOOP pb_new[k] = pb_old[k];
 				if (i == UU) {
 					dpb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (pb_old[UU]);
@@ -757,7 +756,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					ue = pb_new[ENTRE] * pow(pb_new[RHO], GAMMAE) / (GAMMAE - 1.0);
 					if (ue > 0.99 * pb_new[UU]) ue = 0.99 * pb_new[UU];
 					if (ue < 0.01 * pb_new[UU]) ue = 0.01 * pb_new[UU];
-					pb_new[ENTRE]= (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
+					pb_new[ENTRE] = (GAMMAE - 1.0) * ue * pow(pb_new[RHO], -GAMMAE);
 					ui = pb_new[UU] - ue;
 					pb_new[ENTRI] = (GAMMA - 1.0) * ui * pow(pb_new[RHO], -GAMMA);
 					#else
@@ -774,10 +773,10 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					#if(TWO_T)
 					, gamma_g
 					#endif
-				); 
+				);
 				for (k = UU; k <= U3; k++)U_new[k] *= geom->g;
 				U_new[UU] = U_new[UU] + U_new[RHO];
-				
+
 				if (do_entropy == 1) {
 					#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
@@ -797,7 +796,7 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				get_state_rad(pb_new, geom, &q_rad);
 				mhd_calc_rad(pb_new, 0, &q_rad, &U_new[UU_RAD]);
 				#if(P_NUM)
-				U_new[PHOTON] = geom->g*pb_new[PHOTON] * q_rad.ucon[0];
+				U_new[PHOTON] = geom->g * pb_new[PHOTON] * q_rad.ucon[0];
 				#endif
 				for (k = UU_RAD; k <= U3_RAD; k++)U_new[k] *= geom->g;
 
@@ -830,24 +829,22 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 				}
 				else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
 				dEdpb[0][i - UU] = (E_new[0] - E_old[0]) / dpb;
-
-				//Invert Jacobian
-				#if(P_NUM && TWO_T)
-				flag = invert_matrix_6D(dEdpb, dEdpb_inv);
-				#elif(P_NUM || TWO_T)
-				flag = invert_matrix_5D(dEdpb, dEdpb_inv);
-				#else
-				flag = invert_matrix_4D(dEdpb, dEdpb_inv);
-				#endif
-
-				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
-
-			if (flag) {
-				return 1;
 			}
-		}
 
+			//Invert Jacobian
+			#if(P_NUM && TWO_T)
+			flag = invert_matrix_6D(dEdpb, dEdpb_inv);
+			#elif(P_NUM || TWO_T)
+			flag = invert_matrix_5D(dEdpb, dEdpb_inv);
+			#else
+			flag = invert_matrix_4D(dEdpb, dEdpb_inv);
+			#endif
+
+			n_iter_jacob++;
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+
+		if (flag) return 1;
+		
 		//Set primitive variables before Newton step
 		PLOOP pb_new[k] = pb_old[k];
 
@@ -1054,14 +1051,14 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 		}
 
 		//If error increasing stop iterating
-		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-			//keep_iterating = 0;
+		if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+			keep_iterating = 0;
 		}
 
 		//If error increased more than 4 times stop iterating
-		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+		if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 			count_increase++;
-			//if (count_increase >= 5) keep_iterating = 0;
+			if (count_increase >= 5) keep_iterating = 0;
 		}
 
 		//Reset variables if Newton step succesfull
@@ -1094,7 +1091,6 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 
 		n_iter++;
 	}
-
 
 	return(0);
 }
@@ -1146,9 +1142,9 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
 
 		//Calculate jacobian dEdpb
-		for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
-			n_iter_jacob = 0;
-			do {
+		n_iter_jacob = 0;
+		do {
+			for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
 				PLOOP U_new[k] = U_old[k];
 				if (i == UU) {
 					dUb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[UU]);
@@ -1263,23 +1259,22 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 					}
 					else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
 					dEdUb[0][i - UU] = (E_new[0] - E_old[0]) / dUb;
-
-					//Invert Jacobian
-					#if(P_NUM && TWO_T)
-					flag = invert_matrix_6D(dEdUb, dEdUb_inv);
-					#elif(P_NUM || TWO_T)
-					flag = invert_matrix_5D(dEdUb, dEdUb_inv);
-					#else
-					flag = invert_matrix_4D(dEdUb, dEdUb_inv);
-					#endif				
 				}
-				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
-
-			if (flag) {
-				return 1;
 			}
-		}
+
+			//Invert Jacobian
+			#if(P_NUM && TWO_T)
+			flag = invert_matrix_6D(dEdUb, dEdUb_inv);
+			#elif(P_NUM || TWO_T)
+			flag = invert_matrix_5D(dEdUb, dEdUb_inv);
+			#else
+			flag = invert_matrix_4D(dEdUb, dEdUb_inv);
+			#endif	
+
+			n_iter_jacob++;
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+
+		if (flag) return 1;
 
 		n_iter_fail = 0;
 		while (n_iter_fail < 10) {
@@ -1507,14 +1502,14 @@ __device__ int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error increasing stop iterating
-				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					//keep_iterating = 0;
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+					keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
-				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 					count_increase++;
-					//if (count_increase >= 5) keep_iterating = 0;
+					if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -1583,6 +1578,12 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 	while (keep_iterating) {
 		//Calculate reference error
 		for (k = U1; k <= U3; k++) E_old[k - UU] = (U_old[k] - U_i[k] - Dt * dU_old[k]);
+		#if(TWO_T)
+		E_old[4] = (U_old[ENTRE] - U_i[ENTRE] - Dt * dU_old[ENTRE]);
+		#endif
+		#if(P_NUM)
+		E_old[4 + TWO_T] = (U_old[PHOTON] - U_i[PHOTON] - Dt * dU_old[PHOTON]);
+		#endif
 		if (do_entropy == 1) {
 			T_GAS = (GAMMA - 1.) * pb_old[UU] / pb_old[RHO];
 			E_old[0] = T_GAS * (U_old[KTOT] - U_i[KTOT] - Dt * dU_old[KTOT]);
@@ -1590,9 +1591,9 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 		else E_old[0] = (U_old[UU] - U_i[UU] - Dt * dU_old[UU]);
 
 		//Calculate jacobian dEdpb
-		for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
-			n_iter_jacob = 0;
-			do {
+		n_iter_jacob = 0;
+		do {
+			for (i = UU; i <= U3 + TWO_T + P_NUM; i++) {
 				PLOOP U_new[k] = U_old[k];
 				if (i == UU) {
 					dUb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[KTOT]);
@@ -1690,23 +1691,22 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 					}
 					else E_new[0] = (U_new[UU] - U_i[UU] - Dt * dU_new[UU]);
 					dEdUb[0][i - UU] = (E_new[0] - E_old[0]) / dUb;
-
-					//Invert Jacobian
-					#if(P_NUM && TWO_T)
-					flag = invert_matrix_6D(dEdUb, dEdUb_inv);
-					#elif(P_NUM || TWO_T)
-					flag = invert_matrix_5D(dEdUb, dEdUb_inv);
-					#else
-					flag = invert_matrix_4D(dEdUb, dEdUb_inv);
-					#endif
 				}
-				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
-
-			if (flag) {
-				return 1;
 			}
-		}
+			
+			//Invert Jacobian
+			#if(P_NUM && TWO_T)
+			flag = invert_matrix_6D(dEdUb, dEdUb_inv);
+			#elif(P_NUM || TWO_T)
+			flag = invert_matrix_5D(dEdUb, dEdUb_inv);
+			#else
+			flag = invert_matrix_4D(dEdUb, dEdUb_inv);
+			#endif
+
+			n_iter_jacob++;
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+
+		if (flag) return 1;
 
 		n_iter_fail = 0;
 		while (n_iter_fail < 10) {
@@ -1912,14 +1912,14 @@ __device__ int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error increasing stop iterating
-				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					//keep_iterating = 0;
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+					keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
-				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 					count_increase++;
-					//if (count_increase >= 5) keep_iterating = 0;
+					if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//Reset variables if Newton step succesfull
@@ -2001,9 +2001,9 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 		else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
 
 		//Calculate jacobian dEdpb
-		for (i = UU_RAD; i <= U3_RAD + TWO_T + P_NUM; i++) {
-			n_iter_jacob = 0;
-			do {
+		n_iter_jacob = 0;
+		do {
+			for (i = UU_RAD; i <= U3_RAD + TWO_T + P_NUM; i++) {
 				PLOOP U_new[k] = U_old[k];
 				if (i == UU_RAD) {
 					dUb = offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) * (U_old[UU_RAD]);
@@ -2111,21 +2111,22 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 					}
 					else E_new[0] = (U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]);
 					dEdUb[0][i - UU_RAD] = (E_new[0] - E_old[0]) / dUb;
-
-					//Invert Jacobian
-					#if(P_NUM && TWO_T)
-					flag = invert_matrix_6D(dEdUb, dEdUb_inv);
-					#elif(P_NUM || TWO_T)
-					flag = invert_matrix_5D(dEdUb, dEdUb_inv);
-					#else
-					flag = invert_matrix_4D(dEdUb, dEdUb_inv);
-					#endif
 				}
-				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+			}
+			
+			//Invert Jacobian
+			#if(P_NUM && TWO_T)
+			flag = invert_matrix_6D(dEdUb, dEdUb_inv);
+			#elif(P_NUM || TWO_T)
+			flag = invert_matrix_5D(dEdUb, dEdUb_inv);
+			#else
+			flag = invert_matrix_4D(dEdUb, dEdUb_inv);
+			#endif
 
-			if (flag) return 1;
-		}
+			n_iter_jacob++;
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+
+		if (flag) return 1;
 
 		n_iter_fail = 0;
 		while (n_iter_fail < 2) {
@@ -2345,14 +2346,14 @@ __device__ int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error increasing stop iterating
-				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					//keep_iterating = 0;
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5 + 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+					keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
-				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 					count_increase++;
-					//if (count_increase >= 5) keep_iterating = 0;
+					if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
@@ -2444,9 +2445,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 		else E_old[0] = (U_old[UU_RAD] - U_i[UU_RAD] - Dt * dU_old[UU_RAD]);
 
 		//Calculate jacobian dEdpb
-		for (i = UU_RAD; i <= U3_RAD + TWO_T + P_NUM; i++) {
-			n_iter_jacob = 0;
-			do {
+		n_iter_jacob = 0;
+		do {
+			for (i = UU_RAD; i <= U3_RAD + TWO_T + P_NUM; i++) {
 				PLOOP{
 					pb_new[k] = pb_old[k];
 					U_new[k] = U_old[k];
@@ -2561,23 +2562,22 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					}
 					else E_new[0] = (U_new[UU_RAD] - U_i[UU_RAD] - Dt * dU_new[UU_RAD]);
 					dEdpb[0][i - UU_RAD] = (E_new[0] - E_old[0]) / dpb;
-
-					//Invert Jacobian
-					#if(P_NUM && TWO_T)
-					flag = invert_matrix_6D(dEdpb, dEdpb_inv);
-					#elif(P_NUM || TWO_T)
-					flag = invert_matrix_5D(dEdpb, dEdpb_inv);
-					#else
-					flag = invert_matrix_4D(dEdpb, dEdpb_inv);
-					#endif
 				}
-				n_iter_jacob++;
-			} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
-
-			if (flag) {
-				return 1;
 			}
-		}
+				
+			//Invert Jacobian
+			#if(P_NUM && TWO_T)
+			flag = invert_matrix_6D(dEdpb, dEdpb_inv);
+			#elif(P_NUM || TWO_T)
+			flag = invert_matrix_5D(dEdpb, dEdpb_inv);
+			#else
+			flag = invert_matrix_4D(dEdpb, dEdpb_inv);
+			#endif
+
+			n_iter_jacob++;
+		} while (flag && (offset * pow(10., (double)(1 - 2 * (n_iter_jacob % 2)) * ((double)(n_iter_jacob / 2))) < 0.00003));
+
+		if (flag) return 1;
 
 		n_iter_fail = 0;
 		while (n_iter_fail < 2) {
@@ -2591,7 +2591,14 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 			if (do_staged == 0) {
 				D = 1. / pow(2.0, (double)n_iter_fail);
 				for (k = 0; k < 4; k++) {
-					dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]);
+					dpb = -D * (E_old[0] * dEdpb_inv[k][0] + E_old[1] * dEdpb_inv[k][1] + E_old[2] * dEdpb_inv[k][2] + E_old[3] * dEdpb_inv[k][3]
+						#if(TWO_T)
+						+ E_old[4] * dEdpb_inv[k][4]
+						#endif
+						#if(P_NUM)
+						+ E_old[4 + TWO_T] * dEdpb_inv[k][4 + TWO_T]
+						#endif
+						);
 					pb_new[k + UU_RAD] = pb_old[k + UU_RAD] + dpb;
 				}
 			}
@@ -2758,7 +2765,6 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 					#else
 					fprintf(stderr, "Not implemented yet! \n");
 					#endif
-					//norm =  (fabs(U_i[ENTRE]) + fabs(U_new[ENTRE]) + fabs(Dt * dU_new[ENTRE]));
 					error_new[n_iter % 5] += 0.25 * (fabs(U_new[ENTRE] - U_i[ENTRE] - Dt * dU_new[ENTRE]) / (dK_dS * norm));
 					#endif
 				#if(P_NUM)
@@ -2798,14 +2804,14 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 				}
 
 				//If error increasing stop iterating
-				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5]) < 0.5 * (error_new[(n_iter - 1) % 5] + error_new[(n_iter - 0) % 5]))) {
-					//keep_iterating = 0;
+				if (n_iter >= 4 && (0.3333 * (error_new[(n_iter - 4) % 5 + 5] + error_new[(n_iter - 3) % 5] + error_new[(n_iter - 2) % 5 + 5]) < 0.5 * (error_new[(n_iter - 1) % 5 + 5] + error_new[(n_iter - 0) % 5 + 5]))) {
+					keep_iterating = 0;
 				}
 
 				//If error increased more than 4 times stop iterating
-				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5] < error_new[(n_iter) % 5])) {
+				if ((n_iter > 4) && (error_new[(n_iter - 1) % 5 + 5] < error_new[(n_iter) % 5 + 5])) {
 					count_increase++;
-					//if (count_increase >= 5) keep_iterating = 0;
+					if (count_increase >= 5) keep_iterating = 0;
 				}
 
 				//If gas negative more than 2 times stop iterating
