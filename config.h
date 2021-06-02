@@ -313,7 +313,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (0)
+#define TWO_T (1)
 
 /*Wheter to use dynamical load balancing*/
 #define DYNAMIC_LOADBALANCE (0)
