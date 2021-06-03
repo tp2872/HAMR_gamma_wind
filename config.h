@@ -306,11 +306,15 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
+/*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
+#define COOL_STOP (0)
+#define STOP_SCALEHEIGHT (0.03)
+
 /*Enable advenced Roseland and energy opacities*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (0)
+#define P_NUM (1)
 
 /*Enable 2-temperature evolution*/
 #define TWO_T (1)

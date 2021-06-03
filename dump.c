@@ -231,6 +231,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	int NB2_print = NB_2;
 	int NB3_print = NB_3;
 	int stag = STAGGERED;
+	double density = MASS_DENSITY_SCALE;
 	int B = BRAVO;
 	int f1 = REDUCE_FACTOR1;
 	int f2 = REDUCE_FACTOR2;
@@ -280,7 +281,7 @@ void dump_params(FILE *fp, int dump_reduced)
 	fwrite(&Rin, double_size, 1, fp);
 	fwrite(&Rout, double_size, 1, fp);
 	fwrite(&R0, double_size, 1, fp);
-	fwrite(&fractheta, double_size, 1, fp);
+	fwrite(&density, double_size, 1, fp);
 	fwrite(&lim, int_size, 1, fp);
 	fwrite(&stag, int_size, 1, fp);
 	fwrite(&dump_cnt_reduced, int_size, 1, fp);
@@ -343,23 +344,8 @@ void dump_block(MPI_File *fp, int n)
 
 		#if(TWO_T)
 		double Te, Ti;
-			#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-					#if(FULL_ENTROPY)
-					Te = fabs(exp((GAMMAE - 1.0) * p[nl[n]][index_3D(n, i, j, z)][ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMAE - 1.0));
-					Ti = fabs(exp((GAMMA - 1.0) * p[nl[n]][index_3D(n, i, j, z)][ENTRI]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0));
-					#else
-					Te = fabs(p[nl[n]][index_3D(n, i, j, z)][ENTRE] * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMAE - 1.0));
-					Ti = fabs(p[nl[n]][index_3D(n, i, j, z)][ENTRI] * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0));
-					#endif
-				#else     // variable gamma: Sadowski+17 & Chael+19
-					#if(FULL_ENTROPY)
-					Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i, j, z)][RHO] * exp(p[nl[n]][index_3D(n, i, j, z)][ENTRE]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
-					Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i, j, z)][RHO] * exp(p[nl[n]][index_3D(n, i, j, z)][ENTRI]), 2. / 3.)) - 1.0)) / MU_I;
-					#else
-					Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i, j, z)][RHO] * p[nl[n]][index_3D(n, i, j, z)][ENTRE], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
-					Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i, j, z)][RHO] * p[nl[n]][index_3D(n, i, j, z)][ENTRI], 2. / 3.)) - 1.0)) / MU_I;
-					#endif
-			#endif
+		Te = calc_Te(p[nl[n]][index_3D(n, i, j, z)]);
+		Ti = calc_Ti(p[nl[n]][index_3D(n, i, j, z)]);
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (ENTRE + !DOKTOT + RAD_M1)] = (float)Te;
 		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (ENTRI + !DOKTOT + RAD_M1)] = (float)Ti;
 		#endif
@@ -408,23 +394,8 @@ void dump_block_reduced(MPI_File *fp, int n){
 
 			#if(TWO_T)
 			double Te, Ti;
-				#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
-						#if(FULL_ENTROPY)
-						Te = fabs(exp((GAMMAE - 1.0) * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRE]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMAE - 1.0));
-						Ti = fabs(exp((GAMMA - 1.0) * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRI]) * pow(p[nl[n]][index_3D(n, i, j, z)][RHO], GAMMA - 1.0));
-						#else
-						Te = fabs(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRE] * pow(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][RHO], GAMMAE - 1.0));
-						Ti = fabs(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRI] * pow(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][RHO], GAMMA - 1.0));
-						#endif
-					#else     // variable gamma: Sadowski+17 & Chael+19
-						#if(FULL_ENTROPY)
-						Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][RHO] * exp(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRE]), 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
-						Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][RHO] * exp(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRI]), 2. / 3.)) - 1.0)) / MU_I;
-						#else
-						Te = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][RHO] * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRE], 2. / 3.)) - 1.0)) / (MU_E * MASS_RATIO);
-						Ti = fabs(0.2 * (sqrt(1.0 + pow(25.0 * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][RHO] * p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])][ENTRI], 2. / 3.)) - 1.0)) / MU_I;
-						#endif
-				#endif
+			Te = calc_Te(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])]);
+			Ti = calc_Ti(p[nl[n]][index_3D(n, i * REDUCE_FACTOR1 + i1 + N1_GPU_offset[n], j * REDUCE_FACTOR2 + j1 + N2_GPU_offset[n], z * REDUCE_FACTOR3 + z1 + N3_GPU_offset[n])]);
 			array_reduced[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (ENTRE + !DOKTOT + RAD_M1)] = (float)Te * factor;
 			array_reduced[nl[n]][(i)*NPRDUMP * BS_2 / REDUCE_FACTOR2 * BS_3 / REDUCE_FACTOR3 + (j)*NPRDUMP * BS_3 / REDUCE_FACTOR3 + (z)*NPRDUMP + (ENTRI + !DOKTOT + RAD_M1)] = (float)Ti * factor;
 			#endif
