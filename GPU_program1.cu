@@ -4526,8 +4526,11 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[0] = pressure * 3.; // Erad = 3*p_rad
 		}
 
+		//Floor on photon number+
 		#if(P_NUM)
-		prim[4] = U[4] / sqrt(1.0);
+		double Tr;
+		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
 
 		return 0;
@@ -4558,10 +4561,14 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 			prim[3] = 0.;
 			pressure = -Qdotn / (4. * 1. - 1.);
 			prim[0] = 1.e-30;
-			#if(P_NUM)
-			prim[4] = U[4] / sqrt(1.0);
-			#endif
 		}
+
+		//Floor on photon number+
+		#if(P_NUM)
+		double Tr;
+		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		#endif
 		return 0;
 		//else if (y>1.-100.*NUMEPSILON){
 		//	prim[1] = 0.;
@@ -6288,14 +6295,14 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 	#if(RAD_M1)
 	if (pf[UU_RAD] < pow(10., -30.)) {
 		pf[UU_RAD] = pow(10., -30.);
+		
+		//Floor on photon number
+		#if(P_NUM)
+		double Tr;
+		Tr = pow(pf[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		pf[PHOTON] = pf[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		#endif
 	}
-	#endif
-
-	//Floor on photon number
-	#if(P_NUM)
-	double Tr;
-	Tr = pow(pf[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-	pf[PHOTON] = pf[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 	#endif
 
 	#if(DRIFT_FLOOR)
@@ -8418,7 +8425,7 @@ __global__ void fluxcalc2D2(double *  F, const  double* __restrict__  dq1, const
 		ctop_rad = MY_MAX(cmax_rad, cmin_rad);
 
 		for (k = 0; k < NPR; k++) {
-			if (k >= UU_RAD && k <= U3_RAD) {
+			if (k == UU_RAD || k == U1_RAD || k == U2_RAD || k == U3_RAD || k == PHOTON) {
 				F[k * (ksize)+global_id] = 0.5 * (temp1[k] + temp3[k] - ctop_rad * (temp4[k] - temp2[k]));
 			}
 			else {

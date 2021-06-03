@@ -129,14 +129,14 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#if(RAD_M1)
 	if (pv[UU_RAD] < pow(10., -30.)) {
 		pv[UU_RAD] = pow(10., -30.);
-	}
-	#endif
 
-	//Floor on photon number+
-	#if(P_NUM)
-	double Tr;
-	Tr = pow(pv[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
-	pv[PHOTON] = pv[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		//Floor on photon number+
+		#if(P_NUM)
+		double Tr;
+		Tr = pow(pv[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		pv[PHOTON] = pv[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		#endif
+	}
 	#endif
 
 	#if(DRIFT_FLOOR)

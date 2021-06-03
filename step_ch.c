@@ -739,20 +739,28 @@ double fluxcalc(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_LOCAL
 					cmin = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 					ctop = MY_MAX(cmax, cmin);
 
+					#if(RAD_M1)
 					for (k = 0; k < NPR; k++) {
-						if (!(k >= UU_RAD && k <= U3_RAD && RAD_M1)) {
+						if (k == UU_RAD || k == U1_RAD || k == U2_RAD || k == U3_RAD || k == PHOTON) {
+							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k]));
+						}
+						else {
 							#if(HLLF)
 							F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
 							#else
 							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
 							#endif
 						}
-						else {
-							#if(RAD_M1)
-							F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop_rad * (U_r[k] - U_l[k]));
-							#endif
-						}
 					}
+					#else
+					for (k = 0; k < NPR; k++) {
+						#if(HLLF)
+						F[nl[n]][ind0][k] = (cmax * F_l[k] + cmin * F_r[k] - cmax * cmin * (U_r[k] - U_l[k])) / (cmax + cmin + SMALL);
+						#else
+						F[nl[n]][ind0][k] = 0.5 * (F_l[k] + F_r[k] - ctop * (U_r[k] - U_l[k]));
+						#endif
+					}
+					#endif
 
 					/* evaluate restriction on timestep */
 					cmax = MY_MAX(cmax, cmin);
