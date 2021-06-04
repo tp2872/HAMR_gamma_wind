@@ -275,7 +275,7 @@ double calc_kappa_es(double * restrict ph) {
 	kappa_es = 0.2*(1 + X_AB);
 
 #if(WHICHPROBLEM == RAD_PULSE)
-	kappa_es = 1e5;
+	kappa_es = 1e1;
 	return(kappa_es);
 #else 
 	return(kappa_es* (ph[RHO] * MASS_DENSITY_SCALE)* R_G_CGS);

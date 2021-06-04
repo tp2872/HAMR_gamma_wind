@@ -6350,7 +6350,7 @@ __device__ double calc_kappa_es(double* ph
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Tg / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
 #if(WHICHPROBLEM == RAD_PULSE)
-	kappa_es = 1e5;// 1e-6;
+	kappa_es = 1e1;// 1e-6;
 	return (kappa_es);
 #else 
 	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);

@@ -176,13 +176,16 @@ void init_radpulse()
 	double X[NDIM];
 	struct of_geom geom;
 
-	double sigma = 1.56e-54;
+	double sigma = 1.54e-64; // 8.77e-12 * 0.25 * C_CGS * (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	double T0 = 1e6;
 	double myrho = 1.;
-	double xc = 0.5;
-	double yc = 0.5;
-	double w = 0.05;
+	double xc = 0.;
+	double yc = 0.;
+	double zc = 0.;
+	double w = 5.;
 	double T_rad;
+	double tau = 0.;
+	double taumax = 0.;
 
 	/* some physics parameters */
 	gam = GAMMA;
@@ -195,7 +198,7 @@ void init_radpulse()
 	t = 0.; 
 
 	/* output choices */
-	tf = 1.;
+	tf = 1000.;
 
 	/* start diagnostic counters */
 	dump_cnt = 0;
@@ -209,7 +212,7 @@ void init_radpulse()
 			coord(n_ord[n], i, j, z, CENT, X);
 			bl_coord(X, &x, &y, &zz);
 			//applying the perturbations
-			//T_rad = T0 * (1. + 100. * exp(- ((x - xc) * (x - xc) + (y - yc) * (y - yc)) / (w * w)));
+			//T_rad = T0 * (1. + 100. * exp(- ((x - xc) * (x - xc) + (y - yc) * (y - yc) + (zz - zc) * (zz - zc)) / (w * w)));
 			//T_rad = T0 * (100. * exp(- ((x - xc) * (x - xc)) / (w * w)));
 			T_rad = T0 * (1. + 100. * exp(-((x - xc) * (x - xc)) / (w * w)));
 
@@ -227,6 +230,7 @@ void init_radpulse()
 
 #if(RAD_M1)
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 4. * sigma * pow(T_rad, 4.0);
+			//fprintf(stderr, "%e\n", p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD]);
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = 0.;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = 0.;
@@ -234,6 +238,26 @@ void init_radpulse()
 		}
 	}
 
+	double cell_size, kappa_es, kappa_abs;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			//Calculate optical depth of one cell
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			#if(D3>1)
+			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
+			#else
+			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
+			#endif
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			tau = (kappa_es + kappa_abs) * cell_size;
+			if (tau > taumax) {
+				taumax = tau;
+			}
+		}
+	}
+
+	fprintf(stderr, "sigma=%e, taumax=%e\n", sigma, taumax);
 
 	/* enforce boundary conditions */
 	for (n = 0; n < n_active; n++) {
