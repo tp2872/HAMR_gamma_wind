@@ -4479,7 +4479,6 @@ __device__ int Rtoprim(double *U, double gcov[10], double gcon[10], double gdet,
 }
 
 __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double y_max, int lim) {
-
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
@@ -4584,7 +4583,8 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		//}
 	}
 	return(returnval);
-	/*double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
+	/*
+	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
 	int i, returnval = 0;
@@ -4697,7 +4697,8 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
 		#endif
 	}
-	return returnval;*/
+	return returnval;
+	*/
 	/*
 double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
