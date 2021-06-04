@@ -4483,6 +4483,9 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 	double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
+	#if(P_NUM)
+	double Tr;
+	#endif
 	int i, returnval = 0;
 
 	for (i = 0; i < 4; i++) Qcov[i] = U[i];
@@ -4512,6 +4515,10 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 	#if(P_NUM)
 	prim[4] = U[4] / sqrt(gammasq);
+	if (prim[4] < 0.0) {
+		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+	}
 	#endif
 
 	if (isnan(Qdotn) || prim[0] < 0. || isnan(y) || y < 0.) {
@@ -4528,7 +4535,6 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//Floor on photon number+
 		#if(P_NUM)
-		double Tr;
 		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
@@ -4565,7 +4571,6 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 
 		//Floor on photon number+
 		#if(P_NUM)
-		double Tr;
 		Tr = pow(prim[0] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
 		prim[4] = prim[0] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
 		#endif
