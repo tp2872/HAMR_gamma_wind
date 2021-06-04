@@ -94,29 +94,48 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	#endif
 
 	//tie floors to the local values of magnetic field and internal energy density
-	#if(1)
-	if( rhoflr < bsq / BSQORHOMAX ) rhoflr = bsq / BSQORHOMAX;
-	if( uuflr < bsq / BSQOUMAX ) uuflr = bsq / BSQOUMAX;
-	if( rhoflr < pv[UU] / UORHOMAX ) rhoflr = pv[UU] / UORHOMAX;
+	if (rhoflr < bsq / BSQORHOMAX) rhoflr = bsq / (BSQORHOMAX);
+	#if(RAD_M1)
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < (pv[UU] + pv[UU_RAD]) / UORHOMAX)  rhoflr = (pv[UU] + pv[UU_RAD]) / (UORHOMAX);
+	#else
+	if (uuflr < bsq / BSQOUMAX) uuflr = bsq / (BSQOUMAX);
+	if (rhoflr < pv[UU] / UORHOMAX) rhoflr = pv[UU] / (UORHOMAX);
 	#endif
+	if (rhoflr < RHOMINLIMIT) rhoflr = RHOMINLIMIT;
+	if (uuflr < UUMINLIMIT) uuflr = UUMINLIMIT;
 
-	if( rhoflr < RHOMINLIMIT ) rhoflr = RHOMINLIMIT;
-	if( uuflr  < UUMINLIMIT  ) uuflr  = UUMINLIMIT;
-
-	/* floor on density and internal energy density (momentum *not* conserved) */
-	#pragma ivdep
-	PLOOP pv_prefloor[k] = pv[k];
-	if (pv[RHO] < rhoflr){
+	//floor on density and internal energy density (momentum *not* conserved) 
+	for (k = 0; k < NPR_U; k++) pv_prefloor[k] = pv[k];
+	if (pv[RHO] < rhoflr) {
 		pv[RHO] = rhoflr;
 		dofloor = 1;
 	}
-	if (pv[UU] < uuflr){
+
+	//Internal energy floor
+	#if(RAD_M1)
+	if (pv[UU] + pv[UU_RAD] < uuflr) {
+		pv[UU] = uuflr - pv[UU_RAD];
+		dofloor = 1;
+	}
+	#else
+	if (pv[UU] < uuflr) {
 		pv[UU] = uuflr;
 		dofloor = 1;
 	}
+	#endif
+
+	//Floor on radiation internal energy
 	#if(RAD_M1)
 	if (pv[UU_RAD] < pow(10., -30.)) {
 		pv[UU_RAD] = pow(10., -30.);
+
+		//Floor on photon number+
+		#if(P_NUM)
+		double Tr;
+		Tr = pow(pv[UU_RAD] * ENERGY_DENSITY_SCALE / ARAD, 0.25);
+		pv[PHOTON] = pv[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * Tr);
+		#endif
 	}
 	#endif
 
@@ -202,10 +221,29 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		for (m = 1; m < NDIM; m++) {
 			pv[m + UU] = utcon[m] * trans + pv_prefloor[m + UU] * (1. - trans);
 		}
+
+	
 	}
 	#endif
 
-	#if DOKTOT
+	if (dofloor) {
+		#if(TWO_T)
+			#if(FIXEDGAMMA)
+				#if(FULL_ENTROPY)
+				pv[ENTRE] = 1. / (GAMMAE - 1.) * log(0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE));
+				pv[ENTRI] = 1. / (GAMMA - 1.) * log(0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+				#else
+				pv[ENTRE] = 0.5 * (GAMMAE - 1.0) * pv[UU] * pow(pv[RHO], -GAMMAE);
+				pv[ENTRI] = 0.5 * (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
+				#endif
+			#else
+
+
+			#endif
+		#endif
+	}
+
+	/*#if DOKTOT
 	#if (DOHELM)
 	double xentr;
 	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
@@ -216,6 +254,11 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	//pv[KTOT] = 1. / (gam - 1.) * log((gam - 1.) * pv[UU] * pow(pv[RHO], -gam)) + ENTROPY_CONST;
 	pv[KTOT] = (gam - 1.) * pv[UU] * pow(pv[RHO], -gam);
 	#endif
+	#endif*/
+	#if(FULL_ENTROPY)
+	pv[KTOT] = 1. / (GAMMA - 1.) * log((GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA));
+	#else
+	pv[KTOT] = (GAMMA - 1.0) * pv[UU] * pow(pv[RHO], -GAMMA);
 	#endif
 
 	/* limit gamma wrt normal observer */

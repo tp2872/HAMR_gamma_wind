@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 	}
 	#endif
 	#if(RAD_M1)
-	int ind0, k;
+	/*int ind0, k;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]] - 1, BS_1 + N1_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]] + BS_2, N3_GPU_offset[n_ord[n]] - D3, N3_GPU_offset[n_ord[n]] + BS_3 * D3) {
 			for (zz = 0; zz < 1; zz++) {
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 				get_geometry(n_ord[n], i, j, z, CENT, &geom);
 				get_state(p[nl[n_ord[n]]][ind0], &geom, &q);
 				get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
-				primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U);
+				primtoflux(p[nl[n_ord[n]]][ind0], &q, &q_rad, 0, &geom, U, GAMMA);
 
 				//Reset variables
 				PLOOP p_old[k] = p[nl[n_ord[n]]][ind0][k];
@@ -213,13 +213,13 @@ int main(int argc, char *argv[])
 
 				//Print
 				if (fabs(p_old[UU_RAD] - p[nl[n_ord[n]]][ind0][UU_RAD])/(p_old[UU_RAD] + p[nl[n_ord[n]]][ind0][UU_RAD])>pow(10.,-12.)) {
-					fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
+					fprintf(stderr, "uu_old (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p_old[UU_RAD]), fabs(q_rad.ucon[0]));
 					get_state_rad(p[nl[n_ord[n]]][ind0], &geom, &q_rad);
 					fprintf(stderr, "uu_new (%d, %d, %d): %f uu_0-1: %f \n", i, j, z, log10(p[nl[n_ord[n]]][ind0][UU_RAD]), log10(fabs(q_rad.ucon[0] - 1.)));
 				}
 			}
 		}
-	}
+	}*/
 	#endif
 
 	/* do initial diagnostics */

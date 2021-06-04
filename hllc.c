@@ -393,8 +393,10 @@ double fluxcalc_hlld(double(*restrict pr[NB_LOCAL])[NPR], double(*restrict F[NB_
 				get_state(p_l, &geom, &state_l);
 				get_state(p_r, &geom, &state_r);
 
-				vchar(p_l, &state_l, &geom, dir, &(cmax_l), &(cmin_l), i, j, z);
-				vchar(p_r, &state_r, &geom, dir, &(cmax_r), &(cmin_r), i, j, z);
+
+				fprintf(stderr, "Need to update HLLC/HLLD functions! \n");
+				//vchar(p_l, &state_l, &geom, dir, &(cmax_l), &(cmin_l), i, j, z);
+				//vchar(p_r, &state_r, &geom, dir, &(cmax_r), &(cmin_r), i, j, z);
 				cmax[1] = fabs(MY_MAX(MY_MAX(0., cmax_l), cmax_r));
 				cmin[1] = fabs(MY_MAX(MY_MAX(0., -cmin_l), -cmin_r));
 				ctop = MY_MAX(cmax[1], cmin[1]);

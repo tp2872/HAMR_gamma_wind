@@ -24,13 +24,13 @@ statement after "retval = 5;" statement in Utoprim_new_body();
 
 /* these variables need to be shared between the functions
 Utoprim_1D, residual, and utsq */
-double Bsq, QdotBsq, Qtsq, Qdotn, D;
-#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D)
+double Bsq, QdotBsq, Qtsq, Qdotn, D, S[2], fel;
+#pragma omp threadprivate(Bsq, QdotBsq, Qtsq, Qdotn, D, S, fel)
 
 // Declarations:
 static double vsq_calc(double W);
 static int Utoprim_new_body(double U[], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[], double tolerance, int lim);
-static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double tolerance, int lim);
+static int Utoprim_NM_calc(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[NPR_2T], double tolerance, int lim);
 static int general_newton_raphson(double x[], void(*funcd) (double[], double[], double[], double[][NEWT_DIM_2], double *, double *), double tolerance);
 static void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double *f, double *df);
 
@@ -73,7 +73,11 @@ gcov = gcon = diag(-1,1,1,1)  and gdet = 1.  ;
 
 ******************************************************************/
 
-int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim){
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+	#if(TWO_T)
+	, double fel_input
+	#endif
+){
 	double U_tmp[NPR_U],  prim_tmp[NPR_HD];
 	int i, j, ret;
 	double alpha;
@@ -101,6 +105,13 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 	#pragma ivdep
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 
+	//Calculate entropy variable for 2T fluids to recover EOS gamma
+	#if(TWO_T)
+	S[0] = U[ENTRE] / U[RHO];
+	S[1] = U[ENTRI] / U[RHO];
+	fel = fel_input;
+	#endif
+
 	ret = Utoprim_new_body(U_tmp, gcov, gcon, gdet, prim_tmp, tolerance, lim);
 
 	//Transform new primitive variables back if there was no problem
@@ -109,6 +120,11 @@ int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], 
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
+		//Set entropy variables
+		#if(TWO_T)
+		prim[ENTRE] = S[0];
+		prim[ENTRI] = S[1];
+		#endif
 	}
 
 	return(ret);
@@ -223,8 +239,14 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     // Helmholtz EOS
     eos_mode_rhou_pres (rho0, u, &p);
     #else
+	#if(TWO_T)
+	double gamma_eos;
+	gamma_eos = calc_gamma_gas_conserved(S, rho0);
+	p = (gamma_eos - 1.0) * u;
+	#else
     // Ideal gas EOS
     p = pressure_rho0_u(rho0, u);
+	#endif
     #endif
     
 	w = rho0 + u + p;
@@ -275,8 +297,14 @@ static int Utoprim_new_body(double U[NPR_U], double gcov[NDIM][NDIM], double gco
     eos_mode_rhow_pres_u (rho0, w, &p, &u);
     #else
     // Ideal gas EOS
+	#if(TWO_T)
+	gamma_eos = set_S_w(S, rho0, w, fel);
+	u = (w - rho0) / gamma_eos;
+	p = (gamma_eos - 1.0) * u;
+	#else
     p = pressure_rho0_w(rho0, w); // DANAT: change this for Helmholtz EOS! say, find p and u as f(rho0, w)
     u = w - (rho0 + p);
+	#endif
     #endif
     
 	// User may want to handle this case differently, e.g. do NOT return upon 
@@ -484,7 +512,20 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     double dpdvsq_2 = -0.5*(W + p_tmp*gamma_sq)/rho;
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
     dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
-    
+	#elif(TWO_T)
+	double gtmp, gamma_eos, w, rho, factor1, factor2, dvsq, dfactordvsq;
+	w = W * (1.0 - vsq);
+	rho= D * sqrt(1.0 - vsq);
+	gtmp = 1. - vsq;
+	gamma_eos = calc_gamma_gas_w(S, rho, w, fel);
+	factor1 = (gamma_eos - 1.) / gamma_eos;
+	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
+	dPdW = factor1 * gtmp;
+	dvsq = 0.0000000001;
+	factor2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq+dvsq)), fel);
+	factor2 = (factor2 - 1.) / factor2;
+	dfactordvsq = (factor2 - factor1) / (dvsq);
+	dPdvsq = factor1*(0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp))*dfactordvsq;
     #else
     // Ideal gas EOS
 	p_tmp = pressure_W_vsq(W, vsq);
@@ -547,6 +588,7 @@ pressure_W_vsq():
 static double pressure_W_vsq(double W, double vsq){
 	double gtmp;
 	gtmp = 1. - vsq;
+
 	return((GAMMA - 1.) * (W * gtmp - D * sqrt(gtmp)) / GAMMA);
 }
 
@@ -578,8 +620,12 @@ END   OF   UTOPRIM_2D.C
 
 
 //Newman inversion routine serving as backup for utoprim2d
-int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], int lim){
-	double U_tmp[NPR_U], prim_tmp[NPR_HD];
+int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],double gdet, double prim[NPR], double tolerance, int lim
+	#if(TWO_T)
+	, double fel_input
+	#endif
+){
+	double U_tmp[NPR_U], prim_tmp[NPR_HD], S2[NPR_2T];
 	int i, ret;
 	double alpha;
 
@@ -606,7 +652,16 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	#pragma ivdep
 	for (i = 0; i < BCON1; i++) prim_tmp[i] = prim[i];
 	
-	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, NEWT_TOL, lim);
+
+	//Calculate entropy variable for 2T fluids to recover EOS gamma
+	#if(TWO_T)
+	S2[0] = U[ENTRE] / U[RHO];
+	S2[1] = U[ENTRI] / U[RHO];
+	fel = fel_input;
+	#endif
+	if (U[ENTRE] == 0.0 || U[ENTRI] == 0) fprintf(stderr, "U-error \n");
+
+	ret = Utoprim_NM_calc(U_tmp, gcov, gcon, gdet, prim_tmp, S2, tolerance, lim);
 
 	//Transform new primitive variables back if there was no problem
 	if (ret == 0) {
@@ -614,6 +669,12 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 		for (i = 0; i < BCON1; i++) {
 			prim[i] = prim_tmp[i];
 		}
+
+		#if(TWO_T)
+		if (prim[ENTRE] == 0.0 || prim[ENTRI] == 0) fprintf(stderr, "0-error\n");
+		prim[ENTRE] = S2[0];
+		prim[ENTRI] = S2[1];
+		#endif
 	}
 
 	#if(DOKTOT)
@@ -623,10 +684,10 @@ int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM],d
 	return(ret);
 }
 
-static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[5], double tolerance, int lim)
+static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[NDIM][NDIM], double gdet, double prim[NPR_HD], double S2[2], double tolerance, int lim)
 {
 	double QdotB, Bcon[NDIM], Bcov[NDIM], Qcov[NDIM], Qcon[NDIM], ncov[NDIM], ncon[NDIM], Qsq, Qtcon[NDIM];
-	double rho0, u, w,  gamma, vsq, errx=10000.;
+	double rho0, u, w,  gamma, gamma_eos, vsq, errx=10000.;
 	int i;
 
 	// Calculate various scalars (Q.B, Q^2, etc)  from the conserved variables:
@@ -670,12 +731,17 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
     p_array[0] = xpres;
     #else
     // Ideal gas EOS
-    p_array[0] = (GAMMA - 1.)*prim[UU];
+	#if(TWO_T)
+	gamma_eos = calc_gamma_gas_conserved(S2, prim[RHO]);
+	#else
+	gamma_eos = GAMMA;
+	#endif
+    p_array[0] = (gamma_eos - 1.)*prim[UU];
     #endif
 	
     p_new = p_array[0];
 	d = 0.5*(Qtsq*Bsq - QdotBsq);
-//    if (d < 1e-20) return(1); // DANAT : edited for d very small (< 1e-30)
+	//if (d < 1e-20) return(1); // DANAT : edited for d very small (< 1e-30)
 	do{
 		set_variables = 0;
 		a = -Qdotn + p_new + 0.5*Bsq;
@@ -696,13 +762,19 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
 		w = z * (1. - vsq);
 		gamma = 1. / sqrt(1. - vsq);
 		rho0 = U[RHO] / gamma; 
-        
+
         #if (DOHELM)
         // Helmholtz EOS
         eos_mode_rhow_pres_u (rho0, w, &xpres, &u);        
         #else
         // Ideal gas EOS
-		u = (w - rho0) / GAMMA;
+			#if(TWO_T)
+			gamma_eos = calc_gamma_gas_w(S2, rho0, w, fel);
+			if (isnan(gamma_eos))gamma_eos = GAMMA;
+			#else
+			gamma_eos = GAMMA;
+			#endif
+		u = (w - rho0) / gamma_eos;
         #endif
 
 		iter++;
@@ -711,9 +783,9 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         #if DOHELM
         // Helmholtz EOS
         p_array[iter] = xpres;
-        #else
+		#else
         // Ideal gas EOS
-		p_array[iter] = (GAMMA - 1.)*u;
+		p_array[iter] = (gamma_eos - 1.)*u;
         #endif
         
         p_old = p_array[iter - 1];
@@ -760,9 +832,14 @@ static int Utoprim_NM_calc(double U[NPR_U], double gcov[NDIM][NDIM],double gcon[
         eos_mode_rhow_pres_u (rho0, w, &xpres, &u);
         p_new = xpres;
         #else
+		#if(TWO_T)
+		gamma_eos = set_S_w(S2, rho0, w, fel);
+		#else
+		gamma_eos = GAMMA;
+		#endif
         // Ideal gas EOS
-        u = (w - rho0) / GAMMA;
-        p_new = (GAMMA - 1.)*u;
+        u = (w - rho0) / gamma_eos;
+        p_new = (gamma_eos - 1.)*u;
         #endif
 	}
 

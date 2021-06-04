@@ -106,7 +106,10 @@ Physical Parameters section
 
 /* Max. value of gamma, the lorentz factor */
 #define GAMMAMAX (80.)
-#define GAMMAMAX_RAD (50.000625)
+#define GAMMAMAX_RAD (50.)
+
+/*Max value of electron temperature in Kelvin*/
+#define TMAX (1.e15)
 
 /*Runtime in hours*/
 #define RUNTIME (24.0)
@@ -142,12 +145,9 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
-#define MAX_BLOCKS (40)
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
-#define NB_1 1
-#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
@@ -204,7 +204,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define AMR_SWITCHTIMELEVEL 1
 
 /*Minimum number of step times AMR_SWITCHTIMELEVEL for checkppointing to proceed*/
-#define DUMPFACTOR (300)
+#define DUMPFACTOR (600)
 
 /*Use prestepping for load balancing with HTS*/
 #define PRESTEP 0
@@ -216,7 +216,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REVERSE_ORDERING 0
 
 //The time between refinement (AMR) steps
-#define TREF 500.
+#define TREF 100.0
 
 /*Select the courant factor for the timestep*/
 #define COUR (0.8)
@@ -224,7 +224,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Evolve entropy for more stability*/
 #define DO_FONT_FIX (1) //Use redundant inversion scheme for more stability
 #define DOKTOT 1  //Evolve entropy to do the above even more accurately
-#define FULL_ENTROPY (1) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
+#define FULL_ENTROPY (0) //Evolve the full entropy equation S=1/(gamma-1)*log(P/rho^gamma) instead of the entropy tracer K=p/rho^gamma
 
 /*Enable/disable PPM spatial reconstruction. Never enable both*/
 #define PPM (1)
@@ -329,8 +329,33 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 /*Enable Radiation*/
 #define RAD_M1 (1)
 
+/*Wheter to stop cooling the diks once it reaches a certain scaleheight*/
+#define COOL_STOP (0)
+#define STOP_SCALEHEIGHT (0.03)
+
+/*Enable advenced Roseland and energy opacities*/
+#define OP_EXTRA (0)
+
+/*Enable photon number evolution*/
+#define P_NUM (1)
+
+/*Enable 2-temperature evolution*/
+#define TWO_T (1)
+
+/*Wheter to use dynamical load balancing*/
+#define DYNAMIC_LOADBALANCE (0)
+
+/*Wheter to use fixed or variable gamma*/
+#define FIXEDGAMMA (1)
+
+/*Electron gamma-->electrons are most of the time relativistic, so 4/3 is appropriate*/
+#define GAMMAE (4./3.)
+
+/*Enable or disable library with Bessel functions*/
+#define GSL_ENABLED (0)
+
 /*Enable Resistivity*/
-#define RESISTIVE (0)
+#define RESISTIVE (0) 
 
 /*Set resistivity coefficient*/
 #define ETA (0.0)
@@ -344,8 +369,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
 #if(RESISTIVE || RAD_M1)
-#define HLLF  (0)
-#define LAXF  (1)
+#define HLLF  (1)
+#define LAXF  (0)
 #else
 #define HLLF  (1)
 #define LAXF  (0)
@@ -359,6 +384,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 // CGS constants needed for radiation
 #define ARAD (7.5657e-15) /*Radiation density constant*/
 #define MH_CGS (1.673534e-24) /*Mass hydrogen molecule*/
+#define ME_CGS (9.1094e-28) /*Mass hydrogen molecule*/
 #define MMW (1.69) /*Mean molecular weight*/
 #define BOLTZ_CGS (1.3806504e-16) /*Boltzmanns constant*/
 #define THOMSON_CGS (6.652e-25) /*Thomson cross section*/
@@ -374,9 +400,16 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define M_SGRA_SOLAR (1.0e1) /* Solar masses */
 #endif
 #define M_SOLAR_CGS (1.998e33) /* Solar mass */
+#define MASS_RATIO (MH_CGS/ME_CGS)
 #define G_CGS (6.67259e-8) /* Gravitational constant */
+#define CK_CGS (8. * M_PI / (C_CGS * C_CGS * C_CGS * PLANCK_CGS * PLANCK_CGS * PLANCK_CGS))
+#define MU_I (4.0/(4.0*X_AB+Y_AB))
+#define MU_E (2.0/(1.0+X_AB))
+#define MU_G (4.0/(6*X_AB+Y_AB+2.0))
 #define BASIC (0)
 #define TYPE2 (1)
+#define IONS (0)
+#define ELECTRONS (1)
 
 // Scaling from code units to cgs units
 #define R_G_CGS (M_SGRA_SOLAR * M_SOLAR_CGS * G_CGS / (C_CGS * C_CGS)) /*Gravitational radius*/
@@ -407,13 +440,16 @@ MNEMONICS SECTION
 #define B2	(6)
 #define B3	(7)
 #define KTOT (8)
-#define UU_RAD	(9)
-#define U1_RAD	(10)
-#define U2_RAD	(11)
-#define U3_RAD	(12)
-#define E1 (9)
-#define E2 (10)
-#define E3 (11)
+#define UU_RAD	(8+DOKTOT)
+#define U1_RAD	(8+DOKTOT+1)
+#define U2_RAD	(8+DOKTOT+2)
+#define U3_RAD	(8+DOKTOT+3)
+#define E1 (8+DOKTOT+RAD_M1*4)
+#define E2 (8+DOKTOT+RAD_M1*4+1)
+#define E3 (8+DOKTOT+RAD_M1*4+2)
+#define ENTRE (8+DOKTOT+RAD_M1*4+RESISTIVE*3)
+#define ENTRI (8+DOKTOT+RAD_M1*4+RESISTIVE*3+1)
+#define PHOTON (8+DOKTOT+RAD_M1*4+RESISTIVE*3+TWO_T*2)
 
 /* mnemonics for centering of grid functions */
 #define LEFT (0)
@@ -825,26 +861,22 @@ Section with derived quantities
 #define D2 (N2>1)
 #define D3 (N3>1)
 
-#if(RAD_M1)
-#define NPRDUMP 14
-#elif(RESISTIVE)
-#define NPRDUMP 12
-#else
-#define NPRDUMP 9
-#endif
-
 /*Set variable numbers*/
 #define NPR_U      (8+DOKTOT)        /* number of gas primitive variables */
 #define NPR_R      (4)        /* number of radiation primitive variables */
+#define NPR_2T     (2)        /* number of hydrodynamic primitive variables */
+#define NPR_PH     (1)        /* Number density of photons*/
 #define NPR_E      (3)        /* number of electric field primitive variables */
-#define NPR_HD      (5)        /* number of hydrodynamic primitive variables */
-#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E)        /* total number of primitive variables */
+#define NPR_HD     (5)        /* number of hydrodynamic primitive variables */
+#define NPR        (NPR_U+RAD_M1*NPR_R+RESISTIVE*NPR_E+TWO_T*NPR_2T+P_NUM*NPR_PH)        /* total number of primitive variables */
 #define NDIM       (4)        /* number of total dimensions.  Never changes */
 #define NPG        (5)        /* number of positions on grid for grid functions */
 #define NSOLVER    (4)		/* number of positions on grid for HLLC and HLLD solver transformation matrix */
 #define COMPDIM    (2)        /* number of non-trivial spatial dimensions used in computation */
 #define NIMG       (4)        /* Number of types of images to make, kind of */
 #define NFAIL	   (5)        /* Number of types of failure images to make*/
+
+#define NPRDUMP (9+5*RAD_M1+2*TWO_T+3*RESISTIVE+1*P_NUM)
 
 /*Based on derefinement level near pole set total number of AMR levels*/
 #if(NB_2==6 && DEREFINE_POLE)

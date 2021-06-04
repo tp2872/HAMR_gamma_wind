@@ -781,6 +781,7 @@ int(*block)[NV];
 int *lin_coord[N_LEVELS];
 int *lin_coord_RM[N_LEVELS];
 double ref_val[MY_MAX(NB, 40000)];
+double bench_time[NB];
 int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB],(*n_ord_node)[NB_LOCAL];
 int n_active, *n_active_node, n_active_total, n_max;
 int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL], mem_spot_gpu_bound[NB_LOCAL];

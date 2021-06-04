@@ -869,6 +869,7 @@ extern int(*block)[NV];
 extern int *lin_coord[N_LEVELS];
 extern int *lin_coord_RM[N_LEVELS];
 extern double ref_val[MY_MAX(NB, 40000)];
+extern double bench_time[NB];
 extern int n_ord[NB_LOCAL], nl[NB], n_ord_total[NB], n_ord_RM[NB_LOCAL], n_ord_total_RM[NB], (*n_ord_node)[NB_LOCAL];
 extern int mem_spot[NB_LOCAL], mem_spot_gpu[NB_LOCAL], mem_spot_gpu_bound[NB_LOCAL];
 extern int n_active, *n_active_node, n_active_total, n_max;
@@ -925,19 +926,39 @@ void write_E_avg(double(*E_avg1)[BS_1 + 2 * N1G], double(*E_avg2)[BS_1 + 2 * N1G
 void ucon_to_utcon(double *ucon, struct of_geom *geom, double *utcon);
 void ut_calc_3vel(double *vcon, struct of_geom *geom, double *ut);
 void step_ch(void);
-void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict fl);
+void primtoflux(double * restrict pa, struct of_state * restrict q, struct of_state_rad * restrict q_rad, int dir, struct of_geom * restrict geom, double * restrict flux
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 void primtoU(double * restrict p, struct of_state * restrict q, struct of_geom * restrict geom, double * restrict U);
 void inflow_check(double *pr, int n, int ii, int jj, int zz, int type);
-void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt);
-void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU);
+void source(double * restrict pa, struct of_geom * restrict geom, int n, int ii, int jj, int zz, double * restrict U, double Dt
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
+void source_rad(double * restrict ph, struct of_geom * restrict geom, double * restrict dU
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 void calc_ymax(void);
-void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
-void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size);
-int implicit_rad_solve_PMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
-int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
-int implicit_rad_solve_UMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
-int implicit_rad_solve_EMHD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
-int implicit_rad_solve_URAD(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
+void implicit_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], struct of_geom* geom, double dU[NPR], double Dt, double* error_t, double cell_size
+	#if(TWO_T)
+	, double fel
+	#endif
+);
+int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double *dU, double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom *geom, double *dU, double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom *geom, double *dU, double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double *dU, double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
+int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom *geom, double *dU, double Dt, double* error_t, double cell_size, int do_entropy, int do_staged);
 int subcycle_rad_solve(double pb[NPR], double U_n[NPR], double U_i[NPR], double U_f[NPR], int* pflag, int* pflag_rad, struct of_geom *geom, double dU[NPR], double Dt, double cell_size);
 void u_to_v(double *pr, int i, int j);
 void fixup(double((*restrict pv[NB_LOCAL])[NPR]), int n);
@@ -948,27 +969,91 @@ void ucon_calc(double * restrict pr, struct of_geom * restrict geom, double * re
 void ucon_calc_rad(double * restrict pr, struct of_geom * restrict geom, double * restrict ucon_rad);
 void usrfun(double *pr, int n, double *beta, double **alpha);
 void calc_source();
-void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd);
+void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, double * restrict mhd
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 void mhd_calc_rad(double * restrict pr, int dir, struct of_state_rad * restrict q_rad, double * restrict mhd_rad);
-double calc_kappa_abs(double * restrict ph);
-double calc_kappa_emmit(double * restrict ph);
-double calc_kappa_es(double * restrict ph);
+double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]);
+double calc_Te(double* ph);
+double calc_Ti(double* ph);
+double calc_kappa_abs(double * restrict ph, double bsq, double Tr
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
+double calc_kappa_emmit(double* ph, double bsq, double Tr
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
+double calc_kappa_es(double * restrict ph
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 void misc_source(double * restrict ph, int ii, int jj, struct of_geom * restrict geom, struct of_state * restrict q, double * restrict dU, double r, double Dt);
+#if(TWO_T)
+double source_Coulomb(double* p);
+double calc_delta(double* restrict ph, double bsq);
+void heating(double* restrict ph, struct of_state* q);
+double calc_gamma_gas_prim(double* pr);
+double calc_gamma_gas_conserved(double* S, double rho);
+double calc_gamma_gas_w(double* S, double rho, double w, double fel);
+double set_S_w(double* S, double rho, double w, double fel);
+double set_S_u(double* S, double rho, double u);
+double calc_sfromrhou(double rho, double uint, int type);
+double calc_thetafromnmu(double n, double m, double u);
+double calc_sfromntheta(double numd, double theta);
+double bessi0(double x);
+double bessi1(double x);
+double bessk0(double x);
+double bessk1(double x);
+double bessk(int n, double x);
+double calc_CoulombCoupling(double n_e, double theta_e, double theta_i);
+double calc_thetafromsnm(double s, double numd, double mass);
+double calc_ufromsrho(double s, double rho, int type);
+#endif
 void Utoprim(double *Ua, struct of_geom *geom, double *pa);
 int Rtoprim(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], int lim);
 void get_state(double *pr, struct of_geom *geom, struct of_state *q);
 void get_state_rad(double * restrict pr, struct of_geom * restrict geom, struct of_state_rad * restrict q_rad);
-void calc_Gcon(double * restrict ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM]);
+void calc_Gcon(double* restrict ph, double Gcon[NDIM + P_NUM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+	#if(P_NUM)
+	, double* source_photon
+	#endif
+);
 void fix_flux(double(*restrict F1[NB_LOCAL])[NPR], double(*restrict F2[NB_LOCAL])[NPR], double(*restrict F3[NB_LOCAL])[NPR], int n);
-int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
+int Utoprim_2d(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+#if(TWO_T)
+	, double fel
+#endif
+);
 int Utoprim_3d_res(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim, double Dt);
-int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
+int Utoprim_NM(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim
+#if(TWO_T)
+	, double fel
+#endif
+);
 int Utoprim_1dvsq2fix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
 int Utoprim_1dfix1(double U[NPR], double gcov[NDIM][NDIM], double gcon[NDIM][NDIM], double gdet, double prim[NPR], double tolerance, int lim);
-void vchar(double *pr, struct of_state *q, struct of_geom *geom, int dir, double *cmax, double *cmin, int a, int b, int c);
-void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx);
+void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* cmax, double* cmin
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
+void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_state_rad * restrict q_rad, struct of_geom * restrict geom, int js, double * restrict vmax, double * restrict vmin, double dx
+	#if(TWO_T)
+	, double gamma_g
+	#endif
+);
 void step_ch_debug();
 void GPU_benchmark(void);
+void benchmark_GPU(int n);
 void GPU_init(void);
 void set_arrays_GPU(int n, int device);
 void GPU_write(int n);
@@ -1020,6 +1105,12 @@ double lvc3u(int i, int j, int k);
 int invert_matrix_3D(double A[][3], double Ainv[][3]);
 int LU_decompose_3D(double A[][3], int permute[]);
 void LU_substitution_3D(double A[][3], double B[], int permute[]);
+int invert_matrix_5D(double A[][5], double Ainv[][5]);
+int LU_decompose_5D(double A[][5], int permute[]);
+void LU_substitution_5D(double A[][5], double B[], int permute[]);
+int invert_matrix_6D(double A[][6], double Ainv[][6]);
+int LU_decompose_6D(double A[][6], int permute[]);
+void LU_substitution_6D(double A[][6], double B[], int permute[]);
 void utoprim_res(double(*restrict pi[NB_LOCAL])[NPR], double(*restrict pb[NB_LOCAL])[NPR], double(*restrict pf[NB_LOCAL])[NPR], double(*restrict psf[NB_LOCAL])[NDIM], double Dt, int n);
 
 //In step_ch_res.c

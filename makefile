@@ -1,27 +1,27 @@
 #/***********************************************************************************
-#    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble,
+#    Copyright 2006 Charles F. Gammie, Jonathan C. McKinney, Scott C. Noble, 
 #                   Gabor Toth, and Luca Del Zanna
 #
 #                        HARM  version 1.0   (released May 1, 2006)
 #
-#    This file is part of HARM.  HARM is a program that solves hyperbolic
+#    This file is part of HARM.  HARM is a program that solves hyperbolic 
 #    partial differential equations in conservative form using high-resolution
-#    shock-capturing techniques.  This version of HARM has been configured to
-#    solve the relativistic magnetohydrodynamic equations of motion on a
+#    shock-capturing techniques.  This version of HARM has been configured to 
+#    solve the relativistic magnetohydrodynamic equations of motion on a 
 #    stationary black hole spacetime in Kerr-Schild coordinates to evolve
-#    an accretion disk model.
+#    an accretion disk model. 
 #
-#    You are morally obligated to cite the following two papers in his/her
+#    You are morally obligated to cite the following two papers in his/her 
 #    scientific literature that results from use of any part of HARM:
 #
-#    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003,
+#    [1] Gammie, C. F., McKinney, J. C., \& Toth, G.\ 2003, 
 #        Astrophysical Journal, 589, 444.
 #
-#    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006,
+#    [2] Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
 #        Astrophysical Journal, 641, 626.
 #
-#
-#    Further, we strongly encourage you to obtain the latest version of
+#   
+#    Further, we strongly encourage you to obtain the latest version of 
 #    HARM directly from our distribution website:
 #    http://rainman.astro.uiuc.edu/codelib/
 #
@@ -42,20 +42,20 @@
 #
 #***********************************************************************************/
 #### set USEICC to 0 if you want gcc compiler options, else set to 1 to use icc
-########  gcc generally used for debugging with -g option so we can use gdb
+########  gcc generally used for debugging with -g option so we can use gdb 
 USEICC = 0
 
 ifeq ($(USEICC),0)
-CC       = /usr/local/bin/mpicc
-CCFLAGS  = -O0 -I/usr/local/cuda/include -g -ggdb -stdlib=libc++
+CC       = cc 
+CCFLAGS  =  -fopenmp -O3
 endif
 
-EXTRALIBS = -lm -L/usr/local/cuda/lib -lcudart -lmpi
+EXTRALIBS = -lm -lstdc++ -lcudart -lcuda
 
-CC_COMPILE  = $(CC) $(CCFLAGS) -c
-CUDA_COMPILE  = /usr/local/cuda/bin/nvcc -arch=compute_35 -code=sm_35 -I/usr/local/cuda/include --ptxas-options=-dlcm=ca -Xcompiler -lgomp -c
-CC_LOAD     = $(CC) $(CCFLAGS)
-CUDA_LOAD  = /usr/local/cuda/bin/nvcc -arch=compute_35 -code=sm_35 --ptxas-options=-dlcm=ca -Xcompiler -lgomp -dlink
+CC_COMPILE  = $(CC) $(CCFLAGS) -c 
+CUDA_COMPILE  = nvcc -arch=compute_60 -code=sm_60 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -c 
+CC_LOAD     = $(CC) $(CCFLAGS) 
+CUDA_LOAD  = nvcc -arch=compute_60 -code=sm_60 --ptxas-options=-dlcm=cg --maxrregcount=255 -Xcompiler \-fopenmp -lgomp -dlink
 
 GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_program1.cu GPU_program2.cu
 
@@ -64,21 +64,19 @@ GPU_FILES = GPU_boundcomP.cu GPU_boundcomF.cu GPU_boundcomE.cu GPU_main.cu GPU_p
 
 EXE = harm
 all: $(EXE)
-
+	
 OBJS = \
 AMR.o boundcomB.o boundcomE.o boundcomF.o boundcomP.o \
 bounds.o coord.o diag.o dump.o fixup.o \
 init.o interp.o main.o metric.o lu.o \
-phys.o ranc.o restart.o step_ch.o \
+phys.o ranc.o restart.o step_ch.o radiation.o \
 utoprim_1dfix1.o utoprim_1dvsq2fix1.o utoprim_2d.o u2p_util.o\
 GPU_boundcomE.o GPU_boundcomP.o GPU_boundcomF.o\
 GPU_program1.o GPU_program2.o GPU_main.o\
-hllc.o const_trans.o LAS.o \
-eos_helm.o particles.o \
-nuclear.o
+hllc.o const_trans.o LAS.o step_ch_res.o\
+const_trans_res.o utoprim_3d_res.o
 
-INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h \
-Eos_map.h Eos.h Flash_mpi.h Flash.h nuclear.h
+INCS = decs.h decs_MPI.h decsCUDA.h defs.h  u2p_defs.h  u2p_util.h config.h
 
 
 $(OBJS) : $(INCS) makefile
@@ -91,4 +89,3 @@ $(EXE): $(OBJS) $(INCS) makefile
 clean:
 	/bin/rm -f *.o *.il
 	/bin/rm -f $(EXE) image_interp
-	/bin/rm -rf *dumps* reduced

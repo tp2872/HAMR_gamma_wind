@@ -291,20 +291,20 @@ void init_entwave()
 	// Mean state
 	double rho0 = 1.;
 	double u0 = 1.; // TODO set U{n} for boosted entropy
-	double B10 = 1.; // This is set later, see below
+	double B10 = 0.; // This is set later, see below
 	double B20 = 0.;
 	double B30 = 0.;
 
 	// Wavevector
 	double k1 = 2. * M_PI;
-	double k2 = 0.;// 2. * M_PI;
-	double k3 = 0.;// 2. * M_PI;
-	double amp = 1.e-4;
+	double k2 = 2. * M_PI;
+	double k3 = 2. * M_PI;
+	double amp = 1.e-5;
 
 	// "Faux-2D" planar waves direction
 	// Set to 0 for "full" 3D wave
-	int dir = 1;
-	int nmode = 0;
+	int dir = 0;
+	int nmode = 3;
 
 	double omega, drho, du, du1, du2, du3, dB1, dB2, dB3;
 
@@ -319,51 +319,154 @@ void init_entwave()
 	dB2 = 0.;
 	dB3 = 0.;
 
-	// Eigenmode
-	if (nmode == 0) { // Entropy
-		omega = 2. * M_PI / 5.; // To get tf
-		drho = 1.;
-		du = 0.;
-		du1 = 0.;
-		du2 = 0.;
-		du3 = 0.;
-		dB1 = 0.;
-		dB2 = 0.;
-		dB3 = 0.;
+	if (dir == 1)
+		k1 = 0;
+	if (dir == 2)
+		k2 = 0;
+	if (dir == 3)
+		k3 = 0;
+
+	// "Faux-2D" planar waves direction
+   // Set to 0 for "full" 3D wave
+	if (dir == 0)
+	{
+		// 3D (1,1,1) wave
+		B10 = 1.;
+		if (nmode == 0)
+		{ // Entropy
+			omega = 2. * M_PI / 5. * 1;
+			drho = 1.;
+		}
+		else if (nmode == 1)
+		{ // Slow
+			omega = 2.35896379113;
+			drho = 0.556500332363;
+			du = 0.742000443151;
+			du1 = -0.282334999306;
+			du2 = 0.0367010491491;
+			du3 = 0.0367010491491;
+			dB1 = -0.195509141461;
+			dB2 = 0.0977545707307;
+			dB3 = 0.0977545707307;
+		}
+		else if (nmode == 2)
+		{ // Alfven
+			omega = -3.44144232573;
+			du2 = -0.339683110243;
+			du3 = 0.339683110243;
+			dB2 = 0.620173672946;
+			dB3 = -0.620173672946;
+		}
+		else
+		{ // Fast
+			omega = 6.92915162882;
+			drho = 0.481846076323;
+			du = 0.642461435098;
+			du1 = -0.0832240462505;
+			du2 = -0.224080007379;
+			du3 = -0.224080007379;
+			dB1 = 0.406380545676;
+			dB2 = -0.203190272838;
+			dB3 = -0.203190272838;
+		}
 	}
-	else if (nmode == 1) { // Slow
-		omega = 2.74220688339;
-		drho = 0.580429492464;
-		du = 0.773905989952;
-		du1 = -0.253320198552;
-		du2 = 0.;
-		du3 = 0.;
-		dB1 = 0.;
-		dB2 = 0.;
-		dB3 = 0.;
+	else
+	{
+		// 2D (1,1,0), (1,0,1), (0,1,1) wave
+		// Constant field direction
+		if (dir == 1)
+		{
+			B20 = 1.;
+		}
+		else if (dir == 2)
+		{
+			B30 = 1.;
+		}
+		else if (dir == 3)
+		{
+			B10 = 1.;
+		}
+
+		if (nmode == 0)
+		{ // Entropy
+			omega = 2. * M_PI / 5. * 1;
+			drho = 1.;
+		}
+		else if (nmode == 1)
+		{ // Slow
+			omega = 2.41024185339;
+			drho = 0.558104461559;
+			du = 0.744139282078;
+			if (dir == 1)
+			{
+				du2 = -0.277124827421;
+				du3 = 0.0630348927707;
+				dB2 = -0.164323721928;
+				dB3 = 0.164323721928;
+			}
+			else if (dir == 2)
+			{
+				du3 = -0.277124827421;
+				du1 = 0.0630348927707;
+				dB3 = -0.164323721928;
+				dB1 = 0.164323721928;
+			}
+			else if (dir == 3)
+			{
+				du1 = -0.277124827421;
+				du2 = 0.0630348927707;
+				dB1 = -0.164323721928;
+				dB2 = 0.164323721928;
+			}
+		}
+		else if (nmode == 2)
+		{ // Alfven
+			omega = 3.44144232573;
+			if (dir == 1)
+			{
+				du1 = 0.480384461415;
+				dB1 = 0.877058019307;
+			}
+			else if (dir == 2)
+			{
+				du2 = 0.480384461415;
+				dB2 = 0.877058019307;
+			}
+			else if (dir == 3)
+			{
+				du3 = 0.480384461415;
+				dB3 = 0.877058019307;
+			}
+		}
+		else
+		{ // Fast
+			omega = 5.53726217331;
+			drho = 0.476395427447;
+			du = 0.635193903263;
+			if (dir == 1)
+			{
+				du2 = -0.102965815319;
+				du3 = -0.316873207561;
+				dB2 = 0.359559114174;
+				dB3 = -0.359559114174;
+			}
+			else if (dir == 2)
+			{
+				du3 = -0.102965815319;
+				du1 = -0.316873207561;
+				dB3 = 0.359559114174;
+				dB1 = -0.359559114174;
+			}
+			else if (dir == 3)
+			{
+				du1 = -0.102965815319;
+				du2 = -0.316873207561;
+				dB1 = 0.359559114174;
+				dB2 = -0.359559114174;
+			}
+		}
 	}
-	else if (nmode == 2) { // Alfven
-		omega = 3.44144232573;
-		drho = 0.;
-		du = 0.;
-		du1 = 0.;
-		du2 = 0.480384461415;
-		du3 = 0.;
-		dB1 = 0.;
-		dB2 = 0.877058019307;
-		dB3 = 0.;
-	}
-	else { // Fast
-		omega = 3.44144232573;
-		drho = 0.;
-		du = 0.;
-		du1 = 0.;
-		du2 = 0.;
-		du3 = 0.480384461415;
-		dB1 = 0.;
-		dB2 = 0.;
-		dB3 = 0.877058019307;
-	}
+
 
 	// Override tf and the dump and log intervals
 	tf = 2. * M_PI / fabs(omega);
@@ -389,6 +492,7 @@ void init_entwave()
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = B20 + dB2 * mode;
 			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = B30 + dB3 * mode;
 
+			#if(STAGGERED)
 			coord(n_ord[n], i, j, z, FACE1, X);
 			mode = amp * cos(k1 * X[1] + k2 * X[2] + k3 * X[3]);
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][1] = B10 + dB1 * mode;
@@ -400,6 +504,7 @@ void init_entwave()
 			coord(n_ord[n], i, j, z, FACE3, X);
 			mode = amp * cos(k1 * X[1] + k2 * X[2] + k3 * X[3]);
 			ps[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][3] = B30 + dB3 * mode;
+			#endif
 		}
 	}
 
@@ -420,7 +525,7 @@ void init_sndwave()
 	double cosa, sina;
 	double delta_ampl = 1e-5; //amplitude of the wave
 	double k_vec_x = 2 * M_PI;  //wavevector
-	double k_vec_y = 0;
+	double k_vec_y = 2 * M_PI;
 	double k_vec_len = sqrt(k_vec_x * k_vec_x + k_vec_y * k_vec_y);
 	double tfac = 1e3; //factor by which to reduce velocity
 
@@ -441,7 +546,8 @@ void init_sndwave()
 	mycs = sqrt(gam * (gam - 1) * myu / myrho);  //background sound speed
 
 	/* output choices */
-	tf = tfac / mycs;
+	tf = tfac / mycs*sqrt(2);
+	fprintf(stderr, "tf: %f \"n", tf);
 
 
 	/* start diagnostic counters */
@@ -477,308 +583,6 @@ void init_sndwave()
 		fixup(p, n_ord[n]);
 	}
 	bound_prim(p,1);
-}
-
-
-void init_truncdisk()
-{
-	int i, j, z, n;
-	double r, th, phi, sth, cth;
-	double ur, uh, up, u, rho;
-	double bl_gcov[NDIM][NDIM];
-	double X[NDIM], X_cart[NDIM], V[NDIM], V_old[NDIM], V_new[NDIM], pos_new[NDIM];
-	double tilt, eccentricity;
-	double tau, taumax, cell_size, kappa_abs, kappa_emmit, kappa_es;
-	struct of_geom geom;
-
-	/* for disk interior */
-	double l, rin, lnh, expm2chi, up1;
-	double DD, AA, SS, thin, sthin, cthin, DDin, AAin, SSin;
-	double kappa, hm1, gam_local;
-
-	/*For MPI*/
-	double inmsg;
-
-	/* for magnetic field */
-	double rho_av, rhomax, umax, beta, bsq_ij, bsq_max, norm, q, beta_act;
-
-	/* disk parameters (use fishbone.m to select new solutions) */
-	double temp = a;
-	a = 0.9375;
-	rin = 6.;
-	rmax = 12.;
-	l = lfish_calc(rmax);
-	kappa = 1.e-3;
-	beta = 100.;
-	#if(RAD_M1)
-	gam_local = 4. / 3.;
-	#else
-	gam_local = GAMMA;
-	#endif
-
-	//Check if there are enough cells within event horizon
-	coord(0, 5, 0, 0, CENT, X);
-	bl_coord(X, &r, &th, &phi);
-	if (rank == 0) {
-		fprintf(stderr, "r[5]: %g\n", r);
-		fprintf(stderr, "r[5]/rhor: %g", r / (1. + sqrt(1. - a * a)));
-		if (r > 1. + sqrt(1. - a * a)) {
-			fprintf(stderr, ": INSUFFICIENT RESOLUTION, ADD MORE CELLS INSIDE THE HORIZON\n");
-		}
-		else {
-			fprintf(stderr, "\n");
-		}
-	}
-
-	/* output choices */
-	tf = 200000000.0;
-
-	/* start diagnostic counters */
-	dump_cnt = 0;
-	dump_cnt_reduced = 0;
-	image_cnt = 0;
-	rdump_cnt = 0;
-
-	rhomax = 0.;
-	umax = 0.;
-	taumax = 0.;
-	#if(!NSY)
-	tilt = (TILT_ANGLE) / 180. * M_PI;
-	#else
-	tilt = -(TILT_ANGLE) / 180. * M_PI;
-	#endif
-	eccentricity = 0.0;
-	for (n = 0; n < n_active; n++) {
-		#pragma omp parallel for collapse(3) schedule(static,(BS_1*BS_2*BS_3)/nthreads) private(i,j,z, tau, cell_size, kappa_abs, kappa_emmit, kappa_es) firstprivate(r,th,phi,sth,cth, ur,uh,up,u,rho,bl_gcov,X, X_cart, V, V_old, V_new, pos_new,tilt, eccentricity,geom, l,rin,lnh,expm2chi,up1, DD,AA,SS,thin,sthin,cthin,DDin,AAin,SSin,kappa, hm1,inmsg, rho_av,beta,bsq_ij,bsq_max,norm,q,beta_act,temp)
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi);
-			pos_new[1] = r;
-			pos_new[2] = th;
-			pos_new[3] = phi;
-
-			sth = sin(th);
-			cth = cos(th);
-
-			/* calculate lnh */
-			DD = r * r - 2. * r + a * a;
-			AA = (r * r + a * a) * (r * r + a * a) - DD * a * a * sth * sth;
-			SS = r * r + a * a * cth * cth;
-
-			thin = M_PI / 2.;
-			sthin = sin(thin);
-			cthin = cos(thin);
-			DDin = rin * rin - 2. * rin + a * a;
-			AAin = (rin * rin + a * a) * (rin * rin + a * a)
-				- DDin * a * a * sthin * sthin;
-			SSin = rin * rin + a * a * cthin * cthin;
-
-			if (r >= rin) {
-				lnh = 0.5 * log((1. + sqrt(1. + 4. * (l * l * SS * SS) * DD /
-					(AA * sth * AA * sth))) / (SS * DD / AA))
-					- 0.5 * sqrt(1. + 4. * (l * l * SS * SS) * DD / (AA * AA * sth * sth))
-					- 2. * a * r * l / AA
-					- (0.5 * log((1. + sqrt(1. + 4. * (l * l * SSin * SSin) * DDin /
-						(AAin * AAin * sthin * sthin))) / (SSin * DDin / AAin))
-						- 0.5 * sqrt(1. + 4. * (l * l * SSin * SSin) * DDin /
-							(AAin * AAin * sthin * sthin))
-						- 2. * a * rin * l / AAin);
-			}
-			else {
-				lnh = 1.;
-			}
-
-			/* regions outside torus */
-			if (1) {
-				rho = 1.e-7 * RHOMIN;
-				u = 1.e-7 * UUMIN;
-
-				ur = 0.;
-				uh = 0.;
-				up = 0.;
-
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;
-				#if(RAD_M1)
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU_RAD] = 0.0 * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1_RAD] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2_RAD] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3_RAD] = up;
-				#endif
-			}
-			/* region inside magnetized torus; u^i is calculated in
-			 * Boyer-Lindquist coordinates, as per Fishbone & Moncrief,
-			 * so it needs to be transformed at the end */
-			if(lnh >= 0. && r>rin) {
-				hm1 = exp(lnh) - 1.;
-				rho = pow(hm1 * (gam_local - 1.) / (kappa * gam_local),
-					1. / (gam_local - 1.));
-				u = kappa * pow(rho, gam_local) / (gam_local - 1.);
-				ur = 0.;
-				uh = 0.;
-
-				/* calculate u^phi */
-				expm2chi = SS * SS * DD / (AA * AA * sth * sth);
-				up1 = sqrt((-1. + sqrt(1. + 4. * l * l * expm2chi)) / 2.);
-				up = 2. * a * r * sqrt(1. + up1 * up1) / sqrt(AA * SS * DD) +
-					sqrt(SS / AA) * up1 / sth;
-
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
-
-				if (rho > rhomax) {
-					#pragma omp critical
-					rhomax = rho;
-				}
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
-				if (u > umax && r > rin) {
-					#pragma omp critical
-					umax = u;
-				}
-
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
-
-				/* convert from 4-vel to 3-vel */
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
-			}
-			else if(r>40){
-				#if (TILTED)
-				sph_to_cart(X_cart, &(pos_new[1]), &(pos_new[2]), &(pos_new[3]));
-				rotate_coord(X_cart, -tilt);
-				cart_to_sph(X_cart, &r, &th, &phi);
-				#endif
-
-				sth = sin(th);
-				cth = cos(th);
-
-				double A, R, D, E, L, rhoc, rho;
-				thin = M_PI / 2.;
-				A = 1.0 + a * a / (r * r) + 2.0 * a * a / (r * r * r);
-				R = 1 + a / (r * sqrt(r));
-				D = 1.0 - 2.0 / r + a * a / (r * sqrt(r));
-				E = 1.0 + 4.0 * a * a / (r * r) - 4.0 * a * a / (r * r * r) + 3.0 * a * a * a * a / (r * r * r * r);
-				L = 1.;
-				rhoc = 100. / r * pow(A, -4.) * pow(R, 6.0) * D * E * E / (L * L);
-				//if (r > rmax) rhoc = 0.0;////rhoc /= exp(sqrt(r-rmax));
-				rho = rhoc * exp(-pow((th - thin) / H_OVER_R, 2.0) * 0.5);
-				ur = 0.;
-				uh = 0.;
-				up = 0.;
-
-
-				up = 1. / (pow(r, 3. / 2.) + a);
-				up *= sqrt(1. / (1 - up * up));
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] = rho;
-
-				if (rho > rhomax) {
-					#pragma omp critical
-					rhomax = rho;
-				}
-
-				double T_target = M_PI / 2. * pow(H_OVER_R * r * up, 2.);
-				u = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] * T_target / (gam - 1.);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u * (1. + 4.e-2 * (ranc(0) - 0.5));
-				if (u > umax && r > rin) {
-					#pragma omp critical
-					umax = u;
-				}
-
-				#if (TILTED)
-				V[1] = ur;
-				V[2] = uh;
-				V[3] = up;
-				rotate_vector(V, pos_new, &r, &th, &phi, tilt);
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = V[1];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = V[2];
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = V[3];
-
-				// convert from 4-vel to 3-vel
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
-			
-				#else
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U1] = ur;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U2] = uh;
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][U3] = up;//watch out
-
-				// convert from 4-vel to 3-vel 
-				coord_transform(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], n_ord[n], i, j, z);
-				#endif
-			}
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B1] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B2] = 0.;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][B3] = 0.;
-		}
-	}
-	a = temp;
-	#if (MPI_enable)
-	/*Share rhomax among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &rhomax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-	/*Share umax among MPI processes*/
-	MPI_Allreduce(MPI_IN_PLACE, &umax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-
-	/* Normalize the densities so that max(rho) = 1 */
-	if (rank == 0) {
-		fprintf(stderr, "rhomax: %g\n", rhomax);
-	}
-	#endif
-
-	for (n = 0; n < n_active; n++) {
-		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] /= rhomax;
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] /= rhomax;
-			#if(RAD_M1)
-			//init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			#endif
-
-			//Calculate optical depth of one cell
-			get_geometry(n_ord[n], i, j, z, CENT, &geom);
-			#if(D3>1)
-			cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
-			#else
-			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
-			#endif
-			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_es + kappa_abs) * cell_size;
-			if (tau > taumax) {
-				#pragma omp critical
-				taumax = tau;
-			}
-		}
-
-	}
-	umax /= rhomax;
-	rhomax = 1.;
-
-	//Calculate maximum optical depth in once cell
-	#if (MPI_enable)
-	#if(RAD_M1)
-	MPI_Allreduce(MPI_IN_PLACE, &taumax, 1, MPI_DOUBLE, MPI_MAX, mpi_cartcomm);
-	#endif
-	#endif
-
-	#if(RAD_M1)
-	//Print maximum optical depth in grid
-	if (rank == 0) {
-		fprintf(stderr, "taumax: %g\n", taumax);
-	}
-	#endif
-
-	for (n = 0; n < n_active; n++) {
-		fixup(p, n_ord[n]);
-	}
-
-	bound_prim(p, 1);
-
-	set_mag();
-
-	sourceflag = 0.;
-
 }
 
 void init_thindisk()
@@ -1154,7 +958,7 @@ void init_torus()
 					#pragma omp critical
 					rhomax = rho;
 				}
-				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u;// *(1. + 4.e-2 * (ranc(0) - 0.5)); // DIMARK: no perturbation
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = u *(1. + 4.e-2 * (ranc(0) - 0.5)); // DIMARK: no perturbation
 				if(u > umax && r > rin){
 					#pragma omp critical
 					umax = u ;
@@ -1214,10 +1018,8 @@ void init_torus()
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][RHO] /= rhomax;
 			p[nl[n_ord[n]]][index_3D(n_ord[n] ,i, j, z)][UU] /= rhomax;
-			//#if (0)
 			#if(RAD_M1)
 			init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			#endif
 
 			//Calculate optical depth of one cell
 			get_geometry(n_ord[n], i, j, z, CENT, &geom);
@@ -1226,16 +1028,34 @@ void init_torus()
 			#else
 			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
-			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			tau = (kappa_es+ kappa_abs)*cell_size;
+			//Calculate radiation temperature in rest frame of fluid
+			struct of_state q;
+			struct of_state_rad q_rad;
+			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
+			get_state_rad(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q_rad);
+
+			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov);
+			double 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+			double gamma_g = GAMMA;
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq, Tr
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			tau = (kappa_es + kappa_abs) * cell_size;
 			if (tau > taumax) {
 				#pragma omp critical
 				taumax = tau;
 			}
-			//#endif
+			#endif
 		}
 	}
+
 	umax /= rhomax ;
 	rhomax = 1. ;
 
@@ -1266,52 +1086,59 @@ void init_torus()
 	calc_source();
 	#endif
 
-	// DIMARK: correct for DOHELM
-	//or (n = 0; n < n_active; n++) {
-	//	ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord//[n]] + BS_3 - 1) {
-	//		#if(RAD_M1)
-	//		init_rad_pres(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]); // Danat: Does nothing!
-	//		#endif
-	//
-	//		#if (DOHELM)
-	//		// Use Helmholtz EOS to set u given rho and p = (GAMMA - 1)*u
-	//		eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], (gam_local - 1.) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU], &p[nl[n_ord[n]]][index_3D(n_ord//[n], i, j, z)][UU]);
-	//		#endif
-	//
-	//		#if(RAD_M1)
-	//		//Calculate optical depth of one cell
-	//		get_geometry(n_ord[n], i, j, z, CENT, &geom);
-	//		#if(D3>1)
-	//		cell_size = MY_MAX(MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2])), dx[nl[n_ord[n]]][3] * sqrt(geom.gcov[3][3]));
-	//		#else
-	//		cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
-	//		#endif
-	//		// DIMARK: 
-	//		//if (i == 100 && j == 71 && z == 0) {
-	//		//	fprintf(stderr, "%e %e %e (%e %e)\n", kappa_abs, kappa_es, tau, p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU]);
-	//		//}
-	//		kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-	//		kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-	//		tau = (kappa_es + kappa_abs) * cell_size;
-	//		if (tau > taumax) {
-	//			#pragma omp critical
-	//			taumax = tau;
-	//		}
-	//		#endif
-	//	}
-	//
-	// 
-	// #if(RAD_M1)
-	// //Print maximum optical depth in grid
-	// if (rank == 0) {
-	// 	fprintf(stderr, "taumax: %g\n", taumax);
-	// }
-	// #endif
-	// 
-	// #if (DOHELM)
+
+
+	#if (DOHELM)
+	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
+	double den, ener, pres;
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			coord(n_ord[n], i, j, z, CENT, X);
+			bl_coord(X, &r, &th, &phi); 
+
+			den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+			ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			pres = ener * (gam - 1.0);
+			
+			eos_mode_rhopres_u(den, pres, &ener);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+		}
+	}
+	#endif
+
 	for (n = 0; n < n_active; n++) fixup(p, n_ord[n]);
+
+	/* initialize the entropies for two temperature fluids (electrons and ions) */
+	#if(TWO_T)
+	double delta, u_e, u_i, bsq;
+
+	for (n = 0; n < n_active; n++) {
+		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
+			get_geometry(n_ord[n], i, j, z, CENT, &geom);
+			bsq=bsq_calc(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom);
+			delta = calc_delta(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq);   // initial Tel/Ttot (temperature ratio)
+
+			#if(FIXEDGAMMA)   // fixed gamma: Ressler+15, Ryan+17
+				#if(FULL_ENTROPY)
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = 1.0 / (GAMMAE - 1.) * log((GAMMAE - 1.) * delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE));
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = 1.0 / (GAMMA - 1.) * log((GAMMA - 1.) * (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA));
+				#else
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = (GAMMAE - 1.)* delta* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMAE);
+				p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = (GAMMA - 1.)* (1. - delta)* p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] * pow(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], -GAMMA);
+				#endif
+			#else   // variable gamma: Sadowski+17, Chael+19
+			u_e = delta * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+			u_i = (1. - delta) * p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRE] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_e, ELECTRONS);
+			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][ENTRI] = calc_sfromrhou(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO], u_i, IONS);
+			#endif	
+		}
+	}
+	#endif
+
 	bound_prim(p, 1);
-	// #endif
+
 }
 
 void init_rad_pres(double pi[NPR]) {
@@ -1320,7 +1147,7 @@ void init_rad_pres(double pi[NPR]) {
 
 	keep_iterating = 1;
 	n_iter = 0;
-	arad = ARAD/(MASS_DENSITY_SCALE*C_CGS*C_CGS/pow(MMW*MH_CGS*C_CGS*C_CGS/BOLTZ_CGS,4.));
+	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
 	T_old = (GAMMA - 1.)*pi[UU] / pi[RHO];
 	T_new = T_old;
 	ptot = (GAMMA - 1.)*pi[UU];
@@ -1358,6 +1185,10 @@ void init_rad_pres(double pi[NPR]) {
 		pi[UU_RAD] = arad*pow(T_new,4.);
 	}
 
+	#if(P_NUM)
+	T_new *= (MMW * MH_CGS * ENERGY_DENSITY_SCALE / (BOLTZ_CGS * MASS_DENSITY_SCALE));
+	pi[PHOTON] = pi[UU_RAD] * C_CGS * C_CGS / (2.701178 * BOLTZ_CGS * T_new);
+	#endif
 	pi[U1_RAD] = pi[U1];
 	pi[U2_RAD] = pi[U2];
 	pi[U3_RAD] = pi[U3];
@@ -2372,7 +2203,7 @@ void set_mag(void){
 			#if(WHICHPROBLEM==THIN_PROBLEM)
 			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax-0.0005;
 			#else
-			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2;
+			q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax - 0.2; //SANE
 			//q = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO] / rhomax*pow(r/20.*sin(th),3.)*exp(-r/400.) - 0.2; //code comparison
 			#endif
 			if (q > 0.){		
