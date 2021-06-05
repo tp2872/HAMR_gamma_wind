@@ -475,7 +475,8 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	}
 }
 
-#if(RADM1_SUBCYCLING)
+#if(RADM1_SUBCYCLING && !TWO_T)
+// DIMARK: doesn't work with TWO_T yet!
 // Declarations
 __device__ void calc_J_implicit(double J_ini, double* dJ, double Dt, double* p);
 __device__ void calc_H_implicit(double* H_ini, double* dH, double Dt, double* p);
@@ -547,6 +548,7 @@ __device__ void calc_zamo_cons(double* ph, struct of_geom* geom, double* U_0) {
 
 	return;
 }
+
 __device__ void convert_U_spectorad(double* U_spec, double* U_rad, struct of_geom* geom) {
 	double ncon[NDIM], alpha = 1.0 / sqrt(-geom->gcon[0]);
 	ncon[0] = 1.0 / alpha;
@@ -559,6 +561,7 @@ __device__ void convert_U_spectorad(double* U_spec, double* U_rad, struct of_geo
 	U_rad[2] = U_spec[2];
 	U_rad[3] = U_spec[3];
 }
+
 __device__ void source_rad_subcycle_francois(double* ph, struct of_geom* geom, double* U_0, double* U_1, double Dt) {
 	int i, j;
 	double mhd_rad[NDIM][NDIM], R_dot_ncon[NDIM];
@@ -590,11 +593,15 @@ __device__ void source_rad_subcycle_francois(double* ph, struct of_geom* geom, d
 
 	double Puu = P_dot_ucov[1] * ucon[1] + P_dot_ucov[2] * ucon[2] + P_dot_ucov[3] * ucon[3];
 
-	double kappa_abs, eta, kappa_es, lambda;
+	double kappa_abs, eta, kappa_es, lambda, bsq, Tr;
+	struct of_state q;
 	// Set opacities
-	kappa_abs = calc_kappa_abs(ph);
+	get_state(ph, geom, &q);
+	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+	Tr = calc_Tr(ph, q.ucon, q_rad.ucon, q_rad.ucov);
+	kappa_abs = calc_kappa_abs(ph, bsq, Tr);
 	kappa_es = calc_kappa_es(ph);
-	eta = calc_kappa_emmit(ph);
+	eta = calc_kappa_emmit(ph, bsq, Tr);
 	double Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	double arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	lambda = eta * arad * pow(Tg, 4.);
@@ -639,6 +646,7 @@ __device__ void source_rad_subcycle_francois(double* ph, struct of_geom* geom, d
 
 	return;
 }
+
 __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU_f, double Dt, double cell_size, double y_max) {
 	double factor = 1., remainder = 1.0;
 	double U_new[NPR], U_old[NPR], pb_new[NPR], ph[NPR], pb_old[NPR];
@@ -661,10 +669,6 @@ __device__ int subcycle_rad_solve(double* pb, double* U_n, double* U_i, double* 
 		U_old[k] = U_i[k];
 		U_new[k] = U_i[k];
 	}
-
-	kappa_abs = calc_kappa_abs(pb);
-	kappa_es = calc_kappa_es(pb);
-	tau = (kappa_abs + kappa_es) * cell_size;
 
 	// Set SPEC conserved quantities vector
 	calc_zamo_cons(pb_new, geom, U_spec_0);
@@ -842,11 +846,15 @@ __device__ void source_rad_subcycle_francois_old(double* ph, struct of_geom* geo
 
 	double Puu = P_dot_ucov[1] * ucon[1] + P_dot_ucov[2] * ucon[2] + P_dot_ucov[3] * ucon[3];
 
-	double kappa_abs, eta, kappa_es, lambda;
+	double kappa_abs, eta, kappa_es, lambda, bsq, Tr;
+	struct of_state q;
 	// Set -->
-	kappa_abs = calc_kappa_abs(ph);
+	get_state(ph, geom, &q);
+	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+	Tr = calc_Tr(ph, q.ucon, q_rad.ucon, q_rad.ucov);
+	kappa_abs = calc_kappa_abs(ph, bsq, Tr);
 	kappa_es = calc_kappa_es(ph);
-	eta = calc_kappa_emmit(ph);
+	eta = calc_kappa_emmit(ph, bsq, Tr);
 	double Tg = (GAMMA - 1.) * ph[UU] / ph[RHO];
 	double arad = ARAD / (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	lambda = eta * arad * pow(Tg, 4.);
@@ -981,10 +989,6 @@ __device__ int subcycle_rad_solve_old(double* pb, double* U_n, double* U_i, doub
 	flag3 = 0;
 
 	for (k = 0; k < NPR; k++) pb_old[k] = pb[k];
-
-	kappa_abs = calc_kappa_abs(pb);
-	kappa_es = calc_kappa_es(pb);
-	tau = (kappa_abs + kappa_es) * cell_size;
 
 	//Get primitive variables belonging to U_i
 	flag = Utoprim_2d(U_i, geom->gcov, geom->gcon, geom->g, pb_old, NEWT_TOL, TYPE2);
@@ -8370,7 +8374,7 @@ __device__ double calc_kappa_es(double* ph
 
 	if (!isfinite(kappa_es)) kappa_es = 0.0;
 	#if(WHICHPROBLEM == RAD_PULSE)
-	kappa_es = 1e1;// 1e-6;
+	kappa_es = 1e3;// 1e-6;
 	return (kappa_es);
 	#else 		
 	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
@@ -10824,7 +10828,7 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 
 		//Perform implicit solve
 		double cell_size = MY_MAX(MY_MAX(dx_1 * sqrt(geom.gcov[4]), dx_2 * sqrt(geom.gcov[7])), dx_3 * sqrt(geom.gcov[9]));
-		#if (RADM1_SUBCYCLING)
+		#if (RADM1_SUBCYCLING && !TWO_T) // DIMARK: doesn't work with TWO_T yet!
 		semiimplicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max
 			#if(DOHELM)
 			, gpu_eos_table

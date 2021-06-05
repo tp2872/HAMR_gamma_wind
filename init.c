@@ -117,7 +117,6 @@ void init()
 	void init_disruption(void);
 	void init_monopole(double Rout_val);
 	void init_thindisk();
-	void init_truncdisk();
 	void init_postmerger();
 
 	switch( WHICHPROBLEM ) {
@@ -153,11 +152,6 @@ void init()
 		break;
 		case RAD_PULSE:
 		init_radpulse();
-		break;
-
-		case TRUNC_PROBLEM:
-		init_truncdisk();
-
 		break;
 	}
 
@@ -248,8 +242,24 @@ void init_radpulse()
 			#else
 			cell_size = MY_MAX(dx[nl[n_ord[n]]][1] * sqrt(geom.gcov[1][1]), dx[nl[n_ord[n]]][2] * sqrt(geom.gcov[2][2]));
 			#endif
-			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
-			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			//Calculate radiation temperature in rest frame of fluid
+			struct of_state q;
+			struct of_state_rad q_rad;
+			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
+			get_state_rad(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q_rad);
+			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov);
+			double 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
+			double gamma_g = GAMMA;
+			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq, Tr
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
+			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]
+				#if(TWO_T)
+				, gamma_g
+				#endif
+			);
 			tau = (kappa_es + kappa_abs) * cell_size;
 			if (tau > taumax) {
 				taumax = tau;

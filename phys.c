@@ -496,7 +496,7 @@ double calc_kappa_es(double * restrict ph
 	kappa_es = 0.2 * (1 + X_AB);
 
 	#if(WHICHPROBLEM == RAD_PULSE)
-	kappa_es = 1e1;
+	kappa_es = 1e3;
 	return(kappa_es);
 	#else 
 	if (!isfinite(kappa_es)) kappa_es = 0.0;

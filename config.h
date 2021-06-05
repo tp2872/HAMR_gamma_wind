@@ -145,14 +145,17 @@ Numerical Parameters section
 #define COPY_BFIELD 1
 
 /*Maximum number of blocks per node and hten umber of memory places(should be equal)*/
+#define MAX_BLOCKS (40)
 #define NB_LOCAL (1200)
 
 /*Define number of blocks for the first AMR level in all three dimensions*/
+#define NB_1 1
+#define NB_2 1
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 201
-#define BS_2 201
+#define BS_1 1001
+#define BS_2 1001
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -337,10 +340,10 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define OP_EXTRA (0)
 
 /*Enable photon number evolution*/
-#define P_NUM (1)
+#define P_NUM (0)
 
 /*Enable 2-temperature evolution*/
-#define TWO_T (1)
+#define TWO_T (0)
 
 /*Wheter to use dynamical load balancing*/
 #define DYNAMIC_LOADBALANCE (0)
@@ -364,7 +367,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define DO_IMEX (0)
 #else 
-#define DO_IMEX (0) // as ML said: disable IMEX for now; source terms might be broken 
+#define DO_IMEX (1) // as ML said: disable IMEX for now; source terms might be broken 
 #endif 
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
@@ -417,8 +420,8 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define MASS_DENSITY_SCALE (0.0000001)
 #else
-#define MASS_DENSITY_SCALE (0.00001)
-//#define MASS_DENSITY_SCALE (1.)
+//#define MASS_DENSITY_SCALE (0.00001)
+#define MASS_DENSITY_SCALE (1.)
 #endif
 #define ENERGY_DENSITY_SCALE (MASS_DENSITY_SCALE * C_CGS * C_CGS)
 #define MAGNETIC_DENSITY_SCALE (sqrt(MASS_DENSITYSCALE) * C_CGS)
