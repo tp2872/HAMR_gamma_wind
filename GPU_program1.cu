@@ -2908,6 +2908,8 @@ __device__ double calc_delta(double* ph, double bsq) {
 	delta=0.5;
 	#endif
 
+	if (!isfinite(delta) || delta > 1.0 || delta < 0.0) delta = 0.5;
+
 	return delta;
 }
 
@@ -7440,7 +7442,7 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy =  1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * MASS_DENSITY_SCALE * pow(Te, -2.);
+	kappa_sy =  1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * MAGNETIC_DENSITY_SCALE * MAGNETIC_DENSITY_SCALE * pow(Te, -2.);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 	

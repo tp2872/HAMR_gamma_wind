@@ -913,7 +913,9 @@ void misc_source(double *ph, int ii, int jj, struct of_geom *geom, struct of_sta
 #if(TWO_T)
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
 double calc_delta(double* restrict ph, double bsq) {
-	double fel, c1, c2, c3, Te, Ti, beta, ratio, delta;
+	double delta;
+	#if(HEAT_HOWES)
+	double fel, c1, c2, c3, Te, Ti, beta, ratio;
 
 	Te = calc_Te(ph);
 	Ti = calc_Ti(ph);
@@ -929,12 +931,30 @@ double calc_delta(double* restrict ph, double bsq) {
 		c3 = 18.0;
 	}
 
-	beta = (Te + Ti) * ph[RHO]/ (0.5 * bsq);
-	if (!isfinite(beta) || beta>10000.0) beta = 10000.0;
+	beta = ((Te + Ti) * ph[RHO] + 0.3333333 * ph[UU_RAD]) / (0.5 * bsq);
+	if (!isfinite(beta) || beta > 10000.0 || beta < 0.000001) beta = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
-	if (!isfinite(fel))fel = 0.5;
+
 	//Calculate delta
 	delta = 1. / (1. + fel);
+	#elif(HEAT_ROWAN)
+	double sigma_w, beta_i, beta_max, Te, Ti;
+
+	Te = calc_Te(ph);
+	Ti = calc_Ti(ph);
+
+	sigma_w = bsq / (ph[RHO] + GAMMA * ph[UU]);
+	beta_i = (Ti * ph[RHO] + Te * ph[RHO]) / (0.5 * bsq);
+	beta_max = 1.0 / (4.0 * sigma_w);
+
+	//Calculate delta
+	delta = 0.5 * exp((beta_i / beta_max - 1.0)) / (0.8 + sqrt(sigma_w));
+	#else
+	//Set delta to constant value
+	delta = 0.5;
+	#endif
+
+	if (!isfinite(delta) || delta > 1.0 || delta < 0.0) delta = 0.5;
 
 	return delta;
 }

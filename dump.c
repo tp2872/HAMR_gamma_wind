@@ -232,6 +232,8 @@ void dump_params(FILE *fp, int dump_reduced)
 	int NB3_print = NB_3;
 	int stag = STAGGERED;
 	double density = MASS_DENSITY_SCALE;
+	//double gamma_e = GAMMAE;
+	//int fixedgamma = FIXEDGAMMA;
 	int B = BRAVO;
 	int f1 = REDUCE_FACTOR1;
 	int f2 = REDUCE_FACTOR2;
