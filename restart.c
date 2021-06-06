@@ -317,7 +317,7 @@ void param_read(FILE *fp) {
 	fread(&Rin, double_size, 1, fp);
 	fread(&Rout, double_size, 1, fp);
 	fread(&R0, double_size, 1, fp);
-	fread(&fractheta, double_size, 1, fp);
+	fread(&dummy, double_size, 1, fp);
 	fread(&lim, int_size, 1, fp);
 	fread(&stag, int_size, 1, fp);
 	fread(&dump_cnt_reduced, int_size, 1, fp);

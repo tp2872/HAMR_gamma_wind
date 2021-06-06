@@ -2867,7 +2867,9 @@ __device__ int implicit_rad_solve_PRAD(double pb[NPR], double U_n[NPR], double U
 
 //Calculate fraction of heat that goes into electrons on ions based on temperature ratio at previous timestep: 
 __device__ double calc_delta(double* ph, double bsq) {
-	double fel, c1, c2, c3, Te, Ti, beta, ratio, delta;
+	double delta;
+	#if(HEAT_HOWES)
+	double fel, c1, c2, c3, Te, Ti, beta, ratio;
 	
 	Te = calc_Te(ph);
 	Ti = calc_Ti(ph);
@@ -2883,12 +2885,28 @@ __device__ double calc_delta(double* ph, double bsq) {
 		c3 = 18.0;
 	}
 
-	beta = (Te + Ti) * ph[RHO] / (0.5 * bsq);
+	beta = ((Te + Ti) * ph[RHO] + 0.3333333 * ph[UU_RAD]) / (0.5 * bsq);
 	if (!isfinite(beta) || beta>10000.0 || beta<0.000001) beta = 10000.0;
 	fel = c1 * (c2 * c2 + pow(beta, 2.0 + 0.2 * log10(ratio))) / (c3 * c3 + pow(beta, 2.0 + 0.2 * log10(ratio))) * sqrt((MH_CGS / ME_CGS) * (MU_I * Ti) / (MU_E * Te)) * exp(-1.0 / beta);
 
 	//Calculate delta
 	delta = 1. / (1. + fel);
+	#elif(HEAT_ROWAN)
+	double sigma_w, beta_i, beta_max, Te, Ti;
+
+	Te = calc_Te(ph);
+	Ti = calc_Ti(ph);
+
+	sigma_w = bsq / (ph[RHO] + GAMMA * ph[UU]);
+	beta_i = (Ti * ph[RHO] + Te * ph[RHO]) / (0.5 * bsq);
+	beta_max = 1.0 / (4.0 * sigma_w);
+
+	//Calculate delta
+	delta = 0.5 * exp((beta_i / beta_max - 1.0)) / (0.8 + sqrt(sigma_w));
+	#else
+	//Set delta to constant value
+	delta=0.5;
+	#endif
 
 	return delta;
 }
@@ -7386,7 +7404,7 @@ __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * MASS_DENSITY_SCALE * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 	
@@ -7422,7 +7440,7 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy =  1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Te, -2.);
+	kappa_sy =  1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * MASS_DENSITY_SCALE * pow(Te, -2.);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 	
