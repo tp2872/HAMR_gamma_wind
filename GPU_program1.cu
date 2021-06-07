@@ -3045,7 +3045,7 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
@@ -3129,7 +3129,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
@@ -3227,7 +3227,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return gamg;
+	return GAMMA;
 }
 
 // Some bessel functions
