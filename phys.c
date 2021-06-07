@@ -954,7 +954,8 @@ double calc_delta(double* restrict ph, double bsq) {
 	delta = 0.5;
 	#endif
 
-	if (!isfinite(delta) || delta > 1.0 || delta < 0.0) delta = 0.5;
+	//if (!isfinite(delta) || delta > 1.0 || delta < 0.0) 
+		delta = 0.0;
 
 	return delta;
 }
@@ -1077,7 +1078,7 @@ double calc_gamma_gas_conserved(double*  S, double rho) {
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 	if (!isfinite(gamg) || gamg > 2.0 || gamg < 1.0) fprintf(stderr, "Gamma_error_conserved: %f %f %f %f \n", gamg, log10(S[0]), log10(S[1]), log10(rho));
 
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy)  based on primitive variables
@@ -1110,11 +1111,11 @@ double calc_gamma_gas_prim(double* pr) {
 		fprintf(stderr, "Gamma_error_prim: %f %f %f %f %f \n", gamg, log10(pr[ENTRE]), log10(pr[ENTRI]), log10(pr[RHO]), log10(pr[UU]));
 	}
 	
-	return gamg;
+	return GAMMA;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
-double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
+double calc_gamma_gas_w(double* S, double rho, double w, double delta) {
 	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
@@ -1161,16 +1162,21 @@ double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
 	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	u_e += fel * dis;
+	if (dis == 0.0) {
+		quante = game * u_e;
+		quanti = gami * u_i;
+		double factor = quantg / (quante + quanti);
+		quante *= factor;
+		quanti *= factor;
+	}
+	else {
+		u_e += delta * dis;
+		quante = game * u_e; //quant=(gam)/(gam-1)*p
+		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+		quanti = quantg - quante;
+	}
 
-	//Set quante
-	quante = game * u_e; //quant=(gam)/(gam-1)*p
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-
-	//Set quanti
-	quanti = quantg - quante;
-	
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
@@ -1191,11 +1197,11 @@ double calc_gamma_gas_w(double* S, double rho, double w, double fel ) {
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	//if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w: %f %f %f %f\n", gamg, log10(Te), log10(Ti), log10(fabs(rho)));
 	
-	return gamg;
+	return GAMMA;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
-double set_S_w(double* S, double rho, double w, double fel) {
+double set_S_w(double* S, double rho, double w, double delta) {
 	double gamg, game, gami, Te, pe, pi, Ti, u_e, u_i, dis, ughat, quantg, quanti, quante, S_new[2];
 
 	quantg = fabs(w - rho); //quant=gamma*ug=gamma/(gamma-1)*p
@@ -1242,15 +1248,20 @@ double set_S_w(double* S, double rho, double w, double fel) {
 	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	u_e += fel * dis;
-
-	//Set quante
-	quante = game * u_e; //quant=(gam)/(gam-1)*p
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-
-	//Set quanti
-	quanti = quantg - quante;
+	//if (dis == 0.0) {
+	//	quante = game * u_e;
+	//	quanti = gami * u_i;
+	//	double factor = quantg / (quante + quanti);
+	//	quante *= factor;
+	//	quanti *= factor;
+	//}
+	//else {
+		u_e += delta * dis;
+		quante = game * u_e; //quant=(gam)/(gam-1)*p
+		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+		quanti = quantg - quante;
+	//}
 
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
@@ -1286,7 +1297,7 @@ double set_S_w(double* S, double rho, double w, double fel) {
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 	if (!isfinite(gamg) || gamg > 1.00001 * GAMMA || gamg < 0.99999 * GAMMAE) fprintf(stderr, "Gamma_error_w2: %f \n", gamg);
 	
-	return gamg;
+	return GAMMA;
 }
 
 double set_S_u(double* S, double rho, double u) {

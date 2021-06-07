@@ -3045,7 +3045,7 @@ __device__ double calc_gamma_gas_prim(double* pr) {
 	#endif
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (MU_I / (MU_E * MASS_RATIO) + Theta_i / Theta_e)) / ((Theta_i / Theta_e) * (game - 1.0) + MU_I / (MU_E * MASS_RATIO) * (gami - 1.0));
 
-	return GAMMA;
+	return gamg;
 }
 
 //Calculate EOS gamma based on electron (and ion or total entropy) based on conserved entropy, gas density and w=W*(1-vsq)
@@ -3095,13 +3095,21 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	u_e += delta * dis;
+	if (dis == 0.0) {
+		quante = game * u_e;
+		quanti = gami * u_i;
+		double factor = quantg / (quante + quanti);
+		quante *= factor;
+		quanti *= factor;
+	}
+	else {
+		u_e += delta * dis;
+		quante = game * u_e; //quant=(gam)/(gam-1)*p
+		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+		quanti = quantg - quante;
+	}
 
-	quante = game * u_e; //quant=(gam)/(gam-1)*p
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-
-	quanti = quantg - quante;
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
 	pi = (gami - 1.0) / gami * quanti;
@@ -3121,7 +3129,7 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return GAMMA;
+	return gamg;
 }
 
 //Update electron and ion entropy based on found w in Newton Raphson solver
@@ -3171,13 +3179,20 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	u_e += delta * dis;
-
-	quante = game * u_e; //quant=(gam)/(gam-1)*p
-	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-
-	quanti = quantg - quante;
+	if (dis == 0.0) {
+		quante = game * u_e;
+		quanti = gami * u_i;
+		double factor = quantg / (quante + quanti);
+		quante *= factor;
+		quanti *= factor;
+	}
+	else {
+		u_e += delta * dis;
+		quante = game * u_e; //quant=(gam)/(gam-1)*p
+		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+		quanti = quantg - quante;
+	}
 
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
@@ -3212,7 +3227,7 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 
 	gamg = 1.0 + ((game - 1.0) * (gami - 1.0) * (1.0 + Ti / Te)) / (Ti / Te * (game - 1.0) + 1.0 * (gami - 1.0));
 
-	return GAMMA;
+	return gamg;
 }
 
 // Some bessel functions
