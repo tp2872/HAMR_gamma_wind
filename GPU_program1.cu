@@ -5491,6 +5491,7 @@ __device__ int Rtoprim_calc(double* U, double gcov[10], double gcon[10], double 
 		//}
 	}
 	return(returnval);
+
 	/*double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qdotn;
 	double Uabs, qsq;
 	double gammasq, y, pressure, f;
@@ -5715,7 +5716,7 @@ double Qcov[NDIM], Qcon[NDIM], ncov, ncon[NDIM], Qsq = 0., Qtcon[NDIM], Qtsq, Qd
 		else{
 			prim[0] = 1.e-30;
 		}
-	
+
 		#if(P_NUM)
 		prim[4] = U[4] / sqrt(GAMMAMAX_RAD * GAMMAMAX_RAD);
 		#endif
@@ -8374,7 +8375,7 @@ __device__ double calc_kappa_es(double* ph
 
 	if (!isfinite(kappa_es)) kappa_es = 0.0;
 	#if(WHICHPROBLEM == RAD_PULSE)
-	kappa_es = 1e3;// 1e-6;
+	kappa_es = KAPPARADPULSE;
 	return (kappa_es);
 	#else 		
 	return(kappa_es * (ph[RHO] * MASS_DENSITY_SCALE) * R_G_CGS);
@@ -10895,7 +10896,8 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 			#if (DOHELM)
 			, gpu_eos_table
 			#endif
-		)) {
+		)) 
+		{
 			pflag[global_id] = -333;
 			pflag[0] = global_id;
 			failimage[3 * (ksize)+global_id]++;

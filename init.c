@@ -170,7 +170,7 @@ void init_radpulse()
 	double X[NDIM];
 	struct of_geom geom;
 
-	double sigma = 1.54e-64; // 8.77e-12 * 0.25 * C_CGS * (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
+	double sigma = 1.54e-54; // 8.77e-12 * 0.25 * C_CGS * (ENERGY_DENSITY_SCALE / pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.));
 	double T0 = 1e6;
 	double myrho = 1.;
 	double xc = 0.;

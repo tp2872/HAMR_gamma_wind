@@ -19,6 +19,9 @@ Physical Parameters section
 
 #define WHICHPROBLEM RAD_PULSE
 
+// DIMARK: rad.pulse kappa_es
+#define KAPPARADPULSE (10.)
+
 /*Set Cartesian grid for test problems*/
 #define CARTESIAN (1)
 
@@ -154,8 +157,8 @@ Numerical Parameters section
 #define NB_3 1
 
 /*Set block size in each dimension*/
-#define BS_1 1001
-#define BS_2 1001
+#define BS_1 751
+#define BS_2 751
 #define BS_3 1
 
 /*Set the maximum number of refinement levels*/
@@ -324,7 +327,9 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (0)
+#define DUMP_DIAG (1)
+#define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
+#define NDIAG (3) // number of diagnostic variables
 
 /*Enable MPI; Old remnant do not touch!*/
 #define MPI_enable 1

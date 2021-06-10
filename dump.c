@@ -89,18 +89,18 @@ void dump_new(void){
 	}
 
 	#if(DUMP_DIAG)
-	if (dump_cnt%10==0){
-		for(u=0; u<u_max; u++){
-			sprintf(filename, "dumps%d/new_dumpdiag%d", dump_cnt, u);
-			MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY,MPI_INFO_NULL, &fdumpdiag[u]);
+	if (dump_cnt% DUMP_DIAG_FREQUENCY ==0){
+		sprintf(filename, "dumps%d/new_dumpdiag%d", dump_cnt, rank);
+		if ((file = fopen(filename, "r")))
+		{
+			fclose(file);
+			remove(filename);
 		}
-		for (n = 0; n < n_active_total; n++){
-			for(u=0; u<u_max; u++)if(n>=u*u_stride && n<(u+1)*u_stride){
-				if (block[n_ord_total[n]][AMR_NODE] == rank){
-					MPI_File_seek(fdumpdiag[u], (n-u*u_stride) * 4 * BS_1*BS_2*BS_3*sizeof(float), MPI_SEEK_SET);
-					dump_blockdiag(&fdumpdiag[u], n_ord_total[n]);
-				}
-			}
+		MPI_File_open(mpi_self, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fdumpdiag[0]);
+
+		for (n = 0; n < n_active; n++){
+			MPI_File_seek(fdumpdiag[0], (n) * NDIAG * BS_1*BS_2*BS_3*sizeof(float), MPI_SEEK_SET);
+			dump_blockdiag(&fdumpdiag[0], n_ord[n]);
 		}
 	}
 	#endif
@@ -170,7 +170,7 @@ void close_dump(void) {
 		for (n = 0; n < n_active; n++) {
 			MPI_Wait(&req_block[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][0]);
 			#if(DUMP_DIAG)
-			if ((dump_cnt - 1) % 10 == 0) {
+			if ((dump_cnt - 1) % DUMP_DIAG_FREQUENCY == 0) {
 				MPI_Wait(&req_blockdiag[nl[n_ord[n]]][0], &Statbound[nl[n_ord[n]]][1]);
 			}
 			#endif
@@ -180,7 +180,7 @@ void close_dump(void) {
 		for (u = 0; u < u_max; u++) {
 			//MPI_File_close(&fdump[u]);
 			#if(DUMP_DIAG)
-			if ((dump_cnt - 1) % 10 == 0) {
+			if ((dump_cnt - 1) % DUMP_DIAG_FREQUENCY == 0) {
 				MPI_File_close(&fdumpdiag[u]);
 			}
 			#endif
@@ -423,15 +423,14 @@ void dump_blockdiag(MPI_File *fp, int n)
 	int i, j, z;
 	#pragma omp parallel for collapse(3) schedule(static,(BS_1+2*N1G)*(BS_2+2*N2G)*(BS_3+2*N3G)/nthreads) private(i,j,z)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
-		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 0] = (float)divb_calc(n, i, j, z);
-		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 1] = (float)failimage[nl[n]][index_3D(n, i, j, z)][0];
-		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 2] = (float)failimage[nl[n]][index_3D(n, i, j, z)][1];
-		array_diag[nl[n]][(i - N1_GPU_offset[n]) * 4 * BS_2* BS_3 + (j - N2_GPU_offset[n]) * 4 * BS_3 + (z - N3_GPU_offset[n]) * 4 + 3] = (float)failimage[nl[n]][index_3D(n, i, j, z)][2];
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 0] = (float)divb_calc(n, i, j, z);
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 1] = (float)failimage[nl[n]][index_3D(n, i, j, z)][0];
+		array_diag[nl[n]][(i - N1_GPU_offset[n]) * NDIAG * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NDIAG * BS_3 + (z - N3_GPU_offset[n]) * NDIAG + 2] = (float)failimage[nl[n]][index_3D(n, i, j, z)][1];
 	}
 	#if(PARALLEL_IO)
-	MPI_File_iwrite_all(fp[0], array_diag[nl[n]], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
+	MPI_File_iwrite_all(fp[0], array_diag[nl[n]], NDIAG * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
 	#else
-	MPI_File_iwrite(fp[0], array_diag[nl[n]], 4 * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
+	MPI_File_iwrite(fp[0], array_diag[nl[n]], NDIAG * BS_1*BS_2*BS_3, MPI_FLOAT, &req_blockdiag[nl[n]][0]);
 	#endif
 }
 
