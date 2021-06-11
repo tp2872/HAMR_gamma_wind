@@ -75,19 +75,28 @@ void implicit_rad_solve_init(double pb[NPR], double U_n[NPR], double U_i[NPR], d
 	int k, pflag = 0, pflag_rad = 0;
 	struct of_state q;
 	struct of_state_rad q_rad;
-
 	#if(TWO_T)
 	double gamma_g = calc_gamma_gas_prim(pb);
+	#endif
+	#if(P_NUM)
+	double exp_xi;
 	#endif
 
 	//Calculate optical depth
 	get_state(pb, geom, &q);
 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 	get_state_rad(pb, geom, &q_rad);
-	Tr = calc_Tr(pb, q.ucon, q_rad.ucon, q_rad.ucov);
+	Tr = calc_Tr(pb, q.ucon, q_rad.ucon, q_rad.ucov
+		#if(P_NUM)
+		, &exp_xi
+		#endif
+	);
 	kappa_abs = calc_kappa_abs(pb, bsq, Tr
 		#if(TWO_T)
 		, gamma_g
+		#endif
+		#if(P_NUM)
+		, exp_xi
 		#endif
 	);
 	kappa_es = calc_kappa_es(pb

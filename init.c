@@ -933,18 +933,27 @@ void init_torus()
 			get_state(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q);
 			get_state_rad(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], &geom, &q_rad);
 
-			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov);
+			double exp_xi;
+			double Tr = calc_Tr(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], q.ucon, q_rad.ucon, q_rad.ucov
+				#if(P_NUM)
+				, &exp_xi
+				#endif
+			);
 			double 	bsq = q.bcon[0] * q.bcov[0] + q.bcon[1] * q.bcov[1] + q.bcon[2] * q.bcov[2] + q.bcon[3] * q.bcov[3];
 			double gamma_g = GAMMA;
 			kappa_abs = calc_kappa_abs(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)], bsq, Tr
 				#if(TWO_T)
 				, gamma_g
 				#endif
+				#if(P_NUM)
+				, exp_xi
+				#endif
 			);
 			kappa_es = calc_kappa_es(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]
 				#if(TWO_T)
 				, gamma_g
 				#endif
+
 			);
 			tau = (kappa_es + kappa_abs) * cell_size;
 			if (tau > taumax) {

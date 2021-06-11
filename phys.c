@@ -161,7 +161,11 @@ double calc_Ti(double* ph) {
 	return Ti;
 }
 
-double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]) {
+double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM]
+	#if(P_NUM)
+	, double *exp_xi
+	#endif
+) {
 	double Tr, u_dot_urad, urad_dot_urad, Ehat;
 
 	u_dot_urad = ucon[0] * ucov_rad[0] + ucon[1] * ucov_rad[1] + ucon[2] * ucov_rad[2] + ucon[3] * ucov_rad[3];
@@ -173,6 +177,7 @@ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], double ucov
 	double  Nhat;
 	Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
 	Tr = Ehat / (Nhat * BOLTZ_CGS * (3. - 2.449724 * Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat)));
+	exp_xi[0] = 1.64676 / (0.646756 + 0.121982 * CK_CGS * Ehat * Ehat * Ehat / (Nhat * Nhat * Nhat * Nhat));
 	#else
 	Tr = pow(Ehat / ARAD, 0.25);
 	#endif
@@ -339,18 +344,31 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 #if(RAD_M1)
 	int i;
 	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr, Te;
+	#if(P_NUM)
+	double exp_xi;
+	#endif
 
 	//Calculate radiation temperature in rest frame of fluid
-	Tr = calc_Tr(ph, ucon, ucon_rad, ucov_rad);
+	Tr = calc_Tr(ph, ucon, ucon_rad, ucov_rad
+		#if(P_NUM)
+		, &exp_xi
+		#endif
+	);
 
 	kappa_abs = calc_kappa_abs(ph, bsq, Tr
 		#if(TWO_T)
 		, gamma_g
 		#endif
+		#if(P_NUM)
+		, exp_xi
+		#endif
 	);
 	kappa_emmit = calc_kappa_emmit(ph, bsq, Tr
 		#if(TWO_T)
 		, gamma_g
+		#endif
+		#if(P_NUM)
+		, exp_xi
 		#endif
 	);
 	kappa_es = calc_kappa_es(ph
@@ -419,6 +437,9 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	#if(TWO_T)
 	, double gamma_g
 	#endif
+	#if(P_NUM)
+	, double exp_xi
+	#endif
 	) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne, zeta;
 	double Ye = (1. + X_AB) / 2.;
@@ -436,7 +457,7 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Tr, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te));
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -0.5) * pow(Tr, -3.0) * log(1. + 1.6 * (Tr / Te)) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.) * pow(zeta, -3.) * (1. + 5.444 * pow(zeta, -0.666666) + 7.218 * pow(zeta, -4.3333333));
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
@@ -448,6 +469,9 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#if(TWO_T)
 	, double gamma_g
+	#endif
+	#if(P_NUM)
+	, double exp_xi
 	#endif
 ) {
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne;
@@ -466,7 +490,7 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	kappa_chianti = 4.0 * pow(10., 34.) * ph[RHO] * MASS_DENSITY_SCALE * (Z_AB / 0.02) * Ye * pow(Te, -1.7) * pow(Te, -3.);
 	kappa_bf = 3.0 * pow(10., 25.) * Z_AB * (1. + X_AB + 0.75 * Y_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6);
 	kappa_ff = 4.0 * pow(10., 22.) * (1. + X_AB) * (1. - Z_AB) * ph[RHO] * MASS_DENSITY_SCALE * pow(Te, -3.5) * log(1. + 1.6) * (1. + 4.4 * pow(10., -10.) * Te);
-	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * pow(Te, -2.);
+	kappa_sy = 1.59 * pow(10., -30.) * ne * 4. * M_PI * bsq * ENERGY_DENSITY_SCALE * pow(Te, -2.);
 	kappa_abs = 1. / (1. / (kappa_m + kappa_h) + 1. / (kappa_chianti + kappa_bf + kappa_ff));
 	//kappa_abs = kappa_bf; // 1.7 * pow(10., -25.) * pow(fabs(Te), -7. / 2.) * pow(MH_CGS, -2.);
 
@@ -741,6 +765,9 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	double Acov[NDIM], Bcov[NDIM], Acon[NDIM], Bcon[NDIM];
 	double Asq, Bsq, Au, Bu, AB, Au2, Bu2, AuBu, A, B, C;
 	int j;
+	#if(P_NUM)
+	double exp_xi;
+	#endif
 
 	/*Do preliminary calculations*/
 	#pragma ivdep
@@ -813,7 +840,11 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	/* find radiation wave speed in fluid frame based on optical depth */
 	//Calculate optical depth
 	bsq = q->bcon[0] * q->bcov[0] + q->bcon[1] * q->bcov[1] + q->bcon[2] * q->bcov[2] + q->bcon[3] * q->bcov[3];
-	Tr = calc_Tr(pr, q->ucov, q_rad->ucon, q_rad->ucov);
+	Tr = calc_Tr(pr, q->ucov, q_rad->ucon, q_rad->ucov
+		#if(P_NUM)
+		, &exp_xi
+		#endif
+	);
 	kappa_tot = (calc_kappa_es(pr
 		#if(TWO_T)
 		, gamma_g
@@ -821,6 +852,9 @@ void vchar_rad(double * restrict pr, struct of_state* restrict q, struct of_stat
 	) + calc_kappa_abs(pr, bsq, Tr
 		#if(TWO_T)
 		, gamma_g
+		#endif
+		#if(P_NUM)
+		, exp_xi
 		#endif
 	));
 	tau = kappa_tot * sqrt(geom->gcov[js][js]) * dx;
@@ -1554,10 +1588,10 @@ double calc_Tfromtheta(double theta, int type)
 }
 
 double source_Coulomb(double *p){
-	double th_mean, th_sum, Theta_e, Theta_i, coeff, ne_cgs, T_e, T_i;
+	double th_mean, th_sum, Theta_e, Theta_i, coeff, n_cgs, ne_cgs, T_e, T_i;
 	double K2e, K2i, K0, K1;
 	double theta_min = 1.e-2;
-	double coulog = 20.;   // Coulomb logarithm ( ln Lambda )
+	double coulog;
 	double res;
 
 	#if(FIXEDGAMMA)   // fixed gamma: Ressler+15 & Ryan+17
@@ -1578,18 +1612,19 @@ double source_Coulomb(double *p){
 		#endif
 	#endif
 
-	coeff = 1.5 * ME_CGS / MH_CGS * coulog * C_CGS * BOLTZ_CGS * THOMSON_CGS;
 	//note that average number density in Sadowski+17 (eq (20)) is assumed to be n_ave = ne_cgs.this can be updated 
 	ne_cgs = p[RHO] * MASS_DENSITY_SCALE / (MU_E * MH_CGS);    // calculation in cgs unit
+	n_cgs = p[RHO] * MASS_DENSITY_SCALE / (MH_CGS);    // calculation in cgs unit
 
 	T_e = Theta_e / BOLTZ_CGS * (ME_CGS * C_CGS * C_CGS);
 	T_i = Theta_i / BOLTZ_CGS * (MH_CGS * C_CGS * C_CGS);
 
-	coeff *= ne_cgs * ne_cgs * (T_i - T_e);
+	coulog = 35.4 + log(T_e / (10.e7) * sqrt(10.e-3 / ne_cgs));// Coulomb logarithm ( ln Lambda )
+	coeff = 1.5 * ME_CGS / MH_CGS * coulog * C_CGS * BOLTZ_CGS * THOMSON_CGS;
+	coeff *= ne_cgs * n_cgs * (T_i - T_e);
 
 	th_sum = Theta_e + Theta_i;
 	th_mean = Theta_e * Theta_i / (Theta_e + Theta_i);
-
 
 	if (Theta_i < theta_min && Theta_e < theta_min) // approximated equations at small theta
 	{
@@ -1622,7 +1657,7 @@ double source_Coulomb(double *p){
 	if (!isfinite(res)) res = 0.;
 
 	res = res / ENERGY_DENSITY_SCALE * R_GOC_CGS;     // unit conversion from cgs to grid unit
-	return res;
+	return (res);
 }
 
 double calc_CoulombCoupling(double n_e, double theta_e, double theta_i)
