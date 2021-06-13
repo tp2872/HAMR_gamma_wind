@@ -3152,24 +3152,24 @@ __device__ double calc_gamma_gas_w(double* S, double rho, double w, double delta
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	//dis = MY_MAX(quantg / gamg - ughat, 0.);
-	dis = quantg / gamg - ughat;
+	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	//if (dis == 0.0) {
-	//	quante = game * u_e;
-	//	quanti = gami * u_i;
-	//	double factor = quantg / (quante + quanti);
-	//	quante *= factor;
-	//	quanti *= factor;
-	//}
-	//else {
-	u_e += delta * dis;
-	quante = game * u_e; //quant=(gam)/(gam-1)*p
+	if (dis == 0.0) {
+		quante = game * u_e;
+		quanti = gami * u_i;
+		double factor = quantg / (quante + quanti);
+		quante *= factor;
+		quanti *= factor;
+	}
+	else {
+		u_e += delta * dis;
+		quante = game * u_e; //quant=(gam)/(gam-1)*p
+	}
+
 	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
 	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
 	quanti = quantg - quante;
-	//}
 
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
@@ -3237,24 +3237,24 @@ __device__ double set_S_w(double* S, double rho, double w, double delta) {
 	ughat = (u_e + u_i);
 
 	//Calculate dissipation assuming gamg didn't change
-	//dis = MY_MAX(quantg / gamg - ughat, 0.);
-	dis = quantg / gamg - ughat;
+	dis = MY_MAX(quantg / gamg - ughat, 0.);
 
 	//Update internal energy of electrons
-	//if (dis == 0.0) {
-	//	quante = game * u_e;
-	//	quanti = gami * u_i;
-	//	double factor = quantg / (quante + quanti);
-	//	quante *= factor;
-	//	quanti *= factor;
-	//}
-	//else {
+	if (dis == 0.0) {
+		quante = game * u_e;
+		quanti = gami * u_i;
+		double factor = quantg / (quante + quanti);
+		quante *= factor;
+		quanti *= factor;
+	}
+	else {
 		u_e += delta * dis;
 		quante = game * u_e; //quant=(gam)/(gam-1)*p
-		if (quante > 0.99 * quantg) quante = 0.99 * quantg;
-		if (quante < 0.01 * quantg) quante = 0.01 * quantg;
-		quanti = quantg - quante;
-	//}
+	}
+
+	if (quante > 0.99 * quantg) quante = 0.99 * quantg;
+	if (quante < 0.01 * quantg) quante = 0.01 * quantg;
+	quanti = quantg - quante;
 
 	#if(FIXEDGAMMA)
 	pe = (game - 1.0) / game * quante;
