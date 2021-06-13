@@ -343,7 +343,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 ) {
 #if(RAD_M1)
 	int i;
-	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], arad, Tr, Te;
+	double lambda, kappa_abs, kappa_emmit, kappa_es, R_dot_ucon[NDIM], Tr, Te;
 	#if(P_NUM)
 	double exp_xi;
 	#endif
@@ -379,14 +379,14 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
-	arad = ARAD / (ENERGY_DENSITY_SCALE);
+	#elif(TWO_T)
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
-	Te = calc_Te(ph);
+	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
 
 	//Calculate emmission rate
-	arad = (ARAD / ENERGY_DENSITY_SCALE) * pow(MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS, 4.);
-	lambda = kappa_emmit * arad * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
+	lambda = kappa_emmit * (ARAD / ENERGY_DENSITY_SCALE) * Te * Te * Te * Te; //in units of erg/(Rg/c)/cm^3
 
 	//Calculate non-Compton scattering source term
 	for (i = 0; i < NDIM; i++) R_dot_ucon[i] = (mhd_rad[i][0] * ucon[0] + mhd_rad[i][1] * ucon[1] + mhd_rad[i][2] * ucon[2] + mhd_rad[i][3] * ucon[3]);
@@ -403,24 +403,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 		urad_dot_urad = ucon_rad[0] * ucov_rad[0] + ucon_rad[1] * ucov_rad[1] + ucon_rad[2] * ucov_rad[2] + ucon_rad[3] * ucov_rad[3];
 		Ehat = ENERGY_DENSITY_SCALE * ((4. / 3.) * ph[UU_RAD] * u_dot_urad * u_dot_urad + (1. / 3.) * ph[UU_RAD] * (urad_dot_urad));
 		Nhat = -ph[PHOTON] * MASS_DENSITY_SCALE * u_dot_urad;
-		Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS;
 
-		//kappa_abs = calc_kappa_abs_ph(ph, bsq, Tr
-		//	#if(DOHELM)
-		//	, gpu_eos_table
-		//	#endif
-		//	#if(TWO_T)
-		//	, gamma_g
-		//	#endif
-		//);
-		//kappa_emmit = calc_kappa_emmit_ph(ph, bsq, Tr
-		//	#if(DOHELM) 
-		//	, gpu_eos_table
-		//	#endif
-		//	#if(TWO_T)
-		//	, gamma_g
-		//	#endif
-		//);
 		source_photon[0] = -kappa_abs / MASS_DENSITY_SCALE * Ehat / (BOLTZ_CGS * Tr * (3.0 - 2.449724 * (Nhat * Nhat * Nhat * Nhat / (CK_CGS * Ehat * Ehat * Ehat))))
 			+ (kappa_emmit / MASS_DENSITY_SCALE * ARAD * Te * Te * Te * Te / (BOLTZ_CGS * Te * 2.701178));
 
@@ -445,7 +428,8 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
-	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
+	#elif(TWO_T)
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -478,7 +462,8 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
-	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
+	#elif(TWO_T)
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
@@ -506,10 +491,12 @@ double calc_kappa_es(double * restrict ph
 	double kappa_es, Te;
 	#if (DOHELM)
 	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
-	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
+	#elif(TWO_T)
+	Te = calc_Te(ph) * MU_E * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
 	#endif
+
 	kappa_es = 0.2 * (1 + X_AB) / (1. + pow(Te / (4.5 * pow(10., 8.)), 0.86));
 	kappa_es = 0.2 * (1 + X_AB);
 
