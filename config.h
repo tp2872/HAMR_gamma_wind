@@ -327,7 +327,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #define REDUCE_FACTOR3 (4)
 
 /*Whether to dump diag file*/
-#define DUMP_DIAG (1)
+#define DUMP_DIAG (0)
 #define DUMP_DIAG_FREQUENCY (1) // each (x) dumps diag.dumps will be produced; only int!
 #define NDIAG (3) // number of diagnostic variables
 
@@ -372,7 +372,7 @@ If a very high value is needed, lowerin Courant factor may increase stability*/
 #if (RADM1_SUBCYCLING)
 #define DO_IMEX (0)
 #else 
-#define DO_IMEX (1) // as ML said: disable IMEX for now; source terms might be broken 
+#define DO_IMEX (0) // as ML said: disable IMEX for now; source terms might be broken 
 #endif 
 
 /* use local lax-friedrichs or HLL flux:  these are relative weights on each numerical flux */
