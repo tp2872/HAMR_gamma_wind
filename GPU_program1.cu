@@ -1,103 +1,131 @@
 #include "config.h"
 
-/*Declarations of functions for Utoprim2D*/
-#if(DOHELM)
-__device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
-__device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
-__device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance, const  double* __restrict__ gpu_eos_table);
-__device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, const  double* __restrict__ gpu_eos_table);
-__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy, const  double* __restrict__ gpu_eos_table);
-__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm, const  double* __restrict__ gpu_eos_table);
-__device__ void dWdvsq_calc2_helmholtz(const  double* __restrict__ gpu_eos_table, double vsq, double D, double K_atm, double* W, double* dWdvsq);
-__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
-__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, const  double* __restrict__ gpu_eos_table);
-__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance, const  double* __restrict__ gpu_eos_table);
-__device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
-__device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, const  double* __restrict__ gpu_eos_table);
-__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
-__device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom, const  double* __restrict__ gpu_eos_table);
-__device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r, const  double* __restrict__ gpu_eos_table);
-__device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd, const  double* __restrict__ gpu_eos_table);
-__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR], const  double* __restrict__ gpu_eos_table);
-__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin, const  double* __restrict__ gpu_eos_table);
-__device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table);
-__device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, const  double* __restrict__ gpu_eos_table);
-
-/*Declarations of functions related to (M1) radiation inversion scheme*/
-__device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
-__device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
-__device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
-__device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
-__device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged, const  double* __restrict__ gpu_eos_table);
-
-__device__ void source_rad(double* ph, struct of_geom* geom, double* dU, const  double* __restrict__ gpu_eos_table);
-__device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double mhd_rad[NDIM][NDIM],  double bsq,const  double* __restrict__ gpu_eos_table);
-
-__device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx, const  double* __restrict__ gpu_eos_table);
-__device__ double calc_kappa_abs(double* ph, double bsq, double Tr, const  double* __restrict__ gpu_eos_table);
-__device__ double calc_kappa_emmit(double* ph, double bsq, double Tr, const  double* __restrict__ gpu_eos_table);
-__device__ double calc_kappa_es(double* ph, const  double* __restrict__ gpu_eos_table);
-#else 
+/*Declarations of functions for Utoprim2D*/ 
 __device__ int Utoprim_2d(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double fel
 	#endif
 );
 __device__ int Utoprim_new_body(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double tolerance, int lim
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double* S
 	, double fel
 	#endif
 );
 __device__ int general_newton_raphson(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double tolerance
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double* S
 	, double fel
 	#endif
 );
 __device__ void func_vsq(double[], double[], double[], double[][NEWT_DIM_2], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double* S
 	, double fel
 	#endif
 );
-__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy);
-__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm);
-__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim);
-__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm);
-__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance);
+__device__ int Utoprim_1dvsq2fix1(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim, int full_entropy
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
+__device__ double W_of_vsq2(double vsq, double* p, double* rho, double* u, double D, double K_atm
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
+__device__ int Utoprim_new_body2(double U[], double gcov[10], double gcon[10], double gdet, double prim[], double K_atm, double tolerance, int lim
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
+__device__ void func_1d_gnr2(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double* f, double* df, double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
+__device__ int general_newton_raphson2(double x[], double Bsq, double Qtsq, double QdotBsq, double Qdotn, double D, double K_atm, double tolerance
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
 __device__ int Utoprim_NM(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double fel
 	#endif
 );
 __device__ int Utoprim_NM_calc(double* U, double gcov[10], double gcon[10], double gdet, double* prim, double tolerance, int lim
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double *S
 	, double fel
 	#endif
 );
-__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin);
+__device__ void vchar(double* pr, struct of_state* q, struct of_geom* geom, int dir, double* vmax, double* vmin
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
 __device__ void primtoflux(double* pr, struct of_state* q, int dir, struct of_geom* geom, double* flux, double* vmax, double* vmin
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
-__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom);
+__device__ int fixup_cell(double pf[NDIM], double r, struct of_geom* geom
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
 __device__ void source(double* ph, struct of_geom* geom, int icurr, int jcurr, int zcurr, double* dU, double Dt, const  double* __restrict__ conn, struct of_state* q, double r
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
 __device__ void mhd_calc(double* pr, int dir, struct of_state* q, double* mhd
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
-__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]);
-__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin);
+__device__ void primtoflux_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double flux[NPR]
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
+__device__ void vchar_FT(double* pr, double ucon[NDIM], double bcon[NDIM], int dir, double* vmax, double* vmin
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
+);
 __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double cell_size, double y_max
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double fel
 	#endif
@@ -106,6 +134,9 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 	#endif
 );
 __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, double* U_f, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double fel
 	#endif
@@ -116,32 +147,50 @@ __device__ void implicit_rad_solve_init(double* pb, double* U_n, double* U_i, do
 
 /*Declarations of functions related to (M1) radiation inversion scheme*/
 __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(COOL_STOP)
 	, double r
 	#endif
 );
 __device__ int implicit_rad_solve_UMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(COOL_STOP)
 	, double r
 	#endif
 );
 __device__ int implicit_rad_solve_PRAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(COOL_STOP)
 	, double r
 	#endif
 );
 __device__ int implicit_rad_solve_URAD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(COOL_STOP)
 	, double r
 	#endif
 );
 __device__ int implicit_rad_solve_EMHD(double* pb, double* U_n, double* U_i, double* U_f, int* pflag, int* pflag_rad, struct of_geom* geom, double* dU, double Dt, double* error_t, double cell_size, double y_max, int do_entropy, int do_staged
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(COOL_STOP)
 	, double r
 	#endif
 );
 
 __device__ void source_rad(double* ph, struct of_geom* geom, double* dU
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -150,6 +199,9 @@ __device__ void source_rad(double* ph, struct of_geom* geom, double* dU
 	#endif
 );
 __device__ void calc_Gcon(double* ph, double Gcon[NDIM], double ucon[NDIM], double ucov[NDIM], double ucon_rad[NDIM], double ucov_rad[NDIM], double mhd_rad[NDIM][NDIM], double bsq
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -164,16 +216,25 @@ __device__ double calc_Tr(double* ph, double ucon[NDIM], double ucon_rad[NDIM], 
 __device__ double calc_Te(double* ph);
 __device__ double calc_Ti(double* ph);
 __device__ void vchar_rad(double* pr, struct of_state* q, struct of_state_rad* q_rad, struct of_geom* geom, int js, double* vmax, double* vmin, double dx
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
 __device__ double calc_kappa_abs(double* ph, double bsq, double Tr
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
 __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
@@ -182,14 +243,19 @@ __device__ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	#endif
 );
 __device__ double calc_kappa_es(double* ph
+	#if (DOHELM)
+	, const  double* __restrict__ gpu_eos_table
+	#endif
 	#if(TWO_T)
 	, double gamma_g
 	#endif
 );
-#endif
 
 __device__ double vsq_calc(double W, double Bsq, double Qtsq, double QdotBsq);
 __device__ double x1_of_x0(double x0, double Bsq, double Qtsq, double QdotBsq);
+#if (DOHELM)
+__device__ void dWdvsq_calc2_helmholtz(const  double* __restrict__ gpu_eos_table, double vsq, double D, double K_atm, double* W, double* dWdvsq);
+#endif
 __device__ double dWdvsq_calc2(double vsq, double rho, double p);
 __device__ void validate_x2(double x[1], double x0[1]);
 __device__ void func_gnr2_rho(double x[], double dx[], double resid[], double jac[][NEWT_DIM_1], double *f, double *df, double D, double K_atm, double W_for_gnr2);
@@ -415,6 +481,14 @@ __device__ void implicit_rad_solve(double* pb, double* U_n, double* U_i, double*
 			//	#endif
 			//	);
 
+		/*	if (error_t[1] > 1.e-9) implicit_rad_solve_URAD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size, y_max, 0, 0
+				#if(DOHELM)
+				, gpu_eos_table
+				#endif
+				#if(COOL_STOP)
+				, r
+				#endif
+			);*/
 
 			//If error is still below set margin, accept solution, otherwise try URAD
 			if (error_t[1] > 1.e-9) implicit_rad_solve_PMHD(pb_i, U_n_temp, U_i_temp, U_ft, pflag, pflag_rad, geom, dU, Dt, error_t, cell_size,y_max, 0, 0
@@ -1605,11 +1679,11 @@ __device__ int implicit_rad_solve_PMHD(double* pb, double* U_n, double* U_i, dou
 					eos_mode_rhou_entr(gpu_eos_table, pb_new[RHO], pb_new[UU], &xentr);
 					U_new[KTOT] = geom->g * pb_new[RHO] * q.ucon[0] * xentr;
 					#else
-#if(FULL_ENTROPY)
+					#if(FULL_ENTROPY)
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * 1. / (GAMMA - 1.) * log((GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA))); // HELMEOS
-#else
+					#else
 					U_new[KTOT] = geom->g * (pb_new[RHO] * q.ucon[0] * (GAMMA - 1.) * pb_new[UU] * pow(pb_new[RHO], -GAMMA));
-#endif
+					#endif
 					#endif
 				}
 
@@ -5078,6 +5152,165 @@ __device__ int LU_decompose(double A[][NDIM], int permute[]){
 	return(0);
 }
 
+//3D LU
+__device__ int LU_decompose_3D(double A[][3], int permute[])
+{
+	double row_norm[3];
+
+	double absmin = 1.e-30; /* Value used instead of 0 for singular matrices */
+
+	double  absmax, maxtemp, mintemp;
+
+	int i, j, k, max_row;
+	int n = 3;
+
+
+	max_row = 0;
+
+	/* Find the maximum elements per row so that we can pretend later
+	   we have unit-normalized each equation: */
+
+	for (i = 0; i < n; i++) {
+		absmax = 0.;
+
+		for (j = 0; j < n; j++) {
+
+			maxtemp = fabs(A[i][j]);
+
+			if (maxtemp > absmax) {
+				absmax = maxtemp;
+			}
+		}
+
+		/* Make sure that there is at least one non-zero element in this row: */
+		if (absmax == 0.) {
+			//fprintf(stderr, "LU_decompose(): row-wise singular matrix!\n");
+			return(1);
+		}
+
+		row_norm[i] = 1. / absmax;   /* Set the row's normalization factor. */
+	}
+
+
+	/* The following the calculates the matrix composed of the sum
+	   of the lower (L) tridagonal matrix and the upper (U) tridagonal
+	   matrix that, when multiplied, form the original maxtrix.
+	   This is what we call the LU decomposition of the maxtrix.
+	   It does this by a recursive procedure, starting from the
+	   upper-left, proceding down the column, and then to the next
+	   column to the right.  The decomposition can be done in place
+	   since element {i,j} require only those elements with {<=i,<=j}
+	   which have already been computed.
+	   See pg. 43-46 of "Num. Rec." for a more thorough description.
+	*/
+
+	/* For each of the columns, starting from the left ... */
+	for (j = 0; j < n; j++) {
+
+		/* For each of the rows starting from the top.... */
+
+		/* Calculate the Upper part of the matrix:  i < j :   */
+		for (i = 0; i < j; i++) {
+			for (k = 0; k < i; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+		}
+
+		absmax = 0.0;
+
+		/* Calculate the Lower part of the matrix:  i <= j :   */
+
+		for (i = j; i < n; i++) {
+
+			for (k = 0; k < j; k++) {
+				A[i][j] -= A[i][k] * A[k][j];
+			}
+
+			/* Find the maximum element in the column given the implicit
+		   unit-normalization (represented by row_norm[i]) of each row:
+			*/
+			maxtemp = fabs(A[i][j]) * row_norm[i];
+
+			if (maxtemp >= absmax) {
+				absmax = maxtemp;
+				max_row = i;
+			}
+
+		}
+
+		/* Swap the row with the largest element (of column j) with row_j.  absmax
+		   This is the partial pivoting procedure that ensures we don't divide
+		   by 0 (or a small number) when we solve the linear system.
+		   Also, since the procedure starts from left-right/top-bottom,
+		   the pivot values are chosen from a pool involving all the elements
+		   of column_j  in rows beneath row_j.  This ensures that
+		   a row  is not permuted twice, which would mess things up.
+		*/
+		if (max_row != j) {
+
+			/* Don't swap if it will send a 0 to the last diagonal position.
+		   Note that the last column cannot pivot with any other row,
+		   so this is the last chance to ensure that the last two
+		   columns have non-zero diagonal elements.
+			 */
+
+			if ((j == (n - 2)) && (A[j][j + 1] == 0.)) {
+				max_row = j;
+			}
+			else {
+				for (k = 0; k < n; k++) {
+
+					maxtemp = A[j][k];
+					A[j][k] = A[max_row][k];
+					A[max_row][k] = maxtemp;
+
+				}
+
+				/* Don't forget to swap the normalization factors, too...
+				   but we don't need the jth element any longer since we
+				   only look at rows beneath j from here on out.
+				*/
+				row_norm[max_row] = row_norm[j];
+			}
+		}
+
+		/* Set the permutation record s.t. the j^th element equals the
+		   index of the row swapped with the j^th row.  Note that since
+		   this is being done in successive columns, the permutation
+		   vector records the successive permutations and therefore
+		   index of permute[] also indexes the chronology of the
+		   permutations.  E.g. permute[2] = {2,1} is an identity
+		   permutation, which cannot happen here though.
+		*/
+
+		permute[j] = max_row;
+
+		if (A[j][j] == 0.) {
+			A[j][j] = absmin;
+		}
+
+
+		/* Normalize the columns of the Lower tridiagonal part by their respective
+		   diagonal element.  This is not done in the Upper part because the
+		   Lower part's diagonal elements were set to 1, which can be done w/o
+		   any loss of generality.
+		*/
+		if (j != (n - 1)) {
+			maxtemp = 1. / A[j][j];
+
+			for (i = (j + 1); i < n; i++) {
+				A[i][j] *= maxtemp;
+			}
+		}
+
+	}
+
+	return(0);
+
+	/* End of LU_decompose() */
+
+}
+
 //5D LU-decomposition
 __device__ int LU_decompose_5D(double A[][5], int permute[])
 {
@@ -7945,7 +8178,7 @@ __device__ double calc_Te(double* ph) {
 	return Te;
 }
 
-double calc_Ti(double* ph) {
+__device__ double calc_Ti(double* ph) {
 	double Ti;
 
 	#if(TWO_T)
@@ -10837,6 +11070,9 @@ __global__ void fixup(double* pi_i, double* pb_i, double* pf_i, double* storage2
 		);
 		#else
 		implicit_rad_solve(pf, U, U, U_0, &pflag_local, &pflag_rad_local, &geom, dU, Dt, cell_size, y_max
+			#if (DOHELM)
+			, gpu_eos_table
+			#endif
 			#if(TWO_T)
 			, fel
 			#endif
@@ -14106,9 +14342,9 @@ __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* g
 
 	double w, bsq, eta;
 	// EOS-specific calls:
-	#if (DOHELM)
+	#if (0)//(DOHELM) DIMARK: not working yet!
 	// 1. Helmholtz EOS
-	double cs2_helm;
+	double cs2_helm, P;
 	eos_mode_rhou_pres_cs2(gpu_eos_table, pr[RHO], pr[UU], &P, &cs2_helm);
 	w = pr[RHO] + pr[UU] + P;
 	#else
@@ -14124,7 +14360,7 @@ __device__ void vchar_res2(double* pr, struct of_state_res* q, struct of_geom* g
 
 	/* find fast magnetosonic speed */
 	// EOS-specific calls:
-	#if (DOHELM)
+	#if (0) //(DOHELM)
 	// 1. Helmholtz EOS
 	// cs2 was already calculated above
 	cs2 = cs2_helm;
