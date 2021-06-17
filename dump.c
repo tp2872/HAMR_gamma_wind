@@ -318,40 +318,43 @@ void dump_block(MPI_File *fp, int n)
 	ZSLOOP3D(N1_GPU_offset[n], N1_GPU_offset[n] + BS_1 - 1, N2_GPU_offset[n], N2_GPU_offset[n] + BS_2 - 1, N3_GPU_offset[n], N3_GPU_offset[n] + BS_3 - 1) {
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + RHO] = (float)p[nl[n]][index_3D(n, i, j, z)][0];
         array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + UU] = (float)p[nl[n]][index_3D(n, i, j, z)][1];
+        #if(DOHELM_TEMPERATURE)
+        array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2* BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n])* NPRDUMP + DOHELM_TEMP] = (float)p[nl[n]][index_3D(n, i, j, z)][2];
+        #endif
 
 		get_geometry(n, i, j, z, CENT, &geom);
 		ucon_calc(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon);
 
-		for (k = 0; k < NDIM; k++) array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (U1 + k)] = (float)ucon[k];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (B1 + 1)] = (float)p[nl[n]][index_3D(n, i, j, z)][B1];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (B2 + 1)] = (float)p[nl[n]][index_3D(n, i, j, z)][B2];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (B3 + 1)] = (float)p[nl[n]][index_3D(n, i, j, z)][B3];
+		for (k = 0; k < NDIM; k++) array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (U1 + k + DOHELM_TEMPERATURE)] = (float)ucon[k];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (B1 + 1 + DOHELM_TEMPERATURE)] = (float)p[nl[n]][index_3D(n, i, j, z)][B1];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (B2 + 1 + DOHELM_TEMPERATURE)] = (float)p[nl[n]][index_3D(n, i, j, z)][B2];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (B3 + 1 + DOHELM_TEMPERATURE)] = (float)p[nl[n]][index_3D(n, i, j, z)][B3];
 
 		#if(RAD_M1)
 		ucon_calc_rad(p[nl[n]][index_3D(n, i, j, z)], &geom, ucon_rad);
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT)] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_RAD];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 1)] = (float)ucon_rad[0];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 2)] = (float)ucon_rad[1];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 3)] = (float)ucon_rad[2];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 4)] = (float)ucon_rad[3];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + DOHELM_TEMPERATURE)] = (float)p[nl[n]][index_3D(n, i, j, z)][UU_RAD];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 1 + DOHELM_TEMPERATURE)] = (float)ucon_rad[0];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 2 + DOHELM_TEMPERATURE)] = (float)ucon_rad[1];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 3 + DOHELM_TEMPERATURE)] = (float)ucon_rad[2];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (UU_RAD + !DOKTOT + 4 + DOHELM_TEMPERATURE)] = (float)ucon_rad[3];
 		#endif
 
 		#if(RESISTIVE)
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (E1 + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][E1];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (E2 + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][E2];
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (E3 + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][E3];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (E1 + !DOKTOT + DOHELM_TEMPERATURE + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][E1];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (E2 + !DOKTOT + DOHELM_TEMPERATURE + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][E2];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (E3 + !DOKTOT + DOHELM_TEMPERATURE + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][E3];
 		#endif
 
 		#if(TWO_T)
 		double Te, Ti;
 		Te = calc_Te(p[nl[n]][index_3D(n, i, j, z)]);
 		Ti = calc_Ti(p[nl[n]][index_3D(n, i, j, z)]);
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (ENTRE + !DOKTOT + RAD_M1)] = (float)Te;
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (ENTRI + !DOKTOT + RAD_M1)] = (float)Ti;
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (ENTRE + !DOKTOT + DOHELM_TEMPERATURE + RAD_M1)] = (float)Te;
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (ENTRI + !DOKTOT + DOHELM_TEMPERATURE + RAD_M1)] = (float)Ti;
 		#endif
 
 		#if(P_NUM)
-		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (PHOTON + !DOKTOT + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][PHOTON];
+		array[nl[n]][(i - N1_GPU_offset[n]) * NPRDUMP * BS_2 * BS_3 + (j - N2_GPU_offset[n]) * NPRDUMP * BS_3 + (z - N3_GPU_offset[n]) * NPRDUMP + (PHOTON + !DOKTOT + DOHELM_TEMPERATURE + RAD_M1)] = (float)p[nl[n]][index_3D(n, i, j, z)][PHOTON];
 		#endif
 	}
 	#if(PARALLEL_IO)

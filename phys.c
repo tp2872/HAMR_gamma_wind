@@ -86,7 +86,7 @@ void mhd_calc(double * restrict pr, int dir, struct of_state * restrict q, doubl
     
     #if DOHELM
     // Helmholtz EOS
-    eos_mode_rhou_pres (r, u, &P);
+    eos_mode_rhou_pres (pr, &P);
 	#elif(TWO_T)
     // Ideal gas EOS
 	P = (gamma_g - 1.) * u;
@@ -360,7 +360,7 @@ void calc_Gcon(double * restrict ph, double Gcon[NDIM+P_NUM], double ucon[NDIM],
 	);
 
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(ph, &Te);
 	arad = ARAD / (ENERGY_DENSITY_SCALE);
 	#else
 	Te = calc_Te(ph);
@@ -423,7 +423,7 @@ double calc_kappa_abs(double* ph, double bsq, double Tr
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne, zeta;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(ph, &Te);
 	//Tg *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
@@ -456,7 +456,7 @@ double calc_kappa_emmit(double* ph, double bsq, double Tr
 	double kappa_abs, kappa_m, kappa_h, kappa_chianti, kappa_bf, kappa_ff, kappa_sy, Te, ne;
 	double Ye = (1. + X_AB) / 2.;
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(ph, &Te);
 	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
@@ -487,7 +487,7 @@ double calc_kappa_es(double * restrict ph
 	) {
 	double kappa_es, Te;
 	#if (DOHELM)
-	eos_mode_rhou_temp(gpu_eos_table, ph[RHO], ph[UU], &Te);
+	eos_mode_rhou_temp(ph, &Te);
 	//Te *= (MMW * MH_CGS * C_CGS * C_CGS / BOLTZ_CGS);
 	#else
 	Te = calc_Te(ph) * MMW * MH_CGS * C_CGS * C_CGS / (BOLTZ_CGS);
@@ -666,7 +666,7 @@ void vchar(double * restrict pr, struct of_state * restrict q, struct of_geom * 
     #if DOHELM
     // Helmholtz EOS
     double xpres;
-    eos_mode_rhou_pres_cs2 (pr[RHO], pr[UU], &xpres, &cs2);
+    eos_mode_rhou_pres_cs2 (pr, &xpres, &cs2);
     va2 = bsq/(bsq + pr[RHO] + pr[UU] + xpres);
     #else
     // Ideal gas EOS

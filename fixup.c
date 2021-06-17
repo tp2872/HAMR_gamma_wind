@@ -176,7 +176,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		//enthalpy before the floors
 		#if (DOHELM)
 		double xP;
-		eos_mode_rhou_pres(pv_prefloor[RHO], pv_prefloor[UU], &xP);
+		eos_mode_rhou_pres(pv_prefloor, &xP);
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] + xP;
 		#else
 		wold = pv_prefloor[RHO] + pv_prefloor[UU] * GAMMA;
@@ -187,7 +187,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 
 		//enthalpy after the floors
 		#if (DOHELM)
-		eos_mode_rhou_pres(pv[RHO], pv[UU], &xP);
+		eos_mode_rhou_pres(pv, &xP);
 		wnew = pv[RHO] + pv[UU] + xP;
 		#else
 		wnew = pv[RHO] + pv[UU] * gam;
@@ -246,7 +246,7 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 	/*#if DOKTOT
 	#if (DOHELM)
 	double xentr;
-	eos_mode_rhou_entr(pv[RHO], pv[UU], &xentr);
+	eos_mode_rhou_entr(pv, &xentr);
 	pv[KTOT] = xentr;
 	#else 
 	// DIMARK: entropy test

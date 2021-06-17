@@ -1100,18 +1100,17 @@ void init_torus()
 
 	#if (DOHELM)
 	// Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-	double den, ener, pres;
+	// double den, ener, pres;
 	for (n = 0; n < n_active; n++) {
 		ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-			coord(n_ord[n], i, j, z, CENT, X);
-			bl_coord(X, &r, &th, &phi); 
-
-			den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-			ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-			pres = ener * (gam - 1.0);
-			
-			eos_mode_rhopres_u(den, pres, &ener);
-			p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+			//coord(n_ord[n], i, j, z, CENT, X);
+			//bl_coord(X, &r, &th, &phi);
+			// den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+			// ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+      // pres = ener * (gam - 1.0);
+      p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+			eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+			// p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 		}
 	}
 	#endif
@@ -1666,17 +1665,18 @@ void init_postmerger()
 
 #if DOHELM
   // Using density and pressure = (gam - 1) * u, find new u, using Helmholtz EOS
-  double den, ener, pres;
-
+  //double den, ener, pres;
   for (n = 0; n < n_active; n++) {
 	  ZSLOOP3D(N1_GPU_offset[n_ord[n]], BS_1 + N1_GPU_offset[n_ord[n]] - 1, N2_GPU_offset[n_ord[n]], N2_GPU_offset[n_ord[n]] + BS_2 - 1, N3_GPU_offset[n_ord[n]], N3_GPU_offset[n_ord[n]] + BS_3 - 1) {
-		  den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
-		  ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
-		  pres = ener * (gam - 1.0);
-		  coord(n_ord[n], i, j, z, CENT, X);
-		  bl_coord(X, &r, &th, &phi);
-		  eos_mode_rhopres_u(den, pres, &ener);
-		  p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
+      //coord(n_ord[n], i, j, z, CENT, X);
+      //bl_coord(X, &r, &th, &phi);
+		  //den = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][RHO];
+		  //ener = p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU];
+		  //pres = ener * (gam - 1.0);
+      p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] *= (gam - 1.);
+		  
+		  eos_mode_rhopres_u(p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)]);
+		  //p[nl[n_ord[n]]][index_3D(n_ord[n], i, j, z)][UU] = ener;
 	  }
   }
 

@@ -602,19 +602,23 @@ void validate_T(double* temp) {
 }
 
 // Entropy inversion
-void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
+void eos_mode_rhou_entr(double* prim, double* entr) {
     // Parameters of Newton-Raphson iterations
-    int max_iterations = EOS_ITERATIONS;
-    double tolerance = EOS_TEMP_TOL;
     double tolerance_q = EOS_TOL;
-
-    // initial guess : temperature
-    double temp_ini_guess;
+    
+    double den = prim[RHO];
+    double u_goal = prim[UU];
     double ener_goal = u_goal / den;
-
+    
+    // initial guess : temperature
+#if(DOHELM_TEMPERATURE)
+    double temp_ini_guess = prim[DOHELM_TEMP];
+#else
+    double temp_ini_guess;
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+#endif
 
     double temp_new, temp_old, ener_tmp,  ener_old, dpdt, dedt, dpdrho, pres, cs2;
     double error, error_q;
@@ -624,7 +628,7 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
     int addtnl_iters = 2; // number of additional iterations, if reached desired tolerance
 
     temp_old = temp_ini_guess;
-    while (i < max_iterations && more_iterations)
+    while (i < EOS_ITERATIONS && more_iterations)
     {
         eos_helm(1, temp_old, den, 1.0, 1.0, &pres, &ener_tmp, entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -640,8 +644,11 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
         temp_old = temp_new;
 
         // more iterations after reached below tolerance
-        if (error < tolerance && error_q < tolerance_q) {
+        if (error < EOS_TEMP_TOL && error_q < tolerance_q) {
             addtnl_iters -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (addtnl_iters == 0) more_iterations = 0;
         }
 
@@ -673,6 +680,9 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
             error_q = fabs(fC / ener_goal);
 
             if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_q < EOS_TOL) {
+#if(DOHELM_TEMPERATURE)
+                prim[DOHELM_TEMP] = tempC;
+#endif
                 break;
             }
 
@@ -691,19 +701,23 @@ void eos_mode_rhou_entr(double den, double u_goal, double* entr) {
 }
 
 
-void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
+void eos_mode_rhou_pres(double* prim, double *pres) {
     // Parameters of Newton-Raphson iterations
-    int max_iterations = EOS_ITERATIONS;
-    double tolerance = EOS_TEMP_TOL;
     double tolerance_q = EOS_TOL;
     
-    // initial guess : temperature
-    double temp_ini_guess;
+    double den = prim[RHO];
+    double u_goal = prim[UU];
     double ener_goal = u_goal / den;
-
+    
+    // initial guess : temperature
+#if(DOHELM_TEMPERATURE)
+    double temp_ini_guess = prim[DOHELM_TEMP];
+#else
+    double temp_ini_guess;
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+#endif
 
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, entr, cs2;
     double error, error_q;
@@ -713,7 +727,7 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
     int addtnl_iters = 2; // number of additional iterations, if reached desired tolerance
 
     temp_old = temp_ini_guess;
-    while (i < max_iterations && more_iterations)
+    while (i < EOS_ITERATIONS && more_iterations)
     {
         eos_helm(1, temp_old, den, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -729,8 +743,11 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
         temp_old = temp_new;
 
         // more iterations after reached below tolerance
-        if (error < tolerance && error_q < tolerance_q) {
+        if (error < EOS_TEMP_TOL && error_q < tolerance_q) {
             addtnl_iters -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (addtnl_iters == 0) more_iterations = 0;
         }
 
@@ -762,6 +779,9 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
             error_q = fabs(fC / ener_goal);
 
             if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_q < EOS_TOL) {
+#if(DOHELM_TEMPERATURE)
+                prim[DOHELM_TEMP] = tempC;
+#endif
                 break;
             }
 
@@ -772,19 +792,23 @@ void eos_mode_rhou_pres (double den, double u_goal, double *pres) {
     }
 }
 
-void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2) {
+void eos_mode_rhou_pres_cs2(double* prim, double *pres, double *cs2) {
     // Parameters of Newton-Raphson iterations
-    int max_iterations = EOS_ITERATIONS;
-    double tolerance = EOS_TEMP_TOL;
     double tolerance_q = EOS_TOL;
 
-    // initial guess : temperature
-    double temp_ini_guess;
+    double den = prim[RHO];
+    double u_goal = prim[UU];
     double ener_goal = u_goal / den;
-
+    
+    // initial guess : temperature
+#if(DOHELM_TEMPERATURE)
+    double temp_ini_guess = prim[DOHELM_TEMP];
+#else
+    double temp_ini_guess;
     if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(den * ener_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+#endif
 
     double temp_new, temp_old, ener_tmp, ener_old, dpdt, dedt, dpdrho, entr;
     double error, error_q;
@@ -794,7 +818,7 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
     int addtnl_iters = 2; // number of additional iterations, if reached desired tolerance
 
     temp_old = temp_ini_guess;
-    while (i < max_iterations && more_iterations)
+    while (i < EOS_ITERATIONS && more_iterations)
     {
         eos_helm(1, temp_old, den, 1.0, 1.0, pres, &ener_tmp, &entr, &dpdt, &dedt, &dpdrho, cs2);
         temp_new = temp_old - (ener_tmp - ener_goal) / dedt;
@@ -810,8 +834,11 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
         temp_old = temp_new;
 
         // more iterations after reached below tolerance
-        if (error < tolerance && error_q < tolerance_q) {
+        if (error < EOS_TEMP_TOL && error_q < tolerance_q) {
             addtnl_iters -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (addtnl_iters == 0) more_iterations = 0;
         }
 
@@ -843,6 +870,9 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
             error_q = fabs(fC / ener_goal);
 
             if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_q < EOS_TOL) {
+#if(DOHELM_TEMPERATURE)
+                prim[DOHELM_TEMP] = tempC;
+#endif
                 break;
             }
 
@@ -853,22 +883,25 @@ void eos_mode_rhou_pres_cs2(double den, double u_goal, double *pres, double *cs2
     }
 }
 
-void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, double *dpdrho, double *dpde_d) {
+void eos_mode_rhow_pres_dpdrho_dpde_d (double* prim, double *pres, double *dpdrho, double *dpde_d) {
     // Parameters of Newton-Raphson iterations
-    int max_iterations = EOS_ITERATIONS;
-    double tolerance = EOS_TEMP_TOL;
     double tolerance_q = EOS_TOL;
+    
+    double den = prim[RHO];
     double deni = 1.0 / den;
-
+    // prim[UU] is w - rho for this function only
+    double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
+    
     // initial guess : temperature
+#if(DOHELM_TEMPERATURE)
+    double temp_ini_guess = prim[DOHELM_TEMP];
+#else
     double temp_ini_guess;
-    double h_goal = w_goal * deni;
-
-    if (h_goal < 1.0) temp_ini_guess = eos_temp_low;
-    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    if (xenth < 0.0) temp_ini_guess = eos_temp_low;
+    else temp_ini_guess = pow(den * xenth * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
-
-    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
+#endif
+    
     double xener = 0.0;
     double h_tmp;
 
@@ -880,7 +913,7 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, 
     int addtnl_iters = 2; // number of additional iterations, if reached desired tolerance
 
     temp_old = temp_ini_guess;
-    while (i < max_iterations && more_iterations)
+    while (i < EOS_ITERATIONS && more_iterations)
     {
         eos_helm(1, temp_old, den, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, dpdrho, &cs2);
         h_tmp = xener + (*pres) * deni;
@@ -898,8 +931,11 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, 
         temp_old = temp_new;
 
         // more iterations after reached below tolerance
-        if (error < tolerance && error_q < tolerance_q) {
+        if (error < EOS_TEMP_TOL && error_q < tolerance_q) {
             addtnl_iters -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (addtnl_iters == 0) more_iterations = 0;
         }
 
@@ -909,21 +945,25 @@ void eos_mode_rhow_pres_dpdrho_dpde_d (double den, double w_goal, double *pres, 
     *dpde_d = dpdt / dedt;
 }
 
-void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u) {
+void eos_mode_rhow_pres_u (double* prim, double *pres, double *u) {
     // implementation in Newman-Hamlin inversion
     // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = EOS_TEMP_TOL;
     double tolerance_h = EOS_TOL;
     
+    double den = prim[RHO];
     double deni = 1.0 / den;
+    // prim[UU] is w - rho for this function only
+    double xenth = prim[UU] * deni; // Helmholtz EOS takes non-relativistic enthalpy
     
     // initial guess : temperature
+#if(DOHELM_TEMPERATURE)
+    double temp_ini_guess = prim[DOHELM_TEMP];
+#else
     double temp_ini_guess;
-    double h_goal = w_goal * deni;
-    
-    if (h_goal < 1.0) temp_ini_guess = 1.0e4;
-    else temp_ini_guess = pow(den * (h_goal - 1.0) * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    if (xenth < 0.0) temp_ini_guess = eos_temp_low;
+    else temp_ini_guess = pow(den * xenth * conv_ener_CODE2CGS * conv_dens_CODE2CGS / asol, 0.25);
+    temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+#endif
     
     double temp_new, temp_old;
     double ener_old, pres_old;
@@ -935,14 +975,13 @@ void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u) {
     double error, error_h;
     int i;
     
-    double xenth = h_goal - 1.0; // Helmholtz EOS takes non-relativistic enthalpy
     double xener;
     
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
     
     temp_old = temp_ini_guess;
     
-    for(i = 0; i < max_iterations; i++){
+    for(i = 0; i < EOS_ITERATIONS; i++){
         eos_helm(1, temp_old, den, 1.0, 1.0, pres, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         
         h_tmp = xener + (*pres) * deni;
@@ -958,8 +997,11 @@ void eos_mode_rhow_pres_u (double den, double w_goal, double *pres, double *u) {
         validate_T(&temp_new);
         
         temp_old = temp_new;
-        if(error < tolerance && error_h < tolerance_h) {
+        if(error < EOS_TEMP_TOL && error_h < tolerance_h) {
             more_iterations -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (more_iterations == 0) break;
         }
     }
@@ -976,15 +1018,15 @@ void eos_mode_rhotemp_pres_min (double den, double *pres) {
     eos_helm(1, temp, den, 1.0, 1.0, pres, &ener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
 }
 
-void eos_mode_rhopres_u (double den, double p_goal, double *u) {
-    
+void eos_mode_rhopres_u (double* prim) {
     // Parameters of Newton-Raphson iterations
-    int max_iterations = 50;
-    double tolerance = EOS_TEMP_TOL;
     double tolerance_p = EOS_TOL;
     
+    double den = prim[RHO];
     double deni = 1.0 / den;
-    
+    // prim[UU] is p_goal for this function only
+    double p_goal = prim[UU];
+
     // initial guess : temperature
     double temp_ini_guess;
     if (p_goal <= 0.0) temp_ini_guess = 1.0e3;
@@ -1004,7 +1046,7 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
     temp_old = temp_ini_guess;
     
     int more_iterations = 2; // number of additional iterations, if reached desired tolerance
-    for(i = 0; i < max_iterations; i++){
+    for(i = 0; i < EOS_ITERATIONS; i++){
         
         eos_helm(1, temp_old, den, 1.0, 1.0, &p_tmp, &xener, &entr, &dpdt, &dedt, &dpdrho, &cs2);
         
@@ -1021,10 +1063,14 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
         temp_old = temp_new;
         
         // more iterations after reached below tolerance
-        if(error < tolerance && error_p < tolerance_p) {
+        if(error < EOS_TEMP_TOL && error_p < tolerance_p) {
             more_iterations -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (more_iterations == 0) break;
         }
+
     }
 
     // Bisection method as backup rootfinder
@@ -1053,6 +1099,9 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
             error_p = fabs(fC / p_goal);
 
             if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_p < EOS_TOL) {
+#if(DOHELM_TEMPERATURE)
+                prim[DOHELM_TEMP] = tempC;
+#endif
                 break;
             }
 
@@ -1066,18 +1115,24 @@ void eos_mode_rhopres_u (double den, double p_goal, double *u) {
         printf("5 %g %g %g %g %g\n", error_p, temp_old, den, p_goal, temp_ini_guess);
     }
 
-    *u = xener * den;
+    prim[UU] = xener * den;
 }
 
-void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
+void eos_mode_rhou_temp(double* prim, double* temp) {
+    double den = prim[RHO];
+    double u_goal = prim[UU];
+    double ener_goal = u_goal / den;
+    
     // initial guess : temperature
+#if(DOHELM_TEMPERATURE)
+    double temp_ini_guess = prim[DOHELM_TEMP];
+#else
     double temp_ini_guess;
-
-    if (u_goal <= 0.0) temp_ini_guess = eos_temp_low;
+    if (ener_goal <= 0.0) temp_ini_guess = eos_temp_low;
     else temp_ini_guess = pow(u_goal * conv_pres_CODE2CGS / asol, 0.25);
     temp_ini_guess = MY_MIN(eos_temp_up, temp_ini_guess);
+#endif
 
-    double ener_goal = u_goal / den;
     double temp_new, temp_old;
     double ener_tmp;
     double dpdt, dedt, dpdrho;
@@ -1116,6 +1171,9 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
         // more iterations after reached below tolerance
         if (error < EOS_TEMP_TOL && error_e < EOS_TOL) {
             more_iterations -= 1;
+#if(DOHELM_TEMPERATURE)
+            prim[DOHELM_TEMP] = temp_old;
+#endif
             if (more_iterations == 0) break;
         }
     }
@@ -1146,6 +1204,9 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
             error_e = fabs(fC / ener_goal);
 
             if (fC == 0.0 || 0.5 * (tempB - tempA) < EOS_TEMP_TOL || error_e < EOS_TOL) {
+#if(DOHELM_TEMPERATURE)
+                prim[DOHELM_TEMP] = tempC;
+#endif
                 break;
             }
 
@@ -1154,13 +1215,6 @@ void eos_mode_rhou_temp(double den, double u_goal, double* temp) {
             i++;
         }
         *temp = tempC;
-    }
-
-    //if (error_e > EOS_TOL)
-    if (1)
-    {
-        //fprintf(stderr, "i: %d, (%e) T:%e, rho:%e, u_goal:%e\n", i, error_e, *temp, den, u_goal);
-        //fprintf(stderr, "[CPU eos_mode_rhou_temp FAIL %g %g] : %g %g (%g)\n", error_e, *temp, den, u_goal, fabs(MMW * MH_CGS * (5. / 3. - 1.) * (u_goal * ENERGY_DENSITY_SCALE) / (BOLTZ_CGS * den * MASS_DENSITY_SCALE)));
     }
 }
 
