@@ -118,6 +118,10 @@ void fixup1zone( int i, int j, int z, int n, double pv[NPR] )
 		pv[UU] = uuflr - pv[UU_RAD];
 		dofloor = 1;
 	}
+	if (pv[UU] < 0.0001 * uuflr) {
+		pv[UU] = 0.0001 * uuflr;
+		dofloor = 1;
+	}
 	#else
 	if (pv[UU] < uuflr) {
 		pv[UU] = uuflr;

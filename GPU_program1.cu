@@ -6387,6 +6387,10 @@ __device__ int fixup_cell(double* pf, double r, struct of_geom* geom
 		pf[UU] = uuflr - pf[UU_RAD];
 		dofloor = 1;
 	}
+	if (pf[UU] < 0.0001*uuflr) {
+		pf[UU] = 0.0001 * uuflr;
+		dofloor = 1;
+	}
 	#else
 	if (pf[UU] < uuflr) {
 		pf[UU] = uuflr;
@@ -6964,7 +6968,7 @@ __device__ void source_rad(double *  ph, struct of_geom *  geom, double * dU
 	#if(TWO_T)
 		#if(FIXEDGAMMA)
 			#if(FULL_ENTROPY)
-			dK_dS = ph[RHO]/ (GAMMA - 1.) * ph[UU]);
+			dK_dS = ph[RHO]/ (GAMMAE - 1.) * ph[UU]);
 			dU[ENTRE] = -dK_dS * (Gcov[0] * ucon[0] + Gcov[1] * ucon[1] + Gcov[2] * ucon[2] + Gcov[3] * ucon[3]);
 			dU[ENTRE] += dK_dS * source_Coulom b(ph);
 			#else
