@@ -513,19 +513,29 @@ static void func_vsq(double x[], double dx[], double resid[], double jac[][NEWT_
     dPdW = ( dpdeps_o_rho / (1.0 + dpdeps_o_rho) ) / gamma_sq;
     dPdvsq = (dpdvsq_1 + dpde_d * dpdvsq_2)/(1.0 + dpdeps_o_rho);
 	#elif(TWO_T)
-	double gtmp, gamma_eos, w, rho, factor1, factor2, dvsq, dfactordvsq;
-	w = W * (1.0 - vsq);
-	rho= D * sqrt(1.0 - vsq);
+	double gtmp, gamma_eos1, gamma_eos2, w, rho, dgamma, factor, dvsq, dW;
+
+	//Temporary variables
 	gtmp = 1. - vsq;
-	gamma_eos = calc_gamma_gas_w(S, rho, w, fel);
-	factor1 = (gamma_eos - 1.) / gamma_eos;
-	p_tmp = factor1 * (W * gtmp - D * sqrt(gtmp));
-	dPdW = factor1 * gtmp;
-	dvsq = 0.0000000001;
-	factor2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq+dvsq)), fel);
-	factor2 = (factor2 - 1.) / factor2;
-	dfactordvsq = (factor2 - factor1) / (dvsq);
-	dPdvsq = factor1*(0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp))*dfactordvsq;
+	w = W * gtmp;
+	rho= D * sqrt(gtmp);
+	gamma_eos1 = calc_gamma_gas_w(S, rho, w, fel);
+	factor = (gamma_eos1 - 1.) / gamma_eos1;
+	p_tmp = factor * (W * gtmp - D * sqrt(gtmp));
+
+	//Offset sizes
+	dW = 1.e-8 * rho;
+	dvsq = 1.e-8;
+
+	//Calculate dPdW
+	gamma_eos2 = calc_gamma_gas_w(S, rho, (W + dW) * gtmp, fel);
+	dgamma = (gamma_eos2 - gamma_eos1) / dW;
+	dPdW = factor * gtmp + W * pow(gamma_eos1, -2.0) * dgamma;
+
+	//Calculate dPdvsq
+	gamma_eos2 = calc_gamma_gas_w(S, D * sqrt(1.0 - (vsq + dvsq)), W * (1.0 - (vsq + dvsq)), fel);
+	dgamma = (gamma_eos2 - gamma_eos1) / dvsq;
+	dPdvsq = factor * (0.5 * D / sqrt(gtmp) - W) + (W * gtmp - D * sqrt(gtmp)) * pow(gamma_eos1, -2.0) * dgamma;
     #else
     // Ideal gas EOS
 	p_tmp = pressure_W_vsq(W, vsq);
